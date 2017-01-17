@@ -1,0 +1,17 @@
+Need to update:
+Based on the difference reference type: 'time' or 'sample', adjust methods 
+such as getdata,getinterval,readchannel,getchannel accordingly.
+
+data objects:
+subtype:regions/sites
+associate: type, owner, data, description
+(VHIntan_spikesorter)
+
+wrappers
+
+format the example_experiment similar to the Fig 3. in the proposal.
+
+Github access(**independent of computer or language**need multiple version)
+
+One also has the obligation to specify a reference for each data channel that is being acquired in each epoch. The 
+reference consists of a name, reference number, data type, and channel numbers of each signal being acquired by that device. 
