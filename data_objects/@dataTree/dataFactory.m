@@ -1,4 +1,4 @@
-function d = dataTree(name,data,type)
+function d = dataFactory(name,input_data,type)
 % DATATREE - Create a new DATATREE abstract object
 %
 %  D = DATATREE(NAME)
@@ -7,16 +7,16 @@ function d = dataTree(name,data,type)
 %  This is an abstract class that is overridden by specific type of format of data.
 %
 if nargin==1,
-    root = [];
-    dataTree_struct = struct('name',name,'root',root,'type','undefinited'); 
+    data = [];
+    dataTree_struct = struct('name',name,'data',data,'type','undefinited'); 
     d = class(dataTree_struct, 'dataTree');
 elseif nargin==2,
-    root = constructTree(data);
-    dataTree_struct = struct('name',name,'root',root,'type','undefinited'); 
+    data = process(input_data);
+    dataTree_struct = struct('name',name,'data',data,'type','undefinited'); 
     d = class(dataTree_struct, 'dataTree');
 elseif nargin==3,
-    root = constructTree(data);
-    dataTree_struct = struct('name',name,'root',root,'type',type); 
+    data = process(input_data);
+    dataTree_struct = struct('name',name,'data',data,'type',type); 
     d = class(dataTree_struct, 'dataTree');
 end
 
