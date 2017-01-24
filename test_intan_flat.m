@@ -1,4 +1,14 @@
 function test_intan_flat(dirname)
+% TEST_INTAN_FLAT - Test the functionality of the Intan driver
+%
+%  TEST_INTAN_FLAT(DIRNAME)
+%
+%  Given a directory with RHD data inside, this function loads the
+%  channel information and then plots some data from channel 1,
+%  as a test of the Intan Flat driver.
+%
+%  
+
 
 %% this function works as a sample test function specifically for the 
 %% intan_flat daq
