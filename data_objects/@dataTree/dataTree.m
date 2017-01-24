@@ -7,14 +7,15 @@ function d = dataTree(name,data,type)
 %  This is an abstract class that is overridden by specific type of format of data.
 %
 if nargin==1,
+    root = [];
     dataTree_struct = struct('name',name,'root',root,'type','undefinited'); 
     d = class(dataTree_struct, 'dataTree');
 elseif nargin==2,
-    root = process(data);
+    root = constructTree(data);
     dataTree_struct = struct('name',name,'root',root,'type','undefinited'); 
     d = class(dataTree_struct, 'dataTree');
 elseif nargin==3,
-    root = process(data);
+    root = constructTree(data);
     dataTree_struct = struct('name',name,'root',root,'type',type); 
     d = class(dataTree_struct, 'dataTree');
 end
