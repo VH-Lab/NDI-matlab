@@ -1,6 +1,11 @@
 function dt = dataTree_flat(exp, filetype)
-
-  % docs 
+% DATATREE_FLAT - Create a new DATATREE_FLAT object
+%
+%  DT = DATATREE(EXP)   
+%
+%  Creates a new data tree object with the experiment name 
+%  This class in inhereted from datatree and with flat organization
+%
 
 s = struct('filetype',filetype);
 

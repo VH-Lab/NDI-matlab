@@ -1,5 +1,6 @@
 function exp = getExperiment(dt)
-
- % docs
-
+% GETEXPERIMENT - get the experiments assccoiated with specific data object
+%
+%  EXP = GETEXPERIMENT(DT)
+%
 exp = dt.exp;
