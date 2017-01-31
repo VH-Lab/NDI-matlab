@@ -3,7 +3,6 @@ function files = getEpoch(query)
 %
 %  FILES = GETEPOCH(QUERY)
 %
-%  return the specific data files by time or other information
 %
 
 files = '';
