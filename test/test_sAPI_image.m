@@ -24,6 +24,10 @@ disp ( getintervals(dev1) );
 
 myClock = sampleAPI_clock(dev1,1);
 
+figure;
+
+colormap(gray(256));
+
 result1 = read_channel(dev1,'digitalin',1,myClock,0,50);
 
 result2 = read_channel(dev1,'timestamp',1,myClock,0,Inf);
