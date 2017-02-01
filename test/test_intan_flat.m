@@ -1,4 +1,73 @@
 function test_intan_flat(dirname)
+% TEST_INTAN_FLAT - Test the functionality of the Intan driver
+%
+%  TEST_INTAN_FLAT(DIRNAME)
+%
+%  Given a directory with RHD data inside, this function loads the
+%  channel information and then plots some data from channel 1,
+%  as a test of the Intan Flat driver.
+%
+%  
+
+%%%%%%%%%%%%%%%%%%TEST DATATREE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%default tree
+disp(['create a new default datatree with dirname ''exp1''']);
+defaultTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(defaultTree)
+
+disp(['the epoches are:]');
+getEpoch(defaultTree)
+
+%flat tree
+
+disp(['create a new flat datatree with dirname ''exp1''']);
+flatTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(flatTree)
+
+disp(['the epoches are:]');
+getEpoch(flatTree,intmax)
+
+disp(['get the first epoch from the flat tree:]');
+getEpoch(flatTree,1)
+
+%withdir tree
+
+disp(['create a new withdir datatree with dirname ''exp1''']);
+withdirTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(withdirTree)
+
+disp(['the epoches are:]');
+getEpoch(withdirTree,intmax)
+
+disp(['get the first epoch from the withdir tree:]');
+getEpoch(withdirTree,1)
+
+%%%%%%%%%%%%%%%%%%SAMPLEAPI WITH DATAREE%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+...
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% this function works as a sample test function specifically for the 
 %% intan_flat daq
