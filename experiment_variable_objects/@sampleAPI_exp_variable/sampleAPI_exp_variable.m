@@ -1,4 +1,4 @@
-function var = sampleAPI_exp_variable( type, owner, data, description )
+function exp_var = sampleAPI_exp_variable( type, owner, data, description )
 %EXPERIMENT_VARIABLE_OBJECT - Create a new EXPERIMENT VARIABLE object
 %
 % VAR = SAMPLEAPI_VARIABLE(TYPE, OWNER, DATA, DESCRIPTION) creates a new EXPERIMENT VARIABLE object. The experiment has
@@ -9,8 +9,8 @@ function var = sampleAPI_exp_variable( type, owner, data, description )
 if nargin <4,
 	error(['Not enough input arguments.']);
 elseif nargin == 4,
-    sampleAPI_struct = struct('type',type, 'owner',owner,'data',data,'description',description);
-    s = class(sampleAPI_struct,'sampleAPI_variable');
+    sampleAPI_exp_varible_struct = struct('type',type, 'owner',owner,'data',data,'description',description);
+    s = exp_var(sampleAPI_exp_varible_struct,'sampleAPI_exp_variable');
 else,
     error(['Too many input arguments.']);
 end
