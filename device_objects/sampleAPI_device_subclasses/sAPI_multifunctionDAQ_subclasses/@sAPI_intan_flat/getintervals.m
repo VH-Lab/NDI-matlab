@@ -19,11 +19,11 @@ filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'rhd');
         intervals(end+1).file = temp.fileinfo.filename;
         intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list
     end
-return;  
+return;
 
-        
+
 % intervals = [];
 % for (i <= size(device.stim_times,1) )
 % intervals(:,1) = device.stim_times(,2);
 % intervals(:,2) = device.stim_times(,3) - device.stim_times(,2);
-% intervals(:,3) = device.voltageForTime; 
+% intervals(:,3) = device.voltageForTime;
