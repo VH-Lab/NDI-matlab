@@ -13,14 +13,14 @@ classdef sampleAPI_device < handle
       reference,
    end
    methods
-      function obj = sampleAPI_device_handle(name,thedatatree,reference)
-         if nargin==1,
+      function obj = sampleAPI_device_cons(self,name,thedatatree,reference)
+        if nargin==1 || nargin==2,
             error(['Not enough input arguments.']);
-        elseif nargin==2,
+        elseif nargin==3,
             obj.name = name;
             obj.datatree = thedatatree;
             obj.reference = 'time';
-        elseif nargin==3,
+        elseif nargin==4,
             obj.name = name;
             obj.datatree = thedatatree;
             obj.reference = reference;
