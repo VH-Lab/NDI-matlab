@@ -32,8 +32,8 @@ classdef sampleAPI_device < handle
 		% SAMPLEAPI_DEVICE.
 		%  
 		% In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
-		% In specific device classes, this can return a filename, a cell list of file
-		% names, or some other suitable list of links to the epoch data.
+		% In specific device classes, this can return a full path filename, a cell
+                % list of file names, or some other suitable list of links to the epoch data.
 		%
 		% See also: SAMPLEAPI_DEVICE
 			epochfiles = '';
@@ -80,6 +80,8 @@ classdef sampleAPI_device < handle
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
 
 			% actually need to do something here
+			%    getepochfilelocation(self.datatree, self, N)  % need this function in data tree class
+			%    save it in experiment / devices / devname / epoch_NNNN.erf
 			%  verify it is good, then put it in the tree
 		end;
 

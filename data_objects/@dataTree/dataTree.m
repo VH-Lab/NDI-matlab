@@ -9,7 +9,7 @@
 
 
 classdef dataTree < handle
-    properties
+	properties
 		exp;
 		datatree;
 	end
@@ -30,6 +30,24 @@ classdef dataTree < handle
         
         function exp = get.exp(obj)
         end
+
+	function fullpathfilename = getepochfilelocation(self, dev, N)
+	% GETEPOCHFILELOCATION - Return the epoch file location for a given device and data tree
+	%  
+	%  FULLPATHFILENAME = GETEPOCHFILELOCATION(SELF, THE_SAMPLEAPI_DEVICE, N)
+	%
+	% Inputs:
+	%     SELF - the data tree object
+	%     THE_SAMPLEAPI_DEVICE- the device 
+	%     N - the epoch number
+	% 
+	% Output: 
+	%     FULLPATHFILENAME - The full pathname of the epoch record file
+	%
+	%
+
+		exp_path = self.exp.getpath();  
+			% now return path of epoch record file
     end
 end
 
