@@ -1,4 +1,4 @@
-classdef sAPI_record
+classdef sAPI_epochrecord
 	properties
 		name
 		reference
@@ -6,12 +6,12 @@ classdef sAPI_record
 		devicestring
 	end % properties
 	methods
-		function obj = sAPI_record(name_, reference_, type_, devicestring_)
-			% SAPI_RECORD - Create a new sAPI_record object
+		function obj = sAPI_epochrecord(name_, reference_, type_, devicestring_)
+			% SAPI_EPOCHRECORD - Create a new sAPI_epochrecord object
 			% 
-			%   MYSAPI_RECORD = SAPI_RECORD(NAME, REFERENCE, TYPE, DEVICESTRING)
+			%   MYSAPI_EPOCHRECORD = SAPI_EPOCHRECORD(NAME, REFERENCE, TYPE, DEVICESTRING)
 			% 
-			% Creates a new SAPI_RECORD with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new SAPI_EPOCHRECORD with name NAME, reference REFERENCE, type TYPE,
                         % and devicestring DEVICESTRING.
                         %
                         % NAME can be any string that begins with a letter and contains no whitespace. It
@@ -23,11 +23,11 @@ classdef sAPI_record
 			%
 			% The function has an alteranative form:
 			%
-			%   MYSAPI_RECORD = SAPI_RECORD(FILENAME)
+			%   MYSAPI_EPOCHRECORD = SAPI_EPOCHRECORD(FILENAME)
 			%   
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with 
-			% one line per SAPI_RECORD entry.
+			% one line per SAPI_EPOCHRECORD entry.
 			%
 
 			if nargin==1,
@@ -38,7 +38,7 @@ classdef sAPI_record
 				end;
 				obj = [];
 				for i=1:length(sapi_struct),
-					nextentry = sAPI_record(sapi_struct(i).name,...
+					nextentry = sAPI_epochrecord(sapi_struct(i).name,...
 							sapi_struct(i).reference,...
 							sapi_struct(i).type, ...
 							sapi_struct(i).devicestring);
@@ -57,7 +57,7 @@ classdef sAPI_record
 			% reference, check for errors
 
 			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
-				error(['reference of sAPI_record must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of sAPI_epochrecord must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -74,11 +74,11 @@ classdef sAPI_record
 			obj.devicestring = devicestring_;
 		end;
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write sAPI_record object array to disk
+		%  SAVETOFILE - Write sAPI_epochrecord object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the SAPI_RECORD object to disk in filename FILENAME (full path).
+		%  Writes the SAPI_EPOCHRECORD object to disk in filename FILENAME (full path).
 		%
 		%  
 			fn = {'name','reference','type','devicestring'};
