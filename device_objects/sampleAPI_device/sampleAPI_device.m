@@ -13,10 +13,13 @@ classdef sampleAPI_device < handle
 	end
 	methods
 		function obj = sampleAPI_device(name,thedatatree)
-			if nargin==1 || nargin==2,
+			if nargin==0 || nargin==1,
 				error(['Not enough input arguments.']);
-			else,
-			error(['Too many input arguments.']);
+            elseif nargin==2,
+                obj.name = name;
+                obj.datatree = thedatatree;
+            else,
+                error(['Too many input arguments.']);
 			end;
 		end
 
@@ -93,5 +96,6 @@ classdef sampleAPI_device < handle
 		%
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
 		b = isa(epochrecord, 'sAPI_epochrecord');
-	end
+        end
+    end
 end
