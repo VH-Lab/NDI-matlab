@@ -9,7 +9,7 @@ function s=sampleAPI(reference)
 %
 %  
 
-sampleAPI_struct = struct('reference',reference,'devices');
+sampleAPI_struct = struct('reference',reference,'devices',[]);
 
 s = class(sampleAPI_struct,'sampleAPI');
 
