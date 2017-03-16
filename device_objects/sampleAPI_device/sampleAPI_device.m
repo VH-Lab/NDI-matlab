@@ -15,11 +15,11 @@ classdef sampleAPI_device < handle
 		function obj = sampleAPI_device(name,thedatatree)
 			if nargin==0 || nargin==1,
 				error(['Not enough input arguments.']);
-            elseif nargin==2,
-                obj.name = name;
-                obj.datatree = thedatatree;
-            else,
-                error(['Too many input arguments.']);
+		elseif nargin==2,
+			obj.name = name;
+			obj.datatree = thedatatree;
+		else,
+			error(['Too many input arguments.']);
 			end;
 		end
 
