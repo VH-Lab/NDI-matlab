@@ -32,18 +32,26 @@ classdef nsd_datatree_flat < handle & nsd_datatree
 		% need to fix inherentence 
 		nsd_datatree_flat.nsd_datatree = nsd_datatree(exp_,fileparameters_);
 
-        end
+    end;
         
-        function epoch = getepoch(self, n)  
+    %query can be either a single epoch number or a list of epochs from 1
+    %to that number 
+    function epoch = getepoch(self, query)  
 
-		allfiles = findfiletype(self.exp.getpath(), fileparameters);
+        allfiles = findfiletype(self.exp.getpath(), fileparameters);
 
-		if length(allfiles) <= query,
-		        files = allfiles(query);
-		else,
-		        error(['There is not an epoch numbered ' int2str(query) '; only ' int2str(length(allfiles)) ' epochs found.']);
-		end;
+        if length(allfiles) <= query,
+                files = allfiles(query);
+        else,
+                error(['There is not an epoch numbered ' int2str(query) '; only ' int2str(length(allfiles)) ' epochs found.']);
         end;
+    end;
+    
+    function allfiles = getallfiles(self,fileparameters)  
+
+        allfiles = findfiletype(self.exp.getpath(), fileparameters);
+        
+    end;
 
 	end; % methods
 end % object
