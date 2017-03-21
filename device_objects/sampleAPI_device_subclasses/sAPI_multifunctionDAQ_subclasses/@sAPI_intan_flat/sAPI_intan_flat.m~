@@ -162,13 +162,12 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
         %
         %  REPORT is the data collection for specific channels
         
-        %create the query for epoches either use reference number or time
+        %create the query for epoches either use referenc
         if nargin==5,
-            query = clock_or_interval;
+            query = clock_or_interval,
         else,
             query = construct_query(sAPI_clock, t0,t1);
         end
-        
         
         file_names = self.thedatatree.getepoch(query,'rhd');  %%use the files as object fields later
 
@@ -189,7 +188,6 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             else,
                 time_start = 0; % start at beginning of interval
             end;
-            
             if i==i1_,
                 t_end = t1_;
             else,
