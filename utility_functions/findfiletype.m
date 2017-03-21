@@ -30,11 +30,11 @@ return;
 
 
 %% can also use a function called geAllFiles for a specific path and then keep the file with wanted extension
-files = getAllFiles(pathname);
-for i = 1:length(files),
-    [mydir,byname,myext] = fileparts(files(i));
-    if strcmp(lower(myext),lower(extension)),
-		filenames{end+1} = [pathname filesep(files(i))];
-    end
-end
+% files = getAllFiles(pathname);
+% for i = 1:length(files),
+%     [mydir,byname,myext] = fileparts(files(i));
+%     if strcmp(lower(myext),lower(extension)),
+% 		filenames{end+1} = [pathname filesep(files(i))];
+%     end
+% end
 

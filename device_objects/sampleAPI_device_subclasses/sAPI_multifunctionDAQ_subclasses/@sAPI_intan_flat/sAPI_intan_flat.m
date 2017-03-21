@@ -10,7 +10,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
    properties
    end
    methods
-      function obj = sAPI_intan_flat_cons(obj,exp,name,thedatatree,reference)
+      function obj = sAPI_intan_flat(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,
@@ -47,7 +47,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
         % 
         % filelist = findfiletype(mypath,'.rhd');
 
-        filelist = findfiletype(getpath(exp),'rhd');
+        filelist = self.thedatatree.getallfiles('rhd');
 
 
         channels = struct('name',[],'type',[]);
@@ -91,29 +91,59 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             end
         end
       end
-
-      function intervals = getintervals(sAPI_dev)
-        %   FUNCTION GETINTERVALS - list the relative time order for all the
-        %   intervals
-        %
-        %   INTERVALS = GETINTERVALS(SAPI_DEV)
-        %
-        %   Returns the orders for all the intervals related to the experiment
-        %
-        %   INTERVALS = {f1,order1
-        %                f2,order2
-        %                f3,order3....}
-
-        intervals = struct('file',[],'local_epoch_order',[]);
-        intervals = ([]);
-
-        filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'rhd');
-            for i=1:length(filelist),
-                temp = read_Intan_RHD2000_header(filelist{i});
-                intervals(end+1).file = temp.fileinfo.filename;
-                intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list
-            end
+      
+      function epochrecord = getepochrecord(self, number)
+		% GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
+		%
+		%   EPOCHRECORD = GETEPOCHRECORD(MYSAMPLEAPI_DEVICE, NUMBER)
+		% 
+		% Returns the EPOCHRECORD associated the the data epoch NUMBER for the
+		% SAMPLEAPI_DEVICE.
+		%  
+		% In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
+		% In specific device classes, this will return an EPOCHRECORD object.
+		%
+		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
+			epochrecord= [];
+	  end;
+      
+      function b = verifyepochrecord(self, epochrecord, number) 
+		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
+		%
+		%   B = VERIFYEPOCHRECORD(MYSAMPLEAPI_DEVICE, EPOCHRECORD, NUMBER)
+		%
+		% Examines the SAPI_EPOCHRECORD EPOCHRECORD and determines if it is valid for the given device
+		% epoch NUMBER.
+		%
+		% For the abstract class SAMPLEAPI_DEVICE, EPOCHRECORD is always valid as long as
+		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
+		%
+		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
+		b = isa(epochrecord, 'sAPI_epochrecord') && strcmp(epochrecord.type,'rhd') && strcmp(epochrecord.devicestring,self.name);
       end
+
+%       function intervals = getintervals(sAPI_dev)
+%         %   FUNCTION GETINTERVALS - list the relative time order for all the
+%         %   intervals
+%         %
+%         %   INTERVALS = GETINTERVALS(SAPI_DEV)
+%         %
+%         %   Returns the orders for all the intervals related to the experiment
+%         %
+%         %   INTERVALS = {f1,order1
+%         %                f2,order2
+%         %                f3,order3....}
+% 
+%         intervals = struct('file',[],'local_epoch_order',[]);
+%         intervals = ([]);
+% 
+%         filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'rhd');
+%             for i=1:length(filelist),
+%                 temp = read_Intan_RHD2000_header(filelist{i});
+%                 intervals(end+1).file = temp.fileinfo.filename;
+%                 intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list
+%             end
+%       end
 
 
       function report = read_channel(sAPI_dev,channeltype,channel,sAPI_clock, t0,t1)

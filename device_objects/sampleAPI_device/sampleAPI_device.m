@@ -23,10 +23,10 @@ classdef sampleAPI_device < handle
 			end;
 		end
 
-		function epochfiles = getepoch(self, number)
+		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch
 		%
-		%   EPOCHFILES = GETEPOCH(MYSAMPLEAPI_DEVICE, NUMBER)
+		%   EPOCHFILES = GETEPOCHFILES(MYSAMPLEAPI_DEVICE, NUMBER)
 		% 
 		% Returns the file(s) associated the the data epoch NUMBER for the
 		% SAMPLEAPI_DEVICE.

@@ -73,6 +73,7 @@ classdef sAPI_epochrecord
 			end;
 			obj.devicestring = devicestring_;
 		end;
+        
 		function savetofile(obj, filename)
 		%  SAVETOFILE - Write sAPI_epochrecord object array to disk
 		%    
