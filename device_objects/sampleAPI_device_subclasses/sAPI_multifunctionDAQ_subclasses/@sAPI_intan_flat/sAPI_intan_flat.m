@@ -104,7 +104,10 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 		% In specific device classes, this will return an EPOCHRECORD object.
 		%
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-			epochrecord= [];
+            if (verifyepochrecord(self.thedatatree.getepoch(number),~)
+                epochrecord
+            else,
+                error(['the numbered epoch is not a valid epoch for the given device']);
 	  end;
       
       function b = verifyepochrecord(self, epochrecord, number) 
