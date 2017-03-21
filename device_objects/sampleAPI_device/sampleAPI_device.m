@@ -97,7 +97,7 @@ classdef sampleAPI_device < handle
 		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
 		%
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-		b = isa(epochrecord, 'sAPI_epochrecord');
+            b = isa(epochrecord, 'sAPI_epochrecord');
         end
     end
 end

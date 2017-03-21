@@ -35,15 +35,15 @@ classdef nsd_datatree_flat < handle & nsd_datatree
     end;
         
     %query can be either a single epoch number or a list of epochs from 1
-    %to that number, or even to the specific channels
+    %to that number, or even to the specific 
     function epoch = getepoch(self, query)  
 
         allfiles = findfiletype(self.exp.getpath(), fileparameters);
 
         if length(allfiles) <= query,
-            files = allfiles(query);
+                files = allfiles(query);
         else,
-            error(['There is not an epoch numbered ' int2str(query) '; only ' int2str(length(allfiles)) ' epochs found.']);
+                error(['There is not an epoch numbered ' int2str(query) '; only ' int2str(length(allfiles)) ' epochs found.']);
         end;
     end;
     
