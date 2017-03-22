@@ -28,7 +28,7 @@ info = 3;
 
 return; % abstract class, no time shifts possible
 
-if isa(D2,'sAPI_stimtimes_example') | isa(D2,'sAPI_ephys_example'),
+if isa(D2,'NSD_stimtimes_example') | isa(D2,'NSD_ephys_example'),
 	tshift = 0; 
 	alpha = 1;
 	info = 1;
@@ -37,7 +37,7 @@ end;
 return; 
 
 if strcmp(D1,'D1') | strcmp(D2,'D1'),
-    intervals = sampleAPI_getintervals('D1');
+    intervals = NSD_getintervals('D1');
     alpha = 1;
     tshift = intervals(interval2,1) - intervals(interval1,1);
     info = 1;

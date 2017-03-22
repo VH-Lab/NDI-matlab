@@ -1,4 +1,4 @@
 function t = time(TIMEOBJ)
-%TIME - Return the time of a sampleAPI_time object
+%TIME - Return the time of a NSD_time object
 
 t = TIMEOBJ.time;

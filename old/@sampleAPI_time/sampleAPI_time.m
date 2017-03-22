@@ -1,9 +1,9 @@
-function t = sampleAPI_time(clock_type, time)
-% SAMPLEAPI_TIME - Time for the sample API, includes clock information
+function t = NSD_time(clock_type, time)
+% NSD_TIME - Time for the sample API, includes clock information
 %
-%  T = SAMPLEAPI_TIME(CLOCK_TYPE, TIME)
+%  T = NSD_TIME(CLOCK_TYPE, TIME)
 %
-%  Creates a SAMPLEAPI_TIME object with clock equal to
+%  Creates a NSD_TIME object with clock equal to
 %  'CLOCK_TYPE' and time value each to time. The units of time
 %  depend upon the clock.
 %
@@ -15,4 +15,4 @@ function t = sampleAPI_time(clock_type, time)
 %                 |   clock of the device.
 %  'none'         | There is no clock, the number is meaningless.
 
-t = class(struct('clock',clock_type,'time',time),'sampleAPI_time');
+t = class(struct('clock',clock_type,'time',time),'NSD_time');

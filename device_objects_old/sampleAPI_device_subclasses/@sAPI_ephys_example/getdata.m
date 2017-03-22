@@ -7,7 +7,7 @@ function [data, T] = getdata(d, t0, t1, clock)
 %
 
 
-d = load('sAPI_ephys_example_data.mat');
+d = load('NSD_ephys_example_data.mat');
 
 
   % now assume t0_ and t1_ are in interval 1
@@ -18,8 +18,8 @@ s0 = fix(1+ t0_ *sr);
 s1 = fix(1+ t1_ *sr);
 
  % HERE, NEED TO CONVERT T0 AND T1 TO INTERVAL, T0, T1
-t0_ = convert(d,t0,clock,sampleAPI_clock(d,1));
-t1_ = convert(d,t1,clock,sampleAPI_clock(d,1));
+t0_ = convert(d,t0,clock,NSD_clock(d,1));
+t1_ = convert(d,t1,clock,NSD_clock(d,1));
 
 if s1>length(d.voltage),
 	s1 = length(d.voltage);

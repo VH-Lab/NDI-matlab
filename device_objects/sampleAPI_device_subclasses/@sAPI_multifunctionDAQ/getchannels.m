@@ -1,4 +1,4 @@
-function channels = getchannels(sAPI_dev)
+function channels = getchannels(NSD_dev)
 % FUNCTION GETCHANNELS - List the channels that are available on this device
 %
 %  CHANNELS = GETCHANNELS(SAPI_DEV)

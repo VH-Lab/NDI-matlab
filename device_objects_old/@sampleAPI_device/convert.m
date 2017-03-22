@@ -1,4 +1,4 @@
-function [i0,t0] = convert(sAPI,sAPI_clock, t)
+function [i0,t0] = convert(NSD,NSD_clock, t)
 % CONVERT - Computes the interval and sample time relative
 % to another clock
 %
@@ -9,15 +9,15 @@ function [i0,t0] = convert(sAPI,sAPI_clock, t)
 
 i = 1;
 
-if strcmp (getclocktype(sAPI_clock), 'global'),
+if strcmp (getclocktype(NSD_clock), 'global'),
     error(['do not know what to do.']);
     
-elseif strcmp (getclocktype(sAPI_clock), 'local'),
+elseif strcmp (getclocktype(NSD_clock), 'local'),
 % 	t_ = d.clock(t);  % local to local    
     error(['do not know what to do.']);
 
-elseif strcmp (getclocktype(sAPI_clock), 'epoch'),
-    i0 = getinterval(sAPI_clock);
+elseif strcmp (getclocktype(NSD_clock), 'epoch'),
+    i0 = getinterval(NSD_clock);
     t0 = t;
 end
 

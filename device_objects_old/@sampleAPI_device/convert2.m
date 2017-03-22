@@ -12,13 +12,13 @@
 %D2_intervals = [ NaN 50 ; NaN 30 ; NaN 60 ; NaN 150];
 %tshift = 10;
 %alpha = 0.9;
-function [D2_calculated_interval, D2_time,info] = sampleAPI_convert(D1, D1_interval, t_d1, D2)
+function [D2_calculated_interval, D2_time,info] = NSD_convert(D1, D1_interval, t_d1, D2)
 
-%D1_intervals = sampleAPI_getintervals(D1);
-D2_intervals = sampleAPI_getintervals(D2);
+%D1_intervals = NSD_getintervals(D1);
+D2_intervals = NSD_getintervals(D2);
 
 for i=1:size(D2_intervals,1),
-    [tshift,alpha,info] = sampleAPI_timeshift(D1, D2, D1_interval, i);
+    [tshift,alpha,info] = NSD_timeshift(D1, D2, D1_interval, i);
     if info<3,  % got a match
         D2_calculated_interval = i;
         D2_time = alpha*t_d1 - tshift;

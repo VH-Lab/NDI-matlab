@@ -1,4 +1,4 @@
-function exp = getexperiment(sAPI_dev)
+function exp = getexperiment(NSD_dev)
 % GETEXPERIMENT - Return the experiment associated with the device
 %
 %  EXP = GETEXPERIMENT(SAPI_DEV)
@@ -7,4 +7,4 @@ function exp = getexperiment(sAPI_dev)
 
 
 
-exp = sAPI_dev.exp;
+exp = NSD_dev.exp;

@@ -6,16 +6,16 @@
 %  This is an abstract class that is overridden by specific devices.
 %
 
-% sAPI_image_struct = struct('exp',exp);
-% d = class(sAPI_image_struct, 'sAPI_image',sampleAPI_device(name,thedatatree,reference));
+% NSD_image_struct = struct('exp',exp);
+% d = class(NSD_image_struct, 'NSD_image',NSD_device(name,thedatatree,reference));
 
 
-classdef sAPI_image < handle & sampleAPI_device
+classdef NSD_image < handle & NSD_device
    properties
        exp,
    end
    methods
-      function obj = sAPI_image_cons(obj,exp,name,thedatatree,reference)
+      function obj = NSD_image_cons(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,

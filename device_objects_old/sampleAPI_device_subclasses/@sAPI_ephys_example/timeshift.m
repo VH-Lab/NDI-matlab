@@ -26,7 +26,7 @@ tshift = [];
 alpha = [];
 info = 3;
 
-if isa(D2,'sAPI_stimtimes_example') | isa(D2,'sAPI_ephys_example'),
+if isa(D2,'NSD_stimtimes_example') | isa(D2,'NSD_ephys_example'),
 	if (interval1 ~=1) | (interval2 ~=1), return; end;
 	tshift = 0; 
 	alpha = 1;
@@ -36,7 +36,7 @@ end;
 return; 
 
 if strcmp(D1,'D1') | strcmp(D2,'D1'),
-    intervals = sampleAPI_getintervals('D1');
+    intervals = NSD_getintervals('D1');
     alpha = 1;
     tshift = intervals(interval2,1) - intervals(interval1,1);
     info = 1;

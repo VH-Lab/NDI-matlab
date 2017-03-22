@@ -1,7 +1,7 @@
-function interval = getinterval(sampleAPI_clock)
+function interval = getinterval(NSD_clock)
 % GETCLOCKTYPE - get the time interval for specific device
 %
-%   INTERVAL = GETINTERVAL(SAMPLEAPI_CLOCK)  returns the time interval that is specified for certain
+%   INTERVAL = GETINTERVAL(NSD_CLOCK)  returns the time interval that is specified for certain
 %   device
 
-interval = sampleAPI_clock.interval;
+interval = NSD_clock.interval;

@@ -1,4 +1,4 @@
-classdef sAPI_epochrecord
+classdef NSD_epochrecord
 	properties
 		name
 		reference
@@ -6,8 +6,8 @@ classdef sAPI_epochrecord
 		devicestring
 	end % properties
 	methods
-		function obj = sAPI_epochrecord(name_, reference_, type_, devicestring_)
-			% SAPI_EPOCHRECORD - Create a new sAPI_epochrecord object
+		function obj = NSD_epochrecord(name_, reference_, type_, devicestring_)
+			% SAPI_EPOCHRECORD - Create a new NSD_epochrecord object
 			% 
 			%   MYSAPI_EPOCHRECORD = SAPI_EPOCHRECORD(NAME, REFERENCE, TYPE, DEVICESTRING)
 			% 
@@ -38,7 +38,7 @@ classdef sAPI_epochrecord
 				end;
 				obj = [];
 				for i=1:length(sapi_struct),
-					nextentry = sAPI_epochrecord(sapi_struct(i).name,...
+					nextentry = NSD_epochrecord(sapi_struct(i).name,...
 							sapi_struct(i).reference,...
 							sapi_struct(i).type, ...
 							sapi_struct(i).devicestring);
@@ -57,7 +57,7 @@ classdef sAPI_epochrecord
 			% reference, check for errors
 
 			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
-				error(['reference of sAPI_epochrecord must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of NSD_epochrecord must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -75,7 +75,7 @@ classdef sAPI_epochrecord
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write sAPI_epochrecord object array to disk
+		%  SAVETOFILE - Write NSD_epochrecord object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 

@@ -1,12 +1,12 @@
-function s=sampleAPI_dir(dirname)
-% SAMPLEAPI_DIR - Create a new SAMPLEAPI experiment object based on a directory
+function s=NSD_dir(dirname)
+% NSD_DIR - Create a new NSD experiment object based on a directory
 %
-% S=SAMPLEAPI_DIR(DIRNAME) creates a new sampleAPI object. The experiment is linked to 
+% S=NSD_DIR(DIRNAME) creates a new NSD object. The experiment is linked to 
 % the file directory DIRNAME.
 %
 
-S = sampleAPI(dirname);
-sampleAPI_dir_struct = struct('dirname',dirname);
+S = NSD(dirname);
+NSD_dir_struct = struct('dirname',dirname);
 
-s = class(sampleAPI_dir_struct,'sampleAPI_dir',S);
+s = class(NSD_dir_struct,'NSD_dir',S);
 

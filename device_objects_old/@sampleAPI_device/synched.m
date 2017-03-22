@@ -1,5 +1,5 @@
 function b = synced(D1, D2)
-% SYNCED - Checks if 2 SAMPLEAPI devices are ever synchronized
+% SYNCED - Checks if 2 NSD devices are ever synchronized
 %
 %  B = SYNCHED(D1, D2)
 %  return 1 if synced 0 if not synced

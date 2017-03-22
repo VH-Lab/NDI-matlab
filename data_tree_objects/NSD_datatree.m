@@ -29,8 +29,8 @@ classdef nsd_datatree < handle
 		% See also: NSD_EXPERIMENT, NSD_DEVICE
 		%
 
-			if ~isa(exp_,'sampleAPI'),
-				error(['exp must be an experiment of type sampleAPI']);
+			if ~isa(exp_,'NSD'),
+				error(['exp must be an experiment of type NSD']);
 			end;
 			obj.exp = exp_;
 				
@@ -58,6 +58,24 @@ classdef nsd_datatree < handle
 				% now return path of epoch record file
 			fullpathfilename = exp_path;
 		end
+
+		function setfileparameters(self, thefileparameters)
+		% SETFILEPARAMETERS - Set the fileparameters field of a NSD_DATATREE object
+		%
+		%  SELF = SETFILEPARAMETERS(SELF, THEFILEPARAMETERS)
+		%
+		%  (Need to better describe)
+		%
+		%  The FILEPARAMETERS should be a structure with the following fields:
+		%  Fieldname:              | Description
+		%  ----------------------------------------------------------------------
+		%  filematch               | A string or cell list of strings that need to be matched
+		%                          | Wild cards are allowed.
+		%                          |   Example: filematch = '*.rhd'
+		%                          |   Example: filematch = {'*.rhd', 'stimtimes*.txt'}
+		%                          |   Example: filematch = {'#.rhd',  'stimtimes#.txt'} (# is the same, unknown string)
+		%
+		% 
 
 	end % methods
 

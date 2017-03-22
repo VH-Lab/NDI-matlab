@@ -6,16 +6,16 @@
 %  This is an abstract class that is overridden by specific devices.
 %
 
-% function d = sAPI_multifunctionDAQ(name, thedatatree, exp)
-% sAPI_multifunctionDAQ_struct = struct('exp',exp);
-% d = class(sAPI_multifunctionDAQ_struct, 'sAPI_multifunctionDAQ',sampleAPI_device(name,thedatatree));
+% function d = NSD_multifunctionDAQ(name, thedatatree, exp)
+% NSD_multifunctionDAQ_struct = struct('exp',exp);
+% d = class(NSD_multifunctionDAQ_struct, 'NSD_multifunctionDAQ',NSD_device(name,thedatatree));
 
-classdef sAPI_multifunctionDAQ < handle & sampleAPI_device
+classdef NSD_multifunctionDAQ < handle & NSD_device
    properties
       exp,
    end
    methods
-      function obj = sAPI_multifunctionDAQ_cons(obj,exp,name,thedatatree,reference)
+      function obj = NSD_multifunctionDAQ_cons(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,

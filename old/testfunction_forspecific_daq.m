@@ -1,7 +1,7 @@
 
 
 
-exp = sampleAPI('exp');
+exp = NSD('exp');
 
  
 
