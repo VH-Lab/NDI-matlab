@@ -2,7 +2,7 @@
 clear;
 clc;
 
-  
+     
 
 %% the test for intan device
 dev = 'example_experiments/exp1_eg';
