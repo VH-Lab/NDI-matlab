@@ -29,8 +29,7 @@ classdef NSD_datatree_flat < handle & NSD_datatree
         % See also: NSD_EXPERIMENT, NSD_DEVICE
         %
 
-		% need to fix inherentence 
-		NSD_datatree_flat.NSD_datatree = NSD_datatree(exp_,fileparameters_);
+		obj = obj@NSD_datatree(exp_,fileparameters_);
 
     end;
         

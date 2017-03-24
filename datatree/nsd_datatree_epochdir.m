@@ -29,7 +29,7 @@ classdef NSD_datatree_epochdir < handle & NSD_datatree
 	% See also: NSD_EXPERIMENT, NSD_DEVICE
 	%
 
-		NSD_datatree_epochdir.NSD_datatree = NSD_datatree(exp, fileparameters);
+		obj = obj@NSD_datatree(exp, fileparameters);
 
         end
         
