@@ -7,13 +7,13 @@
 %
 
 
-classdef nsd_datatree_epochdir < handle & nsd_datatree
+classdef NSD_datatree_epochdir < handle & NSD_datatree
 	properties
 	end
 
 	methods
 
-        function obj = nsd_datatree_epochdir(exp, fileparameters)
+        function obj = NSD_datatree_epochdir(exp, fileparameters)
 	% NSD_DATATREE_EPOCHDIR - Create a new NSD_DATATREE_EPOCHDIR object that is associated with an experiment and device
 	%
 	%   OBJ = NSD_DATATREE_EPOCHDIR(EXP, FILEPARAMETERS)
@@ -29,7 +29,7 @@ classdef nsd_datatree_epochdir < handle & nsd_datatree
 	% See also: NSD_EXPERIMENT, NSD_DEVICE
 	%
 
-		nsd_datatree_epochdir.nsd_datatree = nsd_datatree(exp, fileparameters);
+		NSD_datatree_epochdir.NSD_datatree = NSD_datatree(exp, fileparameters);
 
         end
         
