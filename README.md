@@ -1,9 +1,11 @@
 # NSD
-NeuroScience Data framework - A means of specifying and accessing neuroscience data
 
-Available at https://github.com/VH-Lab/NSD
+Update:
 
-Depends on functions in vhlab_mltbx_toolbox, available at https://github.com/VH-Lab/vhlab_mltbx_toolbox
+modify the device with handle classes
 
-Still in early development
+add time and sample parameter access to the function of each device classes and subclasses
 
+create expeirment variable objects
+
+add channel info to the data tree objects (similar to the intan_flat)
