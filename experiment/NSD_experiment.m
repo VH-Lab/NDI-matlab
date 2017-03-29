@@ -1,13 +1,13 @@
 % NSD_EXPERIMENT - NSD_EXPERIMENT object class
 
-classdef NSD_experiment < handle
+classdef nsd_experiment < handle
 	properties (SetAccess = protected)
 		reference;
 		device_list;
 	end
 	methods
-		function obj = NSD_experiment(reference)
-		% NSD_experiment - Create a new NSD_EXPERIMENT object
+		function obj = nsd_experiment(reference)
+		% nsd_experiment - Create a new NSD_EXPERIMENT object
 		%
 		%   E=NSD_EXPERIMENT(REFERENCE)
 		%

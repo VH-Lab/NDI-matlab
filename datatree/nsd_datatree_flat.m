@@ -7,13 +7,13 @@
 %
 
 
-classdef NSD_datatree_flat < handle & NSD_datatree
+classdef nsd_datatree_flat < handle & nsd_datatree
 	properties
 	end
 
 	methods
 
-	function obj = NSD_datatree_flat(exp_, fileparameters_)
+	function obj = nsd_datatree_flat(exp_, fileparameters_)
 	% NSD_DATATREE_FLAT - Create a new NSD_DATATREE_FLAT object that is associated with an experiment and device
 	%
         %   OBJ = NSD_DATATREE_FLAT(EXP, FILEPARAMETERS)
@@ -29,7 +29,7 @@ classdef NSD_datatree_flat < handle & NSD_datatree
         % See also: NSD_EXPERIMENT, NSD_DEVICE
         %
 
-		obj = obj@NSD_datatree(exp_,fileparameters_);
+		obj = obj@nsd_datatree(exp_,fileparameters_);
 
     end;
         

@@ -6,14 +6,14 @@
 %  This is an abstract class that is overridden by specific type of format of data.
 %
 
-classdef NSD_datatree < handle
+classdef nsd_datatree < handle
 	properties
 		exp;
 		fileparameters;
 	end
 
 	methods
-	        function obj = NSD_datatree(exp_, fileparameters_)
+	        function obj = nsd_datatree(exp_, fileparameters_)
 		% NSD_DATATREE - Create a new NSD_DATATREE object that is associated with an experiment and device
 		%
 		%   OBJ = NSD_DATATREE(EXP, [ FILEPARAMETERS])

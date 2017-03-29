@@ -1,14 +1,14 @@
 % NSD_EXPERIMENT_DIR - NSD_EXPERIMENT_DIR object class - an experiment with an associated file directory
 %
 
-classdef NSD_experiment_dir < NSD_experiment & handle 
+classdef nsd_experiment_dir < nsd_experiment & handle 
 	properties (SetAccess=protected)
 		pathname;
 	end
 
 	methods
 
-		function obj = NSD_experiment_dir(reference, pathname)
+		function obj = nsd_experiment_dir(reference, pathname)
 		% NSD_EXPERIMENT_DIR - Create a new NSD_EXPERIMENT_DIR object
 		%
 		%   E = NSD_EXPERIMENT_DIR(REFERENCE, PATHNAME)
@@ -20,7 +20,7 @@ classdef NSD_experiment_dir < NSD_experiment & handle
 		% See also: NSD_EXPERIMENT, NSD_EXPERIMENT_DIR/GETPATH
 
 
-		obj = obj@NSD_experiment(reference);
+		obj = obj@nsd_experiment(reference);
 		obj.pathname = pathname;
 	
 		end;
