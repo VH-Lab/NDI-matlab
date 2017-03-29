@@ -2,7 +2,7 @@
 clear;
 clc;
 
-
+      
 
 %% the test for intan device
 dev = 'example_experiments/exp1_eg';
@@ -18,7 +18,7 @@ clear;
 dev = 'example_experiments/exp1_eg';
 display = sprintf('run the example test for image processing device: %s',dev);
 disp(display);
-test_sAPI_image('example_experiments/exp1_eg');
+test_NSD_image('example_experiments/exp1_eg');
 
 
 

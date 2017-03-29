@@ -3,19 +3,19 @@
 % the getdata, getintervals and covert still need to modified based on the
 % implementataion of the intan technique
 
-disp(['Opening a new example sampleAPI with reference ''exp1''']);
-myExp = sampleAPI('exp1');
+disp(['Opening a new example NSD with reference ''exp1''']);
+myExp = NSD('exp1');
 
 disp(['We will now display the reference:']);
 reference(myExp)
 
-disp(['Now we will initialize devices ''sAPI_intan_example'' ']);
+disp(['Now we will initialize devices ''NSD_intan_example'' ']);
 
 sync_channels = readtable('vhintan_syncchannel.txt');
 cg = readtable('vhintan_channelgrouping.txt');
 channel_groups = cg(:,2);
 
-dev1 = sampleAPI_device('dev_intan','','intan',channel_groups,sync_channels);
+dev1 = NSD_device('dev_intan','','intan',channel_groups,sync_channels);
 
 disp('Now will print all the channels :');
 disp (getchannels(dev1));
@@ -41,7 +41,7 @@ disp(['Examining the amplifier channels versus time:']);
 [amp,ts2,tt2] = read_Intan_RHD2000_datafile('intan_160317_131447.rhd','',2,1,0,inf);
 
 % work on clock and time in the future
-% [d,t] = getdata(dev1, 0, Inf, sampleAPI_clock(dev1,1))
+% [d,t] = getdata(dev1, 0, Inf, NSD_clock(dev1,1))
 
 figure;
 plot(time,amp) ;

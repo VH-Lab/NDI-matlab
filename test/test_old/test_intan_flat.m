@@ -4,15 +4,15 @@ function test_intan_flat(dirname)
 %% intan_flat daq
 
 
-disp(['Opening a new example sampleAPI with dirname ''exp1''']);
-myExp = sampleAPI_dir(dirname);
+disp(['Opening a new example NSD with dirname ''exp1''']);
+myExp = NSD_dir(dirname);
 
 disp(['We will now display the reference:']);
 reference(myExp)
 
-disp(['Now we will initialize devices ''sAPI_intan_flat'' ']);
+disp(['Now we will initialize devices ''NSD_intan_flat'' ']);
 
-dev1 = sAPI_intan_flat('dev_intan',myExp);  
+dev1 = NSD_intan_flat('dev_intan',myExp);  
 
 disp('Now will print all the channels :');
 
@@ -22,7 +22,7 @@ disp ( getintervals(dev1) );
 
 % disp(['Examining the amplifier channels versus time:']);
 
-myClock = sampleAPI_clock(dev1,1);
+myClock = NSD_clock(dev1,1);
 
 result1 = read_channel(dev1,'digitalin',1,myClock,0,Inf);
 
