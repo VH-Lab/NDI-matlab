@@ -11,22 +11,31 @@ classdef nsd_datatree < handle
 	properties (SetAccess=protected)
 		exp;
 		fileparameters;
+		epochrecord_class;
+		epochrecord_fileparameters;
 	end
 	properties (Access=private) % potential private variables
 	end
 
 	methods
-	        function obj = nsd_datatree(exp_, fileparameters_)
+	        function obj = nsd_datatree(exp_, fileparameters_, epochrecord_class_, epochrecord_fileparameters_)
 		% NSD_DATATREE - Create a new NSD_DATATREE object that is associated with an experiment and device
 		%
-		%   OBJ = NSD_DATATREE(EXP, [ FILEPARAMETERS])
+		%   OBJ = NSD_DATATREE(EXP, [ FILEPARAMETERS, EPOCHRECORD_CLASS, EPOCHRECORD_FILEPARAMETERS])
 		%
 		% Creates a new NSD_DATATREE object that negotiates the data tree of device's data that is
 		% stored in an experiment EXP.
 		%
-		% Inputs: EXP - an NSD_EXPERIMENT ; DEVICE - an NSD_DEVICE object
-		% Optional input: FILEPARAMETERS - the files that are recorded in each epoch of DEVICE in this
-		%               data tree style (see NSD_DATATREE/SETFILEPARAMETERS for description)
+		% Inputs:
+		%      EXP: an NSD_EXPERIMENT ; DEVICE - an NSD_DEVICE object
+		% Optional inputs:
+		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
+		%          data tree style (see NSD_DATATREE/SETFILEPARAMETERS for description)
+		%      EPOCHRECORD_CLASS: the class of epoch_record to be used; 'nsd_epochrecord' is used by default
+		%      EPOCHRECORD_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
+		%          present in each epoch (see NSD_DATATREE/SETEPOCHRECORDFILEPARAMETERS). By default, the file location
+		%          [EXP]/.nsd/device_name/epoch_NNNNNNNNN.nsderf is used.
+		% 
 		% Output: OBJ - an NSD_DATATREE object
 		%
 		% See also: NSD_EXPERIMENT, NSD_DEVICE
@@ -42,24 +51,55 @@ classdef nsd_datatree < handle
 			else,
 				obj.fileparameters = [];
 			end;
+
+			if nargin > 2,
+				obj.epochrecord_class = epochrecord_class_;
+			else,
+				obj.epochrecord_class = 'nsd_epochrecord';
+			end;
+
+			if nargin > 3,
+				obj = setepochfileparameters(obj,epochrecord_fileparameters_);
+			else,
+				obj.epochrecord_fileparameters = [];
+			end;
 		end;
         
-		function fullpathfilename = getepochfilelocation(self, N)
-		% GETEPOCHFILELOCATION - Return the epoch file location for a given device and data tree
+		function epochrecord = getepochrecord(self, N, devicename)
+		% GETEPOCHRECORD - Return the epoch record for a given nsd_datatree and epoch number
 		%  
-		%  FULLPATHFILENAME = GETEPOCHFILELOCATION(SELF, N)
+		%  EPOCHRECORD = GETEPOCHRECORD(SELF, N, DEVICENAME)
 		%
 		% Inputs:
 		%     SELF - the data tree object
 		%     N - the epoch number
+		%     DEVICENAME - The NSD name of the device
 		% 
 		% Output: 
-		%     FULLPATHFILENAME - The full pathname of the epoch record file
+		%     EPOCHRECORD - The epoch record information associated with epoch N for device with name DEVICENAME
 		%
 		%
-			exp_path = getpath(self.exp);
-				% now return path of epoch record file
-			fullpathfilename = exp_path;
+			% need to get the epoch file
+			% epoch file must either be in a default location or it must be among the epoch files
+
+			% default
+			epochrecordfile_fullpath = [getpath(self.exp) filesep '.nsd' filesep devicename filesep 'epoch_' int2str(N) '.nsderf'];
+
+			if ~isempty(self.epochrecord_fileparameters),
+				epochfiles = getepochfiles(self,N);
+				fn = {};
+				for i=1:length(epochfiles),
+					[pa,name,ext] = fileparts(epochfiles{i});
+					fn{i} = [name ext];
+				end;
+				tf = strcmp_substitution(epochrecord_fileparameters, fn);
+				indexes = find(tf);
+				if numel(indexes)>0,
+					epochrecordfile_fullpath = epochfiles{indexes(1)};
+				end;
+			end;
+			
+			eval(['epochrecord = ' self.epochrecord_class '(epochrecordfile_fullpath);']);
 		end;
 
 		function fullpathfilenames = getepochfiles(self, N)
@@ -129,6 +169,29 @@ classdef nsd_datatree < handle
 				thefileparameters = struct('filematch',{thefileparameters});
 			end;
 			self.fileparameters = thefileparameters;
+		end;
+
+		function self = setepochrecordparameters(self, theepochrecordfileparameters)
+		% SETEPOCHRECORDFILEPARAMETERS - Set the epoch record fileparameters field of a NSD_DATATREE object
+		%
+		%  SELF = SETEPOCHRECORDFILEPARAMETERS(SELF, THEEPOCHRECORDFILEPARAMETERS)
+		%
+		%  THEEPOCHRECORDFILEPARAMETERS is a string or cell list of strings that specifies the epoch record
+		%  file. By default, if no parameters are specified, the epoch record file is located at:
+		%   [EXP]/.nsd/device_name/epoch_NNNNNNNNN.nsderf, where [EXP] is the experiment's path.
+		%
+		%  However, one can pass search parameters that will search among all the file names returned by
+		%  NSD_DATATREE/GETEPOCHS. The search parameter should be a regular expression or a set of regular
+		%  expressions such as:
+		%
+		%         Example: theepochrecordfileparameters = '.*\.ext\>'
+		%         Example: theepochrecordfileparameters = {'myfile1.ext1', 'myfile2.ext2'}
+		%         Example: theepochrecordfileparameters = {'#.ext1',  'myfile#.ext2'} (# is the same, unknown string)
+		%
+			if isa(theepochrecordfileparameters,'char'),
+				theepochrecordfileparameters = {thefileparameters};
+			end;
+			self.epochrecord_fileparameters = theepochrecordfileparameters;
 		end;
 	end % methods
 

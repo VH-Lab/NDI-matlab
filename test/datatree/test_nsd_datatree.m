@@ -21,3 +21,7 @@ disp(['File paths of epoch 2 are as follows: ']);
 
 f = getepochfiles(dt,2),
 
+disp(['the nsd_datatree object fields:'])
+
+dt,
+
