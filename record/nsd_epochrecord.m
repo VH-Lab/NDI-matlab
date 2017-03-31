@@ -1,4 +1,4 @@
-classdef NSD_epochrecord
+classdef nsd_epochrecord
 	properties
 		name
 		reference
@@ -6,12 +6,12 @@ classdef NSD_epochrecord
 		devicestring
 	end % properties
 	methods
-		function obj = NSD_epochrecord(name_, reference_, type_, devicestring_)
-			% SAPI_EPOCHRECORD - Create a new NSD_epochrecord object
+		function obj = nsd_epochrecord(name_, reference_, type_, devicestring_)
+			% NSD_EPOCHRECORD - Create a new nsd_epochrecord object
 			% 
-			%   MYSAPI_EPOCHRECORD = SAPI_EPOCHRECORD(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNSD_EPOCHRECORD = NSD_EPOCHRECORD(NAME, REFERENCE, TYPE, DEVICESTRING)
 			% 
-			% Creates a new SAPI_EPOCHRECORD with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new NSD_EPOCHRECORD with name NAME, reference REFERENCE, type TYPE,
                         % and devicestring DEVICESTRING.
                         %
                         % NAME can be any string that begins with a letter and contains no whitespace. It
@@ -23,25 +23,25 @@ classdef NSD_epochrecord
 			%
 			% The function has an alteranative form:
 			%
-			%   MYSAPI_EPOCHRECORD = SAPI_EPOCHRECORD(FILENAME)
+			%   MYNSD_EPOCHRECORD = NSD_EPOCHRECORD(FILENAME)
 			%   
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with 
-			% one line per SAPI_EPOCHRECORD entry.
+			% one line per NSD_EPOCHRECORD entry.
 			%
 
 			if nargin==1,
-				sapi_struct= loadStructArray(name_);
-				fn = fieldnames(sapi_struct);
+				nsd_struct= loadStructArray(name_);
+				fn = fieldnames(nsd_struct);
 				if ~eqlen(fn,{'name','reference','type','devicestring'}),
 					error(['fields must be (case-sensitive match): name, reference, type, devicestring.']);
 				end;
 				obj = [];
-				for i=1:length(sapi_struct),
-					nextentry = NSD_epochrecord(sapi_struct(i).name,...
-							sapi_struct(i).reference,...
-							sapi_struct(i).type, ...
-							sapi_struct(i).devicestring);
+				for i=1:length(nsd_struct),
+					nextentry = nsd_epochrecord(nsd_struct(i).name,...
+							nsd_struct(i).reference,...
+							nsd_struct(i).type, ...
+							nsd_struct(i).devicestring);
 					obj(i) = nextentry;
 				end;
 				return;
@@ -57,7 +57,7 @@ classdef NSD_epochrecord
 			% reference, check for errors
 
 			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
-				error(['reference of NSD_epochrecord must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of nsd_epochrecord must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -75,11 +75,11 @@ classdef NSD_epochrecord
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write NSD_epochrecord object array to disk
+		%  SAVETOFILE - Write nsd_epochrecord object array to disk
 		%    
-                %    SAVETOFILE(OBJ, FILENAME)
+                %  SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the SAPI_EPOCHRECORD object to disk in filename FILENAME (full path).
+		%  Writes the NSD_EPOCHRECORD object to disk in filename FILENAME (full path).
 		%
 		%  
 			fn = {'name','reference','type','devicestring'};
