@@ -10,12 +10,12 @@
 % NSD_multifunctionDAQ_struct = struct('exp',exp);
 % d = class(NSD_multifunctionDAQ_struct, 'NSD_multifunctionDAQ',NSD_device(name,thedatatree));
 
-classdef NSD_multifunctionDAQ < handle & NSD_device
+classdef nsd_multifunctionDAQ < handle & NSD_device
    properties
       exp,
    end
    methods
-      function obj = NSD_multifunctionDAQ_cons(obj,exp,name,thedatatree,reference)
+      function obj = nsd_multifunctionDAQ_cons(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,

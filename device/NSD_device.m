@@ -6,13 +6,13 @@
 %  This is an abstract class that is overridden by specific devices.
 %
 
-classdef NSD_device < handle
+classdef nsd_device < handle
 	properties
 		name;
 		datatree;
 	end
 	methods
-		function obj = NSD_device(name,thedatatree)
+		function obj = nsd_device(name,thedatatree)
 			if nargin==0 || nargin==1,
 				error(['Not enough input arguments.']);
 		elseif nargin==2,
@@ -27,10 +27,10 @@ classdef NSD_device < handle
 		% GETEPOCH - retreive the data files associated with a recording epoch
 		%
 		%   EPOCHFILES = GETEPOCHFILES(MYNSD_DEVICE, NUMBER)
-		% 
+		%
 		% Returns the data file(s) associated the the data epoch NUMBER for the
 		% NSD_DEVICE.
-		%  
+		%
 		% In the abstract base class NSD_DEVICE, this returns empty always.
 		% In specific device classes, this can return a full path filename, a cell
                 % list of file names, or some other suitable list of links to the epoch data.
@@ -43,10 +43,10 @@ classdef NSD_device < handle
 		% GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
 		%
 		%   EPOCHRECORD = GETEPOCHRECORD(MYNSD_DEVICE, NUMBER)
-		% 
+		%
 		% Returns the EPOCHRECORD associated the the data epoch NUMBER for the
 		% NSD_DEVICE.
-		%  
+		%
 		% In the abstract base class NSD_DEVICE, this returns empty always.
 		% In specific device classes, this will return an EPOCHRECORD object.
 		%
@@ -56,20 +56,20 @@ classdef NSD_device < handle
 
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
-		% 
+		%
 		%   DELETEEPOCH(MYNSD_DEVICE, NUMBER ... [REMOVEDATA])
 		%
 		% Deletes the data and SAPI_EPOCHRECORD and epoch data for epoch NUMBER.
 		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
 		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
-		% 
+		%
 		% In the abstract class, this command takes no action.
 		%
 		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
 		end;
 
 		function setepochrecord(self, epochrecord, number, overwrite)
-		% SETEPOCHRECORD - Sets the epoch record of a particular epoch 
+		% SETEPOCHRECORD - Sets the epoch record of a particular epoch
 		%
 		%   SETEPOCHRECORD(MYNSD_DEVICE, EPOCHRECORD, NUMBER, [OVERWRITE])
 		%
@@ -97,7 +97,7 @@ classdef NSD_device < handle
 		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
 		%
 		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
-            b = isa(epochrecord, 'NSD_epochrecord');
+            b = isa(epochrecord, 'nsd_epochrecord');
         end
     end
 end

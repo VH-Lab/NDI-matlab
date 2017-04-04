@@ -10,12 +10,12 @@
 % d = class(NSD_image_struct, 'NSD_image',NSD_device(name,thedatatree,reference));
 
 
-classdef NSD_image < handle & NSD_device
+classdef nsd_image < handle & nsd_device
    properties
        exp,
    end
    methods
-      function obj = NSD_image_cons(obj,exp,name,thedatatree,reference)
+      function obj = nsd_image_cons(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,

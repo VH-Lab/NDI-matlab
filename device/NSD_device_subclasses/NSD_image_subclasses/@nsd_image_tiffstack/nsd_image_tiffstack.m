@@ -1,21 +1,21 @@
 % function d = sAPI_image_tiffstack(name,thedatatree, exp)
-% 
-% sAPI_image_tiffstack_struct = struct([]); 
+%
+% sAPI_image_tiffstack_struct = struct([]);
 % S = sAPI_image(name,thedatatree,exp);
-% 
+%
 % d = class(sAPI_image_tiffstack_struct, 'sAPI_image_tiffstack',S);
 
-classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
+classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
 % SAPI_IMAGE_TIFFSTACK - Create a new SAPI_IMAGE_TIFFSTACK object
 %
 %  D = SAPI_IMAGE_TIFFSTACK(NAME, THEDATATREE,EXP)
 %
 %  Creates a new SAPI_IMAGE_TIFFSTACK object with NAME, THEDATAREE and associated EXP.
-%  
+%
    properties
    end
    methods
-      function obj = sAPI_intan_flat_cons(obj,exp,name,thedatatree,reference)
+      function obj = nsd_image_tiffstack(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,
@@ -32,7 +32,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             error(['Too many input arguments.']);
         end;
       end
-      
+
       function channels = getchannels(sAPI_dev)
         % FUNCTION GETCHANNELS - List the channels that are available on this device
         %
@@ -49,7 +49,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
         % look for RHD files
         % mypath = getpath(getexperiment(sAPI_dev));
-        % 
+        %
         % filelist = findfiletype(mypath,'.rhd');
 
         filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
@@ -66,7 +66,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
         for i=1:length(filelist),
             % then, open RHD files, and examine the headers for all channels present
-            %   for any new channel that hasn't been identified before, 
+            %   for any new channel that hasn't been identified before,
             %   add it to the list
             obj = imread(filelist{i});
             channels(end+1).name = name;  % needs modifying
@@ -85,7 +85,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
                     for p = 1:num,
                         name = name_convert_to_standard(channel_type_name, channel(p).native_channel_name);
                         answer = strcmp(name,{channels(:).name});
-                        if ~any(answer),    
+                        if ~any(answer),
                             channels(end+1).name = name;  % needs modifying
                             channels(end).type = channel_type_name;
                         end
@@ -94,7 +94,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             end
         end
       end
-     
+
       function report = read_channel(sAPI_dev,channeltype,channel,sAPI_clock, t0,t1)
 
         %  FUNCTION READ_CHANNELS - read the data based on specified channels
@@ -103,7 +103,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
         %
         %  CHANNELTYPE is the type of channel to read
         %  ('image', etc)
-        %  
+        %
         %
         %  REPORT is the data collection for specific image channels
 
@@ -112,7 +112,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
         %file_names,
           % here we want to convert t0, and t1, which are in units of sAPI_clock
-          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval) 
+          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval)
 
         [i0_,t0_] = convert(sAPI_dev,sAPI_clock,t0);
 
@@ -139,11 +139,11 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
         end
       function [sz,imagesize]= getsamplesize(sAPI_dev, interval, channeltype, channel)
         %
-        % FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL 
+        % FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
         %
         % SR = GETSAMERATE(DEV, INTERVAL, CHANNELTYPE, CHANNEL)
         %
-        % SR is the list of sample rate from specified channels 
+        % SR is the list of sample rate from specified channels
 
         file_names = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
 
@@ -170,8 +170,10 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
 
         end
-        
+
         function intervals = getintervals(sAPI_dev)
         end
+
+    end
 
 end

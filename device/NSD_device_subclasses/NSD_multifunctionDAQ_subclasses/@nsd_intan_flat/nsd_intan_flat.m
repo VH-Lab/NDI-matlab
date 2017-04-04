@@ -5,11 +5,11 @@
 %  Creates a new SAPI_INTAN_FLAT object with NAME, THEDATATREE and
 %  associated EXP
 
-classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
+classdef nsd_intan_flat < handle & nsd_multifunctionDAQ
    properties
    end
    methods
-      function obj = sAPI_intan_flat(obj,exp,name,thedatatree,reference)
+      function obj = nsd_intan_flat(obj,exp,name,thedatatree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,
@@ -43,7 +43,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
         % look for RHD files
         % mypath = getpath(getexperiment(sAPI_dev));
-        % 
+        %
         % filelist = findfiletype(mypath,'.rhd');
 
         filelist = self.thedatatree.getallfiles('rhd');
@@ -65,7 +65,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 
         for i=1:length(filelist),
             % then, open RHD files, and examine the headers for all channels present
-            %   for any new channel that hasn't been identified before, 
+            %   for any new channel that hasn't been identified before,
             %   add it to the list
             obj = read_Intan_RHD2000_header(filelist{i});
             list_field = fieldnames(obj);
@@ -81,7 +81,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
                     for p = 1:num,
                         %name = name_convert_to_standard(channel_type_name, channel(p).native_channel_name);
                         %answer = strcmp(name,{channels(:).name});
-                        %if ~any(answer),    
+                        %if ~any(answer),
                             channels(end+1).name = channel(p).native_channel_name;  % needs modifying
                             channels(end).type = channel_type_name;
                         %end
@@ -90,15 +90,15 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             end
         end
       end
-      
+
       function epochrecord = getepochrecord(self, number)
 		% GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
 		%
 		%   EPOCHRECORD = GETEPOCHRECORD(MYSAMPLEAPI_DEVICE, NUMBER)
-		% 
+		%
 		% Returns the EPOCHRECORD associated the the data epoch NUMBER for the
 		% SAMPLEAPI_DEVICE.
-		%  
+		%
 		% In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
 		% In specific device classes, this will return an EPOCHRECORD object.
 		%
@@ -109,8 +109,8 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
                 error(['the numbered epoch is not a valid epoch for the given device']);
             end
 	  end;
-      
-      function b = verifyepochrecord(self, epochrecord, number) 
+
+      function b = verifyepochrecord(self, epochrecord, number)
 		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
 		%
 		%   B = VERIFYEPOCHRECORD(MYSAMPLEAPI_DEVICE, EPOCHRECORD, NUMBER)
@@ -124,7 +124,7 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
 		b = isa(epochrecord, 'sAPI_epochrecord') && strcmp(epochrecord.type,'rhd') && strcmp(epochrecord.devicestring,self.name);
       end
-      
+
       function report = read_channel(self,sAPI_dev,channeltype,channel,clock_or_interval, t0,t1)
 
         %  FUNCTION READ_CHANNELS - read the data based on specified channels
@@ -133,38 +133,38 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
         %
         %  CHANNELTYPE is the type of channel to read
         %  ('analog','digitalin','digitalout', etc)
-        %  
+        %
         %
         %  REPORT is the data collection for specific channels
-        
+
         %create the query for epoches either use reference number or time
         if nargin==5,
             query = clock_or_interval;
         else,
             query = constructQuery(sAPI_clock, t0,t1);
         end
-        
-        
+
+
         file_names = self.thedatatree.getepoch(query,'rhd');  %%use the files as object fields later
 
         %file_names,
           % here we want to convert t0, and t1, which are in units of sAPI_clock
-          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval) 
+          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval)
 
         [i0_,t0_] = convert(sAPI_dev,sAPI_clock,t0);
         [i1_,t1_] = convert(sAPI_dev,sAPI_clock,t1);    %may need to incorporate the getintervals func into convert func
 
         intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
-        
+
         report = emptystruct('data','epoch','t_start','t_end');     %%initial structure
 
         for i = i0_:i1_,
             if i==i0_,
-                time_start = t0_; 
+                time_start = t0_;
             else,
                 time_start = 0; % start at beginning of interval
             end;
-            
+
             if i==i1_,
                 t_end = t1_;
             else,
@@ -177,14 +177,14 @@ classdef sAPI_intan_flat < handle & sAPI_multifunctionDAQ
             report(end).t_end = t1_;
         end
       end
-      
+
       function sr = getsamplerate(sAPI_dev, interval, channeltype, channel)
         %
-        % FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL 
+        % FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
         %
         % SR = GETSAMERATE(DEV, INTERVAL, CHANNELTYPE, CHANNEL)
         %
-        % SR is the list of sample rate from specified channels 
+        % SR is the list of sample rate from specified channels
 
         file_names = findfiletype(getpath(getexperiment(sAPI_dev)),'rhd');
 
