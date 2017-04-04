@@ -13,10 +13,10 @@ Still in early development
 
 - **datatree**: An file organizing class that create any file structure associated with a specific device.
 
-.flat:
+⋅⋅⋅+ flat:
 
-.epochdir:
+⋅⋅⋅+ epochdir:
 
 - **record**: An data class (consist of devicestring and epochrecord) that work between the device objects and the datatree objects. Each epoch contains data for more than one files within the dataree for that device.
 
-.vhintan:
+⋅⋅⋅+ vhintan:
