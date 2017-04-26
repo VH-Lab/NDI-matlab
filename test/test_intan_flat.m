@@ -7,7 +7,7 @@ function test_intan_flat(dirname)
 %  channel information and then plots some data from channel 1,
 %  as a test of the Intan Flat driver.
 %
-%  
+%
 
 %%%%%%%%%%%%%%%%%%TEST DATATREE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -67,16 +67,7 @@ getEpoch(withdirTree,1)
 
 
 
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% this function works as a sample test function specifically for the 
-%% intan_flat daq
-
-
+%%%%%%%%%%%%%%%%%%%%%%%test nsd devices' default method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['Opening a new example NSD with dirname ''exp1''']);
 myExp = NSD_dir(dirname);
 
@@ -85,8 +76,25 @@ reference(myExp)
 
 disp(['Now we will initialize devices ''NSD_intan_flat'' ']);
 
-dev1 = NSD_intan_flat('dev_intan',myExp);  
+myExp_tree= nsd_datatree_flat(myExp);
 
+dev1 = NSD_intan_flat(myExp,myExp_tree);
+
+%%test its default methods
+files = dev1.getepochfiles(1);
+
+records = dev1.getepochrecord(1);
+
+dev1.deleteepoch(1);
+
+dev1.setepochrecord(1,2,1);
+
+sample_epoch = nsd_epochrecord ('epoch1',~,'aux','dev2');
+
+dev1.verifyepochrecord(sample_epoch,1);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%test nsd intan_flat extended method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Now will print all the channels :');
 
 disp ( struct2table(getchannels(dev1)) );
@@ -101,17 +109,5 @@ result1 = read_channel(dev1,'digitalin',1,myClock,0,Inf);
 
 result2 = read_channel(dev1,'timestamp',1,myClock,0,Inf);
 
-result1,
-
-result2,
-
-figure;
-plot(result1.data);
-box off;
-ylabel('Digital value');
-xlabel('Sample number');
-
 channel = 'ai0';
 sr = getsamplerate(dev1,1,'aux',channel),
-
-
