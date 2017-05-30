@@ -1,10 +1,10 @@
-% NSD_DATATREE - Create a new NSD_DATATREE abstract object
+% NSD_DATATREE - object class for accessing files on disk
 %
 %  DT = NSD_DATATREE(EXP)   
 %
 %  The NSD_DATATREE object class
 %
-%    MORE DOCS here
+%    See NSD_DATATREE/NSD_DATATREE
 %
 
 classdef nsd_datatree < handle

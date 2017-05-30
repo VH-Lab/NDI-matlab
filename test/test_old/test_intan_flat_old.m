@@ -1,9 +1,73 @@
 function test_intan_flat(dirname)
+% TEST_INTAN_FLAT - Test the functionality of the Intan driver
+%
+%  TEST_INTAN_FLAT(DIRNAME)
+%
+%  Given a directory with RHD data inside, this function loads the
+%  channel information and then plots some data from channel 1,
+%  as a test of the Intan Flat driver.
+%
+%
 
-% this tests the intan with t00002 data sample
-% the getdata, getintervals and covert still need to modified based on the
-% implementataion of the intan technique
+%%%%%%%%%%%%%%%%%%TEST DATATREE%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%default tree
+disp(['create a new default datatree with dirname ''exp1''']);
+defaultTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(defaultTree)
+
+disp(['the epoches are:]');
+getEpoch(defaultTree)
+
+%flat tree
+
+disp(['create a new flat datatree with dirname ''exp1''']);
+flatTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(flatTree)
+
+disp(['the epoches are:]');
+getEpoch(flatTree,intmax)
+
+disp(['get the first epoch from the flat tree:]');
+getEpoch(flatTree,1)
+
+%withdir tree
+
+disp(['create a new withdir datatree with dirname ''exp1''']);
+withdirTree = dataTree('exp1');
+
+disp(['We will now display the experiment and all the epoches from this datatree:']);
+
+disp(['the experiments are:]');
+getExperiment(withdirTree)
+
+disp(['the epoches are:]');
+getEpoch(withdirTree,intmax)
+
+disp(['get the first epoch from the withdir tree:]');
+getEpoch(withdirTree,1)
+
+<<<<<<< HEAD
+%%%%%%%%%%%%%%%%%%SAMPLEAPI WITH DATAREE%%%%%%%%%%%%%%%%%%%%%%%%%%
+=======
+%%%%%%%%%%%%%%%%%%NSD WITH DATAREE%%%%%%%%%%%%%%%%%%%%%%%%%%
+>>>>>>> 94360047df90390c706266a3ab801ce24431d8b6
+
+...
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%test nsd devices' default method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['Opening a new example NSD with dirname ''exp1''']);
 myExp = NSD_dir(dirname);
 
@@ -12,18 +76,38 @@ reference(myExp)
 
 disp(['Now we will initialize devices ''NSD_intan_flat'' ']);
 
-dev1 = NSD_intan_flat('dev_intan',myExp);  % note to self, maybe name not needed
+myExp_tree= nsd_datatree_flat(myExp);
 
+dev1 = NSD_intan_flat(myExp,myExp_tree);
+
+%%test its default methods
+files = dev1.getepochfiles(1);
+
+records = dev1.getepochrecord(1);
+
+dev1.deleteepoch(1);
+
+dev1.setepochrecord(1,2,1);
+
+sample_epoch = nsd_epochrecord ('epoch1',~,'aux','dev2');
+
+dev1.verifyepochrecord(sample_epoch,1);
+
+
+%%%%%%%%%%%%%%%%%%%%%%%test nsd intan_flat extended method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp('Now will print all the channels :');
 
-ch=getchannels(dev1);
+disp ( struct2table(getchannels(dev1)) );
 
-for i=1:length(ch),
-	disp(ch(i));
-end;
+disp ( getintervals(dev1) );
 
-disp(['Examining the amplifier channels versus time:']);
-result = read_channels(dev1,ch(1:2), NSD_clock(dev1, 1), -Inf, Inf);
+% disp(['Examining the amplifier channels versus time:']);
 
-figure;
-plot(result(1).data,result(2).data) ;
+myClock = NSD_clock(dev1,1);
+
+result1 = read_channel(dev1,'digitalin',1,myClock,0,Inf);
+
+result2 = read_channel(dev1,'timestamp',1,myClock,0,Inf);
+
+channel = 'ai0';
+sr = getsamplerate(dev1,1,'aux',channel),
