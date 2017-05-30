@@ -22,18 +22,18 @@ classdef nsd_device_mfdaq < handle & nsd_device
 		%
 		%  Creates a new NSD_DEVICE_MFDAQ object with NAME, DATATREE and associated EXP.
 		%  This is an abstract class that is overridden by specific devices.
-		if nargin==1,
-			error(['Not enough input arguments.']);
-		elseif nargin==2,
-			obj.name = name;
-			obj.datatree = thedatatree;
-		elseif nargin==5,
-			obj.exp = exp;
-			obj.name = name;
-			obj.datatree = thedatatree;
-		else,
-			error(['Too many input arguments.']);
-		end;
+			if nargin==1,
+				error(['Not enough input arguments.']);
+			elseif nargin==2,
+				obj.name = name;
+				obj.datatree = thedatatree;
+			elseif nargin==5,
+				obj.exp = exp;
+				obj.name = name;
+				obj.datatree = thedatatree;
+			else,
+				error(['Too many input arguments.']);
+			end;
 
 		end; % nsd_device_mfdaq
 
@@ -59,13 +59,36 @@ classdef nsd_device_mfdaq < handle & nsd_device
 		%                    |    (e.g., 'analog', 'digital', 'image', 'timestamp')
 		%
 
-		   % because this is an abstract class, only empty records are returned
-		channels = struct('name',[],'type',[]);  
-		channels = channels([]);
+			   % because this is an abstract class, only empty records are returned
+			channels = struct('name',[],'type',[]);  
+			channels = channels([]);
 
 		end; % getchannels
-	end; % methods
 
+		function ct = channel_types(self)
+		% CHANNEL_TYPES - channel types for NSD_DEVICE_MFDAQ objects
+		%
+		%  CT = 
+		%
+		%  Returns a cell array of strings of supported channels of the
+		%  NSD_DEVICE_MFDAQ class. These are the following:
+		%
+		%  Channel type:       | Description: 
+		%  -------------------------------------------------------------
+		%  analog_in           | Analog input channel
+		%  aux_in              | Auxilliary input
+		%  diagnostic          | Diagnostic channel
+		%  analog_out          | Analog output channel
+		%  digital_in          | Digital input channel
+		%  digital_out         | Digital output channel
+		%
+
+			ct = { 'analog_in', 'aux_in', 'diagnostic', 'analog_in', 'digital_in', 'digital_out' };
+
+		end;
+
+
+	end; % methods
 end;
 
 
