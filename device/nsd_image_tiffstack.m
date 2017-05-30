@@ -96,14 +96,13 @@ classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
       end
 
       function report = read_channel(sAPI_dev,channeltype,channel,sAPI_clock, t0,t1)
-
         %  FUNCTION READ_CHANNELS - read the data based on specified channels
         %
         %  REPORT = READ_CHANNELS(SAPI_DEV, CHANNELTYPE,CHANNEL,SAPI_CLOCK,T0,T1)
         %
         %  CHANNELTYPE is the type of channel to read
         %  ('image', etc)
-        %
+        %  
         %
         %  REPORT is the data collection for specific image channels
 
@@ -112,11 +111,17 @@ classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
 
         %file_names,
           % here we want to convert t0, and t1, which are in units of sAPI_clock
-          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval)
+          %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval) 
 
         [i0_,t0_] = convert(sAPI_dev,sAPI_clock,t0);
 
+        %i0_,
+        %t0_,
+
         [i1_,t1_] = convert(sAPI_dev,sAPI_clock,t1);    %may need to incorporate the getintervals func into convert func
+
+        %i1_,
+        %t1_,
 
         intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
 
@@ -171,9 +176,35 @@ classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
 
         end
 
-        function intervals = getintervals(sAPI_dev)
+        function [intervals] = getintervals(sAPI_dev)
+        %   FUNCTION GETINTERVALS - list the relative time order for all the
+        %   intervals
+        %
+        %   INTERVALS = GETINTERVALS(SAPI_DEV)
+        %
+        %   Returns the orders for all the intervals related to the experiment
+        %
+        %   EPOCH = {f1,order1
+        %            f2,order2
+        %            f3,order3....}
+
+        intervals = struct('file',[],'local_epoch_order',[]);
+        intervals = ([]);
+
+        filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
+            for i=1:length(filelist),
+                intervals(end+1).file = filelist{i};
+                intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list
+            end
+        return;  
+
+
+        % intervals = [];
+        % for (i <= size(device.stim_times,1) )
+        % intervals(:,1) = device.stim_times(,2);
+        % intervals(:,2) = device.stim_times(,3) - device.stim_times(,2);
+        % intervals(:,3) = device.voltageForTime; 
+
         end
 
-    end
-
-end
+   end
