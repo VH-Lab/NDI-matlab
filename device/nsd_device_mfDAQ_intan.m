@@ -13,7 +13,7 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 	end; % properties
 
 	methods
-		function obj = nsd_intan_flat(obj,exp,name,thedatatree,reference)
+		function obj = nsd_device_mfdaq_intan(name,thedatatree)
 		% NSD_DEVICE_MFDAQ_INTAN - Create a new NSD_DEVICE_MFDAQ_INTAN object
 		%
 		%  D = NSD_DEVICE_MFDAQ_INTAN(NAME,THEDATATREE)
@@ -21,18 +21,11 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		%  Creates a new NSD_DEVICE_MFDAQ_INTAN object with name NAME and associated
 		%  datatree THEDATATREE.
 		%
-			if nargin==1 || nargin ==2 || nargin ==3,
+			if nargin==1
 				error(['Not enough input arguments.']);
-			elseif nargin==4,
-				obj.exp = exp;
+			elseif nargin==2,
 				obj.name = name;
 				obj.datatree = thedatatree;
-				obj.reference = 'time';
-			elseif nargin==5,
-				obj.exp = exp;
-				obj.name = name;
-				obj.datatree = thedatatree;
-				obj.reference = reference;
 			else,
 				error(['Too many input arguments.']);
 			end;
@@ -54,8 +47,6 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 
 			N = numepochs(self.datatree);
 
-			filelist = self.thedatatree.getallfiles('rhd');  % does this really exist??
-
 			channels = struct('name',[],'type',[]);
 			channels = channels([]);
 
@@ -67,7 +58,7 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = channel_types(self);
+			multifunctiondaq_channel_types = self.mfdaq_channeltypes(self);
 
 			for n=1:N,
 				% then, open RHD files, and examine the headers for all channels present
@@ -100,25 +91,6 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 			end
 		end % getchannels()
 
-		function epochrecord = getepochrecord(self, number)
-		% GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
-		%
-		%   EPOCHRECORD = GETEPOCHRECORD(MYSAMPLEAPI_DEVICE, NUMBER)
-		%
-		% Returns the EPOCHRECORD associated the the data epoch NUMBER for the
-		% SAMPLEAPI_DEVICE.
-		%
-		% In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
-		% In specific device classes, this will return an EPOCHRECORD object.
-		%
-		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-			if (verifyepochrecord(self.thedatatree.getepoch(number),~)
-				epochrecord = self.thedatatree.getepoch(number);
-			else,
-				error(['the numbered epoch is not a valid epoch for the given device']);
-			end
-		end
-
 		function b = verifyepochrecord(self, epochrecord, number)
 		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
 		%
@@ -131,10 +103,43 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
 		%
 		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-			b = isa(epochrecord, 'sAPI_epochrecord') && strcmp(epochrecord.type,'rhd') && strcmp(epochrecord.devicestring,self.name);
+			b = 1;
+			% UPDATE NEEDED
+			% b = isa(epochrecord, 'sAPI_epochrecord') && strcmp(epochrecord.type,'rhd') && strcmp(epochrecord.devicestring,self.name);
 		end
 
-		function report = read_channel(self,sAPI_dev,channeltype,channel,clock_or_interval, t0,t1)
+		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
+		%  FUNCTION READ_CHANNELS - read the data based on specified channels
+		%
+		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+		%
+		%  CHANNELTYPE is the type of channel to read
+		%
+		%  CHANNEL is a vector of the channel numbers to read, beginning from 1
+		%
+		%  EPOCH is 
+		%
+		%  DATA is the channel data (each row is BLAH, each columns is BLAH) CHECK
+		%
+
+			filename = self.datatree.getepochfiles(self,epoch);
+			filename = filename{1}; % don't know how to handle multiple filenames coming back
+			intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
+
+			sr = getsamplerate(self, channeltype, channel, epoch);
+			sr_unique = unique(sr); % get all sample rates
+			if numel(sr_unique)~=1, error(['Do not know how to handle different sampling rates across channels.']); end;
+
+			sr = sr_unique;
+
+			t0 = (s0-1)/sr;
+			t1 = (s1-1)/sr;
+			[data,~,~] = read_Intan_RHD2000_datafile(file_name,'',intanchanneltype,channel,t0,t1);
+
+		end; % readchannels_epochsamples
+
+
+		function report = read_channel(self,channeltype,channel,clock_or_interval, t0,t1)
 		%  FUNCTION READ_CHANNELS - read the data based on specified channels
 		%
 		%  REPORT = READ_CHANNELS(SAPI_DEV, CHANNELTYPE,CHANNEL,SAPI_CLOCK,T0,T1)
@@ -186,11 +191,11 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 
 		end %read_channel()
 
-		function sr = getsamplerate(sAPI_dev, interval, channeltype, channel)
+		function sr = getsamplerate(sAPI_dev, epoch, channeltype, channel)
 		%
 		% FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 		%
-		% SR = GETSAMERATE(DEV, INTERVAL, CHANNELTYPE, CHANNEL)
+		% SR = GETSAMERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
 		%
 		% SR is the list of sample rate from specified channels
 
@@ -213,8 +218,9 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 			end
 
 		end
-
-		function intanchanneltype = multifuncdaqchanneltype2intan(self, channeltype)
+	end; % methods
+	methods (Static),  % helper functions
+		function intanchanneltype = multifuncdaqchanneltype2intan(channeltype)
 		% INTANCHANNELTYPE - convert the channel type from generic format of multifuncdaqchannel 
 		%					 to the specific intan channel type
 		%
@@ -240,8 +246,8 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 
 		end; % multifuncdaqchanneltype2intan()
 
-		function [ standard_name ] = name_convert_to_standard(self, type, name )
-		%   STANDARD_NAME = NAME_CONVERT_TO_STANDARD(SELF,TYPE,NAME)
+		function [ standard_name ] = name_convert_to_standard(type, name )
+		%   STANDARD_NAME = NAME_CONVERT_TO_STANDARD(TYPE,NAME)
 		%       name_convert_to_standard() takes two inputs the standard type of 
 		%       the channel and the local channel name and convert the local 
 		%       channel name to the standard name 
@@ -276,7 +282,6 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 			end
 
 		end % name_convert_to_standard()
-
-	end; % methods
+	end; % methods (Static)
 end;
 

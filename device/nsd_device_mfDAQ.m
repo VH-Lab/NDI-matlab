@@ -64,11 +64,13 @@ classdef nsd_device_mfdaq < handle & nsd_device
 			channels = channels([]);
 
 		end; % getchannels
+	end; % methods
 
-		function ct = channel_types(self)
-		% CHANNEL_TYPES - channel types for NSD_DEVICE_MFDAQ objects
+	methods (Static), % functions that don't need the object
+		function ct = mfdaq_channeltypes
+		% MFDAQ_CHANNELTYPES - channel types for NSD_DEVICE_MFDAQ objects
 		%
-		%  CT = 
+		%  CT = MFDAQ_CHANNELTYPES - channel types for NSD_DEVICE_MFDAQ objects
 		%
 		%  Returns a cell array of strings of supported channels of the
 		%  NSD_DEVICE_MFDAQ class. These are the following:
@@ -82,13 +84,10 @@ classdef nsd_device_mfdaq < handle & nsd_device
 		%  digital_in          | Digital input channel
 		%  digital_out         | Digital output channel
 		%
-
 			ct = { 'analog_in', 'aux_in', 'diagnostic', 'analog_in', 'digital_in', 'digital_out' };
-
 		end;
 
-
-	end; % methods
+	end; % methods (Static)
 end;
 
 

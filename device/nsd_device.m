@@ -39,21 +39,6 @@ classdef nsd_device < handle
 			epochfiles = '';
 		end;
 
-		function epochrecord = getepochrecord(self, number)
-		% GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
-		%
-		%   EPOCHRECORD = GETEPOCHRECORD(MYNSD_DEVICE, NUMBER)
-		%
-		% Returns the EPOCHRECORD associated the the data epoch NUMBER for the
-		% NSD_DEVICE.
-		%
-		% In the abstract base class NSD_DEVICE, this returns empty always.
-		% In specific device classes, this will return an EPOCHRECORD object.
-		%
-		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
-			epochrecord= [];
-		end;
-
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
 		%
@@ -85,6 +70,25 @@ classdef nsd_device < handle
 			%  verify it is good, then put it in the tree
 		end;
 
+                function epochrecord = getepochrecord(self, number)
+                % GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
+                %
+                %   EPOCHRECORD = GETEPOCHRECORD(MYNSD_DEVICE, NUMBER)
+                %
+                % Returns the EPOCHRECORD associated the the data epoch NUMBER for the
+                % SAMPLEAPI_DEVICE.
+                %
+                % In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
+                % In specific device classes, this will return an EPOCHRECORD object.
+                %
+                % See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
+                        if (verifyepochrecord(self.datatree.getepochrecord(number),~)
+                                epochrecord = self.datatree.getepochrecord(number);
+                        else,
+                                error(['the numbered epoch is not a valid epoch for the given device']);
+                        end
+                end
+
 		function b = verifyepochrecord(self, epochrecord, number)
 		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
 		%
@@ -97,7 +101,7 @@ classdef nsd_device < handle
 		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
 		%
 		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
-            b = isa(epochrecord, 'nsd_epochrecord');
-        end
-    end
+			b = isa(epochrecord, 'nsd_epochrecord');
+		end
+	end % methods
 end
