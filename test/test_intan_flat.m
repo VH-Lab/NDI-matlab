@@ -30,8 +30,11 @@ disp(['Now adding our acquisition device (intan):']);
 
 dt = nsd_datatree(exp, '.*\.rhd\>');  % look for .rhd files
 
-  % Step 2: create the device object:
+  % Step 2: create the device object and add it to the experiment:
 
+dev1 = nsd_device_mfdaq_intan('intan1',dt);
+
+exp.device_add(exp, dev1);
 
 
 
