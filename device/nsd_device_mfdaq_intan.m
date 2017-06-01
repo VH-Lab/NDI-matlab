@@ -186,57 +186,29 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		%
 
 			switch channeltype, 
-				case 'analog',
-					intanchanneltype = 'adc';
-				case 'digitalin',
+				case {'analog_in','ai'},
+					intanchanneltype = 'amp';
+				case {'digital_in','di'},
 					intanchanneltype = 'din';
-				case 'digitalout',
+				case {'digital_out','do'},
 					intanchanneltype = 'dout';
-				case 'image',
-					intanchanneltype = [];
-				case 'timestamp',
-					intanchanneltype = 'timestamp';
-				case 'amplifier' 
-					intanchanneltype = 'amplifier';
+				case {'time','timestamp'},
+					intanchanneltype = 'time';
 			end;
 
 		end; % multifuncdaqchanneltype2intan()
 
-		function [ standard_name ] = name_convert_to_standard(type, name )
+		function [ channame ] = intanname2mfdaqname(type, name )
 		%   STANDARD_NAME = NAME_CONVERT_TO_STANDARD(TYPE,NAME)
 		%       name_convert_to_standard() takes two inputs the standard type of 
 		%       the channel and the local channel name and convert the local 
 		%       channel name to the standard name 
 
-			typeList = strsplit(type,'_');
-
-			temp1 = typeList{1};        %%get the instrumental name
-			temp1 = temp1(1);
-
-			if ~strcmp('diagnostic', typeList{1}),
-				temp2 = typeList{2};        %%get the instrumental name
-				temp2 = temp2(1);
-			else,
-				temp2 = '';
-			end;
-
-			nameList = strsplit(name,'-');   
-
-			if ~isnan(sscanf(nameList{end},'%f'))
-				standard_name = strcat(temp1,temp2,num2str(sscanf(nameList{end},'%f')));
-			else 
-				standard_name = strcat(temp1,temp2);
-				nl = nameList{end};
-				for i = 1:length(nl)
-					s = nl(i);
-					num=str2double(s);
-				
-					if ~isnan(num)
-						standard_name = strcat(standard_name,s);
-					end
-				end
-			end
-
+			sep = find(name=='-');
+			chan_intan = str2num(name(sep+1:end));
+			chan = chan_intan + 1; % intan numbers from 0
+			channame = [mdfaqp_prefix(type) int2str(chan)];
+			
 		end % name_convert_to_standard()
 
 	end % methods (Static)

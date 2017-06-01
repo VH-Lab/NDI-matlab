@@ -159,6 +159,10 @@ classdef nsd_device_mfdaq < handle & nsd_device
 			ct = { 'analog_in', 'aux_in', 'diagnostic', 'analog_out', 'digital_in', 'digital_out' };
 		end;
 
+		function pref = mdfaqp_prefix(channeltype)
+		%
+
+
 	end; % methods (Static)
 end;
 
