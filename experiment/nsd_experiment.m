@@ -15,7 +15,7 @@ classdef nsd_experiment < handle
 		% reference REFERENCE. This class is an abstract class and typically
 		% an end user will open a specific subclass.
 		%
-		% NSD_EXPERIMENT objects can access 0 or more NSD_devices.
+		% NSD_EXPERIMENT objects can access 0 or more NSD_DEVICE objects.
 		%
 		% See also: NSD_EXPERIMENT/DEVICE_ADD, NSD_EXPERIMENT/DEVICE_RM, 
 		%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
@@ -37,12 +37,14 @@ classdef nsd_experiment < handle
 		%  
 		% See also: DEVICE_RM, NSD_EXPERIMENT
 
-		if ~isa(dev,'NSD_device'), error(['dev is not a NSD_device']); end;
+		if ~isa(dev,'nsd_device'), error(['dev is not a nsd_device']); end;
 
 		if isempty(self.device_list),
 			self.device_list = dev;
 		else,
-			self.devicelist(end+1) = dev;
+			if ~any(self.device_list==dev),
+				self.devicelist(end+1) = dev;
+			end;
 		end;
 
 		end

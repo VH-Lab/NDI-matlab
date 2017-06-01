@@ -13,38 +13,29 @@
 % 'digital_in'  or 'di'    | Digital input
 % 'digital_out' or 'do'    | Digital output
 % 'time'        or 't'     | Time
-% 'auxiliary'  or 'ax'     | Auxiliary channels
+% 'auxiliary','aux' or 'ax'| Auxiliary channels
 % 
 %
 % See also: NSD_DEVICE_MFDAQ/NSD_DEVICE_MFDAQ
 %
 % 
 
-classdef nsd_device_mfdaq < handle & nsd_device
+classdef nsd_device_mfdaq < nsd_device
 	properties (SetAccess=protected)
-		name;
-		datatree;
+
 	end
 	properties (Access=private) % potential private variables
 	end
 
 	methods
-		function d = nsd_device_mfdaq(name, thedatatree)
+		function obj = nsd_device_mfdaq(name, thedatatree)
 		% NSD_DEVICE_MFDAQ - Create a new multifunction DAQ object
 		%
 		%  D = NSD_DEVICE_MFDAQ(NAME, THEDATATREE)
 		%
-		%  Creates a new NSD_DEVICE_MFDAQ object with NAME, DATATREE and associated EXP.
+		%  Creates a new NSD_DEVICE_MFDAQ object with NAME, and DATATREE.
 		%  This is an abstract class that is overridden by specific devices.
-			if nargin==1,
-				error(['Not enough input arguments.']);
-			elseif nargin==2,
-				obj.name = name;
-				obj.datatree = thedatatree;
-			else,
-				error(['Too many input arguments.']);
-			end;
-
+			obj = obj@nsd_device(name, thedatatree);
 		end; % nsd_device_mfdaq
 
 		function channels = getchannels(thedev)
@@ -151,20 +142,50 @@ classdef nsd_device_mfdaq < handle & nsd_device
 		%  -------------------------------------------------------------
 		%  analog_in           | Analog input channel
 		%  aux_in              | Auxiliary input
-		%  diagnostic          | Diagnostic channel
 		%  analog_out          | Analog output channel
 		%  digital_in          | Digital input channel
 		%  digital_out         | Digital output channel
 		%
-			ct = { 'analog_in', 'aux_in', 'diagnostic', 'analog_out', 'digital_in', 'digital_out' };
+			ct = { 'analog_in', 'aux', 'analog_out', 'digital_in', 'digital_out' };
 		end;
 
-		function pref = mdfaqp_prefix(channeltype)
+		function prefix = mfdaq_prefix(channeltype)
+		% MFDAQ_PREFIX - Give the channel prefix for a channel type
 		%
+		%  PREFIX = MFDAQ_PREFIX(CHANNELTYPE)
+		%
+		%  Produces the channel name prefix for a given CHANNELTYPE.
+		% 
+		% Channel type:            | MFDAQ_PREFIX:
+		% ---------------------------------------------------------
+		% 'analog_in',       'ai'  | 'ai' 
+		% 'analog_out',      'ao'  | 'ao'
+		% 'digital_in',      'di'  | 'di'
+		% 'digital_out',     'do'  | 'do'
+		% 'time','timestamp','t'   | 't'
+		% 'auxiliary','aux','ax'   | 'ax'
+		%
+		% See also: NSD_DEVICE_MFDAQ
+		%
+			switch channeltype,
+				case {'analog_in','ai'},
+					prefix = 'ai';
+				case {'analog_out','ao'},
+					prefix = 'ao';
+				case {'digital_in','di'},
+					prefix = 'di';
+				case {'digital_out','do'},
+					prefix = 'do';
+				case {'time','timestamp'},
+					prefix = 't';
+				case {'auxiliary','aux','ax'},
+					prefix = 'ax';
+			end;
+		end % mfdaq_prefix()
 
 
-	end; % methods (Static)
-end;
+	end % methods (Static)
+end
 
 
 

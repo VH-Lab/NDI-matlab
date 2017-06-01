@@ -82,7 +82,7 @@ classdef nsd_device < handle
                 % In specific device classes, this will return an EPOCHRECORD object.
                 %
                 % See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-                        if (verifyepochrecord(self.datatree.getepochrecord(number),~)
+                        if (verifyepochrecord(self.datatree.getepochrecord(number)))
                                 epochrecord = self.datatree.getepochrecord(number);
                         else,
                                 error(['the numbered epoch is not a valid epoch for the given device']);

@@ -6,7 +6,7 @@
 %
 %
 
-classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
+classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 	properties
 		
 
@@ -21,14 +21,7 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		%  Creates a new NSD_DEVICE_MFDAQ_INTAN object with name NAME and associated
 		%  datatree THEDATATREE.
 		%
-			if nargin==1
-				error(['Not enough input arguments.']);
-			elseif nargin==2,
-				obj.name = name;
-				obj.datatree = thedatatree;
-			else,
-				error(['Too many input arguments.']);
-			end;
+			obj = obj@nsd_device_mfdaq(name,thedatatree);
 		end
 
 		function channels = getchannels(self)
@@ -45,10 +38,9 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
 		%
 
-			N = numepochs(self.datatree);
+			channels = emptystruct('name','type');
 
-			channels = struct('name',[],'type',[]);
-			channels = channels([]);
+			N = numepochs(self.datatree);
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -56,9 +48,10 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = self.mfdaq_channeltypes(self);
+			multifunctiondaq_channel_types = self.mfdaq_channeltypes;
 
 			for n=1:N,
+
 				% then, open RHD files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
@@ -68,15 +61,28 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 
 				header = read_Intan_RHD2000_header(filename);
 
+				if isempty(channels),
+					channels = struct('name','t1','type','time');
+				end;
+
 				for k=1:length(intan_channel_types),
-					if isfield(header,intan_channel_types{k},
-						channel_type_entry = mfdaqchanneltype2intanheadertype(intan_channel_types{k});
+					if isfield(header,intan_channel_types{k}),
+						channel_type_entry = self.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
 						channel = getfield(header, intan_channel_types{k});
 						num = numel(channel);             %% number of channels with specific type
 						for p = 1:numel(channel),
 							newchannel.type = channel_type_entry;
-							error(['need to convert to standard naming scheme']);
-							newchannel.name = channel(p).native_channel_name;  % needs modifying
+							newchannel.name = self.intanname2mfdaqname(self,...
+								channel_type_entry,...
+								channel(p).native_channel_name); 
+							match = 0;
+							for kk=1:length(channels),
+								if eqlen(channels(kk),newchannel)
+									match = 1;
+									break;
+								end;
+							end;
+							if ~match, channels(end+1) = newchannel; end;
 						end
 					end
 				end
@@ -113,45 +119,39 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-
-			filename = self.datatree.getepochfiles(self,epoch);
+			filename = self.datatree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
-			intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
+			intanchanneltype = self.mfdaqchanneltype2intanchanneltype(channeltype);
 
-			sr = getsamplerate(self, channeltype, channel, epoch);
+			sr = self.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
-			if numel(sr_unique)~=1, error(['Do not know how to handle different sampling rates across channels.']); end;
+			if numel(sr_unique)~=1,
+				error(['Do not know how to handle different sampling rates across channels.']);
+			end;
 
 			sr = sr_unique;
 
 			t0 = (s0-1)/sr;
 			t1 = (s1-1)/sr;
-			[data] = read_Intan_RHD2000_datafile(file_name,'',intanchanneltype,channel,t0,t1);
+			[data] = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
 
 		end % readchannels_epochsamples
 
-		function sr = samplerate(sAPI_dev, epoch, channeltype, channel)
+		function sr = samplerate(self, epoch, channeltype, channel)
+		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 		%
-		% FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
-		%
-		% SR = GETSAMERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
+		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
 		%
 		% SR is the list of sample rate from specified channels
 
-			filename = self.datatree.getepochfiles(self,epoch);
+			filename = self.datatree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
 			head = read_Intan_RHD2000_header(filename);
-			freq = head.frequency_parameters;
-			freq_name = fieldnames(freq);               %get all the names for each freq
-			all_freqs = cell2mat(struct2cell(freq));             %get all the freqs for each name
-			for j = 1:size(freq_name,1),
-				temp = freq_name{i};
-				if (strncmpi(temp,channeltype,length(channeltype))),      %compare the beginning of two strings
-					sr = all_freqs(j); return;
-				end
-			end
+			freq_fieldname = self.mfdaqchanneltype2intanfreqheader(channeltype);
+			sr = getfield(head.frequency_parameters,freq_fieldname);
 		end % samplerate()
+
 	end % methods
 
 	methods (Static)  % helper functions
@@ -173,18 +173,42 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 					intanchanheadertype = 'board_dig_out_channels';
 				case {'auxiliary','aux','ax'},
 					intanchanheadertype = 'aux_input_channels';
+				otherwise,
+					error(['Could not convert channeltype ' channeltype '.']);
 			end;
+
 		end % mfdaqchanneltype2intanheadertype()
-	
-		function intanchanneltype = multifuncdaqchanneltype2intan(channeltype)
-		% INTANCHANNELTYPE - convert the channel type from generic format of multifuncdaqchannel 
+
+		function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
+		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NSD_DEVICE_MFDAQ channel types 
+		%
+		% CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
+		% 
+		% Given an Intan header file type, returns the standard NSD_DEVICE_MFDAQ channel type
+
+			switch (intanchanneltype),
+				case {'amplifier_channels'},
+					channeltype = 'analog_in';
+				case {'board_dig_in_channels'},
+					channeltype = 'digital_in';
+				case {'board_dig_out_channels'},
+					channeltype = 'digital_out';
+				case {'aux_input_channels'},
+					channeltype = 'auxiliary';
+				otherwise,
+					error(['Could not convert channeltype ' intanchanneltype '.']);
+			end;
+
+		end % mfdaqchanneltype2intanheadertype()
+
+		function intanchanneltype = mfdaqchanneltype2intanchanneltype(channeltype)
+		% MFDAQCHANNELTYPE2INTANCHANNELTYPE- convert the channel type from generic format of multifuncdaqchannel 
 		%					 to the specific intan channel type
 		%
-		%    INTANCHANNELTYPE = MULTIFUNCDAQCHANNELTYPE2INTAN(CHANNELTYPE)
+		%    INTANCHANNELTYPE = MFDAQCHANNELTYPE2INTANCHANNELTYPE(CHANNELTYPE)
 		%
 		%	 the intanchanneltype is a string of the specific channel type for intan
 		%
-
 			switch channeltype, 
 				case {'analog_in','ai'},
 					intanchanneltype = 'amp';
@@ -194,22 +218,51 @@ classdef nsd_device_mfdaq_intan < handle & nsd_device_mfdaq
 					intanchanneltype = 'dout';
 				case {'time','timestamp'},
 					intanchanneltype = 'time';
-			end;
+				case {'auxiliary','aux'},
+					intanchanneltype = 'aux';
+				otherwise,
+					error(['Do not know how to convert channel type ' channeltype '.']);
+			end
+		end % mfdaqchanneltype2intanchanneltype()
 
-		end; % multifuncdaqchanneltype2intan()
-
-		function [ channame ] = intanname2mfdaqname(type, name )
-		%   STANDARD_NAME = NAME_CONVERT_TO_STANDARD(TYPE,NAME)
-		%       name_convert_to_standard() takes two inputs the standard type of 
-		%       the channel and the local channel name and convert the local 
-		%       channel name to the standard name 
-
+		function [ channame ] = intanname2mfdaqname(self, type, name )
+		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NSD_DEVICE_MFDAQ format.
+		%
+		% MFDAQNAME = INTANNAME2MFDAQNAME(SELF, MFDAQTYPE, NAME)
+		%   
+		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
+		% NSD_DEVICE_MFDAQ channel type string (see NSD_DEVICE_MFDAQ), this function
+		% produces an NSD_DEVICE_MFDAQ channel name (e.g., 'ai1').
+		%  
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [mdfaqp_prefix(type) int2str(chan)];
-			
-		end % name_convert_to_standard()
+			channame = [self.mfdaq_prefix(type) int2str(chan)];
+
+		end % intanname2mfdaqname()
+
+		function headername = mfdaqchanneltype2intanfreqheader(channeltype)
+		% MFDAQCHANNELTYPE2INTANFREQHEADER - Return header name with frequency information for channel type
+		%
+		%  HEADERNAME = MFDAQCHANNELTYPE2INTANFREQHEADER(CHANNELTYPE)
+		%
+		%  Given an NSD_DEV_MFDAQ channel type string, this function returns the associated fieldname
+		%  
+			switch channeltype,
+				case {'analog_in','ai'},
+					headername = 'amplifier_sample_rate';
+				case {'digital_in','di'},
+					headername = 'board_dig_in_sample_rate';
+				case {'digital_out','do'},
+					headername = 'board_dig_out_sample_rate';
+				case {'time','timestamp'},
+					headername = 'amplifier_sample_rate';
+				case {'auxiliary','aux'},
+					headername = 'aux_input_sample_rate';
+				otherwise,
+					error(['Do not know frequency header name for channel type ' channeltype '.']);
+			end;
+		end % mfdaqchanneltype2intanfreqheader()
 
 	end % methods (Static)
 end

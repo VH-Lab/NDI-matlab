@@ -33,82 +33,28 @@ dt = nsd_datatree(exp, '.*\.rhd\>');  % look for .rhd files
   % Step 2: create the device object and add it to the experiment:
 
 dev1 = nsd_device_mfdaq_intan('intan1',dt);
+exp.device_add(dev1);
 
-exp.device_add(exp, dev1);
+  % Now let's print some statistics
 
-
-
-
-
-disp(['We will now display all the epoches from this datatree:']);
-
-disp(['the experiments are:]');
-getExperiment(defaultTree)
-
-disp(['the epoches are:]');
-getEpoch(defaultTree)
-
-disp(['get the first epoch from the flat tree:]');
-getEpoch(flatTree,1)
-
-%withdir tree
-
-disp(['create a new withdir datatree with dirname ''exp1''']);
-withdirTree = dataTree('exp1');
-
-disp(['We will now display the experiment and all the epoches from this datatree:']);
-
-disp(['the experiments are:]');
-getExperiment(withdirTree)
-
-disp(['the epoches are:]');
-getEpoch(withdirTree,intmax)
-
-disp(['get the first epoch from the withdir tree:]');
-getEpoch(withdirTree,1)
-
-
-%%%%%%%%%%%%%%%%%%%%%%%test nsd devices' default method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-disp(['Opening a new example NSD with dirname ''exp1''']);
-myExp = NSD_dir(dirname);
-
-disp(['We will now display the reference:']);
-reference(myExp)
-
-disp(['Now we will initialize devices ''NSD_intan_flat'' ']);
-
-myExp_tree= nsd_datatree_flat(myExp);
-
-dev1 = NSD_intan_flat(myExp,myExp_tree);
-
-%%test its default methods
-files = dev1.getepochfiles(1);
-
-records = dev1.getepochrecord(1);
-
-dev1.deleteepoch(1);
-
-dev1.setepochrecord(1,2,1);
-
-sample_epoch = nsd_epochrecord ('epoch1',~,'aux','dev2');
-
-dev1.verifyepochrecord(sample_epoch,1);
-
-
-%%%%%%%%%%%%%%%%%%%%%%%test nsd intan_flat extended method%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-disp('Now will print all the channels :');
+disp(['The channels we have on this device are the following:']);
 
 disp ( struct2table(getchannels(dev1)) );
 
-disp ( getintervals(dev1) );
+sr_d = samplerate(dev1,1,'digital_in',1);
+sr_a = samplerate(dev1,1,'analog_in',1);
 
-% disp(['Examining the amplifier channels versus time:']);
+disp(['The sample rate of digital channel 1 in epoch 1 is ' num2str(sr_d) '.']);
+disp(['The sample rate of analog channel 1 in epoch 1 is ' num2str(sr_a) '.']);
 
-myClock = NSD_clock(dev1,1);
+disp(['We will now plot the data for epoch 1 for analog_input channel 1.']);
 
-result1 = read_channel(dev1,'digitalin',1,myClock,0,Inf);
+data = readchannels_epochsamples(dev1,'analog_in',1,1,0,Inf);
+time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
 
-result2 = read_channel(dev1,'timestamp',1,myClock,0,Inf);
+figure;
+plot(time,data);
+ylabel('Data');
+xlabel('Time (s)');
+box off;
 
-channel = 'ai0';
-sr = getsamplerate(dev1,1,'aux',channel),
