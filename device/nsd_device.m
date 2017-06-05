@@ -68,6 +68,7 @@ classdef nsd_device < handle
 			%    getepochfilelocation(self.datatree, self, N)  % need this function in data tree class
 			%    save it in experiment / devices / devname / epoch_NNNN.erf
 			%  verify it is good, then put it in the tree
+			error('not implemented yet.');
 		end;
 
                 function epochrecord = getepochrecord(self, number)
@@ -80,11 +81,16 @@ classdef nsd_device < handle
                 %
                 % In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
                 % In specific device classes, this will return an EPOCHRECORD object.
-                %
+		%
                 % See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
-                        if (verifyepochrecord(self.datatree.getepochrecord(number)))
-                                epochrecord = self.datatree.getepochrecord(number);
-                        else,
+		%
+			   % Developer note: Why is this function present in nsd_device, when it pretty much 
+			   % just calls the nsd_datatree version? Because, some devices may include some sort of epoch
+			   % record in their own files natively, and the nsd_device_DRIVER that reads it may simply read from that
+			   % information. So nsd_device_DRIVER needs the ability to override this function.
+
+			epochrecord = self.datatree.getepochrecord(number,self);
+                        if ~(verifyepochrecord(epochrecord))
                                 error(['the numbered epoch is not a valid epoch for the given device']);
                         end
                 end
