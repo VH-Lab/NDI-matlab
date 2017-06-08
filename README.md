@@ -30,4 +30,6 @@ Still in early development
 
 - Documentation of classes should follow the Matlab standard: https://www.mathworks.com/help/matlab/matlab_prog/create-help-for-classes.html
 
+- In input arguments and documentation, we'll use indexes instead of indices and try to keep other English language exceptions to a minimum
 
+- All error messages should be informative and give specific information about the problem, not just say 'an error occurred.'
