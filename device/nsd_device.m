@@ -7,10 +7,11 @@
 %
 
 classdef nsd_device < handle
-	properties
+	properties (GetAccess=public, SetAccess=protected)
 		name;
 		datatree;
 	end
+
 	methods
 		function obj = nsd_device(name,thedatatree)
 			if nargin==0 || nargin==1,

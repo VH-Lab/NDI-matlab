@@ -1,15 +1,15 @@
-class nsd_dbtree < nds_dbleaf
+classdef nsd_dbtree < nsd_dbleaf
 	% NSD_DBTREE - A class that manages trees of NSD_DBLEAF objects with searchable metadata
 	%
 	% 
 	%
-	
 		    % development notes: opportunties for a metadata cache, search and loading optimization and caching
 
-	parameters (Access=protected)
+	properties (GetAccess=public,SetAccess=protected)
 		path         % String path; where NSD_DBTREE should store its files
-	end % parameters
-	parameters (Access=private)
+		classnames   % Cell array of classes that may be stored in the tree
+	end % properties
+	properties (Access=protected)
 		lockfid      % FID of lock file
 	end % parameters private
 
@@ -30,22 +30,25 @@ class nsd_dbtree < nds_dbleaf
 			% DBTREEs are containers for NSD_DBLEAF elements.
 			%
 
-			error('not implemented.');
+			obj = obj@nsd_dbleaf(name);
+			if exist(path,'dir'),
+				obj.path = path;
+			end;
+			obj.classnames = classnames;
 
 		end % nsd_dbtree
-	end % methods
 
-	methods (Static)
 		function md = metadata(nsd_dbtree_obj)
 			% METADATA - Return the metadata from an NSD_DBTREE
 			%
 			%  MD = METADATA(NSD_DBTREE_OBJ);
 			%
-			if exist(filename(nds_dbtree_obj),'file'),
+			if exist(filename(nsd_dbtree_obj),'file'),
 				md = loadStructArray(filename(nsd_dbtree_obj));
 			else,
 				md = emptystruct;
-			end;
+			end
+		end % metadata
 
 		function mds = metadatastruct(nsd_dbtree_obj)
 			% METADATASTRUCT - return the metadata fields and values for an NSD_DBTREE
@@ -55,7 +58,7 @@ class nsd_dbtree < nds_dbleaf
 			% Returns the metadata fieldnames and values for NSD_DBTREE_OBJ.
 			% This is simply MDS = struct('is_nsd_dbtree',1,'name',NAME);
 				mds = struct('is_nsd_dbtree',1,'name',nsd_dbtree_obj.name);
-			end
+		end
 
 		function nsd_dbtree_obj=add(nsd_dbtree_obj, newobj)
 			% ADD - Add an item to an NSD_DBTREE
@@ -69,9 +72,18 @@ class nsd_dbtree < nds_dbleaf
 			%
 			% See also: NSD_DBTREE/REMOVE, NSD_DBTREE/SEARCH, NSD_DBTREE/LOAD
 
-			if ~ (isa(newobj,'nds_dbleaf') | isa(newobj,'nsd_dbtree')),
+			if ~ (isa(newobj,'nsd_dbleaf') | isa(newobj,'nsd_dbtree')),
 				error(['objects to be added must be descended from NSD_DBLEAF or NSD_DBTREE.']);
 			end
+
+			match = 0;
+			for i=1:length(nsd_dbtree_obj.classnames),
+				match = isa(newobj, nsd_dbtree_obj.classnames{i});
+				if match, break; end;
+			end;
+			if ~match,
+				error(['The object of class ' class(newobj) ' does not match any of the allowed classes for the NSD_DBTREE.']);
+			end;
 
 			   % right now, we need to read all metadata and write it back; silly really, and slow
 			md = metadata(nsd_dbtree_obj);
@@ -103,8 +115,11 @@ class nsd_dbtree < nds_dbleaf
 			% now we're ready to concatenate 
 			md(end+1) = omd;
 
+			% make our subdirectory if it doesn't exist
+			try, mkdir(nsd_dbtree_obj.dirname); end;
+
 			% write the object to our unique subdirectory
-			newobj.writeobjectfile(dirname(nsd_dbtree_obj));
+			newobj.writeobjectfile(nsd_dbtree_obj.dirname());
 
 			% now write md back to disk
 			nsd_dbtree_obj=nsd_dbtree_obj.writemetadata(md);
@@ -232,9 +247,9 @@ class nsd_dbtree < nds_dbleaf
 
 		end % numitems
 
-	end % methods (Static)
+	end % methods
 
-	methods (Private)
+	methods (Access=private)
 
 		function nsd_dbtree_ibj = writemetadata(nsd_dbtree_obj, metad, locked)
 			% WRITEMETADATA - write the metadata to the disk

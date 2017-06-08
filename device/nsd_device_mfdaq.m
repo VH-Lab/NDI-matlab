@@ -21,7 +21,7 @@
 % 
 
 classdef nsd_device_mfdaq < nsd_device
-	properties (SetAccess=protected)
+	properties (GetAcces=public,SetAccess=protected)
 
 	end
 	properties (Access=private) % potential private variables
