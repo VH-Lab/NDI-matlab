@@ -1,7 +1,6 @@
 classdef nsd_experiment < handle
 	% NSD_EXPERIMENT - NSD_EXPERIMENT object class
 
-
 	properties (SetAccess = protected)
 		reference         % A string reference for the experiment
 		device            % An array of NSD_DEVICE objects associated with this experiment
@@ -47,7 +46,9 @@ classdef nsd_experiment < handle
 			else,
 				if ~any(self.device==dev),
 					self.devicelist(end+1) = dev;
-				end; end; end 
+				end;
+			end;
+		end 
 		function self = device_rm(self, dev)
 			% DEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
 			%
@@ -63,7 +64,7 @@ classdef nsd_experiment < handle
 
 		% NSD_VARIABLE METHODS
 
-		function self = device_add(self, var)
+		function self = variable_add(self, var)
 			%VARIABLE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
 			%
 			%   SELF = VARIABLE_ADD(SELF, VAR)

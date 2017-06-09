@@ -6,7 +6,7 @@
 %  This is an abstract class that is overridden by specific devices.
 %
 
-classdef nsd_device < handle
+classdef nsd_device
 	properties (GetAccess=public, SetAccess=protected)
 		name;
 		datatree;
