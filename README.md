@@ -33,3 +33,5 @@ Still in early development
 - In input arguments and documentation, we'll use indexes instead of indices and try to keep other English language exceptions to a minimum
 
 - All error messages should be informative and give specific information about the problem, not just say 'an error occurred.'
+
+- All class names should include the full parentage of the object. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called 'nsd_device_mfdaq_mycompany' to indicate that the bject is descended from the nsd_device and nsd_device_mfdaq objects.

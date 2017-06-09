@@ -4,7 +4,7 @@ classdef nsd_dbleaf
 	%
 
 	properties (GetAccess=public,SetAccess=protected)
-                name           % String name; this must be like a valid Matlab variable name and not include file separators (:,/,\)
+		name           % String name; may be any string
 		objectfilename % Unique name that can be used to store the item in a file on disk
 		metadatanames  % Cell list of metadata fields
 	end % properties
@@ -13,9 +13,9 @@ classdef nsd_dbleaf
 		function obj = nsd_dbleaf(name, isfile)
 			% NSD_DBLEAF - Creates a named NSD_DBLEAF object
 			%
-			% OBJ = NSD_DBLEAF(NAME)
+			% OBJ = NSD_DBLEAF(LEAFNAME)
 			%
-			% Creates an NSD_DBLEAF object with name NAME. NAME must be like
+			% Creates an NSD_DBLEAF object with name LEAFNAME. LEAFNAME must be like
 			% a valid Matlab variable, although Matlab keywords are allowed.
 			% In addition, file separators such as ':', '/', and '\' are not 
 			% allowed.
@@ -29,6 +29,7 @@ classdef nsd_dbleaf
 
 			if nargin==0, % undocumented dummy version
 				obj = nsd_dbleaf('dummy');
+				return;
 			end
 
 			if nargin==1,
@@ -39,12 +40,12 @@ classdef nsd_dbleaf
 				obj = nsd_dbleaf('dummy');
 				obj = obj.readobjectfile(name);  % this will change the object's identity, might be an error, depends on Matlab error checking
 			else,
-				if islikevarname(name) & isempty(intersect(name,':/\')),
+				if ischar(name)
 					obj.name = name;
-					obj.objectfilename = ['object_' num2hex(now) '_' num2hex(rand) ]; % use time and randomness to ensure uniqueness
-					obj.metadatanames = {'objectfilename'};
+					obj.objectfilename = ['object_' num2hex(now) '_' num2hex(rand) '' ]; % use time and randomness to ensure uniqueness
+					obj.metadatanames = {'name','objectfilename'};
 				else,
-					error(['name ' name ' is not like a valid Matlab variable name, or contains :, /, or \.']); 
+					error(['name ' name ' must be a string.']); 
 				end
 			end
 
@@ -79,7 +80,7 @@ classdef nsd_dbleaf
 					error(['Could not open the file ' filename ' for reading.']);
 				end;
 				
-				classname = fgetl(fid);
+				classname = fgetl(fid),
 
 				if strcmp(classname,'nsd_dbleaf'),
 					% we have a plain nsd_dbleaf object, let's read it
@@ -89,8 +90,7 @@ classdef nsd_dbleaf
 					fclose(fid);
 				else,
 					fclose(fid);
-					eval(['obj = ' classname '();']);  % in many languages this would be bogus
-					obj = obj.readobjectfile(filename);
+					error(['Not a valid NSD_DBLEAF file:' filename ]);
 				end;
 
 		end % readobjectfile
@@ -107,13 +107,14 @@ classdef nsd_dbleaf
 			%
 			% See also: NSD_DBLEAF/NSD_DBLEAF
 			%
+
 				filename = [dirname filesep nsd_dbleaf_obj.objectfilename];
 				fid = fopen(filename,'wb');	% files will consistently use big-endian
 				if fid < 0,
 					error(['Could not open the file ' filename ' for writing.']);
 				end;
 
-				data = { class(nsd_dbleaf_obj) nsd_dbleaf_obj.name  nsd_dbleaf_obj.objectfilename };
+				data = nsd_dbleaf_obj.stringdatatosave();
 
 				for i=1:length(data),
 					count = fprintf(fid,'%s\n',data{i});
@@ -122,9 +123,22 @@ classdef nsd_dbleaf
 					end
 				end
 
-				fclose(fid)
+				fclose(fid);
 
 		end % writeobjectfile
+
+		function data = stringdatatosave(nsd_dbleaf_obj)
+			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
+			%
+			% DATA = STRINGDATATOSAVE(NSD_DBLEAF_OBJ)
+			%
+			% Return a cell array of strings to save to the objectfilename
+			%
+			% For NSD_DBLEAF, this returns the classname, name, and the objectfilename.
+			%
+				data = {class(nsd_dbleaf_obj) nsd_dbleaf_obj.name nsd_dbleaf_obj.objectfilename};
+
+		end % stringdatatosave
 
 	end % methods 
 
