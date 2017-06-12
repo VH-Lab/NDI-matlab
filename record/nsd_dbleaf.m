@@ -10,7 +10,7 @@ classdef nsd_dbleaf
 	end % properties
 
 	methods
-		function obj = nsd_dbleaf(name, isfile)
+		function obj = nsd_dbleaf(name, command)
 			% NSD_DBLEAF - Creates a named NSD_DBLEAF object
 			%
 			% OBJ = NSD_DBLEAF(LEAFNAME)
@@ -21,9 +21,10 @@ classdef nsd_dbleaf
 			% allowed.
 			%
 			% In an alternate construction, one may call
-			%   OBJ = NSD_DBLEAF(FILENAME, ISFILE)
-			% with ISFILE set to 1, and the object will be created by
-			% reading in data from the file FILENAME (full path).
+			%   OBJ = NSD_DBLEAF(FILENAME, COMMAND)
+			% with COMMAND set to 'OpenFile', and the object will be created by
+			% reading in data from the file FILENAME (full path). To developers:
+			% All NSD_DBLEAF descendents must offer this 2 element constructor.
 			%  
 			% See also: NSD_DBTREE
 
@@ -33,12 +34,12 @@ classdef nsd_dbleaf
 			end
 
 			if nargin==1,
-				isfile = 0;
+				command = '';
 			end
 
-			if isfile,
+			if strcmp(lower(command),lower('OpenFile')),
 				obj = nsd_dbleaf('dummy');
-				obj = obj.readobjectfile(name);  % this will change the object's identity, might be an error, depends on Matlab error checking
+				obj = obj.readobjectfile(name);
 			else,
 				if ischar(name)
 					obj.name = name;

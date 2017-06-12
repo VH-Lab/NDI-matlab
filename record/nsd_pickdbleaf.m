@@ -21,7 +21,7 @@ dummyclass = eval([classname '();']);
 
 if isa(dummyclass,'nsd_dbleaf'),
 	% we have an nsd_dbleaf object, let's read it
-	obj=feval(classname,filename,1);
+	obj=feval(classname,filename,'OpenFile');
 else, 
 	error(['Could not read valid NSD_DBLEAF data from file ' filename '.']);
 end;

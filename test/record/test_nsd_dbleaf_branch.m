@@ -54,7 +54,7 @@ d = dir([dirname filesep 'object_*.dbleaf_branch*']);
 ind=strfind(d(1).name,'.metadata');
 
 t = nsd_pickdbleaf([dirname filesep d(1).name(1:ind(1)-1)]),
-t = nsd_dbleaf_branch([dirname filesep d(1).name(1:ind(1)-1)],1),
+t = nsd_dbleaf_branch([dirname filesep d(1).name(1:ind(1)-1)],'OpenFile'),
 
 disp(['Now will test adding a branch to a branch']);
 t2 = nsd_dbleaf_branch(t,'testsubbranch',{'nsd_dbleaf'});
