@@ -402,47 +402,68 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 		end % writeobjectfile()
 
-		function data = stringdatatosave(nsd_dbleaf_branch_obj)
+		function [data,fieldnames] = stringdatatosave(nsd_dbleaf_branch_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
 			%
-			% DATA = STRINGDATATOSAVE(NSD_DBLEAF_OBJ)
+			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_DBLEAF_OBJ)
 			%
 			% Return a cell array of strings to save to the objectfilename
 			%
 			% For NSD_DBLEAF, this returns the classname, name, objectfilename, path, and classnames
 			%
-				data = stringdatatosave@nsd_dbleaf(nsd_dbleaf_branch_obj);
+			% FIELDNAMES is a set of names of the fields/properties of the object
+			% that are being stored.
+			%
+				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_dbleaf_branch_obj);
 				data{end+1} = nsd_dbleaf_branch_obj.path;
+				fieldnames{end+1} = 'path';
 				data{end+1} = cell2str(nsd_dbleaf_branch_obj.classnames);
+				fieldnames{end+1} = '$classnames';
 		end % stringdatatosave
 
-		function obj = readobjectfile(nsd_dbleaf_branch_obj, fname)
-			% READOBJECTFILE 
+		function [obj,properties_set] = setproperties(nsd_dbleaf_branch_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_DBLEAF_BRANCH object
 			%
-			% NSD_DBLEAF_BRANCH_OBJ = READOBJECTFILE(NSD_DBLEAF_BRANCH_OBJ, FNAME)
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_DBLEAF_BRANCH_OBJ, PROPERTIES, VALUES)
 			%
-			% Reads the NSD_DBLEAF_BRANCH_OBJ from the file FNAME.
-			
-				fid = fopen(fname,'rb');  % consistently use big-endian
-				if fid<0,
-					error(['Could not open the file ' filename ' for reading.']);
-				end;
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_DBLEAF_BRANCH_OBJ and returns the result in OBJ.
+			%
+			% If any entries in PROPERTIES are not properties of NSD_DBLEAF_BRANCH_OBJ, then
+			% that property is skipped.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+				fn = fieldnames(nsd_dbleaf_branch_obj);
+				obj = nsd_dbleaf_branch_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)), 
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						else,
+							eval(['obj.' properties{i}(2:end) '=' values{i} ';']);
+							properties_set{end+1} = properties{i}(2:end);
+						end
+					end
+				end
+			end
 
-				classname = fgetl(fid);
+ 		function obj = readobjectfile(nsd_dbleaf_branch_obj, fname)
+ 			% READOBJECTFILE 
+ 			%
+ 			% NSD_DBLEAF_BRANCH_OBJ = READOBJECTFILE(NSD_DBLEAF_BRANCH_OBJ, FNAME)
+ 			%
+ 			% Reads the NSD_DBLEAF_BRANCH_OBJ from the file FNAME.
+ 			
+				obj=readobjectfile@nsd_dbleaf(nsd_dbleaf_branch_obj, fname);
 
-				if strcmp(classname,'nsd_dbleaf_branch'),
-					% we have a plain nsd_dbleaf_branch object, let's read it
-					obj = nsd_dbleaf_branch_obj;
-					obj.name = fgetl(fid);
-					obj.objectfilename = fgetl(fid);
-					obj.path = fgetl(fid);
-					obj.classnames = eval(fgetl(fid));
-                                        fclose(fid);
-                                else,
-                                        fclose(fid);
-					error(['Not a valid NSD_DBLEAF_BRANCH file: ' fname '.']);
-                                end;
-		end; % readobjectfile
+				% now, if in memory only, we need to read in the metadata and leafs
+				if obj.isinmemory(),
+					error(['I do not do this correctly yet.']);
+				end
+			end; % readobjectfile
 
 		function [nsd_dbleaf_branch_obj, b] = lock(nsd_dbleaf_branch_obj)
 			% LOCK - lock the metadata file and object files so other processes cannot change them

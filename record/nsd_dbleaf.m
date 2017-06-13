@@ -42,7 +42,7 @@ classdef nsd_dbleaf < handle
 				obj = obj.readobjectfile(name);
 			else,
 				if ischar(name)
-					obj.name = name;
+					obj.name=name;
 					obj.objectfilename = ['object_' num2hex(now) '_' num2hex(rand) '' ]; % use time and randomness to ensure uniqueness
 					obj.metadatanames = {'name','objectfilename'};
 				else,
@@ -75,19 +75,22 @@ classdef nsd_dbleaf < handle
 			%
 			% Reads the NSD_DBLEAF_OBJ from the file FILENAME.
 			%
-
 				fid = fopen(filename, 'rb'); % files will consistently use big-endian
 				if fid<0,
 					error(['Could not open the file ' filename ' for reading.']);
 				end;
 				
-				classname = fgetl(fid),
+				classname = fgetl(fid);
 
-				if strcmp(classname,'nsd_dbleaf'),
-					% we have a plain nsd_dbleaf object, let's read it
+				if strcmp(classname,class(nsd_dbleaf_obj)),
+					% we have the right type of object
+					[dummy,fn] = nsd_dbleaf_obj.stringdatatosave(),
+					values = {};
 					obj = nsd_dbleaf_obj;
-					obj.name = fgetl(fid);
-					obj.objectfilename = fgetl(fid);
+					for i=2:length(fn),
+						values{i} = fgetl(fid);
+					end;
+					obj = setproperties(obj, fn, values);
 					fclose(fid);
 				else,
 					fclose(fid);
@@ -96,6 +99,35 @@ classdef nsd_dbleaf < handle
 
 		end % readobjectfile
 
+		function [obj,properties_set] = setproperties(nsd_dbleaf_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_DBLEAF object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_DBLEAF_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_DBLEAF_OBJ and returns the result in OBJ.
+			%
+			% If any entries in PROPERTIES are not properties of NSD_DBLEAF_OBJ, then 
+			% that property is skipped.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+				fn = fieldnames(nsd_dbleaf_obj);
+				obj = nsd_dbleaf_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						else,
+							eval(['obj.' properties{i}(2:end) '=' values{i} ';']);
+							properties_set{end+1} = properties{i}(2:end);
+						end
+					end
+				end
+			end
+			
 		function nsd_dbleaf_obj=writeobjectfile(nsd_dbleaf_obj, dirname)
 			% WRITEOBJECTFILE - write the object file to a file
 			% 
@@ -128,18 +160,23 @@ classdef nsd_dbleaf < handle
 
 		end % writeobjectfile
 
-		function data = stringdatatosave(nsd_dbleaf_obj)
+		function [data, fieldnames] = stringdatatosave(nsd_dbleaf_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
 			%
-			% DATA = STRINGDATATOSAVE(NSD_DBLEAF_OBJ)
+			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_DBLEAF_OBJ)
 			%
-			% Return a cell array of strings to save to the objectfilename
+			% Return a cell array of strings to save to the objectfilename.
+			%
+			% FIELDNAMES is a set of names of the fields/properties of the object
+			% that are being stored.
 			%
 			% For NSD_DBLEAF, this returns the classname, name, and the objectfilename.
 			%
 				data = {class(nsd_dbleaf_obj) nsd_dbleaf_obj.name nsd_dbleaf_obj.objectfilename};
+				fieldnames = { '', 'name', 'objectfilename' };
 
 		end % stringdatatosave
+
 
 	end % methods 
 
