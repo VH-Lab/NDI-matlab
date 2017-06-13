@@ -1,3 +1,4 @@
+classdef nsd_device < nsd_dbleaf
 % NSD_DEVICE - Create a new NSD_DEVICE class handle object
 %
 %  D = NSD_DEVICE(NAME, THEDATATREE)
@@ -6,23 +7,53 @@
 %  This is an abstract class that is overridden by specific devices.
 %
 
-classdef nsd_device
 	properties (GetAccess=public, SetAccess=protected)
-		name;
 		datatree;
 	end
 
 	methods
 		function obj = nsd_device(name,thedatatree)
-			if nargin==0 || nargin==1,
-				error(['Not enough input arguments.']);
-		elseif nargin==2,
-			obj.name = name;
-			obj.datatree = thedatatree;
-		else,
-			error(['Too many input arguments.']);
-			end;
-		end
+		% NSD_DEVICE - create a new NSD_DEVICE object
+		%
+		%  OBJ = NSD_DEVICE(NAME, THEDATATREE)
+		%
+		%  Creates an NSD_DEVICE with name NAME and NSD_DATATREE
+		%  THEDATATREE. THEDATATREE is an interface object to the raw data files
+		%  on disk that are read by the NSD_DEVICE.
+		%
+		%  NSD_DEVICE is an abstract class, and a specific implementation must be called.
+		%
+
+			loadfromfile = 0;
+
+			if nargin==0, % undocumented 0 argument creator
+				name = '';
+				thedatatree = [];
+			elseif nargin==2,
+				if ischar(thedatatree), % it is a command
+					loadfromfile = 1;
+					filename = name;
+					name='';
+					if ~strcmp(lower(thedatatree), lower('OpenFile')),
+						error(['Unknown command.']);
+					else,
+						thedatatree=[];
+					end
+				end;
+			else,
+				error(['Function requires 2 input arguments exactly.']);
+			end
+
+			obj = obj@nsd_dbleaf(name);
+			if loadfromfile,
+				obj = obj.readobjectfile(filename);
+			else,
+				obj.name = name;
+				obj.datatree = thedatatree;
+			end
+
+		end % nsd_device
+		
 
 		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch

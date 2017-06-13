@@ -21,9 +21,9 @@ classdef nsd_experiment < handle
 			% See also: NSD_EXPERIMENT/DEVICE_ADD, NSD_EXPERIMENT/DEVICE_RM, 
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
-			obj.reference = reference;
-			obj.device = [];
-			obj.variable = [];
+				obj.reference = reference;
+				obj.device = nsd_dbleaf_branch('','device',{'name'},1);
+				obj.variable = nsd_dbleaf_branch('','variable',{'name'},0);
 		end
 
 		%%%%%% DEVICE METHODS
@@ -39,16 +39,10 @@ classdef nsd_experiment < handle
 			%  
 			% See also: DEVICE_RM, NSD_EXPERIMENT
 
-			if ~isa(dev,'nsd_device'), error(['dev is not a nsd_device']); end;
+				if ~isa(dev,'nsd_device'), error(['dev is not a nsd_device']); end;
+				self.device = self.device.add(dev);
 
-			if isempty(self.device),
-				self.device = dev;
-			else,
-				if ~any(self.device==dev),
-					self.devicelist(end+1) = dev;
-				end;
-			end;
-		end 
+			end 
 		function self = device_rm(self, dev)
 			% DEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
 			%
@@ -58,9 +52,13 @@ classdef nsd_experiment < handle
 			%
 			% See also: DEVICE_ADD, NSD_EXPERIMENT
 			
-			indexes = find(self.device~=dev);
-			self.device = self.device(indexes);
-		end
+				leaf = self.device.load('name',dev.name);
+				if ~isempty(leaf),
+					self.device = self.device.remove(leaf.objectfilename);
+				else,
+					error(['No device named ' dev.name ' found.']);
+				end
+			end
 
 		% NSD_VARIABLE METHODS
 
@@ -75,15 +73,8 @@ classdef nsd_experiment < handle
 			%  
 			% See also: VARIABLE_RM, NSD_EXPERIMENT
 
-			if ~isa(var,'nsd_variable'), error(['var is not an NSD_VARIABLE']); end;
-
-			if isempty(self.variable),
-				self.variable= dev;
-			else,
-				if ~any(self.variable==dev),
-					self.variable(end+1) = dev;
-				end;
-			end;
+				if ~isa(var,'nsd_variable'), error(['var is not an NSD_VARIABLE']); end;
+				self.variable= self.variable.add(var);
 		end
 
 		function self = variable_rm(self, var)
@@ -96,8 +87,12 @@ classdef nsd_experiment < handle
 			%
 			% See also: VARIABLE_ADD, NSD_EXPERIMENT
 			
-			indexes = find(self.variable~=var);
-			self.variable= self.variable(indexes);
+				leaf = self.variable.load('name',var.name);
+				if ~isempty(leaf),
+					self.variable = self.variable.remove(leaf.objectfilename);
+				else,
+					error(['No variable named ' var.name ' found.']);
+				end
 		end
 
 		%%%%%% PATH methods

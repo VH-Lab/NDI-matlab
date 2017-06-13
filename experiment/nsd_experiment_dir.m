@@ -2,13 +2,13 @@
 %
 
 classdef nsd_experiment_dir < nsd_experiment & handle 
-	properties (SetAccess=protected)
-		pathname;
+	properties (GetAccess=public,SetAccess=protected)
+		path;
 	end
 
 	methods
 
-		function obj = nsd_experiment_dir(reference, pathname)
+		function obj = nsd_experiment_dir(reference, path)
 		% NSD_EXPERIMENT_DIR - Create a new NSD_EXPERIMENT_DIR object
 		%
 		%   E = NSD_EXPERIMENT_DIR(REFERENCE, PATHNAME)
@@ -19,10 +19,10 @@ classdef nsd_experiment_dir < nsd_experiment & handle
 		%
 		% See also: NSD_EXPERIMENT, NSD_EXPERIMENT_DIR/GETPATH
 
-
-		obj = obj@nsd_experiment(reference);
-		obj.pathname = pathname;
-	
+			obj = obj@nsd_experiment(reference);
+			obj.path = path;
+			obj.device = nsd_dbleaf_branch(obj.path,'device',{'nsd_device'},1);
+			obj.variable = nsd_dbleaf_branch(obj.path,'variable',{'nsd_variable'},0);
 		end;
 		
 		function p = getpath(self)
@@ -35,10 +35,8 @@ classdef nsd_experiment_dir < nsd_experiment & handle
 		% The path is some sort of reference to the storage location of
 		% the experiment. This might be a URL, or a file directory.
                 %
-                p = self.pathname;
+                p = self.path;
                 end;
-
-
 
 	end % methods
 
