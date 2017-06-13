@@ -1,4 +1,4 @@
-classdef nsd_dbleaf_branch < nsd_dbleaf
+classdef nsd_dbleaf_branch < nsd_dbleaf 
 	% NSD_DBLEAF_BRANCH - A class that manages branches of NSD_DBLEAF objects with searchable metadata
 	%
 	% 
@@ -44,7 +44,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% DBBRANCHs are containers for NSD_DBLEAF elements.
 			%
 
-			empty_dummy = 0;
 			loadfromfile = 0;
 			parent = [];
 
@@ -53,7 +52,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			end;
 
 			if nargin==0, % undocumented dummy
-				empty_dummy = 1;
 				name = '';
 				path='';
 				classnames = {};
@@ -76,11 +74,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			end;
 
 			obj = obj@nsd_dbleaf(name);
-			if empty_dummy,
-				obj.path=path;
-				obj.classnames=classnames;
-				return;
-			elseif loadfromfile,
+			if loadfromfile,
 				obj = obj.readobjectfile(path);
 				return;
 			end;
@@ -92,7 +86,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			obj.classnames = classnames;
 			obj.isflat = isflat;
 			if ~isempty(parent), parent.add(obj); end;
-			obj.mdmemory = struct;
+			obj.mdmemory = emptystruct;
 			obj.leaf = {};
 
 		end % nsd_dbleaf_branch
@@ -190,7 +184,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			if nsd_dbleaf_branch_obj.isinmemory(),
 				nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
-				leaf{end+1} = nsd_dbleaf_obj;           % add the leaf to memory
+				nsd_dbleaf_branch_obj.leaf{end+1} = newobj;           % add the leaf to memory
 			else,
 				% make our subdirectory if it doesn't exist
 				if ~exist(nsd_dbleaf_branch_obj.dirname(),'dir'),
@@ -268,7 +262,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%     indexes = search(nsd_dbleaf_branch_obj, 'class','nsd_spike(*.)');
 			%
 			md = nsd_dbleaf_branch_obj.metadata();  % undocumented second output
-			if isempty(md),
+			if isempty(md)
 				indexes = [];
 				return;
 			end;
@@ -322,7 +316,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 					if ~isempty(nsd_dbleaf_branch_obj.path),
 						obj{i} = nsd_pickdbleaf([nsd_dbleaf_branch_obj.dirname() filesep md(indexes(i)).objectfilename]);
 					else,
-						obj{i} = leaf{indexes(i)};
+						obj{i} = nsd_dbleaf_branch_obj.leaf{indexes(i)};
 					end
 				end
 				if numel(obj)==1,
@@ -464,14 +458,14 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			b = 0;
 
-			if isd_dbleaf_branch_obj.isinmemory(),
+			if nsd_dbleaf_branch_obj.isinmemory(),
 				number_of_tries = 30;
 				mytry = 0;  % try to get the lock, waiting up to 30 seconds
-				while ~isempty(nsd_dbleaf_branch_obj.lockfile) & (mytry < number_of_tries),
+				while ~isempty(nsd_dbleaf_branch_obj.lockfid) & (mytry < number_of_tries),
 					pause(1);
 					mytry = mytry + 1;
 				end;
-				if isemmpty(nsd_dbleaf_branch_obj.lockfid),
+				if isempty(nsd_dbleaf_branch_obj.lockfid),
 					nsd_dbleaf_branch_obj.lockfid = 'locked';
 					b = 1;
 				end
@@ -555,13 +549,14 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% Returns the directory name of the items of an NSD_DBLEAF_BRANCH object (full path).
 			%
 				if nsd_dbleaf_branch_obj.isinmemory(),
-					error(['No directory; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a directory.']);
-				end
+					dname = '';
+				else,
 
-				dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
+					dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
+				end
 		end % dirname()
 
-		function TF = isinmemory(nsd_dbleaf_branch_obj)
+		function tf = isinmemory(nsd_dbleaf_branch_obj)
 			% ISINMEMORY - determine if an NSD_DBLEAF_BRANCH object is storing its results in memory or filesystem
 			%
 			% TF = ISINMEMORY(NSD_DBLEAF_BRANCH_OBJ)

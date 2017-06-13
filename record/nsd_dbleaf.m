@@ -1,4 +1,4 @@
-classdef nsd_dbleaf 
+classdef nsd_dbleaf < handle
 	% NSD_DBLEAF - A node that fits into an NSD_DBTREE
 	%
 	%

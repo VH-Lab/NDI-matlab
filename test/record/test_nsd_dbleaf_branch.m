@@ -6,11 +6,17 @@ function test_nsd_dbleaf_branch(dirname)
 % Performs tests and demonstrations of the NSD_DBLEAF class and NSD_DBLEAF_BRANCH classes
 % while saving data in the directory DIRNAME (full path specification).
 %
+% If DIRNAME is empty, then TEST_NSD_DBLEAF_BRANCH tests the memory version
+%
 
-disp(['Start with a blank directory:'])
+testing_memory = isempty(dirname);
 
-try, rmdir(dirname,'s'); end;
-try, mkdir(dirname); end;
+if ~testing_memory,
+	disp(['Start with a blank directory:'])
+
+	try, rmdir(dirname,'s'); end;
+	try, mkdir(dirname); end;
+end;
 
   % create an NSD_DBLEAF object
 
@@ -49,12 +55,17 @@ t.metadata
 disp(['Now will test searching and loading...']);
 l = t.load('name','test')
 
-disp(['Now will test reading branch from disk']);
-d = dir([dirname filesep 'object_*.dbleaf_branch*']);
-ind=strfind(d(1).name,'.metadata');
 
-t = nsd_pickdbleaf([dirname filesep d(1).name(1:ind(1)-1)]),
-t = nsd_dbleaf_branch([dirname filesep d(1).name(1:ind(1)-1)],'OpenFile'),
+if ~testing_memory,
+
+	disp(['Now will test reading branch from disk']);
+	d = dir([dirname filesep 'object_*.dbleaf_branch*']);
+	ind=strfind(d(1).name,'.metadata');
+
+	t = nsd_pickdbleaf([dirname filesep d(1).name(1:ind(1)-1)]),
+	t = nsd_dbleaf_branch([dirname filesep d(1).name(1:ind(1)-1)],'OpenFile'),
+
+end;
 
 disp(['Now will test adding a branch to a branch']);
 t2 = nsd_dbleaf_branch(t,'testsubbranch',{'nsd_dbleaf'});
@@ -89,3 +100,5 @@ t.metadata
 disp(['branch of branch: How many entries do we have now? ' int2str(t2.numitems)])
 disp(['What is our metadata?'])
 t2.metadata
+
+
