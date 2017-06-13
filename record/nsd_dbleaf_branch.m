@@ -188,7 +188,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			% now deal with saving metadata
 
-			if isempty(nsd_dbleaf_branch_obj.path),
+			if nsd_dbleaf_branch_obj.isinmemory(),
 				nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
 				leaf{end+1} = nsd_dbleaf_obj;           % add the leaf to memory
 			else,
@@ -236,7 +236,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			tokeep = setdiff(1:numel(md),indexes);
 			md = md(tokeep);
 			
-			if isempty(nsd_dbleaf_branch_obj.path),
+			if nsd_dbleaf_branch_obj.isinmemory(), 
 				% update memory
 				nsd_dbleaf_branch_obj.mdmemory = md;
 				nsd_dbleaf_branch_obj.leaf = nsd_dbleaf_branch_obj.leaf(tokeep);
@@ -267,7 +267,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%     indexes = search(nsd_dbleaf_branch_obj, 'class','nsd_spikedata');
 			%     indexes = search(nsd_dbleaf_branch_obj, 'class','nsd_spike(*.)');
 			%
-			md = metadata(nsd_dbleaf_branch_obj);  % undocumented second output
+			md = nsd_dbleaf_branch_obj.metadata();  % undocumented second output
 			if isempty(md),
 				indexes = [];
 				return;
@@ -342,7 +342,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% Returns the number of items in the NSD_DBLEAF_BRANCH object.
 			%
 
-			md = metadata(nsd_dbleaf_branch_obj);
+			md = nsd_dbleaf_branch_obj.metadata();
 			n = numel(md);
 
 		end % numitems
@@ -363,6 +363,9 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% 
 
 			if nargin<2 | isempty(thedirname),
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					error(['This branch ''' nsd_dbleaf_branch_obj.name ''' has no path. THEDIRNAME must be provided.']);
+				end;
 				thedirname=nsd_dbleaf_branch_obj.path;
 			end;
 
@@ -460,18 +463,27 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% See also: NSD_DBLEAF_BRANCH/LOCK NSD_DBLEAF_BRANCH/UNLOCK NSD_DBLEAF_BRANCH/LOCKFILENAME
 
 			b = 0;
-			if isempty(nsd_dbleaf_branch_obj.lockfid),
-				if isempty(nsd_dbleaf_branch_obj.path),
-					lockfid = 'locked';
+
+			if isd_dbleaf_branch_obj.isinmemory(),
+				number_of_tries = 30;
+				mytry = 0;  % try to get the lock, waiting up to 30 seconds
+				while ~isempty(nsd_dbleaf_branch_obj.lockfile) & (mytry < number_of_tries),
+					pause(1);
+					mytry = mytry + 1;
+				end;
+				if isemmpty(nsd_dbleaf_branch_obj.lockfid),
+					nsd_dbleaf_branch_obj.lockfid = 'locked';
 					b = 1;
-				else,
+				end
+			else,
+				if isempty(nsd_dbleaf_branch_obj.lockfid),
 					lockfid = checkout_lock_file(nsd_dbleaf_branch_obj.lockfilename());
 					if lockfid>0,
 						nsd_dbleaf_branch_obj.lockfid = lockfid;
 						b = 1;
-					end;
-				end;
-			end;
+					end
+				end
+			end
 
 		end % lock()
 			
@@ -489,12 +501,16 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			b = 1;
 			if ~isempty(nsd_dbleaf_branch_obj.lockfid),
-				try,
-					fclose(nsd_dbleaf_branch_obj.lockfid);
-					delete(nsd_dbleaf_branch_obj.lockfilename());
+				if nsd_dbleaf_branch_obj.isinmemory(),
 					nsd_dbleaf_branch_obj.lockfid = [];
-				catch,
-					b = 0;
+				else,
+					try,
+						fclose(nsd_dbleaf_branch_obj.lockfid);
+						delete(nsd_dbleaf_branch_obj.lockfilename());
+						nsd_dbleaf_branch_obj.lockfid = [];
+					catch,
+						b = 0;
+					end;
 				end;
 			end;
 
@@ -509,6 +525,9 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% See also: NSD_DBLEAF_BRANCH/LOCK NSD_DBLEAF_BRANCH/UNLOCK NSD_DBLEAF_BRANCH/LOCKFILENAME
 
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					error(['No lockfilename; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a path.']);
+				end
 				fname = filename(nsd_dbleaf_branch_obj);
 				lockfname = [fname '-lock'];
 
@@ -521,8 +540,11 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% Returns the filename of the metadata of an NSD_DBLEAF_BRANCH object (full path).
 			%
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					error(['No directory; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a path.']);
+				end
 
-			fname = [nsd_dbleaf_branch_obj.path filesep nsd_dbleaf_branch_obj.objectfilename '.metadata.dbleaf_branch.nsd'];
+				fname = [nsd_dbleaf_branch_obj.path filesep nsd_dbleaf_branch_obj.objectfilename '.metadata.dbleaf_branch.nsd'];
 		end % filename()
 
 		function dname = dirname(nsd_dbleaf_branch_obj)
@@ -532,11 +554,11 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% Returns the directory name of the items of an NSD_DBLEAF_BRANCH object (full path).
 			%
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					error(['No directory; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a directory.']);
+				end
 
-			if isinmemory(nsd_dbleaf_branch_obj),
-				error(['No directory; this branch '''  '''' only stores in memory
-
-			dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
+				dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
 		end % dirname()
 
 		function TF = isinmemory(nsd_dbleaf_branch_obj)
@@ -549,7 +571,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% See also: NSD_DBLEAF_BRANCH
 			
-			tf = isempty(nsd_dbleaf_branch_obj.path);
+				tf = isempty(nsd_dbleaf_branch_obj.path);
 		end
 
 	end % methods
