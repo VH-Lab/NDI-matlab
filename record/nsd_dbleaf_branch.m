@@ -551,7 +551,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				if nsd_dbleaf_branch_obj.isinmemory(),
 					dname = '';
 				else,
-
 					dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
 				end
 		end % dirname()
