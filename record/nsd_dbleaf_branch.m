@@ -373,6 +373,12 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			
 			b = 1;
 
+			% now we have to proceed in 3 steps
+			% a) obtain the lock so we know nobody else is going to be writing our metadata file
+			% b) write our metadata 
+			% c) if we are in memory only, write our leafs
+			% d) write our own object data
+
 			% semaphore
 			if ~locked,
 				[nsd_dbleaf_branch_obj,b] = nsd_dbleaf_branch_obj.lock();
@@ -390,6 +396,19 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 						delete(filename(nsd_dbleaf_branch_obj));
 					end;
 				end;
+
+				% now, if in memory, write leaf objects
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					% make our subdirectory if it doesn't exist
+					if exist(nsd_dbleaf_branch_obj.dirname(thedirname),'dir'),
+						rmdir(nsd_dbleaf_branch_obj.dirname(thedirname),'s');
+					end;
+					mkdir(nsd_dbleaf_branch_obj.dirname(thedirname));
+					for i=1:numel(nsd_dbleaf_branch_obj.leaf),
+						nsd_dbleaf_branch_obj.leaf{i}.writeobjectfile(nsd_dbleaf_branch_obj.dirname(thedirname));  % add the leaf to disk
+					end
+				end
+
 				if ~locked,
 					[nsd_dbleaf_branch_obj,b] = nsd_dbleaf_branch_obj.unlock();
 					if b==0, error(['yikes! could not delete lock file!']); end;
@@ -455,13 +474,18 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
  			%
  			% NSD_DBLEAF_BRANCH_OBJ = READOBJECTFILE(NSD_DBLEAF_BRANCH_OBJ, FNAME)
  			%
- 			% Reads the NSD_DBLEAF_BRANCH_OBJ from the file FNAME.
+ 			% Reads the NSD_DBLEAF_BRANCH_OBJ from the file FNAME (full path).
  			
 				obj=readobjectfile@nsd_dbleaf(nsd_dbleaf_branch_obj, fname);
 
 				% now, if in memory only, we need to read in the metadata and leafs
 				if obj.isinmemory(),
-					error(['I do not do this correctly yet.']);
+					[parent,myfile]=fileparts(fname);
+					obj.mdmemory = loadStructArray(obj.filename(parent));
+					obj.leaf = {};
+					for i=1:numel(obj.mdmemory),
+						obj.leaf{i} = readobjectfile([obj.dirname(parent) filesep obj.mdmemory(i).objectfilename]);
+					end
 				end
 			end; % readobjectfile
 
@@ -531,49 +555,63 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 		end % unlock()
 
-		function lockfname = lockfilename(nsd_dbleaf_branch_obj)
+		function lockfname = lockfilename(nsd_dbleaf_branch_obj, usethispath)
 			% LOCKFILENAME - the filename of the lock file that serves as a semaphore to maintain data integrity
 			%
-			% LOCKFNAME = LOCKFILENAME(NSD_DBLEAF_BRANCH_OBJ)
+			% LOCKFNAME = LOCKFILENAME(NSD_DBLEAF_BRANCH_OBJ, [USETHISPATH])
 			%
 			% Returns the filename that is used for locking the metadata and object data files.
 			%
+			% If the NSD_DBLEAF_BRANCH object is in memory only, it is necessary to provide the path
+			% with USETHISPATH.
+			%
 			% See also: NSD_DBLEAF_BRANCH/LOCK NSD_DBLEAF_BRANCH/UNLOCK NSD_DBLEAF_BRANCH/LOCKFILENAME
 
-				if nsd_dbleaf_branch_obj.isinmemory(),
-					error(['No lockfilename; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a path.']);
+				if nargin<2,
+					if nsd_dbleaf_branch_obj.isinmemory(),
+						error(['No lockfilename; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a path.']);
+					else,
+						usethispath = nsd_dbleaf_branch_obj.path;
+					end
 				end
-				fname = filename(nsd_dbleaf_branch_obj);
+				fname = filename(nsd_dbleaf_branch_obj,usethispath);
 				lockfname = [fname '-lock'];
 
 		end % lockfilename()
 			
-		function fname = filename(nsd_dbleaf_branch_obj)
-			% FILENAME - Return the (full path) database file name associated with an NSD_DBLEAF_BRANCH
+		function fname = filename(nsd_dbleaf_branch_obj, usethispath)
+			% FILENAME - Return the (full path) metadata database file name associated with an NSD_DBLEAF_BRANCH
 			%
-			% FNAME = FILENAME(NSD_DBLEAF_BRANCH_OBJ)
+			% FNAME = FILENAME(NSD_DBLEAF_BRANCH_OBJ, [USETHISPATH])
 			%
 			% Returns the filename of the metadata of an NSD_DBLEAF_BRANCH object (full path).
 			%
-				if nsd_dbleaf_branch_obj.isinmemory(),
-					error(['No directory; this branch ''' nsd_dbleaf_branch_obj.name  ''' does not have a path.']);
+			% If the NSD_DBLEAF_BRANCH object is in memory only, it is necessary to provide the path
+			% with USETHISPATH.
+			%
+				if ~nsd_dbleaf_branch_obj.isinmemory(),
+					usethispath = nsd_dbleaf_branch_obj.path;
 				end
-
-				fname = [nsd_dbleaf_branch_obj.path filesep nsd_dbleaf_branch_obj.objectfilename '.metadata.dbleaf_branch.nsd'];
+				fname = [usethispath filesep nsd_dbleaf_branch_obj.objectfilename '.metadata.dbleaf_branch.nsd'];
 		end % filename()
 
-		function dname = dirname(nsd_dbleaf_branch_obj)
+		function dname = dirname(nsd_dbleaf_branch_obj, usethispath)
 			% DIRNAME - Return the (full path) database directory name where objects are stored
 			%
-			% DNAME = DIRNAME(NSD_DBLEAF_BRANCH_OBJ)
+			% DNAME = DIRNAME(NSD_DBLEAF_BRANCH_OBJ, [USETHISPATH])
 			%
 			% Returns the directory name of the items of an NSD_DBLEAF_BRANCH object (full path).
 			%
-				if nsd_dbleaf_branch_obj.isinmemory(),
-					dname = '';
-				else,
-					dname = [nsd_dbleaf_branch_obj.path filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
+			% If the NSD_DBLEAF_BRANCH object is in memory only, it is necessary to provide the path
+			% with USETHISPATH.
+			%
+				if ~nsd_dbleaf_branch_obj.isinmemory(),
+					usethispath = nsd_dbleaf_branch_obj.path;
+				elseif nargin<2, % it is a memory object and it has no path, so should return empty
+					dname = ''; 
+					return;
 				end
+				dname = [usethispath filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
 		end % dirname()
 
 		function tf = isinmemory(nsd_dbleaf_branch_obj)
