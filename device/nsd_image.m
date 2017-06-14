@@ -6,8 +6,8 @@ classdef (Abstract) nsd_device_image < nsd_device
     end
 
     methods
-        function obj = nsd_device_image(name,datatree)
-            obj = obj@nsd_device(name,datatree);
+        function obj = nsd_device_image(name,filetree)
+            obj = obj@nsd_device(name,filetree);
         end
     end
     

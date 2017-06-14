@@ -43,7 +43,8 @@ classdef nsd_dbleaf < handle
 			else,
 				if ischar(name)
 					obj.name=name;
-					obj.objectfilename = ['object_' num2hex(now) '_' num2hex(rand) '' ]; % use time and randomness to ensure uniqueness
+					% use time and randomness to ensure uniqueness of objectfilename
+					obj.objectfilename = [string2filestring(obj.name) '_object_' num2hex(now) '_' num2hex(rand) '' ]; 
 					obj.metadatanames = {'name','objectfilename'};
 				else,
 					error(['name ' name ' must be a string.']); 
@@ -112,6 +113,10 @@ classdef nsd_dbleaf < handle
 			%
 			% The properties that are actually set are returned in PROPERTIESSET.
 			%
+			% Developer note: when creating a subclass of NSD_DBLEAF that has its own properties that
+			% need to be read/written from disk, copy this method SETPROPERTIES into the new class so that
+			% you will be able to set all properties (this instance can only set properties of NSD_DBLEAF).
+			%
 				fn = fieldnames(nsd_dbleaf_obj);
 				obj = nsd_dbleaf_obj;
 				properties_set = {};
@@ -171,6 +176,10 @@ classdef nsd_dbleaf < handle
 			% that are being stored.
 			%
 			% For NSD_DBLEAF, this returns the classname, name, and the objectfilename.
+			%
+			% Developer note: If you create a subclass of NSD_DBLEAF with properties, it is recommended
+			% that you implement your own version of this method. If you have only properties that can be stored
+			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
 			%
 				data = {class(nsd_dbleaf_obj) nsd_dbleaf_obj.name nsd_dbleaf_obj.objectfilename};
 				fieldnames = { '', 'name', 'objectfilename' };

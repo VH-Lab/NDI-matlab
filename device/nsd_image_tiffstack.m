@@ -1,32 +1,32 @@
-% function d = sAPI_image_tiffstack(name,thedatatree, exp)
+% function d = sAPI_image_tiffstack(name,thefiletree, exp)
 %
 % sAPI_image_tiffstack_struct = struct([]);
-% S = sAPI_image(name,thedatatree,exp);
+% S = sAPI_image(name,thefiletree,exp);
 %
 % d = class(sAPI_image_tiffstack_struct, 'sAPI_image_tiffstack',S);
 
 classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
 % SAPI_IMAGE_TIFFSTACK - Create a new SAPI_IMAGE_TIFFSTACK object
 %
-%  D = SAPI_IMAGE_TIFFSTACK(NAME, THEDATATREE,EXP)
+%  D = SAPI_IMAGE_TIFFSTACK(NAME, THEFILETREE,EXP)
 %
 %  Creates a new SAPI_IMAGE_TIFFSTACK object with NAME, THEDATAREE and associated EXP.
 %
    properties
    end
    methods
-      function obj = nsd_image_tiffstack(obj,exp,name,thedatatree,reference)
+      function obj = nsd_image_tiffstack(obj,exp,name,thefiletree,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,
             obj.exp = exp;
             obj.name = name;
-            obj.datatree = thedatatree;
+            obj.filetree = thefiletree;
             obj.reference = 'time';
         elseif nargin==5,
             obj.exp = exp;
             obj.name = name;
-            obj.datatree = thedatatree;
+            obj.filetree = thefiletree;
             obj.reference = reference;
         else,
             error(['Too many input arguments.']);

@@ -75,7 +75,8 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			obj = obj@nsd_dbleaf(name);
 			if loadfromfile,
-				obj = obj.readobjectfile(path);
+				fullfilename = path; % path is really a full file name
+				obj = obj.readobjectfile(fullfilename);
 				return;
 			end;
 			if exist(path,'dir') | isempty(path),
@@ -611,7 +612,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 					dname = ''; 
 					return;
 				end
-				dname = [usethispath filesep 'subdir' nsd_dbleaf_branch_obj.objectfilename '.dbleaf_branch.nsd'];
+				dname = [usethispath filesep nsd_dbleaf_branch_obj.objectfilename '.subdir.dbleaf_branch.nsd'];
 		end % dirname()
 
 		function tf = isinmemory(nsd_dbleaf_branch_obj)

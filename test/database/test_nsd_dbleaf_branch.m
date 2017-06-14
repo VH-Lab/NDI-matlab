@@ -59,7 +59,7 @@ l = t.load('name','test')
 if ~testing_memory,
 
 	disp(['Now will test reading branch from disk']);
-	d = dir([dirname filesep 'object_*.dbleaf_branch*']);
+	d = dir([dirname filesep '*object_*.dbleaf_branch*']);
 	ind=strfind(d(1).name,'.metadata');
 
 	t = nsd_pickdbleaf([dirname filesep d(1).name(1:ind(1)-1)]),

@@ -13,15 +13,15 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 	end % properties
 
 	methods
-		function obj = nsd_device_mfdaq_intan(name,thedatatree)
+		function obj = nsd_device_mfdaq_intan(name,thefiletree)
 		% NSD_DEVICE_MFDAQ_INTAN - Create a new NSD_DEVICE_MFDAQ_INTAN object
 		%
-		%  D = NSD_DEVICE_MFDAQ_INTAN(NAME,THEDATATREE)
+		%  D = NSD_DEVICE_MFDAQ_INTAN(NAME,THEFILETREE)
 		%
 		%  Creates a new NSD_DEVICE_MFDAQ_INTAN object with name NAME and associated
-		%  datatree THEDATATREE.
+		%  filetree THEFILETREE.
 		%
-			obj = obj@nsd_device_mfdaq(name,thedatatree);
+			obj = obj@nsd_device_mfdaq(name,thefiletree);
 		end
 
 		function channels = getchannels(self)
@@ -40,7 +40,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(self.datatree);
+			N = numepochs(self.filetree);
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -55,7 +55,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 				% then, open RHD files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(self.datatree, n);
+				filelist = getepochfiles(self.filetree, n);
 
 				filename = filelist{1}; % assume only 1 file
 
@@ -119,7 +119,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = self.datatree.getepochfiles(epoch);
+			filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 			intanchanneltype = self.mfdaqchanneltype2intanchanneltype(channeltype);
 
@@ -144,7 +144,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%
 		% SR is the list of sample rate from specified channels
 
-			filename = self.datatree.getepochfiles(epoch);
+			filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
 			head = read_Intan_RHD2000_header(filename);
