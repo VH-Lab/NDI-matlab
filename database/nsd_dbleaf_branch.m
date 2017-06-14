@@ -238,6 +238,8 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			else,
 				% update the file
 				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile(nsd_dbleaf_branch_obj.path,md,1); % we have the lock
+				% delete the leaf from disk
+				delete([nsd_dbleaf_branch_obj.dirname() filesep objectfilename]);
 			end
 
 			nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.unlock();

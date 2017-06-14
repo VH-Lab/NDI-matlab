@@ -28,14 +28,14 @@ classdef nsd_device_mfdaq < nsd_device
 	end
 
 	methods
-		function obj = nsd_device_mfdaq(name, thefiletree)
+		function obj = nsd_device_mfdaq(varargin)
 		% NSD_DEVICE_MFDAQ - Create a new multifunction DAQ object
 		%
 		%  D = NSD_DEVICE_MFDAQ(NAME, THEFILETREE)
 		%
 		%  Creates a new NSD_DEVICE_MFDAQ object with NAME, and FILETREE.
 		%  This is an abstract class that is overridden by specific devices.
-			obj = obj@nsd_device(name, thefiletree);
+			obj = obj@nsd_device(varargin{:});
 		end; % nsd_device_mfdaq
 
 		function channels = getchannels(thedev)

@@ -13,7 +13,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 	end % properties
 
 	methods
-		function obj = nsd_device_mfdaq_intan(name,thefiletree)
+		function obj = nsd_device_mfdaq_intan(varargin)
 		% NSD_DEVICE_MFDAQ_INTAN - Create a new NSD_DEVICE_MFDAQ_INTAN object
 		%
 		%  D = NSD_DEVICE_MFDAQ_INTAN(NAME,THEFILETREE)
@@ -21,7 +21,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%  Creates a new NSD_DEVICE_MFDAQ_INTAN object with name NAME and associated
 		%  filetree THEFILETREE.
 		%
-			obj = obj@nsd_device_mfdaq(name,thefiletree);
+			obj = obj@nsd_device_mfdaq(varargin{:})
 		end
 
 		function channels = getchannels(self)

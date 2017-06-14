@@ -58,3 +58,6 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
+exp.device_rm(dev1); % remove the device so the demo can run again
+
+
