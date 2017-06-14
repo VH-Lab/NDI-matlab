@@ -1,5 +1,5 @@
 classdef nsd_dbleaf < handle
-	% NSD_DBLEAF - A node that fits into an NSD_DBTREE
+	% NSD_DBLEAF - A node that fits into an NSD_DBLEAF_BRANCH
 	%
 	%
 
@@ -185,7 +185,6 @@ classdef nsd_dbleaf < handle
 				fieldnames = { '', 'name', 'objectfilename' };
 
 		end % stringdatatosave
-
 
 	end % methods 
 

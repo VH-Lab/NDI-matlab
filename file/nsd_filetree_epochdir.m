@@ -2,7 +2,7 @@
 %
 %  DT = FILETREE_EPOCHDIR(EXP, FILETYPE)   
 %
-%  Creates a new data tree object with the experiment name 
+%  Creates a new file tree object with the experiment name 
 %  This class in inhereted from filetree and with epochdir organization
 %
 

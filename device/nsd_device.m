@@ -5,7 +5,7 @@ classdef nsd_device < nsd_dbleaf
 %
 %  Creates a new NSD_DEVICE object with name and specific data tree object.
 %  This is an abstract class that is overridden by specific devices.
-%
+
 
 	properties (GetAccess=public, SetAccess=protected)
 		filetree;
@@ -53,7 +53,30 @@ classdef nsd_device < nsd_dbleaf
 			end
 
 		end % nsd_device
-		
+
+		function obj = readobjectfile(nsd_device_obj, fname)
+			% READOBJECTFILE
+			%
+			% NSD_DEVICE_OBJ = READOBJECTFILE(NSD_DEVICE_OBJ, FNAME)
+			%
+			% Reads the NSD_DEVICE_OBJ from the file FNAME (full path).
+
+				obj=readobjectfile@nsd_dbleaf(nsd_device_obj, fname);
+				ft = nsd_filetree;
+				obj.filetree=ft.readobjectfile([fname '.filetree.device.nsd']);
+		end % readobjectfile
+
+		function obj = writeobjectfile(nsd_device_obj, dirname)
+			% WRITEOBJECTFILE - write an nsd_device to a directory
+			%
+			% NSD_DEVICE_OBJ = WRITEOBJECTFILE(NSD_DEVICE_OBJ, dirname)
+			%
+			% Reads the NSD_DEVICE_OBJ from the file FNAME (full path).
+
+				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname);
+				obj.filetree.writeobjectfile([dirname filesep nsd_device_obj.objectfilename '.filetree.device.nsd']);
+				
+		end % writeobjectfile
 
 		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch
