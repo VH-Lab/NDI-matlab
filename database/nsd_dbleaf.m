@@ -1,11 +1,10 @@
-classdef nsd_dbleaf < handle
+classdef nsd_dbleaf < nsd_base
 	% NSD_DBLEAF - A node that fits into an NSD_DBLEAF_BRANCH
 	%
 	%
 
 	properties (GetAccess=public,SetAccess=protected)
 		name           % String name; may be any string
-		objectfilename % Unique name that can be used to store the item in a file on disk
 		metadatanames  % Cell list of metadata fields
 	end % properties
 
@@ -28,6 +27,8 @@ classdef nsd_dbleaf < handle
 			%  
 			% See also: NSD_DBTREE
 
+			obj=obj@nsd_base;
+
 			if nargin==0, % undocumented dummy version
 				obj = nsd_dbleaf('dummy');
 				return;
@@ -44,7 +45,7 @@ classdef nsd_dbleaf < handle
 				if ischar(name)
 					obj.name=name;
 					% use time and randomness to ensure uniqueness of objectfilename
-					obj.objectfilename = [string2filestring(obj.name) '_object_' num2hex(now) '_' num2hex(rand) '' ]; 
+					obj.objectfilename = [string2filestring(obj.name) obj.objectfilename];
 					obj.metadatanames = {'name','objectfilename'};
 				else,
 					error(['name ' name ' must be a string.']); 
@@ -68,37 +69,6 @@ classdef nsd_dbleaf < handle
 			end
 
 		end % metadatastruct
-
-		function obj = readobjectfile(nsd_dbleaf_obj, filename)
-			% READOBJECTFILE - read the object from a file
-			%
-			% OBJ = READOBJECTFILE(NSD_DBLEAF_OBJ, FILENAME)
-			%
-			% Reads the NSD_DBLEAF_OBJ from the file FILENAME.
-			%
-				fid = fopen(filename, 'rb'); % files will consistently use big-endian
-				if fid<0,
-					error(['Could not open the file ' filename ' for reading.']);
-				end;
-				
-				classname = fgetl(fid);
-
-				if strcmp(classname,class(nsd_dbleaf_obj)),
-					% we have the right type of object
-					[dummy,fn] = nsd_dbleaf_obj.stringdatatosave(),
-					values = {};
-					obj = nsd_dbleaf_obj;
-					for i=2:length(fn),
-						values{i} = fgetl(fid);
-					end;
-					obj = setproperties(obj, fn, values);
-					fclose(fid);
-				else,
-					fclose(fid);
-					error(['Not a valid NSD_DBLEAF file:' filename ]);
-				end;
-
-		end % readobjectfile
 
 		function [obj,properties_set] = setproperties(nsd_dbleaf_obj, properties, values)
 			% SETPROPERTIES - set the properties of an NSD_DBLEAF object
@@ -133,38 +103,6 @@ classdef nsd_dbleaf < handle
 				end
 			end
 			
-		function nsd_dbleaf_obj=writeobjectfile(nsd_dbleaf_obj, dirname)
-			% WRITEOBJECTFILE - write the object file to a file
-			% 
-			% WRITEOBJECTFILE(NSD_DBLEAF_OBJ, DIRNAME)
-			%
-			% Writes the NSD_DBLEAF_OBJ to a file in a manner that can be
-			% read by the creator function NSD_DBLEAF.
-			%
-			% Writes to the path DIRNAME/NSD_DBLEAF_OBJ.OBJECTFILENAME
-			%
-			% See also: NSD_DBLEAF/NSD_DBLEAF
-			%
-
-				filename = [dirname filesep nsd_dbleaf_obj.objectfilename];
-				fid = fopen(filename,'wb');	% files will consistently use big-endian
-				if fid < 0,
-					error(['Could not open the file ' filename ' for writing.']);
-				end;
-
-				data = nsd_dbleaf_obj.stringdatatosave();
-
-				for i=1:length(data),
-					count = fprintf(fid,'%s\n',data{i});
-					if count~=numel(data{i})+1,
-						error(['Error writing to the file ' filename '.']);
-					end
-				end
-
-				fclose(fid);
-
-		end % writeobjectfile
-
 		function [data, fieldnames] = stringdatatosave(nsd_dbleaf_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
 			%
@@ -181,8 +119,10 @@ classdef nsd_dbleaf < handle
 			% that you implement your own version of this method. If you have only properties that can be stored
 			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
 			%
-				data = {class(nsd_dbleaf_obj) nsd_dbleaf_obj.name nsd_dbleaf_obj.objectfilename};
-				fieldnames = { '', 'name', 'objectfilename' };
+
+				[data,fieldnames] = stringdatatosave@nsd_base(nsd_dbleaf_obj);
+				data{end+1} = nsd_dbleaf_obj.name;
+				fieldnames{end+1} = 'name';
 
 		end % stringdatatosave
 

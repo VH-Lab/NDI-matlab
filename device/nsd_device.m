@@ -63,7 +63,13 @@ classdef nsd_device < nsd_dbleaf
 
 				obj=readobjectfile@nsd_dbleaf(nsd_device_obj, fname);
 				ft = nsd_filetree;
-				obj.filetree=ft.readobjectfile([fname '.filetree.device.nsd']);
+				[dirname] = fileparts(fname); % same parent directory
+				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
+				f = dir([subdirname filesep 'object_*']);
+				if isempty(f),
+					error(['Could not find filetree file!']);
+				end
+				obj.filetree=ft.readobjectfile([subdirname filesep f(1).name]);
 		end % readobjectfile
 
 		function obj = writeobjectfile(nsd_device_obj, dirname)
@@ -74,9 +80,30 @@ classdef nsd_device < nsd_dbleaf
 			% Reads the NSD_DEVICE_OBJ from the file FNAME (full path).
 
 				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname);
-				obj.filetree.writeobjectfile([dirname filesep nsd_device_obj.objectfilename '.filetree.device.nsd']);
+				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
+				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
+				obj.filetree.writeobjectfile(subdirname)
 				
 		end % writeobjectfile
+
+		function b = deleteobjectfile(nsd_device_obj, thedirname)
+			% DELETEOBJECTFILE - Delete / remove the object file (or files) for NSD_DEVICE
+			%
+			% B = DELETEOBJECTFILE(NSD_DEVICE_OBJ, THEDIRNAME)
+			%
+			% Delete all files associated with NSD_DEVICE_OBJ in directory THEDIRNAME (full path).
+			%
+			% If no directory is given, NSD_DEVICE_OBJ.PATH is used.
+			%
+			% B is 1 if the process succeeds, 0 otherwise.
+			%
+
+				b = 1;
+				subdirname = [thedirname filesep nsd_device_obj.objectfilename '.filetree.device.nsd'];
+				rmdir(subdirname,'s');
+				b = b&deleteobjectfile@nsd_dbleaf(nsd_device_obj, thedirname);
+		end % deletefileobject
+
 
 		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch

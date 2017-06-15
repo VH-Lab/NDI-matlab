@@ -7,14 +7,12 @@
 %    See NSD_FILETREE/NSD_FILETREE
 %
 
-classdef nsd_filetree < handle
+classdef nsd_filetree < nsd_base
 	properties (GetAccess=public, SetAccess=protected)
-		path;
-		fileparameters;
-		epochrecord_class;
-		epochrecord_fileparameters;
-	end
-	properties (Access=private) % potential private variables
+		path                        % The file path of the directory to be examined
+		fileparameters              % The parameters for finding files (see NSD_FILETREE/SETFILEPARAMETERS)
+		epochrecord_class           % The class of epoch_record to be used; nsd_epochrecord is default
+		epochrecord_fileparameters  % The parameters for finding the epochrecords (see NSD_FILETREE/SETEPOCHRECORDFILEPARAMETERS)
 	end
 
 	methods
@@ -281,69 +279,7 @@ classdef nsd_filetree < handle
 						end
 					end
 				end
-			end % setproperties
-
-		function obj = readobjectfile(nsd_filetree_obj, filename)
-                        % READOBJECTFILE - read the object from a file
-			%
-			% OBJ = READOBJECTFILE(NSD_FILETREE_OBJ, FILENAME)
-			%
-			% Reads the NSD_FILETREE_OBJ from the file FILENAME.
-			%
-				fid = fopen(filename, 'rb'); % files will consistently use big-endian
-				if fid<0,
-					error(['Could not open the file ' filename ' for reading.']);
-				end;
-
-				classname = fgetl(fid);
-
-				if strcmp(classname,class(nsd_filetree_obj)),
-					% we have the right type of object
-					[dummy,fn] = nsd_filetree_obj.stringdatatosave(),
-					values = {};
-					obj = nsd_filetree_obj;
-					for i=2:length(fn),
-						values{i} = fgetl(fid);
-					end;
-					obj = setproperties(obj, fn, values);
-					fclose(fid);
-				else,
-					fclose(fid);
-					error(['Not a valid NSD_FILETREE file:' filename ]);
-                                end;
-
-                end % readobjectfile
-
-		function nsd_filetree_obj=writeobjectfile(nsd_filetree_obj, filename)
-			% WRITEOBJECTFILE - write the object file to a file
-			%
-			% WRITEOBJECTFILE(NSD_FILETREE_OBJ, FILENAME)
-			%
-			% Writes the NSD_FILETREE_OBJ to a file in a manner that can be
-			% read by the creator function NSD_FILETREE.
-			%
-			% Writes to the file FILENAME (full path)
-			%
-			% See also: NSD_FILETREE/NSD_FILETREE
-			%
-
-				fid = fopen(filename,'wb');     % files will consistently use big-endian
-				if fid < 0,
-					error(['Could not open the file ' filename ' for writing.']);
-				end;
-
-				data = nsd_filetree_obj.stringdatatosave();
-
-				for i=1:length(data),
-					count = fprintf(fid,'%s\n',data{i});
-					if count~=numel(data{i})+1,
-						error(['Error writing to the file ' filename '.']);
-					end
-				end
-
-				fclose(fid);
-
-		end % writeobjectfile
+		end % setproperties
 
 	end % methods
 

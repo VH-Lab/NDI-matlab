@@ -101,4 +101,5 @@ disp(['branch of branch: How many entries do we have now? ' int2str(t2.numitems)
 disp(['What is our metadata?'])
 t2.metadata
 
+t.deleteobjectfile()
 
