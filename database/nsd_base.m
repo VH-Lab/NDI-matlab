@@ -62,7 +62,7 @@ classdef nsd_base < handle
 
 				if strcmp(classname,class(nsd_base_obj)),
 					% we have the right type of object
-					[dummy,fn] = nsd_base_obj.stringdatatosave(),
+					[dummy,fn] = nsd_base_obj.stringdatatosave();
 					values = {};
 					obj = nsd_base_obj;
 					for i=2:length(fn),

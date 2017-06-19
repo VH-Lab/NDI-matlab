@@ -45,7 +45,7 @@ classdef nsd_dbleaf < nsd_base
 				if ischar(name)
 					obj.name=name;
 					% use time and randomness to ensure uniqueness of objectfilename
-					obj.objectfilename = [string2filestring(obj.name) obj.objectfilename];
+					obj.objectfilename = [string2filestring(obj.name) '_' obj.objectfilename];
 					obj.metadatanames = {'name','objectfilename'};
 				else,
 					error(['name ' name ' must be a string.']); 

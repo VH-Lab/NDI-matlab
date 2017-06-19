@@ -29,7 +29,7 @@ classdef nsd_experiment_dir < nsd_experiment
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),
-					obj.variable = nsd_dbleaf_branch(obj.nsdpathname(),'variable',{'nsd_variable'},0);
+					obj.variable = nsd_dbleaf_branch(obj.nsdpathname(),'variable',{'nsd_variable','nsd_variable_dir'},0);
 				else,
 					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
