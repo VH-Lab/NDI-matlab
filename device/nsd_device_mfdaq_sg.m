@@ -34,7 +34,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                 
                 filename = filelist{1};
                 
-                [fileconfig, channels] = readTrodesFileConfig(filename);
+                [fileconfig, channels] = read_SpikeGadgets_config(filename);
                 
                 for k=1:length(channels)
                     number = 0;
@@ -97,9 +97,9 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             channels = sortrows(channels,{'type','number'});
             channels = table2struct(channels);
             
-            %remove = {'startbyte','bit'};
+            remove = {'startbyte','bit'};
             
-            %channels = rmfield(channels, remove);
+            channels = rmfield(channels, remove);
             
         end
         
@@ -204,10 +204,10 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %
             %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
             %
-            % ---doubts  CHANNELTYPE is the type of channel to read
-            % 'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'
+            %  CHANNELTYPE is the type of channel to read
+            %  'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'
             %
-            % ---doubts  CHANNEL is a vector of the channel numbers to
+            %  CHANNEL is a vector of the channel numbers to
             %  read beginning from 1 if 'etrodeftrode' is channeltype,
             %  if channeltype is 'analog_in' channel is an array with the
             %  string names of analog channels 'Ain1'through 8
@@ -227,12 +227,12 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             
             byteandbit = [];
             
-            %importChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
+            %read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
             %reading from channel 1 in list returned
             %Reads nTrodes
             if (strcmp(channeltype,'analog_in') || strcmp(channeltype, 'analog_out'))  
                 
-                data = importChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
+                data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
                 
             %Reads analog inputs
             elseif (strcmp(channeltype,'auxiliary'))
@@ -247,7 +247,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                         end
                     end
                 end
-                data = importAnalogChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
+                data = read_SpikeGadgets_analogChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
                 
             %Reads digital inputs
             elseif (strcmp(channeltype,'digital_in') || strcmp(channeltype, 'digital_out'))
@@ -264,7 +264,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                     end
                 end
                 
-                data = importDigitalChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
+                data = read_SpikeGadgets_digitalChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
                 data = data';
              
             end
