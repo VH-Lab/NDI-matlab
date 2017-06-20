@@ -102,8 +102,8 @@ classdef nsd_device < nsd_dbleaf
 				subdirname = [thedirname filesep nsd_device_obj.objectfilename '.filetree.device.nsd'];
 				rmdir(subdirname,'s');
 				b = b&deleteobjectfile@nsd_dbleaf(nsd_device_obj, thedirname);
-		end % deletefileobject
 
+		end % deletefileobject
 
 		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch
@@ -119,7 +119,7 @@ classdef nsd_device < nsd_dbleaf
 		%
 		% See also: NSD_DEVICE
 			epochfiles = '';
-		end;
+		end  %epochfiles
 
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
@@ -133,63 +133,60 @@ classdef nsd_device < nsd_dbleaf
 		% In the abstract class, this command takes no action.
 		%
 		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
-		end;
+		end % deleteepoch
 
 		function setepochcontents(self, epochcontents, number, overwrite)
-		% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
-		%
-		%   SETEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
-		%
-		% Sets or replaces the NSD_EPOCHCONTENTS for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
-		% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
-		% Otherwise, an error is given if there is an existing epoch record.
-		%
-		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+			% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
+			%
+			%   SETEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
+			%
+			% Sets or replaces the NSD_EPOCHCONTENTS for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
+			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
+			% Otherwise, an error is given if there is an existing epoch record.
+			%
+			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+				
+				if nargin<4,
+					overwrite = 0;
+				end
 
-			% actually need to do something here
-			%    getepochfilelocation(self.filetree, self, N)  % need this function in data tree class
-			%    save it in experiment / devices / devname / epoch_NNNN.erf
-			%  verify it is good, then put it in the tree
-			error('not implemented yet.');
-		end;
+				self.filetree.setepochcontents(epochcontents, number, overwrite);
+		end % setepochcontents()
 
                 function epochcontents = getepochcontents(self, number)
-                % GETEPOCHCONTENTS - retreive the epoch record associated with a recording epoch
-                %
-                %   EPOCHCONTENTS = GETEPOCHCONTENTS(NSD_DEVICE_OBJ, NUMBER)
-                %
-                % Returns the EPOCHCONTENTS associated the the data epoch NUMBER for the
-                % NSD_DEVICE.
-                %
-                % In the abstract base class NSD_DEVICE, this returns empty always.
-                % In specific device classes, this will return an EPOCHCONTENTS object.
-		%
-                % See also: NSD_DEVICE, NSD_EPOCHCONTENTS
-		%
-			   % Developer note: Why is this function present in nsd_device, when it pretty much 
-			   % just calls the nsd_filetree version? Because, some devices may include some sort of epoch
-			   % record in their own files natively, and the nsd_device_DRIVER that reads it may simply read from that
-			   % information. So nsd_device_DRIVER needs the ability to override this function.
+			% GETEPOCHCONTENTS - retreive the epoch record associated with a recording epoch
+			%
+			%   EPOCHCONTENTS = GETEPOCHCONTENTS(NSD_DEVICE_OBJ, NUMBER)
+			%
+			% Returns the EPOCHCONTENTS associated the the data epoch NUMBER for the
+			% NSD_DEVICE.
+			%
+			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+			%
+				   % Developer note: Why is this function present in nsd_device, when it pretty much 
+				   % just calls the nsd_filetree version? Because, some devices may include some sort of epoch
+				   % record in their own files natively, and the nsd_device_DRIVER that reads it may simply read from that
+				   % information. So nsd_device_DRIVER needs the ability to override this function.
 
-			epochcontents = self.filetree.getepochcontents(number,self);
-                        if ~(verifyepochcontents(epochcontents))
-                                error(['the numbered epoch is not a valid epoch for the given device']);
-                        end
-                end
+				epochcontents = self.filetree.getepochcontents(number, self.name);
+				if ~(verifyepochcontents(epochcontents))
+					error(['the numbered epoch is not a valid epoch for the given device']);
+				end
+                end %getepochcontents()
 
 		function b = verifyepochcontents(self, epochcontents, number)
-		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
-		%
-		%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER)
-		%
-		% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
-		% epoch NUMBER.
-		%
-		% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
-		% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
-		%
-		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
-			b = isa(epochcontents, 'nsd_epochcontents');
-		end
+			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+			%
+			%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER)
+			%
+			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+			% epoch NUMBER.
+			%
+			% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
+			%
+			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+				b = isa(epochcontents, 'nsd_epochcontents');
+		end % verifyepochcontents
 	end % methods
 end

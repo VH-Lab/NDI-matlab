@@ -6,14 +6,14 @@
 % sample a variety of data types potentially simultaneously. 
 %
 % The channel types that are supported are the following:
-% Channel type (string):   | Description
+% Channel type (string):      | Description
 % -------------------------------------------------------------
-% 'analog_in'   or 'ai'    | Analog input
-% 'analog_out'  or 'ao'    | Analog output
-% 'digital_in'  or 'di'    | Digital input
-% 'digital_out' or 'do'    | Digital output
-% 'time'        or 't'     | Time
-% 'auxiliary','aux' or 'ax'| Auxiliary channels
+% 'analog_in'   or 'ai'       | Analog input
+% 'analog_out'  or 'ao'       | Analog output
+% 'digital_in'  or 'di'       | Digital input
+% 'digital_out' or 'do'       | Digital output
+% 'time'        or 't'        | Time
+% 'auxiliary_in','aux' or 'ax'| Auxiliary channels
 % 
 %
 % See also: NSD_DEVICE_MFDAQ/NSD_DEVICE_MFDAQ
@@ -81,7 +81,7 @@ classdef nsd_device_mfdaq < nsd_device
 		%
 			data = [];
 
-		end; % readchannels_epochsamples
+		end % readchannels_epochsamples()
 
 		function data = readchannels(self, channeltype, channel, clock_or_epoch, t0, t1)
 		%  FUNCTION READCHANNELS - read the data based on specified channels
@@ -128,6 +128,24 @@ classdef nsd_device_mfdaq < nsd_device
 			sr = [];  % this is an abstract class
 		end
 
+                function b = verifyepochcontents(self, epochcontents, number)
+                % VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+                %
+                %   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
+                %
+                % Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+                % epoch NUMBER.
+                %
+                % For the abstract class NSD_DEVICE_MFDAQ, EPOCHCONTENTS is always valid as long as
+                % EPOCHCONTENTS is an NSD_EPOCHCONTENTS object and if all of the device strings refer to
+		% valid channel names and types.
+                %
+                % See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+                        b = isa(epochcontents, 'nsd_epochcontents');
+
+			warning('developer note: more verification needed here');
+                end
+
 	end; % methods
 
 	methods (Static), % functions that don't need the object
@@ -147,7 +165,7 @@ classdef nsd_device_mfdaq < nsd_device
 		%  digital_in          | Digital input channel
 		%  digital_out         | Digital output channel
 		%
-			ct = { 'analog_in', 'aux', 'analog_out', 'digital_in', 'digital_out' };
+			ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out' };
 		end;
 
 		function prefix = mfdaq_prefix(channeltype)
@@ -157,15 +175,15 @@ classdef nsd_device_mfdaq < nsd_device
 		%
 		%  Produces the channel name prefix for a given CHANNELTYPE.
 		% 
-		% Channel type:            | MFDAQ_PREFIX:
+		% Channel type:               | MFDAQ_PREFIX:
 		% ---------------------------------------------------------
-		% 'analog_in',       'ai'  | 'ai' 
-		% 'analog_out',      'ao'  | 'ao'
-		% 'digital_in',      'di'  | 'di'
-		% 'digital_out',     'do'  | 'do'
-		% 'time','timestamp','t'   | 't'
-		% 'auxiliary','aux','ax'   | 'ax'
-		%
+		% 'analog_in',       'ai'     | 'ai' 
+		% 'analog_out',      'ao'     | 'ao'
+		% 'digital_in',      'di'     | 'di'
+		% 'digital_out',     'do'     | 'do'
+		% 'time','timestamp','t'      | 't'
+		% 'auxiliary','aux','ax',     | 'ax'
+		%    'auxiliary_in'           | 
 		% See also: NSD_DEVICE_MFDAQ
 		%
 			switch channeltype,
@@ -179,7 +197,7 @@ classdef nsd_device_mfdaq < nsd_device
 					prefix = 'do';
 				case {'time','timestamp'},
 					prefix = 't';
-				case {'auxiliary','aux','ax'},
+				case {'auxiliary','aux','ax','auxiliary_in'},
 					prefix = 'ax';
 			end;
 		end % mfdaq_prefix()

@@ -171,7 +171,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 					intanchanheadertype = 'board_dig_in_channels';
 				case {'digital_out','do'},
 					intanchanheadertype = 'board_dig_out_channels';
-				case {'auxiliary','aux','ax'},
+				case {'auxiliary','aux','ax','auxiliary_in','auxiliary_input'},
 					intanchanheadertype = 'aux_input_channels';
 				otherwise,
 					error(['Could not convert channeltype ' channeltype '.']);
@@ -194,7 +194,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 				case {'board_dig_out_channels'},
 					channeltype = 'digital_out';
 				case {'aux_input_channels'},
-					channeltype = 'auxiliary';
+					channeltype = 'auxiliary_in';
 				otherwise,
 					error(['Could not convert channeltype ' intanchanneltype '.']);
 			end;
@@ -218,7 +218,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 					intanchanneltype = 'dout';
 				case {'time','timestamp'},
 					intanchanneltype = 'time';
-				case {'auxiliary','aux'},
+				case {'auxiliary','aux','auxiliary_input','auxiliary_in'},
 					intanchanneltype = 'aux';
 				otherwise,
 					error(['Do not know how to convert channel type ' channeltype '.']);

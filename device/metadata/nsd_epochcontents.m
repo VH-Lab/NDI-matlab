@@ -1,9 +1,9 @@
 classdef nsd_epochcontents
 	properties
-		name
-		reference
-		type
-		devicestring
+		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
+		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
+		type          % The type of recording that is present in the data
+		devicestring  % An NSD_DEVICESTRING that indicates the device and channels that comprise the data
 	end % properties
 	methods
 		function obj = nsd_epochcontents(name_, reference_, type_, devicestring_)

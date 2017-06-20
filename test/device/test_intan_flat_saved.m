@@ -48,5 +48,8 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
+findmydir = load(exp.variable,'name','Animal parameters'),
+
+findmyvar = load(findmydir,'name','Animal age')
 
 
