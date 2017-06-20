@@ -36,4 +36,5 @@ can be managed by NSD_CLOCK.
 
 - All error messages should be informative and give specific information about the problem, not just say 'an error occurred.'
 
-- All class names should include the full parentage of the object. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called 'nsd_device_mfdaq_mycompany' to indicate that the bject is descended from the nsd_device and nsd_device_mfdaq objects.
+- In general, class names should include the full parentage of the object, starting with the basic classes for NSD: nsd_experiment, nsd_variable, nsd_device. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called 'nsd_device_mfdaq_mycompany' to indicate that the bject is descended from the nsd_device and nsd_device_mfdaq objects. It is not necessary to include the full parentage on nsd_base and nsd_dbleaf objects, as it would get too cumbersome without adding much clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes nsd_experiment, nsd_variable, and nsd_device).
+

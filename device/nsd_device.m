@@ -8,7 +8,7 @@ classdef nsd_device < nsd_dbleaf
 
 
 	properties (GetAccess=public, SetAccess=protected)
-		filetree;
+		filetree   % The NSD_FILETREE associated with this device
 	end
 
 	methods
@@ -108,7 +108,7 @@ classdef nsd_device < nsd_dbleaf
 		function epochfiles = getepochfiles(self, number)
 		% GETEPOCH - retreive the data files associated with a recording epoch
 		%
-		%   EPOCHFILES = GETEPOCHFILES(MYNSD_DEVICE, NUMBER)
+		%   EPOCHFILES = GETEPOCHFILES(NSD_DEVICE_OBJ, NUMBER)
 		%
 		% Returns the data file(s) associated the the data epoch NUMBER for the
 		% NSD_DEVICE.
@@ -124,23 +124,23 @@ classdef nsd_device < nsd_dbleaf
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
 		%
-		%   DELETEEPOCH(MYNSD_DEVICE, NUMBER ... [REMOVEDATA])
+		%   DELETEEPOCH(NSD_DEVICE_OBJ, NUMBER ... [REMOVEDATA])
 		%
-		% Deletes the data and SAPI_EPOCHRECORD and epoch data for epoch NUMBER.
+		% Deletes the data and NSD_EPOCHCONTENTS and epoch data for epoch NUMBER.
 		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
 		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
 		%
 		% In the abstract class, this command takes no action.
 		%
-		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
+		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 		end;
 
-		function setepochrecord(self, epochrecord, number, overwrite)
-		% SETEPOCHRECORD - Sets the epoch record of a particular epoch
+		function setepochcontents(self, epochcontents, number, overwrite)
+		% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
 		%
-		%   SETEPOCHRECORD(MYNSD_DEVICE, EPOCHRECORD, NUMBER, [OVERWRITE])
+		%   SETEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
 		%
-		% Sets or replaces the SAPI_EPOCHRECORD for MYNSD_DEVICE with EPOCHRECORD for the epoch
+		% Sets or replaces the NSD_EPOCHCONTENTS for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
 		% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 		% Otherwise, an error is given if there is an existing epoch record.
 		%
@@ -153,43 +153,43 @@ classdef nsd_device < nsd_dbleaf
 			error('not implemented yet.');
 		end;
 
-                function epochrecord = getepochrecord(self, number)
-                % GETEPOCHRECORD - retreive the epoch record associated with a recording epoch
+                function epochcontents = getepochcontents(self, number)
+                % GETEPOCHCONTENTS - retreive the epoch record associated with a recording epoch
                 %
-                %   EPOCHRECORD = GETEPOCHRECORD(MYNSD_DEVICE, NUMBER)
+                %   EPOCHCONTENTS = GETEPOCHCONTENTS(NSD_DEVICE_OBJ, NUMBER)
                 %
-                % Returns the EPOCHRECORD associated the the data epoch NUMBER for the
-                % SAMPLEAPI_DEVICE.
+                % Returns the EPOCHCONTENTS associated the the data epoch NUMBER for the
+                % NSD_DEVICE.
                 %
-                % In the abstract base class SAMPLEAPI_DEVICE, this returns empty always.
-                % In specific device classes, this will return an EPOCHRECORD object.
+                % In the abstract base class NSD_DEVICE, this returns empty always.
+                % In specific device classes, this will return an EPOCHCONTENTS object.
 		%
-                % See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
+                % See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 		%
 			   % Developer note: Why is this function present in nsd_device, when it pretty much 
 			   % just calls the nsd_filetree version? Because, some devices may include some sort of epoch
 			   % record in their own files natively, and the nsd_device_DRIVER that reads it may simply read from that
 			   % information. So nsd_device_DRIVER needs the ability to override this function.
 
-			epochrecord = self.filetree.getepochrecord(number,self);
-                        if ~(verifyepochrecord(epochrecord))
+			epochcontents = self.filetree.getepochcontents(number,self);
+                        if ~(verifyepochcontents(epochcontents))
                                 error(['the numbered epoch is not a valid epoch for the given device']);
                         end
                 end
 
-		function b = verifyepochrecord(self, epochrecord, number)
-		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
+		function b = verifyepochcontents(self, epochcontents, number)
+		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 		%
-		%   B = VERIFYEPOCHRECORD(MYNSD_DEVICE, EPOCHRECORD, NUMBER)
+		%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER)
 		%
-		% Examines the SAPI_EPOCHRECORD EPOCHRECORD and determines if it is valid for the given device
+		% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
 		% epoch NUMBER.
 		%
-		% For the abstract class NSD_DEVICE, EPOCHRECORD is always valid as long as
-		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
+		% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
+		% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
 		%
-		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
-			b = isa(epochrecord, 'nsd_epochcontents');
+		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+			b = isa(epochcontents, 'nsd_epochcontents');
 		end
 	end % methods
 end

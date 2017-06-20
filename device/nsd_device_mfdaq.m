@@ -45,7 +45,8 @@ classdef nsd_device_mfdaq < nsd_device
 		%
 		%  Returns the channel list of acquired channels in this experiment
 		%
-		%  The channels are of different types:
+		%  The channels are of different types. In the below, 
+		%  'n' is replaced with the channel number.
 		%  Type       | Description
 		%  ------------------------------------------------------
 		%  ain        | Analog input (e.g., ai1 is the first input channel)
@@ -183,9 +184,6 @@ classdef nsd_device_mfdaq < nsd_device
 			end;
 		end % mfdaq_prefix()
 
-
 	end % methods (Static)
 end
-
-
 

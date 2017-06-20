@@ -89,21 +89,21 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 			end
 		end % getchannels()
 
-		function b = verifyepochrecord(self, epochrecord, number)
-		% VERIFYEPOCHRECORD - Verifies that an EPOCHRECORD is compatible with a given device and the data on disk
+		function b = verifyepochcontents(self, epochcontents, number)
+		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 		%
-		%   B = VERIFYEPOCHRECORD(MYSAMPLEAPI_DEVICE, EPOCHRECORD, NUMBER)
+		%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
 		%
-		% Examines the SAPI_EPOCHRECORD EPOCHRECORD and determines if it is valid for the given device
+		% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
 		% epoch NUMBER.
 		%
-		% For the abstract class SAMPLEAPI_DEVICE, EPOCHRECORD is always valid as long as
-		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
+		% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
+		% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
 		%
-		% See also: SAMPLEAPI_DEVICE, SAPI_EPOCHRECORD
+		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 			b = 1;
 			% UPDATE NEEDED
-			% b = isa(epochrecord, 'sAPI_epochrecord') && strcmp(epochrecord.type,'rhd') && strcmp(epochrecord.devicestring,self.name);
+			% b = isa(epochcontents, 'nsd_epochcontents') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end
 
 		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
