@@ -141,6 +141,13 @@ classdef nsd_variable < nsd_dbleaf
 					locked = 0;
 				end
 
+				thisfunctionlocked = 0;
+				if ~locked, % we need to lock it
+					nsd_variable_obj = nsd_variable_obj.lock(dirname);
+					thisfunctionlocked = 1;
+					locked = 1;
+				end
+
 				writeobjectfile@nsd_dbleaf(nsd_variable_obj, dirname, locked);
 
 				filename = [dirname filesep nsd_variable_obj.objectfilename];
@@ -176,6 +183,10 @@ classdef nsd_variable < nsd_dbleaf
 				end
 
 				fclose(fid);
+
+				if thisfunctionlocked,  % we locked it, we need to unlock it
+					nsd_variable_obj = nsd_variable_obj.unlock(dirname);
+				end
 
                 end % writeobjectfile
 

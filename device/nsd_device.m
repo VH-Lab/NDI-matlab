@@ -144,7 +144,7 @@ classdef nsd_device < nsd_dbleaf
 		% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 		% Otherwise, an error is given if there is an existing epoch record.
 		%
-		% See also: NSD_DEVICE, NSD_EPOCHRECORD
+		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 
 			% actually need to do something here
 			%    getepochfilelocation(self.filetree, self, N)  % need this function in data tree class
@@ -189,7 +189,7 @@ classdef nsd_device < nsd_dbleaf
 		% EPOCHRECORD is an SAPI_EPOCHRECORD object.
 		%
 		% See also: NSD_DEVICE, SAPI_EPOCHRECORD
-			b = isa(epochrecord, 'nsd_epochrecord');
+			b = isa(epochrecord, 'nsd_epochcontents');
 		end
 	end % methods
 end

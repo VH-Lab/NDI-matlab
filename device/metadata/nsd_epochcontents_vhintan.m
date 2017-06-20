@@ -1,11 +1,11 @@
-classdef nsd_epochrecord_vhintan < nsd_epochrecord
+classdef nsd_epochcontents_vhintan < nsd_epochcontents
 	properties
 	end % properties
 	methods
-		function obj = nsd_epochrecord_vhintan(filename)
-			% NSD_EPOCHRECORD_VHINTAN - Create a new nsd_epochrecord object derived from the vh lab intan implementation
+		function obj = nsd_epochcontents_vhintan(filename)
+			% NSD_EPOCHCONTENTS_VHINTAN - Create a new nsd_epochcontents object derived from the vh lab intan implementation
 			% 
-			%   MYNSD_EPOCHRECORD = NSD_EPOCHRECORD_VHINTAN(FILENAME)
+			%   MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS_VHINTAN(FILENAME)
 			% 
 			% Here, FILENAME is assumed to be a (full path) tab-delimitted text file in the style of 
 			% 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING) 
@@ -26,7 +26,7 @@ classdef nsd_epochrecord_vhintan < nsd_epochrecord
 				obj = [];
 				for i=1:length(nsd_struct),
 					
-					nextentry = obj@nsd_epochrecord(nsd_struct(i).name,...
+					nextentry = obj@nsd_epochcontents(nsd_struct(i).name,...
 							nsd_struct(i).ref,...
 							['extracellular_electrode-' int2str(numel(nsd(i).channel_list)) ] , ...  % type
 							[]);  % device string
@@ -37,11 +37,11 @@ classdef nsd_epochrecord_vhintan < nsd_epochrecord
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write nsd_epochrecord object array to disk
+		%  SAVETOFILE - Write nsd_epochcontents object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the NSD_EPOCHRECORD_VHINTAN object to disk in filename FILENAME (full path).
+		%  Writes the NSD_EPOCHCONTENTS_VHINTAN object to disk in filename FILENAME (full path).
 		%
 		%  
 		

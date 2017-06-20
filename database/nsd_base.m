@@ -143,6 +143,17 @@ classdef nsd_base < handle
 			%
 			% See also: NSD_BASE/NSD_BASE
 			%
+
+				if nargin<3,
+					locked = 0;
+				end;
+
+				thisfunctionlocked = 0;
+				if ~locked, % we need to lock it
+					nsd_base_obj = nsd_base_obj.lock(dirname)
+					thisfunctionlocked = 1;
+				end
+
 				filename = [dirname filesep nsd_base_obj.objectfilename];
 				fid = fopen(filename,'wb');	% files will consistently use big-endian
 				if fid < 0,
@@ -159,6 +170,10 @@ classdef nsd_base < handle
 				end
 
 				fclose(fid);
+
+				if thisfunctionlocked,
+					nsd_base_obj = nsd_base_obj.unlock(dirname);
+				end
 
 		end % writeobjectfile
 

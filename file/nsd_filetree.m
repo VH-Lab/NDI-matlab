@@ -11,7 +11,7 @@ classdef nsd_filetree < nsd_base
 	properties (GetAccess=public, SetAccess=protected)
 		path                        % The file path of the directory to be examined
 		fileparameters              % The parameters for finding files (see NSD_FILETREE/SETFILEPARAMETERS)
-		epochrecord_class           % The class of epoch_record to be used; nsd_epochrecord is default
+		epochrecord_class           % The class of epoch_record to be used; nsd_epochcontents is default
 		epochrecord_fileparameters  % The parameters for finding the epochrecords (see NSD_FILETREE/SETEPOCHRECORDFILEPARAMETERS)
 	end
 
@@ -29,7 +29,7 @@ classdef nsd_filetree < nsd_base
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NSD_FILETREE/SETFILEPARAMETERS for description)
-		%      EPOCHRECORD_CLASS: the class of epoch_record to be used; 'nsd_epochrecord' is used by default
+		%      EPOCHRECORD_CLASS: the class of epoch_record to be used; 'nsd_epochcontents' is used by default
 		%      EPOCHRECORD_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NSD_FILETREE/SETEPOCHRECORDFILEPARAMETERS). By default, the file location
 		%          [EXP]/.nsd/device_name/epoch_NNNNNNNNN.nsderf is used.
@@ -58,7 +58,7 @@ classdef nsd_filetree < nsd_base
 			if nargin > 2,
 				obj.epochrecord_class = epochrecord_class_;
 			else,
-				obj.epochrecord_class = 'nsd_epochrecord';
+				obj.epochrecord_class = 'nsd_epochcontents';
 			end;
 
 			if nargin > 3,

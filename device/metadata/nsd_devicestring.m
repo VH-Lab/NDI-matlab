@@ -1,13 +1,13 @@
-% NSD_DEVICESTRING - a class for describing the device and channels that correspond to an NSD_EPOCHRECORD
+% NSD_DEVICESTRING - a class for describing the device and channels that correspond to an NSD_EPOCHCONTENTS
 %
 %  NSD_DEVICESTRING
 %
-%  A 'devicestring' is a part of an NSD_EPOCHRECORD that indicates the channel types and
+%  A 'devicestring' is a part of an NSD_EPOCHCONTENTS that indicates the channel types and
 %  channel numbers that correspond to a particular record.
 %
 %  For example, one may specify that a 4-channel extracellular recording with name
 %  'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-%  on channels 27-28 and 45 and 88 with the following nsd_epochrecord entry:
+%  on channels 27-28 and 45 and 88 with the following nsd_epochcontents entry:
 %           name: 'ctx'
 %      reference: 1
 %           type: 'extracellular_electrode-4'
@@ -41,7 +41,7 @@ classdef nsd_devicestring
 		% DEVSTR = NSD_DEVICESTRING(DEVICENAME, CHANNELTYPE, CHANNELLIST)
 		%    or DEVSTR = NSD_DEVICESTRING(DEVSTRING)
 		%
-		% Creates a device string suitable for a NSD_EPOCHRECORD from a DEVICENAME,
+		% Creates a device string suitable for a NSD_EPOCHCONTENTS from a DEVICENAME,
 		% CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
 		%
 		% Inputs:
@@ -114,7 +114,7 @@ classdef nsd_devicestring
 		%
 		% DEVSTR = DEVICESTRING(SELF)
 		%
-		% Creates a device string suitable for a NSD_EPOCHRECORD from an NSD_DEVICESTRING object.
+		% Creates a device string suitable for a NSD_EPOCHCONTENTS from an NSD_DEVICESTRING object.
 		%
 		% Inputs:
 		%    SELF - an NSD_DEVICESTRING object
