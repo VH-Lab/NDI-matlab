@@ -36,7 +36,7 @@ Standard types:
 |'n-LED'               |An N-channel LED stimulator; the number of channels is calculated from the number of channels specified in the device string |
 |_Environment_         |                |
 |Lick-spout            |A lick-spout    |
-|Interoral-cannula     |An interoral cannula|
+|Intraoral-cannula     |An intraoral cannula|
 |Reward-well           |A reward well
 
 
