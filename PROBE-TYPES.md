@@ -9,7 +9,7 @@ The probes that are acquired or controlled in any device epoch are listed in the
    * **name**: A name for the probe, must start with a letter and contain no whitespace but otherwise unrestricted
    * **reference**: A reference for the probe; identical reference numbers indicate that NSD should try to combine data; (for example, if you move an electrode, one should change the reference number to indicate that the probe is being used differently); can be any non-negative integer
    * **type**: The type of probe; must be a string that begins with a letter and has no whitespace; there are standard types (see below) but users can use any valid string for type.
-   * ** devicestring**: A string that indicates the device (and channels) that have a digital record of the probe (see `nsd_devicestring`)
+   * **devicestring**: A string that indicates the device (and channels) that have a digital record of the probe (see `nsd_devicestring`)
 
 Standard types:
 
