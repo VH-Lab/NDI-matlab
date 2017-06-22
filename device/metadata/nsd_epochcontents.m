@@ -30,6 +30,13 @@ classdef nsd_epochcontents
 			% one line per NSD_EPOCHCONTENTS entry.
 			%
 
+			if nargin==0, % undocumented 0 input constructor
+				name_='a';
+				reference_=0;
+				type_='a';
+				devicestring_='a';
+			end
+
 			if nargin==1,
 				nsd_struct= loadStructArray(name_);
 				fn = fieldnames(nsd_struct);
@@ -47,7 +54,7 @@ classdef nsd_epochcontents
 				return;
 			end;
 
-                        %name, check for errors
+			%name, check for errors
 			[b,errormsg] = islikevarname(name_);
 			if ~b,
 				error(['Error in name field: ' errormsg ]);
