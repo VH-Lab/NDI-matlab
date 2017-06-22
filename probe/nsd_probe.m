@@ -42,5 +42,39 @@ classdef nsd_probe
 
 		end % nsd_probe
 
+ 		function [num, probe_epoch_contents, devepoch] = numepochs(nsd_probe_obj)
+			% NUMEPOCHS - return number of epochs and epoch information for NSD_PROBE
+			%
+			% [N, PROBE_EPOCH_CONTENTS, DEVEPOCH] = NUMEPOCHS(NSD_PROBE_OBJ)
+			%
+			% Returns N, the number of all epochs of any NSD_DEVICE in the experiment
+			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
+			%
+			% PROBE_EPOCH_CONTENTS is a 1xN NSD_EPOCHCONTENTS object with all of the
+			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
+			% DEVEPOCH is a 1xN array with the device epoch that contains each probe epoch.
+			
+				probe_epoch_contents = nsd_epochcontents;
+				probe_epoch_contents = probe_epoch_contents([]);
+				devepoch = [];
+				D = load(nsd_probe_obj.exp.device,'name','(.*)');
+				if ~iscell(D), D = {D}; end; % make sure it has cell form
+				for d=1:numel(D),
+					NUM = D{d}.numepochs();
+					for n=1:NUM,
+						ec = D{d}.getepochcontents(n);
+						for k=1:numel(ec),
+							if strcmp(ec(k).name,nsd_probe_obj.name) &&
+								(ec(k).reference==nsd_probe_obj.reference) && 
+								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
+								probe_epoch_contents(end+1) = ec;
+								devepoch(end+1) = n;
+							end
+						end
+					end
+				end
+				N = numel(probe_epoch_contents);
+		end % numepochs()
+
 	end % methods
 end
