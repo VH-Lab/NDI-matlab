@@ -76,5 +76,19 @@ classdef nsd_probe
 				N = numel(probe_epoch_contents);
 		end % numepochs()
 
+		function probestr = probestring(nsd_probe_obj)
+			% PROBESTRING - Produce a human-readable probe string
+			%
+			% PROBESTR = PROBESTRING(NSD_PROBE_OBJ)
+			%
+			% Returns the name and reference of a probe as a human-readable string.
+			%
+			% This is simply PROBESTR = [NSD_PROBE_OBJ.name ' | ' in2str(NSD_PROBE_OBJ.reference)]
+			%
+				probestr = [nsd_probe_obj.name ' | ' int2str(nsd_probe_obj.reference) ];
+
+		end
+
+
 	end % methods
 end

@@ -1,0 +1,45 @@
+function test_probe(dirname)
+% TEST_PROBE - Test the functionality of NSD_PROBE
+%
+%  TEST_PROBE([DIRNAME])
+%
+%  Given an experiment directory with probes, this function
+%  plots some data from the first probe channel 1.
+%
+%  If DIRNAME is not provided, the default directory
+%  [USERPATH/tools/NSD/example_experiments/exp1_eg_saved] is used.
+%
+%
+
+if nargin<1,
+
+	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
+                filesep 'example_experiments' ];
+	dirname = [mydirectory filesep 'exp1_eg_saved'];
+
+end;
+
+disp(['creating a new experiment object...']);
+exp = nsd_experiment_dir(dirname);
+
+dev1 = load(exp.device,'name','Intan1');
+
+%probes = getallprobes(exp)
+probes = getallprobes(exp)
+
+% now let's play with the first probe
+
+sr = samplerate(probes(1),1);
+
+disp(['The sample rate of probe 1 epoch 1 is ' num2str(sr) '.']);
+
+disp(['We will now plot the data for epoch 1 for analog_input channel 1.']);
+
+[data,time] = read_epochsamples(probe(1),1,0,10000);
+
+figure;
+plot(time,data(:,1));
+ylabel('Data on channel 1 of probe 1');
+xlabel('Time (s)');
+box off;
+
