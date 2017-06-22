@@ -28,10 +28,10 @@
 %
 
 classdef nsd_devicestring
-	properties (SetAccess=protected)
-		devicename;
-		channeltype;
-		channellist;
+	properties (GetAccess=public, SetAccess=protected)
+		devicename    % The name of the device
+		channeltype   % The type of channels that are used by the device
+		channellist   % An array of the channels that are referred to by the devicestring
 	end
 
 	methods
@@ -78,10 +78,10 @@ classdef nsd_devicestring
 				end;
 		end % nsd_devicestring
 
-		function [devicename, channeltype, channel] = nsd_devicestring2channel(self, devstr)
+		function [devicename, channeltype, channel] = nsd_devicestring2channel(self)
 			% NSD_DEVICESTRING2CHANNELS - Convert an nsd_devicestring to device, channel type, channel list
 			%
-			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NSD_DEVICESTRING2CHANNEL(SELF, DEVSTR)
+			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NSD_DEVICESTRING2CHANNEL(SELF)
 			%
 			% Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
 			% (CHANNEL) of a device string.
@@ -94,12 +94,13 @@ classdef nsd_devicestring
 			%    CHANNELLIST is an array of the channels
 			%
 			% Example:
-			%    devstr = 'mydevice:ai1-5,13,18';
+			%    devstr = nsd_devicestring('mydevice:ai1-5,13,18');
 			%    [devicename, channeltype, channel] = nsd_devicestring2channel(devstr);
 			%    % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]
 			%
 			% See also: NSD_DEVICESTRING, NSD_DEVICESTRING/DEVICESTRING
 			%
+				devstr = self.devicestring();
 				devstr(find(isspace(devstr))) = []; % remove whitespace
 				colon = find(strtrim(devstr)==':');
 				devicename = devstr(1:colon-1);

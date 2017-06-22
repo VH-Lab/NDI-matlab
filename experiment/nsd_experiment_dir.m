@@ -17,10 +17,25 @@ classdef nsd_experiment_dir < nsd_experiment
 			% associated directory. REFERENCE should be a unique reference for the
 			% experiment and directory PATHNAME.
 			%
+			% One can also open an existing experiment by using
+			%
+			%  E = NSD_EXPERIMENT_DIR(PATHNAME)
+			%
 			% See also: NSD_EXPERIMENT, NSD_EXPERIMENT_DIR/GETPATH
+
+				if nargin==1,
+					path = reference;
+					ref = 'temp';
+				end
 
 				obj = obj@nsd_experiment(reference);
 				obj.path = path;
+				d = dir([obj.nsdpathname() filesep 'reference.txt']);
+				if ~isempty(d),
+					obj.reference = textfile2char([obj.nsdpathname() filesep 'reference.txt']);
+				elseif nargin==1,
+					error(['Could not load the REFERENCE field from the path ' obj.nsdpathname() '.']);
+				end
 				d = dir([obj.nsdpathname() filesep 'device_object_*']);
 				if isempty(d),
 					obj.device = nsd_dbleaf_branch(obj.nsdpathname(),'device',{'nsd_device'},1);
@@ -33,6 +48,7 @@ classdef nsd_experiment_dir < nsd_experiment
 				else,
 					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
+				str2text([obj.nsdpathname() filesep 'reference.txt'],obj.reference);
 		end
 		
 		function p = getpath(self)

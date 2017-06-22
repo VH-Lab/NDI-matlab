@@ -33,7 +33,7 @@ classdef nsd_epochcontents
 			if nargin==1,
 				nsd_struct= loadStructArray(name_);
 				fn = fieldnames(nsd_struct);
-				if ~eqlen(fn,{'name','reference','type','devicestring'}),
+				if ~eqlen(fn,{'name','reference','type','devicestring'}');
 					error(['fields must be (case-sensitive match): name, reference, type, devicestring.']);
 				end;
 				obj = [];
@@ -42,7 +42,7 @@ classdef nsd_epochcontents
 							nsd_struct(i).reference,...
 							nsd_struct(i).type, ...
 							nsd_struct(i).devicestring);
-					obj(i) = nextentry;
+					obj = cat(1,obj,nextentry);
 				end;
 				return;
 			end;
@@ -83,9 +83,9 @@ classdef nsd_epochcontents
 		%
 		%  
 			fn = {'name','reference','type','devicestring'};
-			mystruct = emptystruct(fn);
+			mystruct = emptystruct(fn{:});
 			for i=1:length(obj),
-				mynewstruct = emptystruct(fn{:});
+				mynewstruct = struct;
 				for j=1:length(fn),
 					mynewstruct = setfield(mynewstruct,fn{j},getfield(obj(i),fn{j}));
 				end;

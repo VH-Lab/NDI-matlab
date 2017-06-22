@@ -140,7 +140,7 @@ classdef nsd_device < nsd_dbleaf
 			%
 			%   SETEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
 			%
-			% Sets or replaces the NSD_EPOCHCONTENTS for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
+			% Sets or replaces the NSD_EPOCHCONTENTS object for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
 			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 			% Otherwise, an error is given if there is an existing epoch record.
 			%
@@ -169,7 +169,7 @@ classdef nsd_device < nsd_dbleaf
 				   % information. So nsd_device_DRIVER needs the ability to override this function.
 
 				epochcontents = self.filetree.getepochcontents(number, self.name);
-				if ~(verifyepochcontents(epochcontents))
+				if ~(verifyepochcontents(self,epochcontents))
 					error(['the numbered epoch is not a valid epoch for the given device']);
 				end
                 end %getepochcontents()
@@ -188,5 +188,29 @@ classdef nsd_device < nsd_dbleaf
 			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 				b = isa(epochcontents, 'nsd_epochcontents');
 		end % verifyepochcontents
+
+		function probes_struct=getprobes(self)
+			% GETPROBES = Return all of the probes associated with an NSD_DEVICE object
+			%
+			% PROBES_STRUCT = GETPROBES(NSD_DEVICE_OBJ)
+			%
+			% Returns all probes associated with the NSD_DEVICE object NSD_DEVICE_OBJ
+			%
+			% This function returns a structure with fields of all unique probes across
+			% all EPOCHCONTENTS objects returned in NSD_DEVICE/GETEPOCHCONTENTS.
+			% The fields are 'name', 'reference', and 'type'.
+				probes_struct = emptystruct('name','reference','type');
+				N = self.filetree.numepochs();
+				for n=1:N,
+					epc = self.getepochcontents(n);
+					newentry.name = epc.name;
+					newentry.reference= epc.reference;
+					newentry.type= epc.type;
+					probes_struct(end+1) = newentry;
+				end
+				probes_struct = structunique(probes_struct);
+
+		end % getprobes()
+			
 	end % methods
 end
