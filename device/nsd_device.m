@@ -150,6 +150,16 @@ classdef nsd_device < nsd_dbleaf
 					overwrite = 0;
 				end
 
+				% check for well-formed nsd_devicestrings
+
+				for i=1:numel(epochcontents),
+					try,
+						thedevicestring = nsd_devicestring(epochcontents(i).devicestring);
+					catch,
+						error(['Error evaluating devicestring ' epochcontents(i).devicestring '.']);
+					end
+				end
+
 				self.filetree.setepochcontents(epochcontents, number, overwrite);
 		end % setepochcontents()
 

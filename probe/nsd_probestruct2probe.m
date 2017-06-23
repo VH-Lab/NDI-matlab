@@ -16,7 +16,7 @@ function nsd_probe_obj = nsd_probestruct2probe(probestruct, exp)
 
 nsd_globals;
 
-if ~exist(nsd_probetype2object,'var'),
+if ~exist('nsd_probetype2object','var'),
 	nsd_probetype2objectinit;
 end
 

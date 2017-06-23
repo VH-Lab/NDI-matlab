@@ -34,13 +34,13 @@ classdef nsd_probe_mfdaq < nsd_probe
 		%  T is the time of each sample, relative to the beginning of the epoch.
 		%
 		%  
-			[dev,devname,channeltype,channel]=self.getchanneldevinfo(epoch);
+			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
 
 			if nargout>=1,
-				[data] = readchannels_epochsamples(dev, epoch, channeltype, channel, s0, s1);
+				[data] = readchannels_epochsamples(dev, channeltype, channel, devepoch, s0, s1);
 			end
 			if nargout>=2,
-				[t] = readchannels_epochsamples(dev, epoch, 'time', 1, s0, s1);
+				[t] = readchannels_epochsamples(dev, 'time', 1, devepoch, s0, s1);
 			end
 
 		end % read_epochsamples()
@@ -68,8 +68,8 @@ classdef nsd_probe_mfdaq < nsd_probe
 					error(['this function does not handle working with clocks yet.']);
 				else,
 					epoch = clock_or_epoch;
-					[dev,devname,channeltype,channel]=self.getchanneldevinfo(epoch);
-					sr = samplerate(dev, epoch, channeltype, channel);
+					[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
+					sr = samplerate(dev, devepoch, channeltype, channel);
 					if numel(unique(sr))~=1,
 						error(['Do not know how to handle multiple sampling rates across channels.']);
 					end;
@@ -79,10 +79,10 @@ classdef nsd_probe_mfdaq < nsd_probe
 				end;
 
 				if nargout>=1,
-					[data] = readchannels_epochsamples(dev, epoch, channeltype, channel, s0, s1);
+					[data] = readchannels_epochsamples(dev, devepoch, channeltype, channel, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev, epoch, 'time', 1, s0, s1);
+					[t] = readchannels_epochsamples(dev, devepoch, 'time', 1, s0, s1);
 				end
 
 		end %read()
@@ -95,28 +95,29 @@ classdef nsd_probe_mfdaq < nsd_probe
 			% SR is an array of sample rates for the probe NSD_PROBE_MFDAQ_OBJ
 			% from epoch number EPOCH.
 			%
-				[dev,devname,channeltype,channellist] = self.getchanneldevinfo(epoch);
-				sr = dev.samplerate(devepoch(epoch), channeltype, channellist);
+				[dev, devname, devepoch, channeltype, channellist] = self.getchanneldevinfo(epoch);
+				sr = dev.samplerate(devepoch, channeltype, channellist);
 		end
 
-		function [dev,devname, channeltype, channellist] = getchanneldevinfo(self, epoch)
+		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(self, epoch)
 			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for NSD_PROBE_MFDAQ
 			% 
-			% [DEV, DEVNAME, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_MFDAQ_OBJ, EPOCH)
+			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_MFDAQ_OBJ, EPOCH)
 			%
 			% Given an NSD_PROBE_MFDAQ object and an EPOCH number, this functon returns the corresponding
-			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the CHANNELTYPE, and an array of channels that
-			% comprise the probe in CHANNELLIST.
-				[n, probe_epoch_contents, devepoch] = numepochs(self);
+			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the epoch number, DEVEPOCH of the device that
+			% corresponds to the probe's epoch, the CHANNELTYPE, and an array of channels that comprise the probe in CHANNELLIST.
+			%
+				[n, probe_epoch_contents, devepochs] = numepochs(self);
 				if ~(epoch >=1 & epoch <= n),
 					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
 				end
 				devstr = nsd_devicestring(probe_epoch_contents(epoch).devicestring);
 				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
-				dev = load(self.exp.device,'name',dev{epoch}); % now we have the device handle
+				devepoch = devepochs(epoch);
+				dev = load(self.experiment.device,'name', devname); % now we have the device handle
 			end
-			
-
 	end; % methods
-
 end
+
+

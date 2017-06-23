@@ -52,7 +52,7 @@ classdef nsd_probe
 			%
 			% PROBE_EPOCH_CONTENTS is a 1xN NSD_EPOCHCONTENTS object with all of the
 			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
-			% DEVEPOCH is a 1xN array with the device epoch that contains each probe epoch.
+			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
 			
 				probe_epoch_contents = nsd_epochcontents;
 				probe_epoch_contents = probe_epoch_contents([]);

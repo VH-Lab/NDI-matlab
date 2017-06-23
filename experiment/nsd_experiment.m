@@ -116,5 +116,28 @@ classdef nsd_experiment < handle
 
 		%%%%%% REFERENCE methods
 
+		function probes = getprobes(self)
+			% GETPROBES - Return all NSD_PROBES that are found in NSD_DEVICE epoch contents entries
+			%
+			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ)
+			%
+			% Examines all NSD_DEVICE entries in the NSD_EXPERIMENT_OBJ's device array
+			% and returns all NSD_PROBE entries that can be constructed from each device's
+			% NSD_EPOCHCONENTS entries.
+			%
+			% PROBES is a cell array of NSD_PROBE objects.
+			%
+				probestruct = [];
+				devs = load(self.device,'name','(.*)');
+				if ~isempty(devs),
+					probestruct = getprobes(devs(1));
+				end
+				for d=2:numel(devs),
+					probestruct = cat(1,probestruct,getprobes(devs(d)));
+				end
+				probestruct = structunique(probestruct);
+				probes = nsd_probestruct2probe(probestruct, self);
+		end % getprobes
+
 	end % methods
 end % classdef

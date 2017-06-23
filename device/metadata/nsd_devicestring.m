@@ -78,10 +78,10 @@ classdef nsd_devicestring
 				end;
 		end % nsd_devicestring
 
-		function [devicename, channeltype, channel] = nsd_devicestring2channel(self)
+		function [devicename, channeltype, channel] = nsd_devicestring2channel(self, devstr)
 			% NSD_DEVICESTRING2CHANNELS - Convert an nsd_devicestring to device, channel type, channel list
 			%
-			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NSD_DEVICESTRING2CHANNEL(SELF)
+			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NSD_DEVICESTRING2CHANNEL(SELF, DEVSTR)
 			%
 			% Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
 			% (CHANNEL) of a device string.
@@ -100,7 +100,9 @@ classdef nsd_devicestring
 			%
 			% See also: NSD_DEVICESTRING, NSD_DEVICESTRING/DEVICESTRING
 			%
-				devstr = self.devicestring();
+				if nargin<2,
+					devstr = self.devicestring();
+				end
 				devstr(find(isspace(devstr))) = []; % remove whitespace
 				colon = find(strtrim(devstr)==':');
 				devicename = devstr(1:colon-1);
@@ -124,7 +126,6 @@ classdef nsd_devicestring
 			%
 			%
 			% See also: NSD_DEVICESTRING
-
 				devstr = [self.devicename ':' self.channeltype intseq2str(self.channellist)];
 		end % devicestring
 	end
