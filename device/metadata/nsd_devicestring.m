@@ -20,7 +20,7 @@
 %  
 %  For example:
 %     '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]
-%     '2,5,11-12,8     corresopnds to [2 5 11 12 8]
+%     '2,5,11-12,8     corresponds to [2 5 11 12 8]
 %     ''               corresponds to []  % if the device doesn't have channels
 %
 % 
