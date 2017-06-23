@@ -20,7 +20,7 @@ if nargin<1,
 
 end;
 
-disp(['creating a new experiment object...']);
+disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
 exp = nsd_experiment_dir('exp1',dirname);
 
 dev1 = load(exp.device,'name','Intan1');
