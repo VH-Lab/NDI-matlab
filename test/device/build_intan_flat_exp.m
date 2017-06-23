@@ -36,7 +36,7 @@ exp.device_add(dev1);
  
   % Step 3: let's add a variable
 
-myvardir = nsd_variable_dir(exp.variable,'Animal parameters',{'nsd_variable'});
+myvardir = nsd_variable_branch(exp.variable,'Animal parameters',{'nsd_variable'});
 myvar = nsd_variable('Animal age','double',30,'The age of the animal at the time of the experiment (days)','');
 myvardir.add(myvar);
 

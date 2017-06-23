@@ -23,7 +23,7 @@ classdef nsd_experiment < handle
 
 				obj.reference = reference;
 				obj.device = nsd_dbleaf_branch('','device',{'nsd_device'},1);
-				obj.variable = nsd_dbleaf_branch('','variable',{'nsd_variable','nsd_variable_dir'},0);
+				obj.variable = nsd_dbleaf_branch('','variable',{'nsd_variable','nsd_variable_branch'},0);
 		end
 
 		%%%%%% DEVICE METHODS
@@ -73,7 +73,7 @@ classdef nsd_experiment < handle
 			%  
 			% See also: VARIABLE_RM, NSD_EXPERIMENT
 
-				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_dir'), error(['var is not an NSD_VARIABLE']); end;
+				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_branch'), error(['var is not an NSD_VARIABLE']); end;
 				self.variable= self.variable.add(var);
 		end
 
