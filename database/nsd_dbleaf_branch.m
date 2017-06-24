@@ -464,7 +464,19 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 						end
 					end
 				end
-			end
+
+				ind = find(strcmp('path',properties));
+				if ~isempty(ind), % need to recursively update the path of all child branches
+					subdirname = obj.dirname();
+					subobjs = load(obj,'name','(.*)'),
+					if numel(subobjs)==1, subobjs = {subobjs}; end
+					for j=1:numel(subobjs),
+						if isa(subobjs{j},'nsd_dbleaf_branch'),
+							subobjs{j} = subobjs{j}.setproperties({'path'},{subdirname});
+						end
+					end
+				end
+		end % setproperties()
 
  		function obj = readobjectfile(nsd_dbleaf_branch_obj, fname)
  			% READOBJECTFILE 
