@@ -3,7 +3,7 @@
 
 classdef nsd_experiment_dir < nsd_experiment
 	properties (GetAccess=public,SetAccess=protected)
-		path;
+		path    % the file path of the experiment
 	end
 
 	methods
@@ -42,6 +42,9 @@ classdef nsd_experiment_dir < nsd_experiment
 				else,
 					obj.device = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 					obj.device = obj.device.setproperties({'path'},{obj.nsdpathname()});
+					devs = load(obj.device,'name','(.*)');
+					if numel(devs)==1, devs={devs}; end;
+					for j=1:numel(devs), devs{j} = devs{j}.setpath(obj.path); end;
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),
@@ -64,7 +67,7 @@ classdef nsd_experiment_dir < nsd_experiment
 			% the experiment. This might be a URL, or a file directory.
 			%
 
-			p = self.path;
+				p = self.path;
                 end
 
 		function p = nsdpathname(self)

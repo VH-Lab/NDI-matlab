@@ -468,7 +468,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				ind = find(strcmp('path',properties));
 				if ~isempty(ind), % need to recursively update the path of all child branches
 					subdirname = obj.dirname();
-					subobjs = load(obj,'name','(.*)'),
+					subobjs = load(obj,'name','(.*)');
 					if numel(subobjs)==1, subobjs = {subobjs}; end
 					for j=1:numel(subobjs),
 						if isa(subobjs{j},'nsd_dbleaf_branch'),

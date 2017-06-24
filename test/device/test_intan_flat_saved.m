@@ -23,7 +23,10 @@ end;
 disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
 exp = nsd_experiment_dir(dirname);
 
-dev1 = load(exp.device,'name','Intan1');
+
+disp(['Now looking for device Intan1']);
+
+dev1 = load(exp.device,'name','Intan1'),
 
   % Now let's print some statistics
 

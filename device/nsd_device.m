@@ -221,6 +221,17 @@ classdef nsd_device < nsd_dbleaf
 				probes_struct = structunique(probes_struct);
 
 		end % getprobes()
+
+		function self=setpath(self, path)
+			% SETPATH - set the pathname for an NSD_DEVICE object's filetree
+			%
+			% NSD_DEVICE_OBJ = SETPATH(NSD_DEVICE_OBJ, PATH)
+			%
+			% Set the path of an NSD_DEVICE object's NSD_FILETREE object
+			%	
+				self.filetree = setproperties(self.filetree,{'path'},{path});
+		end % setpath()
+			
 			
 	end % methods
 end
