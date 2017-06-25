@@ -180,7 +180,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% now we're ready to concatenate 
 			md(end+1) = omd;
 
-			% now deal with saving metadata
+			% now deal with saving metadata and the object
 
 			if nsd_dbleaf_branch_obj.isinmemory(),
 				nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
@@ -239,6 +239,21 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.unlock();
 			
+		end
+
+		function nsd_dbleaf_branch_obj=update(nsd_dbleaf_branch_obj, nsd_dbleaf_obj)
+			% UPDATE - update the contents of a NSD_DBLEAF object that is stored in an NSD_DBLEAF_BRANCH
+			%
+			% NSD_DBLEAF_BRANCH_OBJ = UPDATE(NSD_DBLEAF_BRANCH_OBJ, NSD_DBLEAF_OBJ
+			%
+			% Update the record of an NSD_DBLEAF object that is already stored in a NSD_DBLEAF_BRANCH
+			%
+			% The update is achieved by first removing NSD_DBLEAF_OBJ and then re-adding it.
+			%
+
+				nsd_dbleaf_branch_obj = remove(nsd_dbleaf_branch_obj, nsd_dbleaf_obj.objectfilename);
+				nsd_dbleaf_branch_obj = add(nsd_dbleaf_branch_obj, nsd_dbleaf_obj);
+
 		end
 		
 		function [indexes,md] = search(nsd_dbleaf_branch_obj, varargin)
@@ -473,9 +488,11 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 					for j=1:numel(subobjs),
 						if isa(subobjs{j},'nsd_dbleaf_branch'),
 							subobjs{j} = subobjs{j}.setproperties({'path'},{subdirname});
+							obj=obj.update(subobjs{j});
 						end
 					end
 				end
+
 		end % setproperties()
 
  		function obj = readobjectfile(nsd_dbleaf_branch_obj, fname)
