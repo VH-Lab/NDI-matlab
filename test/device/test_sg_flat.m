@@ -23,7 +23,7 @@ dt = nsd_filetree(exp.getpath(), '.*\.rec\>');  % look for .rec files
 
   % Step 2: create the device object and add it to the experiment:
 
-dev1 = nsd_device_mfdaq_sg('sg1',dt);
+dev1 = nsd_device_mfdaq_sg('sgtest',dt);
 exp.device_add(dev1);
 
   % Now let's print some statistics
@@ -47,7 +47,7 @@ disp(['We will now plot the data for epoch 1 for analog_in at channel 2 and 4.']
 data = readchannels_epochsamples(dev1,'analog_in',[2 4],1,1,30000);
 %time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
 
-disp(getepochcontents(dev1,1));
+%disp(getepochcontents(dev1,1));
 
 figure;
 time = (1:30000);

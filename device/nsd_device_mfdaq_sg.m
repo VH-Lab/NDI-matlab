@@ -29,6 +29,8 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
 
             N = numepochs(self.filetree);
 
+            fileconfig = [];
+
             for n=1:N
                 filelist = getepochfiles(self.filetree, n);
 
@@ -106,6 +108,8 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
         function channels = getchannelsdetailed(self)
 
             N = numepochs(self.filetree);
+
+            fileconfig = [];
 
             for n=1:N
                 filelist = getepochfiles(self.filetree, n);
@@ -207,7 +211,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
 			filename = filename{1};
             fileconfig = read_SpikeGadgets_config(filename);
             nTrodes = fileconfig.nTrodes;
-
+            %List where epochcontents objects will be stored
             epochcontents = [];
 
             for i=1:length(nTrodes)
@@ -220,7 +224,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                 end
 
                 obj = nsd_epochcontents(name,reference,nTrode,channels);
-
+                %Append each newly made object to end ef list
                 epochcontents = [epochcontents obj];
             end
 
