@@ -9,7 +9,7 @@ frame_number = 1;
 %the frame to be taken using .frame(n,i) function. Could be changed for testing
 
 %Makes sure that the input_file_directory argument is indeed a directory,
-%and that only one arguments is passed. 
+%and that only one arguments is passed.
 %If no argument is passed, then set the directories to a
 %default.
 if nargin < 1
@@ -20,15 +20,17 @@ elseif exist(input_file_directory) ~= 7
     error('argument is not a directory');
 else
     input_dir_name = input_file_directory;
-    output_dir_name = [input_file_directory filesep 'output'];
+    dir_parts = strsplit(input_dir_name, filesep);
+    parent_dir = strjoin(dir_parts(1:end-1), filesep);
+    output_dir_name = [parent_dir filesep 'output'];
 end
-    
+
 %creating a new experiment object
 example_exp = nsd_experiment_dir('exp1',input_dir_name);
-%creating a new datatree that looks for .tif files.
-example_datatree = nsd_datatree(example_exp,'.*\.tif\>');
+%creating a new filetree that looks for .tif files.
+example_filetree = nsd_filetree(example_exp.getpath,'.*\.tif\>');
 %creating an image_tiffstack device object
-example_device = nsd_device_image_tiffstack('sampleDevice',example_datatree);
+example_device = nsd_device_image_tiffstack('sampleDevice',example_filetree);
 
 
 
@@ -41,4 +43,3 @@ imwrite(image, [output_dir_name filesep 'example_frame.tif']);
 disp(['frame exported to "' output_dir_name '"']);
 
 end
-
