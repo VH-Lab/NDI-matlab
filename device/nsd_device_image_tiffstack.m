@@ -10,8 +10,8 @@ classdef nsd_device_image_tiffstack < nsd_device_image
     methods
         %Constructoe requiers only name and data tree as it uses the super
         %constructor
-        function obj = nsd_device_image_tiffstack(name, datatree)
-                obj = obj@nsd_device_image(name,datatree);
+        function obj = nsd_device_image_tiffstack(name, filetree)
+                obj = obj@nsd_device_image(name,filetree);
         end
 
         %This function returns a specific frame at position 'i' in epoch
