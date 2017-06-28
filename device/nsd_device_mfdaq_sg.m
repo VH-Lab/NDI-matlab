@@ -9,10 +9,10 @@
 classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
-    
+
     properties
     end
-    
+
     methods
         function obj = nsd_device_mfdaq_sg(name, thefiletree)
             % NSD_DEVICE_MFDAQ_SG - Create a new NSD_DEVICE_MFDAQ_SG object
@@ -24,18 +24,20 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %
 			obj = obj@nsd_device_mfdaq(name,thefiletree);
         end
-        
+
         function channels = getchannels(self)
-            
+
             N = numepochs(self.filetree);
-            
+
+            fileconfig = [];
+
             for n=1:N
                 filelist = getepochfiles(self.filetree, n);
-                
+
                 filename = filelist{1};
-                
+
                 [fileconfig, channels] = read_SpikeGadgets_config(filename);
-                
+
                 for k=1:length(channels)
                     number = 0;
                     name = '';
@@ -55,7 +57,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                             name = strcat('axo',num2str(number));
                             channels(k).number = number;
                         end
-                        
+
                     %Digital
                     elseif strcmp(channels(k).name(1),'D')
                         %Input
@@ -79,7 +81,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                         name = strcat('di',num2str(number));
                         channels(k).number = number;
                     end
-                    
+
                     channels(k).name = name;
                 end
             end
@@ -91,29 +93,31 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                     channels(end).type = 'analog_in';
                     channels(end).number = channelNumber+1;
                 end
-            end    
-            
+            end
+
             channels = struct2table(channels);
             channels = sortrows(channels,{'type','number'});
             channels = table2struct(channels);
-            
+
             remove = {'startbyte','bit'};
-            
+
             channels = rmfield(channels, remove);
-            
+
         end
-        
+
         function channels = getchannelsdetailed(self)
-            
+
             N = numepochs(self.filetree);
-            
+
+            fileconfig = [];
+
             for n=1:N
                 filelist = getepochfiles(self.filetree, n);
-                
+
                 filename = filelist{1};
-                
-                [fileconfig, channels] = readTrodesFileConfig(filename);
-                
+
+                [fileconfig, channels] = read_SpikeGadgets_config(filename);
+
                 for k=1:length(channels)
                     number = 0;
                     name = '';
@@ -133,7 +137,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                             name = strcat('axo',num2str(number));
                             channels(k).number = number;
                         end
-                        
+
                     %Digital
                     elseif strcmp(channels(k).name(1),'D')
                         %Input
@@ -157,7 +161,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                         name = strcat('di',num2str(number));
                         channels(k).number = number;
                     end
-                    
+
                     channels(k).name = name;
                 end
             end
@@ -169,20 +173,20 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                     channels(end).type = 'analog_in';
                     channels(end).number = channelNumber;
                 end
-            end    
-            
+            end
+
             channels = struct2table(channels);
             channels = sortrows(channels,{'type','number'});
             channels = table2struct(channels);
         end
-        
-        
-        
+
+
+
         function sr = samplerate(self, epoch)
 		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 		%
 		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
-		% 
+		%
 		% SR is the list of sample rate from specified channels
         %
         % CHANNELTYPE and CHANNEL not used in this case since it is the
@@ -191,14 +195,41 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
 			filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
-			fileconfig = readTrodesFileConfig(filename);
-            
+			fileconfig = read_SpikeGadgets_config(filename);
+
             %Sampling rate is the same for all channels in Spike Gadgets
             %device so it is returned by checking the file configuration
             sr = str2num(fileconfig.samplingRate);
         end
-        
-        
+
+        function epochcontents = getepochcontents(self, epoch)
+            % GETEPOCHCONTENTS returns struct with probe information
+            % name, reference, n-trode, channels
+            %
+
+            filename = self.filetree.getepochfiles(epoch);
+			filename = filename{1};
+            fileconfig = read_SpikeGadgets_config(filename);
+            nTrodes = fileconfig.nTrodes;
+            %List where epochcontents objects will be stored
+            epochcontents = [];
+
+            for i=1:length(nTrodes)
+                name = 'Tetrode' + num2str(nTrodes(i).id);
+                reference = 1;
+                type = 'nTrode';
+                for i=j:4 %number of channels per nTrode
+                    %String with channels of trode
+                    channels = strcat(channels,strcat('ai', num2str(nTrodes(i).channelInfo.packetLocation(j) + 1), ','));
+                end
+
+                obj = nsd_epochcontents(name,reference,nTrode,channels);
+                %Append each newly made object to end ef list
+                epochcontents = [epochcontents obj];
+            end
+
+        end
+
         function data = readchannels_epochsamples(self,channeltype, channels, epoch, s0, s1)
             %  FUNCTION READ_CHANNELS - read the data based on specified channels
             %
@@ -212,31 +243,31 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %  if channeltype is 'analog_in' channel is an array with the
             %  string names of analog channels 'Ain1'through 8
             %
-            %  EPOCH is 
+            %  EPOCH is
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel) 
+            %  DATA is the channel data (each column contains data from an indvidual channel)
             %
             filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
-            
+
             header = readTrodesFileConfig(filename);
-            
+
             sr = self.samplerate(epoch);
-            
+
             detailedchannels = self.getchannelsdetailed();
-            
+
             byteandbit = [];
-            
+
             %read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
             %reading from channel 1 in list returned
             %Reads nTrodes
-            if (strcmp(channeltype,'analog_in') || strcmp(channeltype, 'analog_out'))  
-                
+            if (strcmp(channeltype,'analog_in') || strcmp(channeltype, 'analog_out'))
+
                 data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
-                
+
             %Reads analog inputs
             elseif (strcmp(channeltype,'auxiliary'))
-                %for every channel in device 
+                %for every channel in device
                 for i=1:length(detailedchannels)
                     %based on every channel to read
                     for j=1:length(channels)
@@ -248,10 +279,10 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                     end
                 end
                 data = read_SpikeGadgets_analogChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
-                
+
             %Reads digital inputs
             elseif (strcmp(channeltype,'digital_in') || strcmp(channeltype, 'digital_out'))
-                %for every channel in device 
+                %for every channel in device
                 for i=1:length(detailedchannels)
                     %based on every channel to read
                     for j=1:length(channels)
@@ -263,12 +294,11 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                         end
                     end
                 end
-                
+
                 data = read_SpikeGadgets_digitalChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
                 data = data';
-             
+
             end
         end
     end
 end
-
