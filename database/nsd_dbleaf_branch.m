@@ -156,7 +156,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			if ~isempty(indexes),
 				error(['NSD_DBLEAF with name ''' newobj.name ''' already exists in the NSD_DBLEAF_BRANCH ''' nsd_dbleaf_branch_obj.name '''. Names must be unique within a branch.']);
 			end;
-			
+
 			omd = metadatastruct(newobj);
 			% now have to reconcile possibly different metadata structures
 			fn1 = fieldnames(md);
@@ -180,6 +180,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% now we're ready to concatenate 
 			md(end+1) = omd;
 
+
 			% now deal with saving metadata and the object
 
 			if nsd_dbleaf_branch_obj.isinmemory(),
@@ -192,6 +193,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				% now write md back to disk
 				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile([],0,md);
 			end;
+
 
 		end
 
@@ -248,13 +250,41 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% Update the record of an NSD_DBLEAF object that is already stored in a NSD_DBLEAF_BRANCH
 			%
-			% The update is achieved by first removing NSD_DBLEAF_OBJ and then re-adding it.
-			%
 
-				nsd_dbleaf_branch_obj = remove(nsd_dbleaf_branch_obj, nsd_dbleaf_obj.objectfilename);
-				nsd_dbleaf_branch_obj = add(nsd_dbleaf_branch_obj, nsd_dbleaf_obj);
+				% need to lock
 
-		end
+				[nsd_dbleaf_branch_obj,b] = nsd_dbleaf_branch_obj.lock();
+
+				if ~b,
+					error(['Could not obtain lock on object ' nsd_dbleaf_branch_obj.objectfilename '.']);
+				end
+
+				[index,md] = search(nsd_dbleaf_branch_obj, 'objectfilename', nsd_dbleaf_obj.objectfilename);
+
+				if isempty(index),
+					nsd_dbleaf_branch_obj.unlock();
+					error(['The object to be updated is not in this branch: ' nsd_dbleaf_obj.objectfilename '.']);
+				end;
+
+				% we assume that metadata field identities haven't changed
+				
+				omd = metadatastruct(nsd_dbleaf_obj);
+				md(index) = omd;
+
+				if nsd_dbleaf_branch_obj.isinmemory(),
+					nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
+					nsd_dbleaf_branch_obj.leaf{index} = nsd_dbleaf_obj;           % add the leaf to memory
+				else,
+					% write the object to our unique subdirectory
+					nsd_dbleaf_obj.writeobjectfile(nsd_dbleaf_branch_obj.dirname(),1);  % add the leaf to disk
+
+					% now write md back to disk
+					nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile([],1,md);
+				end;
+
+				nsd_dbleaf_branch_obj.unlock();
+
+		end % update()
 		
 		function [indexes,md] = search(nsd_dbleaf_branch_obj, varargin)
 			% SEARCH - search for a match in NSD_DBLEAF_BRANCH metadata

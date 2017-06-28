@@ -271,6 +271,7 @@ classdef nsd_filetree < nsd_base
 			% that you implement your own version of this method. If you have only properties that can be stored
 			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
 			%
+				[data,fieldnames] = stringdatatosave@nsd_base(nsd_filetree_obj);
 				if isstruct(nsd_filetree_obj.fileparameters),
 					fp = cell2str(nsd_filetree_obj.fileparameters.filematch);
 				else,
@@ -283,8 +284,14 @@ classdef nsd_filetree < nsd_base
 					efp = [];
 				end
 
-				data = {class(nsd_filetree_obj) nsd_filetree_obj.path fp nsd_filetree_obj.epochcontents_class cell2str(nsd_filetree_obj.epochcontents_fileparameters) };
-				fieldnames = { '', 'path', '$fileparameters', 'epochcontents' '$epochcontents_fileparameters' };
+				data{end+1} = nsd_filetree_obj.path;
+				fieldnames{end+1} = 'path';
+				data{end+1} = fp;
+				fieldnames{end+1} = '$fileparameters';
+				data{end+1} = nsd_filetree_obj.epochcontents_class;
+				fieldnames{end+1} = 'epochcontents';
+				data{end+1} = efp;
+				fieldnames{end+1} = '$epochcontents_fileparameters';
 		end % stringdatatosave
 
 		function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
@@ -315,11 +322,19 @@ classdef nsd_filetree < nsd_base
 						else,
 							switch properties{i}(2:end),
 								case 'fileparameters',
-									fp = eval(values{i});
-									obj = obj.setfileparameters(fp);
+									if ~isempty(values{i}),
+										fp = eval(values{i});
+										obj = obj.setfileparameters(fp);
+									else,
+										obj.fileparameters = [];
+									end;
 								case 'epochcontents_fileparameters',
-									fp = eval(values{i});
-									obj = obj.setepochcontentsfileparameters(fp);
+									if ~isempty(values{i}),
+										fp = eval(values{i});
+										obj = obj.setepochcontentsfileparameters(fp);
+									else,
+										obj.epochcontents_fileparameters = [];
+									end
 								otherwise,
 									error(['Do not know how to set property ' properties{i}(2:end) '.']);
 							end

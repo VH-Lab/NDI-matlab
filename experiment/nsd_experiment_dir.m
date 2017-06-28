@@ -44,7 +44,9 @@ classdef nsd_experiment_dir < nsd_experiment
 					obj.device = obj.device.setproperties({'path'},{obj.nsdpathname()});
 					devs = load(obj.device,'name','(.*)');
 					if numel(devs)==1, devs={devs}; end;
+					disp(['updating path of devices']);
 					for j=1:numel(devs), devs{j} = devs{j}.setpath(obj.path); end;
+					for j=1:numel(devs), obj.device.update(devs{j}); end;
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),

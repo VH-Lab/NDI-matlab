@@ -72,14 +72,21 @@ classdef nsd_device < nsd_dbleaf
 				obj.filetree=ft.readobjectfile([subdirname filesep f(1).name]);
 		end % readobjectfile
 
-		function obj = writeobjectfile(nsd_device_obj, dirname)
+		function obj = writeobjectfile(nsd_device_obj, dirname, islocked)
 			% WRITEOBJECTFILE - write an nsd_device to a directory
 			%
-			% NSD_DEVICE_OBJ = WRITEOBJECTFILE(NSD_DEVICE_OBJ, dirname)
+			% NSD_DEVICE_OBJ = WRITEOBJECTFILE(NSD_DEVICE_OBJ, dirname, [islocked])
 			%
-			% Reads the NSD_DEVICE_OBJ from the file FNAME (full path).
+			% Writes the NSD_DEVICE_OBJ to the directory DIRNAME (full path).
+			% 
+			% If ISLOCKED is present, it is passed along to the NSD_DBLEAF/WRITEOBJECT method.
+			% Otherwise, it is assumed that the variable is not already locked (islocked=0).
 
-				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname);
+				if nargin<3,
+					islocked = 0;
+				end
+
+				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname, islocked);
 				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
 				obj.filetree.writeobjectfile(subdirname)

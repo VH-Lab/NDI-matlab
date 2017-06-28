@@ -45,6 +45,7 @@ disp(['We will now plot the data for epoch 1 for analog_input channel 1.']);
 data = readchannels_epochsamples(dev1,'analog_in',1,1,0,Inf);
 time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
 
+
 figure;
 plot(time,data);
 ylabel('Data');

@@ -150,7 +150,7 @@ classdef nsd_base < handle
 
 				thisfunctionlocked = 0;
 				if ~locked, % we need to lock it
-					nsd_base_obj = nsd_base_obj.lock(dirname)
+					nsd_base_obj = nsd_base_obj.lock(dirname);
 					thisfunctionlocked = 1;
 				end
 
@@ -210,7 +210,7 @@ classdef nsd_base < handle
                         % See also: NSD_BASE/LOCK NSD_BASE/UNLOCK NSD_BASE/LOCKFILENAME
 
 				filename = [dirname filesep nsd_base_obj.objectfilename];
-                                lockfname = [filename '-lock'];
+				lockfname = [filename '-lock'];
 
                 end % lockfilename()
 
