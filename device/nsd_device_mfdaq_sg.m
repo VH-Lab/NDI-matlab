@@ -218,7 +218,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                 name = 'Tetrode' + num2str(nTrodes(i).id);
                 reference = 1;
                 type = 'nTrode';
-                for i=j:4 %number of channels per nTrode
+                for j=1:4 %number of channels per nTrode
                     %String with channels of trode
                     channels = strcat(channels,strcat('ai', num2str(nTrodes(i).channelInfo.packetLocation(j) + 1), ','));
                 end
