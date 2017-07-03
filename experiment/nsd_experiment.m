@@ -25,7 +25,9 @@ classdef nsd_experiment < handle
 
 				obj.reference = reference;
 				obj.device = nsd_dbleaf_branch('','device',{'nsd_device'},1);
-				obj.variable = nsd_dbleaf_branch('','variable',{'nsd_variable','nsd_variable_branch'},0);
+				obj.variable = nsd_dbleaf_branch('','variable',...
+					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
+					,0);
 		end
 
 		%%%%%% DEVICE METHODS

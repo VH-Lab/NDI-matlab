@@ -51,26 +51,29 @@ classdef nsd_variable_file < nsd_dbleaf_branch
 				error(['NSD_VARIABLE_FILE objects must be attached to NSD_DBLEAF_BRANCH objects.']);
 			end;
 
+			% this adds to the parent, too
 			obj = obj@nsd_dbleaf_branch(parent,name,classnames,isflat,isinmemory);
 			obj.description = description;
 			obj.history = history;
 			if ~isempty(loadfilename),
-				obj = obj.readobjectfile(loadfilename);
+				obj = obj.readobjectfile(loadfilename); 
+			elseif ~isempty(parent),
+				parent.update(obj);
 			end;
 
 		end % nsd_variable_file
 
-		function mds = metadatastruct(nsd_variable_obj)
+		function mds = metadatastruct(nsd_variable_file_obj)
 			% METADATASTRUCT - return the metadata fields and values for an NSD_VARIABLE object
 			%
-			% MDS = METADATASTRUCT(NSD_VARIABLE_OBJ)
+			% MDS = METADATASTRUCT(NSD_VARIABLE_FILE_OBJ)
 			%
-			% Returns the metadata fieldnames and values for NSD_VARIABLE_OBJ. This adds the properties
+			% Returns the metadata fieldnames and values for NSD_VARIABLE_FILE_OBJ. This adds the properties
 			% 'description' and 'history'.
 			%
-				mds = metadatastruct@nsd_dbleaf(nsd_variable_obj);
-				mds.description = nsd_variable_obj.description;
-				mds.history = nsd_variable_obj.history;
+				mds = metadatastruct@nsd_dbleaf(nsd_variable_file_obj);
+				mds.description = nsd_variable_file_obj.description;
+				mds.history = nsd_variable_file_obj.history;
 		end % metadatastruct()
 
 		function fname = filename(nsd_variable_file_obj)

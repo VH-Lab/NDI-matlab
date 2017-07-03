@@ -23,16 +23,32 @@ end;
 disp(['creating a new experiment object...']);
 exp = nsd_experiment_dir('exp1',dirname);
 
+disp(['Now we will add a variable of each allowed type...'])
 
-myvardir = nsd_variable_branch(exp.variable,'Animal parameters',{'nsd_variable'})
+disp(['First, we will add a variable branch (a collection of variables)...'])
+
+myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
+
+disp(['Second, we will add a variable to the branch ...'])
 
 myvar = nsd_variable('Animal age','double',30,'The age of the animal at the time of the experiment (days)','');
 
 myvardir.add(myvar);
 
+disp(['Third, we will add a variable file to the branch ...'])
+
+myfilevar = nsd_variable_file(myvardir,'Things to write','Some things to write','no history');
+
+disp(['Now, we will access all of our saved variables:']);
+
+disp(['First, the branch...'])
 findmydir = load(exp.variable,'name','Animal parameters'),
 
+disp(['Second, the variable...'])
 findmyvar = load(findmydir,'name','Animal age')
+
+disp(['Third, the file ...'])
+findmyfilevar = load(findmydir,'name','Things to write')
 
 exp.variable_rm(myvardir);
 
