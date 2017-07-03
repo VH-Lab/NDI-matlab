@@ -5,7 +5,8 @@ function build_intan_flat_exp(dirname)
 %
 %  Given a directory with RHD data inside, this function loads the
 %  channel information and then plots some data from channel 1,
-%  as an example of the Intan driver.
+%  as an example of the Intan driver. It also leaves the driver saved
+%  in the experiment record.
 %
 %  If DIRNAME is not provided, the default directory
 %  [USERPATH/tools/NSD/example_experiments/exp1_eg_saved] is used.

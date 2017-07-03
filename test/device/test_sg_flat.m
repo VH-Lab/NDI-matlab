@@ -19,7 +19,7 @@ disp(['Now adding our acquisition device (sg):']);
   % Step 1: Prepare the data tree; we will just look for .rec
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp.getpath(), '.*\.rec\>');  % look for .rec files
+dt = nsd_filetree(exp, '.*\.rec\>');  % look for .rec files
 
   % Step 2: create the device object and add it to the experiment:
 
@@ -56,5 +56,8 @@ plot(time,data);
 ylabel('Data');
 xlabel('Time (s)');
 box off;
+
+
+exp1.device_rm(dev1); % remove the device so the demo works again
 
 end
