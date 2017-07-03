@@ -92,6 +92,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			end;
 			obj.classnames = classnames;
 			obj.isflat = isflat;
+			obj.memory = memory;
 			if ~isempty(parent), parent.add(obj); end;
 			obj.mdmemory = emptystruct;
 			obj.leaf = {};

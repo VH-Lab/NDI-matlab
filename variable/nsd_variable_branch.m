@@ -56,3 +56,4 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 	end % methods
 end % classdef
 
+
