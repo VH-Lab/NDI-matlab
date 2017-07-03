@@ -14,15 +14,17 @@ frame_number = 1;
 %default.
 if nargin < 1
     example_directory = [userpath filesep 'tools' filesep 'NSD' filesep 'example_experiments'];
-    input_dir_name = [example_directory filesep 'exp1' filesep 'raw_data' ];
-    output_dir_name = [example_directory filesep 'exp1' filesep 'output' ];
+    input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
+    output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];
+    if exist(output_dir_name) ~=7
+      mkdir(output_dir_name);
+    end
 elseif exist(input_file_directory) ~= 7
     error('argument is not a directory');
 else
-    input_dir_name = input_file_directory;
-    dir_parts = strsplit(input_dir_name, filesep);
-    parent_dir = strjoin(dir_parts(1:end-1), filesep);
+    parent_dir = parentDir(input_file_directory);
     output_dir_name = [parent_dir filesep 'output'];
+    mkdir(output_dir_name);
 end
 
 %creating a new experiment object
