@@ -41,7 +41,7 @@ classdef nsd_experiment_dir < nsd_experiment
 					obj.device = nsd_dbleaf_branch(obj.nsdpathname(),'device',{'nsd_device'},1);
 				else,
 					obj.device = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
-					obj.device = obj.device.setproperties({'path'},{obj.nsdpathname()});
+					%obj.device = obj.device.setproperties({'path'},{obj.nsdpathname()});  % this would go
 					devs = load(obj.device,'name','(.*)');
 					if numel(devs)==1, devs={devs}; end;
 					disp(['updating path of devices']);
@@ -53,7 +53,7 @@ classdef nsd_experiment_dir < nsd_experiment
 					obj.variable = nsd_dbleaf_branch(obj.nsdpathname(),'variable',{'nsd_variable','nsd_variable_branch'},0);
 				else,
 					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
-					obj.variable= obj.variable.setproperties({'path'},{obj.nsdpathname()});
+					%obj.variable= obj.variable.setproperties({'path'},{obj.nsdpathname()});
 				end;
 				str2text([obj.nsdpathname() filesep 'reference.txt'],obj.reference);
 		end
@@ -68,7 +68,6 @@ classdef nsd_experiment_dir < nsd_experiment
 			% The path is some sort of reference to the storage location of
 			% the experiment. This might be a URL, or a file directory.
 			%
-
 				p = self.path;
                 end
 

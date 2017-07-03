@@ -9,27 +9,30 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 		path         % String path; where NSD_DBLEAF_BRANCH should store its files
 		classnames   % Cell array of classes that may be stored in the branch
 		isflat       % 0/1 Is this a flat branch (that is, with no subbranches allowed?)
+		memory       % 0/1 Should this NSD_DBLEAF_BRANCH exist in memory rather than writing files to disk?
 	end % properties
 	properties (Access=protected)
-		mdmemory     % metadata in memory (if path=='')
-		leaf         % cell array of leafs (leaves) if local memory is storage
+		mdmemory     % metadata in memory (if memory==1)
+		leaf         % cell array of leafs (leaves) if local memory is storage (that is, memory==1)
 	end % parameters private
 
 	methods
 		function obj = nsd_dbleaf_branch(path, name, classnames, isflat)
 			% NSD_DBLEAF_BRANCH - Create a database branch of objects with searchable metadata
 			% 
-			% DBBRANCH = NSD_DBLEAF_BRANCH(PATH, NAME, CLASSNAMES, [ISFLAT])
+			% DBBRANCH = NSD_DBLEAF_BRANCH(PATH, NAME, CLASSNAMES, [ISFLAT], [MEMORY])
 			%
 			% Creates an NSD_DBLEAF_BRANCH object that operates at the path PATH, has the
 			% string name NAME, and may consist of elements of classes that are found
 			% in CLASSNAMES. NAME may be any string. The optional argument ISFLAT is a 0/1
 			% value that indicates whether NSD_DBLEAF_BRANCH objects can be added as elements to
-			% DBBRANCH.
+			% DBBRANCH. The optional argument MEMORY is a 0/1 value that indicates whether this
+			% this NSD_DBLEAF_BRANCH object should only store its objects in memory (1) or write objects
+			% to disk as they are added (1).
 			%
 			% One may also use the form:
 			%
-			% DBBRANCH = NSD_DBLEAF_BRANCH(PARENT_BRANCH, NAME, CLASSNAMES)
+			% DBBRANCH = NSD_DBLEAF_BRANCH(PARENT_BRANCH, NAME, CLASSNAMES, [ISFLAT], [MEMORY])
 			%
 			% where PARENT_BRANCH is a NSD_DBLEAF_BRANCH, and PATH will be taken from that
 			% object's directory name (that is, PARENT_BRANCH.DIRNAME() ). The new object
@@ -45,6 +48,10 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			loadfromfile = 0;
 			parent = [];
+
+			if nargin<5,
+				memory = 0;
+			end
 
 			if nargin<4,
 				isflat = 0;
@@ -183,7 +190,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			% now deal with saving metadata and the object
 
-			if nsd_dbleaf_branch_obj.isinmemory(),
+			if nsd_dbleaf_branch_obj.memory,
 				nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
 				nsd_dbleaf_branch_obj.leaf{end+1} = newobj;           % add the leaf to memory
 			else,
@@ -193,8 +200,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				% now write md back to disk
 				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile([],0,md);
 			end;
-
-
 		end
 
 		function nsd_dbleaf_branch_obj=remove(nsd_dbleaf_branch_obj, objectfilename)
@@ -227,7 +232,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			tokeep = setdiff(1:numel(md),indexes);
 			md = md(tokeep);
 			
-			if nsd_dbleaf_branch_obj.isinmemory(), 
+			if nsd_dbleaf_branch_obj.memory, 
 				% update memory
 				nsd_dbleaf_branch_obj.mdmemory = md;
 				nsd_dbleaf_branch_obj.leaf = nsd_dbleaf_branch_obj.leaf(tokeep);
@@ -271,7 +276,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				omd = metadatastruct(nsd_dbleaf_obj);
 				md(index) = omd;
 
-				if nsd_dbleaf_branch_obj.isinmemory(),
+				if nsd_dbleaf_branch_obj.memory,
 					nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
 					nsd_dbleaf_branch_obj.leaf{index} = nsd_dbleaf_obj;           % add the leaf to memory
 				else,
@@ -401,7 +406,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% If METADATA is provided, it is written directly.
 
 			if nargin<2 | isempty(thedirname),
-				if nsd_dbleaf_branch_obj.isinmemory(),
+				if nsd_dbleaf_branch_obj.memory,
 					error(['This branch ''' nsd_dbleaf_branch_obj.name ''' has no path. THEDIRNAME must be provided.']);
 				end;
 				thedirname=nsd_dbleaf_branch_obj.path;
@@ -443,7 +448,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			end;
 
 			% now, if in memory, write leaf objects
-			if nsd_dbleaf_branch_obj.isinmemory(),
+			if nsd_dbleaf_branch_obj.memory,
 				% remove our subdirectory, it is guaranteed to exist after .dirname() runs
 				rmdir(nsd_dbleaf_branch_obj.dirname(thedirname),'s');
 				% now add back; the subdirectory will exist on the call to .dirname() because it creates it if it doesn't exist
@@ -476,8 +481,8 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% that are being stored.
 			%
 				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_dbleaf_branch_obj);
-				data{end+1} = nsd_dbleaf_branch_obj.path;
-				fieldnames{end+1} = 'path';
+				data{end+1} = int2str(nsd_dbleaf_branch_obj.memory);
+				fieldnames{end+1} = '$memory';
 				data{end+1} = cell2str(nsd_dbleaf_branch_obj.classnames);
 				fieldnames{end+1} = '$classnames';
 		end % stringdatatosave
@@ -534,8 +539,10 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
  			
 				obj=readobjectfile@nsd_dbleaf(nsd_dbleaf_branch_obj, fname);
 
+				obj.path = fileparts(fname); % set path to be parent directory of fname
+
 				% now, if in memory only, we need to read in the metadata and leafs
-				if obj.isinmemory(),
+				if obj.memory,
 					[parent,myfile]=fileparts(fname);
 					obj.mdmemory = loadStructArray(obj.metadatafilename(parent));
 					obj.leaf = {};
@@ -566,7 +573,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				thedirname = nsd_dbleaf_branch_obj.path;
 			end
 
-			if nsd_dbleaf_branch_obj.isinmemory(),
+			if nsd_dbleaf_branch_obj.memory,
 				number_of_tries = 30;
 				mytry = 0;  % try to get the lock, waiting up to 30 seconds
 				while ~isempty(nsd_dbleaf_branch_obj.lockfid) & (mytry < number_of_tries),
@@ -601,7 +608,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			b = 1;
 			if ~isempty(nsd_dbleaf_branch_obj.lockfid),
-				if nsd_dbleaf_branch_obj.isinmemory(),
+				if nsd_dbleaf_branch_obj.memory,
 					nsd_dbleaf_branch_obj.lockfid = [];
 				else,
 					[nsd_dbleaf_branch_obj,b] = unlock@nsd_dbleaf(nsd_dbleaf_branch_obj, thedirname);
@@ -620,7 +627,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% If the NSD_DBLEAF_BRANCH object is in memory only, it is necessary to provide the path
 			% with USETHISPATH.
 			%
-				if ~nsd_dbleaf_branch_obj.isinmemory(),
+				if ~nsd_dbleaf_branch_obj.memory,
 					usethispath = nsd_dbleaf_branch_obj.path;
 				end
 				fname = [usethispath filesep nsd_dbleaf_branch_obj.objectfilename '.metadata.dbleaf_branch.nsd'];
@@ -638,7 +645,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% If the NSD_DBLEAF_BRANCH object is in memory only, it is necessary to provide the path
 			% with USETHISPATH.
 			%
-				if ~nsd_dbleaf_branch_obj.isinmemory(),
+				if ~nsd_dbleaf_branch_obj.memory,
 					usethispath = nsd_dbleaf_branch_obj.path;
 				elseif nargin<2, % it is a memory object and it has no path, so should return empty
 					dname = ''; 
@@ -662,7 +669,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
 
-				if nargin<2 & nsd_dbleaf_branch_obj.isinmemory(),
+				if nargin<2 & nsd_dbleaf_branch_obj.memory,
 					error(['This branch is in memory only, so to delete any files we need to know which directory it may be stored in.']);
 				elseif nargin<2,
 					thedirname = nsd_dbleaf_branch_obj.path;
@@ -677,19 +684,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				rmdir(nsd_dbleaf_branch_obj.dirname(thedirname),'s');
 				b = b&deleteobjectfile@nsd_dbleaf(nsd_dbleaf_branch_obj, thedirname);
 		end % deletefileobject()
-
-		function tf = isinmemory(nsd_dbleaf_branch_obj)
-			% ISINMEMORY - determine if an NSD_DBLEAF_BRANCH object is storing its results in memory or filesystem
-			%
-			% TF = ISINMEMORY(NSD_DBLEAF_BRANCH_OBJ)
-			%
-			% Returns 1 if NSD_DBLEAF_BRANCH_OBJ is storing its NSD_DBLEAF objects in memory.
-			% Otherwise, it returns 0 (which indicates it is storing them in the file system).
-			%
-			% See also: NSD_DBLEAF_BRANCH
-			
-				tf = isempty(nsd_dbleaf_branch_obj.path);
-		end
 
 	end % methods
 
