@@ -1,10 +1,12 @@
 classdef nsd_experiment < handle
 	% NSD_EXPERIMENT - NSD_EXPERIMENT object class
 
-	properties (SetAccess = protected)
+	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
-		device            % An array of NSD_DEVICE objects associated with this experiment
 		variable          % An array of NSD_VARIABLE objects associated with this experiment
+	end
+	properties (GetAccess=protected, SetAccess = protected)
+		device            % An array of NSD_DEVICE objects associated with this experiment
 	end
 	methods
 		function obj = nsd_experiment(reference)
@@ -59,6 +61,31 @@ classdef nsd_experiment < handle
 					error(['No device named ' dev.name ' found.']);
 				end
 			end
+
+		function dev = device_load(self, varargin)
+			% LOAD - Load device objects from an NSD_EXPERIMENT
+			%
+			% DEV = LOAD(NSD_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
+			%         or
+			% DEV = LOAD(NSD_EXPERIMENT_OBJ, INDEXES)
+			%
+			% Returns the device object(s) in the NSD_EXPERIMENT at index(es) INDEXES or
+			% searches for an object whose metadata parameters PARAMS1, PARAMS2, and so on, match
+			% VALUE1, VALUE2, and so on (see NSD_DBLEAF_BRANCH/SEARCH).
+			%
+			% If more than one object is requested, then DEV will be a cell list of matching objects.
+			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
+			%
+				dev = self.device.load(varargin{:});
+				if numel(dev)==1,
+					dev = dev.setexperiment(self);
+				else,
+					for i=1:numel(dev),
+						dev{i} = dev{i}.setexperiment(self);
+					end
+				end
+		end % device_load()	
+
 
 		% NSD_VARIABLE METHODS
 

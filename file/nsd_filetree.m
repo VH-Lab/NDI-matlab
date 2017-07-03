@@ -9,23 +9,23 @@
 
 classdef nsd_filetree < nsd_base
 	properties (GetAccess=public, SetAccess=protected)
-		path                          % The file path of the directory to be examined
+		experiment                    % The NSD_EXPERIMENT to be examined
 		fileparameters                % The parameters for finding files (see NSD_FILETREE/SETFILEPARAMETERS)
 		epochcontents_class           % The (sub)class of nsd_epochcontents to be used; nsd_epochcontents is default
 		epochcontents_fileparameters  % The parameters for finding the epochcontents files (see NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS)
 	end
 
 	methods
-	        function obj = nsd_filetree(path_, fileparameters_, epochcontents_class_, epochcontents_fileparameters_)
+	        function obj = nsd_filetree(experiment_, fileparameters_, epochcontents_class_, epochcontents_fileparameters_)
 		% NSD_FILETREE - Create a new NSD_FILETREE object that is associated with an experiment and device
 		%
-		%   OBJ = NSD_FILETREE(PATH, [ FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
+		%   OBJ = NSD_FILETREE(EXPERIMENT, [ FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
 		%
 		% Creates a new NSD_FILETREE object that negotiates the data tree of device's data that is
 		% stored at the file path PATH.
 		%
 		% Inputs:
-		%      EXP: an NSD_EXPERIMENT ; DEVICE - an NSD_DEVICE object
+		%      EXPERIMENT: an NSD_EXPERIMENT
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NSD_FILETREE/SETFILEPARAMETERS for description)
@@ -36,17 +36,17 @@ classdef nsd_filetree < nsd_base
 		% 
 		% Output: OBJ - an NSD_FILETREE object
 		%
-		% See also: NSD_EXPERIMENT, NSD_DEVICE
+		% See also: NSD_EXPERIMENT
 		%
 
 			if nargin>0,
-				if ~ischar(path_),
-					error(['path must be a file path']);
+				if ~isa(experiment_,'nsd_experiment'),
+					error(['experiement must be an NSD_EXPERIMENT object']);
 				else,
-					obj.path = path_;
+					obj.experiment= experiment_;
 				end;
 			else,
-				obj.path='';
+				obj.experiment=[];
 			end;
 				
 			if nargin > 1,
@@ -165,7 +165,7 @@ classdef nsd_filetree < nsd_base
 			%
 				% developer note: possibility of caching this with some timeout
 
-				exp_path = self.path;
+				exp_path = self.path();
 				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
 				if length(all_epochs)>=N,
 					fullpathfilenames = all_epochs{N};
@@ -185,20 +185,25 @@ classdef nsd_filetree < nsd_base
 
 				% developer note: possibility of caching this with some timeout
 
-				exp_path = self.path;
+				exp_path = self.path();
 				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
 				N = numel(all_epochs);
 		end % numepochs()
 
-		function self = setpath(self, path)
-			% SETPATH - Set the path of the NSD_FILETREE object
+		function thepath = path(self)
+			% PATH - Return the file path for the NSD_FILETREE object
 			%
-			% NSD_FILETREE_OBJ = SETPATH(NSD_FILETREE_OBJ, PATH)
+			% THEPATH = PATH(NSD_FILETREE_OBJ)
 			%
-			% Sets the PATH property of an NSD_FILETREE to PATH.
+			% Returns the path of the NSD_EXPERIMENT associated with the NSD_FILETREE object
+			% NSD_FILETREE_OBJ.
 			%
-				self.path = path;
-		end % setpath
+				if ~isa(self.experiment,'nsd_experiment'),
+					error(['No valid NSD_EXPERIMENT associated with this filetree object.']);
+				else,
+					thepath = self.experiment.getpath;
+				end
+		end % path
 
 		function self = setfileparameters(self, thefileparameters)
 			% SETFILEPARAMETERS - Set the fileparameters field of a NSD_FILETREE object
@@ -265,7 +270,10 @@ classdef nsd_filetree < nsd_base
 			% FIELDNAMES is a set of names of the fields/properties of the object
 			% that are being stored.
 			%
-			% For NSD_FILETREE, this returns the classname, name, and the objectfilename.
+			% For NSD_FILETREE, this returns file parameters, epochcontents, and epochcontents_fileparameters.
+			%
+			% Note: NSD_FILETREE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
+			% SETPROPERTIES after reading an NSD_FILETREE from disk to install the NSD_EXPERIMENT.
 			%
 			% Developer note: If you create a subclass of NSD_FILETREE with properties, it is recommended
 			% that you implement your own version of this method. If you have only properties that can be stored
@@ -284,8 +292,6 @@ classdef nsd_filetree < nsd_base
 					efp = [];
 				end
 
-				data{end+1} = nsd_filetree_obj.path;
-				fieldnames{end+1} = 'path';
 				data{end+1} = fp;
 				fieldnames{end+1} = '$fileparameters';
 				data{end+1} = nsd_filetree_obj.epochcontents_class;

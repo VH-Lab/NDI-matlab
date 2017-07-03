@@ -229,14 +229,14 @@ classdef nsd_device < nsd_dbleaf
 
 		end % getprobes()
 
-		function self=setpath(self, path)
-			% SETPATH - set the pathname for an NSD_DEVICE object's filetree
+		function self=setexperiment(self, experiment)
+			% SETEXPERIMENT - set the EXPERIMENT for an NSD_DEVICE object's filetree (type NSD_FILETREE)
 			%
-			% NSD_DEVICE_OBJ = SETPATH(NSD_DEVICE_OBJ, PATH)
+			% NSD_DEVICE_OBJ = SETEXPERIMENT(NSD_DEVICE_OBJ, PATH)
 			%
-			% Set the path of an NSD_DEVICE object's NSD_FILETREE object
+			% Set the EXPERIMENT property of an NSD_DEVICE object's NSD_FILETREE object
 			%	
-				self.filetree = setproperties(self.filetree,{'path'},{path});
+				self.filetree = setproperties(self.filetree,{'experiment'},{experiment});
 		end % setpath()
 			
 			

@@ -28,7 +28,7 @@ disp(['Now adding our acquisition device (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp.getpath(), '.*\.rhd\>');  % look for .rhd files
+dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
@@ -59,5 +59,4 @@ xlabel('Time (s)');
 box off;
 
 exp.device_rm(dev1); % remove the device so the demo can run again
-
 

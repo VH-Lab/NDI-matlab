@@ -7,7 +7,6 @@ classdef nsd_experiment_dir < nsd_experiment
 	end
 
 	methods
-
 		function obj = nsd_experiment_dir(reference, path)
 			% NSD_EXPERIMENT_DIR - Create a new NSD_EXPERIMENT_DIR object
 			%
@@ -41,11 +40,6 @@ classdef nsd_experiment_dir < nsd_experiment
 					obj.device = nsd_dbleaf_branch(obj.nsdpathname(),'device',{'nsd_device'},1);
 				else,
 					obj.device = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
-					devs = load(obj.device,'name','(.*)');
-					if numel(devs)==1, devs={devs}; end;
-					disp(['updating path of devices']);
-					for j=1:numel(devs), devs{j} = devs{j}.setpath(obj.path); end;
-					for j=1:numel(devs), obj.device.update(devs{j}); end;
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),

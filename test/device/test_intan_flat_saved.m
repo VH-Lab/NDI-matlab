@@ -26,7 +26,7 @@ exp = nsd_experiment_dir(dirname);
 
 disp(['Now looking for device Intan1']);
 
-dev1 = load(exp.device,'name','Intan1'),
+dev1 = exp.device_load('name','Intan1'),
 
   % Now let's print some statistics
 
