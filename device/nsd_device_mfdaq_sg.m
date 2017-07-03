@@ -250,7 +250,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
-            header = readTrodesFileConfig(filename);
+            header = read_SpikeGadgets_config(filename);
 
             sr = self.samplerate(epoch);
 
