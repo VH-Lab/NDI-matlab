@@ -13,11 +13,10 @@ function build_intan_flat_exp(dirname)
 %
 
 if nargin<1,
+	nsd_globals;
 
-	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
-                filesep 'example_experiments' ];
+	mydirectory = [nsdpath filesep 'example_experiments' ];
 	dirname = [mydirectory filesep 'exp1_eg_saved'];
-
 end;
 
 disp(['creating a new experiment object...']);
@@ -28,7 +27,7 @@ disp(['Now adding our acquisition device (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp.getpath(), '.*\.rhd\>');  % look for .rhd files
+dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 

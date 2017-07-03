@@ -7,6 +7,10 @@ Depends on functions in vhlab_mltbx_toolbox, available at https://github.com/VH-
 Depends on functions in vhlab_thirdparty, available at https://github.com/VH-Lab/vhlab_thirdparty
 It is recommended that the developer also install vhlab_vhtools, available at https://github.com/VH-Lab/vhlab_vhtools
 
+It is assumed that the function `nsd_Init.m` is run at startup. Please add this to your `startup.m` file. (If you use the http://github.com/VH-Lab/vhlab_vhtools distribution, it will be run automatically.)
+
+
+
 Still in early development
 
 ## Description of terms:

@@ -17,7 +17,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 	end % parameters private
 
 	methods
-		function obj = nsd_dbleaf_branch(path, name, classnames, isflat)
+		function obj = nsd_dbleaf_branch(path, name, classnames, isflat, memory)
 			% NSD_DBLEAF_BRANCH - Create a database branch of objects with searchable metadata
 			% 
 			% DBBRANCH = NSD_DBLEAF_BRANCH(PATH, NAME, CLASSNAMES, [ISFLAT], [MEMORY])
@@ -121,7 +121,9 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% MDS = METADATASTRUCT(NSD_DBLEAF_BRANCH_OBJ)
 			%
 			% Returns the metadata fieldnames and values for NSD_DBLEAF_BRANCH_OBJ.
+			%
 			% This is simply MDS = struct('is_nsd_dbleaf_branch',1,'name',NAME,'objectfilename',OBJECTFILENAME);
+			%
 				mds = metadatastruct@nsd_dbleaf(nsd_dbleaf_branch_obj);
 				mds.is_nsd_dbleaf_branch = 1;
 		end

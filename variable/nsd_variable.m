@@ -88,7 +88,6 @@ classdef nsd_variable < nsd_dbleaf
 				fieldnames{end+1} = 'history';
 		end % stringdatatosave
 
-
 		function [obj,properties_set] = setproperties(nsd_variable_obj, properties, values)
 			% SETPROPERTIES - set the properties of an NSD_VARIABLE object
 			%
@@ -122,7 +121,6 @@ classdef nsd_variable < nsd_dbleaf
 				end
 			end % setproperties
 
-
 		function nsd_variableobj=writeobjectfile(nsd_variable_obj, dirname, locked)
 			% WRITEOBJECTFILE - write the object file to a file
 			%
@@ -136,7 +134,6 @@ classdef nsd_variable < nsd_dbleaf
 			% If LOCKED is 1, then the calling function has verified a correct
 			% lock on the file and WRITEOBJECTFILE shouldn't lock/unlock it.
 			%
-
 				if nargin<3,
 					locked = 0;
 				end
@@ -188,7 +185,7 @@ classdef nsd_variable < nsd_dbleaf
 					nsd_variable_obj = nsd_variable_obj.unlock(dirname);
 				end
 
-                end % writeobjectfile
+                end % writeobjectfile()
 
                 function obj = readobjectfile(nsd_variable_obj, filename)
                         % READOBJECTFILE - read the object from a file
@@ -200,7 +197,6 @@ classdef nsd_variable < nsd_dbleaf
                         % The file format consists of several strings that are read in sequence.
                         % The first line is always the name of the object class.
                         %
-				
 				obj = readobjectfile@nsd_dbleaf(nsd_variable_obj, filename); 
 				[data,fn] = stringdatatosave(obj);
 				fid = fopen(filename,'rb');
@@ -220,8 +216,21 @@ classdef nsd_variable < nsd_dbleaf
 				data = fread(fid,prod(sz),sizestr);
 				fclose(fid);
 				obj.data = reshape(data,sz(:)');
+                end % readobjectfile()
 
-                end % readobjectfile
+		function mds = metadatastruct(nsd_variable_obj)
+			% METADATASTRUCT - return the metadata fields and values for an NSD_VARIABLE object
+			%
+			% MDS = METADATASTRUCT(NSD_VARIABLE_OBJ)
+			%
+			% Returns the metadata fieldnames and values for NSD_VARIABLE_OBJ. This adds the properties
+			% 'dataclass', 'description', and 'history'.
+			%
+				mds = metadatastruct@nsd_dbleaf(nsd_variable_obj);
+				mds.dataclass = nsd_variable_obj.dataclass;
+				mds.description = nsd_variable_obj.description;
+				mds.history = nsd_variable_obj.history;
+		end % metadatastruct()
 
 	end % methods
 end % classdef

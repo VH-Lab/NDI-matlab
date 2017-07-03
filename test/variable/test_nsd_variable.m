@@ -28,12 +28,11 @@ myvardir = nsd_variable_branch(exp.variable,'Animal parameters',{'nsd_variable'}
 
 myvar = nsd_variable('Animal age','double',30,'The age of the animal at the time of the experiment (days)','');
 
-myvardir.add(myvar)
+myvardir.add(myvar);
 
 findmydir = load(exp.variable,'name','Animal parameters'),
 
 findmyvar = load(findmydir,'name','Animal age')
 
 exp.variable_rm(myvardir);
-
 

@@ -4,10 +4,10 @@ function test_sg_flat( dirname )
 
 if nargin<1,
 
-	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
-                filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp_sg'];
+	nsd_globals
 
+	mydirectory = [nsdpath filesep 'example_experiments' ];
+	dirname = [mydirectory filesep 'exp_sg'];
 end;
 
 disp(['creating a new experiment object...']);

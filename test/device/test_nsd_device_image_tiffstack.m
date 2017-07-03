@@ -13,7 +13,8 @@ frame_number = 1;
 %If no argument is passed, then set the directories to a
 %default.
 if nargin < 1
-    example_directory = [userpath filesep 'tools' filesep 'NSD' filesep 'example_experiments'];
+    nsd_globals
+    example_directory = [nsdpath filesep 'example_experiments'];
     input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
     output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];
     if exist(output_dir_name) ~=7

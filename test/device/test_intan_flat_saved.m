@@ -14,8 +14,9 @@ function test_intan_flat_saved(dirname)
 
 if nargin<1,
 
-	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
-                filesep 'example_experiments' ];
+	nsd_globals;
+
+	mydirectory = [nsdpath filesep 'example_experiments' ];
 	dirname = [mydirectory filesep 'exp1_eg_saved'];
 
 end;
