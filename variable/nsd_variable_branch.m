@@ -9,11 +9,11 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 	end
 
 	methods
-		function obj = nsd_variable_branch(parent, name, classnames, isflat)
+		function obj = nsd_variable_branch(parent, name, classnames, isflat, isinmemory)
 
 			% NSD_VARIABLE_BRANCH - Create an NSD_VARIABLE_BRANCH object
 			%
-			%  OBJ = NSD_VARIABLE_BRANCH(PARENT, NAME, CLASSNAMES, [ISFLAT])
+			%  OBJ = NSD_VARIABLE_BRANCH(PARENT, NAME, CLASSNAMES, [ISFLAT], [ISINMEMORY])
 			%
 			% Creates a variable directory to be linked to an NSD_EXPERIMENT
 			% VARIABLE tree.
@@ -23,7 +23,8 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 			% of the directory name. CLASSNAMES is a list of valid classes that may be 
 			% added to this directory branch. ISFLAT is an optional argument that
 			% indicates that the NSD_VARIABLE_BRANCH should be 'flat' and not allow additional
-			% subdirectories.
+			% subdirectories. If ISINMEMORY is 1, then the object will never be written to disk, it will
+			% only exist in memory.
 			%
 
 			loadfilename = '';
@@ -38,6 +39,10 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 				emptyargs = 1;
 			end
 
+			if nargin<5,
+				isinmemory = 0;
+			end
+
 			if nargin<4,
 				isflat = 0;
 			end
@@ -46,7 +51,7 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 				error(['NSD_VARIABLE_BRANCH objects must be attached to NSD_DBLEAF_BRANCH objects.']);
 			end;
 
-			obj = obj@nsd_dbleaf_branch(parent,name,classnames,isflat);
+			obj = obj@nsd_dbleaf_branch(parent,name,classnames,isflat,isinmemory);
 			if ~isempty(loadfilename),
 				obj = obj.readobjectfile(loadfilename);
 			end;

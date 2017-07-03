@@ -58,6 +58,6 @@ xlabel('Time (s)');
 box off;
 
 
-exp1.device_rm(dev1); % remove the device so the demo works again
+exp.device_rm(dev1); % remove the device so the demo works again
 
 end
