@@ -22,7 +22,7 @@ if nargin < 1
 elseif exist(input_file_directory) ~= 7
     error('argument is not a directory');
 else
-    parent_dir = parentDir(input_file_directory);
+    parent_dir = fileparts(input_file_directory);
     output_dir_name = [parent_dir filesep 'output'];
     mkdir(output_dir_name);
 end
