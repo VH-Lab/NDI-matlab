@@ -271,13 +271,14 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 				if isempty(index),
 					nsd_dbleaf_branch_obj.unlock();
-					error(['The object to be updated is not in this branch: ' nsd_dbleaf_obj.objectfilename '.']);
+					error(['The object to be updated is not in this branch: ' nsd_dbleaf_obj.objectfilename ...
+						' is not in ' nsd_dbleaf_branch_obj.objectfilename '.']);
 				end;
 
 				% we assume that metadata field identities haven't changed
 				
 				omd = metadatastruct(nsd_dbleaf_obj);
-				md(index) = omd;
+				md(index) = structmerge(md(index),omd);
 
 				if nsd_dbleaf_branch_obj.memory,
 					nsd_dbleaf_branch_obj.mdmemory = md;    % add md to memory
@@ -323,12 +324,12 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 					error([varargin{i} ' is not a field of the metadata.']);
 				end;
 				if ischar(varargin{i+1}),
-					tests = regexpi({getfield(md,varargin{i})}, varargin{i+1}, 'forceCellOutput');
+					tests = regexpi(eval(['{md.' varargin{i} '};']), varargin{i+1}, 'forceCellOutput');
 					matches_here = ~(cellfun(@isempty, tests));
 				else,
-					matches_here = cellfun(@(x) eq(x,varargin{i+1}), {getfield(md,varargin{i})});
+					matches_here = cellfun(@(x) eq(x,varargin{i+1}), eval(['{md.' varargin{i} '};']));
 				end;
-				indexes = intersect(indexes,matches_here);
+				indexes = intersect(indexes,find(matches_here));
 				if isempty(indexes), break; end; % if we are out of matches, no reason to keep searching
 			end;
 		end % search
@@ -361,7 +362,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				if isempty(md),
 					md = metadata(nsd_dbleaf_branch_obj,indexes);
 				end;
-				md = md(indexes);
 				obj = {};
 				for i=1:length(indexes),
 					if ~isempty(nsd_dbleaf_branch_obj.path),

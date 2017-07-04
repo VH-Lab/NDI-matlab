@@ -13,14 +13,12 @@ function test_intan_flat(dirname)
 %
 
 if nargin<1,
-
 	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
                 filesep 'example_experiments' ];
 	dirname = [mydirectory filesep 'exp1_eg'];
-
 end;
 
-disp(['creating a new experiment object...']);
+disp(['Creating a new experiment object in directory ' dirname '.']);
 exp = nsd_experiment_dir('exp1',dirname);
 
 disp(['Now we will add a variable of each allowed type...'])
