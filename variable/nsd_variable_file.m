@@ -88,7 +88,7 @@ classdef nsd_variable_file < nsd_dbleaf_branch
 				if isempty(d),
 					error(['There is no file path associated with this object; object may be in memory only.']);
 				else,
-					dname = [d filesep nsd_variable_file_obj.objectfilename '.datafile.nsd_variable_file.nsd'];
+					fname = [d filesep nsd_variable_file_obj.objectfilename '.datafile.nsd_variable_file.nsd'];
 				end
 		end % filename()
 	end % methods

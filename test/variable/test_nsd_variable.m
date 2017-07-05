@@ -36,6 +36,14 @@ myvardir.add(myvar);
 disp(['Third, we will add a variable file to the branch ...'])
 
 myfilevar = nsd_variable_file(myvardir,'Things to write','Some things to write','no history');
+ 
+
+  % store some data in the file
+fname = myfilevar.filename();
+fid = fopen(fname,'w','b'); % write big-endian
+fwrite(fid,char([0:9]));
+fclose(fid);
+
 
 disp(['Now, we will access all of our saved variables:']);
 
@@ -45,8 +53,13 @@ findmydir = load(exp.variable,'name','Animal parameters'),
 disp(['Second, the variable...'])
 findmyvar = load(findmydir,'name','Animal age')
 
-disp(['Third, the file ...'])
+disp(['Third, the file and its output (should be 0..9) ...'])
 findmyfilevar = load(findmydir,'name','Things to write')
+
+fname = findmyfilevar.filename();
+fid = fopen(fname,'r','b');
+a=double(fread(fid,Inf,'char'))
+fclose(fid);
 
 exp.variable_rm(myvardir);
 
