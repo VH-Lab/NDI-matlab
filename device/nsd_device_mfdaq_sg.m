@@ -19,7 +19,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %
             %  D = NSD_DEVICE_MFDAQ_SG(NAME,THEFILETREE)
             %
-            %  Creates a new NSD_DEVICE_MFDAQ_INTAN object with name NAME and associated
+            %  Creates a new NSD_DEVICE_MFDAQ_SG object with name NAME and associated
             %  filetree THEFILETREE.
             %
             %
@@ -221,13 +221,17 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                 name = 'Tetrode' + num2str(nTrodes(i).id);
                 reference = 1;
                 type = 'nTrode';
-                for j=1:4 %number of channels per nTrode
-                    %String with channels of trode
-                    channels = strcat(channels,strcat('ai', num2str(nTrodes(i).channelInfo.packetLocation(j) + 1), ','));
-                end
+                channels = [];
 
-                obj = nsd_epochcontents(name,reference,nTrode,channels);
-                %Append each newly made object to end ef list
+                for j=1:length(nTrodes(i).channelInfo.packetLocation) %number of channels per nTrode
+                    %Array with channels of trode
+                    channels = [channels nTrodes(i).channelInfo.packetLocation(j) + 1];
+                end
+                %Object that deals with channels
+                devicestring = nsd_devicestring('SpikeGadgets','ai', channels);
+                %
+                obj = nsd_epochcontents(name,reference,nTrode,devicestring);
+                %Append each newly made object to end of list
                 epochcontents = [epochcontents obj];
             end
 
