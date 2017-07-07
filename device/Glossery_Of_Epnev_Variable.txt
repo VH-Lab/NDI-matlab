@@ -1,0 +1,18 @@
+path_to_file = the directory in which the video lies.
+sframe = the starting frame from which the video is analyzed.
+num2read = the amount of frames of the video that should be read.
+numFrames = the number of frame in the multipage tiff.
+bd = the BitDepth of the image
+he = a temp variable: 1. the ByteOrder of the image.
+                      2. the offset of the first stip.
+form = the string literal of BitDepth.
+lastframe = the end frame to which the video should be read.
+bo = a 1/0(logical) variable, representing whether the ByteOrder is big-endian or not.
+fp = the file identifier returned from fopen().(low level I/O to read the file)
+idss = a variable holding the number of strips per frame.
+ofds =  a matrix that holds the offset of the first strip in each frame.
+framenum = num2read;
+imData = a 1Xnum2read cell array.
+he_w = a variable holding the width of the first frame (seems like it was meant to be a matrix that holds the width of all frames.)
+he_h = same as above, only for hight.
+tmp1 = a he_wXhe_h array holding the binary of the file.
