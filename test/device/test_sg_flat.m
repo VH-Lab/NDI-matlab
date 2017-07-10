@@ -55,7 +55,9 @@ function test_sg_flat( dirname )
     %for every tetrode i
     %for i=1:length(tetrodes)
         %for all samples loop inf 30000
-        data = readchannels_epochsamples(dev1,'analog_in',str2intseq(tetrodes(1).devicestring),1,1,30000);
+		%get channels in tetrode
+		[~,~,channels]nsd_devicestring(tetrodes(1))
+        data = readchannels_epochsamples(dev1,'analog_in',channels,1,1,30000); %str2intseq(tetrodes(1).devicestring)
         %time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
 
         %Applies Chebyshev Type I filter to channels
