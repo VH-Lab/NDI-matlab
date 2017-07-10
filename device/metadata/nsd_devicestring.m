@@ -13,17 +13,17 @@
 %           type: 'extracellular_electrode-4'
 %   devicestring: 'mydevice:ai27-28,45,88
 %
-%  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
+%  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of
 %  NSD_DEVICE object, CT is the channel type identifier, and #### is a list of channels.
 %  The #### list of channels should be numbered from 1, and can use the symbols '-' to
 %  indicate a sequential run of channels, and ',' to separate channels.
-%  
+%
 %  For example:
 %     '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]
 %     '2,5,11-12,8     corresponds to [2 5 11 12 8]
 %     ''               corresponds to []  % if the device doesn't have channels
 %
-% 
+%
 %  See also: NSD_DEVICESTRING/NSD_DEVICESTRING, NSD_DEVICESTRING/DEVICESTRING
 %
 
@@ -113,7 +113,7 @@ classdef nsd_devicestring
 		end % nsd_devicestring2channel
 
 		function devstr = devicestring(self);
-			% DEVICESTRING - Produce an NSD_DEVICESTRING character string 
+			% DEVICESTRING - Produce an NSD_DEVICESTRING character string
 			%
 			% DEVSTR = DEVICESTRING(SELF)
 			%
@@ -122,14 +122,13 @@ classdef nsd_devicestring
 			% Inputs:
 			%    SELF - an NSD_DEVICESTRING object
 			% Outputs:
-			%    DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23'
+			%    DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23' %%%%%%% can't convert back to seq because ai
 			%
 			%
 			% See also: NSD_DEVICESTRING
-				devstr = [self.devicename ':' self.channeltype intseq2str(self.channellist)];
+				% first channel lost because channeltype is not separated from channelnum fixed with another comma to separate
+				devstr = [self.devicename ':' self.channeltype ',' intseq2str(self.channellist)];
 		end % devicestring
 	end
 
 end
-
-     
