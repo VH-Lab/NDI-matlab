@@ -102,7 +102,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             channels = sortrows(channels,{'type','number'});
             channels = table2struct(channels);
 
-            remove = {'startbyte','bit'};
+            remove = {'startbyte','bit','number'};
 
             channels = rmfield(channels, remove);
 
@@ -218,19 +218,20 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             epochcontents = [];
 
             for i=1:length(nTrodes)
-                name = 'Tetrode' + num2str(nTrodes(i).id);
+                name = strcat('Tetrode', nTrodes(i).id);
                 reference = 1;
                 type = 'nTrode';
                 channels = [];
 
-                for j=1:length(nTrodes(i).channelInfo.packetLocation) %number of channels per nTrode
+                for j=1:length(nTrodes(i).channelInfo) %number of channels per nTrode
                     %Array with channels of trode
-                    channels = [channels nTrodes(i).channelInfo.packetLocation(j) + 1];
+                    channels = [channels nTrodes(i).channelInfo(j).packetLocation + 1];
                 end
                 %Object that deals with channels
-                devicestring = nsd_devicestring('SpikeGadgets','ai', channels);
+                devicestring_ = nsd_devicestring('SpikeGadgets','ai', channels);
+                devicestring__ = devicestring_.devicestring();
                 %
-                obj = nsd_epochcontents(name,reference,nTrode,devicestring);
+                obj = nsd_epochcontents(name,reference,type,devicestring__);
                 %Append each newly made object to end of list
                 epochcontents = [epochcontents obj];
             end
