@@ -14,6 +14,8 @@
 % 'digital_out' or 'do'       | Digital output
 % 'time'        or 't'        | Time
 % 'auxiliary_in','aux' or 'ax'| Auxiliary channels
+% 'event'                     | Event trigger (returns times of event trigger activation)
+% 'mark'                      | Mark channel (contains value at specified times)
 % 
 %
 % See also: NSD_DEVICE_MFDAQ/NSD_DEVICE_MFDAQ
@@ -164,8 +166,9 @@ classdef nsd_device_mfdaq < nsd_device
 		%  analog_out          | Analog output channel
 		%  digital_in          | Digital input channel
 		%  digital_out         | Digital output channel
+		%  marker              | 
 		%
-			ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out' };
+			ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out', 'marker', 'event', 'time' };
 		end;
 
 		function prefix = mfdaq_prefix(channeltype)
@@ -184,6 +187,9 @@ classdef nsd_device_mfdaq < nsd_device
 		% 'time','timestamp','t'      | 't'
 		% 'auxiliary','aux','ax',     | 'ax'
 		%    'auxiliary_in'           | 
+		% 'mark', 'marker', or 'mk'   | 'mk'
+		% 'event' or 'e'              | 'e'
+		%
 		% See also: NSD_DEVICE_MFDAQ
 		%
 			switch channeltype,
@@ -195,13 +201,58 @@ classdef nsd_device_mfdaq < nsd_device
 					prefix = 'di';
 				case {'digital_out','do'},
 					prefix = 'do';
-				case {'time','timestamp'},
+				case {'time','timestamp','t'},
 					prefix = 't';
 				case {'auxiliary','aux','ax','auxiliary_in'},
 					prefix = 'ax';
+				case {'marker','mark','mk'},
+					prefix = 'mk';
+				case {'event','e'},
+					prefix = 'e';
 			end;
 		end % mfdaq_prefix()
 
+		function type = mfdaq_type(channeltype)
+		% MFDAQ_TYPE - Give the preferred long channel type for a channel type
+		%
+		%  TYPE = MFDAQ_TYPE(CHANNELTYPE)
+		%
+		%  Produces the preferred long channel type name for a given CHANNELTYPE.
+		% 
+		% Channel type:               | MFDAQ_TYPE:
+		% ---------------------------------------------------------
+		% 'analog_in',       'ai'     | 'analog_in' 
+		% 'analog_out',      'ao'     | 'analog_out'
+		% 'digital_in',      'di'     | 'digital_in'
+		% 'digital_out',     'do'     | 'digital_out'
+		% 'time','timestamp','t'      | 'time'
+		% 'auxiliary','aux','ax',     | 'auxiliary'
+		%    'auxiliary_in'           | 
+		% 'mark', 'marker', or 'mk'   | 'mark'
+		% 'event' or 'e'              | 'event'
+		%
+		% See also: NSD_DEVICE_MFDAQ
+		%
+			switch channeltype,
+				case {'analog_in','ai'},
+					type = 'analog_in';
+				case {'analog_out','ao'},
+					type = 'analog_out';
+				case {'digital_in','di'},
+					type = 'digital_in';
+				case {'digital_out','do'},
+					type = 'digital_out';
+				case {'time','timestamp','t'},
+					type = 'time';
+				case {'auxiliary','aux','ax','auxiliary_in'},
+					type = 'ax';
+				case {'marker','mark','mk'},
+					type = 'mark';
+				case {'event','e'},
+					type = 'event';
+			end;
+		end 
+	
 	end % methods (Static)
 end
 
