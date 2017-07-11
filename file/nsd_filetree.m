@@ -153,7 +153,7 @@ classdef nsd_filetree < nsd_base
 				end
 		end % setepochcontents()
 
-		function fullpathfilenames = getepochfiles(self, N)
+		function [fullpathfilenames,fileID] = getepochfiles(self, N)
 			% GETEPOCHFILES - Return the file paths for one recording epoch
 			%
 			%  FULLPATHFILENAMES = GETEPOCHFILES(SELF, N)
@@ -170,7 +170,7 @@ classdef nsd_filetree < nsd_base
 				fileIDArray = self.getepochID(all_epochs);
 				if nargin < 2
 					fullpathfilenames = all_epochs;
-					%fileID = fileIDArray;
+					fileID = fileIDArray;
 				elseif length(all_epochs)>=N,
 					fullpathfilenames = all_epochs{N};
 					fileID = fileIDArray{N};
@@ -188,10 +188,10 @@ classdef nsd_filetree < nsd_base
 			%aquiered by checksum
 			%
 			%fileIDArray = cellfun(@Simulink.getFileChecksum,pathToEpochs);
-			numOfEpochs = size(pathToEpochs);
-			fileIDArray = cell(1,numOfEpochs(2));
-			for i = 1:numOfEpochs(2)
-				fileIDArray{i} = Simulink.getFileChecksum(pathToEpochs{i});
+			numOfEpochs = max(size(pathToEpochs));
+			fileIDArray = cell(1,numOfEpochs);
+			for i = 1:numOfEpochs
+				fileIDArray{i} = Simulink.getFileChecksum(pathToEpochs{i}{1});
 			end
 		end
 

@@ -9,6 +9,6 @@ input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_d
 example_exp = nsd_experiment_dir('exp1',input_dir_name);
 %creating a new filetree that looks for .tif files.
 example_filetree = nsd_filetree(example_exp,'.*\.tif\>');
-fileName = example_filetree.getepochfiles;
+[fileName,fileID] = example_filetree.getepochfiles;
 
 end  % function
