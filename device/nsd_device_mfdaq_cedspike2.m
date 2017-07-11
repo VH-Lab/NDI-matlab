@@ -15,29 +15,29 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 
 	methods
 		function obj = nsd_device_mfdaq_cedspike2(varargin)
-		% NSD_DEVICE_MFDAQ_CEDSPIKE2 - Create a new NSD_DEVICE_MFDAQ_CEDSPIKE2 object
-		%
-		%  D = NSD_DEVICE_MFDAQ_CEDSPIKE2(NAME,THEFILETREE)
-		%
-		%  Creates a new NSD_DEVICE_MFDAQ_CEDSPIKE2 object with name NAME and associated
-		%  filetree THEFILETREE.
-		%
+			% NSD_DEVICE_MFDAQ_CEDSPIKE2 - Create a new NSD_DEVICE_MFDAQ_CEDSPIKE2 object
+			%
+			%  D = NSD_DEVICE_MFDAQ_CEDSPIKE2(NAME,THEFILETREE)
+			%
+			%  Creates a new NSD_DEVICE_MFDAQ_CEDSPIKE2 object with name NAME and associated
+			%  filetree THEFILETREE.
+			%
 			obj = obj@nsd_device_mfdaq(varargin{:})
 		end
 
 		function channels = getchannels(self)
-		% GETCHANNELS - List the channels that are available on this device
-		%
-		%  CHANNELS = GETCHANNELS(THEDEV)
-		%
-		%  Returns the channel list of acquired channels in this experiment
-		%
-		% CHANNELS is a structure list of all channels with fields:
-		% -------------------------------------------------------
-		% 'name'             | The name of the channel (e.g., 'ai1')
-		% 'type'             | The type of data stored in the channel
-		%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
-		%
+			% GETCHANNELS - List the channels that are available on this device
+			%
+			%  CHANNELS = GETCHANNELS(THEDEV)
+			%
+			%  Returns the channel list of acquired channels in this experiment
+			%
+			% CHANNELS is a structure list of all channels with fields:
+			% -------------------------------------------------------
+			% 'name'             | The name of the channel (e.g., 'ai1')
+			% 'type'             | The type of data stored in the channel
+			%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+			%
 
 			channels = emptystruct('name','type');
 
@@ -78,35 +78,35 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 		end % getchannels()
 
 		function b = verifyepochcontents(self, epochcontents, number)
-		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
-		%
-		%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHCONTENTS, NUMBER)
-		%
-		% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
-		% epoch NUMBER.
-		%
-		% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
-		% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
-		%
-		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+			%
+			%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHCONTENTS, NUMBER)
+			%
+			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+			% epoch NUMBER.
+			%
+			% For the abstract class NSD_DEVICE, EPOCHCONTENTS is always valid as long as
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
+			%
+			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
 			b = 1;
 			% UPDATE NEEDED
 			% b = isa(epochcontents, 'nsd_epochcontents') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end
 
 		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
-		%  FUNCTION READ_CHANNELS - read the data based on specified channels
-		%
-		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
-		%
-		%  CHANNELTYPE is the type of channel to read
-		%
-		%  CHANNEL is a vector of the channel numbers to read, beginning from 1
-		%
-		%  EPOCH is 
-		%
-		%  DATA is the channel data (each column contains data from an indvidual channel) 
-		%
+			%  FUNCTION READ_CHANNELS - read the data based on specified channels
+			%
+			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+			%
+			%  CHANNELTYPE is the type of channel to read
+			%
+			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
+			%
+			%  EPOCH is 
+			%
+			%  DATA is the channel data (each column contains data from an indvidual channel) 
+			%
 			filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
@@ -130,6 +130,37 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 			end
 
 		end % readchannels_epochsamples
+
+		function data = readevents_epoch(self, channeltype, channel, epoch, t0, t1)
+			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
+			%
+			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%
+			%  CHANNELTYPE is the type of channel to read
+			%  ('event','marker', etc)
+			%
+			%  CHANNEL is a vector with the identity of the channel(s) to be read.
+			%
+			%  EPOCH is the epoch number
+			%
+			%  DATA is a two-column vector; the first column has the time of the event. The second
+			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
+			%  is requested, DATA is returned as a cell array, one entry per channel.
+			%
+				filename = self.filetree.getepochfiles(epoch);
+				filename = filename{1}; % don't know how to handle multiple filenames coming back
+				if numel(channel)>1,
+					data = {};
+					for i=1:numel(channel),
+						data{i} = [];
+						[data{i}(:,2),dummy,dummy,dummy,data{i}(:,1)]=read_CED_SOMSMR_datafile(filename, ...
+							'',channel(i),t0,t1);
+					end
+				else,
+					data = [];
+					[data(:,2),dummy,dummy,dummy,data(:,1)] = read_CED_SOMSMR_datafile(filename,'',channel,t0,t1);
+				end
+		end % readevents_epoch()
 
 		function sr = samplerate(self, epoch, channeltype, channel)
 		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
