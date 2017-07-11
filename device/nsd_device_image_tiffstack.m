@@ -20,9 +20,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
             epochn_directory = obj.filetree.getepochfiles(n);
             epochn_tiff_file = epochn_directory{1};
             epochn = Tiff(epochn_tiff_file,'r');
-            for j = 2:i
-                epochn.nextDirectory;
-            end
+            epochn.setDirectory(i);
             im = epochn.read;
             epochn.close;
         end
