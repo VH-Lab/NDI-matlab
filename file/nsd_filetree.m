@@ -1,6 +1,6 @@
 % NSD_FILETREE - object class for accessing files on disk
 %
-%  DT = NSD_FILETREE(EXP)   
+%  DT = NSD_FILETREE(EXP)
 %
 %  The NSD_FILETREE object class
 %
@@ -33,7 +33,7 @@ classdef nsd_filetree < nsd_base
 		%      EPOCHCONTENTS_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS). By default, the file location
 		%          specified in NSD_FILETREE/EPOCHCONTENTSFILENAME is used
-		% 
+		%
 		% Output: OBJ - an NSD_FILETREE object
 		%
 		% See also: NSD_EXPERIMENT
@@ -48,7 +48,7 @@ classdef nsd_filetree < nsd_base
 			else,
 				obj.experiment=[];
 			end;
-				
+
 			if nargin > 1,
 				obj = obj.setfileparameters(fileparameters_);
 			else,
@@ -89,18 +89,18 @@ classdef nsd_filetree < nsd_base
 					ecfname = [parentdir filesep '.' filename '.epochcontents.nsd'];
 				end
 		end % epochcontentsfilename
-        
+
 		function epochcontents = getepochcontents(self, N, devicename)
 			% GETEPOCHCONTENTS - Return the epoch record for a given nsd_filetree and epoch number
-			%  
+			%
 			%  EPOCHCONTENTS = GETEPOCHCONTENTS(SELF, N, DEVICENAME)
 			%
 			% Inputs:
 			%     SELF - the data tree object
 			%     N - the epoch number
 			%     DEVICENAME - The NSD name of the device
-			% 
-			% Output: 
+			%
+			% Output:
 			%     EPOCHCONTENTS - The epoch record information associated with epoch N for device with name DEVICENAME
 			%
 			%
@@ -123,7 +123,7 @@ classdef nsd_filetree < nsd_base
 						epochcontentsfile_fullpath = epochfiles{indexes(1)};
 					end;
 				end;
-				
+
 				eval(['epochcontents = ' self.epochcontents_class '(epochcontentsfile_fullpath);']);
 		end
 
@@ -167,12 +167,34 @@ classdef nsd_filetree < nsd_base
 
 				exp_path = self.path();
 				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
-				if length(all_epochs)>=N,
+				fileIDArray = self.getepochID(all_epochs);
+				if nargin < 2
+					fullpathfilenames = all_epochs;
+					%fileID = fileIDArray;
+				elseif length(all_epochs)>=N,
 					fullpathfilenames = all_epochs{N};
-				else,
+					fileID = fileIDArray{N};
+				else
 					error(['No epoch number ' int2str(N) ' found.']);
 				end;
 		end % getepochfiles()
+
+		function fileIDArray = getepochID(self,pathToEpochs)
+			%GETEPOCHID - Return a cell array containing a unique ID for each epoch file.
+			%
+			% fileIDArray = getepochID(pathToEpochs)
+			%
+			%Returns a cell array containing the unique ID of each epoch file
+			%aquiered by checksum
+			%
+			%fileIDArray = cellfun(@Simulink.getFileChecksum,pathToEpochs);
+			numOfEpochs = size(pathToEpochs);
+			fileIDArray = cell(1,numOfEpochs(2));
+			for i = 1:numOfEpochs(2)
+				fileIDArray{i} = Simulink.getFileChecksum(pathToEpochs{i});
+			end
+		end
+
 
 		function N = numepochs(self)
 			% NUMEPOCHS - Return the number of epochs in an NSD_FILETREE
@@ -211,7 +233,7 @@ classdef nsd_filetree < nsd_base
 			%  SELF = SETFILEPARAMETERS(SELF, THEFILEPARAMETERS)
 			%
 			%  THEFILEPARAMETERS is a string or cell list of strings that specifies the files
-			%  that comprise an epoch. 
+			%  that comprise an epoch.
 			%
 			%         Example: filematch = '.*\.ext\>'
 			%         Example: filematch = {'myfile1.ext1', 'myfile2.ext2'}
@@ -227,7 +249,7 @@ classdef nsd_filetree < nsd_base
 			%                          |   Example: filematch = {'myfile1.ext1', 'myfile2.ext2'}
 			%                          |   Example: filematch = {'#.ext1',  'myfile#.ext2'} (# is the same, unknown string)
 			%
-			% 
+			%
 				if isa(thefileparameters,'char'),
 					thefileparameters = {thefileparameters};
 				end;
@@ -353,4 +375,3 @@ classdef nsd_filetree < nsd_base
 	end % methods
 
 end % classdef
-
