@@ -81,12 +81,13 @@ classdef nsd_filetree < nsd_base
 			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
 			%
 			%
+				fmstr = filematch_hashstring(self);
 				epochfiles = getepochfiles(self, number);
 				if isempty(epochfiles),
 					error(['No files in epoch number ' int2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
-					ecfname = [parentdir filesep '.' filename '.epochcontents.nsd'];
+					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.nsd'];
 				end
 		end % epochcontentsfilename
 
@@ -165,6 +166,7 @@ classdef nsd_filetree < nsd_base
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
 			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochid.nsd.'.
 			%
+				fmstr = filematch_hashstring(self);
 				if nargin<3, % undocumented 3rd argument
 					epochfiles = getepochfiles(self, number);
 				end
@@ -172,7 +174,7 @@ classdef nsd_filetree < nsd_base
 					error(['No files in epoch number ' int2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
-					eidfname = [parentdir filesep '.' filename '.epochid.nsd'];
+					eidfname = [parentdir filesep '.' filename '.' fmstr '.epochid.nsd'];
 				end
 		end % epochidfilename()
 
@@ -274,7 +276,7 @@ classdef nsd_filetree < nsd_base
 					fullpathfilenames = all_epochs(epochindexes);
 					out_of_bounds = find(epochindexes==0);
 					if ~isempty(out_of_bounds),
-						error(['No match for epochID ' n{out_of_bounds} ' found, possibly others as well.']);
+						error(['No match for epochid ' n{out_of_bounds} ' found, possibly others as well.']);
 					end
 				end
 				if ~multiple_outputs,
@@ -362,6 +364,36 @@ classdef nsd_filetree < nsd_base
 				end;
 				self.fileparameters = thefileparameters;
 		end %setfileparameters()
+
+		function fmstr = filematch_hashstring(self)
+			% FILEMATCH_HASHSTRING - a computation to produce a (likely to be) unique string based on filematch
+			%
+			% FMSTR = FILEMATCH_HASHSTRING(SELF)
+			%
+			% Returns a string that is based on a hash function that is computed on 
+			% the concatenated text of the 'filematch' field of the 'fileparameters' property.
+			%
+			% Note: the function used is 'crc' (see PM_HASH)
+
+				algo = 'crc';
+
+				if isempty(self.fileparameters),
+					fmhash = [];
+				else,
+					if ischar(self.fileparameters.filematch),
+						fmhash = pm_hash(algo,self.fileparameters.filematch);
+					elseif iscell(self.fileparameters.filematch), % is cell
+						catstr = cat(2,self.fileparameters.filematch);
+						fmhash = pm_hash(algo,catstr);
+					else,
+						error(['unexpected datatype for fileparameters.filematch.']);
+					end
+				end
+
+				if ~isempty(fmhash),
+					fmstr = num2hex(double(fmhash));
+				end
+			end
 
 		function self = setepochcontentsfileparameters(self, theepochcontentsfileparameters)
 			% SETEPOCHCONTENTSFILEPARAMETERS - Set the epoch record fileparameters field of a NSD_FILETREE object
