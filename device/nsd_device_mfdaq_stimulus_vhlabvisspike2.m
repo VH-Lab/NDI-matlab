@@ -40,19 +40,19 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			% This device produces the following channels in each epoch:
 			% Channel name:   | Signal description:
 			% ----------------|------------------------------------------
-			% m1              | stimulus on/off
-			% m2              | stimid 
+			% mk1             | stimulus on/off
+			% mk2             | stimid 
 			% e1              | frame trigger
 			% e2              | vertical refresh trigger
 			% e3              | pretime trigger
 			%
 
-			channels        = struct('name','m1','type','marker');  
-			channels(end+1) = struct('name','m2','type','marker');  
+			channels        = struct('name','mk1','type','marker');  
+			channels(end+1) = struct('name','mk2','type','marker');  
 			channels(end+1) = struct('name','e1','type','event');  
 			channels(end+1) = struct('name','e2','type','event');  
 			channels(end+1) = struct('name','e3','type','event');  
-		end; % getchannels
+		end; % getchannels()
 
 		function data = readevents_epoch(self, channeltype, channel, n, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
@@ -83,7 +83,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			channeltype = self.mfdaq_prefix(channeltype);
 
 			% do the decoding
-			[stimids,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
+			[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
 			[ss,mti]=getstimscript(pathname{1});
 			stimofftimes = [];
 			stimsetuptimes = [];
@@ -101,7 +101,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			end;
 
 			switch (channeltype),
-				case 'm',
+				case 'mk',
 					% put them together, alternating stimtimes and stimofftimes in the final product
 					time1 = [stimtimes(:)' ; stimofftimes(:)'];
 					data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
@@ -112,22 +112,24 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 					time2 = [stimtimes(:)];
 					data2 = [stimid(:)];
 					ch{2} = [time2 data2];
+
+					data = ch(channel);
+					if numel(data)==1, data = data{1}; end; % make it non-cell
 					
-					for i=1:numel(channel),
-						data = [data ch{channel(i)}];
-					end
 				case 'e',
+					data = {};
 					for i=1:numel(channel),
 						if channel(i)==1, % frametimes
 							allframetimes = cat(2,frametimes{:});
-							data = [data allframetimes(:)];
+							data{end+1} = [data allframetimes(:)];
 						elseif channel(i)==2, % vertical refresh
 							vr = load(filelist{find(strcmp('verticalblanking',fname))},'-ascii');
-							data = [data vr(:)];
+							data{end+1} = [data vr(:)];
 						elseif channel(i)==3, % background trigger, simulated
-							data = [data stimsetuptimes(:)];
+							data{end+1} = [data stimsetuptimes(:)];
 						end
 					end
+					if numel(data)==1, data = data{1}; end; % make it non-cell
 				otherwise,
 					error(['Unknown channel.']);
 			end
@@ -148,6 +150,35 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 
 			sr = 1e-4 * ones(size(channel));
 		end
+
+		function parameters = get_stimulus_parameters(nsd_device_stimulus_obj, epoch_number)
+			%
+			% PARAMETERS = NSD_GET_STIMULUS_PARAMETERS(NSD_DEVICE_STIMULUS_OBJ, EPOCH_NUMBER)
+			%
+			% Returns the parameters (array, struct array, or cell array) associated with the
+			% stimulus or stimuli that were prepared to be presented in epoch EPOCH_NUMBER.
+			%
+			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
+			%
+
+			filelist = nsd_device_stimulus_obj.filetree.getepochfiles(epoch_number),
+			pathname = {};
+			fname = {};
+			ext = {};
+			for i=1:numel(filelist),
+				[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
+			end
+
+			index = find(strcmp('stims',fname));
+			[ss,mti]=getstimscript(pathname{index});
+
+			parameters = {};
+			for i=1:numStims(ss),
+				parameters{i} = getparameters(get(ss,i));
+			end;
+		end
+
 	end; % methods
 end
+
 
