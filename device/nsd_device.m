@@ -112,22 +112,6 @@ classdef nsd_device < nsd_dbleaf
 
 		end % deletefileobject
 
-		function epochfiles = getepochfiles(self, number)
-		% GETEPOCH - retreive the data files associated with a recording epoch
-		%
-		%   EPOCHFILES = GETEPOCHFILES(NSD_DEVICE_OBJ, NUMBER)
-		%
-		% Returns the data file(s) associated the the data epoch NUMBER for the
-		% NSD_DEVICE.
-		%
-		% In the abstract base class NSD_DEVICE, this returns empty always.
-		% In specific device classes, this can return a full path filename, a cell
-                % list of file names, or some other suitable list of links to the epoch data.
-		%
-		% See also: NSD_DEVICE
-			epochfiles = '';
-		end  %epochfiles
-
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
 		%
@@ -140,7 +124,8 @@ classdef nsd_device < nsd_dbleaf
 		% In the abstract class, this command takes no action.
 		%
 		% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
-		end % deleteepoch
+			error(['Not implemented yet.']);
+		end % deleteepoch()
 
 		function setepochcontents(self, epochcontents, number, overwrite)
 			% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
