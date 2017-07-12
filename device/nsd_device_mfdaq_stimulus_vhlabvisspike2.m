@@ -30,7 +30,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			%  Creates a new NSD_DEVICE_MFDAQ object with NAME, and FILETREE.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@nsd_device_mfdaq(varargin{:});
-		end; % nsd_device_mfdaq_stimulus_vhlabvisspike2
+		end; % nsd_device_mfdaq_stimulus_vhlabvisspike2()
 
 		function channels = getchannels(thedev)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
@@ -46,9 +46,12 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			% e2              | vertical refresh trigger
 			% e3              | pretime trigger
 			%
-			channels = struct('name',[],'type',[]);  
-			channels = channels([]);
 
+			channels        = struct('name','m1','type','marker');  
+			channels(end+1) = struct('name','m2','type','marker');  
+			channels(end+1) = struct('name','e1','type','event');  
+			channels(end+1) = struct('name','e2','type','event');  
+			channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannels
 
 		function data = readevents_epoch(self, channeltype, channel, n, t0, t1)
@@ -101,7 +104,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 				case 'm',
 					% put them together, alternating stimtimes and stimofftimes in the final product
 					time1 = [stimtimes(:)' ; stimofftimes(:)'];
-					data1 = [ones(size(stimtimes(:)') ; -1*ones(size(stimofftimes(:)')];
+					data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
 					time1 = reshape(time1,numel(time1),1);
 					data1 = reshape(data1,numel(data1),1);
 					ch{1} = [time1 data1];
@@ -110,8 +113,8 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 					data2 = [stimid(:)];
 					ch{2} = [time2 data2];
 					
-					for i=numel(channel),
-						data = [data ch{channel(i)];
+					for i=1:numel(channel),
+						data = [data ch{channel(i)}];
 					end
 				case 'e',
 					for i=1:numel(channel),
@@ -124,6 +127,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 						elseif channel(i)==3, % background trigger, simulated
 							data = [data stimsetuptimes(:)];
 						end
+					end
 				otherwise,
 					error(['Unknown channel.']);
 			end

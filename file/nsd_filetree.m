@@ -252,7 +252,7 @@ classdef nsd_filetree < nsd_base
 					fullpathfilenames = all_epochs(n);
 					epochid = {};
 					for i=1:numel(n),
-						epochID{i} = self.getepochid(n(i),all_epochs{n(i)});
+						epochid{i} = self.getepochid(n(i),all_epochs{n(i)});
 					end
 				else, % need to check IDs until we find all the epochs of interest
 					% n is cell array of ids
