@@ -143,5 +143,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
           end
         end%isBig = file2big(file_path)
 
+        function [byteOrder, bitDepth, numFrames, ofds, ]
+
     end%methods
 end%classdef
