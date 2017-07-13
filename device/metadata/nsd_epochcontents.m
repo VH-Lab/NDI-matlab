@@ -8,25 +8,25 @@ classdef nsd_epochcontents
 	methods
 		function obj = nsd_epochcontents(name_, reference_, type_, devicestring_)
 			% NSD_EPOCHCONTENTS - Create a new nsd_epochcontents object
-			% 
+			%
 			% MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS(NAME, REFERENCE, TYPE, DEVICESTRING)
-			% 
+			%
 			% Creates a new NSD_EPOCHCONTENTS with name NAME, reference REFERENCE, type TYPE,
-                        % and devicestring DEVICESTRING.
-                        %
-                        % NAME can be any string that begins with a letter and contains no whitespace. It
+            % and devicestring DEVICESTRING.
+            %
+            % NAME can be any string that begins with a letter and contains no whitespace. It
 			% is CASE SENSITIVE.
 			% REFERENCE must be a non-negative scalar integer.
-			% TYPE is the type of recording. 
+			% TYPE is the type of recording.
 			% DEVICESTRING is a string that indicates the channels that were used to acquire
 			% this record.
 			%
 			% The function has an alteranative form:
 			%
 			%   MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS(FILENAME)
-			%   
+			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with 
+			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
 			% one line per NSD_EPOCHCONTENTS entry.
 			%
 
@@ -80,15 +80,15 @@ classdef nsd_epochcontents
 			end;
 			obj.devicestring = devicestring_;
 		end;
-        
+
 		function savetofile(obj, filename)
 		%  SAVETOFILE - Write nsd_epochcontents object array to disk
-		%    
+		%
                 %  SAVETOFILE(OBJ, FILENAME)
-		% 
+		%
 		%  Writes the NSD_EPOCHCONTENTS object to disk in filename FILENAME (full path).
 		%
-		%  
+		%
 			fn = {'name','reference','type','devicestring'};
 			mystruct = emptystruct(fn{:});
 			for i=1:length(obj),
@@ -102,5 +102,3 @@ classdef nsd_epochcontents
 		end;
 	end  % methods
 end
-
-
