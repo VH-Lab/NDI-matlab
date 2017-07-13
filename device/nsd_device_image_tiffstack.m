@@ -20,21 +20,68 @@ classdef nsd_device_image_tiffstack < nsd_device_image
         %number 'n'. It acesses the file using the filetree
         function im = frame(obj,n,i)
             [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
-            fileStatus = checkFile(epochn_directory, fileID);
-            if fileStatus == 1
+            epochn_tiff_file = epochn_directory{1}; %gets the string vector with the files path
+            fileStatus = checkFile(epochn_tiff_file, fileID);%checks if the file exists, and whether it changed.
+
+            if fileStatus == 1%In case the file exists, but its content has changed, the function displays an error.
               disp(['Epoch number ' num2str(n) 'has changed.']);
+
+            %In case the file exists and is the same, or the file is a new file
             else
-              epochn_tiff_file = epochn_directory{1};
-              if file2big(epochn_tiff_file)
-                %%use bigread2 functionality.
+              if file2big(epochn_tiff_file)%Checks if the file is over 4GB
+
+                if fileStatus == -1%If the file did not exist and is a new file, execute a bigread2 functionality.
+                  info = imfinfo(epochn_tiff_file);%extracts the metadata of the file.
+                  totNumFrame = max(size(info));%gets the total number of ferames in the file.
+                  ofds = zeros(1,totNumFrame);%a matrix to hold the offset of the first strip in each frame
+                  for j=1:numFrames%writing all the offsets of the first strip in each frame into ofds matrix
+                      ofds(j)=info(j).StripOffsets(1);
+                  end
+
+                  %% Organizing the meta data of the file so it could be read using fread().
+                  bd = info.BitDepth;
+                  if (bd==64)%translating the bit depth from a number into a string vector so it fits arguments of fread()
+                      info.BitDepth ='double';
+                  elseif (bd==32)
+                      info.BitDepth='single';
+                  elseif (bd==16)
+                      info.BitDepth='uint16';
+                  elseif (bd==8)
+                      info.BitDepth='uint8';
+                  end
+
+                  if strcmpi(info.BitDepth,'double')%takes care of a special case in which the bit depth is double
+                    form = 'single';
+                    if strcmp(info.ByteOrder,'big-endian')
+                      byteOrder = 'ieee-be.l64';
+                    else
+                      byteOrder = 'ieee-le. l64';
+                    end
+                    %translating the byte ore of the file so it matches arguments of fread()
+                  else
+                    if strcmp(info.ByteOrder,'big-endian');
+                      byteOrder = 'ieee-be';
+                    else
+                      byteOrder = 'ieee-le';
+                    end
+                      form = info.BitDepth;
+                  end
+                  %
+                  %% reading the data and writing it the image to the memory
+
+                  tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
+                  im = cast(tmp1,form);
+
+                  cache{n} = {'large',epochn_directory,fileID, ofds,info};
+                else
+
+                end
               else
                 epochn = Tiff(epochn_tiff_file,'r');
                 epochn.setDirectory(i);
                 im = epochn.read;
                 epochn.close;
-              end
-              if fileStatus == -1
-                chache{n} = {epochn_directory,fileID};
+                chache{n} = {'small',epochn_directory,fileID};
               end
             end
         end%im=frame(obj,n,i)
