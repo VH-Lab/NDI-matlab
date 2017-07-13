@@ -84,7 +84,7 @@ classdef nsd_filetree < nsd_base
 				fmstr = filematch_hashstring(self);
 				epochfiles = getepochfiles(self, number);
 				if isempty(epochfiles),
-					error(['No files in epoch number ' int2str(number) '.']);
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
 					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.nsd'];
@@ -171,7 +171,7 @@ classdef nsd_filetree < nsd_base
 					epochfiles = getepochfiles(self, number);
 				end
 				if isempty(epochfiles),
-					error(['No files in epoch number ' int2str(number) '.']);
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
 					eidfname = [parentdir filesep '.' filename '.' fmstr '.epochid.nsd'];
@@ -248,7 +248,7 @@ classdef nsd_filetree < nsd_base
 				if ~useids,
 					out_of_bounds = find(n>numel(all_epochs));
 					if ~isempty(out_of_bounds),
-						error(['No epoch number ' int2str(n(out_of_bounds)) ' found.']);
+						error(['No epoch number ' self.epoch2str(n(out_of_bounds)) ' found.']);
 					end
 					
 					fullpathfilenames = all_epochs(n);
@@ -286,21 +286,187 @@ classdef nsd_filetree < nsd_base
 				
 		end % getepochfiles()
 
-		function fileIDArray = getFileIDArray(self,pathToEpochs)
-			%GETEPOCHID - Return a cell array containing a unique ID for each epoch file.
+		function etfname = epochtagfilename(self, number, epochfiles)
+			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
 			%
-			% fileIDArray = getepochID(pathToEpochs)
+			% ETFNAME = EPOCHTAGFILENAME(NSD_DEVICE_OBJ, NUMBER)
 			%
-			%Returns a cell array containing the unique ID of each epoch file
-			%aquiered by checksum
+			% Returns the tag file name for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			%fileIDArray = cellfun(@Simulink.getFileChecksum,pathToEpochs);
-			numOfEpochs = max(size(pathToEpochs));
-			fileIDArray = cell(1,numOfEpochs);
-			for i = 1:numOfEpochs
-				fileIDArray{i} = Simulink.getFileChecksum(pathToEpochs{i}{1});
-			end
-		end
+			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
+			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
+			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.nsd.'.
+			%
+				fmstr = filematch_hashstring(self);
+				if nargin<3, % undocumented 3rd argument
+					epochfiles = getepochfiles(self, number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
+				else,
+					[parentdir,filename]=fileparts(epochfiles{1});
+					etfname = [parentdir filesep '.' filename '.' fmstr '.epochtag.nsd'];
+				end
+		end % epochtagfilename()
+
+		function tag = getepochtag(self, number, epochfiles)
+			% GETEPOCHTAG - Get tag(s) from an epoch
+			%
+			% TAG = GETEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				if nargin<3,
+					epochfiles = getepochfiles(self,number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
+				else,
+					etfname = epochtagfilename(self, number, epochfiles);
+					if exist(etfname,'file'),
+						tag = loadStructArray(etfname);
+					else,
+						tag = emptystruct('name','value');
+					end
+				end
+		end % getepochtag()
+
+		function setepochtag(self, number, tag, epochfiles)
+			% SETEPOCHTAG - Set tag(s) for an epoch
+			%
+			% SETEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will replace any
+			% tags in the epoch directory. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				if ~isfield(tag,'name') | ~isfield(tag,'value') | ~(numel(fieldnames(tag))==2),
+					error(['TAG should have fields ''name'' and ''value'' only.']);
+				end
+				if nargin<4, % undocumented 4th arg
+					epochfiles = getepochfiles(self,number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
+				else,
+					etfname = epochtagfilename(self, number, epochfiles);
+					if ~isempty(tag),
+						saveStructArray(etfname,tag);
+					else, % delete the file so it is empty
+						if exist(etfname,'file'),
+							delete(etfname);
+						end
+					end
+				end
+		end % setepochtag()
+
+		function addepochtag(self, number, tag, epochfiles)
+			% ADDEPOCHTAG - Add tag(s) for an epoch
+			%
+			% ADDEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will be added to any
+			% tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				if ~isfield(tag,'name') | ~isfield(tag,'value'),
+					error(['TAG should have fields ''name'' and ''value'' only.']);
+				end
+				if nargin<4, % undocumented 4th arg
+					epochfiles = getepochfiles(self,number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
+				else,
+					etfname = epochtagfilename(self, number, epochfiles);
+					currenttag = getepochtag(self, number);
+					% update current tags, replacing any existing names
+					tagsadded = [];
+					if ~isempty(currenttag),
+						for i=1:numel(tag),
+							% check for matches
+							index = find(strcmp(tag(i).name,{currenttag.name}));
+							if ~isempty(index),
+								currenttag(index) = tag(i);
+								tagsadded(end+1) = i;
+							end
+						end
+					end
+					tag = tag(setdiff(1:numel(tag),tagsadded));
+					currenttag = cat(1,currenttag(:),tag(:));
+					setepochtag(self, number, currenttag, epochfiles);
+				end
+		end % addepochtag()
+
+		function removeepochtag(self, number, name, epochfiles)
+			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
+			%
+			% REMOVEEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER, NAME)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. Any tags with name 'NAME' will
+			% be removed from the tags in the epoch EPOCHNUMBER.
+			% tags in the epoch directory. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+			% NAME can be a single string, or it can be a cell array of strings
+			% (which will result in the removal of multiple tags).
+			%
+				if nargin<4, % undocumented 4th arg
+					epochfiles = getepochfiles(self,number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' self.epoch2str(number) '.']);
+				else,
+					etfname = epochtagfilename(self, number, epochfiles);
+					currenttag = getepochtag(self, number);
+					% update current tags, replacing any existing names
+					tagstoremove = [];
+					if ~isempty(currenttag),
+						for i=1:numel(name),
+							index = find(strcmp(name,{currenttag.name}));
+							if ~isempty(index),
+								tagstoremove(end+1) = i;
+							end
+						end
+					end
+					currenttag = currenttag(setdiff(1:numel(currenttag),tagstoremove));
+					currenttag = cat(1,currenttag(:),tag(:));
+					setepochtag(self, number, currenttag, epochfiles);
+				end
+		end % removeepochtag()
+
+		function s = epoch2str(self, number)
+			% EPOCH2STR - convert an epoch number or id to a string
+			%
+			% S = EPOCH2STR(NSD_FILETREE_OBJ, NUMBER)
+			%
+			% Returns the epoch NUMBER in the form of a string. If it is a simple
+			% integer, then INT2STR is used to produce a string. If it is an epoch
+			% identifier string, then it is returned.
+				if isnumeric(number)
+					s = int2str(number);
+				elseif iscell(s), % a cell array of strings
+					s = [];
+					for i=1:numel(number),
+						if (i>2)
+							s=cat(2,s,[', ']);
+						end;
+						s=cat(2,s,number{i});
+					end
+				elseif ischar(s),
+					s = number;
+				else,
+					error(['Unknown epoch number or identifier.']);
+				end;
+		end % epoch2str()
 
 		function N = numepochs(self)
 			% NUMEPOCHS - Return the number of epochs in an NSD_FILETREE
