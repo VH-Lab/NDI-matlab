@@ -91,11 +91,8 @@ classdef nsd_device_image_tiffstack < nsd_device_image
             epochn = Tiff(epochn_tiff_file,'r');
             %is there a case of 0 frames? can a Tiff file of 0 frames
             %exist? Not sure how to determine if that is the case.
-            num = 1;
-            while ~epochn.lastDirectory
-                num = num+1;
-                epochn.nextDirectory;
-            end
+            epochn.lastDirectory;
+            num = currentDirectory;
             epochn.close;
         end%num = numFrame(obj,n)
         function fileStatus = checkFile(epochn_directory,fileID)
