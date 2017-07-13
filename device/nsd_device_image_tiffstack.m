@@ -25,7 +25,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
               disp(['Epoch number ' num2str(n) 'has changed.']);
             else
               epochn_tiff_file = epochn_directory{1};
-              if file2big
+              if file2big(epochn_tiff_file)
                 %%use bigread2 functionality.
               else
                 epochn = Tiff(epochn_tiff_file,'r');
@@ -64,6 +64,15 @@ classdef nsd_device_image_tiffstack < nsd_device_image
             end
           end
         end%fileStatus = checkFile(epochn_directory,fileID)
+        function isBig = file2big(file_path)
+          fileDetails = dir(file_path);
+          sizeInGigaBytes = fileDetails.bytes/10^9;
+          if sizeInGigaBytes > 4
+            isBig = 1;
+          else
+            isBig = 0;
+          end
+        end%isBig = file2big(file_path)
 
     end%methods
 end%classdef
