@@ -8,12 +8,14 @@ function test_intan_flat(dirname)
 %  removes them on completion.
 %
 %  If DIRNAME is not provided, the default directory
-%  [USERPATH/tools/NSD/example_experiments/exp1_eg] is used.
+%  [NSDPATH/example_experiments/exp1_eg] is used.
 %
 %
 
+nsd_globals;
+
 if nargin<1,
-	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
+	mydirectory = [nsdpath filesep 'tools' filesep 'NSD' ...
                 filesep 'example_experiments' ];
 	dirname = [mydirectory filesep 'exp1_eg'];
 end;
