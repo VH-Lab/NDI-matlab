@@ -81,12 +81,13 @@ classdef nsd_filetree < nsd_base
 			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
 			%
 			%
+				fmstr = filematch_hashstring(self);
 				epochfiles = getepochfiles(self, number);
 				if isempty(epochfiles),
 					error(['No files in epoch number ' int2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
-					ecfname = [parentdir filesep '.' filename '.epochcontents.nsd'];
+					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.nsd'];
 				end
 		end % epochcontentsfilename
 
@@ -153,33 +154,139 @@ classdef nsd_filetree < nsd_base
 				end
 		end % setepochcontents()
 
-		function [fullpathfilenames,fileID] = getepochfiles(self, N)
+		function eidfname = epochidfilename(self, number, epochfiles)
+			% EPOCHCONTENTSFILENAME - return the file path for the NSD_EPOCHCONTENTS file for an epoch
+			%
+			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			%
+			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% If there are no files in epoch NUMBER, an error is generated.
+			%
+			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
+			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
+			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochid.nsd.'.
+			%
+				fmstr = filematch_hashstring(self);
+				if nargin<3, % undocumented 3rd argument
+					epochfiles = getepochfiles(self, number);
+				end
+				if isempty(epochfiles),
+					error(['No files in epoch number ' int2str(number) '.']);
+				else,
+					[parentdir,filename]=fileparts(epochfiles{1});
+					eidfname = [parentdir filesep '.' filename '.' fmstr '.epochid.nsd'];
+				end
+		end % epochidfilename()
+
+		function id = getepochid(self, epoch_number, epochfiles)
+			% GETEPOCHID - Get the epoch identifier for a particular epoch
+			%
+			% ID = GETEPOCHID (SELF, EPOCH_NUMBER)
+			%
+			% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
+			% If it doesn't exist, it is created.
+			%
+			% 
+				if nargin<3,
+					epochfiles = getepochfiles(self,epoch_number);
+				end
+
+				eidfname = epochidfilename(self, epoch_number, epochfiles);
+
+				if exist(eidfname,'file'),
+					id = text2cellstr(eidfname);
+					id = id{1};
+				else,
+					id = ['epoch_' num2hex(now) '_' num2hex(rand)];
+					str2text(eidfname,id);
+				end
+		end %getepochid()
+
+		function [fullpathfilenames, epochid] = getepochfiles(self, n)
 			% GETEPOCHFILES - Return the file paths for one recording epoch
 			%
-			%  FULLPATHFILENAMES = GETEPOCHFILES(SELF, N)
+			%  [FULLPATHFILENAMES, EPOCHID] = GETEPOCHFILES(SELF, N)
 			%
 			%  Return the file names or file paths associated with one recording epoch.
 			%
+			%  N can either be a number of an epoch to return, or an epoch identifier (epoch id).
+			%
+			%  Requesting multiple epochs simultaneously:
+			%  N can also be an array of numbers, in which case a cell array of cell arrays is 
+			%  returned in FULLPATHFILENAMES and a cell array is returned in EPOCHID, one entry per
+			%  number in N.  Further, N can be a cell array of strings of multiple epoch identifiers;
+			%  in this case, a cell array of cell arrays is returned in FULLPATHFILENAMES and a cell array
+			%  is returned in EPOCHID.
+			%
 			%  Uses the FILEPARAMETERS (see NSD_FILETREE/SETFILEPARAMETERS) to identify recording
 			%  epochs under the EXPERIMENT path.
+			%
+			%  See also: GETEPOCHID
 			%
 				% developer note: possibility of caching this with some timeout
 
 				exp_path = self.path();
 				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
-				fileIDArray = self.getepochID(all_epochs);
-				if nargin < 2
-					fullpathfilenames = all_epochs;
-					fileID = fileIDArray;
-				elseif length(all_epochs)>=N,
-					fullpathfilenames = all_epochs{N};
-					fileID = fileIDArray{N};
-				else
-					error(['No epoch number ' int2str(N) ' found.']);
-				end;
+
+				if nargin<2,
+					n = 1:numel(all_epochs);
+				end
+
+				multiple_outputs = 0;
+				useids = 0;
+				if (isnumeric(n) & length(n)>1) | iscell(n),
+					multiple_outputs = 1;
+				end
+				if ischar(n),
+					n = {n};
+				end;  % make sure we have consistent format
+				if iscell(n),
+					useids = 1;
+				end
+
+				% now resolve each entry in turn
+				if ~useids,
+					out_of_bounds = find(n>numel(all_epochs));
+					if ~isempty(out_of_bounds),
+						error(['No epoch number ' int2str(n(out_of_bounds)) ' found.']);
+					end
+					
+					fullpathfilenames = all_epochs(n);
+					epochid = {};
+					for i=1:numel(n),
+						epochid{i} = self.getepochid(n(i),all_epochs{n(i)});
+					end
+				else, % need to check IDs until we find all the epochs of interest
+					% n is cell array of ids
+					epochindexes = zeros(1,numel(all_epochs));
+					epochid = {};
+					for i=1:numel(all_epochs),
+						idhere = self.getepochid(i,all_epochs{i});
+						tf = find(strcmp(idhere,n));
+						if ~isempty(tf),
+							for t=1:numel(tf),
+								epochid{tf(t)} = idhere;
+							end
+							epochindexes(tf) = i;
+						end
+						if ~any(epochindexes==0)
+							break; % we're done
+						end
+					end
+					fullpathfilenames = all_epochs(epochindexes);
+					out_of_bounds = find(epochindexes==0);
+					if ~isempty(out_of_bounds),
+						error(['No match for epochid ' n{out_of_bounds} ' found, possibly others as well.']);
+					end
+				end
+				if ~multiple_outputs,
+					fullpathfilenames = fullpathfilenames{1};
+					epochid = epochid{1}; 
+				end
+				
 		end % getepochfiles()
 
-		function fileIDArray = getepochID(self,pathToEpochs)
+		function fileIDArray = getFileIDArray(self,pathToEpochs)
 			%GETEPOCHID - Return a cell array containing a unique ID for each epoch file.
 			%
 			% fileIDArray = getepochID(pathToEpochs)
@@ -194,7 +301,6 @@ classdef nsd_filetree < nsd_base
 				fileIDArray{i} = Simulink.getFileChecksum(pathToEpochs{i}{1});
 			end
 		end
-
 
 		function N = numepochs(self)
 			% NUMEPOCHS - Return the number of epochs in an NSD_FILETREE
@@ -258,6 +364,36 @@ classdef nsd_filetree < nsd_base
 				end;
 				self.fileparameters = thefileparameters;
 		end %setfileparameters()
+
+		function fmstr = filematch_hashstring(self)
+			% FILEMATCH_HASHSTRING - a computation to produce a (likely to be) unique string based on filematch
+			%
+			% FMSTR = FILEMATCH_HASHSTRING(SELF)
+			%
+			% Returns a string that is based on a hash function that is computed on 
+			% the concatenated text of the 'filematch' field of the 'fileparameters' property.
+			%
+			% Note: the function used is 'crc' (see PM_HASH)
+
+				algo = 'crc';
+
+				if isempty(self.fileparameters),
+					fmhash = [];
+				else,
+					if ischar(self.fileparameters.filematch),
+						fmhash = pm_hash(algo,self.fileparameters.filematch);
+					elseif iscell(self.fileparameters.filematch), % is cell
+						catstr = cat(2,self.fileparameters.filematch);
+						fmhash = pm_hash(algo,catstr);
+					else,
+						error(['unexpected datatype for fileparameters.filematch.']);
+					end
+				end
+
+				if ~isempty(fmhash),
+					fmstr = num2hex(double(fmhash));
+				end
+			end
 
 		function self = setepochcontentsfileparameters(self, theepochcontentsfileparameters)
 			% SETEPOCHCONTENTSFILEPARAMETERS - Set the epoch record fileparameters field of a NSD_FILETREE object
