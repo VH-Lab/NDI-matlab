@@ -89,6 +89,85 @@ classdef nsd_probe
 
 		end
 
+		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(nsd_probe_obj, epoch)
+			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for NSD_PROBE
+			%
+			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_OBJ, EPOCH)
+			%
+			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding
+			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the epoch number, DEVEPOCH of the device that
+			% corresponds to the probe's epoch, the CHANNELTYPE, and an array of channels that comprise the probe in CHANNELLIST.
+			%
+				[n, probe_epoch_contents, devepochs] = numepochs(nsd_probe_obj);
+				if ~(epoch >=1 & epoch <= n),
+					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
+				end
+				devstr = nsd_devicestring(probe_epoch_contents(epoch).devicestring);
+				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
+				devepoch = devepochs(epoch);
+				dev = load(nsd_probe_obj.experiment.device,'name', devname); % now we have the device handle
+		end % getchanneldevinfo(nsd_probe_obj, epoch)
+
+		function tag = getepochtag(nsd_probe_obj, number)
+			% GETEPOCHTAG - Get tag(s) from an epoch
+			%
+			% TAG = GETEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
+				tag = dev.getepochtag(number);
+		end % getepochtag()
+
+		function setepochtag(nsd_probe_obj, number, tag)
+			% SETEPOCHTAG - Set tag(s) for an epoch
+			%
+			% SETEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will replace any
+			% tags in the epoch directory. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
+				dev.setepochtag(number, tag);
+		end % setepochtag()
+
+		function addepochtag(nsd_probe_obj, number, tag)
+			% ADDEPOCHTAG - Add tag(s) for an epoch
+			%
+			% ADDEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will be added to any
+			% tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
+				dev.addepochtag(number, tag);
+		end % addepochtag()
+
+		function removeepochtag(nsd_probe_obj, number, name)
+			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
+			%
+			% REMOVEEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, NAME)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. Any tags with name 'NAME' will
+			% be removed from the tags in the epoch EPOCHNUMBER.
+			% tags in the epoch directory. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+			% NAME can be a single string, or it can be a cell array of strings
+			% (which will result in the removal of multiple tags).
+			%
+				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
+				dev.removeepochtag(number,name);
+		end % removeepochtag()
 
 	end % methods
 end

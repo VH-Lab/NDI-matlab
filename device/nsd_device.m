@@ -6,7 +6,6 @@ classdef nsd_device < nsd_dbleaf
 %  Creates a new NSD_DEVICE object with name and specific data tree object.
 %  This is an abstract class that is overridden by specific devices.
 
-
 	properties (GetAccess=public, SetAccess=protected)
 		filetree   % The NSD_FILETREE associated with this device
 	end
@@ -205,10 +204,12 @@ classdef nsd_device < nsd_dbleaf
 				N = self.filetree.numepochs();
 				for n=1:N,
 					epc = self.getepochcontents(n);
-					newentry.name = epc.name;
-					newentry.reference= epc.reference;
-					newentry.type= epc.type;
-					probes_struct(end+1) = newentry;
+					if ~isempty(epc),
+						newentry.name = epc.name;
+						newentry.reference= epc.reference;
+						newentry.type= epc.type;
+						probes_struct(end+1) = newentry;
+					end
 				end
 				probes_struct = structunique(probes_struct);
 
@@ -266,7 +267,7 @@ classdef nsd_device < nsd_dbleaf
 		function removeepochtag(self, number, name)
 			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
 			%
-			% REMOVEEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER, NAME)
+			% REMOVEEPOCHTAG(NSD_DEVICE_OBJ, EPOCHNUMBER, NAME)
 			%
 			% Tags are name/value pairs returned in the form of a structure
 			% array with fields 'name' and 'value'. Any tags with name 'NAME' will

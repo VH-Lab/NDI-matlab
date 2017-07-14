@@ -191,7 +191,7 @@ classdef nsd_device_mfdaq < nsd_device
 			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
                         b = isa(epochcontents, 'nsd_epochcontents');
 
-			warning('developer note: more verification needed here');
+			%warning('developer note: more verification needed here');
                 end
 
 	end; % methods

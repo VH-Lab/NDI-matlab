@@ -99,24 +99,6 @@ classdef nsd_probe_mfdaq < nsd_probe
 				sr = dev.samplerate(devepoch, channeltype, channellist);
 		end
 
-		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(self, epoch)
-			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for NSD_PROBE_MFDAQ
-			% 
-			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_MFDAQ_OBJ, EPOCH)
-			%
-			% Given an NSD_PROBE_MFDAQ object and an EPOCH number, this functon returns the corresponding
-			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the epoch number, DEVEPOCH of the device that
-			% corresponds to the probe's epoch, the CHANNELTYPE, and an array of channels that comprise the probe in CHANNELLIST.
-			%
-				[n, probe_epoch_contents, devepochs] = numepochs(self);
-				if ~(epoch >=1 & epoch <= n),
-					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
-				end
-				devstr = nsd_devicestring(probe_epoch_contents(epoch).devicestring);
-				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
-				devepoch = devepochs(epoch);
-				dev = load(self.experiment.device,'name', devname); % now we have the device handle
-			end
 	end; % methods
 end
 
