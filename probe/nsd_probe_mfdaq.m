@@ -17,7 +17,6 @@ classdef nsd_probe_mfdaq < nsd_probe
 			%
 			%  NSD_PROBE is an abstract class, and a specific implementation must be called.
 			%
-
 				obj = obj@nsd_probe(experiment, name, reference, type);
 
 		end % nsd_probe_mfdaq
@@ -36,8 +35,10 @@ classdef nsd_probe_mfdaq < nsd_probe
 		%  
 			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
 
+			if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
+
 			if nargout>=1,
-				[data] = readchannels_epochsamples(dev, channeltype, channel, devepoch, s0, s1);
+				[data] = readchannels_epochsamples(dev, channeltype{1}, channel, devepoch, s0, s1);
 			end
 			if nargout>=2,
 				[t] = readchannels_epochsamples(dev, 'time', 1, devepoch, s0, s1);
@@ -50,11 +51,6 @@ classdef nsd_probe_mfdaq < nsd_probe
 			%
 			%  [DATA,T] = READ(NSD_PROBE_MFDAQ_OBJ, CLOCK_OR_EPOCH, T0, T1)
 			%
-			%  CHANNELTYPE is the type of channel to read
-			%  ('analog','digitalin','digitalout', etc)
-			%  
-			%  CHANNEL is a vector with the identity of the channels to be read.
-			%  
 			%  CLOCK_OR_EPOCH is either an NSD_CLOCK object indicating the clock for T0, T1, or
 			%  it can be a single number, which will indicate the data are to be read from that epoch.
 			%
@@ -84,7 +80,6 @@ classdef nsd_probe_mfdaq < nsd_probe
 				if nargout>=2,
 					[t] = readchannels_epochsamples(dev, devepoch, 'time', 1, s0, s1);
 				end
-
 		end %read()
 
                 function sr = samplerate(self, epoch)
@@ -96,6 +91,7 @@ classdef nsd_probe_mfdaq < nsd_probe
 			% from epoch number EPOCH.
 			%
 				[dev, devname, devepoch, channeltype, channellist] = self.getchanneldevinfo(epoch);
+				if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
 				sr = dev.samplerate(devepoch, channeltype, channellist);
 		end
 

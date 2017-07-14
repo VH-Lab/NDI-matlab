@@ -96,7 +96,8 @@ classdef nsd_probe
 			%
 			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding
 			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the epoch number, DEVEPOCH of the device that
-			% corresponds to the probe's epoch, the CHANNELTYPE, and an array of channels that comprise the probe in CHANNELLIST.
+			% corresponds to the probe's epoch, a cell array of CHANNELTYPEs, and an array of channels that
+			% comprise the probe in CHANNELLIST. 
 			%
 				[n, probe_epoch_contents, devepochs] = numepochs(nsd_probe_obj);
 				if ~(epoch >=1 & epoch <= n),
@@ -118,7 +119,7 @@ classdef nsd_probe
 			% EPOCHNUMBER then an error is returned.
 			%
 				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				tag = dev.getepochtag(number);
+				tag = dev.getepochtag(devepoch);
 		end % getepochtag()
 
 		function setepochtag(nsd_probe_obj, number, tag)
@@ -132,7 +133,7 @@ classdef nsd_probe
 			% EPOCHNUMBER then an error is returned.
 			%
 				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.setepochtag(number, tag);
+				dev.setepochtag(devepoch, tag);
 		end % setepochtag()
 
 		function addepochtag(nsd_probe_obj, number, tag)
@@ -147,7 +148,7 @@ classdef nsd_probe
 			% EPOCHNUMBER then an error is returned.
 			%
 				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.addepochtag(number, tag);
+				dev.addepochtag(devepoch, tag);
 		end % addepochtag()
 
 		function removeepochtag(nsd_probe_obj, number, name)
@@ -166,7 +167,7 @@ classdef nsd_probe
 			% (which will result in the removal of multiple tags).
 			%
 				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.removeepochtag(number,name);
+				dev.removeepochtag(devepoch,name);
 		end % removeepochtag()
 
 	end % methods

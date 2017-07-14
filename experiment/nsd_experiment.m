@@ -157,7 +157,7 @@ classdef nsd_experiment < handle
 			% PROBES is a cell array of NSD_PROBE objects.
 			%
 				probestruct = [];
-				devs = load(self.device,'name','(.*)');
+				devs = self.device_load('name','(.*)');
 				if ~isempty(devs),
 					probestruct = getprobes(devs(1));
 				end

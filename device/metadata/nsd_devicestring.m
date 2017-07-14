@@ -42,7 +42,7 @@ classdef nsd_devicestring
 			%    or DEVSTR = NSD_DEVICESTRING(DEVSTRING)
 			%
 			% Creates a device string suitable for a NSD_EPOCHCONTENTS from a DEVICENAME,
-			% CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
+			% a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
 			%
 			% Inputs:
 			%    In the first form:
@@ -67,7 +67,6 @@ classdef nsd_devicestring
 			%
 			% See also: NSD_DEVICESTRING
 			%
-
 				if nargin==1,
 					% it is a string
 					[obj.devicename, obj.channeltype, obj.channellist] = nsd_devicestring2channel(obj,devicename);
@@ -90,8 +89,8 @@ classdef nsd_devicestring
 			%    DEVSTR should be an NSD devicestring in the form: devicename:ct#,#-#,#,#
 			% Outputs:
 			%    DEVICENAME is the string corresponding to the device name
-			%    CHANNELTYPE is the channel type
-			%    CHANNELLIST is an array of the channels
+			%    CHANNELTYPE is a cell array of strings with channel types
+			%    CHANNELLIST is an array of the channel numbers
 			%
 			% Example:
 			%    devstr = nsd_devicestring('mydevice:ai1-5,13,18');
@@ -103,13 +102,26 @@ classdef nsd_devicestring
 				if nargin<2,
 					devstr = self.devicestring();
 				end
+				channeltype = {};
+				channel = [];
 				devstr(find(isspace(devstr))) = []; % remove whitespace
 				colon = find(strtrim(devstr)==':');
 				devicename = devstr(1:colon-1);
-				firstnumber = find(  ~isletter(devstr(colon+1:end)), 1);
-				if isempty(firstnumber), firstnumber = length(devstr(colon+1:end))+1; end;
-				channeltype = devstr(colon+1:colon+firstnumber-1);
-				channel = str2intseq(devstr(colon+firstnumber:end));
+				% now read semi-colon-delimited segments
+				if devstr(end)~=';',
+					devstr(end+1)=';';
+				end; % add a superfluous ending semi-colon to make code easier
+				separators= [colon find(devstr==';')];
+				for i=1:numel(separators)-1,
+					mysubstr = devstr(separators(i)+1:separators(i+1)-1);
+					firstnumber = find(  ~isletter(mysubstr), 1);
+					if isempty(firstnumber),
+						error(['No number in nsd_device substring: ' mysubstr '.']);
+					end
+					channelshere = str2intseq(mysubstr(firstnumber:end));
+					channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
+					channel = cat(2,channel,channelshere(:)');
+				end
 		end % nsd_devicestring2channel
 
 		function devstr = devicestring(self);
@@ -126,10 +138,29 @@ classdef nsd_devicestring
 			%
 			%
 			% See also: NSD_DEVICESTRING
-				devstr = [self.devicename ':' self.channeltype intseq2str(self.channellist)];
+				devstr = [self.devicename ':'];
+				prevchanneltype = '';
+				newchannellist = [];
+				for i=1:numel(self.channellist),
+					currentchanneltype = self.channeltype{i};
+					if strcmp(currentchanneltype,prevchanneltype),
+						newchannellist(end+1) = self.channellist(i);
+					elseif ~strcmp(currentchanneltype,prevchanneltype)
+						% we need to write the previous channels
+						if ~isempty(newchannellist), % do the writing
+							devstr = cat(2,devstr, [prevchanneltype intseq2str(newchannellist) ]);
+							devstr(end+1) = ';';
+						end
+						% start off the new list
+						newchannellist = [self.channellist(i)];
+					end
+					if i==numel(self.channellist), % need to write any channels accumulated 
+						devstr = cat(2,devstr, [currentchanneltype intseq2str(newchannellist) ]);
+					end
+					prevchanneltype = currentchanneltype;
+				end;
 		end % devicestring
 	end
-
 end
 
      

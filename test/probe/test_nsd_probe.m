@@ -1,22 +1,21 @@
-function test_probe(dirname)
-% TEST_PROBE - Test the functionality of NSD_PROBE
+function test_nsd_probe(dirname)
+% TEST_NSD_PROBE - Test the functionality of NSD_PROBE
 %
-%  TEST_PROBE([DIRNAME])
+%  TEST_NSD_PROBE([DIRNAME])
 %
 %  Given an experiment directory with probes, this function
 %  plots some data from the first probe channel 1.
 %
 %  If DIRNAME is not provided, the default directory
-%  [USERPATH/tools/NSD/example_experiments/exp1_eg_saved] is used.
+%  [NSDPATH/example_experiments/exp1_eg_saved] is used.
 %
 %
 
 if nargin<1,
+	nsd_globals;
 
-	mydirectory = [userpath filesep 'tools' filesep 'NSD' ...
-                filesep 'example_experiments' ];
+	mydirectory = [nsdpath filesep 'example_experiments' ];
 	dirname = [mydirectory filesep 'exp1_eg_saved'];
-
 end;
 
 disp(['reading experiment from directory ' dirname ' ...']);
