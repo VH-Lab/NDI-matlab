@@ -223,7 +223,62 @@ classdef nsd_device < nsd_dbleaf
 			%	
 				self.filetree = setproperties(self.filetree,{'experiment'},{experiment});
 		end % setpath()
-			
-			
+
+		function tag = getepochtag(self, number)
+			% GETEPOCHTAG - Get tag(s) from an epoch
+			%
+			% TAG = GETEPOCHTAG(NSD_DEVICE_OBJ, EPOCHNUMBER)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				tag = self.filetree.getepochtag(number);
+		end % getepochtag()
+
+		function setepochtag(self, number, tag)
+			% SETEPOCHTAG - Set tag(s) for an epoch
+			%
+			% SETEPOCHTAG(NSD_DEVICE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will replace any
+			% tags in the epoch directory. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				self.filetree.setepochtag(number,tag);
+		end % setepochtag()
+
+		function addepochtag(self, number, tag)
+			% ADDEPOCHTAG - Add tag(s) for an epoch
+			%
+			% ADDEPOCHTAG(NSD_DEVICE_OBJ, EPOCHNUMBER, TAG)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. These tags will be added to any
+			% tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+				self.filetree.addepochtag(number, tag);
+		end % addepochtag()
+
+		function removeepochtag(self, number, name)
+			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
+			%
+			% REMOVEEPOCHTAG(NSD_FILETREE_OBJ, EPOCHNUMBER, NAME)
+			%
+			% Tags are name/value pairs returned in the form of a structure
+			% array with fields 'name' and 'value'. Any tags with name 'NAME' will
+			% be removed from the tags in the epoch EPOCHNUMBER.
+			% tags in the epoch directory. If tags with the same names as those in TAG
+			% already exist, they will be overwritten. If there are no files in
+			% EPOCHNUMBER then an error is returned.
+			%
+			% NAME can be a single string, or it can be a cell array of strings
+			% (which will result in the removal of multiple tags).
+			%
+				self.filetree.removeepochtag(number,name);
+		end % removeepochtag()
 	end % methods
 end
