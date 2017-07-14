@@ -13,7 +13,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
         %constructor
         function obj = nsd_device_image_tiffstack(name, filetree)
                 obj = obj@nsd_device_image(name,filetree);
-                chache = {};
+                cache = {};
         end
 
         %This function returns a specific frame at position 'i' in epoch
@@ -39,23 +39,25 @@ classdef nsd_device_image_tiffstack < nsd_device_image
                 tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
                 im = cast(tmp1,form);
 
-                cache{n} = {'large',epochn_tiff_file,fileID,info,ofds};
+                obj.cache{n} = {'large',epochn_tiff_file,fileID,info,ofds};
               else
                 epochn = Tiff(epochn_tiff_file,'r');
                 epochn.setDirectory(i);
                 im = epochn.read;
                 %epochn.close; not sure if I need to delete this line
-                chache{n} = {'small',epochn_tiff_file,fileID,epochn};
+                obj.cache{n} = {'small',epochn_tiff_file,fileID,epochn};
+                disp('cached');
               end%file2big
             else
-              if file2big(epochn_tiff_file)
+              disp('Frame taken from cache')
+              if obj.file2big(epochn_tiff_file)
                 fp = fopen(epochn_tiff_file);
                 info = cache{n}{4};
                 %call organize metadata function
                 tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
                 im = cast(tmp1,form);
               else
-                epochn = cache{n}{4};
+                epochn = obj.cache{n}{4};
                 epochn.setDirectory(i);
                 im = epochn.read;
               end
@@ -67,6 +69,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
             fileStatus = obj.checkFile(epochn_tiff_file, fileID);
             if fileStatus == 1%In case the file exists, but its content has changed, the function displays an error.
               disp(['Epoch number ' num2str(n) 'has changed.']);
+              num = -1;
             elseif fileStatus == -1
               if obj.file2big(epochn_tiff_file)
                 info = imfinfo(epochn_directory);
@@ -82,12 +85,20 @@ classdef nsd_device_image_tiffstack < nsd_device_image
                 %epochn.close;
               end
             else
-              if strcmp(cache{n}{1}, 'large')
+              disp('Number of frames retreived from cache');
+              if strcmp(obj.cache{n}{1}, 'large')
                 num = max(size(cache{n}{4}));
               else
-                epochn = cache{n}{4};
-                epochn.lastDirectory;
-                num = currentDirectory;
+                if size(obj.cache) == 5
+                  num = obj.cache{n}{5};
+                else
+                  epochn = obj.cache{n}{4};
+                  while ~epochn.lastDirectory
+                    epochn.nextDirectory;
+                  end
+                  num = epochn.currentDirectory;
+                  obj.cache{n}{5} = num;
+                end
               end
             end
         end%num = numFrame(obj,n)
@@ -102,7 +113,7 @@ classdef nsd_device_image_tiffstack < nsd_device_image
           if index == -1
             fileStatus = -1;
           else
-            if strcmp(obj.cache{index}{2}, fileID)
+            if strcmp(obj.cache{index}{3}, fileID)
               fileStatus = 0;
             else
               fileStatus = 1;
