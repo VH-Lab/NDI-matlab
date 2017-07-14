@@ -31,40 +31,8 @@ classdef nsd_device_image_tiffstack < nsd_device_image
 
               if file2big(epochn_tiff_file)%Checks if the file is over 4GB
                 info = imfinfo(epochn_tiff_file);%extracts the metadata of the file.
-                totNumFrame = max(size(info));%gets the total number of ferames in the file.
-                ofds = zeros(1,totNumFrame);%a matrix to hold the offset of the first strip in each frame
-                for j=1:numFrames%writing all the offsets of the first strip in each frame into ofds matrix
-                    ofds(j)=info(j).StripOffsets(1);
-                end
+                [byteOrder, bitDepth, totnumFrame, ofds, info] = self.organizeBigTiffMetaData(info);
 
-                %% Organizing the meta data of the file so it could be read using fread().%thinking about making it a function of its own
-                bd = info.BitDepth;
-                if (bd==64)%translating the bit depth from a number into a string vector so it fits arguments of fread()
-                    info.BitDepth ='double';
-                elseif (bd==32)
-                    info.BitDepth='single';
-                elseif (bd==16)
-                    info.BitDepth='uint16';
-                elseif (bd==8)
-                    info.BitDepth='uint8';
-                end
-
-                if strcmpi(info.BitDepth,'double')%takes care of a special case in which the bit depth is double
-                  form = 'single';
-                  if strcmp(info.ByteOrder,'big-endian')
-                    byteOrder = 'ieee-be.l64';
-                  else
-                    byteOrder = 'ieee-le. l64';
-                  end
-                  %translating the byte ore of the file so it matches arguments of fread()
-                else
-                  if strcmp(info.ByteOrder,'big-endian');
-                    byteOrder = 'ieee-be';
-                  else
-                    byteOrder = 'ieee-le';
-                  end
-                    form = info.BitDepth;
-                end
                 %
                 %% reading the data and writing it the image to the memory
                 fp = fopen(epochn_tiff_file);
@@ -143,7 +111,42 @@ classdef nsd_device_image_tiffstack < nsd_device_image
           end
         end%isBig = file2big(file_path)
 
-        function [byteOrder, bitDepth, numFrames, ofds, ]
+        function [byteOrder, bitDepth, numFrames, ofds, info] = organizeBigTiffMetaData(info)
+          totNumFrame = max(size(info));%gets the total number of ferames in the file.
+          ofds = zeros(1,totNumFrame);%a matrix to hold the offset of the first strip in each frame
+          for j=1:numFrames%writing all the offsets of the first strip in each frame into ofds matrix
+              ofds(j)=info(j).StripOffsets(1);
+          end
+
+          %% Organizing the meta data of the file so it could be read using fread().%thinking about making it a function of its own
+          bd = info.BitDepth;
+          if (bd==64)%translating the bit depth from a number into a string vector so it fits arguments of fread()
+              info.BitDepth ='double';
+          elseif (bd==32)
+              info.BitDepth='single';
+          elseif (bd==16)
+              info.BitDepth='uint16';
+          elseif (bd==8)
+              info.BitDepth='uint8';
+          end
+
+          if strcmpi(info.BitDepth,'double')%takes care of a special case in which the bit depth is double
+            form = 'single';
+            if strcmp(info.ByteOrder,'big-endian')
+              byteOrder = 'ieee-be.l64';
+            else
+              byteOrder = 'ieee-le. l64';
+            end
+            %translating the byte ore of the file so it matches arguments of fread()
+          else
+            if strcmp(info.ByteOrder,'big-endian');
+              byteOrder = 'ieee-be';
+            else
+              byteOrder = 'ieee-le';
+            end
+              form = info.BitDepth;
+          end
+        end%organizeMetaData()
 
     end%methods
 end%classdef
