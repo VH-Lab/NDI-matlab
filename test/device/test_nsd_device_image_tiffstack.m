@@ -44,4 +44,13 @@ image = example_device.frame(epoch_number,frame_number);
 imwrite(image, [output_dir_name filesep 'example_frame.tif']);
 disp(['frame exported to "' output_dir_name '"']);
 
+disp('Testing cache functionality...');
+disp('Counting the number of frames in the first epoch');
+disp(['The first epoch has ' num2str(example_device.numFrame(epoch_number)) ' frames']);
+
+disp(['Collecting frame number ' num2str(frame_number) ' from epoch number ' num2str(epoch_number)]);
+image = example_device.frame(epoch_number,frame_number);
+imwrite(image, [output_dir_name filesep 'example_frame.tif']);
+disp(['frame exported to "' output_dir_name '"']);
+
 end
