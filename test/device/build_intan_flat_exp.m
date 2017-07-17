@@ -9,7 +9,7 @@ function build_intan_flat_exp(dirname)
 %  in the experiment record.
 %
 %  If DIRNAME is not provided, the default directory
-%  [USERPATH/tools/NSD/example_experiments/exp1_eg_saved] is used.
+%  [NSDPATH]/example_experiments/exp1_eg_saved is used.
 %
 
 if nargin<1,
@@ -46,16 +46,16 @@ disp(['The channels we have on this device are the following:']);
 
 disp ( struct2table(getchannels(dev1)) );
 
-sr_d = samplerate(dev1,1,'digital_in',1);
-sr_a = samplerate(dev1,1,'analog_in',1);
+sr_d = samplerate(dev1,1,{'digital_in'},1);
+sr_a = samplerate(dev1,1,{'analog_in'},1);
 
 disp(['The sample rate of digital channel 1 in epoch 1 is ' num2str(sr_d) '.']);
 disp(['The sample rate of analog channel 1 in epoch 1 is ' num2str(sr_a) '.']);
 
 disp(['We will now plot the data for epoch 1 for analog_input channel 1.']);
 
-data = readchannels_epochsamples(dev1,'analog_in',1,1,0,Inf);
-time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
+data = readchannels_epochsamples(dev1,{'analog_in'},1,1,0,Inf);
+time = readchannels_epochsamples(dev1,{'timestamp'},1,1,0,Inf);
 
 figure;
 plot(time,data);

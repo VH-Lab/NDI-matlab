@@ -16,7 +16,14 @@ function nsd_probe_obj = nsd_probestruct2probe(probestruct, exp)
 
 nsd_globals;
 
+init_probetypes = 0;
 if ~exist('nsd_probetype2object','var'),
+	init_probetypes = 1;
+elseif isempty(nsd_probetype2object),
+	init_probetypes = 1;
+end
+
+if init_probetypes==1,
 	nsd_probetype2objectinit;
 end
 

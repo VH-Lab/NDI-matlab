@@ -57,7 +57,7 @@ classdef nsd_probe
 				probe_epoch_contents = nsd_epochcontents;
 				probe_epoch_contents = probe_epoch_contents([]);
 				devepoch = [];
-				D = load(nsd_probe_obj.experiment.device,'name','(.*)');
+				D = nsd_probe_obj.experiment.device_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 				for d=1:numel(D),
 					NUM = D{d}.filetree.numepochs();
@@ -106,7 +106,7 @@ classdef nsd_probe
 				devstr = nsd_devicestring(probe_epoch_contents(epoch).devicestring);
 				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
 				devepoch = devepochs(epoch);
-				dev = load(nsd_probe_obj.experiment.device,'name', devname); % now we have the device handle
+				dev = nsd_probe_obj.experiment.device_load('name', devname); % now we have the device handle
 		end % getchanneldevinfo(nsd_probe_obj, epoch)
 
 		function tag = getepochtag(nsd_probe_obj, number)

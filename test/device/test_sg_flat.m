@@ -38,7 +38,7 @@ function test_sg_flat( dirname )
 
 	disp ( struct2table(getchannels(dev1)) );
 
-	%sr_d = samplerate(dev1,1,'digital_in',1);
+	%sr_d = samplerate(dev1,1,{'digital_in'},1);
 	%sg has a global sample rate of 30000, if this changes functions in sg dev
 	%need to be fixed
 
@@ -57,8 +57,8 @@ function test_sg_flat( dirname )
         %for all samples loop inf 30000
 		%get channels in tetrode
 		[~,~,channels] = nsd_devicestring(tetrodes(1).devicestring)
-        data = readchannels_epochsamples(dev1,'analog_in',channels,1,1,30000); %str2intseq(tetrodes(1).devicestring)
-        %time = readchannels_epochsamples(dev1,'timestamp',1,1,0,Inf);
+        data = readchannels_epochsamples(dev1,{'analog_in'},channels,1,1,30000); %str2intseq(tetrodes(1).devicestring)
+        %time = readchannels_epochsamples(dev1,{'timestamp'},1,1,0,Inf);
 
         %Applies Chebyshev Type I filter to channels
         [b,a] = cheby1(4,0.8,300/(0.5 * 30000),'high');

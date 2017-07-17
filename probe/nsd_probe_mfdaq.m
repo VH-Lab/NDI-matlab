@@ -38,10 +38,10 @@ classdef nsd_probe_mfdaq < nsd_probe
 			if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
 
 			if nargout>=1,
-				[data] = readchannels_epochsamples(dev, channeltype{1}, channel, devepoch, s0, s1);
+				[data] = readchannels_epochsamples(dev, channeltype, channel, devepoch, s0, s1);
 			end
 			if nargout>=2,
-				[t] = readchannels_epochsamples(dev, 'time', 1, devepoch, s0, s1);
+				[t] = readchannels_epochsamples(dev, {'time'}, 1, devepoch, s0, s1);
 			end
 
 		end % read_epochsamples()
@@ -82,7 +82,7 @@ classdef nsd_probe_mfdaq < nsd_probe
 				end
 		end %read()
 
-                function sr = samplerate(self, epoch)
+		function sr = samplerate(self, epoch)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR A PROBE IN AN EPOCH
 			%
 			% SR = SAMPLERATE(NSD_PROBE_MFDAQ_OBJ, EPOCH)

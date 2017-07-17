@@ -111,7 +111,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%
 		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
 		%
-		%  CHANNELTYPE is the type of channel to read
+		%  CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
 		%
 		%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 		%
@@ -121,7 +121,11 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%
 			filename = self.filetree.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
-			intanchanneltype = self.mfdaqchanneltype2intanchanneltype(channeltype);
+			uniquechannel = unique(channeltype);
+			if numel(uniquechannel)~=1,
+				error(['Only one type of channel may be read per function call at present.']);
+			end
+			intanchanneltype = self.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
 			sr = self.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
@@ -148,8 +152,10 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
 			head = read_Intan_RHD2000_header(filename);
-			freq_fieldname = self.mfdaqchanneltype2intanfreqheader(channeltype);
-			sr = getfield(head.frequency_parameters,freq_fieldname);
+			for i=1:numel(channeltype),
+				freq_fieldname = self.mfdaqchanneltype2intanfreqheader(channeltype{i});
+				sr(i) = getfield(head.frequency_parameters,freq_fieldname);
+			end
 		end % samplerate()
 
 	end % methods
