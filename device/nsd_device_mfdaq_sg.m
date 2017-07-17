@@ -29,7 +29,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
         end
 
         function channels = getchannels(self)
-
+            %Calculate number of epochs in filetree
             N = numepochs(self.filetree);
 
             fileconfig = [];
@@ -44,7 +44,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                 for k=1:length(channels)
                     number = 0;
                     name = '';
-                    %
+
                     %Auxiliary
                     if strcmp(channels(k).name(1),'A')
                         %Input
@@ -211,7 +211,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %
 
             filename = self.filetree.getepochfiles(epoch);
-			filename = filename{1};
+			filename = filename{1}; %no need to adjust for epoch, channels and tetrodes remain the same
             fileconfig = read_SpikeGadgets_config(filename);
             nTrodes = fileconfig.nTrodes;
             %List where epochcontents objects will be stored
@@ -228,10 +228,10 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
                     channels = [channels nTrodes(i).channelInfo(j).packetLocation + 1];
                 end
                 %Object that deals with channels
-                devicestring_ = nsd_devicestring('SpikeGadgets','ai', channels);
-                devicestring__ = devicestring_.devicestring();
+                devicestringobject = nsd_devicestring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
+                devicestringstring = devicestringobject.devicestring();
                 %
-                obj = nsd_epochcontents(name,reference,type,devicestring__);
+                obj = nsd_epochcontents(name,reference,type,devicestringstring);
                 %Append each newly made object to end of list
                 epochcontents = [epochcontents obj];
             end
