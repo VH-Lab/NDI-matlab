@@ -20,7 +20,6 @@
 %
 % See also: NSD_DEVICE_MFDAQ/NSD_DEVICE_MFDAQ
 %
-% 
 
 classdef nsd_device_mfdaq < nsd_device
 	properties (GetAcces=public,SetAccess=protected)
@@ -38,6 +37,7 @@ classdef nsd_device_mfdaq < nsd_device
 			%  Creates a new NSD_DEVICE_MFDAQ object with NAME, and FILETREE.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@nsd_device(varargin{:});
+			obj.clock = nsd_clock_device('dev_local_time',obj);
 		end; % nsd_device_mfdaq
 
 		function channels = getchannels(thedev)
@@ -65,7 +65,6 @@ classdef nsd_device_mfdaq < nsd_device
 			   % because this is an abstract class, only empty records are returned
 			channels = struct('name',[],'type',[]);  
 			channels = channels([]);
-
 		end; % getchannels
 
 		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
@@ -82,7 +81,6 @@ classdef nsd_device_mfdaq < nsd_device
 			%  DATA will have one column per channel.
 			%
 			data = [];
-
 		end % readchannels_epochsamples()
 
 		function data = readchannels(self, channeltype, channel, clock_or_epoch, t0, t1)
@@ -101,21 +99,24 @@ classdef nsd_device_mfdaq < nsd_device
 			%  DATA is the data collection for specific channels
 
 			if isa(clock_or_epoch,'nsd_clock'),
-				clock = clock_or_epoch;
-				error(['this function does not handle working with clocks yet.']);
+				[t0,epoch0] = self.timeconvert(clock_or_epoch,t0);
+				[t1,epoch1] = self.timeconvert(clock_or_epoch,t1);
+				if epoch0~=epoch1,
+					error(['Do not know how to read across epochs yet; request spanned ' ...
+						 self.filetree.epoch2str(epoch0) ' and ' self.filetree.epoch2str(epoch1) '.']);
+				end
+				epoch = epoch0;
 			else,
 				epoch = clock_or_epoch;
-				sr = samplerate(self, epoch, channeltype, channel);
-				if numel(unique(sr))~=1,
-					error(['Do not know how to handle multiple sampling rates across channels.']);
-				end;
-				sr = unique(sr);
-				s0 = 1+round(sr*t0);
-				s1 = 1+round(sr*t1);
-				[data] = readchannels_epochsamples(self, epoch, channeltype, channel, s0, s1);
+			end
+			sr = samplerate(self, epoch, channeltype, channel);
+			if numel(unique(sr))~=1,
+				error(['Do not know how to handle multiple sampling rates across channels.']);
 			end;
-
-
+			sr = unique(sr);
+			s0 = 1+round(sr*t0);
+			s1 = 1+round(sr*t1);
+			[data] = readchannels_epochsamples(self, epoch, channeltype, channel, s0, s1);
 		end %readchannels()
 
 		function data = readevents(self, channeltype, channel, clock_or_epoch, t0, t1)
@@ -179,7 +180,7 @@ classdef nsd_device_mfdaq < nsd_device
                 function b = verifyepochcontents(self, epochcontents, number)
 			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 			%
-			%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
+			%   B = VERIFYEPOCHCONTENTS(NSD_DEVICE_MFDAQ_OBJ, EPOCHCONTENTS, NUMBER)
 			%
 			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
 			% epoch NUMBER.
@@ -190,10 +191,59 @@ classdef nsd_device_mfdaq < nsd_device
 			%
 			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
                         b = isa(epochcontents, 'nsd_epochcontents');
-
 			%warning('developer note: more verification needed here');
                 end
 
+		function [t_prime, epochnumber_prime] = timeconvert(self, clock, t, epochnumber)
+			% TIMECONVERT - convert time to NSD_DEVICE_MFDAQ 'dev_local_time'
+			%
+			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NSD_DEVICE_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])
+			%
+			%Given an NSD_CLOCK CLOCK, a time T, and, if CLOCK is a 'dev_local_time' type of clock,
+			%an EPOCHNUMBER, convert time to device's local 'dev_local_time' clock. EPOCHNUMBER_PRIME is the
+			%epoch number in which time T occurs, and time T_PRIME is the time within the EPOCHNUMBER_PRIME when 
+			%time T occurs.
+			%
+				ismyclock = 0;
+				% is this clock already linked to my device??
+				if isa(clock,'nsd_clock_device'),
+					if clock.device==self,
+						ismyclock = 1;
+					end
+				end
+
+				if ~ismyclock, % need to send out to sync table for conversion
+					exp = self.experiment;
+					myclock = nsd_clock_device('dev_local_time',self); % MORE HERE
+					if nargin<4,
+						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t); % more here!
+					else,
+						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t, epochnumber); % more here!
+					end
+					return;
+				end
+
+				if isa(clock,'nsd_clock_device_epoch'), % don't need epochnumber, we know it already
+					t_prime = t;
+					epochnumber_prime = clock.epoch;
+					return
+				end
+
+				switch clock.type,
+					case 'dev_local_time',
+						t_prime = t;
+						if nargin<4,
+							error(['EPOCHNUMBER must be given if clock is type ''dev_local_time''.']);
+						end
+						epochnumber_prime = epochnumber; % must be given
+					case 'no_time',
+						t_prime = [];
+						epochnumber_prime = [];
+					case {'utc','exp_global_time','dev_global_time'},
+						% need to get start and end time of each epoch, figure out which one has t
+						error(['Do not know how to do this yet. More development needed.']);
+				end
+		end % timeconvert()
 	end; % methods
 
 	methods (Static), % functions that don't need the object

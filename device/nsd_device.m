@@ -8,6 +8,7 @@ classdef nsd_device < nsd_dbleaf
 
 	properties (GetAccess=public, SetAccess=protected)
 		filetree   % The NSD_FILETREE associated with this device
+		clock      % The NSD_CLOCK object associated with this device
 	end
 
 	methods
@@ -50,7 +51,7 @@ classdef nsd_device < nsd_dbleaf
 				obj.name = name;
 				obj.filetree = thefiletree;
 			end
-
+			obj.clock = nsd_clock('no_time');
 		end % nsd_device
 
 		function obj = readobjectfile(nsd_device_obj, fname)
@@ -103,7 +104,6 @@ classdef nsd_device < nsd_dbleaf
 			%
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
-
 				b = 1;
 				subdirname = [thedirname filesep nsd_device_obj.objectfilename '.filetree.device.nsd'];
 				rmdir(subdirname,'s');
@@ -281,5 +281,17 @@ classdef nsd_device < nsd_dbleaf
 			%
 				self.filetree.removeepochtag(number,name);
 		end % removeepochtag()
+
+		function exp=experiment(self)
+			% EXPERIMENT - return the NSD_EXPERIMENT object associated with the NSD_DEVICE object
+			%
+			% EXP = EXPERIMENT(NSD_DEVICE_OBJ)
+			%
+			% Return the NSD_EXPERIMENT object associated with the NSD_FILETREE of the
+			% NSD_DEVICE object.
+			%
+				exp = self.filetree.experiment;
+		end % experiment()
+
 	end % methods
 end
