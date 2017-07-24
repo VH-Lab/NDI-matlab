@@ -3,6 +3,7 @@ classdef nsd_device_image < nsd_device
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
     properties
+    cache;
     end
 
     methods
@@ -12,10 +13,14 @@ classdef nsd_device_image < nsd_device
     end
 
     methods
-        %This function returns a specific fram 'i' from epoch 'n'
+        %This function returns a specific frame 'i' from epoch 'n'
         function im = frame(obj,n,i)
-          imageFile = loadImage(getepochfiles(n));
-          im = imageFile.read;
+          image = nsd_image(getepochfiles(n));
+          if cache.exist(image)
+            cache.getImage(image)
+          else
+            image.loadImage;
+            im = image.read;
         %This function returns the number of frames in epoch 'n'
         function num = numFrame(obj,n)
     end
