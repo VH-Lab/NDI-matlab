@@ -1,4 +1,4 @@
-classdef (Abstract) nsd_device_image < nsd_device
+classdef nsd_device_image < nsd_device
     %This is an abstract superclass of all imaging device drivers
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
@@ -11,11 +11,13 @@ classdef (Abstract) nsd_device_image < nsd_device
         end
     end
 
-    methods (Abstract)
+    methods
         %This function returns a specific fram 'i' from epoch 'n'
-        im = frame(obj,n,i)
+        function im = frame(obj,n,i)
+          imageFile = loadImage(getepochfiles(n));
+          im = imageFile.read;
         %This function returns the number of frames in epoch 'n'
-        num = numFrame(obj,n)
+        function num = numFrame(obj,n)
     end
 
 
