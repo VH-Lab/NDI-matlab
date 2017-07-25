@@ -7,6 +7,7 @@ classdef nsd_image_tiffstack < handle
   totnumFrame;
   ofds;
   info;
+  big;
   end%properties
 
   methods
@@ -15,12 +16,24 @@ classdef nsd_image_tiffstack < handle
       if obj.file2big(file_path)
         %large tiff
         [obj.byteOrder, obj.bitDepth, obj.totnumFrame, obj.ofds, obj.info] = self.organizeBigTiffMetaData(info);
+        obj.big = 1;
       else
         %small tiff
         obj.tiffObject = Tiff(epochn_tiff_file,'r');
+        obj.big = 0;
       end
     end%constructor
     function frame = read(obj,i)
+      if big
+        %read frame as big
+        fp = fopen(epochn_tiff_file);
+        tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
+        frame = cast(tmp1,form);
+      else
+        %read frame as small
+        tiffObject.setDirectory(i);
+        im = epochn.read;
+      end
     end%read
     function isBig = file2big(obj,file_path)
       fileDetails = dir(file_path);
