@@ -32,7 +32,7 @@ classdef nsd_image_tiffstack < handle
       else
         %read frame as small
         tiffObject.setDirectory(i);
-        im = epochn.read;
+        frane = tiffObject.read;
       end
     end%read
     function isBig = file2big(obj,file_path)
