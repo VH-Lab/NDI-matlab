@@ -7,16 +7,24 @@ classdef nsd_image < handle
   end%properties
 
   methods
-    function obj = nsd_image(epochn_directory, fileID)
+    function obj = nsd_image(epochn_directory, fileID,format)
+      if nargin < 2 || nargin > 3
+        error('number of arguments is only 2 or 3');
+      end
       obj.epochn_directory = epochn_directory;
       obj.fileID = fileID;
-      [~,~,extention] = fileparts(obj.epochn_directory{1});
+      if nargin == 2
+        [~,~,extention] = fileparts(obj.epochn_directory{1});
+      elseif nargin == 3
+        extention = format;
+      end
       switch extention%many possible image formats can be added here.
       case {'.tif','.tiff'}
         obj.image = nsd_image_tiffstack(obj.epochn_directory);
       otherwise
         obj.image = nsd_image_matlab(obj.epochn_directory);
       end%switch
+
     end%constructor
     function epochn_directory = getEpochDir(obj)
       epochn_directory = obj.epochn_directory;
