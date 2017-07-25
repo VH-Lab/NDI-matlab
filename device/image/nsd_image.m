@@ -18,12 +18,17 @@ classdef nsd_image < handle
     function fileID = getFileID(obj)
       fileID = obj.fileID;
     end%getFileID
-    function image = read(obj)
-      if ~isempty(obj.image)
-        image = obj.image;
-      else
-        %return proper image
+    function frame = read(obj,i)
+      if isempty(obj.image)
+        [~,~,extention] = fileparts(obj.epochn_directory{1});
+        switch extention%many possible image formats can be added here.
+        case {'.tif','.tiff'}
+          obj.image = nsd_image_tiffstack(obj.epochn_directory);
+        otherwise
+          obj.image = nsd_image_matlab(obj.epochn_directory);
+        end
       end
+      frame = obj.image.read(i);
     end%read
 
   end%methods

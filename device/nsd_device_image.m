@@ -10,20 +10,20 @@ classdef nsd_device_image < nsd_device
         function obj = nsd_device_image(name,filetree)
             obj = obj@nsd_device(name,filetree);
         end
-    end
 
-    methods
         %This function returns a specific frame 'i' from epoch 'n'
-        function im = frame(obj,n,i)
+        function frame = frame(obj,n,i)
           image = nsd_image(getepochfiles(n));
           if cache.exist(image)
-            cache.getImage(image)
-          else
-            image.loadImage;
-            im = image.read;
+            image = cache.getImage(image);
+          end
+          frame = image.read(i);
+          cache.add(image);
+        end%frame
         %This function returns the number of frames in epoch 'n'
         function num = numFrame(obj,n)
-    end
+        end%numFrame
 
+      end%methods
 
-end
+end%classdef
