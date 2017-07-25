@@ -9,26 +9,61 @@ classdef nsd_cache < handle
 
     function exist = exists(obj, epochn_directory, fileID, n)
       exist = 0;
-      for i = 0:size(dataArray)
-        if dataArray{i}.compareTo(epochn_directory,fileID)
-          exist = 1;
-        end
+      if obj.find(epochn_directory,fileID) ~= -1
+        exist = 1;
       end
-
     end%exists
 
-    function image = getCachedImage(obj, epochn_directory, fileID)
-    end%getImage
+    function data = getCachedData(obj, epochn_directory, fileID)
+      index = obj.find(epochn_directory,fileID);
+      if index == -1
+        error('Data does not exist in cache');
+      else
+        data = obj.dataArray{index};
+      end
+    end%getCachedImage
 
-    function obj = add(obj, data)
-      obj.dataArray{end+1} = data;
+    function data = getCachedData(obj,epochnumber)
+      if isempty(obj.dataArray{epochnumber})
+        error('Data does not exist in cache');
+      else
+        data = obj.dataArray{epochnumber};
+      end
+    end%getCachedImage
+
+    function obj = add(obj, data, epochnumber)
+      obj.dataArray{epochnumber} = data;
     end%add
 
-    function obj = remove(obj, image)
+    function obj = remove(obj, data)
+      index = obj.find(data);
+      obj.dataArray{index} = [];
     end%remove
 
-    function fileStatus = checkFile(obj, image)
+    function fileStatus = checkFile(obj, data)
     end%checkFile
+
+    function index = find(obj, data)
+      index = -1;
+      for i = 1:size(dataArray)
+        if dataArray{i}.compareTo(data)
+          index = i;
+        end
+      end
+    end%find
+
+    function index = find(obj, epochn_directory, fileID)
+      index = -1;
+      for i = 1:size(dataArray)
+        if dataArray{i}.compareTo(epochn_directory,fileID)
+          index = i;
+        end
+      end
+    end%find
+
+    function empty = isEmpty(obj)
+      empty = isempty(obj.dataArray);
+    end%isEmpty
 
   end%methods
 end%classdef
