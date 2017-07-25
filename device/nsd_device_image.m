@@ -14,10 +14,11 @@ classdef nsd_device_image < nsd_device
 
         %This function returns a specific frame 'i' from epoch 'n'
         function frame = frame(obj,n,i)
+          image;
           [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
-
-          if cache.exists(epochn_directory, fileID,n)%should I add a functionality where the cache checks if the imageID and the epochnumber match
-            image = cache.getImage(epochn_directory, fileID);
+          if obj.cache.exists(epochn_directory, fileID)%should I add a functionality where the cache checks if the imageID and the epochnumber match
+            image = obj.cache.getCachedImage(epochn_directory, fileID);
+            fileStatus = obj.cache.checkFile(image, epochn_directory, fileID, n);
           else
             image = nsd_image(epochn_directory, fileID);
           end
