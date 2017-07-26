@@ -1,22 +1,34 @@
-classdef (Abstract) nsd_device_image < nsd_device
+classdef nsd_device_image < nsd_device
     %This is an abstract superclass of all imaging device drivers
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
     properties
+    cache;
     end
 
     methods
         function obj = nsd_device_image(name,filetree)
-            obj = obj@nsd_device(name,filetree);
+          obj = obj@nsd_device(name,filetree);
+          obj.cache = nsd_cache;
         end
-    end
 
-    methods (Abstract)
-        %This function returns a specific fram 'i' from epoch 'n'
-        im = frame(obj,n,i)
+        %This function returns a specific frame 'i' from epoch 'n'
+        function frame = frame(obj,n,i)
+          image;
+          [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
+          if obj.cache.exists(epochn_directory, fileID)%should I add a functionality where the cache checks if the imageID and the epochnumber match
+            image = obj.cache.getCachedImage(epochn_directory, fileID);
+            fileStatus = obj.cache.checkFile(image, epochn_directory, fileID, n);
+          else
+            image = nsd_image(epochn_directory, fileID);
+          end
+          frame = image.read(i);
+          cache.add(image);
+        end%frame
         %This function returns the number of frames in epoch 'n'
-        num = numFrame(obj,n)
-    end
+        function num = numFrame(obj,n)
+        end%numFrame
 
+      end%methods
 
-end
+end%classdef
