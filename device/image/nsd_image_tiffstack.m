@@ -11,7 +11,7 @@ classdef nsd_image_tiffstack < handle
   end%properties
 
   methods
-    function obj = nsd_device_image_tiffstack(epochn_directory)
+    function obj = nsd_image_tiffstack(epochn_directory)
       obj.file_path = epochn_directory{1};
       if obj.file2big(file_path)
         %large tiff
@@ -32,7 +32,7 @@ classdef nsd_image_tiffstack < handle
       else
         %read frame as small
         tiffObject.setDirectory(i);
-        frane = tiffObject.read;
+        frame = tiffObject.read;
       end
     end%read
     function isBig = file2big(obj,file_path)
@@ -44,6 +44,18 @@ classdef nsd_image_tiffstack < handle
         isBig = 0;
       end
     end%isBig = file2big(file_path)
+    function num = numFrame(obj)
+      if big
+        num = totNumFrame;
+      else
+        tiffObject.setDirectory(1);
+        while ~tiffObject.lastDirectory;
+          tiffObject.nextDirectory;
+        end
+        num = tiffObject.currentDirectory;
+      end
+    end%numFrame
+
 
     function [byteOrder, bitDepth, numFrames, ofds, info] = organizeBigTiffMetaData(obj,info)
       totNumFrame = max(size(info));%gets the total number of ferames in the file.
