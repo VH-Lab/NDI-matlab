@@ -16,7 +16,7 @@ classdef nsd_device_image < nsd_device
         function frame = frame(obj,n,i)
           [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
           if obj.cache.exists(epochn_directory, fileID)%should I add a functionality where the cache checks if the imageID and the epochnumber match
-            image = obj.cache.getCachedImage(epochn_directory, fileID);
+            image = obj.cache.getCachedData(epochn_directory, fileID);
             fileStatus = obj.cache.checkFile(image, epochn_directory, fileID, n);
             if fileStatus == -1 || fileStatus == 0
               cache.updateImage(image, fileStatus);
@@ -25,13 +25,13 @@ classdef nsd_device_image < nsd_device
             image = nsd_image(epochn_directory, fileID);
           end
           frame = image.read(i);
-          cache.add(image);
+          obj.cache.add(image, n);
         end%frame
         %This function returns the number of frames in epoch 'n'
         function num = numFrame(obj,n)
           [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
           if obj.cache.exists(epochn_directory, fileID)%should I add a functionality where the cache checks if the imageID and the epochnumber match
-            image = obj.cache.getCachedImage(epochn_directory, fileID);
+            image = obj.cache.getCachedData(epochn_directory, fileID);
             fileStatus = obj.cache.checkFile(image, epochn_directory, fileID, n);
             if fileStatus == -1 || fileStatus == 0
               cache.updateImage(image, fileStatus);
@@ -39,7 +39,7 @@ classdef nsd_device_image < nsd_device
           else
             image = nsd_image(epochn_directory, fileID);
           end
-          num = image.numFrame(n);
+          num = image.numFrame;
         end%numFrame
 
       end%methods

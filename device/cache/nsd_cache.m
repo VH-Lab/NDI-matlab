@@ -15,7 +15,7 @@ classdef nsd_cache < handle
     end%exists
 
     function data = getCachedData(obj, epochn_directory, fileID)
-      if nargin < 2
+      if nargin > 2
         index = obj.find(epochn_directory,fileID);
         if index == -1
           error('Data does not exist in cache');
@@ -41,12 +41,12 @@ classdef nsd_cache < handle
       obj.dataArray{index} = [];
     end%remove
 
-    function fileStatus = checkFile(obj, data)
+    function fileStatus = checkFile(obj, data, epochn_directory, fileID, n)
       % output possibilities:
       % 0 - same file
       % -1 - same name, but file changed
       % 1 - same file, but diff name
-      fileStatus = 0;
+      fileStatus = 1;
     end%checkFile
 
     function index = find(obj, data, fileID)
@@ -60,7 +60,7 @@ classdef nsd_cache < handle
       elseif nargin == 3 && ischar(data{1})
         epochn_directory = data;
         for i = 1:size(obj.dataArray)
-          if dataArray{i}.compareTo(epochn_directory,fileID)
+          if obj.dataArray{i}.compareTo(epochn_directory,fileID)
             index = i;
           end
         end

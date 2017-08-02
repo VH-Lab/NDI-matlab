@@ -38,10 +38,11 @@ classdef nsd_image < handle
     function frame = read(obj,i)
       frame = obj.image.read(i);
     end%read
-    function compare = compareTo(obj, image)
+    function compare = compareTo(obj, image, fileID)
       if nargin == 2
         compare = strcmp(obj.fileID,image.getFileID) && cellfun(@strcmp,obj.epochn_directory, image.getEpochDir);%passes argument to the wrapped image implementation of the function
       elseif nargin == 3
+        epochn_directory = image;
         compare = strcmp(obj.fileID,fileID) && cellfun(@strcmp,obj.epochn_directory, epochn_directory);
       end
     end%compareTo
