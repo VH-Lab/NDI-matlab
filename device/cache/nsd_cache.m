@@ -15,19 +15,20 @@ classdef nsd_cache < handle
     end%exists
 
     function data = getCachedData(obj, epochn_directory, fileID)
-      index = obj.find(epochn_directory,fileID);
-      if index == -1
-        error('Data does not exist in cache');
+      if nargin > 2
+        index = obj.find(epochn_directory,fileID);
+        if index == -1
+          error('Data does not exist in cache');
+        else
+          data = obj.dataArray{index};
+        end
       else
-        data = obj.dataArray{index};
-      end
-    end%getCachedImage
-
-    function data = getCachedData(obj,epochnumber)
-      if isempty(obj.dataArray{epochnumber})
-        error('Data does not exist in cache');
-      else
-        data = obj.dataArray{epochnumber};
+        epochnumber = epochn_directory;
+        if isempty(obj.dataArray{epochnumber})
+          error('Data does not exist in cache');
+        else
+          data = obj.dataArray{epochnumber};
+        end
       end
     end%getCachedImage
 
@@ -40,24 +41,31 @@ classdef nsd_cache < handle
       obj.dataArray{index} = [];
     end%remove
 
-    function fileStatus = checkFile(obj, data)
+    function fileStatus = checkFile(obj, data, epochn_directory, fileID, n)
+      % output possibilities:
+      % 0 - same file
+      % -1 - same name, but file changed
+      % 1 - same file, but diff name
+      fileStatus = 1;
     end%checkFile
 
-    function index = find(obj, data)
+    function index = find(obj, data, fileID)
       index = -1;
-      for i = 1:size(dataArray)
-        if dataArray{i}.compareTo(data)
-          index = i;
+      if nargin < 3 && isa(data, 'nsd_image')
+        for i = 1:size(obj.dataArray)
+          if dataArray{i}.compareTo(data)
+            index = i;
+          end
         end
-      end
-    end%find
-
-    function index = find(obj, epochn_directory, fileID)
-      index = -1;
-      for i = 1:size(dataArray)
-        if dataArray{i}.compareTo(epochn_directory,fileID)
-          index = i;
+      elseif nargin == 3 && ischar(data{1})
+        epochn_directory = data;
+        for i = 1:size(obj.dataArray)
+          if obj.dataArray{i}.compareTo(epochn_directory,fileID)
+            index = i;
+          end
         end
+      else
+        error('Wrong use of the find function');
       end
     end%find
 

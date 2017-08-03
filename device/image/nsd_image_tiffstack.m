@@ -11,28 +11,28 @@ classdef nsd_image_tiffstack < handle
   end%properties
 
   methods
-    function obj = nsd_device_image_tiffstack(epochn_directory)
+    function obj = nsd_image_tiffstack(epochn_directory)
       obj.file_path = epochn_directory{1};
-      if obj.file2big(file_path)
+      if obj.file2big(obj.file_path)
         %large tiff
-        [obj.byteOrder, obj.bitDepth, obj.totnumFrame, obj.ofds, obj.info] = self.organizeBigTiffMetaData(info);
+        [obj.byteOrder, obj.bitDepth, obj.totnumFrame, obj.ofds, obj.info] = self.organizeBigTiffMetaData(obj.file_path);
         obj.big = 1;
       else
         %small tiff
-        obj.tiffObject = Tiff(epochn_tiff_file,'r');
+        obj.tiffObject = Tiff(obj.file_path,'r');
         obj.big = 0;
       end
     end%constructor
     function frame = read(obj,i)
-      if big
+      if obj.big
         %read frame as big
-        fp = fopen(epochn_tiff_file);
-        tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
-        frame = cast(tmp1,form);
+        fp = fopen(obj.file_path);
+        tmp1 = fread(fp, [obj.info.Width obj.info.Height], obj.bitDepth, obj.ofds(i), obj.byteOrder);
+        frame = cast(tmp1,obj.bitDepth);
       else
         %read frame as small
-        tiffObject.setDirectory(i);
-        frane = tiffObject.read;
+        obj.tiffObject.setDirectory(i);
+        frame = obj.tiffObject.read;
       end
     end%read
     function isBig = file2big(obj,file_path)
@@ -44,8 +44,21 @@ classdef nsd_image_tiffstack < handle
         isBig = 0;
       end
     end%isBig = file2big(file_path)
+    function num = numFrame(obj)
+      if obj.big
+        num = obj.totNumFrame;
+      else
+        obj.tiffObject.setDirectory(1);
+        while ~obj.tiffObject.lastDirectory;
+          obj.tiffObject.nextDirectory;
+        end
+        num = obj.tiffObject.currentDirectory;
+      end
+    end%numFrame
 
-    function [byteOrder, bitDepth, numFrames, ofds, info] = organizeBigTiffMetaData(obj,info)
+
+    function [byteOrder, bitDepth, numFrames, ofds, info] = organizeBigTiffMetaData(obj,file_path)
+      info = imfinfo(file_path);
       totNumFrame = max(size(info));%gets the total number of ferames in the file.
       ofds = zeros(1,totNumFrame);%a matrix to hold the offset of the first strip in each frame
       for j=1:numFrames%writing all the offsets of the first strip in each frame into ofds matrix
