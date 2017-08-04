@@ -158,11 +158,12 @@ classdef nsd_experiment < handle
 			%
 				probestruct = [];
 				devs = self.device_load('name','(.*)');
+				if ~isempty(devs)&~iscell(devs), devs = {devs}; end;
 				if ~isempty(devs),
-					probestruct = getprobes(devs(1));
+					probestruct = getprobes(devs{1});
 				end
 				for d=2:numel(devs),
-					probestruct = cat(1,probestruct,getprobes(devs(d)));
+					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
 				probestruct = structunique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, self);

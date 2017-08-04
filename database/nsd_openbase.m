@@ -1,11 +1,11 @@
-function obj = nsd_pickdbleaf(filename)
-% NSD_PICKDBLEAF - open an NSD_DBLEAF object and return the appropriate object
+function obj = nsd_openbase(filename)
+% NSD_OPENBASE - open an NSD_BASE object and return the appropriate object
 %
-% OBJ = NSD_PICKDBLEAF(FILENAME)
+% OBJ = NSD_OPENBASE(FILENAME)
 %
 % Reads from FILENAME (full path) to identify the type of object data contained
 % within. As long as the data belongs to a class that is descendent of type
-% NSD_DBLEAF, OBJ will return the object. Otherwise, an error will occur.
+% NSD_BASE, OBJ will return the object. Otherwise, an error will occur.
 %
 
 fid = fopen(filename, 'rb'); % files will consistently use big-endian
@@ -19,10 +19,10 @@ fclose(fid);
 
 dummyclass = eval([classname '();']);
 
-if isa(dummyclass,'nsd_dbleaf'),
-	% we have an nsd_dbleaf object, let's read it
+if isa(dummyclass,'nsd_base'),
+	% we have an nsd_baseobject, let's read it
 	obj=feval(classname,filename,'OpenFile');
 else, 
-	error(['Could not read valid NSD_DBLEAF data from file ' filename '.']);
+	error(['Could not read valid NSD_BASE data from file ' filename '.']);
 end;
 

@@ -243,7 +243,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				% update the file
 				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile(nsd_dbleaf_branch_obj.path,1,md); % we have the lock
 				% delete the leaf from disk
-				theleaf = nsd_pickdbleaf([nsd_dbleaf_branch_obj.dirname() filesep objectfilename]);
+				theleaf = nsd_openbase([nsd_dbleaf_branch_obj.dirname() filesep objectfilename]);
 				theleaf.deleteobjectfile(nsd_dbleaf_branch_obj.dirname());
 			end
 
@@ -365,7 +365,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				obj = {};
 				for i=1:length(indexes),
 					if ~isempty(nsd_dbleaf_branch_obj.path),
-						obj{i} = nsd_pickdbleaf([nsd_dbleaf_branch_obj.dirname() filesep md(indexes(i)).objectfilename]);
+						obj{i} = nsd_openbase([nsd_dbleaf_branch_obj.dirname() filesep md(indexes(i)).objectfilename]);
 					else,
 						obj{i} = nsd_dbleaf_branch_obj.leaf{indexes(i)};
 					end

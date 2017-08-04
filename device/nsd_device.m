@@ -62,14 +62,17 @@ classdef nsd_device < nsd_dbleaf
 			% Reads the NSD_DEVICE_OBJ from the file FNAME (full path).
 
 				obj=readobjectfile@nsd_dbleaf(nsd_device_obj, fname);
-				ft = nsd_filetree;
+
+				% now read filetree
 				[dirname] = fileparts(fname); % same parent directory
 				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
 				f = dir([subdirname filesep 'object_*']);
 				if isempty(f),
 					error(['Could not find filetree file!']);
 				end
-				obj.filetree=ft.readobjectfile([subdirname filesep f(1).name]);
+				obj.filetree=nsd_openbase([subdirname filesep f(1).name]);
+
+
 		end % readobjectfile
 
 		function obj = writeobjectfile(nsd_device_obj, dirname, islocked)

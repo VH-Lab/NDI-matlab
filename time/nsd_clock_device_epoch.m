@@ -48,7 +48,6 @@ classdef nsd_clock_device_epoch < nsd_clock_device
 				else,
 					error(['Function must have 0, 2, or 3 input arguments.']);
 				end
-
 				obj=obj@nsd_clock_device(type, device);
 				obj.epoch = epoch;
 		end % nsd_clock_device_epoch()

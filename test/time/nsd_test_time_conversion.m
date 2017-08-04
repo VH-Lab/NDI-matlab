@@ -26,8 +26,23 @@ spike2= exp.device_load('name','spike2');
 
 data = vhlabstim1.readevents('marker',1,1,0,Inf);
 
+probes = exp.getprobes;
+if ~iscell(probes), probes = {probes}; end;
+
+  % find the sharp electrode
+sharp = 0;
+for i=1:numel(probes)
+	if strcmp(probes{i}.type,'sharp-I'),
+		sharp = i;
+		break;
+	end
+end
+
+sharpp = probes{sharp};
 
 keyboard
+data = sharpp.read(nsd_clock_device_epoch(vhlabstim1.clock,1),data(1,1),data(2,1));
+
 
 
 if 0,
@@ -44,3 +59,4 @@ if 0,
 	box off;
 
 end
+
