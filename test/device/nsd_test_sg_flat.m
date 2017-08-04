@@ -1,7 +1,7 @@
-function test_sg_flat(dirname)
-%TEST_SG_FLAT - Test the functionality of the SpikeGadgets driver and a filetree with a flat organization
+function nsd_test_sg_flat(dirname)
+%NSD_TEST_SG_FLAT - Test the functionality of the SpikeGadgets driver and a filetree with a flat organization
 %
-% TEST_SG_FLAT([DIRNAME])
+% NSD_TEST_SG_FLAT([DIRNAME])
 %
 % Given a directory with .rec data inside, this function loads the
 % first tetrode and plots the first second of data in all four channels.

@@ -1,7 +1,7 @@
 function test_intan_flat_saved(dirname)
-% TEST_INTAN_FLAT - Test the functionality of the Intan driver and a file tree with a flat organization
+% NSD_TEST_INTAN_FLAT - Test the functionality of the Intan driver and a file tree with a flat organization
 %
-%  TEST_INTAN_FLAT_SAVED([DIRNAME])
+%  NSD_TEST_INTAN_FLAT_SAVED([DIRNAME])
 %
 %  Given an experiment directory with an associated Intan driver, 
 %  this function loads the channel information and then plots some

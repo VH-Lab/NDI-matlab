@@ -1,22 +1,22 @@
-function test_intan_flat(dirname)
-% TEST_INTAN_FLAT - Test the functionality of the Intan driver and a file tree with a flat organization
+function nsd_build_intan_flat_exp(dirname)
+% NSD_BUILD_INTAN_FLAT_EXP - Create an Intan driver and save it to an experiment
 %
-%  TEST_INTAN_FLAT([DIRNAME])
+%  NSD_BUILD_INTAN_FLAT_EXP([DIRNAME])
 %
 %  Given a directory with RHD data inside, this function loads the
 %  channel information and then plots some data from channel 1,
-%  as an example of the Intan driver.
+%  as an example of the Intan driver. It also leaves the driver saved
+%  in the experiment record.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NSDPATH]/example_experiments/exp1_eg is used.
-%
+%  [NSDPATH]/example_experiments/exp1_eg_saved is used.
 %
 
 if nargin<1,
 	nsd_globals;
 
 	mydirectory = [nsdpath filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp1_eg'];
+	dirname = [mydirectory filesep 'exp1_eg_saved'];
 end;
 
 disp(['creating a new experiment object...']);
@@ -33,6 +33,12 @@ dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
 dev1 = nsd_device_mfdaq_intan('intan1',dt);
 exp.device_add(dev1);
+ 
+  % Step 3: let's add a variable
+
+myvardir = nsd_variable_branch(exp.variable,'Animal parameters',{'nsd_variable'});
+myvar = nsd_variable('Animal age','double',30,'The age of the animal at the time of the experiment (days)','');
+myvardir.add(myvar);
 
   % Now let's print some statistics
 
@@ -57,5 +63,5 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-exp.device_rm(dev1); % remove the device so the demo can run again
+
 
