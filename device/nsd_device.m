@@ -72,6 +72,17 @@ classdef nsd_device < nsd_dbleaf
 				end
 				obj.filetree=nsd_openbase([subdirname filesep f(1).name]);
 
+				subdirname = [dirname filesep obj.objectfilename '.clock.device.nsd'];
+				f = dir([subdirname filesep 'object_*']);
+				if isempty(f),
+					error(['Could not find clock file!']);
+				end
+				obj.clock=nsd_openbase([subdirname filesep f(1).name]);
+
+				if isa(obj.clock,'nsd_clock_device'),
+					obj.clock = obj.clock.setdevice(nsd_device_obj);
+				end
+
 
 		end % readobjectfile
 
@@ -92,7 +103,11 @@ classdef nsd_device < nsd_dbleaf
 				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname, islocked);
 				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
-				obj.filetree.writeobjectfile(subdirname)
+				obj.filetree.writeobjectfile(subdirname);
+
+				subdirname = [dirname filesep obj.objectfilename '.clock.device.nsd'];
+				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
+				obj.clock.writeobjectfile(subdirname);
 				
 		end % writeobjectfile
 

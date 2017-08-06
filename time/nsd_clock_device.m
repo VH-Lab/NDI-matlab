@@ -74,6 +74,20 @@ classdef nsd_clock_device < nsd_clock
 				end
 		end % setclocktype() %
 
+		function nsd_clock_device_obj = setdevice(nsd_clock_device_obj, device)
+			% SETDEVICE - set the device of an NSD_CLOCK_DEVICE object
+			%
+			% NSD_CLOCK_DEVICE_OBJ = SETDEVICE(NSD_CLOCK_DEVICE_OBJ, DEVICE)
+			%
+			% Sets the current device for an NSD_CLOCK_DEVICE_OBJ.
+			%
+
+				if ~isa(device,'nsd_device'),
+					error(['The device must be an NSD_DEVICE object or one of its children.']);
+				end
+				nsd_clock_device_obj.device = device;
+		end
+
 	end % methods
 end % nsd_clock_device class
 

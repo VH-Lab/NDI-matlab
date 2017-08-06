@@ -99,7 +99,7 @@ classdef nsd_clock < nsd_base
 			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
 			%
 				[data,fieldnames] = stringdatatosave@nsd_base(nsd_clock_obj);
-				data{end+1} = nsd_clock_obj.data;
+				data{end+1} = nsd_clock_obj.type;
 				fieldnames{end+1} = 'type';
 		end % stringdatatosave
 
