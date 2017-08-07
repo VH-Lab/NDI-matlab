@@ -4,6 +4,7 @@ classdef nsd_experiment < handle
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
 		variable          % An array of NSD_VARIABLE objects associated with this experiment
+		synctable         % An NSD_SYNCTABLE object that describes mapping across devices
 	end
 	properties (GetAccess=protected, SetAccess = protected)
 		device            % An array of NSD_DEVICE objects associated with this experiment
@@ -28,6 +29,7 @@ classdef nsd_experiment < handle
 				obj.variable = nsd_dbleaf_branch('','variable',...
 					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
 					,0);
+				obj.synctable = synctable;
 		end
 
 		%%%%%% DEVICE METHODS

@@ -33,7 +33,7 @@ classdef nsd_clock_device_epoch < nsd_clock_device
 				epoch=[];
 				fullfilename = '';
 				if nargin==2,
-					if strcmp(lower(varargin{2}),loewr('OpenFile')),
+					if strcmp(lower(varargin{2}),lower('OpenFile')),
 						fullfilename = varargin{1};
 					else,
 						myclock = varargin{1};
@@ -66,7 +66,7 @@ classdef nsd_clock_device_epoch < nsd_clock_device
 		function nsd_clock_device_epoch_obj = setepoch(nsd_clock_device_epoch_obj, epoch)
 			% SETEPOCH - Set the epoch of an NSD_CLOCK_DEVICE_EPOCH object
 			%
-			% NSD_CLOCK_DEVICE_EPOCH_OBJ = SETEPOCH(NSD_CLOCK_DEVIE_EPOCH_OBJ, EPOCH)
+			% NSD_CLOCK_DEVICE_EPOCH_OBJ = SETEPOCH(NSD_CLOCK_DEVICE_EPOCH_OBJ, EPOCH)
 			%
 			% Set the epoch property of an NSD_CLOCK_DEVICE_EPOCH object to EPOCH.
 			%
