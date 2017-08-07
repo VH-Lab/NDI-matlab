@@ -31,14 +31,19 @@ classdef nsd_clock_device_epoch < nsd_clock_device
 				type='';
 				device=[];
 				epoch=[];
+				fullfilename = '';
 				if nargin==2,
-					myclock = varargin{1};
-					epoch = varargin{2};
-					if isa(myclock,'nsd_clock_device'),
-						type = myclock.type;
-						device = myclock.device;
+					if strcmp(lower(varargin{2}),loewr('OpenFile')),
+						fullfilename = varargin{1};
 					else,
-						error(['When called with 2 inputs, first input must be an NSD_CLOCK_DEVICE object.']);
+						myclock = varargin{1};
+						epoch = varargin{2};
+						if isa(myclock,'nsd_clock_device'),
+							type = myclock.type;
+							device = myclock.device;
+						else,
+							error(['When called with 2 inputs, first input must be an NSD_CLOCK_DEVICE object.']);
+						end
 					end
 				elseif nargin==3,
 					type = varargin{1};
@@ -48,8 +53,14 @@ classdef nsd_clock_device_epoch < nsd_clock_device
 				else,
 					error(['Function must have 0, 2, or 3 input arguments.']);
 				end
-				obj=obj@nsd_clock_device(type, device);
-				obj.epoch = epoch;
+				obj=obj@nsd_clock_device;
+				if ~isempty(fullfilename),
+					obj = obj.readobjectfile(fullfilename);
+				else,
+					obj = obj.setclocktype(type);
+					obj = obj.setdevice(device);
+					obj.epoch = epoch;
+				end
 		end % nsd_clock_device_epoch()
 
 		function nsd_clock_device_epoch_obj = setepoch(nsd_clock_device_epoch_obj, epoch)

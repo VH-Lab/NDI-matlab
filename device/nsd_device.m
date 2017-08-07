@@ -50,8 +50,8 @@ classdef nsd_device < nsd_dbleaf
 			else,
 				obj.name = name;
 				obj.filetree = thefiletree;
+				obj.clock = nsd_clock('no_time');
 			end
-			obj.clock = nsd_clock('no_time');
 		end % nsd_device
 
 		function obj = readobjectfile(nsd_device_obj, fname)
@@ -82,8 +82,6 @@ classdef nsd_device < nsd_dbleaf
 				if isa(obj.clock,'nsd_clock_device'),
 					obj.clock = obj.clock.setdevice(nsd_device_obj);
 				end
-
-
 		end % readobjectfile
 
 		function obj = writeobjectfile(nsd_device_obj, dirname, islocked)

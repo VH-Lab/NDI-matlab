@@ -24,6 +24,7 @@ classdef nsd_clock < nsd_base
 				fullfilename = '';
 				type = '';
 
+
 				if nargin==1,
 					type = varargin{1};
 				end
