@@ -62,7 +62,7 @@ if ~testing_memory,
 	d = dir([dirname filesep '*object_*.dbleaf_branch*']);
 	ind=strfind(d(1).name,'.metadata');
 
-	t = nsd_openbase([dirname filesep d(1).name(1:ind(1)-1)]),
+	t = nsd_pickdbleaf([dirname filesep d(1).name(1:ind(1)-1)]),
 	t = nsd_dbleaf_branch([dirname filesep d(1).name(1:ind(1)-1)],'OpenFile'),
 
 end;

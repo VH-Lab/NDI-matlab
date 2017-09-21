@@ -39,7 +39,7 @@ classdef nsd_experiment_dir < nsd_experiment
 				if isempty(d),
 					obj.device = nsd_dbleaf_branch(obj.nsdpathname(),'device',{'nsd_device'},1);
 				else,
-					obj.device = nsd_openbase([obj.nsdpathname() filesep d(1).name]);
+					obj.device = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),
@@ -47,7 +47,7 @@ classdef nsd_experiment_dir < nsd_experiment
 						{'nsd_variable','nsd_variable_branch','nsd_variable_file'}, ...
 						0);
 				else,
-					obj.variable = nsd_openbase([obj.nsdpathname() filesep d(1).name]);
+					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
 				str2text([obj.nsdpathname() filesep 'reference.txt'],obj.reference);
 		end

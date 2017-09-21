@@ -33,7 +33,7 @@ example_exp = nsd_experiment_dir('exp1',input_dir_name);
 %creating a new filetree that looks for .tif files.
 example_filetree = nsd_filetree(example_exp,'.*\.tif\>');
 %creating an image_tiffstack device object
-example_device = nsd_device_image('sampleDevice',example_filetree);
+example_device = nsd_device_image_tiffstack('sampleDevice',example_filetree);
 
 
 disp('Counting the number of frames in the first epoch');

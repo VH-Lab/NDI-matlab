@@ -37,9 +37,7 @@ classdef nsd_device_mfdaq < nsd_device
 			%  Creates a new NSD_DEVICE_MFDAQ object with NAME, and FILETREE.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@nsd_device(varargin{:});
-			if isempty(obj.clock),
-				obj.clock = nsd_clock_device('dev_local_time',obj);
-			end
+			obj.clock = nsd_clock_device('dev_local_time',obj);
 		end; % nsd_device_mfdaq
 
 		function channels = getchannels(thedev)
@@ -144,7 +142,7 @@ classdef nsd_device_mfdaq < nsd_device
 				error(['this function does not handle working with clocks yet.']);
 			else,
 				epoch = clock_or_epoch;
-				data = self.readevents_epoch(channeltype, channel, epoch, t0, t1);
+				[data] = readchannels_epochsamples(self, epoch, channeltype, channel);
 			end
 		end % readevents
 
