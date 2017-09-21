@@ -1,6 +1,6 @@
 classdef nsd_synctable < nsd_base
 
-	NOTE ONLY IN MY IMAGINATION RIGHT NOW
+	%NOTE ONLY IN MY IMAGINATION RIGHT NOW
 
 	% NSD_SYNCTABLE - A class for managing synchronization across NSD_CLOCK objects
 	%
@@ -13,6 +13,7 @@ classdef nsd_synctable < nsd_base
 	end % properties
 	properties (SetAccess=protected,GetAccess=protected)
 		recursion_count % how many times have we recursively called nsd_synctable.synctable?
+	end
 	methods
 		function obj = nsd_synctable
 			% NSD_SYNCTABLE - Creates a new NSD_SYNCTABLE object
@@ -25,7 +26,7 @@ classdef nsd_synctable < nsd_base
 			obj.entries = emptystruct('clock1','clock2','rule','ruleparameters','cost','valid_range');
 			obj.G = [];
 			obj.clocks = {};
-			
+			obj.recursion_count = 0;
 		end % nsd_synctable()
 			
 		function nsd_synctable_obj = add(nsd_synctable_obj, clock1, clock2, rule, ruleparameters, cost, valid_range)
@@ -73,8 +74,8 @@ classdef nsd_synctable < nsd_base
 
 				% don't remove existing entries; might be more than one sync mechanism between two identical sources
 
-				%index1 = cellfun(@(x) @eq(x,clock1), nsd_synctable_obj.clocks);
-				%index2 = cellfun(@(x) @eq(x,clock2), nsd_synctable_obj.clocks);
+				%index1 = cellfun(@(x) eq(x,clock1), nsd_synctable_obj.clocks);
+				%index2 = cellfun(@(x) eq(x,clock2), nsd_synctable_obj.clocks);
 				%if isempty(find(index1)),
 				%	nsd_synctable_obj.clocks{end+1} = clock1;
 				%	nsd_synctable_obj.clocks{end+1} = clock2;
@@ -154,12 +155,12 @@ classdef nsd_synctable < nsd_base
 				elseif ~isempty(device),
 					for i=1:N,
 						if isa(nsd_synctable_obj.entries(i).clock1,'nsd_clock_device'),
-							if nsd_synctable_obj.entries(i).clock1.device==device),
+							if nsd_synctable_obj.entries(i).clock1.device==device,
 								index(end+1) = i;
 							end
 						end
 						if isa(nsd_synctable_obj.entries(i).clock2,'nsd_clock_device'),
-							if nsd_synctable_obj.entries(i).clock2.device==device),
+							if nsd_synctable_obj.entries(i).clock2.device==device,
 								index(end+1) = i;
 							end
 						end
@@ -186,7 +187,7 @@ classdef nsd_synctable < nsd_base
 				end
 
 				clock1s = {nsd_synctable_obj.entries.clock1};
-				table_locations = find(cellfun(@(x) @eq(x,clock), clock1s));
+				table_locations = find(cellfun(@(x) eq(x,clock), clock1s));
 
 				switch clock.type,
 					case {'utc','exp_global_time','dev_global_time'},
@@ -234,11 +235,11 @@ classdef nsd_synctable < nsd_base
 
 				for i=1:N,
 					% where is the ith clock the first clock?
-					table_locations = find(cellfun(@(x) @eq(x,nsd_syncable_obj.clocks{i}), clock1s));
+					table_locations = find(cellfun(@(x) eq(x,nsd_syncable_obj.clocks{i}), clock1s));
 					for j=1:numel(table_locations),
 						clock2 = nsd_synctable_obj.entries(locations(j).clock2);
 						% which nsd_synctable_obj.clocks entry number is clock2?
-						index2 = find(cellfun(@(x) @eq(x,nsd_syncable_obj.clocks{i}), clock2));
+						index2 = find(cellfun(@(x) eq(x,nsd_syncable_obj.clocks{i}), clock2));
 
 						% now we know the G(i,index2) is where the weight should be 
 						% test to see if we should replace the weight
@@ -272,7 +273,7 @@ classdef nsd_synctable < nsd_base
 				epochnumber_prime = [];
 
 				  % Step 1: if we are stuck, bail out
-				if nsd_synctable_obj.recusion_count > 2, % can't find any mapping
+				if nsd_synctable_obj.recusion_count > 3, % can't find any mapping
 					nsd_synctable_obj.recursion_count = 0;
 					return;
 				end
@@ -290,7 +291,7 @@ classdef nsd_synctable < nsd_base
 					return;
 				end
 
-				if strcmp(source_clock.type,'utc') & strcmp(second_clock.type,'utc') | ,
+				if strcmp(source_clock.type,'utc') & strcmp(second_clock.type,'utc'),
 						strcmp(source_clock.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
 					t_prime = source_t;
 					epochnumber_prime = source_epoch;
@@ -311,8 +312,8 @@ classdef nsd_synctable < nsd_base
 				  % Step 3: now deal with other combinations
 
 				mygraph = digraph(G);
-				index1 = cellfun(@(x) @eq(x,source_clock), nsd_synctable_obj.clocks);
-				index2 = cellfun(@(x) @eq(x,second_clock), nsd_synctable_obj.clocks);
+				index1 = cellfun(@(x) eq(x,source_clock), nsd_synctable_obj.clocks);
+				index2 = cellfun(@(x) eq(x,second_clock), nsd_synctable_obj.clocks);
 				path = shortestpath(mygraph, index1, index2);
 
 				if ~isempty(path),
@@ -338,6 +339,61 @@ classdef nsd_synctable < nsd_base
 			%
 			%
 		end
+
+
+		function [obj,properties_set] = setproperties(nsd_synctable_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_BASE object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_SYNCTABLE_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_SYNCTABLE_OBJ and returns the result in OBJ.
+			%
+			% If any entries in PROPERTIES are not properties of NSD_SYNCTABLE_OBJ, then 
+			% that property is skipped.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+			% Developer note: when creating a subclass of NSD_BASE that has its own properties that
+			% need to be read/written from disk, copy this method SETPROPERTIES into the new class so that
+			% you will be able to set all properties (this instance can only set properties of NSD_BASE).
+			%
+				fn = fieldnames(nsd_synctable_obj);
+				obj = nsd_synctable_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						else,
+							eval(['obj.' properties{i}(2:end) '=' values{i} ';']);
+							properties_set{end+1} = properties{i}(2:end);
+						end
+					end
+				end
+			end
+			
+		function [data, fieldnames] = stringdatatosave(nsd_synctable_obj)
+			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
+			%
+			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_SYNCTABLE_OBJ)
+			%
+			% Return a cell array of strings to save to the objectfilename.
+			%
+			% FIELDNAMES is a set of names of the fields/properties of the object
+			% that are being stored.
+			%
+			% For NSD_BASE, this returns the classname, name, and the objectfilename.
+			%
+			% Developer note: If you create a subclass of NSD_BASE with properties, it is recommended
+			% that you implement your own version of this method. If you have only properties that can be stored
+			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
+			%
+				data = {class(nsd_synctable_obj) nsd_synctable_obj.objectfilename};
+				fieldnames = { '', 'objectfilename' };
+
+		end % stringdatatosave
 
 	end % methods
 end % nsd_synctable class

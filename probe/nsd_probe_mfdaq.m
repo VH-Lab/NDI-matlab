@@ -61,7 +61,42 @@ classdef nsd_probe_mfdaq < nsd_probe
 
 				if isa(clock_or_epoch,'nsd_clock'),
 					clock = clock_or_epoch;
-					error(['this function does not handle working with clocks yet.']);
+					% need to convert to the device's local clock
+					% in principle, we don't know the device to convert to, because the probe may switch devices from
+					% time to time
+					[N, probeepochcontents, devepoch] = self.numepochs;
+					% ok, now have a list of devices to try
+					devicelist = {};
+					for i=1:numel(probeepochcontents),
+						ds = nsd_devicestring(probeepochcontents(i).devicestring);
+						devicelist = cat(2,devicelist,ds.devicename);
+					end
+					devicelist = unique(devicelist);
+					gotone = 0;
+					for d=1:numel(devicelist),
+						dev = self.experiment.device_load('name',devicelist{d});
+						newclock = nsd_clock_device('dev_local_time',dev);
+						try,
+							[t0_, epochnumber0_] = self.experiment.synctable.timeconvert(...
+								clock, t0, [], newclock);
+							[t1_, epochnumber1_] = self.experiment.synctable.timeconvert(...
+								clock, t1, [], newclock);
+							gotone = ~isempty(t0_) & ~isempty(t1_);
+						end
+					end
+					if gotone,
+						if ~(epochnumber0_==epochnumber1_)
+							error(['Epoch numbers for t0 and t1 are different. Do not know how to proceed.']);
+						end
+						if nargout==0,
+							readchannels_epochsamples(dev, devepoch, channeltype, channel, s0, s1);
+						elseif nargout==1,
+							data=readchannels_epochsamples(dev, devepoch, channeltype, channel, s0, s1);
+						elseif nargout==2,
+							[data,t]=readchannels_epochsamples(dev, devepoch, channeltype, channel, s0, s1);
+
+						end;
+					end
 				else,
 					epoch = clock_or_epoch;
 					[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);

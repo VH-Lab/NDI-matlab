@@ -4,6 +4,7 @@ classdef nsd_experiment < handle
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
 		variable          % An array of NSD_VARIABLE objects associated with this experiment
+		synctable         % An NSD_SYNCTABLE object that describes mapping across devices
 	end
 	properties (GetAccess=protected, SetAccess = protected)
 		device            % An array of NSD_DEVICE objects associated with this experiment
@@ -28,6 +29,7 @@ classdef nsd_experiment < handle
 				obj.variable = nsd_dbleaf_branch('','variable',...
 					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
 					,0);
+				obj.synctable = synctable;
 		end
 
 		%%%%%% DEVICE METHODS
@@ -158,11 +160,12 @@ classdef nsd_experiment < handle
 			%
 				probestruct = [];
 				devs = self.device_load('name','(.*)');
+				if ~isempty(devs)&~iscell(devs), devs = {devs}; end;
 				if ~isempty(devs),
-					probestruct = getprobes(devs(1));
+					probestruct = getprobes(devs{1});
 				end
 				for d=2:numel(devs),
-					probestruct = cat(1,probestruct,getprobes(devs(d)));
+					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
 				probestruct = structunique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, self);

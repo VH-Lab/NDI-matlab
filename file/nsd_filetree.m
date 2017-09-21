@@ -39,9 +39,17 @@ classdef nsd_filetree < nsd_base
 		% See also: NSD_EXPERIMENT
 		%
 
+			if nargin==2,
+				if ischar(experiment_) & strcmp(lower(fileparameters_),lower('OpenFile'))
+					fullfilename = experiment_;
+					obj = obj.readobjectfile(fullfilename);
+					return;
+				end
+			end
+
 			if nargin>0,
 				if ~isa(experiment_,'nsd_experiment'),
-					error(['experiement must be an NSD_EXPERIMENT object']);
+					error(['experiment must be an NSD_EXPERIMENT object']);
 				else,
 					obj.experiment= experiment_;
 				end;
@@ -66,6 +74,7 @@ classdef nsd_filetree < nsd_base
 			else,
 				obj.epochcontents_fileparameters = {};
 			end;
+
 		end;
 
 		function ecfname = epochcontentsfilename(self, number)
@@ -124,7 +133,6 @@ classdef nsd_filetree < nsd_base
 						epochcontentsfile_fullpath = epochfiles{indexes(1)};
 					end;
 				end;
-
 				eval(['epochcontents = ' self.epochcontents_class '(epochcontentsfile_fullpath);']);
 		end
 
@@ -619,7 +627,7 @@ classdef nsd_filetree < nsd_base
 				data{end+1} = fp;
 				fieldnames{end+1} = '$fileparameters';
 				data{end+1} = nsd_filetree_obj.epochcontents_class;
-				fieldnames{end+1} = 'epochcontents';
+				fieldnames{end+1} = 'epochcontents_class';
 				data{end+1} = efp;
 				fieldnames{end+1} = '$epochcontents_fileparameters';
 		end % stringdatatosave
