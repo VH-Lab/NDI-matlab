@@ -29,7 +29,7 @@ classdef nsd_experiment < handle
 				obj.variable = nsd_dbleaf_branch('','variable',...
 					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
 					,0);
-				obj.synctable = synctable;
+				obj.synctable = [];%synctable;
 		end
 
 		%%%%%% DEVICE METHODS
