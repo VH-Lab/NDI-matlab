@@ -23,6 +23,7 @@ classdef nsd_device_stimulus < nsd_device
 			%  NSD_DEVICE_STIMULUS is an abstract class, and a specific implementation must be called.
 			%
 			obj = obj@nsd_device(varargin{:});
+			obj.clock = nsd_clock('dev_local_time',obj);
 		end % nsd_device_stimulus
 
 		function parameters = get_stimulus_parameters(nsd_device_stimulus_obj, epoch_number)

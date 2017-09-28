@@ -1,2 +1,0 @@
-name	ref	channel_list
-extra	1	1

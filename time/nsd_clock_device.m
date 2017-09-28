@@ -1,12 +1,13 @@
 classdef nsd_clock_device < nsd_clock
 % NSD_CLOCK_DEVICE - a class for specifying time in the NSD framework for clocks that are linked to NSD_DEVICE objects
 %
+%
 	properties (SetAccess=protected, GetAccess=public)
 		device % the nsd_device object associated with the clock
 	end
 
 	methods
-		function obj = nsd_clock_device(varargin)
+		function obj = nsd_clock_device(type, device)
 			% NSD_CLOCK_DEVICE - Creates a new NSD_CLOCK_DEVICE object, an NSD_CLOCK associated with a device
 			%
 			% OBJ = NSD_CLOCK_DEVICE(TYPE, DEVICE)
@@ -24,35 +25,18 @@ classdef nsd_clock_device < nsd_clock
 			%
 				obj = obj@nsd_clock();
 
-				type = '';
-				device = [];
-				fullfilename = '';
+				obj.type = '';
+				obj.device = [];
 
-				if nargin==0,
-					return;
+				if nargin>0,
+					obj = setclocktype(obj,type);
 				end
 
-				if nargin==2,
-					if strcmp(lower(varargin{2}),lower('OpenFile'))
-						fullfilename = varargin{1};
-					else,
-						type = varargin{1};
-						device = varargin{2};
-                                        end
-                                end
-
-				if ~isempty(fullfilename),
-					obj = obj.readobjectfile(fullfilename);
+				if ~isa(device,'nsd_device') & ~isempty(device),
+					error(['DEVICE must be of type NSD_DEVICE.']);
+				else,
+					obj.device = device;
 				end
-
-				if ~isempty(type),
-					obj = obj.setclocktype(type);
-				end
-
-				if ~isempty(device),
-					obj = setdevice(obj,device);
-				end
-
 		end % nsd_clock_device()
 		
 		function nsd_clock_device_obj = setclocktype(nsd_clock_device_obj, type)
@@ -86,23 +70,9 @@ classdef nsd_clock_device < nsd_clock
 						otherwise,
 							error(['Unknown clock type ' type '.']);
 					end
-					nsd_clock_device_obj.type = type;
+					nsd_clock_obj.type = type;
 				end
 		end % setclocktype() %
-
-		function nsd_clock_device_obj = setdevice(nsd_clock_device_obj, device)
-			% SETDEVICE - set the device of an NSD_CLOCK_DEVICE object
-			%
-			% NSD_CLOCK_DEVICE_OBJ = SETDEVICE(NSD_CLOCK_DEVICE_OBJ, DEVICE)
-			%
-			% Sets the current device for an NSD_CLOCK_DEVICE_OBJ.
-			%
-
-				if ~isa(device,'nsd_device'),
-					error(['The device must be an NSD_DEVICE object or one of its children.']);
-				end
-				nsd_clock_device_obj.device = device;
-		end
 
 	end % methods
 end % nsd_clock_device class
