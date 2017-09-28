@@ -205,10 +205,12 @@ classdef nsd_device < nsd_dbleaf
 				for n=1:N,
 					epc = self.getepochcontents(n);
 					if ~isempty(epc),
-						newentry.name = epc.name;
-						newentry.reference= epc.reference;
-						newentry.type= epc.type;
-						probes_struct(end+1) = newentry;
+						for ec = 1:numel(epc),
+							newentry.name = epc(ec).name;
+							newentry.reference= epc(ec).reference;
+							newentry.type= epc(ec).type;
+							probes_struct(end+1) = newentry;
+						end
 					end
 				end
 				probes_struct = structunique(probes_struct);
