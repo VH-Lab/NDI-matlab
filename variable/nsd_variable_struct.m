@@ -27,35 +27,7 @@ classdef nsd_variable_struct < nsd_variable_file
             %     full path directory name where the user may store files
             %
 
-            loadfilename = '';
-
-            isinmemory = 0;
-            isflat = 1;
-            classnames = {};
-
-            if nargin==0 | nargin==2,
-                if nargin==2, % it is a loadfilename
-                    loadfilename = parent;
-                end;
-                parent='';
-                name='';
-                description = '';
-                history = '';
-            end
-
-            if ~isempty(parent)&~isa(parent,'nsd_dbleaf_branch'),
-                error(['NSD_VARIABLE_FILE objects must be attached to NSD_DBLEAF_BRANCH objects.']);
-            end;
-
-            % this adds to the parent, too
-            obj = obj@nsd_dbleaf_branch(parent,name,classnames,isflat,isinmemory);
-            obj.description = description;
-            obj.history = history;
-            if ~isempty(loadfilename),
-                obj = obj.readobjectfile(loadfilename);
-            elseif ~isempty(parent),
-                parent.update(obj);
-            end;
+            obj@nsd_variable_file(super_args{:});
 
         end % nsd_variable_struct
 
@@ -67,26 +39,6 @@ classdef nsd_variable_struct < nsd_variable_file
 			% Returns the metadata fieldnames and values for NSD_VARIABLE_FILE_OBJ. This adds the properties
 			% 'description' and 'history'.
 			%
-				mds = metadatastruct@nsd_dbleaf(nsd_variable_file_obj);
-				mds.description = nsd_variable_file_obj.description;
-				mds.history = nsd_variable_file_obj.history;
-		end % metadatastruct()
-
-        function fname = filename(nsd_variable_file_obj)
-			% FILENAME - return the name of a file that can be written to by the user's program
-			%
-			% FNAME = FILENAME(NSD_VARIABLE_FILE_OBJ)
-			%
-			% Returns the full path filename FNAME of a file that can be used to store data.
-			%
-			%
-			 	d = dirname(nsd_variable_file_obj);
-				if isempty(d),
-					error(['There is no file path associated with this object; object may be in memory only.']);
-				else,
-					fname = [d filesep nsd_variable_file_obj.objectfilename '.datafile.nsd_variable_file.nsd'];
-				end
-		end % filename()
 
         function writeStructArray(self, struct)
             %check if anything is written
@@ -97,6 +49,8 @@ classdef nsd_variable_struct < nsd_variable_file
             %check if there is anything to read
             loadStructArray(self.filename());
         end
+
+        function addToStructArray
     end
 
 end
