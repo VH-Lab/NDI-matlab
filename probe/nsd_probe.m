@@ -67,7 +67,7 @@ classdef nsd_probe
 							if strcmp(ec(k).name,nsd_probe_obj.name) && ...
 								(ec(k).reference==nsd_probe_obj.reference) &&  ...
 								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
-								probe_epoch_contents(end+1) = ec;
+								probe_epoch_contents(end+1) = ec(k);
 								devepoch(end+1) = n;
 							end
 						end
