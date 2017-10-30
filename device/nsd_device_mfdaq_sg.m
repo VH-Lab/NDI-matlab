@@ -185,7 +185,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
 
 
 
-        function sr = samplerate(self, epoch)
+        function sr = samplerate(self, epoch, channeltype, channel)
 		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 		%
 		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
@@ -220,7 +220,7 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             for i=1:length(nTrodes)
                 name = strcat('Tetrode', nTrodes(i).id);
                 reference = 1;
-                type = 'nTrode';
+                type = 'n-trode';
                 channels = [];
 
                 for j=1:length(nTrodes(i).channelInfo) %number of channels per nTrode
@@ -269,7 +269,8 @@ classdef nsd_device_mfdaq_sg < nsd_device_mfdaq
             %read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
             %reading from channel 1 in list returned
             %Reads nTrodes
-            if (strcmp(channeltype,'analog_in') || strcmp(channeltype, 'analog_out'))
+            %WARNING channeltype hard coded, ask Steve
+            if (strcmp(nsd_device_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(nsd_device_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
 
                 data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 
