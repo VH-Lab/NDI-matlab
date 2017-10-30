@@ -1,0 +1,3 @@
+name	reference	center_range	interpolation	overlap	read_size	refractory_samples	spike_sample_end	spike_sample_start	start_time
+vhintan	1	10	3	0.05	30	10	-9	20	1
+spikegadgets	1	10	3	0.05	30	10	-9	20	1

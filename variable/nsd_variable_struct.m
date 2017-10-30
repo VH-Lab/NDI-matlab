@@ -27,30 +27,49 @@ classdef nsd_variable_struct < nsd_variable_file
             %     full path directory name where the user may store files
             %
 
-            obj@nsd_variable_file(super_args{:});
+		    inputs = {};
+
+            if nargin > 0
+                inputs{1} = parent;
+            end
+
+            if nargin > 1
+                inputs{2} = name;
+            end
+
+            if nargin > 2
+                inputs{3} = description;
+            end
+
+            if nargin > 3
+                inputs{4} = history;
+            end
+
+
+            obj = obj@nsd_variable_file(inputs{:});
 
         end % nsd_variable_struct
-
-        function mds = metadatastruct(nsd_variable_file_obj)
-			% METADATASTRUCT - return the metadata fields and values for an NSD_VARIABLE object
-			%
-			% MDS = METADATASTRUCT(NSD_VARIABLE_FILE_OBJ)
-			%
-			% Returns the metadata fieldnames and values for NSD_VARIABLE_FILE_OBJ. This adds the properties
-			% 'description' and 'history'.
-			%
 
         function writeStructArray(self, struct)
             %check if anything is written
             saveStructArray(self.filename(), struct, 1);
         end
 
-        function returnStructArray(self)
+        function loadedStruct = returnStructArray(self)
             %check if there is anything to read
-            loadStructArray(self.filename());
+            loadedStruct = loadStructArray(self.filename());
         end
 
-        function addToStructArray
+        function addToStructArray(self, field, value)
+            loadedStruct = returnStructArray(self);
+            if isa(value, 'char')
+                value = str2num(value);
+            end
+            %Add to struct
+            eval(['loadedStruct.' field ' = ' int2str(value) ';']);
+            %Write it to file
+            writeStructArray(self, loadedStruct);
+        end
     end
 
 end
