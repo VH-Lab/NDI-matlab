@@ -93,9 +93,20 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			obj.classnames = classnames;
 			obj.isflat = isflat;
 			obj.memory = memory;
-			if ~isempty(parent), parent.add(obj); end;
 			obj.mdmemory = emptystruct;
 			obj.leaf = {};
+			if ~isempty(parent),
+                potential_existing_nsd_dbleaf_branch_obj = parent.load('name',obj.name);
+                if isempty(potential_existing_nsd_dbleaf_branch_obj),
+                    parent.add(obj);
+                else,
+                    if potential_existing_nsd_dbleaf_branch_obj.isflat ~= obj.isflat | ...
+                        potential_existing_nsd_dbleaf_branch_obj.memory ~= obj.memory,
+                        error(['nsd_dbleaf_branch with name ' obj.name ' already exists with different isflat or memory parameters.']);
+                    end
+                    obj = potential_existing_nsd_dbleaf_branch_obj;                    
+                end
+            end;
 
 		end % nsd_dbleaf_branch
 
