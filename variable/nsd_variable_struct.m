@@ -66,7 +66,7 @@ classdef nsd_variable_struct < nsd_variable_file
                 value = str2num(value);
             end
             %Add to struct
-            eval(['loadedStruct.' field ' = ' int2str(value) ';']);
+            eval(['loadedStruct.' field ' = value;']);
             %Write it to file
             writeStructArray(self, loadedStruct);
         end
