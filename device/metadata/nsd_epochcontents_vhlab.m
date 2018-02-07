@@ -1,11 +1,23 @@
-classdef nsd_epochcontents_vhintan < nsd_epochcontents
+classdef nsd_epochcontents_vhlab < nsd_epochcontents
 	properties
 	end % properties
 	methods
-		function obj = nsd_epochcontents_vhintan(filename)
-			% NSD_EPOCHCONTENTS_VHINTAN - Create a new nsd_epochcontents object derived from the vh lab intan implementation
+		function obj = nsd_epochcontents_vhlab(name_, reference_, type_, devicestring_)
+			% NSD_EPOCHCONTENTS_VHLAB - Create a new nsd_epochcontents object derived from the vhlab device implementation
+			%
+			% MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING)
+			%
+			% Creates a new NSD_EPOCHCONTENTS with name NAME, reference REFERENCE, type TYPE,
+			% and devicestring DEVICESTRING.
+			%
+			% NAME can be any string that begins with a letter and contains no whitespace. It
+			% is CASE SENSITIVE.
+			% REFERENCE must be a non-negative scalar integer.
+			% TYPE is the type of recording.
+			% DEVICESTRING is a string that indicates the channels that were used to acquire
+			% this record.
 			% 
-			%   MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS_VHINTAN(FILENAME)
+			%   MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS_VHLAB(FILENAME)
 			% 
 			% Here, FILENAME is assumed to be a (full path) tab-delimitted text file in the style of 
 			% 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING) 
@@ -14,26 +26,54 @@ classdef nsd_epochcontents_vhintan < nsd_epochcontents
 			% The device type of each channel is assumed to be 'extracellular_electrode-n', where n is 
 			% set to be the number of channels in the channel_list for each name/ref pair.
 			%
-			% The NSD device name for this device must be 'vhintan'.
+			% The NSD device name for this device must be 'vhintan' (VH Intan RHD device), 'vhlv' (VH Lab Labview custom
+			% acqusition code), 'vhspike2', or 'vhwillow'. The device name will be taken from the filename,
+			% following [VHDEVICENAME '_channelgrouping.txt']
 			%
 
+			if nargin==0,
+				name_ = 'a';
+			end
 			if nargin==1,
+				filename = name_;
+				name_ = 'a';
+			end
+			if nargin<4,
+				reference_ = 0;
+				type_ = 'a';
+				devicestring_ = 'a';
+			end
+
+			obj = obj@nsd_epochcontents(name_, reference_, type_, devicestring_);
+
+			if nargin==1,
+				[filepath, localfile, ext] = fileparts(filename);
+				vhdevice_string = regexp(lower([localfile ext]),'(\w*)_channelgrouping.txt','tokens');
+				if isempty(vhdevice_string),
+					error(['File name not of expected form VHDEVICENAME_channelgrouping.txt']);
+				end
+				vhdevice_string = vhdevice_string{1}{1};
+				valid_vhdevice_strings = {'vhspike2','vhintan','vhlv','vhwillow'};
+				vhdevice_string = intersect(vhdevice_string, valid_vhdevice_strings);
+				if isempty(vhdevice_string)
+					error(['VHDEVICENAME must be one of ' strjoin(valid_vhdevice_strings,', ') ]);
+				end	
+				vhdevice_string = vhdevice_string{1}; 
+	
 				nsd_struct = loadStructArray(filename);
 				fn = fieldnames(nsd_struct);
-				if ~eqlen(fn,{'name','ref','channel_list'}),
-					error(['fields must be (case-sensitive match): name, ref, channel_list, devicestring. See HELP VHINTAN_CHANNELGROUPING.']);
+				if ~eqlen(fn,{'name','ref','channel_list'}'),
+					error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
 				end;
-				obj = [];
 				for i=1:length(nsd_struct),
-					
-					nextentry = obj@nsd_epochcontents(nsd_struct(i).name,...
+					nextentry = nsd_epochcontents_vhlab(nsd_struct(i).name,...
 							nsd_struct(i).ref,...
-							['extracellular_electrode-' int2str(numel(nsd(i).channel_list)) ] , ...  % type
-							[]);  % device string
+							['extracellular_electrode-' int2str(numel(nsd_struct(i).channel_list)) ] , ...  % type
+							[vhdevice_string ':ai' intseq2str(nsd_struct(i).channel_list)]);  % device string
 					obj(i) = nextentry;
 				end;
-				return;
-			end;
+			end
+
 		end;
         
 		function savetofile(obj, filename)
@@ -41,11 +81,10 @@ classdef nsd_epochcontents_vhintan < nsd_epochcontents
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the NSD_EPOCHCONTENTS_VHINTAN object to disk in filename FILENAME (full path).
+		%  Writes the NSD_EPOCHCONTENTS_VHLAB object to disk in filename FILENAME (full path).
 		%
 		%  
-		
-			error(['Sorry, I only know how to read these files, I don't write (yet? ever?).']);
+			error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);
 		end;
 	end  % methods
 end

@@ -12,9 +12,9 @@ classdef nsd_epochcontents
 			% MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS(NAME, REFERENCE, TYPE, DEVICESTRING)
 			%
 			% Creates a new NSD_EPOCHCONTENTS with name NAME, reference REFERENCE, type TYPE,
-            % and devicestring DEVICESTRING.
-            %
-            % NAME can be any string that begins with a letter and contains no whitespace. It
+			% and devicestring DEVICESTRING.
+			%
+			% NAME can be any string that begins with a letter and contains no whitespace. It
 			% is CASE SENSITIVE.
 			% REFERENCE must be a non-negative scalar integer.
 			% TYPE is the type of recording.
@@ -66,6 +66,7 @@ classdef nsd_epochcontents
 			if ~b,
 				error(['Error in name field: ' errormsg ]);
 			end;
+
 			obj.name = name_;
 
 			% reference, check for errors

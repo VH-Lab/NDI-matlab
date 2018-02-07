@@ -69,9 +69,9 @@ classdef nsd_filetree < nsd_base
 		end;
 
 		function ecfname = epochcontentsfilename(self, number)
-			% EPOCHCONTENTSFILENAME - return the file path for the NSD_EPOCHCONTENTS file for an epoch
+			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
 			%
 			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
@@ -108,7 +108,7 @@ classdef nsd_filetree < nsd_base
 				% need to get the epoch file
 				% epoch file must either be in a default location or it must be among the epoch files
 
-				% default
+				% default   % need to move this to epochcontentsfilename  SDV
 				epochcontentsfile_fullpath = epochcontentsfilename(self, N);
 
 				if ~isempty(self.epochcontents_fileparameters),
@@ -202,6 +202,23 @@ classdef nsd_filetree < nsd_base
 				end
 		end %getepochid()
 
+		function [epochfiles] = selectfilegroups(self)
+			% SELECTFILEGROUPS - Return groups of files that will comprise epochs
+			%
+			% EPOCHFILES = SELECTFILEGROUPS(SELF)
+			%
+			% Return the files that comprise epochs.
+			%
+			% EPOCHFILES{n} will be a cell list of the files in epoch n.
+			%
+			% For NSD_FILETREE, this simply uses the file matching parameters.
+			%
+			% See also: NSD_FILETREE/SETFILEPARAMETERS
+			%
+				exp_path = self.path();
+				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch);
+		end % selectfilegroups
+
 		function [fullpathfilenames, epochid] = getepochfiles(self, n)
 			% GETEPOCHFILES - Return the file paths for one recording epoch
 			%
@@ -225,8 +242,7 @@ classdef nsd_filetree < nsd_base
 			%
 				% developer note: possibility of caching this with some timeout
 
-				exp_path = self.path();
-				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
+				all_epoch = self.selectfilegroups();
 
 				if nargin<2,
 					n = 1:numel(all_epochs);
@@ -479,8 +495,7 @@ classdef nsd_filetree < nsd_base
 
 				% developer note: possibility of caching this with some timeout
 
-				exp_path = self.path();
-				all_epochs = findfilegroups(exp_path, self.fileparameters.filematch);
+				all_epochs = self.selectfilegroups();
 				N = numel(all_epochs);
 		end % numepochs()
 
