@@ -88,7 +88,7 @@ classdef nsd_device < nsd_dbleaf
 				obj=writeobjectfile@nsd_dbleaf(nsd_device_obj, dirname, islocked);
 				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
-				obj.filetree.writeobjectfile(subdirname)
+				obj.filetree.writeobjectfile(subdirname);
 				
 		end % writeobjectfile
 

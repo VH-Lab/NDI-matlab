@@ -55,7 +55,7 @@ classdef nsd_filetree < nsd_base
 			end;
 
 			if nargin > 3,
-				obj = obj.setepochfileparameters(epochcontents_fileparameters_);
+				obj = obj.setepochcontentsfileparameters(epochcontents_fileparameters_);
 			else,
 				obj.epochcontents_fileparameters = {};
 			end;
@@ -102,7 +102,7 @@ classdef nsd_filetree < nsd_base
 			% See also: NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS, NSD_FILETREE/DEFAULTEPOCHCONTENTSFILENAME
 			%
 				% default   
-				ecfname = defaultepochcontentsfilename(self, N);
+				ecfname = defaultepochcontentsfilename(self, number);
 
 				% see if we need to use a different name based on EPOCHCONTENTS_FILEPARAMETERS
 
@@ -111,7 +111,7 @@ classdef nsd_filetree < nsd_base
 					fn = {};
 					for i=1:length(epochfiles),
 						[pa,name,ext] = fileparts(epochfiles{i});
-						fn{i} = [name ext];
+						fn{i} = [name ext],
 					end;
 					tf = strcmp_substitution(epochcontents_fileparameters, fn);
 					indexes = find(tf);
@@ -119,6 +119,7 @@ classdef nsd_filetree < nsd_base
 						ecfname = epochfiles{indexes(1)};
 					end;
 				end;
+				ecfname,
 		end % epochcontentsfilename
 
 		function epochcontents = getepochcontents(self, N, devicename)
@@ -253,7 +254,7 @@ classdef nsd_filetree < nsd_base
 			%
 				% developer note: possibility of caching this with some timeout
 
-				all_epoch = self.selectfilegroups();
+				all_epochs = self.selectfilegroups();
 
 				if nargin<2,
 					n = 1:numel(all_epochs);
@@ -605,7 +606,10 @@ classdef nsd_filetree < nsd_base
 			%         Example: theepochcontentsfileparameters = {'#.ext1',  'myfile#.ext2'} (# is the same, unknown string)
 			%
 				if isa(theepochcontentsfileparameters,'char'),
-					theepochcontentsfileparameters = {thefileparameters};
+					theepochcontentsfileparameters = {theepochcontentsfileparameters};
+				end;
+				if isa(theepochcontentsfileparameters,'cell'),
+					theepochcontentsfileparameters = struct('filematch',{theepochcontentsfileparameters});
 				end;
 				self.epochcontents_fileparameters = theepochcontentsfileparameters;
 		end % setepochcontentsfileparameters()

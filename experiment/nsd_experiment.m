@@ -43,9 +43,10 @@ classdef nsd_experiment < handle
 			%  
 			% See also: DEVICE_RM, NSD_EXPERIMENT
 
-				if ~isa(dev,'nsd_device'), error(['dev is not a nsd_device']); end;
+				if ~isa(dev,'nsd_device'),
+					error(['dev is not a nsd_device']);
+				end;
 				self.device = self.device.add(dev);
-
 			end 
 		function self = device_rm(self, dev)
 			% DEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
@@ -159,10 +160,10 @@ classdef nsd_experiment < handle
 				probestruct = [];
 				devs = self.device_load('name','(.*)');
 				if ~isempty(devs),
-					probestruct = getprobes(devs(1));
+					probestruct = getprobes(celloritem(devs,1));
 				end
 				for d=2:numel(devs),
-					probestruct = cat(1,probestruct,getprobes(devs(d)));
+					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
 				probestruct = structunique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, self);

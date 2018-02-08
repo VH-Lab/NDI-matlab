@@ -18,9 +18,9 @@ function exp = nsd_vhlab_makedev(exp, devname)
 % Devices created    | Description
 % ----------------------------------------------------------------
 % vhintan            |  nsd_device_multichannel_mfdaq_intan that looks for
-%                    |    files 'vhintan_channelgroupings.txt' and '*.rhd'
+%                    |    files 'vhintan_channelgrouping.txt' and '*.rhd'
 % vhspike2           |  nsd_device_multichannel_mfdaq_cedspike2 that looks for
-%                    |    files 'vhspike2_channelgroupings.txt' and '*.smr'
+%                    |    files 'vhspike2_channelgrouping.txt' and '*.smr'
 % vhvis_spike2       |  nsd_device_multichannel_mfdaq_stimulus_vhlabvisspike2 that
 %                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
 %                    |    'stims.mat', and 'spike2data.smr'.
@@ -41,16 +41,19 @@ end
 
 fileparameters = {'reference.txt'};
 objectclass = 'nsd_device_mfdaq';
+epochcontentsclass = 'nsd_epochcontents_vhlab';
 
 switch devname,
 	case 'vhintan',
 		fileparameters{end+1} = '.*\.rhd\>';
-		fileparameters{end+1} = 'vhintan_channelgroupings.txt'; 
+		fileparameters{end+1} = 'vhintan_channelgrouping.txt'; 
 		objectclass = [objectclass '_intan'];
+		epochcontentsfileparameters = {'vhintan_channelgrouping.txt'};
 	case 'vhspike2',
 		fileparameters{end+1} = '.*\.smr\>';
-		fileparameters{end+1} = 'vhspike2_channelgroupings.txt'; 
+		fileparameters{end+1} = 'vhspike2_channelgrouping.txt'; 
 		objectclass = [objectclass '_cedspike2'];
+		epochcontentsfileparameters = {'vhspike2_channelgrouping.txt'};
 
 	case 'vhvis_spike2'
 		fileparameters{end+1} = 'stimtimes.txt';
@@ -58,14 +61,17 @@ switch devname,
 		fileparameters{end+1} = 'stims.mat';
 		fileparameters{end+1} = 'spike2data.smr'; 
 		objectclass = [objectclass '_stimulus_vhlabvisspike2'];
+		epochcontentsfileparameters = {'.txt'}; % really need a method that always returns 1 stim machine
 
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
 end
 
-ft = nsd_filetree_epochdir(exp, fileparameters);
+ft = nsd_filetree_epochdir(exp, fileparameters, epochcontentsclass, epochcontentsfileparameters);
+
 eval(['mydev = ' objectclass '(devname, ft);']);
 
 exp = exp.device_add(mydev);
+
 
