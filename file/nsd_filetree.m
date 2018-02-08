@@ -68,17 +68,20 @@ classdef nsd_filetree < nsd_base
 			end;
 		end;
 
-		function ecfname = epochcontentsfilename(self, number)
+		function ecfname = defaultepochcontentsfilename(self, number)
 			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS file for an epoch
 			%
 			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% Returns the default EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
 			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
+			% the default NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
+			% This may be overridden if there is an EPOCHCONTENTS_FILEPARAMETERS set.
+			%
+			% See also: NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS
 			%
 			%
 				fmstr = filematch_hashstring(self);
@@ -89,6 +92,41 @@ classdef nsd_filetree < nsd_base
 					[parentdir,filename]=fileparts(epochfiles{1});
 					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.nsd'];
 				end
+		end % defaultepochcontentsfilename
+
+		function ecfname = epochcontentsfilename(self, number)
+			% EPOCHCONTENTSFILENAME - return the file name for the NSD_EPOCHCONTENTS file for an epoch
+			%
+			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			%
+			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% If there are no files in epoch NUMBER, an error is generated. The file name is returned with
+			% a full path.
+			%
+			% The file name is determined by examining if the user has specified any
+			% EPOCHCONTENTS_FILEPARAMETERS; if not, then the DEFAULTEPOCHCONTENTSFILENAME is used.
+			%
+			% See also: NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS, NSD_FILETREE/DEFAULTEPOCHCONTENTSFILENAME
+			%
+				% default   
+				ecfname = defaultepochcontentsfilename(self, N);
+
+				% see if we need to use a different name based on EPOCHCONTENTS_FILEPARAMETERS
+
+				if ~isempty(self.epochcontents_fileparameters),
+					epochfiles = getepochfiles(self,N);
+					fn = {};
+					for i=1:length(epochfiles),
+						[pa,name,ext] = fileparts(epochfiles{i});
+						fn{i} = [name ext];
+					end;
+					tf = strcmp_substitution(epochcontents_fileparameters, fn);
+					indexes = find(tf);
+					if numel(indexes)>0,
+						ecfname = epochfiles{indexes(1)};
+					end;
+				end;
+			end
 		end % epochcontentsfilename
 
 		function epochcontents = getepochcontents(self, N, devicename)
@@ -105,26 +143,7 @@ classdef nsd_filetree < nsd_base
 			%     EPOCHCONTENTS - The epoch record information associated with epoch N for device with name DEVICENAME
 			%
 			%
-				% need to get the epoch file
-				% epoch file must either be in a default location or it must be among the epoch files
-
-				% default   % need to move this to epochcontentsfilename  SDV
 				epochcontentsfile_fullpath = epochcontentsfilename(self, N);
-
-				if ~isempty(self.epochcontents_fileparameters),
-					epochfiles = getepochfiles(self,N);
-					fn = {};
-					for i=1:length(epochfiles),
-						[pa,name,ext] = fileparts(epochfiles{i});
-						fn{i} = [name ext];
-					end;
-					tf = strcmp_substitution(epochcontents_fileparameters, fn);
-					indexes = find(tf);
-					if numel(indexes)>0,
-						epochcontentsfile_fullpath = epochfiles{indexes(1)};
-					end;
-				end;
-
 				eval(['epochcontents = ' self.epochcontents_class '(epochcontentsfile_fullpath);']);
 		end
 

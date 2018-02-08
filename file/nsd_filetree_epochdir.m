@@ -35,7 +35,6 @@ classdef nsd_filetree_epochdir < nsd_filetree
 		%
 		% See also: NSD_EXPERIMENT, NSD_DEVICE
 		%
-
 			obj = obj@nsd_filetree(exp, varargin{:});
 		end
 
@@ -50,67 +49,68 @@ classdef nsd_filetree_epochdir < nsd_filetree
 			%
 			% EPOCHFILES{n} will be a cell list of the files in epoch n.
 			%
-			% For NSD_FILETREE, this simply uses the file matching parameters.
+			% For NSD_FILETREE_EPOCHDIR, this uses the file matching parameters in all
+			% subdirectories within the experiment (at a folder depth of 1; that is, it doesn't
+			% search folders in folders).
 			%
 			% See also: NSD_FILETREE/SETFILEPARAMETERS
 			%
 				exp_path = self.path();
-				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch);
+				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch,...
+					'SearchParent',0,'SearchDepth',1);
 		end % selectfilegroups
 
 		% need to evalute: epochidfilename, getepochid, 
-		% need to tab setproperties
 
-                function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
-                        % SETPROPERTIES - set the properties of an NSD_FILETREE object
-                        %
-                        % [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_FILETREE_OBJ, PROPERTIES, VALUES)
-                        %
-                        % Given a cell array of string PROPERTIES and a cell array of the corresponding
-                        % VALUES, sets the fields in NSD_FILETREE_OBJ and returns the result in OBJ.
-                        %
-                        % If any entries in PROPERTIES are not properties of NSD_FILETREE_OBJ, then
-                        % that property is skipped.
-                        %
-                        % The properties that are actually set are returned in PROPERTIESSET.
-                        %
-                        % Developer note: when creating a subclass of NSD_FILETREE that has its own properties that
-                        % need to be read/written from disk, copy this method SETPROPERTIES into the new class so that
-                        % you will be able to set all properties (this instance can only set properties of NSD_FILETREE).
-                        %
-                                fn = fieldnames(nsd_filetree_obj);
-                                obj = nsd_filetree_obj;
-                                properties_set = {};
-                                for i=1:numel(properties),
-                                        if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-                                                if properties{i}(1)~='$',
-                                                        eval(['obj.' properties{i} '= values{i};']);
-                                                        properties_set{end+1} = properties{i};
-                                                else,
-                                                        switch properties{i}(2:end),
-                                                                case 'fileparameters',
-                                                                        if ~isempty(values{i}),
-                                                                                fp = eval(values{i});
-                                                                                obj = obj.setfileparameters(fp);
-                                                                        else,
-                                                                                obj.fileparameters = [];
-                                                                        end;
-                                                                case 'epochcontents_fileparameters',
-                                                                        if ~isempty(values{i}),
-                                                                                fp = eval(values{i});
-                                                                                obj = obj.setepochcontentsfileparameters(fp);
-                                                                        else,
-                                                                                obj.epochcontents_fileparameters = [];
-                                                                        end
-                                                                otherwise,
-                                                                        error(['Do not know how to set property ' properties{i}(2:end) '.']);
-                                                        end
-                                                        properties_set{end+1} = properties{i}(2:end);
-                                                end
-                                        end
-                                end
-                end % setproperties()
-
+		function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_FILETREE object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_FILETREE_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_FILETREE_OBJ and returns the result in OBJ.
+			%
+			% If any entries in PROPERTIES are not properties of NSD_FILETREE_OBJ, then
+			% that property is skipped.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+			% Developer note: when creating a subclass of NSD_FILETREE that has its own properties that
+			% need to be read/written from disk, copy this method SETPROPERTIES into the new class so that
+			% you will be able to set all properties (this instance can only set properties of NSD_FILETREE).
+			%
+				fn = fieldnames(nsd_filetree_obj);
+				obj = nsd_filetree_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						else,
+							switch properties{i}(2:end),
+								case 'fileparameters',
+									if ~isempty(values{i}),
+										fp = eval(values{i});
+										obj = obj.setfileparameters(fp);
+									else,
+										obj.fileparameters = [];
+									end;
+								case 'epochcontents_fileparameters',
+									if ~isempty(values{i}),
+										fp = eval(values{i});
+										obj = obj.setepochcontentsfileparameters(fp);
+									else,
+										obj.epochcontents_fileparameters = [];
+									end
+							otherwise,
+								error(['Do not know how to set property ' properties{i}(2:end) '.']);
+							end
+							properties_set{end+1} = properties{i}(2:end);
+						end
+					end
+				end
+		end % setproperties()
 
 end
 
