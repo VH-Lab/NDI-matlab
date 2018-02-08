@@ -61,7 +61,7 @@ switch devname,
 		fileparameters{end+1} = 'stims.mat';
 		fileparameters{end+1} = 'spike2data.smr'; 
 		objectclass = [objectclass '_stimulus_vhlabvisspike2'];
-		epochcontentsfileparameters = {'.txt'}; % really need a method that always returns 1 stim machine
+		epochcontentsfileparameters = {'stimtimes.txt'}; 
 
 	otherwise,
 		error(['Unknown device requested ' devname '.']);

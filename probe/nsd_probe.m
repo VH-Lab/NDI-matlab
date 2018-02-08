@@ -50,12 +50,11 @@ classdef nsd_probe
 			% Returns N, the number of all epochs of any NSD_DEVICE in the experiment
 			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
 			%
-			% PROBE_EPOCH_CONTENTS is a 1xN NSD_EPOCHCONTENTS object with all of the
+			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
 			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
 			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
 			
-				probe_epoch_contents = nsd_epochcontents;
-				probe_epoch_contents = probe_epoch_contents([]);
+				probe_epoch_contents = {}; 
 				devepoch = [];
 				D = nsd_probe_obj.experiment.device_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
@@ -67,7 +66,7 @@ classdef nsd_probe
 							if strcmp(ec(k).name,nsd_probe_obj.name) && ...
 								(ec(k).reference==nsd_probe_obj.reference) &&  ...
 								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
-								probe_epoch_contents(end+1) = ec(k);
+								probe_epoch_contents{end+1} = ec(k);
 								devepoch(end+1) = n;
 							end
 						end
@@ -103,7 +102,7 @@ classdef nsd_probe
 				if ~(epoch >=1 & epoch <= n),
 					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
 				end
-				devstr = nsd_devicestring(probe_epoch_contents(epoch).devicestring);
+				devstr = nsd_devicestring(probe_epoch_contents{epoch}.devicestring);
 				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
 				devepoch = devepochs(epoch);
 				dev = nsd_probe_obj.experiment.device_load('name', devname); % now we have the device handle

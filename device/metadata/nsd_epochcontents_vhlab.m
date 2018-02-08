@@ -23,7 +23,7 @@ classdef nsd_epochcontents_vhlab < nsd_epochcontents
 			% 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING) 
 			% that has entries 'name<tab>ref<tab>channel_list<tab>'.
 			%
-			% The device type of each channel is assumed to be 'extracellular_electrode-n', where n is 
+			% The device type of each channel is assumed to be 'n-trode', where n is 
 			% set to be the number of channels in the channel_list for each name/ref pair.
 			%
 			% The NSD device name for this device must be 'vhintan' (VH Intan RHD device), 'vhlv' (VH Lab Labview custom
@@ -48,6 +48,17 @@ classdef nsd_epochcontents_vhlab < nsd_epochcontents
 
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
+				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
+					mylist = {'m1','m2','e1','e2','e3'};
+					for i=1:numel(mylist),
+						nextentry = nsd_epochcontents_vhlab('vhvis_spike2',...
+							1,...
+							['stimulator'  ] , ...  % type
+							['vhvis_spike2' ':' mylist{i}]);  % device string
+						obj(i) = nextentry;
+					end
+					return;
+				end
 				vhdevice_string = regexp(lower([localfile ext]),'(\w*)_channelgrouping.txt','tokens');
 				if isempty(vhdevice_string),
 					error(['File name not of expected form VHDEVICENAME_channelgrouping.txt']);
@@ -68,8 +79,9 @@ classdef nsd_epochcontents_vhlab < nsd_epochcontents
 				for i=1:length(nsd_struct),
 					nextentry = nsd_epochcontents_vhlab(nsd_struct(i).name,...
 							nsd_struct(i).ref,...
-							['extracellular_electrode-' int2str(numel(nsd_struct(i).channel_list)) ] , ...  % type
+							['n-trode'] , ...  % type
 							[vhdevice_string ':ai' intseq2str(nsd_struct(i).channel_list)]);  % device string
+							%['extracellular_electrode-' int2str(numel(nsd_struct(i).channel_list)) ] , ...  % type
 					obj(i) = nextentry;
 				end;
 			end

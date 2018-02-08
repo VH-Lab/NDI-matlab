@@ -107,19 +107,21 @@ classdef nsd_filetree < nsd_base
 				% see if we need to use a different name based on EPOCHCONTENTS_FILEPARAMETERS
 
 				if ~isempty(self.epochcontents_fileparameters),
-					epochfiles = getepochfiles(self,N);
+					epochfiles = getepochfiles(self,number);
 					fn = {};
 					for i=1:length(epochfiles),
 						[pa,name,ext] = fileparts(epochfiles{i});
-						fn{i} = [name ext],
+						fn{i} = [name ext];
 					end;
-					tf = strcmp_substitution(epochcontents_fileparameters, fn);
-					indexes = find(tf);
-					if numel(indexes)>0,
-						ecfname = epochfiles{indexes(1)};
-					end;
+                    for i=1:numel(self.epochcontents_fileparameters.filematch),
+                        tf = strcmp_substitution(self.epochcontents_fileparameters.filematch{i}, fn);
+                        indexes = find(tf);
+                        if numel(indexes)>0,
+                            ecfname = epochfiles{indexes(1)};
+                            break;
+                        end;
+                    end
 				end;
-				ecfname,
 		end % epochcontentsfilename
 
 		function epochcontents = getepochcontents(self, N, devicename)
@@ -649,7 +651,7 @@ classdef nsd_filetree < nsd_base
 				data{end+1} = fp;
 				fieldnames{end+1} = '$fileparameters';
 				data{end+1} = nsd_filetree_obj.epochcontents_class;
-				fieldnames{end+1} = 'epochcontents';
+				fieldnames{end+1} = 'epochcontents_class';
 				data{end+1} = efp;
 				fieldnames{end+1} = '$epochcontents_fileparameters';
 		end % stringdatatosave
