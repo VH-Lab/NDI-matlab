@@ -1,0 +1,71 @@
+function exp = nsd_vhlab_makedev(exp, devname)
+% NSD_VHLAB_MAKEDEV - initialize devices used by VHLAB
+%
+% EXP = NSD_VHLAB_MAKEDEV(EXP, DEVNAME)
+%
+% Creates devices that look for files in the VHLAB standard recording
+% scheme, where data from different epochs are organized into
+% subdirectories (using NSD_FILETREE_EPOCHDIR). DEVNAME should be the 
+% name a device in the table below. These devices are added to the NSD_EXPERIMENT
+% object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
+%
+% If the function is called with no input arguments, then it returns a list
+% of all valid device names.
+% 
+% Each epoch is defined by the presence of a 'reference.txt' file, as well
+% as specific files that are needed by each device as described below.
+%
+% Devices created    | Description
+% ----------------------------------------------------------------
+% vhintan            |  nsd_device_multichannel_mfdaq_intan that looks for
+%                    |    files 'vhintan_channelgroupings.txt' and '*.rhd'
+% vhspike2           |  nsd_device_multichannel_mfdaq_cedspike2 that looks for
+%                    |    files 'vhspike2_channelgroupings.txt' and '*.smr'
+% vhvis_spike2       |  nsd_device_multichannel_mfdaq_stimulus_vhlabvisspike2 that
+%                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
+%                    |    'stims.mat', and 'spike2data.smr'.
+%
+% See also: NSD_FILETREE_EPOCHDIR
+
+if nargin == 0,
+	exp = {'vhintan', 'vhspike2', 'vhvis_spike2'};
+	return;
+end;
+
+if iscell(devname),
+	for i=1:length(devname),
+		exp = nsd_vhlab_makedev(exp, devname{i});
+	end
+	return;
+end
+
+fileparameters = {'reference.txt'};
+objectclass = 'nsd_device_mfdaq';
+
+switch devname,
+	case 'vhintan',
+		fileparameters{end+1} = '.*\.rhd\>';
+		fileparameters{end+1} = 'vhintan_channelgroupings.txt'; 
+		objectclass = [objectclass '_intan'];
+	case 'vhspike2',
+		fileparameters{end+1} = '.*\.smr\>';
+		fileparameters{end+1} = 'vhspike2_channelgroupings.txt'; 
+		objectclass = [objectclass '_cedspike2'];
+
+	case 'vhvis_spike2'
+		fileparameters{end+1} = 'stimtimes.txt';
+		fileparameters{end+1} = 'verticalblanking.txt';
+		fileparameters{end+1} = 'stims.mat';
+		fileparameters{end+1} = 'spike2data.smr'; 
+		objectclass = [objectclass '_stimulus_vhlabvisspike2'];
+
+	otherwise,
+		error(['Unknown device requested ' devname '.']);
+
+end
+
+ft = nsd_filetree_epochdir(exp, fileparameters);
+eval(['mydev = ' objectclass '(devname, ft);']);
+
+exp = exp.device_add(mydev);
+

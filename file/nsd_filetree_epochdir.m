@@ -13,7 +13,7 @@ classdef nsd_filetree_epochdir < nsd_filetree
 
 	methods
 
-		function obj = nsd_filetree_epochdir(exp, varargin)
+		function obj = nsd_filetree_epochdir(varargin)
 		% NSD_FILETREE_EPOCHDIR - Create a new NSD_FILETREE_EPOCHDIR object that is associated with an experiment and device
 		%
 		%   OBJ = NSD_FILETREE_EPOCHDIR(EXP, [FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
@@ -35,7 +35,7 @@ classdef nsd_filetree_epochdir < nsd_filetree
 		%
 		% See also: NSD_EXPERIMENT, NSD_DEVICE
 		%
-			obj = obj@nsd_filetree(exp, varargin{:});
+			obj = obj@nsd_filetree(varargin{:});
 		end
 
 		% in NSD_BASE, need to change epochcontentsfilename to defaultepochcontentsfilename
@@ -60,8 +60,31 @@ classdef nsd_filetree_epochdir < nsd_filetree
 					'SearchParent',0,'SearchDepth',1);
 		end % selectfilegroups
 
-		% need to evalute: epochidfilename, getepochid, 
-
+		function id = getepochid(self, epoch_number, epochfiles)
+		% GETEPOCHID = Get the epoch identifier for a particular epoch
+		%
+		% ID = GETEPOCHID(SELF, EPOCH_NUMBER, [EPOCHFILES])
+		%
+		% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
+		% For the NSD_FILETREE_EPOCHDIR object, each EPOCH is organized in its own subdirectory,
+		% and the epoch identifier is the _name_ of the subdirectory.
+		%
+		% For example, if my device has a file tree that reads files with extension .dat,
+		% the experiment directory is
+		%
+		% myexperiment/
+		%       t00001/
+		%          mydata.dat
+		%
+		% Then ID is 't00001'
+		%
+			if nargin < 3,
+				epochfiles = getepochfiles(self, epoch_number);
+			end
+			[pathdir,filename] = fileparts(epochfiles{1});
+			[abovepath, id] = fileparts(pathdir);
+		end
+	
 		function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
 			% SETPROPERTIES - set the properties of an NSD_FILETREE object
 			%
@@ -111,6 +134,6 @@ classdef nsd_filetree_epochdir < nsd_filetree
 					end
 				end
 		end % setproperties()
-
+	end % methods
 end
 

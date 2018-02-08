@@ -40,6 +40,9 @@ classdef nsd_clock < handle
 			% ------------------------------------------------------------------------------
 			% 'utc'              | The device keeps universal coordinated time (within 0.1ms)
 			% 'exp_global_time'  | The device keeps experiment global time (within 0.1ms)
+			% 'dev_global_time'  | The device keeps its own global time (within 0.1ms) 
+            %                    |   (that is, it knows its own clock across recording epochs)
+            % 'dev_local_time'   | The device keeps its own local time only within epochs
 			% 'no_time'          | The device has no timing information
 			%
 			%
@@ -50,7 +53,7 @@ classdef nsd_clock < handle
 				type = lower(type);
 
 				switch type,
-					case {'utc','exp_global_time','no_time'},
+					case {'utc','exp_global_time','dev_global_time', 'dev_local_time', 'no_time'},
 						% no error
 					otherwise,
 						error(['Unknown clock type ' type '.']);

@@ -1,13 +1,6 @@
-% NSD_FILETREE - object class for accessing files on disk
-%
-%  DT = NSD_FILETREE(EXP)
-%
-%  The NSD_FILETREE object class
-%
-%    See NSD_FILETREE/NSD_FILETREE
-%
-
 classdef nsd_filetree < nsd_base
+	% NSD_FILETREE - object class for accessing files on disk
+
 	properties (GetAccess=public, SetAccess=protected)
 		experiment                    % The NSD_EXPERIMENT to be examined
 		fileparameters                % The parameters for finding files (see NSD_FILETREE/SETFILEPARAMETERS)
@@ -126,7 +119,6 @@ classdef nsd_filetree < nsd_base
 						ecfname = epochfiles{indexes(1)};
 					end;
 				end;
-			end
 		end % epochcontentsfilename
 
 		function epochcontents = getepochcontents(self, N, devicename)
