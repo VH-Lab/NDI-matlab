@@ -106,7 +106,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 			% b = isa(epochcontents, 'nsd_epochcontents') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end
 
-		function filename = filenamefromepoch(self, filename)
+		function filename = filenamefromepochfiles(self, filename)
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
 			[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
 			index = find(tf);
@@ -133,7 +133,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
 			filename = self.filetree.getepochfiles(epoch);
-			filename = self.filenamefromepoch(filename); % don't know how to handle multiple filenames coming back
+			filename = self.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
 				error(['Only one type of channel may be read per function call at present.']);
@@ -162,7 +162,7 @@ classdef nsd_device_mfdaq_intan < nsd_device_mfdaq
 		% SR is the list of sample rate from specified channels
 
 			filename = self.filetree.getepochfiles(epoch);
-			filename = self.filenamefromepoch(filename); % don't know how to handle multiple filenames coming back
+			filename = self.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
 
 			head = read_Intan_RHD2000_header(filename);
 			for i=1:numel(channeltype),
