@@ -1,4 +1,4 @@
-classdef nsd_variable < nsd_dbleaf
+classdef nsd_variable < nsd_dbleaf_branch
 	% NSD_VARIABLE - A variable class for NSD
 	%
 	% NSD_VARIABLE
@@ -10,20 +10,26 @@ classdef nsd_variable < nsd_dbleaf
 
 	properties (GetAccess=public,SetAccess=protected)
 		dataclass    % A string describing the class of the data ('double', 'char', or 'bin')
+		type         % formal type name
 		data         % Data to be stored
 		description  % A human-readable description of the variable's purpose
 		history      % A character string description of the variable's history (what created it, etc)
 	end
 
 	methods
-		function obj = nsd_variable(name, dataclass, data, description, history)
+		function obj = nsd_variable(parent, name, dataclass, type, data, description, history)
 			% NSD_VARIABLE - Create an NSD_VARIABLE object
 			%
-			%  OBJ = NSD_VARIABLE(NAME, DATACLASS, DATA, DESCRIPTION, HISTORY)
+			%  OBJ = NSD_VARIABLE(NAME, DATACLASS, TYPE, DATA, DESCRIPTION, HISTORY)
 			%
 			%  Creates a variable to be linked to an experiment:
+			%  PARENT      - must be an NSD_DBLEAF_BRANCH object (or descendendant class, such as
+			%                  NSD_VARIABLE_BRANCH), usually the variable list associated with an NSD_EXPERIMENT
+			%                  or its children.
 			%  NAME        - the name for the variable; may be any string
-			%  DATACLASS   - a string describing the data; it may be 'double', 'char', or 'bin'
+			%  DATACLASS   - a string describing the data; it may be 'double', 'char', or 'bin', 'file', or 'struct'
+			%  TYPE        - a string describing the type of data stored, for other programs to read	
+			%                  (e.g., 'Spike times')
 			%  DATA        - the data to be stored
 			%  DESCRIPTION - a human-readable string description of the variable's contents and purpose
 			%  HISTORY     - a character string description of the variable's history (what function created it,
@@ -31,20 +37,27 @@ classdef nsd_variable < nsd_dbleaf
 
 			loadfilename = '';
 
+			isflat = 1;
+			classnames = {};
+
 			if nargin==0 | nargin==2, % undocumented 0 argument creator or loadcommand
-				if nargin==2, loadfilename= name; end;
+				if nargin==2,
+					loadfilename= parent;
+				end;
+				parent = [];
+				isinmemory = 0;
 				name='';
 				dataclass='double';
+				type = '';
 				data=[];
 				description='';
 				history='';
 			end
 
-			switch lower(dataclass),
-				case {'double','char','bin'},
-					% do nothing
-				otherwise,
-					error(['class must be ''double'', ''char'', or ''bin''']);
+			if ~isempty(parent)&~isa(parent,'nsd_dbleaf_branch'),
+				error(['NSD_VARIABLE_FILE objects must be attached to NSD_DBLEAF_BRANCH objects or descendant classes.']);
+			elseif ~isempty(parent),
+				isinmemory = parent.memory;
 			end
 
 			if ~ischar(description),
@@ -55,16 +68,39 @@ classdef nsd_variable < nsd_dbleaf
 				error(['history must be a character string (it can be the empty string '''') .']);
 			end;
 
-			obj = obj@nsd_dbleaf(name);
+			obj = obj@nsd_dbleaf_branch(parent, name, classnames, isflat, isinmemory,0);
+			if ~obj.allowedclass(dataclass),
+				error(['class must be ''double'', ''char'', ''bin'', ''file'', or ''struct''']);
+			end
 			obj.dataclass=dataclass;
 			obj.data=data;
+			obj.type = type;
 			obj.description=description;
 			obj.history=history;
+			if ~isempty(parent),
+				parent.add(obj);
+			end;
 			if ~isempty(loadfilename),
 				obj = obj.readobjectfile(loadfilename);
 			end;
+		end % nsd_variable creator
 
-		end % nsd_variable
+		function b = allowedclass(nsd_variable_obj, dataclass)
+			% ALLOWEDCLASS - is this dataclass allowed as a variable?
+			%
+			% B = ALLOWEDCLASS(NSD_VARIABLE_OBJ, DATACLASS)
+			%
+			% Returns 1 if DATACLASS is an allowed type. Returns 0 otherwise.
+			%
+			% For NSD_VARIABLE objects: 'char', 'double', or 'bin' are allowed.
+			%
+				b = 0;
+
+				switch(lower(dataclass)),
+					case {'double','char','bin','file','struct'},
+						b = 1;
+				end
+		end % allowedclass
 
 		function [data,fieldnames] = stringdatatosave(nsd_variable_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
@@ -79,9 +115,11 @@ classdef nsd_variable < nsd_dbleaf
 			% FIELDNAMES is a set of names of the fields/properties of the object
 			% that are being stored.
 			%
-				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_variable_obj);
+				[data,fieldnames] = stringdatatosave@nsd_dbleaf_branch(nsd_variable_obj);
 				data{end+1} = nsd_variable_obj.dataclass;
 				fieldnames{end+1} = 'dataclass';
+				data{end+1} = nsd_variable_obj.type;
+				fieldnames{end+1} = 'type';
 				data{end+1} = nsd_variable_obj.description;
 				fieldnames{end+1} = 'description';
 				data{end+1} = nsd_variable_obj.history;
@@ -121,7 +159,24 @@ classdef nsd_variable < nsd_dbleaf
 				end
 			end % setproperties
 
-		function nsd_variableobj=writeobjectfile(nsd_variable_obj, dirname, locked)
+		function fname = filename(nsd_variable_obj)
+			% FILENAME - return the name of the file that is written to store the variable data
+			%
+			% FNAME = FILENAME(NSD_VARIABLE_FILE)
+			%
+			% Returns the full path filename FNAME of a file that is used to store data.
+			% 
+			% Don't touch this file unless you are using dataclass 'file'.
+			%
+				d = dirname(nsd_variable_obj);
+				if isempty(d),
+					error(['There is no file path associated with this object; object may be in memory only.']);
+				else,
+					fname = [d filesep nsd_variable_obj.objectfilename '.datafile.nsd_variable.nsd'];
+				end
+			end % filename
+
+		function nsd_variable_obj=writeobjectfile(nsd_variable_obj, dirname, locked)
 			% WRITEOBJECTFILE - write the object file to a file
 			%
 			% WRITEOBJECTFILE(NSD_VARIABLEOBJ, DIRNAME, [LOCKED])
@@ -145,77 +200,62 @@ classdef nsd_variable < nsd_dbleaf
 					locked = 1;
 				end
 
-				writeobjectfile@nsd_dbleaf(nsd_variable_obj, dirname, locked);
+				writeobjectfile@nsd_dbleaf_branch(nsd_variable_obj, dirname, locked);
 
-				filename = [dirname filesep nsd_variable_obj.objectfilename];
-				fid = fopen(filename,'ab');     % files will consistently use big-endian
+				fname = nsd_variable_obj.filename;
+
+				fid = fopen(fname,'w','b');     % files will consistently use big-endian
 				if fid < 0,
-					error(['Could not open the file ' filename ' for writing.']);
-                                end;
+					error(['Could not open the file ' fname ' for writing.']);
+				end;
 
-				sz = size(nsd_variable_obj.data);
-				count=fwrite(fid,numel(sz),'double'); % now have written the size of the size vector
-				if count~=1,
-					error(['size of data written does not match request.']);
-				end
-				count=fwrite(fid,uint32(sz(:)),'uint32'); % now have written the size of the vector to be stored
-				if count~=numel(sz),
-					error(['size of data written does not match request.']);
-				end
-				switch nsd_variable_obj.dataclass,
-					case 'double',
-						sizestr = 'double';
-					case 'char',
-						sizestr = 'char';
-					case 'bin',
-						sizestr = 'char';
-					otherwise,
-						error(['Unknown dataclass ' nas_variable_obj.dataclass '.']);
-				end % switch
-
-				count=fwrite(fid, nsd_variable_obj.data(:), sizestr);    % now have written the data
-
-				if count~=prod(sz),
-					error(['size of data written does not match request.']);
+				if ~isempty(nsd_variable_obj.dataclass),
+					switch nsd_variable_obj.dataclass,
+						case 'file', % do nothing
+						case 'struct',
+							fclose(fid);
+							saveStructArray(nsd_variable_obj.filename,nsd_variable_obj.data, 1);
+						otherwise,
+							writeplainmat(fid, nsd_variable_obj.data);
+					end
 				end
 
-				fclose(fid);
+				try,
+					fclose(fid);
+				end
 
 				if thisfunctionlocked,  % we locked it, we need to unlock it
 					nsd_variable_obj = nsd_variable_obj.unlock(dirname);
 				end
+		end % writeobjectfile()
 
-                end % writeobjectfile()
+		function nsd_variable_obj = readobjectfile(nsd_variable_obj, filename)
+			% READOBJECTFILE - read the object from a file
+			%
+			% OBJ = READOBJECTFILE(NSD_VARIABLE_OBJ, FILENAME)
+			%
+			% Reads the NSD_VARIABLE_OBJ from the file FILENAME.
+			%
+			% The file format consists of several strings that are read in sequence.
+			% The first line is always the name of the object class.
+			%
+				nsd_variable_obj= readobjectfile@nsd_dbleaf_branch(nsd_variable_obj, filename); 
 
-                function obj = readobjectfile(nsd_variable_obj, filename)
-                        % READOBJECTFILE - read the object from a file
-                        %
-                        % OBJ = READOBJECTFILE(NSD_VARIABLE_OBJ, FILENAME)
-                        %
-                        % Reads the NSD_VARIABLE_OBJ from the file FILENAME.
-                        %
-                        % The file format consists of several strings that are read in sequence.
-                        % The first line is always the name of the object class.
-                        %
-				obj = readobjectfile@nsd_dbleaf(nsd_variable_obj, filename); 
-				[data,fn] = stringdatatosave(obj);
-				fid = fopen(filename,'rb');
-				for i=1:numel(fn), fgetl(fid); end;  % read in that many lines to skip the top of the file
-
-				switch obj.dataclass,
-					case 'double',
-						sizestr = 'double';
-					case 'char','bin',
-						sizestr = 'char';
-					otherwise,
-						error(['Unknown dataclass.']);
+				fid = fopen(nsd_variable_obj.filename,'r','b');
+				if fid<0,
+					error(['Could not open file ' filename ' for reading.']);
 				end
 
-				n = fread(fid,1,'double'); % read in the size of size
-				sz = fread(fid,n,'uint32'); % read in the size
-				data = fread(fid,prod(sz),sizestr);
+				switch nsd_variable_obj.dataclass,
+					case 'file',
+						% do nothing
+					case 'struct',
+						nsd_variable_obj.data = loadStructArray(nsd_variable_obj.filename);
+					otherwise,
+						nsd_variable_obj.data = readplainmat(fid);
+				end
+
 				fclose(fid);
-				obj.data = reshape(data,sz(:)');
                 end % readobjectfile()
 
 		function mds = metadatastruct(nsd_variable_obj)
@@ -224,14 +264,14 @@ classdef nsd_variable < nsd_dbleaf
 			% MDS = METADATASTRUCT(NSD_VARIABLE_OBJ)
 			%
 			% Returns the metadata fieldnames and values for NSD_VARIABLE_OBJ. This adds the properties
-			% 'dataclass', 'description', and 'history'.
+			% 'dataclass', 'type', 'description', and 'history'.
 			%
-				mds = metadatastruct@nsd_dbleaf(nsd_variable_obj);
+				mds = metadatastruct@nsd_dbleaf_branch(nsd_variable_obj);
 				mds.dataclass = nsd_variable_obj.dataclass;
+				mds.type= nsd_variable_obj.type;
 				mds.description = nsd_variable_obj.description;
 				mds.history = nsd_variable_obj.history;
 		end % metadatastruct()
-
 	end % methods
 end % classdef
 

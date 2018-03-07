@@ -1,4 +1,4 @@
-function test_intan_flat(dirname)
+function test_nsd_variable(dirname)
 % TEST_NSD_VARIABLE - Test the functionality of the NSD_VARIABLE object
 %
 %  TEST_NSD_VARIABLE([DIRNAME])
@@ -14,6 +14,8 @@ function test_intan_flat(dirname)
 
 nsd_globals;
 
+test_struct = 0;
+
 if nargin<1,
 	mydirectory = [nsdpath filesep 'tools' filesep 'NSD' ...
                 filesep 'example_experiments' ];
@@ -23,6 +25,13 @@ end;
 disp(['Creating a new experiment object in directory ' dirname '.']);
 exp = nsd_experiment_dir('exp1',dirname);
 
+disp(['Now clearing out any old variables...']);
+
+findmyvar = load(exp.variable,'name','Animal parameters');
+if ~isempty(findmyvar),
+	exp.variable_rm(findmyvar);
+end
+
 disp(['Now we will add a variable of each allowed type...'])
 
 disp(['First, we will add a variable branch (a collection of variables)...'])
@@ -31,22 +40,27 @@ myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
 
 disp(['Second, we will add a variable to the branch ...'])
 
-myvar = nsd_variable('Animal age','double',30,'The age of the animal at the time of the experiment (days)','');
-
-myvardir.add(myvar);
+myvar = nsd_variable(myvardir, 'Animal age','double','Animal age in days', 30, 'The age of the animal at the time of the experiment (days)','');
 
 disp(['Third, we will add a variable file to the branch ...'])
 
-myfilevar = nsd_variable_file(myvardir,'Things to write','Some things to write','no history');
- 
-
-  % store some data in the file
+myfilevar = nsd_variable(myvardir, 'Things to write','file', 'Test: Some things to write', ...
+		[], 'Some things to write','no history');
+	 
+	  % store some data in the file
 fname = myfilevar.filename();
 fid = fopen(fname,'w','b'); % write big-endian
 fwrite(fid,char([0:9]));
 fclose(fid);
 
+disp(['Fourth, we will add a structure variable to the branch'])
 
+mystruct.a = 5;
+mystruct.b = 3;
+mystructvar = nsd_variable(myvardir, 'Structure to write', 'struct', 'Test: A test structure', ...
+		mystruct, 'Some things to write', 'no history');
+
+disp(['..........................']);
 disp(['Now, we will access all of our saved variables:']);
 
 disp(['First, the branch...'])
@@ -60,8 +74,15 @@ findmyfilevar = load(findmydir,'name','Things to write')
 
 fname = findmyfilevar.filename();
 fid = fopen(fname,'r','b');
-a=double(fread(fid,Inf,'char'))
+a=double(fread(fid,Inf,'char'));
+a(:)'
 fclose(fid);
 
+disp(['Fourth, the structure (should be a==5, b==3):']);
+
+findmystructvar = load(findmydir,'type','Test: A test structure');
+findmystructvar.data
+
 exp.variable_rm(myvardir);
+
 

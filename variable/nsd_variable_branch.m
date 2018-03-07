@@ -27,7 +27,7 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 			%
 
 			loadfilename = '';
-			classnames={'nsd_variable','nsd_variable_file','nsd_variable_branch'};
+			classnames={'nsd_variable','nsd_variable_branch'};
 
 			if nargin==0 | nargin==2,
 				if nargin==2 & strcmp(lower(name),lower('OpenFile')) & ischar(parent),

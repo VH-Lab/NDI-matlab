@@ -17,10 +17,10 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 	end % parameters private
 
 	methods
-		function obj = nsd_dbleaf_branch(path, name, classnames, isflat, memory)
+		function obj = nsd_dbleaf_branch(path, name, classnames, isflat, memory, doadd)
 			% NSD_DBLEAF_BRANCH - Create a database branch of objects with searchable metadata
 			% 
-			% DBBRANCH = NSD_DBLEAF_BRANCH(PATH, NAME, CLASSNAMES, [ISFLAT], [MEMORY])
+			% DBBRANCH = NSD_DBLEAF_BRANCH(PATH, NAME, CLASSNAMES, [ISFLAT], [MEMORY], [ADD])
 			%
 			% Creates an NSD_DBLEAF_BRANCH object that operates at the path PATH, has the
 			% string name NAME, and may consist of elements of classes that are found
@@ -32,11 +32,11 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% One may also use the form:
 			%
-			% DBBRANCH = NSD_DBLEAF_BRANCH(PARENT_BRANCH, NAME, CLASSNAMES, [ISFLAT], [MEMORY])
+			% DBBRANCH = NSD_DBLEAF_BRANCH(PARENT_BRANCH, NAME, CLASSNAMES, [ISFLAT], [MEMORY], [ADD])
 			%
 			% where PARENT_BRANCH is a NSD_DBLEAF_BRANCH, and PATH will be taken from that
 			% object's directory name (that is, PARENT_BRANCH.DIRNAME() ). The new object
-			% will be added to the parent branch PARENT_BRANCH.
+			% will be added to the parent branch PARENT_BRANCH unless ADD is 0.
 			%
 			% Another variation is:
 			%
@@ -48,6 +48,10 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			loadfromfile = 0;
 			parent = [];
+
+			if nargin < 6, 
+				doadd = 1;
+			end
 
 			if nargin<5,
 				memory = 0;
@@ -96,17 +100,19 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			obj.mdmemory = emptystruct;
 			obj.leaf = {};
 			if ~isempty(parent),
-                potential_existing_nsd_dbleaf_branch_obj = parent.load('name',obj.name);
-                if isempty(potential_existing_nsd_dbleaf_branch_obj),
-                    parent.add(obj);
-                else,
-                    if potential_existing_nsd_dbleaf_branch_obj.isflat ~= obj.isflat | ...
-                        potential_existing_nsd_dbleaf_branch_obj.memory ~= obj.memory,
-                        error(['nsd_dbleaf_branch with name ' obj.name ' already exists with different isflat or memory parameters.']);
-                    end
-                    obj = potential_existing_nsd_dbleaf_branch_obj;                    
-                end
-            end;
+				potential_existing_nsd_dbleaf_branch_obj = parent.load('name',obj.name);
+				if isempty(potential_existing_nsd_dbleaf_branch_obj),
+					if doadd,
+						parent.add(obj);
+					end
+				else,
+					if potential_existing_nsd_dbleaf_branch_obj.isflat ~= obj.isflat | ...
+						potential_existing_nsd_dbleaf_branch_obj.memory ~= obj.memory,
+						error(['nsd_dbleaf_branch with name ' obj.name ' already exists with different isflat or memory parameters.']);
+					end
+					obj = potential_existing_nsd_dbleaf_branch_obj;                    
+				end
+			end;
 
 		end % nsd_dbleaf_branch
 
