@@ -83,6 +83,14 @@ disp(['Fourth, the structure (should be a==5, b==3):']);
 findmystructvar = load(findmydir,'type','Test: A test structure');
 findmystructvar.data
 
-exp.variable_rm(myvardir);
+disp(['Fifth, now let''s update this variable to (a==3, b==3):']);
 
+mydata = findmystructvar.data;
+mydata.a = 3;
+findmystructvar = updatedata(findmystructvar,mydata);
+
+findmystructvar = load(findmydir,'type','Test: A test structure');
+findmystructvar.data
+
+exp.variable_rm(myvardir);
 

@@ -159,6 +159,17 @@ classdef nsd_variable < nsd_dbleaf_branch
 				end
 			end % setproperties
 
+		function nsd_variable_obj = updatedata(nsd_variable_obj, newdata)
+			% UPDATE_DATA - Update the data field of an NSD_VARIABLE object
+			%
+			% NSD_VARIABLE_OBJ = UPDATE_DATA(NSD_VARIABLE_OBJ, NEWDATA)
+			%
+			% Update the data field of an NSD_VARIABLE object, including on disk.
+			%
+				nsd_variable_obj.data = newdata;
+				nsd_variable_obj.writeobjectdata;
+		end % update_data
+
 		function fname = filename(nsd_variable_obj)
 			% FILENAME - return the name of the file that is written to store the variable data
 			%
@@ -175,6 +186,54 @@ classdef nsd_variable < nsd_dbleaf_branch
 					fname = [d filesep nsd_variable_obj.objectfilename '.datafile.nsd_variable.nsd'];
 				end
 			end % filename
+
+		function nsd_variable_obj=writeobjectdata(nsd_variable_obj, locked)
+			% WRITEOBJECTDATA - write the actual data for the object to the object's data file
+			%
+			% WRITEOBJECTDATA(NSD_VARIABLEOBJ)
+			%
+			% Writes the data to the data file.
+			%
+				if nargin<2,
+					locked = 0;
+				end
+
+				thisfunctionlocked = 0;
+				d = [];
+
+				if ~locked,
+					d = dirname(nsd_variable_obj);
+					nsd_variable_obj = nsd_variable_obj.lock(d);
+					thisfunctionlocked = 1;
+					locked = 1;
+				end
+				
+				fname = nsd_variable_obj.filename;
+
+				fid = fopen(fname,'w','b');     % files will consistently use big-endian
+				if fid < 0,
+					error(['Could not open the file ' fname ' for writing.']);
+				end;
+
+				if ~isempty(nsd_variable_obj.dataclass),
+					switch nsd_variable_obj.dataclass,
+						case 'file', % do nothing
+						case 'struct',
+							fclose(fid);
+							saveStructArray(nsd_variable_obj.filename,nsd_variable_obj.data, 1);
+						otherwise,
+							writeplainmat(fid, nsd_variable_obj.data);
+					end
+				end
+
+				try,
+					close(fid);
+				end
+
+				if thisfunctionlocked, % we locked it, we need to unlock it
+					nsd_variable_obj = nsd_variable_obj.unlock(d);
+				end
+			end
 
 		function nsd_variable_obj=writeobjectfile(nsd_variable_obj, dirname, locked)
 			% WRITEOBJECTFILE - write the object file to a file
@@ -202,27 +261,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 
 				writeobjectfile@nsd_dbleaf_branch(nsd_variable_obj, dirname, locked);
 
-				fname = nsd_variable_obj.filename;
-
-				fid = fopen(fname,'w','b');     % files will consistently use big-endian
-				if fid < 0,
-					error(['Could not open the file ' fname ' for writing.']);
-				end;
-
-				if ~isempty(nsd_variable_obj.dataclass),
-					switch nsd_variable_obj.dataclass,
-						case 'file', % do nothing
-						case 'struct',
-							fclose(fid);
-							saveStructArray(nsd_variable_obj.filename,nsd_variable_obj.data, 1);
-						otherwise,
-							writeplainmat(fid, nsd_variable_obj.data);
-					end
-				end
-
-				try,
-					fclose(fid);
-				end
+				nsd_variable_obj.writeobjectdata(locked);
 
 				if thisfunctionlocked,  % we locked it, we need to unlock it
 					nsd_variable_obj = nsd_variable_obj.unlock(dirname);

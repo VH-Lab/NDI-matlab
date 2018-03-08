@@ -688,7 +688,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
-
 				if nargin<2 & nsd_dbleaf_branch_obj.memory,
 					error(['This branch is in memory only, so to delete any files we need to know which directory it may be stored in.']);
 				elseif nargin<2,
@@ -704,7 +703,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				rmdir(nsd_dbleaf_branch_obj.dirname(thedirname),'s');
 				b = b&deleteobjectfile@nsd_dbleaf(nsd_dbleaf_branch_obj, thedirname);
 		end % deletefileobject()
-
 	end % methods
 
 end % nsd_dbleaf_branch
