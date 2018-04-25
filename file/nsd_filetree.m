@@ -483,7 +483,7 @@ classdef nsd_filetree < nsd_base
 			% identifier string, then it is returned.
 				if isnumeric(number)
 					s = int2str(number);
-				elseif iscell(s), % a cell array of strings
+				elseif iscell(number), % a cell array of strings
 					s = [];
 					for i=1:numel(number),
 						if (i>2)
