@@ -491,7 +491,7 @@ classdef nsd_filetree < nsd_base
 						end;
 						s=cat(2,s,number{i});
 					end
-				elseif ischar(s),
+				elseif ischar(number),
 					s = number;
 				else,
 					error(['Unknown epoch number or identifier.']);
