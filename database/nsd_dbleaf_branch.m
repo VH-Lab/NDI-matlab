@@ -377,6 +377,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			if ~isempty(indexes),
 				if isempty(md),
+					error('check why ''indexes'' is passed here, or is it an error?');
 					md = metadata(nsd_dbleaf_branch_obj,indexes);
 				end;
 				obj = {};
