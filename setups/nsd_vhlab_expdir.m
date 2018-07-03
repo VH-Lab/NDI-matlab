@@ -1,7 +1,7 @@
-function exp = nsd_vhlab_experdir(ref, dirname)
+function exp = nsd_vhlab_expdir(ref, dirname)
 % NSD_VHLAB_EXPERDIR - initialize an NSD_EXPERIMENT_DIR with VHLAB devices
 %
-%  EXP = NSD_VHLAB_EXPERDIR(REF, DIRNAME)
+%  EXP = NSD_VHLAB_EXPDIR(REF, DIRNAME)
 %
 %  Initializes an NSD_EXPERIMENT_DIR object for the directory
 %  DIRNAME with the standard compliment of VHLAB devices, as

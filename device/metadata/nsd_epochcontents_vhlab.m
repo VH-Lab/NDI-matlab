@@ -76,10 +76,25 @@ classdef nsd_epochcontents_vhlab < nsd_epochcontents
 				if ~eqlen(fn,{'name','ref','channel_list'}'),
 					error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
 				end;
+
+				% now pull reference.txt file to determine type
+				[myfilepath,myfilename] = fileparts(filename);
+				ref_struct = loadStructArray([myfilepath filesep 'reference.txt']);
+
+				nsd_globals;
+
 				for i=1:length(nsd_struct),
+					tf_name = strcmp(nsd_struct(i).name,{ref_struct.name});
+					tf_ref = [nsd_struct(i).ref == [ref_struct.ref]];
+					index = intersect(tf_name,tf_ref);
+					if numel(index)~=1, error(['Cannot find exclusive match for name/ref in reference.txt file.']); end;
+					ec_type = ref_struct(index).type;
+					if isempty(intersect({nsd_probetype2object.type},ec_type)),
+						error(['Unknown type ' ec_type '.']);
+					end
 					nextentry = nsd_epochcontents_vhlab(nsd_struct(i).name,...
 							nsd_struct(i).ref,...
-							['n-trode'] , ...  % type
+							ec_type, ...  % type
 							[vhdevice_string ':ai' intseq2str(nsd_struct(i).channel_list)]);  % device string
 							%['extracellular_electrode-' int2str(numel(nsd_struct(i).channel_list)) ] , ...  % type
 					obj(i) = nextentry;

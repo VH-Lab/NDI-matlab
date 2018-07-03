@@ -51,8 +51,7 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
 				filelist = getepochfiles(self.filetree, n);
-
-				filename = filelist{1}; % assume only 1 file
+				filename = self.cedspike2filelist2smrfile(filelist);
 
 				header = read_CED_SOMSMR_header(filename);
 
@@ -108,7 +107,7 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
 			filename = self.filetree.getepochfiles(epoch);
-			filename = filename{1}; % don't know how to handle multiple filenames coming back
+			filename = self.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
 
 			sr = self.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
@@ -170,7 +169,7 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 		% SR is the list of sample rate from specified channels
 
 			filename = self.filetree.getepochfiles(epoch);
-			filename = filename{1}; % don't know how to handle multiple filenames coming back
+			filename = self.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
 
 			sr = [];
 			for i=1:numel(channel),
@@ -182,6 +181,24 @@ classdef nsd_device_mfdaq_cedspike2 < nsd_device_mfdaq
 	end % methods
 
 	methods (Static)  % helper functions
+
+		function smrfile = cedspike2filelist2smrfile(filelist)
+			% CEDSPIKE2SPIKELIST2SMRFILE - Identify the .SMR file out of a file list
+			% 
+			% FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
+			%
+			% Given a cell array of strings FILELIST with full-path file names,
+			% this function identifies the first file with an extension '.smr' (case insensitive)
+			% and returns the result in FILENAME (full-path file name).
+				for k=1:numel(filelist),
+					[pathpart,filenamepart,extpart] = fileparts(filelist{k});
+					if strcmpi(extpart,'.smr'),
+						smrfile = filelist{k}; % assume only 1 file
+						return;
+					end; % got the .smr file
+				end
+				error(['Could not find any .smr file in the file list.']);
+		end
 
 		function channeltype = cedspike2headertype2mfdaqchanneltype(cedspike2channeltype)
 		% CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NSD_DEVICE_MFDAQ channel types 

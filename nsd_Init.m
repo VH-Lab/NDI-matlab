@@ -11,4 +11,4 @@ addpath(genpath(mynsdpath));
 nsd_globals;
 
 nsdpath = mynsdpath;
-
+nsd_probetype2objectinit;
