@@ -75,10 +75,10 @@ classdef nsd_probe_mfdaq < nsd_probe
 				end;
 
 				if nargout>=1,
-					[data] = readchannels_epochsamples(dev, devepoch, channeltype, channel, s0, s1);
+					[data] = readchannels_epochsamples(dev, channeltype, channel, devepoch, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev, devepoch, 'time', 1, s0, s1);
+					[t] = readchannels_epochsamples(dev, 'time', 1, devepoch, s0, s1);
 				end
 		end %read()
 

@@ -82,9 +82,9 @@ classdef nsd_probe
 			%
 			% Returns the name and reference of a probe as a human-readable string.
 			%
-			% This is simply PROBESTR = [NSD_PROBE_OBJ.name ' | ' in2str(NSD_PROBE_OBJ.reference)]
+			% This is simply PROBESTR = [NSD_PROBE_OBJ.name ' _ ' in2str(NSD_PROBE_OBJ.reference)]
 			%
-				probestr = [nsd_probe_obj.name ' | ' int2str(nsd_probe_obj.reference) ];
+				probestr = [nsd_probe_obj.name ' _ ' int2str(nsd_probe_obj.reference) ];
 
 		end
 

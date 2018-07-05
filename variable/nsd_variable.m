@@ -7,6 +7,34 @@ classdef nsd_variable < nsd_dbleaf_branch
 	% with paticular values. They can be accessed from an NSD_EXPERIMENT
 	% object.
 	%
+	% See also: NSD_VARIABLE/NSD_VARIABLE, NSD_VARIABLE_BRANCH, NSD_VARIABLE_BRANCH/NSD_VARIABLE_BRANCH
+	%
+	% Examples:
+	%	% if exp is an NSD_EXPERIMENT object
+	%		% BRANCHES a.k.a. subdirectories
+	%	myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
+	%		% or
+	%	myvardir = exp.variable.load_createbranch('Animal parameters'); % loads it if it is already there, creates it otherwise
+	%
+	%		% DOUBLE ARRAYS
+	%	myvar = nsd_variable(myvardir, 'Animal age','double','Animal age in days', ...
+	%		30, 'The age of the animal at the time of the experiment (days)','');
+ 	%
+	%		% FILES
+	%	myfilevar = nsd_variable(myvardir, 'Things to write','file', 'Test: Some things to write', ...
+	%		[], 'Some things to write','no history');
+	% 		% store some data in the file
+	%		fname = myfilevar.filename();
+	%		fid = fopen(fname,'w','b'); % write big-endian
+	%		fwrite(fid,char([0:9]));
+	%		fclose(fid);
+	%
+	%		% STRUCTURES
+	%	mystruct.a = 5;
+	%	mystruct.b = 3;
+	%	mystructvar = nsd_variable(myvardir, 'Structure to write', 'struct', 'Test: A test structure', ...
+	%		mystruct, 'Some things to write', 'no history');
+	% 
 
 	properties (GetAccess=public,SetAccess=protected)
 		dataclass    % A string describing the class of the data ('double', 'char', or 'bin')
@@ -20,7 +48,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 		function obj = nsd_variable(parent, name, dataclass, type, data, description, history)
 			% NSD_VARIABLE - Create an NSD_VARIABLE object
 			%
-			%  OBJ = NSD_VARIABLE(NAME, DATACLASS, TYPE, DATA, DESCRIPTION, HISTORY)
+			%  OBJ = NSD_VARIABLE(PARENT, NAME, DATACLASS, TYPE, DATA, DESCRIPTION, HISTORY)
 			%
 			%  Creates a variable to be linked to an experiment:
 			%  PARENT      - must be an NSD_DBLEAF_BRANCH object (or descendendant class, such as
