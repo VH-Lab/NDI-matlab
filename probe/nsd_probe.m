@@ -66,8 +66,11 @@ classdef nsd_probe
 							if strcmp(ec(k).name,nsd_probe_obj.name) && ...
 								(ec(k).reference==nsd_probe_obj.reference) &&  ...
 								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
-								probe_epoch_contents{end+1} = ec(k);
-								devepoch(end+1) = n;
+								if numel(probe_epoch_contents)<n,
+									probe_epoch_contents{n} = {};
+								end
+								probe_epoch_contents{n}{end+1} = ec(k);
+								devepoch(n) = n;
 							end
 						end
 					end
@@ -93,19 +96,35 @@ classdef nsd_probe
 			%
 			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_OBJ, EPOCH)
 			%
-			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding
-			% NSD_DEVICE object DEV, the name of the device in DEVNAME, the epoch number, DEVEPOCH of the device that
-			% corresponds to the probe's epoch, a cell array of CHANNELTYPEs, and an array of channels that
-			% comprise the probe in CHANNELLIST. 
+			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding channel and device info.
+			% Suppose there are C channels corresponding to a probe. Then the outputs are
+			%   DEV is a 1xC cell array of NSD_DEVICE objects for each channel
+			%   DEVNAME is a 1xC cell array of the names of each device in DEV
+			%   DEVEPOCH is a 1xC array with the number of the probe's EPOCH on each device
+			%   CHANNELTYPE is a cell array of the type of each channel
+			%   CHANNELLIST is the channel number of each channel.
 			%
 				[n, probe_epoch_contents, devepochs] = numepochs(nsd_probe_obj);
 				if ~(epoch >=1 & epoch <= n),
 					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
+		                end
+
+				dev = {};
+				devname = {};
+				devepoch = [];
+				channeltype = {};
+				channellist = [];
+				
+				for ec = 1:numel(probe_epoch_contents{epoch}),
+					devstr = nsd_devicestring(probe_epoch_contents{epoch}{ec}.devicestring);
+					[devname_here, channeltype_here, channellist_here] = devstr.nsd_devicestring2channel();
+					dev{end+1} = nsd_probe_obj.experiment.device_load('name', devname_here);
+					devname = cat(2,devname,devname_here);
+					devepoch = cat(2,devepoch,devepochs(epoch));
+					channeltype = cat(2,channeltype,channeltype_here);
+					channellist = cat(2,channellist,channellist_here);
 				end
-				devstr = nsd_devicestring(probe_epoch_contents{epoch}.devicestring);
-				[devname, channeltype, channellist] = devstr.nsd_devicestring2channel();
-				devepoch = devepochs(epoch);
-				dev = nsd_probe_obj.experiment.device_load('name', devname); % now we have the device handle
+
 		end % getchanneldevinfo(nsd_probe_obj, epoch)
 
 		function tag = getepochtag(nsd_probe_obj, number)

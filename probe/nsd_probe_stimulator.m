@@ -43,7 +43,13 @@ classdef nsd_probe_stimulator < nsd_probe
 			%    STIMOPENCLOSE == [STIMON STIMOFF].
 			% 
 			
-			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
+				if isa(clock_or_epoch, 'nsd_clock'),
+					error(['Do not know how to deal with clocks yet.']);
+				end
+
+				epoch = clock_or_epoch;
+
+				[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch),
 
 		end %read_stimulusepoch()
 

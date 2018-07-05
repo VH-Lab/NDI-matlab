@@ -510,7 +510,7 @@ classdef nsd_filetree < nsd_base
 				% developer note: possibility of caching this with some timeout
 
 				all_epochs = self.selectfilegroups();
-				N = numel(all_epochs);
+				N = size(all_epochs,1);
 		end % numepochs()
 
 		function thepath = path(self)
