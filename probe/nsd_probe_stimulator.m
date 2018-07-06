@@ -49,7 +49,7 @@ classdef nsd_probe_stimulator < nsd_probe
 
 				epoch = clock_or_epoch;
 
-				[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch),
+				[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
 

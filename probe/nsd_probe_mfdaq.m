@@ -21,16 +21,18 @@ classdef nsd_probe_mfdaq < nsd_probe
 
 		end % nsd_probe_mfdaq
 
-		function [data,t] = read_epochsamples(self, epoch, s0, s1)
+		function [data,t,clock] = read_epochsamples(self, epoch, s0, s1)
 		%  READ_EPOCHSAMPLES - read the data from a specified epoch
 		%
-		%  [DATA, T] = READ_EPOCHSAMPLES(NSD_PROBE_MFDAQ_OBJ, EPOCH ,S0, S1)
+		%  [DATA, T, CLOCK] = READ_EPOCHSAMPLES(NSD_PROBE_MFDAQ_OBJ, EPOCH ,S0, S1)
 		%
 		%  EPOCH is the epoch number to read from.
 		%
 		%  DATA will have one column per channel.
 		%
 		%  T is the time of each sample, relative to the beginning of the epoch.
+		%
+		%  CLOCK is the NSD_CLOCK associated with the device.
 		%
 		%  
 			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
@@ -44,10 +46,13 @@ classdef nsd_probe_mfdaq < nsd_probe
 			if nargout>=2,
 				[t] = readchannels_epochsamples(dev{1}, {'time'}, 1, devepoch(1), s0, s1);
 			end
+			if nargout>=3,
+				clock = dev{1}.clock;
+			end
 
 		end % read_epochsamples()
 
-		function [data,t] = read(self, clock_or_epoch, t0, t1)
+		function [data,t,clock] = read(self, clock_or_epoch, t0, t1)
 			%  READ - read the probe data based on specified time relative to an epoch or clock
 			%
 			%  [DATA,T] = READ(NSD_PROBE_MFDAQ_OBJ, CLOCK_OR_EPOCH, T0, T1)
@@ -58,6 +63,8 @@ classdef nsd_probe_mfdaq < nsd_probe
 			%  DATA is the data collection for the probe. It will have one column per channel.
 			%
 			%  T is the time of each sample, relative to the beginning of the epoch.
+			%
+			%  CLOCK is the device's NSD_CLOCK indicating a reference for T
 			%
 
 				if isa(clock_or_epoch,'nsd_clock'),
@@ -80,6 +87,9 @@ classdef nsd_probe_mfdaq < nsd_probe
 				end
 				if nargout>=2,
 					[t] = readchannels_epochsamples(dev{1}, 'time', 1, devepoch(1), s0, s1);
+				end
+				if nargout>=3,
+					clock=dev{1}.clock;
 				end
 		end %read()
 
