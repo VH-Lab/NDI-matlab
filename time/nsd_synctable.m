@@ -1,6 +1,6 @@
 classdef nsd_synctable < nsd_base
 
-	NOTE ONLY IN MY IMAGINATION RIGHT NOW
+	% NOTE ONLY IN MY IMAGINATION RIGHT NOW
 
 	% NSD_SYNCTABLE - A class for managing synchronization across NSD_CLOCK objects
 	%
