@@ -14,8 +14,8 @@
 % 'digital_out' or 'do'       | Digital output
 % 'time'        or 't'        | Time
 % 'auxiliary_in','aux' or 'ax'| Auxiliary channels
-% 'event'                     | Event trigger (returns times of event trigger activation)
-% 'mark'                      | Mark channel (contains value at specified times)
+% 'event', or 'e'             | Event trigger (returns times of event trigger activation)
+% 'mark', or 'mk'             | Mark channel (contains value at specified times)
 % 
 %
 % See also: NSD_DEVICE_MFDAQ/NSD_DEVICE_MFDAQ
@@ -63,8 +63,8 @@ classdef nsd_device_mfdaq < nsd_device
 			%                    |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')
 			%
 			   % because this is an abstract class, only empty records are returned
-			channels = struct('name',[],'type',[]);  
-			channels = channels([]);
+				channels = struct('name',[],'type',[]);  
+				channels = channels([]);
 		end; % getchannels
 
 		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
@@ -142,14 +142,15 @@ classdef nsd_device_mfdaq < nsd_device
 				error(['this function does not handle working with clocks yet.']);
 			else,
 				epoch = clock_or_epoch;
-				[data] = readchannels_epochsamples(self, epoch, channeltype, channel);
+				disp('here, about to call readchannels_epochsamples')
+				[data] = readevents_epochsamples(self,channeltype,channel,epoch,t0,t1);
 			end
 		end % readevents
 
-		function data = readevents_epoch(self, channeltype, channel, n, t0, t1)
-			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
+		function data = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
+			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
@@ -163,7 +164,7 @@ classdef nsd_device_mfdaq < nsd_device
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%  
 			data = [];
-		end % readevents_epoch
+		end % readevents_epochsamples
 
                 function sr = samplerate(self, epoch, channeltype, channel)
 			%

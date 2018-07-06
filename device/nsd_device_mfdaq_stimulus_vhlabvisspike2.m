@@ -42,6 +42,7 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			% ----------------|------------------------------------------
 			% mk1             | stimulus on/off
 			% mk2             | stimid 
+			% mk3             | stimulus open/close
 			% e1              | frame trigger
 			% e2              | vertical refresh trigger
 			% e3              | pretime trigger
@@ -49,17 +50,20 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 
 			channels        = struct('name','mk1','type','marker');  
 			channels(end+1) = struct('name','mk2','type','marker');  
+			channels(end+1) = struct('name','mk3','type','marker');  
 			channels(end+1) = struct('name','e1','type','event');  
 			channels(end+1) = struct('name','e2','type','event');  
 			channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannels()
 
-		function data = readevents_epoch(self, channeltype, channel, n, t0, t1)
+		function data = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
-			%  CHANNELTYPE is the type of channel to read
+			%  SELF is the NSD_DEVICE_MFDAQ_STIMULUS_VHVISSPIKE2 object.
+			%
+			%  CHANNELTYPE is(are) the type(s) of channel(s) to read
 			%  ('event','marker', etc)
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
@@ -70,17 +74,15 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%  
-			data = [];
+			data = {};
 
-			filelist = self.filetree.getepochfiles(n);
+			filelist = self.filetree.getepochfiles(n),
 			pathname = {};
 			fname = {};
 			ext = {};
 			for i=1:numel(filelist),
 				[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
 			end
-
-			channeltype = self.mfdaq_prefix(channeltype);
 
 			% do the decoding
 			[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
@@ -100,41 +102,48 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 				stimcleartimes(i) = mti{i}.startStopTimes(4) + timeshift;
 			end;
 
-			switch (channeltype),
-				case 'mk',
-					% put them together, alternating stimtimes and stimofftimes in the final product
-					time1 = [stimtimes(:)' ; stimofftimes(:)'];
-					data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
-					time1 = reshape(time1,numel(time1),1);
-					data1 = reshape(data1,numel(data1),1);
-					ch{1} = [time1 data1];
-					
-					time2 = [stimtimes(:)];
-					data2 = [stimid(:)];
-					ch{2} = [time2 data2];
+			for i=1:numel(channel),
+				self.mfdaq_prefix(channeltype{i}),
+				switch (self.mfdaq_prefix(channeltype{i})),
+					case 'mk',
+						% put them together, alternating stimtimes and stimofftimes in the final product
+						time1 = [stimtimes(:)' ; stimofftimes(:)'];
+						data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
+						time1 = reshape(time1,numel(time1),1);
+						data1 = reshape(data1,numel(data1),1);
+						ch{1} = [time1 data1];
+						
+						time2 = [stimtimes(:)];
+						data2 = [stimid(:)];
+						ch{2} = [time2 data2];
 
-					data = ch(channel);
-					if numel(data)==1, data = data{1}; end; % make it non-cell
-					
-				case 'e',
-					data = {};
-					for i=1:numel(channel),
+						time3 = [stimsetuptimes(:)' ; stimcleartimes(:)'];
+						data3 = [ones(size(stimsetuptimes(:)')) ; -1*ones(size(stimcleartimes(:)'))];
+						time3 = reshape(time3,numel(time3),1);
+						data3 = reshape(data3,numel(data3),1);
+						ch{3} = [time3 data3];
+
+						data{i} = ch{channel(i)};
+					case 'e',
 						if channel(i)==1, % frametimes
-							allframetimes = cat(2,frametimes{:});
-							data{end+1} = [data allframetimes(:)];
+							allframetimes = cat(1,frametimes{:});
+							data{end+1} = [allframetimes(:) ones(size(allframetimes(:)))];
 						elseif channel(i)==2, % vertical refresh
 							vr = load(filelist{find(strcmp('verticalblanking',fname))},'-ascii');
-							data{end+1} = [data vr(:)];
+							data{end+1} = [vr(:) ones(size(vr(:)))];
 						elseif channel(i)==3, % background trigger, simulated
-							data{end+1} = [data stimsetuptimes(:)];
+							data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
 						end
-					end
-					if numel(data)==1, data = data{1}; end; % make it non-cell
-				otherwise,
-					error(['Unknown channel.']);
+					otherwise,
+						error(['Unknown channel.']);
+				end
 			end
 
-		end % readevents_epoch()
+			if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+				data = data{1};
+			end; 
+
+		end % readevents_epochsamples()
 
                 function sr = samplerate(self, epoch, channeltype, channel)
 			%
@@ -180,5 +189,4 @@ classdef nsd_device_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_devic
 
 	end; % methods
 end
-
 

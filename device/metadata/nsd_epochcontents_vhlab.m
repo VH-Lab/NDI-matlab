@@ -49,7 +49,7 @@ classdef nsd_epochcontents_vhlab < nsd_epochcontents
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
 				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
-					mylist = {'m1','m2','e1','e2','e3'};
+					mylist = {'mk1','mk2','mk3','e1','e2','e3'};
 					for i=1:numel(mylist),
 						nextentry = nsd_epochcontents_vhlab('vhvis_spike2',...
 							1,...

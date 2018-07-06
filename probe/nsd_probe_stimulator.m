@@ -51,6 +51,33 @@ classdef nsd_probe_stimulator < nsd_probe
 
 				[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch),
 
+				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
+
+				channel_labels = getchannels(dev{1});
+
+				[data] = readevents(dev{1},channeltype,channel,devepoch(epoch),t0,t1);
+
+				data,
+
+				for i=1:numel(channeltype),
+					switch channel_labels(i).name,
+						case 'mk1', % stimonoff
+							data{i},
+							stimon = data{i}(find(data{i}(:,2)==1),1);
+							stimoff = data{i}(find(data{i}(:,2)==-1),1);
+						case 'mk2',
+							stimid = data{i}(:,2);
+						case 'mk3',
+							stimopenclose(1,:) = data{i}( find(data{i}(:,2)==1) , 1)'; 
+							stimopenclose(2,:) = data{i}( find(data{i}(:,2)==1) , 1)'; 
+						case {'e1','e2','e3'}, % not saved
+						otherwise,
+							error(['Unknown channel.']);
+					end
+				end
+
+				parameters = get_stimulus_parameters(dev{1},epoch);
+
 		end %read_stimulusepoch()
 
 	end; % methods

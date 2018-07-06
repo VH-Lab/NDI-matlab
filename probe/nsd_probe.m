@@ -1,6 +1,32 @@
-classdef nsd_probe 
-% NSD_PROBE - Create a new NSD_PROBE class handle object
+classdef nsd_probe < handle
+% NSD_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
+% In NSD, a PROBE is an instance of an instrument that can be used to MEASURE
+% or to STIMULATE.
+%
+% Typically, a probe is associated with an NSD_DEVICE that performs data acquisition or
+% even control of a stimulator. 
+%
+% A probe is uniquely identified by 3 fields:
+%    name      - the name of the probe
+%    reference - the reference number of the probe
+%    type      - the type of probe (see type NSD_PROBETYPE2OBJECTINIT)
+%
+% Examples:
+%    A multichannel extracellular electrode might be named 'extra', have a reference of 1, and
+%    a type of 'n-trode'. 
+%
+%    If the electrode is moved, one should change the name or the reference to indicate that 
+%    the data should not be attempted to be combined across the two positions. One might change
+%    the reference number to 2.
+%
+% How to make a probe:
+%    (Talk about epochcontents records of devices, probes are created from these elements.)
+%   
+
+
+
+
 	properties (GetAccess=public, SetAccess=protected)
 		experiment   % The handle of an NSD_EXPERIMENT object with which the NSD_PROBE is associated
 		name         % The name of the probe; this must start with a letter and contain no whitespace
