@@ -37,9 +37,9 @@ classdef nsd_experiment_dir < nsd_experiment
 				end
 				d = dir([obj.nsdpathname() filesep 'device_object_*']);
 				if isempty(d),
-					obj.device = nsd_dbleaf_branch(obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
+					obj.iodevice = nsd_dbleaf_branch(obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
 				else,
-					obj.device = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
+					obj.iodevice = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
 				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),

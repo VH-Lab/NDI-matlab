@@ -5,7 +5,7 @@
 %
 % d = class(sAPI_image_tiffstack_struct, 'sAPI_image_tiffstack',S);
 
-classdef nsd_image_tiffstack < handle & sAPI_multifunctionDAQ
+classdef nsd_image_tiffstack < handle & nsd_iodevice_mfdaq
 % SAPI_IMAGE_TIFFSTACK - Create a new SAPI_IMAGE_TIFFSTACK object
 %
 %  D = SAPI_IMAGE_TIFFSTACK(NAME, THEFILETREE,EXP)

@@ -1,4 +1,4 @@
-classdef nsd_iodevice_stimulus < nsd_device
+classdef nsd_iodevice_stimulus < nsd_iodevice
 % NSD_IODEVICE_STIMULUS - Create a new NSD_DEVICE_STIMULUS class handle object
 %
 %  D = NSD_IODEVICE_STIMULUS(NAME, THEFILETREE)

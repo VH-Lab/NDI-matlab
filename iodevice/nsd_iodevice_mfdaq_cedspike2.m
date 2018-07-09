@@ -1,11 +1,11 @@
-classdef nsd_iodevice_mfdaq_cedspike2 < nsd_device_mfdaq
+classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 % NSD_IODEVICE_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from CED Spike2 .SMR or .SON file formats.
 %
 % It depends on sigTOOL by Malcolm Lidierth (http://sigtool.sourceforge.net).
 %
-% sigTOOL is also included in the https://github.com/VH-Lab/thirdparty bundle and
+% sigTOOL is also included in the https://github.com/VH-Lab/vhlab-thirdparty-matlab bundle and
 % can be installed with instructions at http://code.vhlab.org.
 %
 	properties

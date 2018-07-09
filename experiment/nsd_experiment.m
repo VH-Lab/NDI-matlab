@@ -46,7 +46,7 @@ classdef nsd_experiment < handle
 				if ~isa(dev,'nsd_iodevice'),
 					error(['dev is not a nsd_iodevice']);
 				end;
-				self.device = self.iodevice.add(dev);
+				self.iodevice = self.iodevice.add(dev);
 			end 
 		function self = iodevice_rm(self, dev)
 			% IODEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
@@ -59,7 +59,7 @@ classdef nsd_experiment < handle
 			
 				leaf = self.iodevice.load('name',dev.name);
 				if ~isempty(leaf),
-					self.iodevice = self.device.remove(leaf.objectfilename);
+					self.iodevice = self.iodevice.remove(leaf.objectfilename);
 				else,
 					error(['No iodevice named ' dev.name ' found.']);
 				end
@@ -79,7 +79,7 @@ classdef nsd_experiment < handle
 			% If more than one object is requested, then DEV will be a cell list of matching objects.
 			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 			%
-				dev = self.device.load(varargin{:});
+				dev = self.iodevice.load(varargin{:});
 				if numel(dev)==1,
 					dev = dev.setexperiment(self);
 				else,

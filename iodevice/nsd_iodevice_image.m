@@ -1,4 +1,4 @@
-classdef (Abstract) nsd_iodevice_image < nsd_device
+classdef (Abstract) nsd_iodevice_image < nsd_iodevice
     %This is an abstract superclass of all imaging device drivers
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 

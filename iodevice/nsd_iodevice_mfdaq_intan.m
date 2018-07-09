@@ -6,7 +6,7 @@
 %
 %
 
-classdef nsd_iodevice_mfdaq_intan < nsd_device_mfdaq
+classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 	properties
 		
 

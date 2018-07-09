@@ -6,7 +6,7 @@
 %
 %
 
-classdef nsd_iodevice_mfdaq_sg < nsd_device_mfdaq
+classdef nsd_iodevice_mfdaq_sg < nsd_iodevice_mfdaq
     %UNTITLED Summary of this class goes here
     %   Detailed explanation goes here
 

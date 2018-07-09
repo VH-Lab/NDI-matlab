@@ -21,7 +21,7 @@
 % See also: NSD_IODEVICE_MFDAQ/NSD_DEVICE_MFDAQ
 %
 
-classdef nsd_iodevice_mfdaq < nsd_device
+classdef nsd_iodevice_mfdaq < nsd_iodevice
 	properties (GetAcces=public,SetAccess=protected)
 
 	end

@@ -3,7 +3,7 @@ classdef nsd_clock_iodevice < nsd_clock
 %
 %
 	properties (SetAccess=protected, GetAccess=public)
-		device % the nsd_iodevice object associated with the clock
+		iodevice % the nsd_iodevice object associated with the clock
 	end
 
 	methods
@@ -26,25 +26,25 @@ classdef nsd_clock_iodevice < nsd_clock
 				obj = obj@nsd_clock();
 
 				obj.type = '';
-				obj.device = [];
+				obj.iodevice = [];
 
 				if nargin>0,
 					obj = setclocktype(obj,type);
 				end
 
-				if ~isa(device,'nsd_iodevice') & ~isempty(iodevice),
+				if ~isa(iodevice,'nsd_iodevice') & ~isempty(iodevice),
 					error(['DEVICE must be of type NSD_IODEVICE.']);
 				else,
-					obj.device = device;
+					obj.iodevice = iodevice;
 				end
 		end % nsd_clock_iodevice()
 		
-		function nsd_clock_iodevice_obj = setclocktype(nsd_clock_device_obj, type)
+		function nsd_clock_iodevice_obj = setclocktype(nsd_clock_iodevice_obj, type)
 			% SETCLOCKTYPE - Set the type of an NSD_CLOCK_IODEVICE
 			%
-			% NSD_CLOCK_IODEVICE_OBJ = SETCLOCKTYPE(NSD_CLOCK_DEVICE_OBJ, TYPE)
+			% NSD_CLOCK_IODEVICE_OBJ = SETCLOCKTYPE(NSD_CLOCK_IODEVICE_OBJ, TYPE)
 			%
-			% Sets the TYPE property of an NSD_CLOCK_IODEVICE object NSD_CLOCK_DEVICE_OBJ.
+			% Sets the TYPE property of an NSD_CLOCK_IODEVICE object NSD_CLOCK_IODEVICE_OBJ.
 			% Valid values for the TYPE string are as follows:
 			%
 			% TYPE string        | Description
@@ -60,7 +60,7 @@ classdef nsd_clock_iodevice < nsd_clock
 				end
 
 				try,
-					nsd_clock_iodevice_obj = setclocktype@nsd_clock_device_obj(nsd_clock_device_obj,type);
+					nsd_clock_iodevice_obj = setclocktype@nsd_clock_iodevice_obj(nsd_clock_device_obj,type);
 					return;
 				catch,
 					type = lower(type);

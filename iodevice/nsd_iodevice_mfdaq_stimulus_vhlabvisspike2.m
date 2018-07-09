@@ -14,7 +14,7 @@
 % e3              | pretime trigger
 %
 
-classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_device_mfdaq & nsd_device_stimulus
+classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_iodevice_stimulus
 	properties (GetAcces=public,SetAccess=protected)
 
 	end

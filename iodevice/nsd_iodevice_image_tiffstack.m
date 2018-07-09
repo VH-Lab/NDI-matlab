@@ -1,4 +1,4 @@
-classdef nsd_iodevice_image_tiffstack < nsd_device_image
+classdef nsd_iodevice_image_tiffstack < nsd_iodevice_image
     %nsd_iodevice_image_tiffstack is a driver used to read images from a tif
     %format.
     %   This class is able to return a frame at a specific epoch, and the numnber of
