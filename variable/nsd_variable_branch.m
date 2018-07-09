@@ -48,9 +48,11 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 				isflat = 0;
 			end
 
-			if ~isempty(parent)&~isa(parent,'nsd_dbleaf_branch'),
-				error(['NSD_VARIABLE_BRANCH objects must be attached to NSD_DBLEAF_BRANCH objects.']);
-			end;
+			if 0,
+				if ~isempty(parent)&~isa(parent,'nsd_dbleaf_branch'),
+					error(['NSD_VARIABLE_BRANCH objects must be attached to NSD_DBLEAF_BRANCH objects.']);
+				end;
+			end
 
 			obj = obj@nsd_dbleaf_branch(parent,name,classnames,isflat,isinmemory);
 			if ~isempty(loadfilename),
