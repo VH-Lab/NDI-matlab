@@ -17,11 +17,11 @@ function exp = nsd_vhlab_makedev(exp, devname)
 %
 % Devices created    | Description
 % ----------------------------------------------------------------
-% vhintan            |  nsd_device_multichannel_mfdaq_intan that looks for
+% vhintan            |  nsd_iodevice_multichannel_mfdaq_intan that looks for
 %                    |    files 'vhintan_channelgrouping.txt' and '*.rhd'
-% vhspike2           |  nsd_device_multichannel_mfdaq_cedspike2 that looks for
+% vhspike2           |  nsd_iodevice_multichannel_mfdaq_cedspike2 that looks for
 %                    |    files 'vhspike2_channelgrouping.txt' and '*.smr'
-% vhvis_spike2       |  nsd_device_multichannel_mfdaq_stimulus_vhlabvisspike2 that
+% vhvis_spike2       |  nsd_iodevice_multichannel_mfdaq_stimulus_vhlabvisspike2 that
 %                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
 %                    |    'stims.mat', and 'spike2data.smr'.
 %
@@ -40,7 +40,7 @@ if iscell(devname),
 end
 
 fileparameters = {'reference.txt'};
-objectclass = 'nsd_device_mfdaq';
+objectclass = 'nsd_iodevice_mfdaq';
 epochcontentsclass = 'nsd_epochcontents_vhlab';
 
 switch devname,
@@ -54,7 +54,6 @@ switch devname,
 		fileparameters{end+1} = 'vhspike2_channelgrouping.txt'; 
 		objectclass = [objectclass '_cedspike2'];
 		epochcontentsfileparameters = {'vhspike2_channelgrouping.txt'};
-
 	case 'vhvis_spike2'
 		fileparameters{end+1} = 'stimtimes.txt';
 		fileparameters{end+1} = 'verticalblanking.txt';
@@ -72,6 +71,6 @@ ft = nsd_filetree_epochdir(exp, fileparameters, epochcontentsclass, epochcontent
 
 eval(['mydev = ' objectclass '(devname, ft);']);
 
-exp = exp.device_add(mydev);
+exp = exp.iodevice_add(mydev);
 
 

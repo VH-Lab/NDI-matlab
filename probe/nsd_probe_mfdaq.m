@@ -1,5 +1,5 @@
 classdef nsd_probe_mfdaq < nsd_probe
-% NSD_PROBE_MFDAQ - Create a new NSD_PROBE_MFAQ class object that handles probes that are associated with NSD_DEVICE_MFDAQ objects
+% NSD_PROBE_MFDAQ - Create a new NSD_PROBE_MFAQ class object that handles probes that are associated with NSD_IODEVICE_MFDAQ objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end

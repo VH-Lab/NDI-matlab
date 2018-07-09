@@ -6,7 +6,7 @@ classdef nsd_experiment < handle
 		variable          % An array of NSD_VARIABLE objects associated with this experiment
 	end
 	properties (GetAccess=protected, SetAccess = protected)
-		device            % An array of NSD_DEVICE objects associated with this experiment
+		iodevice            % An array of NSD_IODEVICE objects associated with this experiment
 	end
 	methods
 		function obj = nsd_experiment(reference)
@@ -18,13 +18,13 @@ classdef nsd_experiment < handle
 			% reference REFERENCE. This class is an abstract class and typically
 			% an end user will open a specific subclass.
 			%
-			% NSD_EXPERIMENT objects can access 0 or more NSD_DEVICE objects.
+			% NSD_EXPERIMENT objects can access 0 or more NSD_IODEVICE objects.
 			%
-			% See also: NSD_EXPERIMENT/DEVICE_ADD, NSD_EXPERIMENT/DEVICE_RM, 
+			% See also: NSD_EXPERIMENT/IODEVICE_ADD, NSD_EXPERIMENT/IODEVICE_RM, 
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
 				obj.reference = reference;
-				obj.device = nsd_dbleaf_branch('','device',{'nsd_device'},1);
+				obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
 				obj.variable = nsd_variable_branch('','variable',...
 					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
 					,0);
@@ -32,45 +32,45 @@ classdef nsd_experiment < handle
 
 		%%%%%% DEVICE METHODS
 
-		function self = device_add(self, dev)
-			%DEVICE_ADD - Add a sampling device to a NSD_EXPERIMENT object
+		function self = iodevice_add(self, dev)
+			%IODEVICE_ADD - Add a sampling device to a NSD_EXPERIMENT object
 			%
-			%   SELF = DEVICE_ADD(SELF, DEV)
+			%   SELF = IODEVICE_ADD(SELF, DEV)
 			%
 			% Adds the device DEV to the NSD_EXPERIMENT SELF
 			%
 			% The devices can be accessed by referencing SELF.device
 			%  
-			% See also: DEVICE_RM, NSD_EXPERIMENT
+			% See also: IODEVICE_RM, NSD_EXPERIMENT
 
-				if ~isa(dev,'nsd_device'),
-					error(['dev is not a nsd_device']);
+				if ~isa(dev,'nsd_iodevice'),
+					error(['dev is not a nsd_iodevice']);
 				end;
-				self.device = self.device.add(dev);
+				self.device = self.iodevice.add(dev);
 			end 
-		function self = device_rm(self, dev)
-			% DEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
+		function self = iodevice_rm(self, dev)
+			% IODEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
 			%
-			%   SELF = DEVICE_RM(SELF, DEV)
+			%   SELF = IODEVICE_RM(SELF, DEV)
 			%
 			% Removes the device DEV from the device list.
 			%
-			% See also: DEVICE_ADD, NSD_EXPERIMENT
+			% See also: IODEVICE_ADD, NSD_EXPERIMENT
 			
-				leaf = self.device.load('name',dev.name);
+				leaf = self.iodevice.load('name',dev.name);
 				if ~isempty(leaf),
-					self.device = self.device.remove(leaf.objectfilename);
+					self.iodevice = self.device.remove(leaf.objectfilename);
 				else,
-					error(['No device named ' dev.name ' found.']);
+					error(['No iodevice named ' dev.name ' found.']);
 				end
 			end
 
-		function dev = device_load(self, varargin)
-			% LOAD - Load device objects from an NSD_EXPERIMENT
+		function dev = iodevice_load(self, varargin)
+			% LOAD - Load iodevice objects from an NSD_EXPERIMENT
 			%
-			% DEV = LOAD(NSD_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
+			% DEV = IOIODEVICE_LOAD(NSD_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
-			% DEV = LOAD(NSD_EXPERIMENT_OBJ, INDEXES)
+			% DEV = IOIODEVICE_LOAD(NSD_EXPERIMENT_OBJ, INDEXES)
 			%
 			% Returns the device object(s) in the NSD_EXPERIMENT at index(es) INDEXES or
 			% searches for an object whose metadata parameters PARAMS1, PARAMS2, and so on, match
@@ -87,7 +87,7 @@ classdef nsd_experiment < handle
 						dev{i} = dev{i}.setexperiment(self);
 					end
 				end
-		end % device_load()	
+		end % ioiodevice_load()	
 
 
 		% NSD_VARIABLE METHODS
@@ -147,18 +147,18 @@ classdef nsd_experiment < handle
 		%%%%%% REFERENCE methods
 
 		function probes = getprobes(self)
-			% GETPROBES - Return all NSD_PROBES that are found in NSD_DEVICE epoch contents entries
+			% GETPROBES - Return all NSD_PROBES that are found in NSD_IODEVICE epoch contents entries
 			%
 			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ)
 			%
-			% Examines all NSD_DEVICE entries in the NSD_EXPERIMENT_OBJ's device array
+			% Examines all NSD_IODEVICE entries in the NSD_EXPERIMENT_OBJ's device array
 			% and returns all NSD_PROBE entries that can be constructed from each device's
 			% NSD_EPOCHCONENTS entries.
 			%
 			% PROBES is a cell array of NSD_PROBE objects.
 			%
 				probestruct = [];
-				devs = self.device_load('name','(.*)');
+				devs = self.iodevice_load('name','(.*)');
 				if ~isempty(devs),
 					probestruct = getprobes(celloritem(devs,1));
 				end

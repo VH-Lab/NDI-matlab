@@ -4,7 +4,7 @@ classdef nsd_probe < handle
 % In NSD, a PROBE is an instance of an instrument that can be used to MEASURE
 % or to STIMULATE.
 %
-% Typically, a probe is associated with an NSD_DEVICE that performs data acquisition or
+% Typically, a probe is associated with an NSD_IODEVICE that performs data acquisition or
 % even control of a stimulator. 
 %
 % A probe is uniquely identified by 3 fields:
@@ -73,7 +73,7 @@ classdef nsd_probe < handle
 			%
 			% [N, PROBE_EPOCH_CONTENTS, DEVEPOCH] = NUMEPOCHS(NSD_PROBE_OBJ)
 			%
-			% Returns N, the number of all epochs of any NSD_DEVICE in the experiment
+			% Returns N, the number of all epochs of any NSD_IODEVICE in the experiment
 			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
 			%
 			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
@@ -82,7 +82,7 @@ classdef nsd_probe < handle
 			
 				probe_epoch_contents = {}; 
 				devepoch = [];
-				D = nsd_probe_obj.experiment.device_load('name','(.*)');
+				D = nsd_probe_obj.experiment.iodevice_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 				for d=1:numel(D),
 					NUM = D{d}.filetree.numepochs();
@@ -124,7 +124,7 @@ classdef nsd_probe < handle
 			%
 			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding channel and device info.
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
-			%   DEV is a 1xC cell array of NSD_DEVICE objects for each channel
+			%   DEV is a 1xC cell array of NSD_IODEVICE objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
 			%   DEVEPOCH is a 1xC array with the number of the probe's EPOCH on each device
 			%   CHANNELTYPE is a cell array of the type of each channel
@@ -142,9 +142,9 @@ classdef nsd_probe < handle
 				channellist = [];
 				
 				for ec = 1:numel(probe_epoch_contents{epoch}),
-					devstr = nsd_devicestring(probe_epoch_contents{epoch}{ec}.devicestring);
-					[devname_here, channeltype_here, channellist_here] = devstr.nsd_devicestring2channel();
-					dev{end+1} = nsd_probe_obj.experiment.device_load('name', devname_here);
+					devstr = nsd_iodevicestring(probe_epoch_contents{epoch}{ec}.devicestring);
+					[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
+					dev{end+1} = nsd_probe_obj.experiment.iodevice_load('name', devname_here);
 					devname = cat(2,devname,devname_here);
 					devepoch = cat(2,devepoch,devepochs(epoch));
 					channeltype = cat(2,channeltype,channeltype_here);

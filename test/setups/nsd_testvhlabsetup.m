@@ -11,7 +11,7 @@ exp = nsd_experiment_dir(dirname);
 
 
  % now print all devices
-devs = exp.device_load('name','(.*)');
+devs = exp.iodevice_load('name','(.*)');
 
 for i=1:numel(devs),
 	mydev = celloritem(devs,i),

@@ -33,7 +33,7 @@ classdef nsd_filetree_epochdir < nsd_filetree
 		%
 		% Output: OBJ - an NSD_FILETREE_EPOCHDIR object
 		%
-		% See also: NSD_EXPERIMENT, NSD_DEVICE
+		% See also: NSD_EXPERIMENT, NSD_IODEVICE
 		%
 			obj = obj@nsd_filetree(varargin{:});
 		end

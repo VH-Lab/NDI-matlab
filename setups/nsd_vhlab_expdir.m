@@ -15,7 +15,7 @@ exp = nsd_experiment_dir(ref, dirname);
 vhlabdevnames = nsd_vhlab_makedev;
 
 for i=1:numel(vhlabdevnames),
-	dev = exp.device_load('name',vhlabdevnames{i});
+	dev = exp.iodevice_load('name',vhlabdevnames{i});
 	if isempty(dev),
 		exp = nsd_vhlab_makedev(exp, vhlabdevnames{i});
 	end

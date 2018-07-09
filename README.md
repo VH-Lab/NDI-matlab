@@ -17,11 +17,11 @@ Still in early development
 
 - Experiment: A collection of measurements and analysis that are associated with one experimental session. A "study" usually consists of several experiments.
 
-- Epoch: An episode of time during which data from a device is acquired. Each epoch consists of an interval of time between when a data acquisition device was switched on to acquire data and when it was switched off. An epoch on one device may or may not correspond to epochs from other devices, and synchronization can be managed by NSD_CLOCK.
+- Epoch: An episode of time during which data from a iodevice is acquired. Each epoch consists of an interval of time between when a data acquisition device was switched on to acquire data and when it was switched off. An epoch on one device may or may not correspond to epochs from other devices, and synchronization can be managed by NSD_CLOCK.
 
 ## Description of software objects that impliment the framework:
 
-- nsd_device: A software object that reads data from files created by hardware data acquisition devices
+- nsd_iodevice: A software object that reads data from files created by hardware data acquisition devices
 
 - nsd_filetree: A file organizing class that traverses any file structure to identify the data files associated with each epoch
 
@@ -44,5 +44,5 @@ Still in early development
 
 - All error messages should be informative and give specific information about the problem, not just say 'an error occurred.'
 
-- In general, class names should include the full parentage of the object, starting with the basic classes for NSD: nsd_experiment, nsd_variable, nsd_device. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called 'nsd_device_mfdaq_mycompany' to indicate that the object is descended from the nsd_device and nsd_device_mfdaq objects. It is not necessary to include the full parentage on nsd_base and nsd_dbleaf objects, as it would get too cumbersome without adding much clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes nsd_experiment, nsd_variable, and nsd_device).
+- In general, class names should include the full parentage of the object, starting with the basic classes for NSD: nsd_experiment, nsd_variable, nsd_iodevice. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called 'nsd_iodevice_mfdaq_mycompany' to indicate that the object is descended from the nsd_iodevice and nsd_iodevice_mfdaq objects. It is not necessary to include the full parentage on nsd_base and nsd_dbleaf objects, as it would get too cumbersome without adding much clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes nsd_experiment, nsd_variable, and nsd_iodevice).
 

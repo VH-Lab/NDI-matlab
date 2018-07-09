@@ -21,7 +21,7 @@ end;
 disp(['reading experiment from directory ' dirname ' ...']);
 exp = nsd_experiment_dir(dirname);
 
-%dev1 = load(exp.device,'name','Intan1');
+%dev1 = load(exp.iodevice,'name','Intan1');
 
 probes = getprobes(exp);
 

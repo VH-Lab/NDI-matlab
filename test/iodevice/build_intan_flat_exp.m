@@ -22,7 +22,7 @@ end;
 disp(['creating a new experiment object...']);
 exp = nsd_experiment_dir('exp1',dirname);
 
-disp(['Now adding our acquisition device (intan):']);
+disp(['Now adding our acquisition iodevice (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
@@ -31,8 +31,8 @@ dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
-dev1 = nsd_device_mfdaq_intan('intan1',dt);
-exp.device_add(dev1);
+dev1 = nsd_iodevice_mfdaq_intan('intan1',dt);
+exp.iodevice_add(dev1);
  
   % Step 3: let's add a variable
 

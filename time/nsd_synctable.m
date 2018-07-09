@@ -45,8 +45,8 @@ classdef nsd_synctable < nsd_base
 			% 'equal'           | The clocks are equal (no RULEPARAMETERS)
 			% 'commontrigger'   | The devices acquire a common trigger signal.
 			%                   | RULEPARAMETERS should be a struct with fields
-			%                   |   clock1_channels: nsd_device_string (e.g., 'mydev:mk1')
-			%                   |   clock2_channels: nsd_device_string (e.g., 'myotherdev:din1')
+			%                   |   clock1_channels: nsd_iodevice_string (e.g., 'mydev:mk1')
+			%                   |   clock2_channels: nsd_iodevice_string (e.g., 'myotherdev:din1')
 			% 'withindevice'    | Conversion from one clock within a device to a different clock
 			%                   |   in the device (e.g., 'utc' to 'dev_local_time')
 			%
@@ -126,7 +126,7 @@ classdef nsd_synctable < nsd_base
 							error(['The third argument must be of type NSD_CLOCK.']);
 						end
 					end
-				elseif isa(arg2,'nsd_device'),
+				elseif isa(arg2,'nsd_iodevice'),
 					device = arg2;
 				end
 
@@ -153,12 +153,12 @@ classdef nsd_synctable < nsd_base
 					nsd_synctable_obj = nsd_synctable_obj.remove(index);
 				elseif ~isempty(device),
 					for i=1:N,
-						if isa(nsd_synctable_obj.entries(i).clock1,'nsd_clock_device'),
+						if isa(nsd_synctable_obj.entries(i).clock1,'nsd_clock_iodevice'),
 							if nsd_synctable_obj.entries(i).clock1.device==device),
 								index(end+1) = i;
 							end
 						end
-						if isa(nsd_synctable_obj.entries(i).clock2,'nsd_clock_device'),
+						if isa(nsd_synctable_obj.entries(i).clock2,'nsd_clock_iodevice'),
 							if nsd_synctable_obj.entries(i).clock2.device==device),
 								index(end+1) = i;
 							end
@@ -177,7 +177,7 @@ classdef nsd_synctable < nsd_base
 			% NSD_SYNCTABLE_OBJ = ADDIMPLICITTABLEENTRIES(NSD_SYNCTABLE_OBJ, CLOCK)
 			%
 			% Adds all implicit conversions among a CLOCK (type:NSD_CLOCK)  to the
-			% NSD_SYNCTABLE_OBJECT NSD_SYNCTABLE_OBJ. For example, if an NSD_CLOCK_DEVICE
+			% NSD_SYNCTABLE_OBJECT NSD_SYNCTABLE_OBJ. For example, if an NSD_CLOCK_IODEVICE
 			% has 'utc' as its type, it can convert to 'dev_local_time' or vice-versa. These
 			% implicit conversions will be added to the table.
 			%
@@ -190,8 +190,8 @@ classdef nsd_synctable < nsd_base
 
 				switch clock.type,
 					case {'utc','exp_global_time','dev_global_time'},
-						if isa(clock,'nsd_clock_device'),
-							clock2 = nsd_clock_device('dev_local_time', clock.device); % might not catch all cases
+						if isa(clock,'nsd_clock_iodevice'),
+							clock2 = nsd_clock_iodevice('dev_local_time', clock.device); % might not catch all cases
 							% check to make sure it is not already there
 							mystruct.clock1 = clock;
 							mystruct.clock2 = clock2;
@@ -298,7 +298,7 @@ classdef nsd_synctable < nsd_base
 					return;
 				end
 
-				if isa(source_clock,'nsd_clock_device') & isa(second_clock,'nsd_clock_device'),
+				if isa(source_clock,'nsd_clock_iodevice') & isa(second_clock,'nsd_clock_device'),
 					if strcmp(source_clock.type,'dev_global_time') & strcmp(second_clock.type,'dev_global_time') & ...
 							(source_clock.device==second_clock.device),
 						t_prime = source_t;

@@ -29,14 +29,14 @@ disp(['Now adding our acquisition device (intan):']);
 
 dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
-  % Step 2: create the device object and add it to the experiment:
+  % Step 2: create the iodevice object and add it to the experiment:
 
-dev1 = nsd_device_mfdaq_intan('intan1',dt);
-exp.device_add(dev1);
+dev1 = nsd_iodevice_mfdaq_intan('intan1',dt);
+exp.iodevice_add(dev1);
 
   % Now let's print some statistics
 
-disp(['The channels we have on this device are the following:']);
+disp(['The channels we have on this iodevice are the following:']);
 
 disp ( struct2table(getchannels(dev1)) );
 
@@ -57,5 +57,5 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-exp.device_rm(dev1); % remove the device so the demo can run again
+exp.iodevice_rm(dev1); % remove the iodevice so the demo can run again
 

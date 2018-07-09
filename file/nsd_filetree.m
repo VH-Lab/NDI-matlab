@@ -10,11 +10,11 @@ classdef nsd_filetree < nsd_base
 
 	methods
 	        function obj = nsd_filetree(experiment_, fileparameters_, epochcontents_class_, epochcontents_fileparameters_)
-		% NSD_FILETREE - Create a new NSD_FILETREE object that is associated with an experiment and device
+		% NSD_FILETREE - Create a new NSD_FILETREE object that is associated with an experiment and iodevice
 		%
 		%   OBJ = NSD_FILETREE(EXPERIMENT, [ FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
 		%
-		% Creates a new NSD_FILETREE object that negotiates the data tree of device's data that is
+		% Creates a new NSD_FILETREE object that negotiates the data tree of iodevice's data that is
 		% stored at the file path PATH.
 		%
 		% Inputs:
@@ -64,9 +64,9 @@ classdef nsd_filetree < nsd_base
 		function ecfname = defaultepochcontentsfilename(self, number)
 			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS file for an epoch
 			%
-			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
-			% Returns the default EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% Returns the default EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
 			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
@@ -90,9 +90,9 @@ classdef nsd_filetree < nsd_base
 		function ecfname = epochcontentsfilename(self, number)
 			% EPOCHCONTENTSFILENAME - return the file name for the NSD_EPOCHCONTENTS file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% Returns the EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. The file name is returned with
 			% a full path.
 			%
@@ -124,10 +124,10 @@ classdef nsd_filetree < nsd_base
 				end;
 		end % epochcontentsfilename
 
-		function epochcontents = getepochcontents(self, N, devicename)
+		function epochcontents = getepochcontents(self, N, iodevicename)
 			% GETEPOCHCONTENTS - Return the epoch record for a given nsd_filetree and epoch number
 			%
-			%  EPOCHCONTENTS = GETEPOCHCONTENTS(SELF, N, DEVICENAME)
+			%  EPOCHCONTENTS = GETEPOCHCONTENTS(SELF, N, IODEVICENAME)
 			%
 			% Inputs:
 			%     SELF - the data tree object
@@ -145,13 +145,13 @@ classdef nsd_filetree < nsd_base
                 function setepochcontents(self, epochcontents, number, overwrite)
 			% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
 			%
-			%   SETEPOCHCONTENTS(NSD_DEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
+			%   SETEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
 			%
-			% Sets or replaces the NSD_EPOCHCONTENTS for NSD_DEVICE_OBJ with EPOCHCONTENTS for the epoch
+			% Sets or replaces the NSD_EPOCHCONTENTS for NSD_IODEVICE_OBJ with EPOCHCONTENTS for the epoch
 			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 			% Otherwise, an error is given if there is an existing epoch record.
 			%
-			% See also: NSD_DEVICE, NSD_EPOCHCONTENTS
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
 
 				if nargin<4,
 					overwrite = 0;
@@ -171,9 +171,9 @@ classdef nsd_filetree < nsd_base
 		function eidfname = epochidfilename(self, number, epochfiles)
 			% EPOCHCONTENTSFILENAME - return the file path for the NSD_EPOCHCONTENTS file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% Returns the EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
 			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
@@ -319,9 +319,9 @@ classdef nsd_filetree < nsd_base
 		function etfname = epochtagfilename(self, number, epochfiles)
 			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
 			%
-			% ETFNAME = EPOCHTAGFILENAME(NSD_DEVICE_OBJ, NUMBER)
+			% ETFNAME = EPOCHTAGFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
-			% Returns the tag file name for the NSD_DEVICE NSD_DEVICE_OBJ for epoch NUMBER.
+			% Returns the tag file name for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
 			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory

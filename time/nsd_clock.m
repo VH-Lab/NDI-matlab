@@ -8,18 +8,18 @@ classdef nsd_clock < handle
 
 	methods
 		function obj = nsd_clock(type)
-			% NSD_CLOCK - Creates a new NSD_CLOCK device
+			% NSD_CLOCK - Creates a new NSD_CLOCK object
 			%
 			% OBJ = NSD_CLOCK(TYPE)
 			%
-			% Creates a new NSD_CLOCK object for the device DEVICE. TYPE can be
+			% Creates a new NSD_CLOCK object. TYPE can be
 			% any of the following strings (with description):
 			%
 			% TYPE string        | Description
 			% ------------------------------------------------------------------------------
-			% 'utc'              | The device keeps universal coordinated time (within 0.1ms)
-			% 'exp_global_time'  | The device keeps experiment global time (within 0.1ms)
-			% 'no_time'          | The device has no timing information
+			% 'utc'              | The iodevice keeps universal coordinated time (within 0.1ms)
+			% 'exp_global_time'  | The iodevice keeps experiment global time (within 0.1ms)
+			% 'no_time'          | The iodevice has no timing information
 			%
 				obj.type = '';
 
@@ -38,12 +38,12 @@ classdef nsd_clock < handle
 			%
 			% TYPE string        | Description
 			% ------------------------------------------------------------------------------
-			% 'utc'              | The device keeps universal coordinated time (within 0.1ms)
-			% 'exp_global_time'  | The device keeps experiment global time (within 0.1ms)
-			% 'dev_global_time'  | The device keeps its own global time (within 0.1ms) 
-            %                    |   (that is, it knows its own clock across recording epochs)
-            % 'dev_local_time'   | The device keeps its own local time only within epochs
-			% 'no_time'          | The device has no timing information
+			% 'utc'              | The iodevice keeps universal coordinated time (within 0.1ms)
+			% 'exp_global_time'  | The iodevice keeps experiment global time (within 0.1ms)
+			% 'dev_global_time'  | The iodevice keeps its own global time (within 0.1ms) 
+			%                    |   (that is, it knows its own clock across recording epochs)
+			% 'dev_local_time'   | The iodevice keeps its own local time only within epochs
+			% 'no_time'          | The iodevice has no timing information
 			%
 			%
 				if ~ischar(type),
