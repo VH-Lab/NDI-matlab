@@ -1,4 +1,4 @@
-classdef nsd_clock < handle
+classdef nsd_clock 
 % NSD_CLOCK - a class for specifying time in the NSD framework
 %
 %

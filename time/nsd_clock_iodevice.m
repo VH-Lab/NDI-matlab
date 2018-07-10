@@ -28,15 +28,15 @@ classdef nsd_clock_iodevice < nsd_clock
 				obj.type = '';
 				obj.iodevice = [];
 
-				if nargin>0,
-					obj = setclocktype(obj,type);
-				end
-
 				if ~isa(iodevice,'nsd_iodevice') & ~isempty(iodevice),
 					error(['DEVICE must be of type NSD_IODEVICE.']);
 				else,
 					obj.iodevice = iodevice;
 				end
+				if nargin>0,
+					obj = setclocktype(obj,type);
+				end
+
 		end % nsd_clock_iodevice()
 		
 		function nsd_clock_iodevice_obj = setclocktype(nsd_clock_iodevice_obj, type)
@@ -61,7 +61,6 @@ classdef nsd_clock_iodevice < nsd_clock
 
 				try,
 					nsd_clock_iodevice_obj = setclocktype@nsd_clock_iodevice_obj(nsd_clock_device_obj,type);
-					return;
 				catch,
 					type = lower(type);
 					switch type,
@@ -70,7 +69,7 @@ classdef nsd_clock_iodevice < nsd_clock
 						otherwise,
 							error(['Unknown clock type ' type '.']);
 					end
-					nsd_clock_obj.type = type;
+					nsd_clock_iodevice_obj.type = type;
 				end
 		end % setclocktype() %
 

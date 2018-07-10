@@ -18,7 +18,7 @@
 % 'mark', or 'mk'             | Mark channel (contains value at specified times)
 % 
 %
-% See also: NSD_IODEVICE_MFDAQ/NSD_DEVICE_MFDAQ
+% See also: NSD_IODEVICE_MFDAQ/NSD_IODEVICE_MFDAQ
 %
 
 classdef nsd_iodevice_mfdaq < nsd_iodevice

@@ -7,7 +7,7 @@ classdef nsd_iodevice < nsd_dbleaf
 %  This is an abstract class that is overridden by specific devices.
 
 	properties (GetAccess=public, SetAccess=protected)
-		filetree   % The NSD_FILETREE associated with this device
+		filetree   % The NSD_IODEVICE associated with this device
 		clock      % The NSD_CLOCK object associated with this device
 	end
 
@@ -17,7 +17,7 @@ classdef nsd_iodevice < nsd_dbleaf
 		%
 		%  OBJ = NSD_IODEVICE(NAME, THEFILETREE)
 		%
-		%  Creates an NSD_IODEVICE with name NAME and NSD_FILETREE
+		%  Creates an NSD_IODEVICE with name NAME and NSD_IODEVICE
 		%  THEFILETREE. THEFILETREE is an interface object to the raw data files
 		%  on disk that are read by the NSD_IODEVICE.
 		%
@@ -89,7 +89,6 @@ classdef nsd_iodevice < nsd_dbleaf
 				subdirname = [dirname filesep obj.objectfilename '.filetree.device.nsd'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
 				obj.filetree.writeobjectfile(subdirname);
-				
 		end % writeobjectfile
 
 		function b = deleteobjectfile(nsd_iodevice_obj, thedirname)
@@ -217,11 +216,11 @@ classdef nsd_iodevice < nsd_dbleaf
 		end % getprobes()
 
 		function self=setexperiment(self, experiment)
-			% SETEXPERIMENT - set the EXPERIMENT for an NSD_IODEVICE object's filetree (type NSD_FILETREE)
+			% SETEXPERIMENT - set the EXPERIMENT for an NSD_IODEVICE object's filetree (type NSD_IODEVICE)
 			%
 			% NSD_IODEVICE_OBJ = SETEXPERIMENT(NSD_DEVICE_OBJ, PATH)
 			%
-			% Set the EXPERIMENT property of an NSD_IODEVICE object's NSD_FILETREE object
+			% Set the EXPERIMENT property of an NSD_IODEVICE object's NSD_IODEVICE object
 			%	
 				self.filetree = setproperties(self.filetree,{'experiment'},{experiment});
 		end % setpath()
@@ -288,11 +287,56 @@ classdef nsd_iodevice < nsd_dbleaf
 			%
 			% EXP = EXPERIMENT(NSD_IODEVICE_OBJ)
 			%
-			% Return the NSD_EXPERIMENT object associated with the NSD_FILETREE of the
+			% Return the NSD_EXPERIMENT object associated with the NSD_IODEVICE of the
 			% NSD_IODEVICE object.
 			%
 				exp = self.filetree.experiment;
 		end % experiment()
 
+
+		function [data, fieldnames] = stringdatatosave(nsd_iodevice_obj)
+			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
+			%
+			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_IODEVICE_OBJ)
+			%
+			% Return a cell array of strings to save to the objectfilename.
+			%
+			% FIELDNAMES is a set of names of the fields/properties of the object
+			% that are being stored.
+			%
+			% For NSD_IODEVICE, this returns the type of clock (NSD_IODEVICE_OBJ.CLOCK.TYPE).
+			%
+			% Note: NSD_IODEVICE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
+			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
+			%
+				[data,fieldnames] = stringdatatosave@nsd_base(nsd_iodevice_obj);
+				data{end+1} = nsd_iodevice_obj.clock.type;
+				fieldnames{end+1} = '$nsdclocktype';
+		end % stringdatatosave
+
+		function [obj,properties_set] = setproperties(nsd_iodevice_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_IODEVICE object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_IODEVICE_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_IODEVICE_OBJ and returns the result in OBJ.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+				fn = fieldnames(nsd_iodevice_obj);
+				obj = nsd_iodevice_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if strcmp(properties{i},'$nsdclocktype'),
+						obj.clock = nsd_clock_iodevice(values{i},obj);
+					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						end
+					end
+				end
+		end % setproperties()
 	end % methods
 end
