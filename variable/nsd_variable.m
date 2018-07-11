@@ -246,16 +246,14 @@ classdef nsd_variable < nsd_dbleaf_branch
 				if ~isempty(nsd_variable_obj.dataclass),
 					switch nsd_variable_obj.dataclass,
 						case 'file', % do nothing
+							fclose(fid);
 						case 'struct',
 							fclose(fid);
 							saveStructArray(nsd_variable_obj.filename,nsd_variable_obj.data, 1);
 						otherwise,
 							writeplainmat(fid, nsd_variable_obj.data);
+							fclose(fid);
 					end
-				end
-
-				try,
-					close(fid);
 				end
 
 				if thisfunctionlocked, % we locked it, we need to unlock it

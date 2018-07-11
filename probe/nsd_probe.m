@@ -82,6 +82,7 @@ classdef nsd_probe < handle
 			
 				probe_epoch_contents = {}; 
 				devepoch = [];
+				epoch_matches = [];
 				D = nsd_probe_obj.experiment.iodevice_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 				for d=1:numel(D),
@@ -92,11 +93,20 @@ classdef nsd_probe < handle
 							if strcmp(ec(k).name,nsd_probe_obj.name) && ...
 								(ec(k).reference==nsd_probe_obj.reference) &&  ...
 								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
-								if numel(probe_epoch_contents)<n,
-									probe_epoch_contents{n} = {};
+								epoch_entry = [];
+								if ~isempty(epoch_matches),
+									% do we already know this epoch?
+									epoch_entry = find((epoch_matches(:,1)==d) && (epoch_matches(:,2)==n)); 
+								end;
+								if isempty(epoch_entry),
+									epoch_matches(end+1,:) = [ d n ];
+									epoch_entry = size(epoch_matches,1);
+								end;
+								if numel(probe_epoch_contents)<epoch_entry,
+									probe_epoch_contents{epoch_entry} = {};
 								end
-								probe_epoch_contents{n}{end+1} = ec(k);
-								devepoch(n) = n;
+								probe_epoch_contents{epoch_entry}{end+1} = ec(k);
+								devepoch(epoch_entry) = n;
 							end
 						end
 					end

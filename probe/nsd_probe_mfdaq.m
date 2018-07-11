@@ -71,8 +71,8 @@ classdef nsd_probe_mfdaq < nsd_probe
 					clock = clock_or_epoch;
 					error(['this function does not handle working with clocks yet.']);
 				else,
-					epoch = clock_or_epoch;
-					[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
+					epoch = clock_or_epoch,
+					[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch),
 					sr = samplerate(dev{1}, devepoch(1), channeltype, channel);
 					if numel(unique(sr))~=1,
 						error(['Do not know how to handle multiple sampling rates across channels.']);

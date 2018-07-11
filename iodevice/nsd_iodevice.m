@@ -309,8 +309,12 @@ classdef nsd_iodevice < nsd_dbleaf
 			% Note: NSD_IODEVICE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
 			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
 			%
-				[data,fieldnames] = stringdatatosave@nsd_base(nsd_iodevice_obj);
-				data{end+1} = nsd_iodevice_obj.clock.type;
+				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_iodevice_obj);
+				if isa(nsd_iodevice_obj.clock,'nsd_clock_iodevice'),
+					data{end+1} = nsd_iodevice_obj.clock.type;
+				else,
+					data{end+1} = ''; % we are about to read it from disk
+				end
 				fieldnames{end+1} = '$nsdclocktype';
 		end % stringdatatosave
 
