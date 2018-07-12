@@ -79,7 +79,6 @@ classdef nsd_probe < handle
 			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
 			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
 			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
-			
 				probe_epoch_contents = {}; 
 				devepoch = [];
 				epoch_matches = [];
@@ -124,7 +123,6 @@ classdef nsd_probe < handle
 			% This is simply PROBESTR = [NSD_PROBE_OBJ.name ' _ ' in2str(NSD_PROBE_OBJ.reference)]
 			%
 				probestr = [nsd_probe_obj.name ' _ ' int2str(nsd_probe_obj.reference) ];
-
 		end
 
 		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(nsd_probe_obj, epoch)

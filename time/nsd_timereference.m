@@ -1,4 +1,4 @@
-classdef nsd_time_reference
+classdef nsd_timereference
 % NSD_TIME_REFERENCE - a class for specifying time relative to an NSD_CLOCK
 % 
 % 
@@ -9,7 +9,7 @@ classdef nsd_time_reference
 	end % properties
 
 	methods
-		function obj = nsd_time_reference(clock, epoch, time)
+		function obj = nsd_timereference(clock, epoch, time)
 			% NSD_TIME_REFERENCE - creates a new time reference object
 			%
 			% OBJ = NSD_TIME_REFERENCE(CLOCK, EPOCH, TIME)

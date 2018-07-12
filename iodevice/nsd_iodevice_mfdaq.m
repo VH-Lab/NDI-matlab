@@ -98,7 +98,7 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%
 			%  DATA is the data collection for specific channels
 
-			if isa(timeref_or_epoch,'nsd_clock'),
+			if isa(timeref_or_epoch,'nsd_timereference'),
 				[t0,epoch0] = self.timeconvert(timeref_or_epoch,t0);
 				[t1,epoch1] = self.timeconvert(timeref_or_epoch,t1);
 				if epoch0~=epoch1,
@@ -147,10 +147,10 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			end
 		end % readevents
 
-		function data = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
+		function [data, timeref] = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
 			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%  [DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
@@ -162,8 +162,11 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%  DATA is a two-column vector; the first column has the time of the event. The second
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
+			%
+			%  TIMEREF is an NSD_TIMEREFERENCE with the NSD_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
 			data = [];
+			timeref = [];
 		end % readevents_epochsamples
 
                 function sr = samplerate(self, epoch, channeltype, channel)
@@ -195,7 +198,9 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%warning('developer note: more verification needed here');
                 end
 
-		function [t_prime, epochnumber_prime] = timeconvert(self, clock, t, epochnumber)
+		
+
+		function [t_prime, epochnumber_prime] = timeconvert_old(self, clock, t, epochnumber)
 			% TIMECONVERT - convert time to NSD_IODEVICE_MFDAQ 'dev_local_time'
 			%
 			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NSD_IODEVICE_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])

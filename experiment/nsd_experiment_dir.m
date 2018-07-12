@@ -47,6 +47,12 @@ classdef nsd_experiment_dir < nsd_experiment
 				else,
 					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
+				d = dir([obj.nsdpathname() filesep 'nsd_synctable_object*']);
+				if isempty(d),
+					obj.synctable = nsd_synctable();
+				else,
+					obj.synctable = nsd_synctable([obj.nsdpathname filesep d(1).name]);
+				end;
 				str2text([obj.nsdpathname() filesep 'reference.txt'],obj.reference);
 		end
 		

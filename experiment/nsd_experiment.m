@@ -3,10 +3,11 @@ classdef nsd_experiment < handle
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
-		variable          % An array of NSD_VARIABLE objects associated with this experiment
+		variable          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
+		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
+		synctable         % An NSD_SYNCTABLE object related to this experiment
 	end
 	properties (GetAccess=protected, SetAccess = protected)
-		iodevice            % An array of NSD_IODEVICE objects associated with this experiment
 	end
 	methods
 		function obj = nsd_experiment(reference)
@@ -28,6 +29,7 @@ classdef nsd_experiment < handle
 				obj.variable = nsd_variable_branch('','variable',...
 					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
 					,0);
+				obj.synctable = nsd_synctable;
 		end
 
 		%%%%%% DEVICE METHODS
@@ -46,7 +48,7 @@ classdef nsd_experiment < handle
 				if ~isa(dev,'nsd_iodevice'),
 					error(['dev is not a nsd_iodevice']);
 				end;
-				self.iodevice = self.iodevice.add(dev);
+				self.iodevice.add(dev);
 			end 
 		function self = iodevice_rm(self, dev)
 			% IODEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
@@ -59,7 +61,7 @@ classdef nsd_experiment < handle
 			
 				leaf = self.iodevice.load('name',dev.name);
 				if ~isempty(leaf),
-					self.iodevice = self.iodevice.remove(leaf.objectfilename);
+					self.iodevice.remove(leaf.objectfilename);
 				else,
 					error(['No iodevice named ' dev.name ' found.']);
 				end
@@ -81,14 +83,13 @@ classdef nsd_experiment < handle
 			%
 				dev = self.iodevice.load(varargin{:});
 				if numel(dev)==1,
-					dev = dev.setexperiment(self);
+					dev.setexperiment(self);
 				else,
 					for i=1:numel(dev),
-						dev{i} = dev{i}.setexperiment(self);
+						dev{i}.setexperiment(self);
 					end
 				end
 		end % ioiodevice_load()	
-
 
 		% NSD_VARIABLE METHODS
 
@@ -104,7 +105,7 @@ classdef nsd_experiment < handle
 			% See also: VARIABLE_RM, NSD_EXPERIMENT
 
 				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_branch'), error(['var is not an NSD_VARIABLE']); end;
-				self.variable= self.variable.add(var);
+				self.variable.add(var);
 		end
 
 		function self = variable_rm(self, var)
@@ -119,7 +120,7 @@ classdef nsd_experiment < handle
 			
 				leaf = self.variable.load('name',var.name);
 				if ~isempty(leaf),
-					self.variable = self.variable.remove(leaf.objectfilename);
+					self.variable.remove(leaf.objectfilename);
 				else,
 					error(['No variable named ' var.name ' found.']);
 				end

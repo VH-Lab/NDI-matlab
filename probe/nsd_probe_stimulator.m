@@ -1,5 +1,5 @@
 classdef nsd_probe_stimulator < nsd_probe
-% NSD_PROBE_STIMULATOR - Create a new NSD_PROBE_MFAQ class object that handles probes that are associated with NSD_IODEVICE_MFDAQ objects
+% NSD_PROBE_STIMULATOR - Create a new NSD_PROBE_STIMULATOR class object that handles probes that are associated with NSD_IODEVICE_STIMULUS objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
@@ -18,16 +18,43 @@ classdef nsd_probe_stimulator < nsd_probe
 				obj = obj@nsd_probe(experiment, name, reference, type);
 		end % nsd_probe_stimulator()
 
-		function [stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, clock_or_epoch, t0, t1)
-			% READ_STIMULUSEPOCH - Read stimulus data from an NSD_PROBE_STIMULATOR object
+		function [stimon, stimoff, stimid, parameters, stimopenclose] = read(self, timeref_or_epoch, t0, t1)
+			% READ - read stimulus data from an NSD_PROBE_STIMULATOR object
 			%
 			% [STIMON, STIMOFF, STIMID, PARAMETERS, STIMOPENCLOSE] = ...
-			%    READSTIMULUSEPOCH(NSD_PROBE_STIMULTOR_OBJ, CLOCK_OR_EPOCH, T0, T1)
+			%   READ(NSD_PROBE_STIMULATOR_OBJ, TIMEREF_OR_EPOCH, T0, T1)
 			%
 			% Reads stimulus delivery information from an NSD_PROBE_STIMULATOR object.
 			%
-			% CLOCK_OR_EPOCH is either an NSD_CLOCK object indicating the clock for T0, T1, or
+			% TIMEREF_OR_EPOCH is either an NSD_TIMEREFERENCE object indicating the clock for T0, T1, or
 			% it can be a single number, which will indicate the data are to be read from that epoch.
+			%
+			% Outputs:
+			%
+			% STIMON is an Nx1 vector with the ON times of each stimulus delivery in the time units of
+			%    the epoch or the clock.
+			% STIMOFF is an Nx1 vector with the OFF times of each stimulus delivery in the time units of
+			%    the epoch or the clock. If STIMOFF data is not provided, these values will be NaN.
+			% STIMID is an Nx1 vector with the STIMID values. If STIMID values are not provided, these values
+			%    will be NaN.
+			% PARAMETERS is an Nx1 cell array of stimulus parameters. If the device provides no parameters,
+			%    then this will be an empty cell array of size Nx1.
+			% STIMOPENCLOSE is an Nx2 vector of stimulus 'setup' and 'shutdown' times, if applicable. For example,
+			%    a visual stimulus might begin or end with the presentation of a 'background' image. These times will
+			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
+			%    STIMOPENCLOSE == [STIMON STIMOFF].
+			%  
+				error('still needs implementation');
+		end; % read 
+
+		function [stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, epoch, t0, t1)
+			% READ_STIMULUSEPOCH - Read stimulus data from an NSD_PROBE_STIMULATOR object
+			%
+			% [STIMON, STIMOFF, STIMID, PARAMETERS, STIMOPENCLOSE] = ...
+			%    READSTIMULUSEPOCH(NSD_PROBE_STIMULTOR_OBJ, EPOCH, T0, T1)
+			%
+			% Reads stimulus delivery information from an NSD_PROBE_STIMULATOR object for a given EPOCH.
+			% T0 and T1 are in epoch time.
 			%
 			% STIMON is an Nx1 vector with the ON times of each stimulus delivery in the time units of
 			%    the epoch or the clock.
@@ -43,8 +70,8 @@ classdef nsd_probe_stimulator < nsd_probe
 			%    STIMOPENCLOSE == [STIMON STIMOFF].
 			% 
 			
-				if isa(clock_or_epoch, 'nsd_clock'),
-					error(['Do not know how to deal with clocks yet.']);
+				if isa(clock_or_epoch, 'nsd_timereference'),
+					error(['Do not know how to deal with nsd_timeref objects yet.']);
 				end
 
 				epoch = clock_or_epoch;
@@ -56,8 +83,6 @@ classdef nsd_probe_stimulator < nsd_probe
 				channel_labels = getchannels(dev{1});
 
 				[data] = readevents(dev{1},channeltype,channel,devepoch(epoch),t0,t1);
-
-				data,
 
 				for i=1:numel(channeltype),
 					switch channel_labels(i).name,
@@ -76,7 +101,7 @@ classdef nsd_probe_stimulator < nsd_probe
 					end
 				end
 
-				parameters = get_stimulus_parameters(dev{1},epoch);
+				parameters = get_stimulus_parameters(dev{1},devepoch(epoch));
 
 		end %read_stimulusepoch()
 

@@ -73,6 +73,18 @@ classdef nsd_clock_iodevice < nsd_clock
 				end
 		end % setclocktype() %
 
+		function b = eq(nsd_clock_iodevice_obj_a, nsd_clock_iodevice_obj_b)
+		% EQ - are two NSD_CLOCK_IODEVICE objects equal?
+		%
+		% B = EQ(NDS_CLOCK_IODEVICE_OBJ_A, NSD_CLOCK_IODEVICE_OBJ_B)
+		%
+		% Compares two NSD_CLOCK_IODEVICE objects and returns 1 if they are refer to the same
+		% device and have the same clock type.
+		%
+			b = nsd_clock_iodevice_obj_a.iodevice == nsd_clock_iodevice_obj_b.iodevice;
+			b = b & strcmp(nsd_clock_iodevice_obj_a.type,nsd_clock_iodevice_obj_b.type);
+		end % eq()
+
 	end % methods
 end % nsd_clock_iodevice class
 
