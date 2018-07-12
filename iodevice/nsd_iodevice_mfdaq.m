@@ -83,31 +83,31 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			data = [];
 		end % readchannels_epochsamples()
 
-		function data = readchannels(self, channeltype, channel, clock_or_epoch, t0, t1)
+		function data = readchannels(self, channeltype, channel, timeref_or_epoch, t0, t1)
 			%  FUNCTION READCHANNELS - read the data based on specified channels
 			%
-			%  DATA = READCHANNELS(MYDEV, CHANNELTYPE, CHANNEL, CLOCK_OR_EPOCH, T0, T1)
+			%  DATA = READCHANNELS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('analog','digitalin','digitalout', etc)
 			%  
 			%  CHANNEL is a vector with the identity of the channels to be read.
 			%  
-			%  CLOCK_OR_EPOCH is either an NSD_CLOCK object indicating the clock for T0, T1, or
+			%  TIMEREF_OR_EPOCH is either an NSD_CLOCK object indicating the clock for T0, T1, or
 			%  it can be a single number, which will indicate the data are to be read from that epoch.
 			%
 			%  DATA is the data collection for specific channels
 
-			if isa(clock_or_epoch,'nsd_clock'),
-				[t0,epoch0] = self.timeconvert(clock_or_epoch,t0);
-				[t1,epoch1] = self.timeconvert(clock_or_epoch,t1);
+			if isa(timeref_or_epoch,'nsd_clock'),
+				[t0,epoch0] = self.timeconvert(timeref_or_epoch,t0);
+				[t1,epoch1] = self.timeconvert(timeref_or_epoch,t1);
 				if epoch0~=epoch1,
 					error(['Do not know how to read across epochs yet; request spanned ' ...
 						 self.filetree.epoch2str(epoch0) ' and ' self.filetree.epoch2str(epoch1) '.']);
 				end
 				epoch = epoch0;
 			else,
-				epoch = clock_or_epoch;
+				epoch = timeref_or_epoch;
 			end
 			sr = samplerate(self, epoch, channeltype, channel);
 			if numel(unique(sr))~=1,
@@ -119,17 +119,17 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			[data] = readchannels_epochsamples(self, epoch, channeltype, channel, s0, s1);
 		end %readchannels()
 
-		function data = readevents(self, channeltype, channel, clock_or_epoch, t0, t1)
+		function data = readevents(self, channeltype, channel, timeref_or_epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, CLOCK_OR_EPOCH, T0, T1)
+			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
-			%  CLOCK_OR_EPOCH is either an NSD_CLOCK object indicating the clock for T0, T1, or
+			%  TIMEREF_OR_EPOCH is either an NSD_TIMEREFERENCE object indicating the clock for T0, T1, or
 			%  it can be a single number, which will indicate the data are to be read from that epoch.
 			%
 			%  DATA is a two-column-per-channel vector; the first column has the time of the event. The second
@@ -137,11 +137,11 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
 
-			if isa(clock_or_epoch,'nsd_clock'),
-				clock = clock_or_epoch;
+			if isa(timeref_or_epoch,'nsd_timereference'),
+				tref = timeref_or_epoch;
 				error(['this function does not handle working with clocks yet.']);
 			else,
-				epoch = clock_or_epoch;
+				epoch = timeref_or_epoch;
 				disp('here, about to call readchannels_epochsamples')
 				[data] = readevents_epochsamples(self,channeltype,channel,epoch,t0,t1);
 			end
