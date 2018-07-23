@@ -62,6 +62,28 @@ classdef nsd_clock
 				nsd_clock_obj.type = type;
 		end % setclocktype() %
 
+		function b = eq(nsd_clock_obj_a, nsd_clock_obj_b)
+			% EQ - are two NSD_CLOCK objects equal?
+			%
+			% B = EQ(NDS_CLOCK_OBJ_A, NSD_CLOCK_OBJ_B)
+			%
+			% Compares two NSD_CLOCK_objects and returns 1 if they refer to the 
+			% same clock type.
+			%
+			b = strcmp(nsd_clock_obj_a.type,nsd_clock_obj_b.type);
+		end % eq()
+
+		function b = ne(nsd_clock_obj_a, nsd_cock_obj_b)
+			% NE - are two NSD_CLOCK objects not equal?
+			%
+			% B = EQ(NDS_CLOCK_OBJ_A, NSD_CLOCK_OBJ_B)
+			%
+			% Compares two NSD_CLOCK_objects and returns 0 if they refer to the 
+			% same clock type.
+			%
+			b = ~eq(nsd_clock_obj_a.type,nsd_clock_obj_b.type);
+		end % ne()
+
 	end % methods
 end % nsd_clock class
 

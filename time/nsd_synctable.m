@@ -79,8 +79,13 @@ classdef nsd_synctable < nsd_base
 					mystruct = var2struct('clock1','clock2','rule','ruleparameters','cost','valid_range');
 				end
 
-				% don't remove existing entries; might be more than one sync mechanism between two identical sources
+				index = (mystruct == nsd_synctable_obj.entries);
+				if any(index),
+					%warning('Identical entry already exists. No more work to do.');
+					return;
+				end
 
+					% dis:one may say, why not add them and let computeadjacencymatrix find the redundency? not for now
 				index1 = cellfun(@(x) eq(x,mystruct.clock1), nsd_synctable_obj.clocks);
 				index2 = cellfun(@(x) eq(x,mystruct.clock2), nsd_synctable_obj.clocks);
 				if isempty(find(index1)),
@@ -92,10 +97,12 @@ classdef nsd_synctable < nsd_base
 					index2(end+1) = 1;
 				end
 
-				nsd_synctable_obj.entries(end+1) = mystruct;
-				%nsd_synctable_obj = nsd_synctable_obj.addimplicittableentries(clock1);
-				%nsd_synctable_obj = nsd_synctable_obj.addimplicittableentries(clock2);
-				nsd_synctable_obj = computegraph(nsd_synctable_obj);
+				try,
+					nsd_synctable_obj.entries(end+1) = mystruct;
+					nsd_synctable_obj = computeadjacencymatrix(nsd_synctable_obj);
+				catch,
+					error(['Unable to add entry:' lasterr ]);
+				end
 		end % add()
 
 		function nsd_synctable_obj = remove(nsd_synctable_obj, arg2, arg3)
@@ -142,10 +149,10 @@ classdef nsd_synctable < nsd_base
 					device = arg2;
 				end
 
-				N = numel(nsd_syntable_obj.entries);
+				N = numel(nsd_synctable_obj.entries);
 				if ~isempty(index),
 					nsd_synctable_obj.entries = nsd_synctable_obj.entries(setdiff(1:N,index));
-					nsd_synctable_obj = computegraph(nsd_synctable_obj);
+					nsd_synctable_obj = computeadjacencymatrix(nsd_synctable_obj);
 				elseif ~isempty(clock),
 					if isempty(clock2),
 						for i=1:N,
@@ -183,92 +190,77 @@ classdef nsd_synctable < nsd_base
 				end
 		end % remove()
 
-		function nsd_synctable_obj = addimplicittableentries(nsd_synctable_obj, clock)
-			% ADDIMPLICITTABLEENTRIES - Add 'implicit' conversions among a clock and other clocks associated with itself
-			%
-			% NSD_SYNCTABLE_OBJ = ADDIMPLICITTABLEENTRIES(NSD_SYNCTABLE_OBJ, CLOCK)
-			%
-			% Adds all implicit conversions among a CLOCK (type:NSD_CLOCK)  to the
-			% NSD_SYNCTABLE_OBJECT NSD_SYNCTABLE_OBJ. For example, if an NSD_CLOCK_IODEVICE
-			% has 'utc' as its type, it can convert to 'dev_local_time' or vice-versa. These
-			% implicit conversions will be added to the table.
-			%
-				if ~isa(clock,'nsd_clock'),
-					error(['CLOCK must be an object of type NSD_CLOCK.']);
-				end
-
-				clock1s = {nsd_synctable_obj.entries.clock1};
-				table_locations = find(cellfun(@(x) eq(x,clock), clock1s));
-
-				switch clock.type,
-					case {'utc','exp_global_time','dev_global_time'},
-						if isa(clock,'nsd_clock_iodevice'),
-							clock2 = nsd_clock_iodevice('dev_local_time', clock.device); % might not catch all cases
-							% check to make sure it is not already there
-							mystruct.clock1 = clock;
-							mystruct.clock2 = clock2;
-							mystruct.rule = 'within';
-							mystruct.ruleparameters = [];
-							mystruct.cost = 3;
-							mystuct.valid_range = [];
-
-							alreadythere = 0;
-							for j=1:numel(table_locations),
-								if clock2==nsd_synctable_obj.entries(table_locations(j).clock2)
-									if eqlen(mystruct,table_locations(j)),
-										alreadythere = 1;
-										break;
-									end
-								end
-							end
-							if ~alreadythere,
-								nsd_synctable_obj.entries(end+1) = mystruct;
-							end
-						end
-				end
-
-		end % addimplicittableentries
-
-		function nsd_synctable_obj = computegraph(nsd_synctable_obj)
+		function nsd_synctable_obj = computeadjacencymatrix(nsd_synctable_obj)
 			% COMPUTEGRAPH - (re)compute the adjacency matrix graph for an NSD_SYNCTABLE object
 			%
-			% NSD_SYNCTABLE_OBJ = COMPUTEGRAPH(NSD_SYNCTABLE_OBJ)
+			% NSD_SYNCTABLE_OBJ = COMPUTEADJACENCYMATRIX(NSD_SYNCTABLE_OBJ)
 			%
 			% (Re)compute the adjacency matrix property G from the table entries.
 			%
-			
+				% Step 1: make sure the nsd_synctable_obj.clocks cell array does not have duplicate entries
 				clock1s = {nsd_synctable_obj.entries.clock1};
 				clock2s = {nsd_synctable_obj.entries.clock2};
-				nsd_synctable_obj.clocks = unique(cat(2,clock1s,clock2s));
+				clocklist = cat(2,clock1s,clock2s);
+				extra_indexes = [];
+				for i=1:numel(clocklist),
+					tf= cellfun(@(x) eq(x, clocklist{i}), clocklist);
+					tf(1:i) = 0; % duh, it equals itself; also, only flag later repeats
+					if any(tf),
+						extra_indexes = cat(2,extra_indexes,find(tf));
+					end
+				end
+				nsd_synctable_obj.clocks = clocklist(setdiff(1:numel(clocklist),extra_indexes));
+
+				% Step 2: now make the graph table
 				N = numel(nsd_synctable_obj.clocks);
-				nsd_synctable_obj.G = zeros(N,N);
+				nsd_synctable_obj.G = Inf(N,N);
 				nsd_synctable_obj.bestrule = nan(N,N);
 
-				for i=1:N,
-					% where is the ith clock the first clock?
-					%table_locations = find(cellfun(@(x) @eq(x,nsd_syncable_obj.clocks{i}), clock1s));
-					for j=1:numel(table_locations),
-						clock2 = nsd_synctable_obj.entries(locations(j).clock2);
-						% which nsd_synctable_obj.clocks entry number is clock2?
-						%index2 = find(cellfun(@(x) @eq(x,nsd_syncable_obj.clocks{i}), clock2));
+				% Add the entries to G
 
-						% now we know the G(i,index2) is where the weight should be 
-						% test to see if we should replace the weight
-						if nsd_synctable_obj.G(i,index2) == 0 | ...
-							nsd-synctable_obj.G(i,index2) > nsd_synctable_obj.entries(locations(j).cost),
-							nsd_synctable_obj.G(i,index2) = nsd_synctable_obj.entries(locations(j).cost);
-							nsd_synctable_obj.bestrule(i,index2) = locations(j);
+				for i=1:N, % compute G(i,:) 
+					% where in entries is the ith clock the first clock?
+					entry_locations = find(cellfun(@(x) eq(x,nsd_synctable_obj.clocks{i}), clock1s));
+					for j=1:numel(entry_locations),
+						clock2 = nsd_synctable_obj.entries(entry_locations(j)).clock2;
+						% which nsd_synctable_obj.clocks entry number is clock2?
+						index2 = find(cellfun(@(x) eq(x,clock2), nsd_synctable_obj.clocks));
+
+						if ~isempty(index2),
+							% now we know the G(i,index2) is where the weight should be 
+
+							% test to see if we should replace the weight
+							if nsd_synctable_obj.G(i,index2) > nsd_synctable_obj.entries(entry_locations(j)).cost,
+								nsd_synctable_obj.G(i,index2) = nsd_synctable_obj.entries(entry_locations(j)).cost;
+								nsd_synctable_obj.bestrule(i,index2) = entry_locations(j);
+							end
+
+							% now handle special implicit cases
+
+							switch nsd_synctable_obj.entries(entry_locations(j)).rule,
+								case 'equal', % goes in both directions
+
+									if nsd_synctable_obj.G(index2,i) > nsd_synctable_obj.entries(entry_locations(j)).cost,
+										nsd_synctable_obj.G(index2,i) = nsd_synctable_obj.entries(entry_locations(j)).cost;
+										nsd_synctable_obj.bestrule(index2,i) = entry_locations(j);
+									end
+
+								otherwise,
+									% do nothing
+
+							end
+							
 						end
 					end
 				end
 
-		end % computegraph()
+		end % computeadjacencymatrix()
 
 		function epoch = epoch_overlap(nsd_synctable_obj, clock, epoch, t0, t1)
 
 		end % epoch_overlap()
 
-		function [timeref_out, message] = timeconvert(nsd_synctable_obj, timeref, second_clock)
+		function [timeref_out, message] = timeconvert(nsd_synctable_obj, timeref_in, second_clock)
 			% TIMECONVERT - convert time between clocks
 			%
 			% [TIMEREF_OUT, MESSAGE] = TIMECONVERT(NSD_SYNCTABLE_OBJ, TIMEREF_IN, SECOND_CLOCK)
@@ -282,15 +274,8 @@ classdef nsd_synctable < nsd_base
 			%
 			% If necessary, the function uses the NSD_SYNCTABLE to make the conversion.
 			%
-
 				timeref_out = [];
-				t_prime = [];
-				epochnumber_prime = [];
 				message = '';
-
-				source_clock = timeref.clock;
-				source_t = timeref.time;
-				source_epoch = timeref.epoch;
 
 				  % Step 1: if we are stuck, bail out
 				if nsd_synctable_obj.recursion_count > 2, % can't find any mapping
@@ -300,69 +285,78 @@ classdef nsd_synctable < nsd_base
 				end
 
 				  % Step 2: deal with trivial cases
-				if source_clock==second_clock,
-					t_prime = source_t;
-					epochnumber_prime = source_epoch;
-					timeref_out = nsd_timereference(second_clock, source_epoch, t_prime);
+				if timeref_in.clock==second_clock,
+					timeref_out = nsd_timereference(second_clock, timeref_in.epoch, timeref_in.time);
 					nsd_synctable_obj.recursion_count = 0; 
 					return
 				end
 
-				if strcmp(source_clock.type,'no_time') | strcmp(second_clock.type,'no_time'), % inherently unresolveable
+				if strcmp(timeref_in.clock.type,'no_time') | strcmp(second_clock.type,'no_time'), % inherently unresolveable
 					nsd_synctable_obj.recursion_count = 0;
 					message = 'inherently unresolvable (at least one clock does not keep time)';
 					return;
 				end
 
-				if strcmp(source_clock.type,'utc') & strcmp(second_clock.type,'utc') | ...
-						strcmp(source_clock.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
-					t_prime = source_t;
-					epochnumber_prime = [];
+				if strcmp(timeref_in.type,'utc') & strcmp(second_clock.type,'utc') | ...
+						strcmp(timeref_in.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
 					nsd_synctable_obj.recursion_count = 0; 
 					return;
-				end
-
-				if isa(source_clock,'nsd_clock_iodevice') & isa(second_clock,'nsd_clock_device'),
-					if strcmp(source_clock.type,'dev_global_time') & strcmp(second_clock.type,'dev_global_time') & ...
-							(source_clock.device==second_clock.device),
-						t_prime = source_t;
-						epochnumber_prime = source_epoch;
-						nsd_synctable_obj.recursion_count = 0; 
-						return;
-					end
 				end
 
 				  % Step 3: now deal with other combinations
 
-				mygraph = digraph(G);
-				%index1 = cellfun(@(x) @eq(x,source_clock), nsd_synctable_obj.clocks);
-				%index2 = cellfun(@(x) @eq(x,second_clock), nsd_synctable_obj.clocks);
+				Gtable = nsd_synctable_obj.G;
+				inf_indexes = isinf(Gtable);
+				Gtable(inf_indexes) = 0;
+				mygraph = digraph(Gtable);
+				index1 = find(cellfun(@(x) eq(x,timeref_in.clock), nsd_synctable_obj.clocks));
+				index2 = find(cellfun(@(x) eq(x,second_clock), nsd_synctable_obj.clocks));
 				path = shortestpath(mygraph, index1, index2);
 
 				if ~isempty(path),
-					t_prime = source_t;
-					epochnumber_prime = source_epoch;
+					timeref_here = timeref_in;
 					for i=1:numel(path)-1,
-						mystruct = nsd_synctable_objs.entries(nsd_synctable_objs.bestrule(path(i),path(i+1)));
-						[t_prime,epochnumber_prime] = directruleconversion(nsd_synctable_obj, ...
-							mystruct.source_clock, t_prime, epoch_numberprime, mystruct.second_clock, ...
-							mystruct.rule, mystruct.ruleparameters, mystruct.valid_range);
+						mystruct = nsd_synctable_obj.entries(nsd_synctable_obj.bestrule(path(i),path(i+1)));
+						try, 
+							[timeref_out] = directruleconversion(nsd_synctable_obj, ...
+								timeref_here, mystruct, second_clock);
+						catch,
+							timeref_out = [];
+							message = ['Error in evaluating directruleconversion: ' lasterr];
+							return;
+						end
+						timeref_here = timeref_out;
 					end
 					nsd_synctable_obj.recursion_count = 0; 
 					return;
 				end
 
-				% okay, now we are down to 'dev_local' clocks and we need to know if epochs on different devices overlap 
-				% 
-
+				% if we are here, we didn't get it
+				message = 'unable to find mapping between timeref_in and second_clock.';
+					% dis: we never used any recursion...
 
 		end % convert
 
-		function [t_prime, epochnumber_prime] = directruleconversion(nsd_synctable_obj, source_clock, source_t, source_epoch, second_clock, rule, ruleparameters, valid_range)
+		function [timeref_out]= directruleconversion(nsd_synctable_obj, timeref_in, rulestruct, second_clock)
+			% DIRECTRULECONVERSION - Convert from one NSD_TIMEREFERENCE to another with a direct rule
+			%
+			% [TIMEREF_OUT] = DIRECTRULECONVERSION(NSD_SYNCTABLE_OBJ, TIMEREF_IN, RULESTRUCT, SECOND_CLOCK)
+			%
+			% Use the direct rule described in RULESTRUCT to convert between the NSD_TIMEREFERENCE
+			% TIMEREF_IN and the second clock in SECOND_CLOCK.
+			% 
+			% See also: NSD_SYNCTABLE/ADD for a description of the RULESTRUCT parameters
 			%
 			%
-		end
+				timeref_out = [];
 
+				switch(rulestruct.rule),
+					case 'equal',
+						timeref_out = nsd_timereference(second_clock,timeref_in.epoch,timeref_in.time);
+					otherwise,
+						error(['I do not yet know how to implement the rule ' rulestruct.rule '.']);
+				end
+		end % directruleconversion() 
 
                 function [obj,properties_set] = setproperties(nsd_synctable_obj, properties, values)
                         % SETPROPERTIES - set the properties of an NSD_DBLEAF object
@@ -454,8 +448,5 @@ end % nsd_synctable class
 %ok, there are some implicit conversions:
 %
 %if our device uses 'utc', 'exp_global_time', or 'dev_global_time', as its primary clock, then we can always convert to 'dev_local_time' or vice-versa
-%
-%
-%If our device uses 'no_time', then it's hopeless
 %
 %

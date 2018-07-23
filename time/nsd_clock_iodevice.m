@@ -78,11 +78,13 @@ classdef nsd_clock_iodevice < nsd_clock
 		%
 		% B = EQ(NDS_CLOCK_IODEVICE_OBJ_A, NSD_CLOCK_IODEVICE_OBJ_B)
 		%
-		% Compares two NSD_CLOCK_IODEVICE objects and returns 1 if they are refer to the same
+		% Compares two NSD_CLOCK_IODEVICE objects and returns 1 if they refer to the same
 		% device and have the same clock type.
 		%
-			b = nsd_clock_iodevice_obj_a.iodevice == nsd_clock_iodevice_obj_b.iodevice;
-			b = b & strcmp(nsd_clock_iodevice_obj_a.type,nsd_clock_iodevice_obj_b.type);
+			b = eq@nsd_clock(nsd_clock_iodevice_obj_a,nsd_clock_iodevice_obj_b);
+			if b,
+				b = nsd_clock_iodevice_obj_a.iodevice==nsd_clock_iodevice_obj_b.iodevice;
+			end
 		end % eq()
 
 	end % methods
