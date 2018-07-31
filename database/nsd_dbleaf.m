@@ -25,7 +25,7 @@ classdef nsd_dbleaf < nsd_base
 			% reading in data from the file FILENAME (full path). To developers:
 			% All NSD_DBLEAF descendents must offer this 2 element constructor.
 			%  
-			% See also: NSD_DBTREE
+			% See also: NSD_DBLEAF_BRANCH
 
 			obj=obj@nsd_base;
 

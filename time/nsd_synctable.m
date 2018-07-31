@@ -6,11 +6,9 @@ classdef nsd_synctable < nsd_base
 		entries % entries of the NSD_SYNCTABLE
 		G  % adjacency matrix of clocks for construction of a graph
 		bestrule % table entry of the best rule between two clocks
-		clocks % a cell array of nsd_clock types 
+		clocks % a cell array of nsd_clock_iodevice 
 	end % properties
 	properties (SetAccess=protected,GetAccess=protected)
-		path % data path
-		recursion_count % how many times have we recursively called nsd_synctable.synctable?
 	end % properties
 	methods
 		function obj = nsd_synctable(varargin)
@@ -23,15 +21,21 @@ classdef nsd_synctable < nsd_base
 			% Can also be called with OBJ = NSD_SYNCTABLE(FILENAME, 'OpenFile') to read the object from the
 			% file FILENAME.
 			%
+			% Can also be called with OBJ = NSD_SYNCTABLE(FILENAME, 'OpenFileAndUpdate', EXP) to read the object from
+			% the file FILENAME and then to update the CLOCK handles with the NSD_EXPERIMENT EXP.
+			%
 			obj=obj@nsd_base;
 			obj.entries = emptystruct('clock1','clock2','rule','ruleparameters','cost','valid_range');
 			obj.G = [];
 			obj.clocks = {};
-			obj.recursion_count = 0;
-			obj.path = '';
 			if nargin==2,
 				if strcmp(lower(varargin{2}),lower('OpenFile')),
 					obj = obj.readobjectfile(varargin{1});
+				end
+			elseif nargin==3,
+				if strcmp(lower(varargin{2}),lower('OpenFileAndUpdate')),
+					obj = obj.readobjectfile(varargin{1});
+					obj = obj.UpdateHandles(varargin{3});
 				end
 			end
 		end % nsd_synctable()
@@ -69,7 +73,7 @@ classdef nsd_synctable < nsd_base
 			% 'commontrigger'   | 10
 			% 'withindevice'    | 3
 			%
-			% Whenever a new NSD_CLOCK CLOCK1 or CLOCK2 is added to the tabe, and if those clocks
+			% Whenever a new NSD_CLOCK_IODEVICE CLOCK1 or CLOCK2 is added to the tabe, and if those clocks
 			% are of type 'utc', 'exp_global_time', or 'dev_global_time', and are associated with a
 			% device, then additional entries are added that chart the implict 'withindevice' conversions.
 			%
@@ -277,33 +281,23 @@ classdef nsd_synctable < nsd_base
 				timeref_out = [];
 				message = '';
 
-				  % Step 1: if we are stuck, bail out
-				if nsd_synctable_obj.recursion_count > 2, % can't find any mapping
-					nsd_synctable_obj.recursion_count = 0;
-					message = 'matching failed in 2 loops';
-					return;
-				end
-
-				  % Step 2: deal with trivial cases
+				  % Step 1: deal with trivial cases
 				if timeref_in.clock==second_clock,
 					timeref_out = nsd_timereference(second_clock, timeref_in.epoch, timeref_in.time);
-					nsd_synctable_obj.recursion_count = 0; 
 					return
 				end
 
 				if strcmp(timeref_in.clock.type,'no_time') | strcmp(second_clock.type,'no_time'), % inherently unresolveable
-					nsd_synctable_obj.recursion_count = 0;
 					message = 'inherently unresolvable (at least one clock does not keep time)';
 					return;
 				end
 
 				if strcmp(timeref_in.type,'utc') & strcmp(second_clock.type,'utc') | ...
 						strcmp(timeref_in.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
-					nsd_synctable_obj.recursion_count = 0; 
 					return;
 				end
 
-				  % Step 3: now deal with other combinations
+				  % Step 2: now deal with other combinations
 
 				Gtable = nsd_synctable_obj.G;
 				inf_indexes = isinf(Gtable);
@@ -327,13 +321,11 @@ classdef nsd_synctable < nsd_base
 						end
 						timeref_here = timeref_out;
 					end
-					nsd_synctable_obj.recursion_count = 0; 
 					return;
 				end
 
 				% if we are here, we didn't get it
 				message = 'unable to find mapping between timeref_in and second_clock.';
-					% dis: we never used any recursion...
 
 		end % convert
 
@@ -357,6 +349,39 @@ classdef nsd_synctable < nsd_base
 						error(['I do not yet know how to implement the rule ' rulestruct.rule '.']);
 				end
 		end % directruleconversion() 
+
+		function saveStruct = getsavestruct(nsd_synctable_obj)
+			% GETSAVESTRUCT - Create a structure representation of the object that is free of handles
+			%
+			% SAVESTRUCT = GETSAVESTRUCT(NSD_SYNCTABLE_OBJ)
+			%
+			% Creates a structure representation of the NSD_SYNCTABLE_OBJ that is free of object handles
+			%
+			% SAVESTRUCT has the following properties:
+			% Fieldname                 | Description
+			% -------------------------------------------------------------------------------------
+			% entries                   | 'entries' except with all clocks replaced with structures (see NSD_CLOCK_IODEVICE/CLOCK2STRUCT)
+			% G                         | G numeric array as is
+			% bestrule                  | bestrule array as is
+			% clocks                    | NSD_CLOCK_IODEVICE entries replaced with structures (see NSD_CLOCK_IODEVICE/CLOCK2STRUCT)
+			% objectfilename            | The object file name string as is
+
+				saveStruct.entries        = nsd_synctable_obj.entries;
+				saveStruct.G              = nsd_synctable_obj.G;
+				saveStruct.bestrule       = nsd_synctable_obj.bestrule;
+				saveStruct.clocks         = nsd_synctable_obj.clocks;
+				saveStruct.objectfilename = nsd_synctable_obj.objectfilename;
+
+				for i=1:numel(saveStruct.clocks),
+					saveStruct.clocks{i} = saveStruct.clocks{i}.clock2struct;
+				end
+
+				for i=1:numel(saveStruct.entries),
+					saveStruct.entries(i).clock1 = saveStruct.entries(i).clock1.clock2struct;
+					saveStruct.entries(i).clock2 = saveStruct.entries(i).clock2.clock2struct;
+				end
+
+		end % getsavestruct()
 
                 function [obj,properties_set] = setproperties(nsd_synctable_obj, properties, values)
                         % SETPROPERTIES - set the properties of an NSD_DBLEAF object
@@ -387,53 +412,63 @@ classdef nsd_synctable < nsd_base
 				end
 			end
 
-		function [data, fieldnames] = stringdatatosave(nsd_synctable_obj)
-			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
+		function writedata2objectfile(nsd_synctable_obj, fid)
+			% WRITEDATA2OBJECTFILE - write NSD_SYNCTABLE object file data to the object file FID
 			%
-			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_SYNCTABLE_OBJ)
+			% WRITEDATA2OBJECTFILE(NSD_SYNCTABLE_OBJ, FID)
 			%
-			% Return a cell array of strings to save to the objectfilename.
+			% This function writes the data for the NSD_SYNCTABLE_OBJ to the object file      
+			% identifier FID.
 			%
-			% FIELDNAMES is a set of names of the fields/properties of the object
-			% that are being stored.
+			% This function assumes the FID is open for writing and it does not close the
+			% the FID. This function is normally called by WRITEOBJECTFILE and is typically
+			% an internal function.
 			%
-			% For NSD_DBLEAF, this returns the classname, name, and the objectfilename.
-			%
-			% Developer note: If you create a subclass of NSD_DBLEAF with properties, it is recommended
-			% that you implement your own version of this method. If you have only properties that can be stored
-			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
-			%
-				[data,fieldnames] = stringdatatosave@nsd_base(nsd_synctable_obj);
-				data{end+1} = nsd_synctable_obj.name;
-				fieldnames{end+1} = 'name';
-		end % stringdatatosave
+				saveStruct = nsd_synctable_obj.getsavestruct;
 
-		function nsd_synctable_obj = writeobjectfile(nsd_synctable_obj, thedirname, locked)
-			% WRITEOBJECTFILE - write the object data to the disk
-			%
-			% NSD_SYNCTABLE_OBJ = WRITEOBJECTFILE(NSD_SYNCTABLE_OBJ, THEDIRNAME, [LOCKED])
-			%
-			% Writes the object data of NSD_SYNCTABLE object NSD_DBLEAF_BRANCH_OBJ
-			% to disk.
-			%
-			% If LOCKED is 1, then the calling function has verified a correct
-			% lock on the output file and WRITEOBJECTFILE shouldn't lock/unlock it.
-			%
-				error('not implemented yet.');
-		end % writeobjectfile()
+				saveStructString = struct2mlstr(saveStruct);
+				count = fwrite(fid,saveStructString,'char');
+				if count~=numel(saveStructString),
+					error(['Error writing to the file ' filename '.']);
+                                end
+                end % writedata2objectfile()
 
-		function obj = readobjectfile(nsd_synctable_obj, fname)
-			% READOBJECTFILE
+		function nsd_synctable_obj = readobjectfile(nsd_synctable_obj, filename)
+			% READOBJECTFILE - read 
 			%
-			% NSD_SYNCTABLE_OBJ = READOBJECTFILE(NSD_SYNCTABLE_OBJ, FNAME)
+			% NSD_SYNCTABLE_OBJ = READOBJECTFILE(NSD_SYNCTABLE_OBJ, FILENAME)
 			%
 			% Reads the NSD_SYNCTABLE_OBJ from the file FNAME (full path).
-                                obj=readobjectfile@nsd_base(nsd_synctable_obj, fname);
+				fid = fopen(filename, 'rb');
+				if fid<0,
+					error(['Could not open the file ' filename ' for reading.']);
+				end;
+				saveStructString = char(fread(fid,Inf,'char'));
+				saveStructString = saveStructString(:)'; % make sure we are a 'row'
+				fclose(fid);
+				saveStruct = mlstr2var(saveStructString);
+				fn = fieldnames(saveStruct);
+				values = {};
+				for i=1:numel(fn), 
+					values{i} = getfield(saveStruct,fn{i});
+				end;
+				nsd_synctable_obj = nsd_synctable_obj.setproperties(fn,values);
+		end; % readobjectfile
 
-                                obj.path = fileparts(fname); % set path to be parent directory of fname
+		function nsd_synctable_obj = updatehandles(nsd_synctable_obj, exp)
+			% UPDATEHANDLES - Update CLOCK and IODEVICE handles with those from an experiment
+			%
+			% NSD_SYNCTABLE_OBJ = UPDATEHANDLES(NSD_SYNCTABLE_OBJ, EXP)
+			%
+			% Using the IODEVICE information in the NSD_EXPERIMENT object EXP,
+			% this function updates the handles of the NSD_SYNCTABLE_OBJECT NSD_SYNCTABLE_OBJ.
+			%
+			% This function is necessary because handles cannot be updated and linked to
+			% an NSD_EXPERIMENT object from a file.
+			%
+				error(['not implemented yet.']);
+		end % updatehandles
 
-				error(['need to do more here, to read synctable data']);
-                        end; % readobjectfile
 	end % methods
 
 end % nsd_synctable class

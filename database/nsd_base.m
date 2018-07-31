@@ -160,14 +160,7 @@ classdef nsd_base < handle
 					error(['Could not open the file ' filename ' for writing.']);
 				end;
 
-				data = nsd_base_obj.stringdatatosave();
-
-				for i=1:length(data),
-					count = fprintf(fid,'%s\n',data{i});
-					if count~=numel(data{i})+1,
-						error(['Error writing to the file ' filename '.']);
-					end
-				end
+				nsd_base_obj.writedata2objectfile(fid);
 
 				fclose(fid);
 
@@ -176,6 +169,28 @@ classdef nsd_base < handle
 				end
 
 		end % writeobjectfile
+
+		function writedata2objectfile(nsd_base_obj, fid)
+			% WRITEDATA2OBJECTFILE - write NSD_BASE object file data to the object file FID
+			%
+			% WRITEDATA2OBJECTFILE(NSD_BASE_OBJ, FID)
+			%
+			% This function writes the data for the NSD_BASE_OBJ to the object file 
+			% identifier FID.
+			%
+			% This function assumes the FID is open for writing and it does not close the
+			% the FID. This function is normally called by WRITEOBJECTFILE and is typically
+			% an internal function.
+			%
+				data = nsd_base_obj.stringdatatosave();
+				
+				for i=1:length(data),
+					count = fprintf(fid,'%s\n',data{i});
+					if count~=numel(data{i})+1,
+						error(['Error writing to the file ' filename '.']);
+					end
+				end
+		end % writedata2objectfile() 
 
 		function [data, fieldnames] = stringdatatosave(nsd_base_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information

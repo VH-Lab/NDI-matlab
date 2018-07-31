@@ -293,7 +293,6 @@ classdef nsd_iodevice < nsd_dbleaf
 				exp = self.filetree.experiment;
 		end % experiment()
 
-
 		function [data, fieldnames] = stringdatatosave(nsd_iodevice_obj)
 			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
 			%

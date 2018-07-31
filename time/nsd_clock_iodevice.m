@@ -73,6 +73,29 @@ classdef nsd_clock_iodevice < nsd_clock
 				end
 		end % setclocktype() %
 
+		function nsd_clock_iodevice_struct = clock2struct(nsd_clock_iodevice_obj)
+			% CLOCK2STRUCT - create a structure version of the clock that lacks handles
+			%
+			% NSD_CLOCK_IODEVICE_STRUCT = CLOCK2STRUCT(NSD_CLOCK_IODEVICE_OBJ)
+			%
+			% Return a structure with information that uniquely specifies an NSD_CLOCK_IODEVICE_OBJ
+			% within an NSD_EXPERIMENT but does not contain handles.
+			%
+			% This function is useful for saving a clock to disk.
+			%
+			% NSD_CLOCK_IODEVICE_STRUCT contains the following fields:
+			% Fieldname              | Description
+			% --------------------------------------------------------------------------
+			% 'type'                 | The 'type' field of NSD_CLOCK_IODEVICE_OBJ
+			% 'nsd_iodevice_name'    | The name of the NSD_IODEVICE in the 'iodevice' field of NSD_CLOCK_IODEVICE_OBJ
+			% 'nsd_iodevice_class'   | The class of the NSD_IODEVICE in the 'iodevice' field of NSD_CLOCK_IODEVICE_OBJ
+			%
+				nsd_clock_iodevice_struct.type = nsd_clock_iodevice_obj.type;
+				nsd_clock_iodevice_struct.nsd_iodevice_name = nsd_clock_iodevice_obj.iodevice.name;
+				nsd_clock_iodevice_struct.nsd_iodevice_class = class(nsd_clock_iodevice_obj.iodevice);
+		end % clock2struct()
+			
+
 		function b = eq(nsd_clock_iodevice_obj_a, nsd_clock_iodevice_obj_b)
 		% EQ - are two NSD_CLOCK_IODEVICE objects equal?
 		%
