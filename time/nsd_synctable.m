@@ -7,6 +7,7 @@ classdef nsd_synctable < nsd_base
 		G  % adjacency matrix of clocks for construction of a graph
 		bestrule % table entry of the best rule between two clocks
 		clocks % a cell array of nsd_clock_iodevice 
+		experiment % NSD_EXPERIMENT object
 	end % properties
 	properties (SetAccess=protected,GetAccess=protected)
 	end % properties
@@ -18,26 +19,33 @@ classdef nsd_synctable < nsd_base
 			%
 			% Creates an empty NSD_SYNCTABLE object.
 			%
+			% Can also be called with OBJ = NSD_SYNCTABLE(EXP) to install EXP as the NSD_EXPERIMENT object
+			% (property 'experiment')
+			%
 			% Can also be called with OBJ = NSD_SYNCTABLE(FILENAME, 'OpenFile') to read the object from the
 			% file FILENAME.
 			%
 			% Can also be called with OBJ = NSD_SYNCTABLE(FILENAME, 'OpenFileAndUpdate', EXP) to read the object from
 			% the file FILENAME and then to update the CLOCK handles with the NSD_EXPERIMENT EXP.
 			%
-			obj=obj@nsd_base;
-			obj.entries = emptystruct('clock1','clock2','rule','ruleparameters','cost','valid_range');
-			obj.G = [];
-			obj.clocks = {};
-			if nargin==2,
-				if strcmp(lower(varargin{2}),lower('OpenFile')),
-					obj = obj.readobjectfile(varargin{1});
+				obj=obj@nsd_base;
+				obj.entries = emptystruct('clock1','clock2','rule','ruleparameters','cost','valid_range');
+				obj.G = [];
+				obj.clocks = {};
+				obj.experiment = [];
+				if nargin==1,
+					obj.experiment = varargin{1};
 				end
-			elseif nargin==3,
-				if strcmp(lower(varargin{2}),lower('OpenFileAndUpdate')),
-					obj = obj.readobjectfile(varargin{1});
-					obj = obj.UpdateHandles(varargin{3});
+				if nargin==2,
+					if strcmp(lower(varargin{2}),lower('OpenFile')),
+						obj = obj.readobjectfile(varargin{1});
+					end
+				elseif nargin==3,
+					if strcmp(lower(varargin{2}),lower('OpenFileAndUpdate')),
+						obj = obj.readobjectfile(varargin{1});
+						obj = obj.updatehandles(varargin{3});
+					end
 				end
-			end
 		end % nsd_synctable()
 			
 		function nsd_synctable_obj = add(nsd_synctable_obj, clock1, clock2, rule, ruleparameters, cost, valid_range)
@@ -106,6 +114,10 @@ classdef nsd_synctable < nsd_base
 					nsd_synctable_obj = computeadjacencymatrix(nsd_synctable_obj);
 				catch,
 					error(['Unable to add entry:' lasterr ]);
+				end
+
+				if isfield(nsd_synctable_obj.experiment,'path'),
+					nsd_synctable_obj.writeobjectfile(nsd_synctable_obj.experiment.path);
 				end
 		end % add()
 
@@ -191,6 +203,10 @@ classdef nsd_synctable < nsd_base
 					nsd_synctable_obj = nsd_synctable_obj.remove(index);
 				else,
 					error(['Do not know how to handle second input of type ' class(arg2) '.']);
+				end
+
+				if isfield(nsd_synctable_obj.experiment,'path'),
+					nsd_synctable_obj.writeobjectfile(nsd_synctable_obj.experiment.path);
 				end
 		end % remove()
 
@@ -372,6 +388,10 @@ classdef nsd_synctable < nsd_base
 				saveStruct.clocks         = nsd_synctable_obj.clocks;
 				saveStruct.objectfilename = nsd_synctable_obj.objectfilename;
 
+				if isa(nsd_synctable_obj.experiment,'nsd_experiment'),
+					saveStruct.experiment = nsd_synctable_obj.experiment.reference; % though this will be replaced, it might help in debugging
+				end
+
 				for i=1:numel(saveStruct.clocks),
 					saveStruct.clocks{i} = saveStruct.clocks{i}.clock2struct;
 				end
@@ -469,6 +489,7 @@ classdef nsd_synctable < nsd_base
 			% If the clocks of NSD_SYNCTABLE_OBJ are already handles, they are not updated.
 			%
 				% Step 1: pull all devices
+				nsd_synctable_obj.experiment = exp;
 				d = exp.iodevice_load('name','(.*)');
 				for i=1:numel(d),
 					for j=1:numel(nsd_synctable_obj.clocks),
@@ -493,6 +514,18 @@ classdef nsd_synctable < nsd_base
 					end
 				end
 		end % updatehandles
+
+		function fname = outputobjectfilename(nsd_synctable_obj)
+			% OUTPUTOBJECTFILENAME - return the file name of an NSD_SYNCTABLE object
+			%
+			% FNAME = OUTPUTOBJECTFILENAME(NSD_SYNCTABLE_OBJ)
+			%
+			% Returns the filename (without parent directory) to be used to save the NSD_SYNCTABLE
+			% object. In the NSD_SYNCTABLE class, it is [NSD_BASE_OBJ.objectfilename '.synctable.nsd']
+			%
+			%
+				fname = [nsd_synctable_obj.objectfilename '.synctable.nsd'];
+		end % outputobjectfilename()
 
 	end % methods
 

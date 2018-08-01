@@ -341,5 +341,19 @@ classdef nsd_iodevice < nsd_dbleaf
 					end
 				end
 		end % setproperties()
+
+		function b = eq(nsd_iodevice_obj_a, nsd_iodevice_obj_b)
+			% EQ - are two NSD_IODEVICE objects equal?
+			%
+			% B = EQ(NSD_IODEVICE_OBJ_A, NSD_IODEVICE_OBJ_B)
+			%
+			% Returns 1 if the NSD_IODEVICE objects have the same name and class type.
+			% The objects do not have to be the same handle or have the same space in memory.
+			% Otherwise, returns 0.
+			%
+				b = strcmp(nsd_iodevice_obj_a.name,nsd_iodevice_obj_b.name) & ...
+					strcmp(class(nsd_iodevice_obj_a),class(nsd_iodevice_obj_b));
+		end % eq()
+			
 	end % methods
 end

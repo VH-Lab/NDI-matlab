@@ -35,7 +35,7 @@ classdef nsd_experiment_dir < nsd_experiment
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' obj.nsdpathname() '.']);
 				end
-				d = dir([obj.nsdpathname() filesep 'device_object_*']);
+				d = dir([obj.nsdpathname() filesep 'iodevice_object_*']);
 				if isempty(d),
 					obj.iodevice = nsd_dbleaf_branch(obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
 				else,
@@ -47,13 +47,13 @@ classdef nsd_experiment_dir < nsd_experiment
 				else,
 					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
 				end;
-				d = dir([obj.nsdpathname() filesep 'nsd_synctable_object*']);
+				d = dir([obj.nsdpathname() filesep '*synctable.nsd']);
 				if isempty(d),
-					obj.synctable = nsd_synctable();
+					obj.synctable = nsd_synctable(obj);
 				else,
-					obj.synctable = nsd_synctable([obj.nsdpathname filesep d(1).name]);
+					obj.synctable = nsd_synctable([obj.nsdpathname filesep d(1).name],'OpenFileAndUpdate',obj);
 				end;
-				str2text([obj.nsdpathname() filesep 'reference.txt'],obj.reference);
+				str2text([obj.nsdpathname() filesep 'reference.txt'], obj.reference);
 		end
 		
 		function p = getpath(self)

@@ -86,7 +86,7 @@ classdef nsd_base < handle
 			%
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
-				filename = [dirname filesep nsd_base_obj.objectfilename];
+				filename = [dirname filesep nsd_base_obj.outputobjectfilename];
 				b = 1;
 				try,
 					delete(filename);
@@ -143,7 +143,6 @@ classdef nsd_base < handle
 			%
 			% See also: NSD_BASE/NSD_BASE
 			%
-
 				if nargin<3,
 					locked = 0;
 				end;
@@ -154,7 +153,7 @@ classdef nsd_base < handle
 					thisfunctionlocked = 1;
 				end
 
-				filename = [dirname filesep nsd_base_obj.objectfilename];
+				filename = [dirname filesep nsd_base_obj.outputobjectfilename];
 				fid = fopen(filename,'wb');	% files will consistently use big-endian
 				if fid < 0,
 					error(['Could not open the file ' filename ' for writing.']);
@@ -213,6 +212,18 @@ classdef nsd_base < handle
 
 		end % stringdatatosave
 
+		function fname = outputobjectfilename(nsd_base_obj)
+			% OUTPUTOBJECTFILENAME - return the output file name for an NSD_BASE object
+			%
+			% FNAME = OUTPUTOBJECTFILENAME(NSD_BASE_OBJ)
+			%
+			% Returns the filename (without parent directory) to be used to save the NSD_BASE
+			% object. In the NSD_BASE class, it is just NSD_BASE_OBJ.objectfilename.
+			%
+			%
+				fname = nsd_base_obj.objectfilename;
+		end % outputobjectfilename ()
+
                 function lockfname = lockfilename(nsd_base_obj, dirname)
                         % LOCKFILENAME - the filename of the lock file that serves as a semaphore to maintain data integrity
                         %
@@ -223,10 +234,9 @@ classdef nsd_base < handle
 			% DIRNAME is the directory to use (full path).
                         %
                         % See also: NSD_BASE/LOCK NSD_BASE/UNLOCK NSD_BASE/LOCKFILENAME
-
-				filename = [dirname filesep nsd_base_obj.objectfilename];
+			%
+				filename = [dirname filesep nsd_base_obj.outputobjectfilename];
 				lockfname = [filename '-lock'];
-
                 end % lockfilename()
 
                 function [nsd_base_obj, b] = lock(nsd_base_obj, dirname)
@@ -265,7 +275,6 @@ classdef nsd_base < handle
 			% The function returns B=1 if the operation was successful, B=0 otherwise.
 			%
 			% See also: NSD_BASE/LOCK NSD_BASE/UNLOCK NSD_BASE/LOCKFILENAME
-
 				b = 1;
 				if ~isempty(nsd_base_obj.lockfid),
 					try,
@@ -276,7 +285,6 @@ classdef nsd_base < handle
 						b = 0;
 					end;
 				end;
-
                 end % unlock()
 
 	end % methods 
