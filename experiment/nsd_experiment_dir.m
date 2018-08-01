@@ -85,6 +85,21 @@ classdef nsd_experiment_dir < nsd_experiment
 				end
 		end
 
+		function b = eq(nsd_experiment_dir_obj_a, nsd_experiment_dir_obj_b)
+			% EQ - Are two NSD_EXPERIMENT_DIR objects equivalent?
+			%
+			% B = EQ(NSD_EXPERIMENT_DIR_OBJ_A, NSD_EXPERIMENT_DIR_OBJ_B)
+			%
+			% Returns 1 if the two NSD_EXPERIMENT_DIR objects have the same
+			% path and reference fields. They do not have to be the same handles
+			% (that is, have the same location in memory).
+			%
+				b = strcmp(nsd_experiment_dir_obj_a.reference,nsd_experiment_dir_obj_b.reference);
+				if b,
+					b = strcmp(nsd_experiment_dir_obj_a.path,nsd_experiment_dir_obj_b.path);
+				end
+		end % eq
+
 	end % methods
 
 end % classdef

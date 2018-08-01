@@ -466,7 +466,32 @@ classdef nsd_synctable < nsd_base
 			% This function is necessary because handles cannot be updated and linked to
 			% an NSD_EXPERIMENT object from a file.
 			%
-				error(['not implemented yet.']);
+			% If the clocks of NSD_SYNCTABLE_OBJ are already handles, they are not updated.
+			%
+				% Step 1: pull all devices
+				d = exp.iodevice_load('name','(.*)');
+				for i=1:numel(d),
+					for j=1:numel(nsd_synctable_obj.clocks),
+						if isstruct(nsd_synctable_obj.clocks{j}),
+							if isclockstruct(d{i}.clock, nsd_synctable_obj.clocks{j}),
+								nsd_synctable_obj.clocks{j} = d{i}.clock;
+							end
+						end
+					end
+					for j=1:numel(nsd_synctable_obj.entries),
+						if isstruct(nsd_synctable_obj.entries(j).clock1),
+							if isclockstruct(d{i}.clock, nsd_synctable_obj.entries(j).clock1),
+								nsd_synctable_obj.entries(j).clock1 = d{i}.clock;
+							end
+						end
+
+						if isstruct(nsd_synctable_obj.entries(j).clock2),
+							if isclockstruct(d{i}.clock, nsd_synctable_obj.entries(j).clock2),
+								nsd_synctable_obj.entries(j).clock2 = d{i}.clock;
+							end
+						end
+					end
+				end
 		end % updatehandles
 
 	end % methods

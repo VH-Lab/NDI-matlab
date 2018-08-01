@@ -706,6 +706,24 @@ classdef nsd_filetree < nsd_base
 				end
 		end % setproperties()
 
+		function b = eq(nsd_filetree_obj_a, nsd_filetree_obj_b)
+			% EQ - determines whether two NSD_FILETREE objects are equivalent
+			%
+			% B = EQ(NSD_FILETREE_OBJ_A, NSD_FILETREE_OBJ_B)
+			%
+			% Returns 1 if the NSD_FILETREE objects are equivalent, and 0 otherwise.
+			% This equivalency does not depend on NSD_FILETREE_OBJ_A and NSD_FILETREE_OBJ_B are 
+			% the same HANDLE objects. They can be equivalent and occupy different places in memory.
+				parameternames = {'experiment','fileparameters','epochcontents_class','epochcontents_fileparameters'};
+				b = 1;
+				for i=1:numel(parameternames),
+					b = b & eqlen(getfield(nsd_filetree_obj_a,parameternames{i}),getfield(nsd_filetree_obj_b,parameternames{i}));
+					if ~b,
+						break; % can stop checking
+					end;
+				end
+		end % eq()
+
 	end % methods
 
 end % classdef

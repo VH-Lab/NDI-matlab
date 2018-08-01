@@ -62,6 +62,39 @@ classdef nsd_clock
 				nsd_clock_obj.type = type;
 		end % setclocktype() %
 
+		function nsd_clock_struct = clock2struct(nsd_clock_obj)
+			% CLOCK2STRUCT - create a structure version of the clock that lacks handles
+			%
+			% NSD_CLOCK_STRUCT = CLOCK2STRUCT(NSD_CLOCK_OBJ)
+			%
+			% Return a structure with information that specifies an NSD_CLOCK_OBJ
+			% within an NSD_EXPERIMENT but does not contain handles.
+			%
+			% This function is useful for saving a clock to disk.
+			%
+			% NSD_CLOCK_STRUCT contains the following fields:
+			% Fieldname              | Description
+			% --------------------------------------------------------------------------
+			% 'type'                 | The 'type' field of NSD_CLOCK_IODEVICE_OBJ
+			%
+				nsd_clock_struct.type = nsd_clock_obj.type;
+		end % clock2struct()
+
+		function b = isclockstruct(nsd_clock_obj, nsd_clock_struct)
+			% ISCLOCKSTRUCT - is an nsd_clock_struct description equivalent to this clock?
+			%
+			% B = ISCLOCKSTRUCT(NSD_CLOCK_OBJ, NSD_CLOCKSTRUCT)
+			%
+			% Returns 1 if NSD_CLOCK_STRUCT is an equivalent description to NSD_CLOCK_OBJ
+			% 
+			% In the base class, only the property/field 'type' is examined.
+			%
+				b = 0;
+				if isfield(nsd_clock_struct,'type'),
+					b = strcmp(nsd_clock_obj.type, nsd_clock_struct.type);
+				end
+		end % isclockstruct
+		
 		function b = eq(nsd_clock_obj_a, nsd_clock_obj_b)
 			% EQ - are two NSD_CLOCK objects equal?
 			%

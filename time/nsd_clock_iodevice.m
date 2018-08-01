@@ -90,11 +90,33 @@ classdef nsd_clock_iodevice < nsd_clock
 			% 'nsd_iodevice_name'    | The name of the NSD_IODEVICE in the 'iodevice' field of NSD_CLOCK_IODEVICE_OBJ
 			% 'nsd_iodevice_class'   | The class of the NSD_IODEVICE in the 'iodevice' field of NSD_CLOCK_IODEVICE_OBJ
 			%
-				nsd_clock_iodevice_struct.type = nsd_clock_iodevice_obj.type;
+				nsd_clock_iodevice_struct = clock2struct@nsd_clock(nsd_clock_iodevice_obj);
 				nsd_clock_iodevice_struct.nsd_iodevice_name = nsd_clock_iodevice_obj.iodevice.name;
 				nsd_clock_iodevice_struct.nsd_iodevice_class = class(nsd_clock_iodevice_obj.iodevice);
 		end % clock2struct()
-			
+
+		function b = isclockstruct(nsd_clock_iodevice_obj, nsd_clock_struct)
+			% ISCLOCKSTRUCT - is an nsd_clock_struct description equivalent to this clock?
+			%
+			% B = ISCLOCKSTRUCT(NSD_CLOCK_IODEVICE_OBJ, NSD_CLOCK_STRUCT)
+			%
+			% Returns 1 if NSD_CLOCK_STRUCT is an equivalent description to NSD_CLOCK_IODEVICE_OBJ.
+			% Otherwise returns 0.
+			% 
+			% The property/fields 'type', 'nsd_iodevice_name', and 'nsd_iodevice_class' are examined.
+			%
+				b = isclockstruct@nsd_clock(nsd_clock_iodevice_obj, nsd_clock_struct);
+				if b&isfield(nsd_clock_struct,'nsd_iodevice_name'),
+					b = strcmp(nsd_clock_iodevice_obj.iodevice.name, nsd_clock_struct.nsd_iodevice_name);
+				else,
+					b = 0;
+				end
+				if b&isfield(nsd_clock_struct,'nsd_iodevice_class'),
+					b = strcmp(class(nsd_clock_iodevice_obj.iodevice), nsd_clock_struct.nsd_iodevice_class);
+				else,
+					b = 0;
+				end
+		end % isclockstruct()
 
 		function b = eq(nsd_clock_iodevice_obj_a, nsd_clock_iodevice_obj_b)
 		% EQ - are two NSD_CLOCK_IODEVICE objects equal?
@@ -102,7 +124,7 @@ classdef nsd_clock_iodevice < nsd_clock
 		% B = EQ(NDS_CLOCK_IODEVICE_OBJ_A, NSD_CLOCK_IODEVICE_OBJ_B)
 		%
 		% Compares two NSD_CLOCK_IODEVICE objects and returns 1 if they refer to the same
-		% device and have the same clock type.
+		% iodevice and have the same clock type.
 		%
 			b = eq@nsd_clock(nsd_clock_iodevice_obj_a,nsd_clock_iodevice_obj_b);
 			if b,
