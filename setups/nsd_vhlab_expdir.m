@@ -14,11 +14,23 @@ exp = nsd_experiment_dir(ref, dirname);
 
 vhlabdevnames = nsd_vhlab_makedev;
 
+devclocks = {};
+
 for i=1:numel(vhlabdevnames),
 	dev = exp.iodevice_load('name',vhlabdevnames{i});
 	if isempty(dev),
 		exp = nsd_vhlab_makedev(exp, vhlabdevnames{i});
 	end
+	dev = exp.iodevice_load('name',vhlabdevnames{i});
+	devclocks{i} = dev.clock;
 end
 
+ % update SYNCTABLE
+
+idx1 = find(strcmp('vhspike2', vhlabdevnames));
+idx2 = find(strcmp('vhvis_spike2', vhlabdevnames));
+
+if ~isempty(idx1)&~isempty(idx2),
+	exp.synctable.add(devclocks{idx1},devclocks{idx2},'equal','',1,[]);
+end
 
