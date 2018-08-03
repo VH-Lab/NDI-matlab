@@ -44,7 +44,35 @@ classdef nsd_probe_stimulator < nsd_probe
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
 			%    STIMOPENCLOSE == [STIMON STIMOFF].
 			%  
-				error('still needs implementation');
+				% Step 1, get the epoch
+
+				if ~isa(timeref_or_epoch,'nsd_timereference'),
+					epoch = timeref_or_epoch; % for clarity
+					[stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, epoch, t0, t1);
+					return;
+				end;
+
+				timeref_in = timeref_or_epoch;
+
+				% now we know we need to find a match
+
+				[N, pec, devepochs, devs] = numepochs(self);
+				devs = equnique(devs);
+
+				for i=1:numel(devs),
+					clock2 = devs{i}.clock;
+					[tref,message] = timeconvert(experiment.nsd_synctable, timeref_in, clock2);
+					if ~isempty(tref),
+						break; % break the for loop, we're done
+					end
+				end
+
+				if isempty(tref),
+					error(['No way to convert between clocks.']);
+				end;
+
+				% how are we guarenteed that tref has an epoch? we aren't right now; punt this issue
+				[stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, tref.epoch, t0-tref.t0, t1-tref.t0);
 		end; % read 
 
 		function [stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, epoch, t0, t1)
@@ -69,13 +97,6 @@ classdef nsd_probe_stimulator < nsd_probe
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
 			%    STIMOPENCLOSE == [STIMON STIMOFF].
 			% 
-			
-				if isa(clock_or_epoch, 'nsd_timereference'),
-					error(['Do not know how to deal with nsd_timeref objects yet.']);
-				end
-
-				epoch = clock_or_epoch;
-
 				[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;

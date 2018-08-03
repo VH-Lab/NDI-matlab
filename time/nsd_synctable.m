@@ -220,16 +220,7 @@ classdef nsd_synctable < nsd_base
 				% Step 1: make sure the nsd_synctable_obj.clocks cell array does not have duplicate entries
 				clock1s = {nsd_synctable_obj.entries.clock1};
 				clock2s = {nsd_synctable_obj.entries.clock2};
-				clocklist = cat(2,clock1s,clock2s);
-				extra_indexes = [];
-				for i=1:numel(clocklist),
-					tf= cellfun(@(x) eq(x, clocklist{i}), clocklist);
-					tf(1:i) = 0; % duh, it equals itself; also, only flag later repeats
-					if any(tf),
-						extra_indexes = cat(2,extra_indexes,find(tf));
-					end
-				end
-				nsd_synctable_obj.clocks = clocklist(setdiff(1:numel(clocklist),extra_indexes));
+				nsd_synctable_obj.clocks = equnique(cat(2,clock1s,clock2s))';
 
 				% Step 2: now make the graph table
 				N = numel(nsd_synctable_obj.clocks);

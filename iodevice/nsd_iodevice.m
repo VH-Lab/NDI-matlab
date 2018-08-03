@@ -211,7 +211,7 @@ classdef nsd_iodevice < nsd_dbleaf
 						end
 					end
 				end
-				probes_struct = structunique(probes_struct);
+				probes_struct = equnique(probes_struct);
 
 		end % getprobes()
 

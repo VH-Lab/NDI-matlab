@@ -24,9 +24,6 @@ classdef nsd_probe < handle
 %    (Talk about epochcontents records of devices, probes are created from these elements.)
 %   
 
-
-
-
 	properties (GetAccess=public, SetAccess=protected)
 		experiment   % The handle of an NSD_EXPERIMENT object with which the NSD_PROBE is associated
 		name         % The name of the probe; this must start with a letter and contain no whitespace
@@ -68,10 +65,10 @@ classdef nsd_probe < handle
 
 		end % nsd_probe
 
- 		function [N, probe_epoch_contents, devepoch] = numepochs(nsd_probe_obj)
+ 		function [N, probe_epoch_contents, devepoch, devs] = numepochs(nsd_probe_obj)
 			% NUMEPOCHS - return number of epochs and epoch information for NSD_PROBE
 			%
-			% [N, PROBE_EPOCH_CONTENTS, DEVEPOCH] = NUMEPOCHS(NSD_PROBE_OBJ)
+			% [N, PROBE_EPOCH_CONTENTS, DEVEPOCH, DEVS] = NUMEPOCHS(NSD_PROBE_OBJ)
 			%
 			% Returns N, the number of all epochs of any NSD_IODEVICE in the experiment
 			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
@@ -79,9 +76,12 @@ classdef nsd_probe < handle
 			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
 			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
 			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
+			% DEVS is a 1xN cell array of the NSD_IODEVICE that is used in each epoch
+			%
 				probe_epoch_contents = {}; 
 				devepoch = [];
 				epoch_matches = [];
+				devs = {};
 				D = nsd_probe_obj.experiment.iodevice_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 				for d=1:numel(D),
@@ -95,7 +95,7 @@ classdef nsd_probe < handle
 								epoch_entry = [];
 								if ~isempty(epoch_matches),
 									% do we already know this epoch?
-									epoch_entry = find((epoch_matches(:,1)==d) && (epoch_matches(:,2)==n)); 
+									epoch_entry = find((epoch_matches(:,1)==d) & (epoch_matches(:,2)==n)); 
 								end;
 								if isempty(epoch_entry),
 									epoch_matches(end+1,:) = [ d n ];
@@ -106,6 +106,7 @@ classdef nsd_probe < handle
 								end
 								probe_epoch_contents{epoch_entry}{end+1} = ec(k);
 								devepoch(epoch_entry) = n;
+								devs{epoch_entry} = D{d};
 							end
 						end
 					end

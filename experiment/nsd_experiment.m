@@ -166,7 +166,7 @@ classdef nsd_experiment < handle
 				for d=2:numel(devs),
 					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
-				probestruct = structunique(probestruct);
+				probestruct = equnique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, self);
 		end % getprobes
 
