@@ -299,8 +299,8 @@ classdef nsd_synctable < nsd_base
 					return;
 				end
 
-				if strcmp(timeref_in.type,'utc') & strcmp(second_clock.type,'utc') | ...
-						strcmp(timeref_in.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
+				if strcmp(timeref_in.clock.type,'utc') & strcmp(second_clock.clock.type,'utc') | ...
+						strcmp(timeref_in.clock.type,'exp_global_time') & strcmp(second_clock.type,'exp_global_time'),
 					return;
 				end
 
@@ -312,7 +312,12 @@ classdef nsd_synctable < nsd_base
 				mygraph = digraph(Gtable);
 				index1 = find(cellfun(@(x) eq(x,timeref_in.clock), nsd_synctable_obj.clocks));
 				index2 = find(cellfun(@(x) eq(x,second_clock), nsd_synctable_obj.clocks));
-				path = shortestpath(mygraph, index1, index2);
+
+				if isempty(index1) | isempty(index2),
+					path = shortestpath(mygraph, index1, index2);
+				else,
+					path = [];
+				end
 
 				if ~isempty(path),
 					timeref_here = timeref_in;
