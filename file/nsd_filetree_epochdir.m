@@ -39,53 +39,10 @@ classdef nsd_filetree_epochdir < nsd_filetree
 		end
 
 		% in NSD_BASE, need to change epochcontentsfilename to defaultepochcontentsfilename
-		
-		function [epochfiles] = selectfilegroups(self)
-			% SELECTFILEGROUPS - Return groups of files that will comprise epochs
-			%
-			% EPOCHFILES = SELECTFILEGROUPS(SELF)
-			%
-			% Return the files that comprise epochs.
-			%
-			% EPOCHFILES{n} will be a cell list of the files in epoch n.
-			%
-			% For NSD_FILETREE_EPOCHDIR, this uses the file matching parameters in all
-			% subdirectories within the experiment (at a folder depth of 1; that is, it doesn't
-			% search folders in folders).
-			%
-			% See also: NSD_FILETREE/SETFILEPARAMETERS
-			%
-				exp_path = self.path();
-				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch,...
-					'SearchParent',0,'SearchDepth',1);
-		end % selectfilegroups
 
-		function id = getepochid(self, epoch_number, epochfiles)
-		% GETEPOCHID = Get the epoch identifier for a particular epoch
-		%
-		% ID = GETEPOCHID(SELF, EPOCH_NUMBER, [EPOCHFILES])
-		%
-		% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
-		% For the NSD_FILETREE_EPOCHDIR object, each EPOCH is organized in its own subdirectory,
-		% and the epoch identifier is the _name_ of the subdirectory.
-		%
-		% For example, if my device has a file tree that reads files with extension .dat,
-		% the experiment directory is
-		%
-		% myexperiment/
-		%       t00001/
-		%          mydata.dat
-		%
-		% Then ID is 't00001'
-		%
-			if nargin < 3,
-				epochfiles = getepochfiles(self, epoch_number);
-			end
-			[pathdir,filename] = fileparts(epochfiles{1});
-			[abovepath, id] = fileparts(pathdir);
-		end
-	
-		function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
+		%% methods overriding NSD_BASE
+
+			function [obj,properties_set] = setproperties(nsd_filetree_obj, properties, values)
 			% SETPROPERTIES - set the properties of an NSD_FILETREE object
 			%
 			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_FILETREE_OBJ, PROPERTIES, VALUES)
@@ -134,6 +91,56 @@ classdef nsd_filetree_epochdir < nsd_filetree
 					end
 				end
 		end % setproperties()
+
+		%% methods overriding NSD_EPOCHSET
+
+		function id = epochid(self, epoch_number, epochfiles)
+		% EPOCHID = Get the epoch identifier for a particular epoch
+		%
+		% ID = EPOCHID(SELF, EPOCH_NUMBER, [EPOCHFILES])
+		%
+		% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
+		% For the NSD_FILETREE_EPOCHDIR object, each EPOCH is organized in its own subdirectory,
+		% and the epoch identifier is the _name_ of the subdirectory.
+		%
+		% For example, if my device has a file tree that reads files with extension .dat,
+		% the experiment directory is
+		%
+		% myexperiment/
+		%       t00001/
+		%          mydata.dat
+		%
+		% Then ID is 't00001'
+		%
+			if nargin < 3,
+				epochfiles = getepochfiles(self, epoch_number);
+			end
+			[pathdir,filename] = fileparts(epochfiles{1});
+			[abovepath, id] = fileparts(pathdir);
+		end % epochid
+
+		%% methods overriding NSD_FILETREE
+	
+		function [epochfiles] = selectfilegroups(self)
+			% SELECTFILEGROUPS - Return groups of files that will comprise epochs
+			%
+			% EPOCHFILES = SELECTFILEGROUPS(SELF)
+			%
+			% Return the files that comprise epochs.
+			%
+			% EPOCHFILES{n} will be a cell list of the files in epoch n.
+			%
+			% For NSD_FILETREE_EPOCHDIR, this uses the file matching parameters in all
+			% subdirectories within the experiment (at a folder depth of 1; that is, it doesn't
+			% search folders in folders).
+			%
+			% See also: NSD_FILETREE/SETFILEPARAMETERS
+			%
+				exp_path = self.path();
+				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch,...
+					'SearchParent',0,'SearchDepth',1);
+		end % selectfilegroups
+
 	end % methods
 end
 

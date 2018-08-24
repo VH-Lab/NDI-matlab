@@ -142,7 +142,7 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 				error(['this function does not handle working with clocks yet.']);
 			else,
 				epoch = timeref_or_epoch;
-				disp('here, about to call readchannels_epochsamples')
+				%disp('here, about to call readchannels_epochsamples')
 				[data] = readevents_epochsamples(self,channeltype,channel,epoch,t0,t1);
 			end
 		end % readevents

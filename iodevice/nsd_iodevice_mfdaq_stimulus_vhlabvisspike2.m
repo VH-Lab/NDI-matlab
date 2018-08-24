@@ -76,7 +76,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			%  
 			data = {};
 
-			filelist = self.filetree.getepochfiles(n),
+			filelist = self.filetree.getepochfiles(n);
 			pathname = {};
 			fname = {};
 			ext = {};
@@ -103,7 +103,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			end;
 
 			for i=1:numel(channel),
-				self.mfdaq_prefix(channeltype{i}),
+				%self.mfdaq_prefix(channeltype{i}),
 				switch (self.mfdaq_prefix(channeltype{i})),
 					case 'mk',
 						% put them together, alternating stimtimes and stimofftimes in the final product
@@ -170,7 +170,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
 			%
 
-			filelist = nsd_iodevice_stimulus_obj.filetree.getepochfiles(epoch_number),
+			filelist = nsd_iodevice_stimulus_obj.filetree.getepochfiles(epoch_number);
 			pathname = {};
 			fname = {};
 			ext = {};

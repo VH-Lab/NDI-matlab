@@ -54,6 +54,24 @@ classdef nsd_iodevice < nsd_dbleaf
 			obj.clock = nsd_clock('no_time');
 		end % nsd_iodevice
 
+
+		%% functions that override HANDLE:
+
+		function b = eq(nsd_iodevice_obj_a, nsd_iodevice_obj_b)
+			% EQ - are two NSD_IODEVICE objects equal?
+			%
+			% B = EQ(NSD_IODEVICE_OBJ_A, NSD_IODEVICE_OBJ_B)
+			%
+			% Returns 1 if the NSD_IODEVICE objects have the same name and class type.
+			% The objects do not have to be the same handle or have the same space in memory.
+			% Otherwise, returns 0.
+			%
+				b = strcmp(nsd_iodevice_obj_a.name,nsd_iodevice_obj_b.name) & ...
+					strcmp(class(nsd_iodevice_obj_a),class(nsd_iodevice_obj_b));
+		end % eq()
+
+		%% functions that override NSD_BASE/NSD_LEAF:
+
 		function obj = readobjectfile(nsd_iodevice_obj, fname)
 			% READOBJECTFILE
 			%
@@ -91,6 +109,55 @@ classdef nsd_iodevice < nsd_dbleaf
 				obj.filetree.writeobjectfile(subdirname);
 		end % writeobjectfile
 
+		function [data, fieldnames] = stringdatatosave(nsd_iodevice_obj)
+			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
+			%
+			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_IODEVICE_OBJ)
+			%
+			% Return a cell array of strings to save to the objectfilename.
+			%
+			% FIELDNAMES is a set of names of the fields/properties of the object
+			% that are being stored.
+			%
+			% For NSD_IODEVICE, this returns the type of clock (NSD_IODEVICE_OBJ.CLOCK.TYPE).
+			%
+			% Note: NSD_IODEVICE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
+			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
+			%
+				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_iodevice_obj);
+				if isa(nsd_iodevice_obj.clock,'nsd_clock_iodevice'),
+					data{end+1} = nsd_iodevice_obj.clock.type;
+				else,
+					data{end+1} = ''; % we are about to read it from disk
+				end
+				fieldnames{end+1} = '$nsdclocktype';
+		end % stringdatatosave
+
+		function [obj,properties_set] = setproperties(nsd_iodevice_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_IODEVICE object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_IODEVICE_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_IODEVICE_OBJ and returns the result in OBJ.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
+				fn = fieldnames(nsd_iodevice_obj);
+				obj = nsd_iodevice_obj;
+				properties_set = {};
+				for i=1:numel(properties),
+					if strcmp(properties{i},'$nsdclocktype'),
+						obj.clock = nsd_clock_iodevice(values{i},obj);
+					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+						if properties{i}(1)~='$',
+							eval(['obj.' properties{i} '= values{i};']);
+							properties_set{end+1} = properties{i};
+						end
+					end
+				end
+		end % setproperties()
+
 		function b = deleteobjectfile(nsd_iodevice_obj, thedirname)
 			% DELETEOBJECTFILE - Delete / remove the object file (or files) for NSD_IODEVICE
 			%
@@ -108,6 +175,8 @@ classdef nsd_iodevice < nsd_dbleaf
 				b = b&deleteobjectfile@nsd_dbleaf(nsd_iodevice_obj, thedirname);
 
 		end % deletefileobject
+
+		%%
 
 		function deleteepoch(self, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
@@ -198,6 +267,7 @@ classdef nsd_iodevice < nsd_dbleaf
 			% This function returns a structure with fields of all unique probes across
 			% all EPOCHCONTENTS objects returned in NSD_IODEVICE/GETEPOCHCONTENTS.
 			% The fields are 'name', 'reference', and 'type'.
+
 				probes_struct = emptystruct('name','reference','type');
 				N = self.filetree.numepochs();
 				for n=1:N,
@@ -212,8 +282,18 @@ classdef nsd_iodevice < nsd_dbleaf
 					end
 				end
 				probes_struct = equnique(probes_struct);
-
 		end % getprobes()
+
+		function exp=experiment(self)
+			% EXPERIMENT - return the NSD_EXPERIMENT object associated with the NSD_IODEVICE object
+			%
+			% EXP = EXPERIMENT(NSD_IODEVICE_OBJ)
+			%
+			% Return the NSD_EXPERIMENT object associated with the NSD_IODEVICE of the
+			% NSD_IODEVICE object.
+			%
+				exp = self.filetree.experiment;
+		end % experiment()
 
 		function self=setexperiment(self, experiment)
 			% SETEXPERIMENT - set the EXPERIMENT for an NSD_IODEVICE object's filetree (type NSD_IODEVICE)
@@ -281,79 +361,6 @@ classdef nsd_iodevice < nsd_dbleaf
 			%
 				self.filetree.removeepochtag(number,name);
 		end % removeepochtag()
-
-		function exp=experiment(self)
-			% EXPERIMENT - return the NSD_EXPERIMENT object associated with the NSD_IODEVICE object
-			%
-			% EXP = EXPERIMENT(NSD_IODEVICE_OBJ)
-			%
-			% Return the NSD_EXPERIMENT object associated with the NSD_IODEVICE of the
-			% NSD_IODEVICE object.
-			%
-				exp = self.filetree.experiment;
-		end % experiment()
-
-		function [data, fieldnames] = stringdatatosave(nsd_iodevice_obj)
-			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
-			%
-			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NSD_IODEVICE_OBJ)
-			%
-			% Return a cell array of strings to save to the objectfilename.
-			%
-			% FIELDNAMES is a set of names of the fields/properties of the object
-			% that are being stored.
-			%
-			% For NSD_IODEVICE, this returns the type of clock (NSD_IODEVICE_OBJ.CLOCK.TYPE).
-			%
-			% Note: NSD_IODEVICE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
-			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
-			%
-				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_iodevice_obj);
-				if isa(nsd_iodevice_obj.clock,'nsd_clock_iodevice'),
-					data{end+1} = nsd_iodevice_obj.clock.type;
-				else,
-					data{end+1} = ''; % we are about to read it from disk
-				end
-				fieldnames{end+1} = '$nsdclocktype';
-		end % stringdatatosave
-
-		function [obj,properties_set] = setproperties(nsd_iodevice_obj, properties, values)
-			% SETPROPERTIES - set the properties of an NSD_IODEVICE object
-			%
-			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_IODEVICE_OBJ, PROPERTIES, VALUES)
-			%
-			% Given a cell array of string PROPERTIES and a cell array of the corresponding
-			% VALUES, sets the fields in NSD_IODEVICE_OBJ and returns the result in OBJ.
-			%
-			% The properties that are actually set are returned in PROPERTIESSET.
-			%
-				fn = fieldnames(nsd_iodevice_obj);
-				obj = nsd_iodevice_obj;
-				properties_set = {};
-				for i=1:numel(properties),
-					if strcmp(properties{i},'$nsdclocktype'),
-						obj.clock = nsd_clock_iodevice(values{i},obj);
-					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-						if properties{i}(1)~='$',
-							eval(['obj.' properties{i} '= values{i};']);
-							properties_set{end+1} = properties{i};
-						end
-					end
-				end
-		end % setproperties()
-
-		function b = eq(nsd_iodevice_obj_a, nsd_iodevice_obj_b)
-			% EQ - are two NSD_IODEVICE objects equal?
-			%
-			% B = EQ(NSD_IODEVICE_OBJ_A, NSD_IODEVICE_OBJ_B)
-			%
-			% Returns 1 if the NSD_IODEVICE objects have the same name and class type.
-			% The objects do not have to be the same handle or have the same space in memory.
-			% Otherwise, returns 0.
-			%
-				b = strcmp(nsd_iodevice_obj_a.name,nsd_iodevice_obj_b.name) & ...
-					strcmp(class(nsd_iodevice_obj_a),class(nsd_iodevice_obj_b));
-		end % eq()
-			
+		
 	end % methods
 end

@@ -57,7 +57,7 @@ classdef nsd_probe_stimulator < nsd_probe
 				% now we know we need to find a match
 
 				[N, pec, devepochs, devs] = numepochs(self);
-				devs = equnique(devs),
+				devs = equnique(devs);
 
 				for i=1:numel(devs),
 					clock2 = devs{i}.clock;
@@ -72,7 +72,7 @@ classdef nsd_probe_stimulator < nsd_probe
 				end;
 
 				% how are we guarenteed that tref has an epoch? we aren't right now; punt this issue
-				[stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, tref.epoch, t0-tref.t, t1-tref.t);
+				[stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, tref.epoch, t0-tref.time, t1-tref.time);
 		end; % read 
 
 		function [stimon, stimoff, stimid, parameters, stimopenclose] = read_stimulusepoch(self, epoch, t0, t1)
@@ -108,7 +108,7 @@ classdef nsd_probe_stimulator < nsd_probe
 				for i=1:numel(channeltype),
 					switch channel_labels(i).name,
 						case 'mk1', % stimonoff
-							data{i},
+							%data{i},
 							stimon = data{i}(find(data{i}(:,2)==1),1);
 							stimoff = data{i}(find(data{i}(:,2)==-1),1);
 						case 'mk2',
