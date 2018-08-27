@@ -26,7 +26,7 @@ l = nsd_dbleaf('test')
 
 disp(['Creating an NSD_DBLEAF_BRANCH object...'])
 
-t = nsd_dbleaf_branch(dirname,'testbranch',{'nsd_dbleaf'})
+t = nsd_dbleaf_branch(dirname,'testbranch',{'nsd_dbleaf'},0,testing_memory)
 
 disp(['Adding our leaf to the branch...'])
 
@@ -68,7 +68,7 @@ if ~testing_memory,
 end;
 
 disp(['Now will test adding a branch to a branch']);
-t2 = nsd_dbleaf_branch(t,'testsubbranch',{'nsd_dbleaf'});
+t2 = nsd_dbleaf_branch(t,'testsubbranch',{'nsd_dbleaf'},0,testing_memory);
 
 disp(['How many entries do we have now? ' int2str(t.numitems)])
 disp(['What is our metadata?'])

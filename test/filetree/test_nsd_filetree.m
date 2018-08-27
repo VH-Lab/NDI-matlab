@@ -6,22 +6,37 @@ function test_nsd_filetree
 %
 %   
 
-mydirectory = [userpath filesep 'tools' filesep 'vhlab_mltbx_toolbox' ...
- 		filesep 'directory' filesep 'test_dirs' filesep 'findfilegroupstest3'];
+mydirectory = [userpath filesep 'tools' filesep 'vhlab-toolbox-matlab' ...
+ 		filesep 'file' filesep 'test_dirs' filesep 'findfilegroupstest3'];
+
+disp(['Working on directory ' mydirectory '...'])
+
+ls(mydirectory)
 
 exp = nsd_experiment_dir('myexperiment',mydirectory);
 
-dt = nsd_filetree(exp, {'myfile_#.ext1','myfile_#.ext2'});
+ft = nsd_filetree(exp, {'myfile_#.ext1','myfile_#.ext2'});
 
-n = numepochs(dt);
+n = numepochs(ft);
 
 disp(['Number of epochs are ' num2str(n) '.']);
 
 disp(['File paths of epoch 2 are as follows: ']);
 
-f = getepochfiles(dt,2),
+f = getepochfiles(ft,2),
 
 disp(['the nsd_filetree object fields:'])
 
-dt,
+ft,
 
+et = epochtable(ft);
+
+disp(['The epoch table entries:']);
+
+for i=1:numel(et),
+	et(i),
+end
+
+disp(['File paths of epoch ' et(2).epoch_id ' are as follows: ']);
+
+f = getepochfiles(ft,et(2).epoch_id),

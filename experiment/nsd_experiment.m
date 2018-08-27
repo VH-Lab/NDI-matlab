@@ -26,9 +26,7 @@ classdef nsd_experiment < handle
 
 				obj.reference = reference;
 				obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
-				obj.variable = nsd_variable_branch('','variable',...
-					{'nsd_variable','nsd_variable_branch','nsd_variable_file'}...
-					,0);
+				obj.variable = nsd_variable_branch('','variable',0);
 				obj.synctable = nsd_synctable(obj);
 		end
 
@@ -83,10 +81,10 @@ classdef nsd_experiment < handle
 			%
 				dev = self.iodevice.load(varargin{:});
 				if numel(dev)==1,
-					dev.setexperiment(self);
+					dev=dev.setexperiment(self);
 				else,
 					for i=1:numel(dev),
-						dev{i}.setexperiment(self);
+						dev{i}=dev{i}.setexperiment(self);
 					end
 				end
 		end % ioiodevice_load()	

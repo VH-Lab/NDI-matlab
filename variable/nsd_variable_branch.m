@@ -46,6 +46,8 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 
 			if nargin<3,
 				isflat = 0;
+			else,
+				if ~isnumeric(isflat), error(['isflat must be numeric (0/1).']); end;
 			end
 
 			if 0,

@@ -6,7 +6,6 @@
 %  This class in inhereted from filetree and with epochdir organization
 %
 
-
 classdef nsd_filetree_epochdir < nsd_filetree
 	properties
 	end

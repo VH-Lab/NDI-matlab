@@ -1,8 +1,8 @@
-classdef nsd_filetree < nsd_base, nsd_epochset_param
+classdef nsd_filetree < nsd_base & nsd_epochset_param
 	% NSD_FILETREE - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
-		experiment                    % The NSD_EXPERIMENT to be examined
+		experiment                    % The NSD_EXPERIMENT to be examined (handle)
 		fileparameters                % The parameters for finding files (see NSD_FILETREE/SETFILEPARAMETERS)
 		epochcontents_fileparameters  % The parameters for finding the epochcontents files (see NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS)
 	end
@@ -188,6 +188,35 @@ classdef nsd_filetree < nsd_base, nsd_epochset_param
 				all_epochs = self.selectfilegroups();
 				N = size(all_epochs,1);
 		end % numepochs()
+
+		function [et, all_epochs] = epochtable(nsd_filetree_obj)
+			% EPOCHTABLE - Return an epoch table for NSD_FILETREE
+			%
+                        % ET = EPOCHTABLE(NSD_EPOCHSET_OBJ)
+                        %
+                        % ET is a structure array with the following fields:
+                        % Fieldname:                | Description
+                        % ------------------------------------------------------------------------
+                        % 'epoch_number'            | The number of the epoch (may change)
+                        % 'epoch_id'                | The epoch ID code (will never change once established)
+                        %                           |   This uniquely specifies the epoch.
+                        % 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
+                        %                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
+
+				all_epochs = nsd_filetree_obj.selectfilegroups();
+
+				ue = emptystruct('underlying','epoch_number','epoch_id');
+				et = emptystruct('epoch_number','epoch_id','underlying_epochs');
+
+				for i=1:numel(all_epochs),
+					et_here = emptystruct('epoch_number','epoch_id','underlying_epochs');
+					et_here(1).underlying_epochs = ue;
+					et_here(1).epoch_number = i;
+					et_here(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
+					et(end+1) = et_here;
+				end
+
+		end % epochtable
 
 		function id = epochid(self, epoch_number, epochfiles)
 			% EPOCHID - Get the epoch identifier for a particular epoch
@@ -439,7 +468,7 @@ classdef nsd_filetree < nsd_base, nsd_epochset_param
 			%
 				% developer note: possibility of caching this with some timeout
 
-				all_epochs = self.selectfilegroups();
+				[et,all_epochs] = self.epochtable();
 
 				if nargin<2,
 					n = 1:numel(all_epochs);
@@ -463,35 +492,21 @@ classdef nsd_filetree < nsd_base, nsd_epochset_param
 					if ~isempty(out_of_bounds),
 						error(['No epoch number ' self.epoch2str(n(out_of_bounds)) ' found.']);
 					end
-					
-					fullpathfilenames = all_epochs(n);
-					epochid = {};
-					for i=1:numel(n),
-						epochid{i} = self.epochid(n(i),all_epochs{n(i)});
-					end
+					matches = n;
 				else, % need to check IDs until we find all the epochs of interest
-					% n is cell array of ids
-					epochindexes = zeros(1,numel(all_epochs));
-					epochid = {};
-					for i=1:numel(all_epochs),
-						idhere = self.epochid(i,all_epochs{i});
-						tf = find(strcmp(idhere,n));
-						if ~isempty(tf),
-							for t=1:numel(tf),
-								epochid{tf(t)} = idhere;
-							end
-							epochindexes(tf) = i;
+					matches = [];
+					for i=1:numel(n),
+						id_match = find(strcmpi(n{i},{et.epoch_id}));
+						if isempty(id_match),
+							error(['No such epochid ' n{i} '.']);
 						end
-						if ~any(epochindexes==0)
-							break; % we're done
-						end
-					end
-					fullpathfilenames = all_epochs(epochindexes);
-					out_of_bounds = find(epochindexes==0);
-					if ~isempty(out_of_bounds),
-						error(['No match for epochid ' n{out_of_bounds} ' found, possibly others as well.']);
+						matches(i) = id_match;
 					end
 				end
+
+				fullpathfilenames = all_epochs(matches);
+				epochid = {et(matches).epoch_id};
+					
 				if ~multiple_outputs,
 					fullpathfilenames = fullpathfilenames{1};
 					epochid = epochid{1}; 

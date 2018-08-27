@@ -1,4 +1,4 @@
-classdef nsd_base < handle
+classdef nsd_base 
 	% NSD_BASE - A node that fits into an NSD_BASE_BRANCH
 	%
 	%

@@ -42,6 +42,27 @@ classdef nsd_epochset_param < nsd_epochset
 				error('Abstract class, no filenames');
 		end % epochcontentsfilename
 
+		function [b,msg] = verifyepochcontents(nsd_epochset_param_obj, epochcontents, number)
+			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is appropriate for the NSD_EPOCHSET_PARAM object
+			%
+			%   [B,MSG] = VERIFYEPOCHCONTENTS(NSD_EPOCHSET_PARAM, EPOCHCONTENTS, EPOCH_NUMBER_OR_ID)
+			%
+			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given 
+			% epoch number or epoch id EPOCH_NUMBER_OR_ID.
+			%
+			% For the abstract class EPOCHCONTENTS is always valid as long as EPOCHCONTENTS is an
+			% NSD_EPOCHCONTENTS object.
+			%
+			% If B is 0, then the error message is returned in MSG.
+			%
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+				msg = '';
+				b = isa(epochcontents, 'nsd_epochcontents');
+				if ~b,
+					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS; it must be.';
+				end
+                end % verifyepochcontents()
+
 		function epochcontents = getepochcontents(nsd_epochset_param_obj, N)
 			% GETEPOCHCONTENTS - Return the epoch record for a given nsd_filetree and epoch number
 			%
@@ -58,6 +79,10 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 				epochcontentsfile_fullpath = epochcontentsfilename(nsd_epochset_param_obj, N);
 				eval(['epochcontents = ' nsd_epochset_param_obj.epochcontents_class '(epochcontentsfile_fullpath);']);
+				[b,msg]=verifyepochcontents(nsd_epochset_param_obj,epochcontents);
+				if b,
+					error(['The epochcontents are not valid for this object: ' msg]);
+				end
 		end
 
 		function setepochcontents(nsd_epochset_param_obj, epochcontents, number, overwrite)
@@ -75,14 +100,16 @@ classdef nsd_epochset_param < nsd_epochset
 					overwrite = 0;
 				end
 
-				if isa(epochcontents,'nsd_epochcontents'),
+				[b,msg] = verifyepochcontents(nsd_epochset_param_obj,epochcontents,number);
+
+				if b,
 					ecfname = nsd_epochset_param_obj.epochcontentsfilename(number);
 					if exist(ecfname,'file') & ~overwrite,
 						error(['epochcontents file exists and overwrite was not requested.']);
 					end
 					epochcontents.savetofile(ecfname);
 				else,
-					error(['epochcontents must be a member of the class ''nsd_epochcontents''.']);
+					error(['Invalid epochcontents: ' msg '.']);
 				end
 		end % setepochcontents()
 
@@ -91,7 +118,7 @@ classdef nsd_epochset_param < nsd_epochset
                 function etfname = epochtagfilename(nsd_epochset_param_obj, epochnumber)
 			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
 			%
-			% ETFNAME = EPOCHTAGFILENAME(NSD_FILETREE_OBJ, EPOCHNUMBER)
+			% ETFNAME = EPOCHTAGFILENAME(NSD_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
 			%
 			% In this base class, empty is returned because it is an abstract class.
 			%
@@ -156,22 +183,21 @@ classdef nsd_epochset_param < nsd_epochset
 				end
 				etfname = epochtagfilename(nsd_epochset_param_obj, number, epochfiles);
 				currenttag = getepochtag(nsd_epochset_param_obj, number);
-                                        % update current tags, replacing any existing names
-                                        tagsadded = [];
-                                        if ~isempty(currenttag),
-                                                for i=1:numel(tag),
-                                                        % check for matches
-                                                        index = find(strcmp(tag(i).name,{currenttag.name}));
-                                                        if ~isempty(index),
-                                                                currenttag(index) = tag(i);
-                                                                tagsadded(end+1) = i;
-                                                        end
-                                                end
-                                        end
-                                        tag = tag(setdiff(1:numel(tag),tagsadded));
-                                        currenttag = cat(1,currenttag(:),tag(:));
-                                        setepochtag(nsd_epochset_param_obj, number, currenttag, epochfiles);
-                                end
+				% update current tags, replacing any existing names
+				tagsadded = [];
+				if ~isempty(currenttag),
+					for i=1:numel(tag),
+						% check for matches
+						index = find(strcmp(tag(i).name,{currenttag.name}));
+						if ~isempty(index),
+							currenttag(index) = tag(i);
+							tagsadded(end+1) = i;
+						end
+					end
+				end
+				tag = tag(setdiff(1:numel(tag),tagsadded));
+				currenttag = cat(1,currenttag(:),tag(:));
+				setepochtag(nsd_epochset_param_obj, number, currenttag, epochfiles);
                 end % addepochtag()
 
 		function removeepochtag(nsd_epochparams_obj, number, name)
