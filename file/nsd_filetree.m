@@ -21,7 +21,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NSD_FILETREE/SETFILEPARAMETERS for description)
-		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'nsd_epochcontents' is used by default
+		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'nsd_epochconents_iodevice' is used by default
 		%      EPOCHCONTENTS_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS). By default, the file location
 		%          specified in NSD_FILETREE/EPOCHCONTENTSFILENAME is used
@@ -50,7 +50,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			if nargin > 2,
 				obj.epochcontents_class = epochcontents_class_;
 			else,
-				obj.epochcontents_class = 'nsd_epochcontents';
+				obj.epochcontents_class = 'nsd_epochconents_iodevice';
 			end;
 
 			if nargin > 3,

@@ -194,7 +194,7 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			% valid channel names and types.
 			%
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-                        b = isa(epochcontents, 'nsd_epochcontents');
+                        b = isa(epochcontents, 'nsd_epochconents_iodevice');
 			%warning('developer note: more verification needed here');
                 end
 

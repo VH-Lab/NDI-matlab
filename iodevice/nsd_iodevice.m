@@ -278,7 +278,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			%
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
 				msg = '';
-				b = isa(epochcontents, 'nsd_epochcontents');
+				b = isa(epochcontents, 'nsd_epochconents_iodevice');
 				if ~b,
 					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS; it must be.';
 					return;

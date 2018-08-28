@@ -7,7 +7,7 @@
 %
 %  For example, one may specify that a 4-channel extracellular recording with name
 %  'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-%  on channels 27-28 and 45 and 88 with the following nsd_epochcontents entry:
+%  on channels 27-28 and 45 and 88 with the following nsd_epochconents_iodevice entry:
 %           name: 'ctx'
 %      reference: 1
 %           type: 'extracellular_electrode-4'

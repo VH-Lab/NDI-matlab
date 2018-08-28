@@ -103,7 +103,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
 			b = 1;
 			% UPDATE NEEDED
-			% b = isa(epochcontents, 'nsd_epochcontents') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
+			% b = isa(epochcontents, 'nsd_epochconents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end
 
 		function filename = filenamefromepochfiles(self, filename)

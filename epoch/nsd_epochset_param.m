@@ -19,7 +19,7 @@ classdef nsd_epochset_param < nsd_epochset
 			% of NSD_EPOCHCONTENTS to be used.
 			%
 				if nargin==0,
-					obj.epochcontents_class = 'nsd_epochcontents';
+					obj.epochcontents_class = 'nsd_epochconents_iodevice';
 				else,
 					obj.epochcontents_class = epochcontents_class_;
 				end
@@ -57,7 +57,7 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
 				msg = '';
-				b = isa(epochcontents, 'nsd_epochcontents');
+				b = isa(epochcontents, 'nsd_epochconents_iodevice');
 				if ~b,
 					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS; it must be.';
 				end
