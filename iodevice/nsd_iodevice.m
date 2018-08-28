@@ -262,7 +262,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% a full path.
 			%
 			%
-				ecfname = nsd_iodevice.filetree.epochcontentsfilename(epochnumber);
+				ecfname = nsd_iodevice_obj.filetree.epochcontentsfilename(epochnumber);
                 end % epochcontentsfilename
 
 		function b = verifyepochcontents(self, epochcontents, number)

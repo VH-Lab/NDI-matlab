@@ -89,7 +89,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function b = verifyepochcontents(self, epochcontents, number)
+		function [b,msg] = verifyepochcontents(self, epochcontents, number)
 		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 		%
 		%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
@@ -102,6 +102,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 		%
 		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 			b = 1;
+			msg = '';
 			% UPDATE NEEDED
 			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end

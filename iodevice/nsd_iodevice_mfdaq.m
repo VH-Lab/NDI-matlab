@@ -181,25 +181,6 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			sr = [];  % this is an abstract class
 		end
 
-                function b = verifyepochcontents(self, epochcontents, number)
-			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
-			%
-			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_OBJ, EPOCHCONTENTS, NUMBER)
-			%
-			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
-			% epoch NUMBER.
-			%
-			% For the abstract class NSD_IODEVICE_MFDAQ, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object and if all of the device strings refer to
-			% valid channel names and types.
-			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
-                        b = isa(epochcontents, 'nsd_epochcontents_iodevice');
-			%warning('developer note: more verification needed here');
-                end
-
-		
-
 		function [t_prime, epochnumber_prime] = timeconvert_old(self, clock, t, epochnumber)
 			% TIMECONVERT - convert time to NSD_IODEVICE_MFDAQ 'dev_local_time'
 			%

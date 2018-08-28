@@ -1,4 +1,4 @@
-classdef nsd_probe < handle
+classdef nsd_probe 
 % NSD_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NSD, a PROBE is an instance of an instrument that can be used to MEASURE

@@ -57,7 +57,7 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 				msg = '';
-				b = isa(epochcontents, 'nsd_epochcontents_iodevice');
+				b = isa(epochcontents, 'nsd_epochcontents');
 				if ~b,
 					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS_IODEVICE; it must be.';
 				end
@@ -80,7 +80,7 @@ classdef nsd_epochset_param < nsd_epochset
 				epochcontentsfile_fullpath = epochcontentsfilename(nsd_epochset_param_obj, N);
 				eval(['epochcontents = ' nsd_epochset_param_obj.epochcontents_class '(epochcontentsfile_fullpath);']);
 				[b,msg]=verifyepochcontents(nsd_epochset_param_obj,epochcontents);
-				if b,
+				if ~b,
 					error(['The epochcontents are not valid for this object: ' msg]);
 				end
 		end
