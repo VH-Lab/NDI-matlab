@@ -1,4 +1,4 @@
-classdef nsd_epochconents_iodevice
+classdef nsd_epochcontents_iodevice < nsd_epochcontents
 	properties
 		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
@@ -6,12 +6,12 @@ classdef nsd_epochconents_iodevice
 		devicestring  % An NSD_IODEVICESTRING that indicates the device and channels that comprise the data
 	end % properties
 	methods
-		function obj = nsd_epochconents_iodevice(name_, reference_, type_, devicestring_)
-			% NSD_EPOCHCONTENTS - Create a new nsd_epochconents_iodevice object
+		function obj = nsd_epochcontents_iodevice(name_, reference_, type_, devicestring_)
+			% NSD_EPOCHCONTENTS_IODEVICE - Create a new nsd_epochcontents_iodevice object
 			%
-			% MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNSD_EPOCHCONTENTS_IODEVICE = NSD_EPOCHCONTENTS(NAME, REFERENCE, TYPE, DEVICESTRING)
 			%
-			% Creates a new NSD_EPOCHCONTENTS with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new NSD_EPOCHCONTENTS_IODEVICE with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -21,13 +21,13 @@ classdef nsd_epochconents_iodevice
 			% DEVICESTRING is a string that indicates the channels that were used to acquire
 			% this record.
 			%
-			% The function has an alteranative form:
+			% The function has an alternative form:
 			%
-			%   MYNSD_EPOCHCONTENTS = NSD_EPOCHCONTENTS(FILENAME)
+			%   MYNSD_EPOCHCONTENTS_IODEVICE = NSD_EPOCHCONTENTS(FILENAME)
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-			% one line per NSD_EPOCHCONTENTS entry.
+			% one line per NSD_EPOCHCONTENTS_IODEVICE entry.
 			%
 
 			if nargin==0, % undocumented 0 input constructor
@@ -48,14 +48,14 @@ classdef nsd_epochconents_iodevice
 				end;
 				obj = [];
 				for i=1:length(nsd_struct),
-					nextentry = nsd_epochconents_iodevice(nsd_struct(i).name,...
+					nextentry = nsd_epochcontents_iodevice(nsd_struct(i).name,...
 							nsd_struct(i).reference,...
 							nsd_struct(i).type, ...
 							nsd_struct(i).devicestring);
 					obj = cat(1,obj,nextentry);
 				end;
 				if isempty(obj),
-					obj = nsd_epochconents_iodevice;
+					obj = nsd_epochcontents_iodevice;
 					obj = obj([]);
 				end
 				return;
@@ -72,7 +72,7 @@ classdef nsd_epochconents_iodevice
 			% reference, check for errors
 
 			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
-				error(['reference of nsd_epochconents_iodevice must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of nsd_epochcontents_iodevice must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -89,12 +89,12 @@ classdef nsd_epochconents_iodevice
 			obj.devicestring = devicestring_;
 		end;
 
-		function savetofile(obj, filename)
-		%  SAVETOFILE - Write nsd_epochconents_iodevice object array to disk
+		function savetofile(nsd_epochcontents_iodevice_obj, filename)
+		%  SAVETOFILE - Write nsd_epochcontents_iodevice object array to disk
 		%
-                %  SAVETOFILE(OBJ, FILENAME)
+                %  SAVETOFILE(NSD_EPOCHCONTENTS_IODEVICE_OBJ, FILENAME)
 		%
-		%  Writes the NSD_EPOCHCONTENTS object to disk in filename FILENAME (full path).
+		%  Writes the NSD_EPOCHCONTENTS_IODEVICE object to disk in filename FILENAME (full path).
 		%
 		%
 			fn = {'name','reference','type','devicestring'};

@@ -81,16 +81,16 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHCONTENTS, NUMBER)
 			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
 			% For the abstract class NSD_IODEVICE, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object.
 			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 			b = 1;
 			% UPDATE NEEDED
-			% b = isa(epochcontents, 'nsd_epochconents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
+			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end
 
 		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)

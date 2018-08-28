@@ -232,13 +232,13 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 		%
 		%   DELETEEPOCH(NSD_IODEVICE_OBJ, NUMBER ... [REMOVEDATA])
 		%
-		% Deletes the data and NSD_EPOCHCONTENTS and epoch data for epoch NUMBER.
+		% Deletes the data and NSD_EPOCHCONTENTS_IODEVICE and epoch data for epoch NUMBER.
 		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
 		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
 		%
 		% In the abstract class, this command takes no action.
 		%
-		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 			error(['Not implemented yet.']);
 		end % deleteepoch()
 
@@ -253,7 +253,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 		end % epochtable
 
 		function ecfname = epochcontentsfilename(nsd_iodevice_obj, epochnumber)
-			% EPOCHCONTENTSFILENAME - return the filename for the NSD_EPOCHCONTENTS file for an epoch
+			% EPOCHCONTENTSFILENAME - return the filename for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
 			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, EPOCH_NUMBER_OR_ID)
 			%
@@ -270,17 +270,17 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)
 			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
 			% For the abstract class NSD_IODEVICE, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object.
 			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 				msg = '';
-				b = isa(epochcontents, 'nsd_epochconents_iodevice');
+				b = isa(epochcontents, 'nsd_epochcontents_iodevice');
 				if ~b,
-					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS; it must be.';
+					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS_IODEVICE; it must be.';
 					return;
 				end;
 

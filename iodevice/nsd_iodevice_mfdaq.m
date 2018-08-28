@@ -186,15 +186,15 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_OBJ, EPOCHCONTENTS, NUMBER)
 			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
+			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
 			% For the abstract class NSD_IODEVICE_MFDAQ, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object and if all of the device strings refer to
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object and if all of the device strings refer to
 			% valid channel names and types.
 			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-                        b = isa(epochcontents, 'nsd_epochconents_iodevice');
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
+                        b = isa(epochcontents, 'nsd_epochcontents_iodevice');
 			%warning('developer note: more verification needed here');
                 end
 

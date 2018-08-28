@@ -73,7 +73,7 @@ classdef nsd_probe < handle
 			% Returns N, the number of all epochs of any NSD_IODEVICE in the experiment
 			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
 			%
-			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
+			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS_IODEVICE object with all of the
 			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
 			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
 			% DEVS is a 1xN cell array of the NSD_IODEVICE that is used in each epoch

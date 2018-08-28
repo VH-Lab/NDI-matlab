@@ -21,7 +21,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NSD_FILETREE/SETFILEPARAMETERS for description)
-		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'nsd_epochconents_iodevice' is used by default
+		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'nsd_epochcontents_iodevice' is used by default
 		%      EPOCHCONTENTS_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS). By default, the file location
 		%          specified in NSD_FILETREE/EPOCHCONTENTSFILENAME is used
@@ -50,7 +50,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			if nargin > 2,
 				obj.epochcontents_class = epochcontents_class_;
 			else,
-				obj.epochcontents_class = 'nsd_epochconents_iodevice';
+				obj.epochcontents_class = 'nsd_epochcontents_iodevice';
 			end;
 
 			if nargin > 3,
@@ -243,16 +243,16 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 		end %epochid()
 
 		function eidfname = epochidfilename(self, number, epochfiles)
-			% EPOCHCONTENTSFILENAME - return the file path for the NSD_EPOCHCONTENTS file for an epoch
+			% EPOCHCONTENTSFILENAME - return the file path for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
 			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
 			% Returns the EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
+			% In the base class, NSD_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochid.nsd.'.
+			% the NSD_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochid.nsd.'.
 			%
 				fmstr = filematch_hashstring(self);
 				if nargin<3, % undocumented 3rd argument
@@ -267,7 +267,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 		end % epochidfilename()
 
 		function ecfname = epochcontentsfilename(self, number)
-			% EPOCHCONTENTSFILENAME - return the file name for the NSD_EPOCHCONTENTS file for an epoch
+			% EPOCHCONTENTSFILENAME - return the file name for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
 			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
@@ -304,16 +304,16 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 		end % epochcontentsfilename
 
 		function ecfname = defaultepochcontentsfilename(self, number)
-			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS file for an epoch
+			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
 			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
 			%
 			% Returns the default EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
+			% In the base class, NSD_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the default NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
+			% the default NSD_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochcontents.nsd.'.
 			% This may be overridden if there is an EPOCHCONTENTS_FILEPARAMETERS set.
 			%
 			% See also: NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS
@@ -337,9 +337,9 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			% Returns the tag file name for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NSD_EPOCHCONTENTS data is stored as a hidden file in the same directory
+			% In the base class, NSD_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NSD_EPOCHCONTENTS data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.nsd.'.
+			% the NSD_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.nsd.'.
 			%
 				fmstr = filematch_hashstring(self);
 				if nargin<3, % undocumented 3rd argument

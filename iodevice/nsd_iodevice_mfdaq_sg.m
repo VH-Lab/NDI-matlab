@@ -231,7 +231,7 @@ classdef nsd_iodevice_mfdaq_sg < nsd_iodevice_mfdaq
                 devicestringobject = nsd_iodevicestring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
                 devicestringstring = devicestringobject.devicestring();
                 %
-                obj = nsd_epochconents_iodevice(name,reference,type,devicestringstring);
+                obj = nsd_epochcontents_iodevice(name,reference,type,devicestringstring);
                 %Append each newly made object to end of list
                 epochcontents = [epochcontents obj];
             end

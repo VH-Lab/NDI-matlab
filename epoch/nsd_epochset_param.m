@@ -3,7 +3,7 @@ classdef nsd_epochset_param < nsd_epochset
 %
 
 	properties (SetAccess=protected,GetAccess=public)
-		epochcontents_class  % The (sub)class of NSD_EPOCHCONTENTS to be used; NSD_EPOCHCONTS is the default; a string
+		epochcontents_class  % The (sub)class of NSD_EPOCHCONTENTS_IODEVICE to be used; NSD_EPOCHCONTS is the default; a string
 		
 	end % properties
 
@@ -16,10 +16,10 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 			% Create a new NSD_EPOCHSET_PARAM object. It has one optional input argument,
 			% EPOCHCONTENTS_CLASS, a string, that specifies the name of the class or subclass
-			% of NSD_EPOCHCONTENTS to be used.
+			% of NSD_EPOCHCONTENTS_IODEVICE to be used.
 			%
 				if nargin==0,
-					obj.epochcontents_class = 'nsd_epochconents_iodevice';
+					obj.epochcontents_class = 'nsd_epochcontents_iodevice';
 				else,
 					obj.epochcontents_class = epochcontents_class_;
 				end
@@ -28,7 +28,7 @@ classdef nsd_epochset_param < nsd_epochset
 		%% EPOCHCONTENTS methods
 
 		function ecfname = epochcontentsfilename(nsd_epochset_param_obj, epochnumber)
-			% EPOCHCONTENTSFILENAME - return the filename for the NSD_EPOCHCONTENTS file for an epoch
+			% EPOCHCONTENTSFILENAME - return the filename for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
 			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
 			%
@@ -47,19 +47,19 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 			%   [B,MSG] = VERIFYEPOCHCONTENTS(NSD_EPOCHSET_PARAM, EPOCHCONTENTS, EPOCH_NUMBER_OR_ID)
 			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given 
+			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given 
 			% epoch number or epoch id EPOCH_NUMBER_OR_ID.
 			%
 			% For the abstract class EPOCHCONTENTS is always valid as long as EPOCHCONTENTS is an
-			% NSD_EPOCHCONTENTS object.
+			% NSD_EPOCHCONTENTS_IODEVICE object.
 			%
 			% If B is 0, then the error message is returned in MSG.
 			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 				msg = '';
-				b = isa(epochcontents, 'nsd_epochconents_iodevice');
+				b = isa(epochcontents, 'nsd_epochcontents_iodevice');
 				if ~b,
-					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS; it must be.';
+					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS_IODEVICE; it must be.';
 				end
                 end % verifyepochcontents()
 
@@ -90,11 +90,11 @@ classdef nsd_epochset_param < nsd_epochset
 			%
 			%   SETEPOCHCONTENTS(NSD_EPOCHSET_PARAM_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
 			%
-			% Sets or replaces the NSD_EPOCHCONTENTS for NSD_EPOCHSET_PARAM_OBJ with EPOCHCONTENTS for the epoch
+			% Sets or replaces the NSD_EPOCHCONTENTS_IODEVICE for NSD_EPOCHSET_PARAM_OBJ with EPOCHCONTENTS for the epoch
 			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 			% Otherwise, an error is given if there is an existing epoch record.
 			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 
 				if nargin<4,
 					overwrite = 0;
