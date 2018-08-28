@@ -44,14 +44,15 @@ classdef nsd_epochset
 			% ET is a structure array with the following fields:
 			% Fieldname:                | Description
 			% ------------------------------------------------------------------------
-			% 'epoch_number'            | The number of the epoch (may change)
-			% 'epoch_id'                | The epoch ID code (will never change once established)
-			%                           |   This uniquely specifies the epoch.
+			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
+			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
+			%                           |   This epoch ID uniquely specifies the epoch.
+			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
 				ue = emptystruct('underlying','epoch_number','epoch_id');
-				et = emptystruct('epoch_number','epoch_id','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 
 		end % epochtable
 

@@ -1,4 +1,4 @@
-classdef nsd_probe 
+classdef nsd_probe < nsd_epochset
 % NSD_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NSD, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -64,6 +64,10 @@ classdef nsd_probe
 				obj.type = type;
 
 		end % nsd_probe
+
+		function et = epochtable(nsd_probe_obj)
+			% EPOCHTABLE - return the epoch table for an NSD_PROBE
+
 
  		function [N, probe_epoch_contents, devepoch, devs] = numepochs(nsd_probe_obj)
 			% NUMEPOCHS - return number of epochs and epoch information for NSD_PROBE

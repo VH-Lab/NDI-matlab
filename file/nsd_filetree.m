@@ -60,7 +60,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			end;
 		end;
 
-		%% functions that override HANDLE
+		%% functions that used to override HANDLE
 
 		function b = eq(nsd_filetree_obj_a, nsd_filetree_obj_b)
 			% EQ - determines whether two NSD_FILETREE objects are equivalent
@@ -174,21 +174,6 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 
 		%% functions that override the methods of NSD_EPOCHSET_PARAM
 
-		function N = numepochs(self)
-			% NUMEPOCHS - Return the number of epochs in an NSD_FILETREE
-			%
-			%   N = NUMEPOCHS(SELF)
-			%
-			% Returns the number of available epochs in the data tree SELF.
-			%
-			% See also: NSD_FILETREE/GETEPOCHFILES
-
-				% developer note: possibility of caching this with some timeout
-
-				all_epochs = self.selectfilegroups();
-				N = size(all_epochs,1);
-		end % numepochs()
-
 		function [et, all_epochs] = epochtable(nsd_filetree_obj)
 			% EPOCHTABLE - Return an epoch table for NSD_FILETREE
 			%
@@ -200,18 +185,20 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
                         % 'epoch_number'            | The number of the epoch (may change)
                         % 'epoch_id'                | The epoch ID code (will never change once established)
                         %                           |   This uniquely specifies the epoch.
+			% 'epochcontents'           | The epochcontents object from each epoch
                         % 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
                         %                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
 				all_epochs = nsd_filetree_obj.selectfilegroups();
 
 				ue = emptystruct('underlying','epoch_number','epoch_id');
-				et = emptystruct('epoch_number','epoch_id','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 
 				for i=1:numel(all_epochs),
-					et_here = emptystruct('epoch_number','epoch_id','underlying_epochs');
+					et_here = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 					et_here(1).underlying_epochs = ue;
 					et_here(1).epoch_number = i;
+					et_here(1).epochcontents = getepochcontents(nsd_filetree_obj,i);
 					et_here(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
 					et(end+1) = et_here;
 				end
@@ -256,7 +243,8 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			%
 				fmstr = filematch_hashstring(self);
 				if nargin<3, % undocumented 3rd argument
-					epochfiles = getepochfiles(self, number);
+					all_epochs = nsd_filetree_obj.selectfilegroups();
+					epochfiles = all_epochs(number);
 				end
 				if isempty(epochfiles),
 					error(['No files in epoch number ' self.epoch2str(number) '.']);
@@ -286,7 +274,8 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 				% see if we need to use a different name based on EPOCHCONTENTS_FILEPARAMETERS
 
 				if ~isempty(self.epochcontents_fileparameters),
-					epochfiles = getepochfiles(self,number);
+					all_epochs = nsd_filetree_obj.selectfilegroups();
+					epochfiles = all_epochs{number};
 					fn = {};
 					for i=1:length(epochfiles),
 						[pa,name,ext] = fileparts(epochfiles{i});
@@ -303,10 +292,10 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 				end;
 		end % epochcontentsfilename
 
-		function ecfname = defaultepochcontentsfilename(self, number)
+		function ecfname = defaultepochcontentsfilename(nsd_filetree_obj, number)
 			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
-			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, NUMBER)
+			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NSD_FILETREE_OBJ, NUMBER)
 			%
 			% Returns the default EPOCHCONTENTSFILENAME for the NSD_IODEVICE NSD_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
@@ -319,10 +308,11 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			% See also: NSD_FILETREE/SETEPOCHCONTENTSFILEPARAMETERS
 			%
 			%
-				fmstr = filematch_hashstring(self);
-				epochfiles = getepochfiles(self, number);
+				fmstr = filematch_hashstring(nsd_filetree_obj);
+				all_epochs = nsd_filetree_obj.selectfilegroups();
+				epochfiles = all_epochs{number};
 				if isempty(epochfiles),
-					error(['No files in epoch number ' self.epoch2str(number) '.']);
+					error(['No files in epoch number ' nsd_filetree_obj.epoch2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
 					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.nsd'];
@@ -494,6 +484,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					end
 					matches = n;
 				else, % need to check IDs until we find all the epochs of interest
+					et = self.epochtable();
 					matches = [];
 					for i=1:numel(n),
 						id_match = find(strcmpi(n{i},{et.epoch_id}));

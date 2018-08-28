@@ -52,6 +52,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				obj.filetree = thefiletree;
 			end
 			obj.clock = nsd_clock('no_time');
+			obj.epochcontents_class = 'nsd_epochcontents_iodevice';
 		end % nsd_iodevice
 
 		%% functions that used to override HANDLE, now just implement equal:
@@ -250,6 +251,9 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% Returns the epoch table for NSD_IODEVICE_OBJ
 			%
 				et = nsd_iodevice_obj.filetree.epochtable;
+				for i=1:numel(et),
+					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
+				end
 		end % epochtable
 
 		function ecfname = epochcontentsfilename(nsd_iodevice_obj, epochnumber)
