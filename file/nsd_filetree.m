@@ -187,16 +187,21 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
                         %                           |   This uniquely specifies the epoch.
 			% 'epochcontents'           | The epochcontents object from each epoch
                         % 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
-                        %                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
+                        %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
+			%                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
+			%                           |   match those of NSD_FILETREE_OBJ
 
 				all_epochs = nsd_filetree_obj.selectfilegroups();
 
-				ue = emptystruct('underlying','epoch_number','epoch_id');
+				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
 				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 
 				for i=1:numel(all_epochs),
 					et_here = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 					et_here(1).underlying_epochs = ue;
+					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
+					et_here(1).underlying_epochs(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
+					et_here(1).underlying_epochs(1).epoch_number = i;
 					et_here(1).epoch_number = i;
 					et_here(1).epochcontents = getepochcontents(nsd_filetree_obj,i);
 					et_here(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});

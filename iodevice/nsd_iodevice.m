@@ -178,7 +178,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 
 		%%
 
-		function probes_struct=getprobes(self)
+		function probes_struct=getprobes(nsd_iodevice_obj)
 			% GETPROBES = Return all of the probes associated with an NSD_IODEVICE object
 			%
 			% PROBES_STRUCT = GETPROBES(NSD_IODEVICE_OBJ)
@@ -190,9 +190,9 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% The fields are 'name', 'reference', and 'type'.
 
 				probes_struct = emptystruct('name','reference','type');
-				N = self.numepochs();
+				N = nsd_iodevice_obj.numepochs();
 				for n=1:N,
-					epc = self.getepochcontents(n);
+					epc = nsd_iodevice_obj.getepochcontents(n);
 					if ~isempty(epc),
 						for ec = 1:numel(epc),
 							newentry.name = epc(ec).name;
@@ -205,7 +205,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				probes_struct = equnique(probes_struct);
 		end % getprobes()
 
-		function exp=experiment(self)
+		function exp=experiment(nsd_iodevice_obj)
 			% EXPERIMENT - return the NSD_EXPERIMENT object associated with the NSD_IODEVICE object
 			%
 			% EXP = EXPERIMENT(NSD_IODEVICE_OBJ)
@@ -213,22 +213,22 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% Return the NSD_EXPERIMENT object associated with the NSD_IODEVICE of the
 			% NSD_IODEVICE object.
 			%
-				exp = self.filetree.experiment;
+				exp = nsd_iodevice_obj.filetree.experiment;
 		end % experiment()
 
-		function self=setexperiment(self, experiment)
+		function nsd_iodevice_obj=setexperiment(nsd_iodevice_obj, experiment)
 			% SETEXPERIMENT - set the EXPERIMENT for an NSD_IODEVICE object's filetree (type NSD_IODEVICE)
 			%
 			% NSD_IODEVICE_OBJ = SETEXPERIMENT(NSD_DEVICE_OBJ, PATH)
 			%
 			% Set the EXPERIMENT property of an NSD_IODEVICE object's NSD_IODEVICE object
 			%	
-				self.filetree = setproperties(self.filetree,{'experiment'},{experiment});
+				nsd_iodevice_obj.filetree = setproperties(nsd_iodevice_obj.filetree,{'experiment'},{experiment});
 		end % setpath()
 
 		%% functions that override NSD_EPOCHSET, NSD_EPOCHSET_PARAM
 
-		function deleteepoch(self, number, removedata)
+		function deleteepoch(nsd_iodevice_obj, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
 		%
 		%   DELETEEPOCH(NSD_IODEVICE_OBJ, NUMBER ... [REMOVEDATA])
@@ -252,6 +252,8 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			%
 				et = nsd_iodevice_obj.filetree.epochtable;
 				for i=1:numel(et),
+					% developer note: you might ask, why is this here?
+					% this allows future iodevice subclasses to override getepochcontents without also needing to override epochtable
 					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
 				end
 		end % epochtable
@@ -269,7 +271,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				ecfname = nsd_iodevice_obj.filetree.epochcontentsfilename(epochnumber);
                 end % epochcontentsfilename
 
-		function b = verifyepochcontents(self, epochcontents, number)
+		function b = verifyepochcontents(nsd_iodevice_obj, epochcontents, number)
 			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)
