@@ -40,5 +40,3 @@ plot(time,data(:,1));
 ylabel('Data on channel 1 of probe 1');
 xlabel('Time (s)');
 box off;
-
-

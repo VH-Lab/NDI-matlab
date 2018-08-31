@@ -8,7 +8,6 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 
 	properties (GetAccess=public, SetAccess=protected)
 		filetree   % The NSD_FILETREE associated with this device
-		clock      % The NSD_CLOCK object associated with this device
 	end
 
 	methods
@@ -51,7 +50,6 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				obj.name = name;
 				obj.filetree = thefiletree;
 			end
-			obj.clock = nsd_clock('no_time');
 			obj.epochcontents_class = 'nsd_epochcontents_iodevice';
 		end % nsd_iodevice
 
@@ -125,12 +123,6 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
 			%
 				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_iodevice_obj);
-				if isa(nsd_iodevice_obj.clock,'nsd_clock_iodevice'),
-					data{end+1} = nsd_iodevice_obj.clock.type;
-				else,
-					data{end+1} = ''; % we are about to read it from disk
-				end
-				fieldnames{end+1} = '$nsdclocktype';
 		end % stringdatatosave
 
 		function [obj,properties_set] = setproperties(nsd_iodevice_obj, properties, values)
@@ -148,7 +140,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				properties_set = {};
 				for i=1:numel(properties),
 					if strcmp(properties{i},'$nsdclocktype'),
-						obj.clock = nsd_clock_iodevice(values{i},obj);
+						%obj.clock = nsd_clock_iodevice(values{i},obj); % do nothing, this is gone
 					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
 						if properties{i}(1)~='$',
 							eval(['obj.' properties{i} '= values{i};']);
@@ -276,6 +268,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 					% developer note: you might ask, why is this here?
 					% this allows future iodevice subclasses to override getepochcontents without also needing to override epochtable
 					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
+					et(i).epoch_clock = epochclock(nsd_iodevice_obj, et(i).epoch_number);
 				end
 		end % epochtable
 

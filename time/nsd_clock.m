@@ -1,5 +1,5 @@
 classdef nsd_clock 
-% NSD_CLOCK - a class for specifying time in the NSD framework
+% NSD_CLOCK - a class for specifying a clock type in the NSD framework
 %
 %
 	properties (SetAccess=protected, GetAccess=public)

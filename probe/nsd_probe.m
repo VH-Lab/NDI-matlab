@@ -77,11 +77,12 @@ classdef nsd_probe < nsd_epochset
 			% 'epoch_id'                | The epoch ID code (will never change once established)
 			%                           |   This uniquely specifies the epoch.
 			% 'epochcontents'           | The epochcontents object from each epoch
+                        % 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
 				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
 
 				% pull all the devices from the experiment and look for device strings that match this probe
 
@@ -104,12 +105,25 @@ classdef nsd_probe < nsd_epochset
 							et_(1).epoch_number = numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epochcontents = []; % not applicable for nsd_probe objects
+							et_(1).epoch_clock = {epochclock(nsd_probe_obj)}; % 'inherited'
 							et_(1).underlying_epochs = underlying_epochs;
 							et(end+1) = et_;
 						end
 					end
 				end
 		end % epochtable
+
+		function ec = epochclock(nsd_probe_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_PROBE_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch.
+			%
+			% The NSD_PROBE class always returns NSD_CLOCKTYPE('inherited')
+			%
+				ec = nsd_clocktype('inherited');
+		end % epochclock
 
                 function [cache,key] = getcache(nsd_probe_obj)
 			% GETCACHE - return the NSD_CACHE and key for NSD_PROBE

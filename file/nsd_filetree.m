@@ -194,7 +194,6 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 				end
 		end	
 
-
 		function [et] = buildepochtable(nsd_filetree_obj)
 			% EPOCHTABLE - Return an epoch table for NSD_FILETREE
 			%
@@ -207,6 +206,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
                         % 'epoch_id'                | The epoch ID code (will never change once established)
                         %                           |   This uniquely specifies the epoch.
 			% 'epochcontents'           | The epochcontents object from each epoch
+			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
                         % 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
                         %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
@@ -215,7 +215,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 				all_epochs = nsd_filetree_obj.selectfilegroups();
 
 				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
 
 				for i=1:numel(all_epochs),
 					et_here = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
@@ -225,6 +225,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					et_here(1).underlying_epochs(1).epoch_number = i;
 					et_here(1).epoch_number = i;
 					et_here(1).epochcontents = getepochcontents(nsd_filetree_obj,i);
+					et_here(1).epoch_clock = epochclock(nsd_filetree_obj,i);
 					et_here(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
 					et(end+1) = et_here;
 				end

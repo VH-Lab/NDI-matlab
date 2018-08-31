@@ -50,6 +50,7 @@ classdef nsd_epochset
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
+			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%
@@ -87,6 +88,7 @@ classdef nsd_epochset
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
+			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%
@@ -94,7 +96,7 @@ classdef nsd_epochset
 			% unless the user calls NSD_EPOCHSET/RESETEPOCHTABLE.
 			%
 				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
 		end % buildepochtable
 
 		function [et,hashvalue]=cached_epochtable(nsd_epochset_obj)
@@ -166,7 +168,7 @@ classdef nsd_epochset
 		function eid = epochid(nsd_epochset_obj, epoch_number)
 			% EPOCHID - Get the epoch identifier for a particular epoch
 			%
-			% ID = EPOCHID (SELF, EPOCH_NUMBER)
+			% ID = EPOCHID (NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
 			% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
 			% If it doesn't exist, it is created.
@@ -175,10 +177,25 @@ classdef nsd_epochset
 				eid = ''; % abstract class;
 		end % epochid
 
-                function s = epoch2str(self, number)
+		function ec = epochclock(nsd_epochset_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of NSD_CLOCKTYPE objects (or sub-class members).
+			%
+			% The abstract class always returns NSD_CLOCKTYPE('no_time')
+			%
+			% See also: NSD_CLOCKTYPE
+			%
+				ec = {nsd_clocktype('no_time')};
+		end % epochclock
+
+                function s = epoch2str(nsd_epochset_obj, number)
 			% EPOCH2STR - convert an epoch number or id to a string
 			%
-			% S = EPOCH2STR(NSD_FILETREE_OBJ, NUMBER)
+			% S = EPOCH2STR(NSD_EPOCHSET_OBJ, NUMBER)
 			%
 			% Returns the epoch NUMBER in the form of a string. If it is a simple
 			% integer, then INT2STR is used to produce a string. If it is an epoch
@@ -200,6 +217,16 @@ classdef nsd_epochset
 				end;
                 end % epoch2str()
 
+		function ot = overlaptable(nsd_epochset_obj_a, nsd_epochset_obj_b)
+			% OVERLAPTABLE - compute overlaps among two NSD_EPOCHSET objects
+			%
+			% OT = OVERLAPTABLE(NSD_EPOCHSET_OBJ_A, NSD_EPOCHSET_OBJ_B)
+			%
+			% 
+
+				% is this the right way to do it?
+
+		end % overlaptable
 
 	end % methods
 
