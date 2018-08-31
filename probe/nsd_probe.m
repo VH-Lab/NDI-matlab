@@ -65,10 +65,10 @@ classdef nsd_probe < nsd_epochset
 
 		end % nsd_probe
 
-		function et = epochtable(nsd_probe_obj)
-			% EPOCHTABLE - return the epoch table for an NSD_PROBE
+		function et = buildepochtable(nsd_probe_obj)
+			% BUILDEPOCHTABLE - build the epoch table for an NSD_PROBE
 			%
-			% ET = EPOCHTABLE(NSD_PROBE_OBJ)
+			% ET = BUILDEPOCHTABLE(NSD_PROBE_OBJ)
 			%
 			% ET is a structure array with the following fields:
 			% Fieldname:                | Description
@@ -110,6 +110,27 @@ classdef nsd_probe < nsd_epochset
 					end
 				end
 		end % epochtable
+
+                function [cache,key] = getcache(nsd_probe_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_PROBE
+			%
+			% [CACHE,KEY] = GETCACHE(NSD_PROBE_OBJ)
+			%
+			% Returns the CACHE and KEY for the NSD_PROBE object.
+			%
+			% The CACHE is returned from the associated experiment.
+			% The KEY is the probe's PROBESTRING.
+			%
+			% See also: NSD_FILETREE, NSD_BASE
+
+				cache = [];
+				key = [];
+				if isa(nsd_probe_obj.experiment,'handle'),,
+					exp = nsd_probe_obj.experiment();
+					cache = exp.cache;
+					key = nsd_probe_obj.probestring;
+				end
+		end
 
 		function probestr = probestring(nsd_probe_obj)
 			% PROBESTRING - Produce a human-readable probe string

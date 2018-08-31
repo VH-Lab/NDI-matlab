@@ -6,6 +6,7 @@ classdef nsd_experiment < handle
 		variable          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
 		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
 		synctable         % An NSD_SYNCTABLE object related to this experiment
+		cache             % An NSD_CACHE object for the experiment's use
 	end
 	properties (GetAccess=protected, SetAccess = protected)
 	end
@@ -28,6 +29,7 @@ classdef nsd_experiment < handle
 				obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
 				obj.variable = nsd_variable_branch('','variable',0);
 				obj.synctable = nsd_synctable(obj);
+				obj.cache = nsd_cache();
 		end
 
 		%%%%%% DEVICE METHODS

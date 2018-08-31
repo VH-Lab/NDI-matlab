@@ -13,8 +13,6 @@ classdef nsd_cache < handle
 	end
 
 
-
-
 	methods
 		
 		function nsd_cache_obj = nsd_cache(varargin)
@@ -28,20 +26,28 @@ classdef nsd_cache < handle
 			% Parameter (default)         | Description
 			% ------------------------------------------------------------
 			% maxMemory (1e9)             | Max memory for cache, in bytes
-			% replacement_rule ('FIFO')   | Replacement rule (see NSD_CACHE/SET_REPLACEMENT_RULE
+			% replacement_rule ('fifo')   | Replacement rule (see NSD_CACHE/SET_REPLACEMENT_RULE
 			%
 			% Note that the cache is not 'secure', any function can query the data added.
 			%
 			% See also: NAMEVALUEPAIR
 
 				maxMemory = 1e9;
-				replacement_rule = 'FIFO';
+				replacement_rule = 'fifo';
 
 				assign(varargin{:});
 
-				obj.maxMemory = 1e9;
-				obj = obj.set_replacement_rule(replacement_rule);
-				obj.table = emptystruct('key','type','timestamp','priority','bytes','data')
+				if nargin==0,
+					nsd_cache_obj.maxMemory = maxMemory;
+					nsd_cache_obj.replacement_rule = replacement_rule;
+					nsd_cache_obj.table = emptystruct('key','type','timestamp','priority','bytes','data')
+					return;
+				end;
+
+				nsd_cache_obj = nsd_cache();
+
+				nsd_cache_obj.maxMemory = maxMemory;
+				nsd_cache_obj = set_replacement_rule(nsd_cache_obj,replacement_rule);
 
 		end % nsd_cache creator
 
@@ -77,20 +83,19 @@ classdef nsd_cache < handle
 			% If desired, a PRIORITY can be added; items with greatest PRIORITY will be
 			% deleted last.
 			%
-
 				if nargin < 5,
 					priority = 0;
 				end
 
 				% before we reorganize anything, make sure it will fit
-				s = whos(data);
+				s = whos('data');
 				if s.bytes > nsd_cache_obj.maxMemory,
 					error(['This variable is too large to fit in the cache; cache''s maxMemory exceeded.']);
 				end
 
 				total_memory = nsd_cache_obj.bytes() + s.bytes;
 				if total_memory > nsd_cache_obj.maxMemory, % it doesn't fit
-					if strcmpi(nsd_cache.replacement_rule,'error'),
+					if strcmpi(nsd_cache_obj.replacement_rule,'error'),
 						error(['Cache is too full too accommodate the new data; error was requested rather than replacement.']);
 					end
 					freespaceneeded = total_memory - nsd_cache_obj.maxMemory;
@@ -99,12 +104,12 @@ classdef nsd_cache < handle
 
 				% now there's room
 				newentry = emptystruct('key','type','timestamp','priority','bytes','data');
-				newentry.key = key;
-				newentry.type = type;
-				newentry.timestamp = now; % serial date number
-				newentry.priority = priority;
-				newentry.bytes = s.bytes;
-				newentry.data = data;
+				newentry(1).key = key;
+				newentry(1).type = type;
+				newentry(1).timestamp = now; % serial date number
+				newentry(1).priority = priority;
+				newentry(1).bytes = s.bytes;
+				newentry(1).data = data;
 
 				nsd_cache_obj.table(end+1) = newentry;
 		end % add
@@ -136,13 +141,13 @@ classdef nsd_cache < handle
 				if isnumeric(index_or_key),
 					index = index_or_key;
 				else,
-					index = find ( strcmp(key,{table.key}) & strcmp(type,{table.type}) );
+					index = find ( strcmp(key,{nsd_cache_obj.table.key}) & strcmp(type,{nsd_cache_obj.table.type}) );
 				end
 
 				% delete handles if needed
 				if ~leavehandle, 
 					for i=1:numel(index),
-						if ihsandle(nsd_cache_obj.table(index(i)).data)
+						if ishandle(nsd_cache_obj.table(index(i)).data)
 							delete(nsd_cache_obj.table(index(i)).data);
 						end;
 					end
@@ -167,8 +172,8 @@ classdef nsd_cache < handle
 					thesign = -1;
 				end
 				[y,i] = sortrows(stats,[1 thesign*2]);
-				cumulative_memory_saved = cumsum(nsd_cache_obj.table.bytes(i));
-				spot = find(cumulative_memory_saved>=freebytes,1,'first');
+				cumulative_memory_saved = cumsum([nsd_cache_obj.table(i).bytes]);
+				spot = find(cumulative_memory_saved>=freebytes,1,'first'),
 				if isempty(spot),
 					error(['did not expect to be here.']);
 				end;
@@ -192,7 +197,7 @@ classdef nsd_cache < handle
 			% bytes             | The size of the data in this entry (bytes)
 			% data              | The data stored
 
-				index = find ( strcmp(key,{table.key}) & strcmp(type,{table.type}) );
+				index = find ( strcmp(key,{nsd_cache_obj.table.key}) & strcmp(type,{nsd_cache_obj.table.type}) );
 				tableentry = nsd_cache_obj.table(index);
 		end % tableentry
 
@@ -204,7 +209,10 @@ classdef nsd_cache < handle
 			% Return the current memory that is occupied by the table of NSD_CACHE_OBJ.
 			%
 			%
-				b = sum([nsd_cache_obj.table.bytes]);
+				b = 0;
+				if numel(nsd_cache_obj.table) > 0,
+					b = sum([nsd_cache_obj.table.bytes]);
+				end
 		end % bytes
 
 	end % methods

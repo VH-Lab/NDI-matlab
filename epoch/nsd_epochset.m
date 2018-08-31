@@ -7,8 +7,6 @@ classdef nsd_epochset
 		
 	end % properties
 	properties (SetAccess=protected,GetAccess=protected)
-		cached_epochtable    % Cached epochtable 
-		hashed_epochtable    % Hashed version of epochtable
 	end % properties
 
 	methods
@@ -61,21 +59,26 @@ classdef nsd_epochset
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NSD_EPOCHSET/RESETEPOCHTABLE.
 			%
-				if isempty(nsd_epochset_obj.cached_epochtable),
-					[et,hashvalue] = nsd_epochset_obj.buildepochtable;
-					nsd_epochset_obj.cached_epochtable = et;
-					nsd_epochset_obj.hashed_epochtable = hashvalue;
+				[cached_et, cached_hash] = cached_epochtable(nsd_epochset_obj);
+				if isempty(cached_et),
+					et = nsd_epochset_obj.buildepochtable();
+					hashvalue = hashmatlabvariable(et);
+					[cache,key] = getcache(nsd_epochset_obj);
+					if ~isempty(cache),
+						priority = 1; % use higher than normal priority
+						cache.add(key,'epochtable-hash',struct('epochtable',et,'hashvalue',hashvalue),priority);
+					end
 				else,
-					et = nsd_epochset_obj.cached_epochtable;
-					hashvalue = nsd_epochset_obj.hashed_epochtable;
+					et = cached_et;
+					hashvalue = cached_hash;
 				end;
 
 		end % epochtable
 
-		function [et,hashvalue] = buildepochtable(nsd_epochset_obj)
+		function [et] = buildepochtable(nsd_epochset_obj)
 			% BUILDEPOCHTABLE - Build and store an epoch table that relates the current object's epochs to underlying epochs
 			%
-			% [ET,HASHVALUE] = BUILDEPOCHTABLE(NSD_EPOCHSET_OBJ)
+			% [ET] = BUILDEPOCHTABLE(NSD_EPOCHSET_OBJ)
 			%
 			% ET is a structure array with the following fields:
 			% Fieldname:                | Description
@@ -87,16 +90,47 @@ classdef nsd_epochset
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%
-			% HASHVALUE is the hashed value of the epochtable. One can check to see if the epochtable
-			% has changed with NSD_EPOCHSET/MATCHEDEPOCHTABLE.
-			%
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NSD_EPOCHSET/RESETEPOCHTABLE.
 			%
 				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
 				et = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
-				hashvalue = hashmatlabvariable(et);
 		end % buildepochtable
+
+		function [et,hashvalue]=cached_epochtable(nsd_epochset_obj)
+			% CACHED_EPOCHTABLE - return the cached epochtable of an NSD_EPOCHSET object
+			%
+			% [ET, HASHVALUE] = CACHED_EPOCHTABLE(NSD_EPOCHSET_OBJ)
+			%
+			% Return the cached version of the epochtable, if it exists, along with its HASHVALUE
+			% (a hash number generated from the table). If there is no cached version,
+			% ET and HASHVALUE will be empty.
+			%
+				et = [];
+				hashvalue = [];
+				[cache,key] = getcache(nsd_epochset_obj);
+				if (~isempty(cache) & ~isempty(key)),
+					table_entry = cache.lookup(key,'epochtable-hash');
+					if ~isempty(table_entry),
+						et = table_entry(1).data.epochtable;
+						hashvalue = table_entry(1).data.hashvalue;
+					end;
+				end
+		end % cached_epochtable
+
+		function [cache, key] = getcache(nsd_epochset_obj)
+			% GETCACHE - return the NSD_CACHE and key for an NSD_EPOCHSET object
+			%
+			% [CACHE, KEY] = GETCACHE(NSD_EPOCHSET_OBJ)
+			%
+			% Returns the NSD_CACHE object CACHE and the KEY used by the NSD_EPOCHSET object NSD_EPOCHSET_OBJ.
+			%
+			% In this abstract class, no cache is available, so CACHE and KEY are empty. But subclasses can engage the
+			% cache services of the class by returning an NSD_CACHE object and a unique key.
+			%
+				cache = [];
+				key = [];
+		end % getcache
 
 		function nsd_epochset_obj = resetepochtable(nsd_epochset_obj)
 			% RESETEPOCHTABLE - clear an NSD_EPOCHSET epochtable in memory and force it to be re-read from disk
@@ -108,9 +142,10 @@ classdef nsd_epochset
 			%
 			% See also: NSD_EPOCHSET/EPOCHTABLE
 
-				nsd_epochset_obj.hashed_epochtable = -1;
-				nsd_epochset_obj.cashed_epochtable = [];
-
+				[cache,key]=getcache(nsd_epochset_obj);
+				if (~isempty(cache) & ~isempty(key)),
+					cache.remove(key,'epochtable-hash');
+				end
 		end % resetepochtable
 
 		function b = matchedepochtable(nsd_epochset_obj, hashvalue)
@@ -122,10 +157,10 @@ classdef nsd_epochset
 			% Otherwise, it returns 0.
 
 				b = 0;
-				if ~isempty(nsd_epochset_obj.cached_epochtable),
-					b = (hashvalue == nsd_epochset_obj.hashed_epochtable);
+				[cached_et, cached_hashvalue] = cached_epochtable(nsd_epochset_obj);
+				if ~isempty(cached_et),
+					b = (hashvalue == cached_hashvalue);
 				end
-
 		end % matchedepochtable
 
 		function eid = epochid(nsd_epochset_obj, epoch_number)

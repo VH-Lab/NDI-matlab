@@ -243,10 +243,31 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			error(['Not implemented yet.']);
 		end % deleteepoch()
 
-		function et = epochtable(nsd_iodevice_obj)
-			% EPOCHTABLE - Return the epochtable for an NSD_IODEVICE object
+                function [cache,key] = getcache(nsd_iodevice_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_IODEVICE
 			%
-			% ET = EPOCHTABLE(NSD_IODEVICE_OBJ)
+			% [CACHE,KEY] = GETCACHE(NSD_IODEVICE_OBJ)
+			%
+			% Returns the CACHE and KEY for the NSD_IODEVICE object.
+			%
+			% The CACHE is returned from the associated experiment.
+			% The KEY is the object's objectfilename.
+			%
+			% See also: NSD_FILETREE, NSD_BASE
+
+				cache = [];
+				key = [];
+				if isa(nsd_iodevice_obj.experiment,'handle'),
+					exp = nsd_iodevice_obj.experiment();
+					cache = exp.cache;
+					key = nsd_iodevice_obj.objectfilename;
+				end
+		end
+
+		function et = buildepochtable(nsd_iodevice_obj)
+			% BUILDEPOCHTABLE - Build the epochtable for an NSD_IODEVICE object
+			%
+			% ET = BUILDEPOCHTABLE(NSD_IODEVICE_OBJ)
 			%
 			% Returns the epoch table for NSD_IODEVICE_OBJ
 			%

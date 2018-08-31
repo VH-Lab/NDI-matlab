@@ -174,10 +174,31 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 
 		%% functions that override the methods of NSD_EPOCHSET_PARAM
 
-		function [et, all_epochs] = epochtable(nsd_filetree_obj)
+		function [cache,key] = getcache(nsd_filetree_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_FILETREE
+			%
+			% [CACHE,KEY] = GETCACHE(NSD_FILETREE_OBJ)
+			%
+			% Returns the CACHE and KEY for the NSD_FILETREE object.
+			%
+			% The CACHE is returned from the associated experiment.
+			% The KEY is the object's objectfilename.	
+			%
+			% See also: NSD_FILETREE, NSD_BASE
+			
+				cache = [];
+				key = [];
+				if isa(nsd_filetree_obj.experiment,'handle'),
+					cache = nsd_filetree_obj.experiment.cache;
+					key = nsd_filetree_obj.objectfilename;
+				end
+		end	
+
+
+		function [et] = buildepochtable(nsd_filetree_obj)
 			% EPOCHTABLE - Return an epoch table for NSD_FILETREE
 			%
-                        % ET = EPOCHTABLE(NSD_EPOCHSET_OBJ)
+                        % ET = BUILDEPOCHTABLE(NSD_EPOCHSET_OBJ)
                         %
                         % ET is a structure array with the following fields:
                         % Fieldname:                | Description
@@ -460,9 +481,9 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			%
 			%  See also: GETEPOCHID
 			%
-				% developer note: possibility of caching this with some timeout
+				% developer note: possibility of caching this with some timeout -- 2018-08-31 we did it!!!
 
-				[et,all_epochs] = nsd_filetree_obj.epochtable();
+				[et] = nsd_filetree_obj.epochtable();
 
 				multiple_outputs = 0;
 				useids = 0;
@@ -478,7 +499,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 
 				% now resolve each entry in turn
 				if ~useids,
-					out_of_bounds = find(epoch_number_or_id>numel(all_epochs));
+					out_of_bounds = find(epoch_number_or_id>numel(et));
 					if ~isempty(out_of_bounds),
 						error(['No epoch number ' nsd_filetree_obj.epoch2str(epoch_number_or_id(out_of_bounds)) ' found.']);
 					end
@@ -495,7 +516,10 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					end
 				end
 
-				fullpathfilenames = all_epochs(matches);
+				fullpathfilenames = {};
+				for i=1:numel(matches),
+					fullpathfilenames{i} = et(matches(i)).underlying_epochs.underlying;
+				end;
 				epochid = {et(matches).epoch_id};
 					
 				if ~multiple_outputs,
