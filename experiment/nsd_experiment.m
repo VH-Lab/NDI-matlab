@@ -70,9 +70,9 @@ classdef nsd_experiment < handle
 		function dev = iodevice_load(nsd_experiment_obj, varargin)
 			% LOAD - Load iodevice objects from an NSD_EXPERIMENT
 			%
-			% DEV = IOIODEVICE_LOAD(NSD_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
+			% DEV = IODEVICE_LOAD(NSD_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
-			% DEV = IOIODEVICE_LOAD(NSD_EXPERIMENT_OBJ, INDEXES)
+			% DEV = IODEVICE_LOAD(NSD_EXPERIMENT_OBJ, INDEXES)
 			%
 			% Returns the device object(s) in the NSD_EXPERIMENT at index(es) INDEXES or
 			% searches for an object whose metadata parameters PARAMS1, PARAMS2, and so on, match

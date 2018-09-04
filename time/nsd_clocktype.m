@@ -77,39 +77,45 @@ classdef nsd_clocktype
 				nsd_clocktype_obj.type = type;
 		end % setclocktype() %
 
-		function nsd_clock_struct = clock2struct(nsd_clocktype_obj)
-			% CLOCK2STRUCT - create a structure version of the clock that lacks handles
+		function [cost, mapping] = epochgraph_edge(nsd_clocktype_a, nsd_clocktype_b)
+			% EPOCHGRAPH_EDGE - provide epochgraph edge based purely on clock type
 			%
-			% NSD_CLOCKTYPE_STRUCT = CLOCK2STRUCT(NSD_CLOCKTYPE_OBJ)
+			% [COST, MAPPING] = EPOCHGRAPH_EDGE(NSD_CLOCKTYPE_A, NSD_CLOCKTYPE_B)
 			%
-			% Return a structure with information that specifies an NSD_CLOCKTYPE_OBJ
-			% within an NSD_EXPERIMENT but does not contain handles.
+			% Returns the COST and NSD_TIMEMAPPING object MAPPING that describes the
+			% automatic mapping between epochs that have clock types NSD_CLOCKTYPE_A
+			% and NSD_CLOCKTYPE_B.
 			%
-			% This function is useful for saving a clock to disk.
+                        % The following NSD_CLOCKTYPES, if they exist, are linked across epochs with
+                        % a cost of 1 and a linear mapping rule with shift 1 and offset 0:
+                        %   'utc' -> 'utc'
+                        %   'utc' -> 'approx_utc'
+                        %   'exp_global_time' -> 'exp_global_time'
+                        %   'exp_global_time' -> 'approx_exp_global_time'
+                        %   'dev_global_time' -> 'dev_global_time'
+                        %   'dev_global_time' -> 'approx_dev_global_time'
 			%
-			% NSD_CLOCKTYPE_STRUCT contains the following fields:
-			% Fieldname              | Description
-			% --------------------------------------------------------------------------
-			% 'type'                 | The 'type' field of NSD_CLOCKTYPE_IODEVICE_OBJ
-			%
-				nsd_clock_struct.type = nsd_clocktype_obj.type;
-		end % clock2struct()
+			% Otherwise, COST is Inf and MAPPING is empty.
 
-		function b = isclockstruct(nsd_clocktype_obj, nsd_clock_struct)
-			% ISCLOCKSTRUCT - is an nsd_clock_struct description equivalent to this clock?
-			%
-			% B = ISCLOCKSTRUCT(NSD_CLOCKTYPE_OBJ, NSD_CLOCKTYPESTRUCT)
-			%
-			% Returns 1 if NSD_CLOCKTYPE_STRUCT is an equivalent description to NSD_CLOCKTYPE_OBJ
-			% 
-			% In the base class, only the property/field 'type' is examined.
-			%
-				b = 0;
-				if isfield(nsd_clock_struct,'type'),
-					b = strcmp(nsd_clocktype_obj.type, nsd_clock_struct.type);
+				cost = Inf;
+				mapping = [];
+
+				if strcmp(nsd_clocktype_a.type,'no_time') | strcmp(nsd_clocktype_b.type,'no_time'), 
+					% stop the search if its trivial
+					return;
 				end
-		end % isclockstruct
 		
+				from_list = {'utc','utc','exp_global_time','exp_global_time','dev_global_time','dev_global_time'};
+				to_list = {'utc','approx_utc','exp_global_time','approx_exp_global_time',...
+					'dev_global_time','approx_dev_global_time'};
+
+				index = find(  strcmp(nsd_clocktype_a.type,from_list) & strcmp(nsd_clocktype_b.type) );
+				if ~isempty(index),
+					cost = 1;
+					mapping = nsd_timemapping([1 0]); % trivial mapping
+				end
+		end  % epochgraph_edge
+
 		function b = eq(nsd_clocktype_obj_a, nsd_clocktype_obj_b)
 			% EQ - are two NSD_CLOCKTYPE objects equal?
 			%

@@ -50,19 +50,19 @@ classdef nsd_synctable2 < nsd_base
 
 		%% functions that override NSD_BASE:
 
-                function [obj,properties_set] = setproperties(nsd_synctable_obj, properties, values)
-                        % SETPROPERTIES - set the properties of an NSD_DBLEAF object
-                        %
-                        % [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_SYNCTABLE_OBJ, PROPERTIES, VALUES)
-                        %
-                        % Given a cell array of string PROPERTIES and a cell array of the corresponding
-                        % VALUES, sets the fields in NSD_SYNCTABLE_OBJ and returns the result in OBJ.
-                        %
-                        % If any entries in PROPERTIES are not properties of NSD_SYNCTABLE_OBJ, then
-                        % that property is skipped.
-                        %
-                        % The properties that are actually set are returned in PROPERTIESSET.
-                        %
+		function [obj,properties_set] = setproperties(nsd_synctable_obj, properties, values)
+			% SETPROPERTIES - set the properties of an NSD_DBLEAF object
+			%
+			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NSD_SYNCTABLE_OBJ, PROPERTIES, VALUES)
+			%
+			% Given a cell array of string PROPERTIES and a cell array of the corresponding
+			% VALUES, sets the fields in NSD_SYNCTABLE_OBJ and returns the result in OBJ.
+			%
+			% If any entries in PROPERTIES are not properties of NSD_SYNCTABLE_OBJ, then
+			% that property is skipped.
+			%
+			% The properties that are actually set are returned in PROPERTIESSET.
+			%
 				fn = fieldnames(nsd_synctable_obj);
 				obj = nsd_synctable_obj;
 				properties_set = {};
@@ -77,7 +77,7 @@ classdef nsd_synctable2 < nsd_base
 						end
 					end
 				end
-			end % setproperties()
+		end % setproperties()
 
 		function writedata2objectfile(nsd_synctable_obj, fid)
 			% WRITEDATA2OBJECTFILE - write NSD_SYNCTABLE object file data to the object file FID
@@ -97,8 +97,8 @@ classdef nsd_synctable2 < nsd_base
 				count = fwrite(fid,saveStructString,'char');
 				if count~=numel(saveStructString),
 					error(['Error writing to the file ' filename '.']);
-                                end
-                end % writedata2objectfile()
+				end
+		end % writedata2objectfile()
 
 		function nsd_synctable_obj = readobjectfile(nsd_synctable_obj, filename)
 			% READOBJECTFILE - read 
@@ -122,46 +122,6 @@ classdef nsd_synctable2 < nsd_base
 				nsd_synctable_obj = nsd_synctable_obj.setproperties(fn,values);
 		end; % readobjectfile
 
-		function nsd_synctable_obj = updatehandles(nsd_synctable_obj, exp)
-			% UPDATEHANDLES - Update CLOCK and IODEVICE handles with those from an experiment
-			%
-			% NSD_SYNCTABLE_OBJ = UPDATEHANDLES(NSD_SYNCTABLE_OBJ, EXP)
-			%
-			% Using the IODEVICE information in the NSD_EXPERIMENT object EXP,
-			% this function updates the handles of the NSD_SYNCTABLE_OBJECT NSD_SYNCTABLE_OBJ.
-			%
-			% This function is necessary because handles cannot be updated and linked to
-			% an NSD_EXPERIMENT object from a file.
-			%
-			% If the clocks of NSD_SYNCTABLE_OBJ are already handles, they are not updated.
-			%
-				% Step 1: pull all devices
-				nsd_synctable_obj.experiment = exp;
-				d = exp.iodevice_load('name','(.*)');
-				for i=1:numel(d),
-					for j=1:numel(nsd_synctable_obj.clocks),
-						if isstruct(nsd_synctable_obj.clocks{j}),
-							if isclockstruct(d{i}.clock, nsd_synctable_obj.clocks{j}),
-								nsd_synctable_obj.clocks{j} = d{i}.clock;
-							end
-						end
-					end
-					for j=1:numel(nsd_synctable_obj.entries),
-						if isstruct(nsd_synctable_obj.entries(j).clock1),
-							if isclockstruct(d{i}.clock, nsd_synctable_obj.entries(j).clock1),
-								nsd_synctable_obj.entries(j).clock1 = d{i}.clock;
-							end
-						end
-
-						if isstruct(nsd_synctable_obj.entries(j).clock2),
-							if isclockstruct(d{i}.clock, nsd_synctable_obj.entries(j).clock2),
-								nsd_synctable_obj.entries(j).clock2 = d{i}.clock;
-							end
-						end
-					end
-				end
-		end % updatehandles
-
 		function fname = outputobjectfilename(nsd_synctable_obj)
 			% OUTPUTOBJECTFILENAME - return the file name of an NSD_SYNCTABLE object
 			%
@@ -174,9 +134,28 @@ classdef nsd_synctable2 < nsd_base
 				fname = [nsd_synctable_obj.objectfilename '.synctable.nsd'];
 		end % outputobjectfilename()
 
-
 		% novel methods:
-		
+
+		function [cache,key] = getcache(nsd_synctable_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_SYNCTABLE
+			%
+			% [CACHE,KEY] = GETCACHE(NSD_SYNCTABLE_OBJ)
+			%
+			% Returns the CACHE and KEY for the NSD_SYNCTABLE object.
+			%
+			% The CACHE is returned from the associated experiment (type NSD_EXPERIMENT).
+			% The KEY is the object's objectfilename.
+			%
+			% See also: NSD_FILETREE, NSD_BASE
+
+				cache = [];
+				key = [];
+				if isa(nsd_synctable_obj.experiment,'handle'),
+					cache = nsd_synctable_obj.experiment.cache;
+					key = nsd_synctable_obj.objectfilename;
+				end
+		end
+
 		function nsd_synctable_obj = add(nsd_synctable_obj, clock1, clock2, rule, ruleparameters, cost, valid_range)
 			% ADD - add a time conversion rule entry to an NSD_SYNCTABLE object
 			%
@@ -346,59 +325,17 @@ classdef nsd_synctable2 < nsd_base
 			%
 			% (Re)compute the adjacency matrix property G from the table entries.
 			%
-				% Step 1: make sure the nsd_synctable_obj.clocks cell array does not have duplicate entries
-				clock1s = {nsd_synctable_obj.entries.clock1};
-				clock2s = {nsd_synctable_obj.entries.clock2};
-				nsd_synctable_obj.clocks = equnique(cat(2,clock1s,clock2s))';
 
-				% Step 2: now make the graph table
-				N = numel(nsd_synctable_obj.clocks);
-				nsd_synctable_obj.G = Inf(N,N);
-				nsd_synctable_obj.bestrule = nan(N,N);
+				% Step 1:  Get all devices
+				D = nsd_synctable_obj.load('name','(.*)');
+				if ~iscell(D), D = {D}; end; % make sure we always have a cell
+				
+				% Step 2: Compute all overlaps across all pairs of devices and add them to the graph
 
-				% Add the entries to G
-
-				for i=1:N, % compute G(i,:) 
-					% where in entries is the ith clock the first clock?
-					entry_locations = find(cellfun(@(x) eq(x,nsd_synctable_obj.clocks{i}), clock1s));
-					for j=1:numel(entry_locations),
-						clock2 = nsd_synctable_obj.entries(entry_locations(j)).clock2;
-						% which nsd_synctable_obj.clocks entry number is clock2?
-						index2 = find(cellfun(@(x) eq(x,clock2), nsd_synctable_obj.clocks));
-
-						if ~isempty(index2),
-							% now we know the G(i,index2) is where the weight should be 
-
-							% test to see if we should replace the weight
-							if nsd_synctable_obj.G(i,index2) > nsd_synctable_obj.entries(entry_locations(j)).cost,
-								nsd_synctable_obj.G(i,index2) = nsd_synctable_obj.entries(entry_locations(j)).cost;
-								nsd_synctable_obj.bestrule(i,index2) = entry_locations(j);
-							end
-
-							% now handle special implicit cases
-
-							switch nsd_synctable_obj.entries(entry_locations(j)).rule,
-								case 'equal', % goes in both directions
-
-									if nsd_synctable_obj.G(index2,i) > nsd_synctable_obj.entries(entry_locations(j)).cost,
-										nsd_synctable_obj.G(index2,i) = nsd_synctable_obj.entries(entry_locations(j)).cost;
-										nsd_synctable_obj.bestrule(index2,i) = entry_locations(j);
-									end
-
-								otherwise,
-									% do nothing
-
-							end
-							
-						end
-					end
-				end
+				% Step 3:
+				
 
 		end % computeadjacencymatrix()
-
-		function epoch = epoch_overlap(nsd_synctable_obj, clock, epoch, t0, t1)
-
-		end % epoch_overlap()
 
 		function [timeref_out, message] = timeconvert(nsd_synctable_obj, timeref_in, second_referent, time_type)
 			% TIMECONVERT - convert time between clocks
