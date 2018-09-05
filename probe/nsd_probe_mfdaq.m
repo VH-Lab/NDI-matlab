@@ -55,8 +55,9 @@ classdef nsd_probe_mfdaq < nsd_probe
 			%
 			%  [DATA,T,TIMEREF] = READ(NSD_PROBE_MFDAQ_OBJ, TIMEREF_OR_EPOCH, T0, T1)
 			%
-			%  TIMEREF_OR_EPOCH is either an NSD_TIMEREFERENCE object indicating the clock for T0, T1, or
-			%  it can be a single number, which will indicate the data are to be read from that epoch.
+			%  TIMEREF_OR_EPOCH is either an NSD_TIMEREFERENCE object indicating the time reference for
+			%  T0, T1, or it can be a single number, which will indicate the data are to be read from that
+			%  epoch.
 			%
 			%  DATA is the data collection for the probe. It will have one column per channel.
 			%
