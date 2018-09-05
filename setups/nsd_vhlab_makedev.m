@@ -41,7 +41,7 @@ end
 
 fileparameters = {'reference.txt'};
 objectclass = 'nsd_iodevice_mfdaq';
-epochcontentsclass = 'nsd_epochcontents_vhlab';
+epochcontentsclass = 'nsd_epochcontents_iodevice_vhlab';
 
 switch devname,
 	case 'vhintan',

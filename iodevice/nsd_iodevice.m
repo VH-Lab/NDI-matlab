@@ -1,4 +1,4 @@
-classdef nsd_iodevice < nsd_dbleaf
+classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 % NSD_IODEVICE - Create a new NSD_DEVICE class handle object
 %
 %  D = NSD_IODEVICE(NAME, THEFILETREE)
@@ -7,8 +7,7 @@ classdef nsd_iodevice < nsd_dbleaf
 %  This is an abstract class that is overridden by specific devices.
 
 	properties (GetAccess=public, SetAccess=protected)
-		filetree   % The NSD_IODEVICE associated with this device
-		clock      % The NSD_CLOCK object associated with this device
+		filetree   % The NSD_FILETREE associated with this device
 	end
 
 	methods
@@ -51,11 +50,10 @@ classdef nsd_iodevice < nsd_dbleaf
 				obj.name = name;
 				obj.filetree = thefiletree;
 			end
-			obj.clock = nsd_clock('no_time');
+			obj.epochcontents_class = 'nsd_epochcontents_iodevice';
 		end % nsd_iodevice
 
-
-		%% functions that override HANDLE:
+		%% functions that used to override HANDLE, now just implement equal:
 
 		function b = eq(nsd_iodevice_obj_a, nsd_iodevice_obj_b)
 			% EQ - are two NSD_IODEVICE objects equal?
@@ -70,7 +68,7 @@ classdef nsd_iodevice < nsd_dbleaf
 					strcmp(class(nsd_iodevice_obj_a),class(nsd_iodevice_obj_b));
 		end % eq()
 
-		%% functions that override NSD_BASE/NSD_LEAF:
+		%% functions that override NSD_BASE/NSD_DBLEAF:
 
 		function obj = readobjectfile(nsd_iodevice_obj, fname)
 			% READOBJECTFILE
@@ -125,12 +123,6 @@ classdef nsd_iodevice < nsd_dbleaf
 			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
 			%
 				[data,fieldnames] = stringdatatosave@nsd_dbleaf(nsd_iodevice_obj);
-				if isa(nsd_iodevice_obj.clock,'nsd_clock_iodevice'),
-					data{end+1} = nsd_iodevice_obj.clock.type;
-				else,
-					data{end+1} = ''; % we are about to read it from disk
-				end
-				fieldnames{end+1} = '$nsdclocktype';
 		end % stringdatatosave
 
 		function [obj,properties_set] = setproperties(nsd_iodevice_obj, properties, values)
@@ -148,7 +140,7 @@ classdef nsd_iodevice < nsd_dbleaf
 				properties_set = {};
 				for i=1:numel(properties),
 					if strcmp(properties{i},'$nsdclocktype'),
-						obj.clock = nsd_clock_iodevice(values{i},obj);
+						%obj.clock = nsd_clock_iodevice(values{i},obj); % do nothing, this is gone
 					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
 						if properties{i}(1)~='$',
 							eval(['obj.' properties{i} '= values{i};']);
@@ -178,86 +170,7 @@ classdef nsd_iodevice < nsd_dbleaf
 
 		%%
 
-		function deleteepoch(self, number, removedata)
-		% DELETEEPOCH - Delete an epoch and an epoch record from a device
-		%
-		%   DELETEEPOCH(NSD_IODEVICE_OBJ, NUMBER ... [REMOVEDATA])
-		%
-		% Deletes the data and NSD_EPOCHCONTENTS and epoch data for epoch NUMBER.
-		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
-		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
-		%
-		% In the abstract class, this command takes no action.
-		%
-		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-			error(['Not implemented yet.']);
-		end % deleteepoch()
-
-		function setepochcontents(self, epochcontents, number, overwrite)
-			% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
-			%
-			%   SETEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
-			%
-			% Sets or replaces the NSD_EPOCHCONTENTS object for NSD_IODEVICE_OBJ with EPOCHCONTENTS for the epoch
-			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
-			% Otherwise, an error is given if there is an existing epoch record.
-			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-				
-				if nargin<4,
-					overwrite = 0;
-				end
-
-				% check for well-formed nsd_iodevicestrings
-
-				for i=1:numel(epochcontents),
-					try,
-						thedevicestring = nsd_iodevicestring(epochcontents(i).devicestring);
-					catch,
-						error(['Error evaluating devicestring ' epochcontents(i).devicestring '.']);
-					end
-				end
-
-				self.filetree.setepochcontents(epochcontents, number, overwrite);
-		end % setepochcontents()
-
-                function epochcontents = getepochcontents(self, number)
-			% GETEPOCHCONTENTS - retreive the epoch record associated with a recording epoch
-			%
-			%   EPOCHCONTENTS = GETEPOCHCONTENTS(NSD_IODEVICE_OBJ, NUMBER)
-			%
-			% Returns the EPOCHCONTENTS associated the the data epoch NUMBER for the
-			% NSD_IODEVICE.
-			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-			%
-				   % Developer note: Why is this function present in nsd_iodevice, when it pretty much 
-				   % just calls the nsd_filetree version? Because, some devices may include some sort of epoch
-				   % record in their own files natively, and the nsd_iodevice_DRIVER that reads it may simply read from that
-				   % information. So nsd_iodevice_DRIVER needs the ability to override this function.
-
-				epochcontents = self.filetree.getepochcontents(number, self.name);
-				if ~(verifyepochcontents(self,epochcontents))
-					error(['the numbered epoch is not a valid epoch for the given device']);
-				end
-                end %getepochcontents()
-
-		function b = verifyepochcontents(self, epochcontents, number)
-			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
-			%
-			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)
-			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
-			% epoch NUMBER.
-			%
-			% For the abstract class NSD_IODEVICE, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object.
-			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-				b = isa(epochcontents, 'nsd_epochcontents');
-		end % verifyepochcontents
-
-		function probes_struct=getprobes(self)
+		function probes_struct=getprobes(nsd_iodevice_obj)
 			% GETPROBES = Return all of the probes associated with an NSD_IODEVICE object
 			%
 			% PROBES_STRUCT = GETPROBES(NSD_IODEVICE_OBJ)
@@ -269,9 +182,9 @@ classdef nsd_iodevice < nsd_dbleaf
 			% The fields are 'name', 'reference', and 'type'.
 
 				probes_struct = emptystruct('name','reference','type');
-				N = self.filetree.numepochs();
+				N = nsd_iodevice_obj.numepochs();
 				for n=1:N,
-					epc = self.getepochcontents(n);
+					epc = nsd_iodevice_obj.getepochcontents(n);
 					if ~isempty(epc),
 						for ec = 1:numel(epc),
 							newentry.name = epc(ec).name;
@@ -284,7 +197,7 @@ classdef nsd_iodevice < nsd_dbleaf
 				probes_struct = equnique(probes_struct);
 		end % getprobes()
 
-		function exp=experiment(self)
+		function exp=experiment(nsd_iodevice_obj)
 			% EXPERIMENT - return the NSD_EXPERIMENT object associated with the NSD_IODEVICE object
 			%
 			% EXP = EXPERIMENT(NSD_IODEVICE_OBJ)
@@ -292,75 +205,125 @@ classdef nsd_iodevice < nsd_dbleaf
 			% Return the NSD_EXPERIMENT object associated with the NSD_IODEVICE of the
 			% NSD_IODEVICE object.
 			%
-				exp = self.filetree.experiment;
+				exp = nsd_iodevice_obj.filetree.experiment;
 		end % experiment()
 
-		function self=setexperiment(self, experiment)
+		function nsd_iodevice_obj=setexperiment(nsd_iodevice_obj, experiment)
 			% SETEXPERIMENT - set the EXPERIMENT for an NSD_IODEVICE object's filetree (type NSD_IODEVICE)
 			%
 			% NSD_IODEVICE_OBJ = SETEXPERIMENT(NSD_DEVICE_OBJ, PATH)
 			%
 			% Set the EXPERIMENT property of an NSD_IODEVICE object's NSD_IODEVICE object
 			%	
-				self.filetree = setproperties(self.filetree,{'experiment'},{experiment});
+				nsd_iodevice_obj.filetree = setproperties(nsd_iodevice_obj.filetree,{'experiment'},{experiment});
 		end % setpath()
 
-		function tag = getepochtag(self, number)
-			% GETEPOCHTAG - Get tag(s) from an epoch
-			%
-			% TAG = GETEPOCHTAG(NSD_IODEVICE_OBJ, EPOCHNUMBER)
-			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. If there are no files in
-			% EPOCHNUMBER then an error is returned.
-			%
-				tag = self.filetree.getepochtag(number);
-		end % getepochtag()
+		%% functions that override NSD_EPOCHSET, NSD_EPOCHSET_PARAM
 
-		function setepochtag(self, number, tag)
-			% SETEPOCHTAG - Set tag(s) for an epoch
-			%
-			% SETEPOCHTAG(NSD_IODEVICE_OBJ, EPOCHNUMBER, TAG)
-			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. These tags will replace any
-			% tags in the epoch directory. If there are no files in
-			% EPOCHNUMBER then an error is returned.
-			%
-				self.filetree.setepochtag(number,tag);
-		end % setepochtag()
+		function deleteepoch(nsd_iodevice_obj, number, removedata)
+		% DELETEEPOCH - Delete an epoch and an epoch record from a device
+		%
+		%   DELETEEPOCH(NSD_IODEVICE_OBJ, NUMBER ... [REMOVEDATA])
+		%
+		% Deletes the data and NSD_EPOCHCONTENTS_IODEVICE and epoch data for epoch NUMBER.
+		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
+		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
+		%
+		% In the abstract class, this command takes no action.
+		%
+		% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
+			error(['Not implemented yet.']);
+		end % deleteepoch()
 
-		function addepochtag(self, number, tag)
-			% ADDEPOCHTAG - Add tag(s) for an epoch
+                function [cache,key] = getcache(nsd_iodevice_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_IODEVICE
 			%
-			% ADDEPOCHTAG(NSD_IODEVICE_OBJ, EPOCHNUMBER, TAG)
+			% [CACHE,KEY] = GETCACHE(NSD_IODEVICE_OBJ)
 			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. These tags will be added to any
-			% tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
-			% already exist, they will be overwritten. If there are no files in
-			% EPOCHNUMBER then an error is returned.
+			% Returns the CACHE and KEY for the NSD_IODEVICE object.
 			%
-				self.filetree.addepochtag(number, tag);
-		end % addepochtag()
+			% The CACHE is returned from the associated experiment.
+			% The KEY is the object's objectfilename.
+			%
+			% See also: NSD_FILETREE, NSD_BASE
 
-		function removeepochtag(self, number, name)
-			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
+				cache = [];
+				key = [];
+				if isa(nsd_iodevice_obj.experiment,'handle'),
+					exp = nsd_iodevice_obj.experiment();
+					cache = exp.cache;
+					key = nsd_iodevice_obj.objectfilename;
+				end
+		end
+
+		function et = buildepochtable(nsd_iodevice_obj)
+			% BUILDEPOCHTABLE - Build the epochtable for an NSD_IODEVICE object
 			%
-			% REMOVEEPOCHTAG(NSD_IODEVICE_OBJ, EPOCHNUMBER, NAME)
+			% ET = BUILDEPOCHTABLE(NSD_IODEVICE_OBJ)
 			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. Any tags with name 'NAME' will
-			% be removed from the tags in the epoch EPOCHNUMBER.
-			% tags in the epoch directory. If tags with the same names as those in TAG
-			% already exist, they will be overwritten. If there are no files in
-			% EPOCHNUMBER then an error is returned.
+			% Returns the epoch table for NSD_IODEVICE_OBJ
 			%
-			% NAME can be a single string, or it can be a cell array of strings
-			% (which will result in the removal of multiple tags).
+				et = nsd_iodevice_obj.filetree.epochtable;
+				for i=1:numel(et),
+					% developer note: you might ask, why is this here?
+					% this allows future iodevice subclasses to override getepochcontents without also needing to override epochtable
+					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
+					et(i).epoch_clock = epochclock(nsd_iodevice_obj, et(i).epoch_number);
+				end
+		end % epochtable
+
+		function ecfname = epochcontentsfilename(nsd_iodevice_obj, epochnumber)
+			% EPOCHCONTENTSFILENAME - return the filename for the NSD_EPOCHCONTENTS_IODEVICE file for an epoch
 			%
-				self.filetree.removeepochtag(number,name);
-		end % removeepochtag()
-		
+			% ECFNAME = EPOCHCONTENTSFILENAME(NSD_IODEVICE_OBJ, EPOCH_NUMBER_OR_ID)
+			%
+			% Returns the EPOCHCONTENTSFILENAME for the NSD_IODEVICE epoch EPOCH_NUMBER_OR_ID.
+			% If there is no epoch NUMBER, an error is generated. The file name is returned with
+			% a full path.
+			%
+			%
+				ecfname = nsd_iodevice_obj.filetree.epochcontentsfilename(epochnumber);
+                end % epochcontentsfilename
+
+		function b = verifyepochcontents(nsd_iodevice_obj, epochcontents, number)
+			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+			%
+			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)
+			%
+			% Examines the NSD_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
+			% epoch NUMBER.
+			%
+			% For the abstract class NSD_IODEVICE, EPOCHCONTENTS is always valid as long as
+			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object.
+			%
+			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
+				msg = '';
+				b = isa(epochcontents, 'nsd_epochcontents_iodevice');
+				if ~b,
+					msg = 'epochcontents is not a member of the class NSD_EPOCHCONTENTS_IODEVICE; it must be.';
+					return;
+				end;
+
+				for i=1:numel(epochcontents),
+					try,
+						thedevicestring = nsd_iodevicestring(epochcontents(i).devicestring);
+					catch,
+						b = 0;
+						msg = ['Error evaluating devicestring ' epochcontents(i).devicestring '.'];
+                                        end
+                                end
+		end % verifyepochcontents
+
+		function etfname = epochtagfilename(nsd_epochset_param_obj, epochnumber)
+			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
+			%
+			% ETFNAME = EPOCHTAGFILENAME(NSD_FILETREE_OBJ, EPOCHNUMBER)
+			%
+			% In this base class, empty is returned because it is an abstract class.
+			%
+				etfname = nsd_epochset_param.obj.filetree.epochtagfilename(epochnumber);
+                end % epochtagfilename()
+
 	end % methods
-end
+end % nsd_iodevice classdef
+

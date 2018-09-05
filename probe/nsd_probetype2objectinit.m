@@ -5,7 +5,7 @@ function nsd_probetype2objectinit
 %
 % Initializes the NSD_PROBETYPE2OBJECT structure. The structure has two fields,
 % 'type' and 'classname'. Each entry describes the NSD_PROBE subclass to use to
-% create an NSD_PROBE object for the given NSD_EPOCHCONTENTS type.
+% create an NSD_PROBE object for the given NSD_EPOCHCONTENTS_IODEVICE type.
 % 
 % Use TYPE NSD_PROBETYPE2OBJECTINIT to see the structure
 

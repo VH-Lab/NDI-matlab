@@ -1,4 +1,4 @@
-classdef nsd_probe < handle
+classdef nsd_probe < nsd_epochset
 % NSD_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NSD, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -65,54 +65,86 @@ classdef nsd_probe < handle
 
 		end % nsd_probe
 
- 		function [N, probe_epoch_contents, devepoch, devs] = numepochs(nsd_probe_obj)
-			% NUMEPOCHS - return number of epochs and epoch information for NSD_PROBE
+		function et = buildepochtable(nsd_probe_obj)
+			% BUILDEPOCHTABLE - build the epoch table for an NSD_PROBE
 			%
-			% [N, PROBE_EPOCH_CONTENTS, DEVEPOCH, DEVS] = NUMEPOCHS(NSD_PROBE_OBJ)
+			% ET = BUILDEPOCHTABLE(NSD_PROBE_OBJ)
 			%
-			% Returns N, the number of all epochs of any NSD_IODEVICE in the experiment
-			% NSD_PROBE_OBJ.exp that contain the NSD_PROBE_OBJ name, reference, and type.
-			%
-			% PROBE_EPOCH_CONTENTS is a 1xN cell array of NSD_EPOCHCONTENTS object with all of the
-			% EPOCHCONTENTS entries that match NSD_PROBE_OBJ. 	
-			% DEVEPOCH is a 1xN array with the device's epoch number that contains each probe epoch.
-			% DEVS is a 1xN cell array of the NSD_IODEVICE that is used in each epoch
-			%
-				probe_epoch_contents = {}; 
-				devepoch = [];
-				epoch_matches = [];
-				devs = {};
+			% ET is a structure array with the following fields:
+			% Fieldname:                | Description
+			% ------------------------------------------------------------------------
+			% 'epoch_number'            | The number of the epoch (may change)
+			% 'epoch_id'                | The epoch ID code (will never change once established)
+			%                           |   This uniquely specifies the epoch.
+			% 'epochcontents'           | The epochcontents object from each epoch
+                        % 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
+			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
+			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
+
+				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+
+				% pull all the devices from the experiment and look for device strings that match this probe
+
 				D = nsd_probe_obj.experiment.iodevice_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
+
+				d_et = {};
+
 				for d=1:numel(D),
-					NUM = D{d}.filetree.numepochs();
-					for n=1:NUM,
-						ec = D{d}.getepochcontents(n);
-						for k=1:numel(ec),
-							if strcmp(ec(k).name,nsd_probe_obj.name) && ...
-								(ec(k).reference==nsd_probe_obj.reference) &&  ...
-								strcmp(lower(ec(k).type),lower(nsd_probe_obj.type)),  % we have a match
-								epoch_entry = [];
-								if ~isempty(epoch_matches),
-									% do we already know this epoch?
-									epoch_entry = find((epoch_matches(:,1)==d) & (epoch_matches(:,2)==n)); 
-								end;
-								if isempty(epoch_entry),
-									epoch_matches(end+1,:) = [ d n ];
-									epoch_entry = size(epoch_matches,1);
-								end;
-								if numel(probe_epoch_contents)<epoch_entry,
-									probe_epoch_contents{epoch_entry} = {};
-								end
-								probe_epoch_contents{epoch_entry}{end+1} = ec(k);
-								devepoch(epoch_entry) = n;
-								devs{epoch_entry} = D{d};
-							end
+					d_et{d} = epochtable(D{d});
+
+					for n=1:numel(d_et{d}),
+						underlying_epochs = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
+						underlying_epochs(1).underlying = D{d};
+						if nsd_probe_obj.epochcontentsmatch(d_et{d}(n).epochcontents),
+							underlying_epochs.epoch_number = n;
+							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
+							underlying_epochs.epochcontents = d_et{d}(n).epochcontents;
+							et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+							et_(1).epoch_number = numel(et);
+							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
+							et_(1).epochcontents = []; % not applicable for nsd_probe objects
+							et_(1).epoch_clock = {epochclock(nsd_probe_obj)}; % 'inherited'
+							et_(1).underlying_epochs = underlying_epochs;
+							et(end+1) = et_;
 						end
 					end
 				end
-				N = numel(probe_epoch_contents);
-		end % numepochs()
+		end % epochtable
+
+		function ec = epochclock(nsd_probe_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_PROBE_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch.
+			%
+			% The NSD_PROBE class always returns NSD_CLOCKTYPE('inherited')
+			%
+				ec = nsd_clocktype('inherited');
+		end % epochclock
+
+                function [cache,key] = getcache(nsd_probe_obj)
+			% GETCACHE - return the NSD_CACHE and key for NSD_PROBE
+			%
+			% [CACHE,KEY] = GETCACHE(NSD_PROBE_OBJ)
+			%
+			% Returns the CACHE and KEY for the NSD_PROBE object.
+			%
+			% The CACHE is returned from the associated experiment.
+			% The KEY is the probe's PROBESTRING.
+			%
+			% See also: NSD_FILETREE, NSD_BASE
+
+				cache = [];
+				key = [];
+				if isa(nsd_probe_obj.experiment,'handle'),,
+					exp = nsd_probe_obj.experiment();
+					cache = exp.cache;
+					key = nsd_probe_obj.probestring;
+				end
+		end
 
 		function probestr = probestring(nsd_probe_obj)
 			% PROBESTRING - Produce a human-readable probe string
@@ -126,12 +158,12 @@ classdef nsd_probe < handle
 				probestr = [nsd_probe_obj.name ' _ ' int2str(nsd_probe_obj.reference) ];
 		end
 
-		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(nsd_probe_obj, epoch)
+		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(nsd_probe_obj, epoch_number_or_id)
 			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for NSD_PROBE
 			%
-			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_OBJ, EPOCH)
+			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NSD_PROBE_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Given an NSD_PROBE object and an EPOCH number, this functon returns the corresponding channel and device info.
+			% Given an NSD_PROBE object and an EPOCH number, this function returns the corresponding channel and device info.
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
 			%   DEV is a 1xC cell array of NSD_IODEVICE objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
@@ -139,10 +171,21 @@ classdef nsd_probe < handle
 			%   CHANNELTYPE is a cell array of the type of each channel
 			%   CHANNELLIST is the channel number of each channel.
 			%
-				[n, probe_epoch_contents, devepochs] = numepochs(nsd_probe_obj);
-				if ~(epoch >=1 & epoch <= n),
-					error(['Requested epoch out of range of 1 .. ' int2str(n) '.']);
-		                end
+
+				et = epochtable(nsd_probe_obj);
+
+				if ischar(epoch_number_or_id),
+					epoch_number = strcmpi(epoch_number_or_id, {et.epochid});
+					if isempty(epoch_number),
+						error(['Could not identify epoch with id ' epoch_number_or_id '.']);
+					end
+				else,
+					epoch_number = epoch_number_or_id;
+				end
+
+				if epoch_number>numel(et),
+		 			error(['Epoch number ' epoch_number ' out of range 1..' int2str(numel(et)) '.']);
+				end;
 
 				dev = {};
 				devname = {};
@@ -150,78 +193,32 @@ classdef nsd_probe < handle
 				channeltype = {};
 				channellist = [];
 				
-				for ec = 1:numel(probe_epoch_contents{epoch}),
-					devstr = nsd_iodevicestring(probe_epoch_contents{epoch}{ec}.devicestring);
-					[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
-					dev{end+1} = nsd_probe_obj.experiment.iodevice_load('name', devname_here);
-					devname = cat(2,devname,devname_here);
-					devepoch = cat(2,devepoch,devepochs(epoch));
-					channeltype = cat(2,channeltype,channeltype_here);
-					channellist = cat(2,channellist,channellist_here);
+				for i = 1:numel(et),
+					for j=1:numel(et(i).underlying_epochs),
+						devstr = nsd_iodevicestring(et(i).underlying_epochs(j).epochcontents.devicestring);
+						[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
+						dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
+						devname = cat(2,devname,devname_here);
+						devepoch = cat(2,devepoch,et(i).underlying_epochs(j).epoch_number);
+						channeltype = cat(2,channeltype,channeltype_here);
+						channellist = cat(2,channellist,channellist_here);
+					end
 				end
 
 		end % getchanneldevinfo(nsd_probe_obj, epoch)
 
-		function tag = getepochtag(nsd_probe_obj, number)
-			% GETEPOCHTAG - Get tag(s) from an epoch
+		function b = epochcontentsmatch(nsd_probe_obj, epochcontents)
+			% EPOCHCONTENTSMATCH - does an epochcontents record match our probe?
 			%
-			% TAG = GETEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER)
+			% B = EPOCHCONTENTSMATCH(NSD_PROBE_OBJ, EPOCHCONTENTS)
 			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. If there are no files in
-			% EPOCHNUMBER then an error is returned.
+			% Returns 1 if the NSD_EPOCHCONTENTS object EPOCHCONTENTS is a match for
+			% the NSD_PROBE_OBJ probe and 0 otherwise.
 			%
-				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				tag = dev.getepochtag(devepoch);
-		end % getepochtag()
-
-		function setepochtag(nsd_probe_obj, number, tag)
-			% SETEPOCHTAG - Set tag(s) for an epoch
-			%
-			% SETEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, TAG)
-			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. These tags will replace any
-			% tags in the epoch directory. If there are no files in
-			% EPOCHNUMBER then an error is returned.
-			%
-				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.setepochtag(devepoch, tag);
-		end % setepochtag()
-
-		function addepochtag(nsd_probe_obj, number, tag)
-			% ADDEPOCHTAG - Add tag(s) for an epoch
-			%
-			% ADDEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, TAG)
-			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. These tags will be added to any
-			% tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
-			% already exist, they will be overwritten. If there are no files in
-			% EPOCHNUMBER then an error is returned.
-			%
-				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.addepochtag(devepoch, tag);
-		end % addepochtag()
-
-		function removeepochtag(nsd_probe_obj, number, name)
-			% REMOVEEPOCHTAG - Remove tag(s) for an epoch
-			%
-			% REMOVEEPOCHTAG(NSD_PROBE_OBJ, EPOCHNUMBER, NAME)
-			%
-			% Tags are name/value pairs returned in the form of a structure
-			% array with fields 'name' and 'value'. Any tags with name 'NAME' will
-			% be removed from the tags in the epoch EPOCHNUMBER.
-			% tags in the epoch directory. If tags with the same names as those in TAG
-			% already exist, they will be overwritten. If there are no files in
-			% EPOCHNUMBER then an error is returned.
-			%
-			% NAME can be a single string, or it can be a cell array of strings
-			% (which will result in the removal of multiple tags).
-			%
-				[dev,devname,devepoch] = nsd_probe_obj.getchanneldevinfo(number);
-				dev.removeepochtag(devepoch,name);
-		end % removeepochtag()
+				b = strcmp(epochcontents.name,nsd_probe_obj.name) && ...
+					(epochcontents.reference==nsd_probe_obj.reference) &&  ...
+					strcmp(lower(epochcontents.type),lower(nsd_probe_obj.type));  % we have a match
+		end % epochcontentsmatch()
 
 	end % methods
 end

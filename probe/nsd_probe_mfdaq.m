@@ -36,7 +36,7 @@ classdef nsd_probe_mfdaq < nsd_probe
 			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
 
 			if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
-			if numel(unique(dev))>1, error(['At present, do not know how to mix devices.']); end;
+			if numel(equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
 
 			if nargout>=1,
 				[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch(1), s0, s1);
@@ -101,9 +101,9 @@ classdef nsd_probe_mfdaq < nsd_probe
 			% SR is an array of sample rates for the probe NSD_PROBE_MFDAQ_OBJ
 			% from epoch number EPOCH.
 			%
-				[dev, devname, devepoch, channeltype, channellist] = self.getchanneldevinfo(epoch);
+				[dev, devname, devepoch, channeltype, channellist] = self.getchanneldevinfo(epoch),
 				if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
-				sr = dev.samplerate(devepoch, channeltype, channellist);
+				sr = dev{1}.samplerate(devepoch, channeltype, channellist);
 		end
 
 	end; % methods

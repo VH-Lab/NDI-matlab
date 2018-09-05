@@ -37,8 +37,25 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%  Creates a new NSD_IODEVICE_MFDAQ object with NAME, and FILETREE.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@nsd_iodevice(varargin{:});
-			obj.clock = nsd_clock_iodevice('dev_local_time',obj);
 		end; % nsd_iodevice_mfdaq
+
+		% functions that override nsd_epochset
+
+                function ec = epochclock(nsd_iodevice_mfdaq_obj, epoch_number)
+                        % EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+                        %
+                        % EC = EPOCHCLOCK(NSD_IODEVICE_MFDAQ_OBJ, EPOCH_NUMBER)
+                        %
+                        % Return the clock types available for this epoch as a cell array
+                        % of NSD_CLOCKTYPE objects (or sub-class members).
+			% 
+			% For the generic NSD_IODEVICE_MFDAQ, this returns a single clock
+			% type 'dev_local'time';
+			%
+			% See also: NSD_CLOCKTYPE
+                        %
+                                ec = {nsd_clocktype('dev_local_time')};
+                end % epochclock
 
 		function channels = getchannels(thedev)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
@@ -180,25 +197,6 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			% Note: in the abstract class NSD_IODEVICE_MFDAQ, this returns empty.
 			sr = [];  % this is an abstract class
 		end
-
-                function b = verifyepochcontents(self, epochcontents, number)
-			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
-			%
-			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_OBJ, EPOCHCONTENTS, NUMBER)
-			%
-			% Examines the NSD_EPOCHCONTENTS EPOCHCONTENTS and determines if it is valid for the given device
-			% epoch NUMBER.
-			%
-			% For the abstract class NSD_IODEVICE_MFDAQ, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS object and if all of the device strings refer to
-			% valid channel names and types.
-			%
-			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS
-                        b = isa(epochcontents, 'nsd_epochcontents');
-			%warning('developer note: more verification needed here');
-                end
-
-		
 
 		function [t_prime, epochnumber_prime] = timeconvert_old(self, clock, t, epochnumber)
 			% TIMECONVERT - convert time to NSD_IODEVICE_MFDAQ 'dev_local_time'

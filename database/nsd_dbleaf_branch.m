@@ -1,4 +1,4 @@
-classdef nsd_dbleaf_branch < nsd_dbleaf 
+classdef nsd_dbleaf_branch < nsd_dbleaf
 	% NSD_DBLEAF_BRANCH - A class that manages branches of NSD_DBLEAF objects with searchable metadata
 	%
 	% 
@@ -207,7 +207,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% now we're ready to concatenate 
 			md(end+1) = omd;
 
-
 			% now deal with saving metadata and the object
 
 			if nsd_dbleaf_branch_obj.memory,
@@ -265,13 +264,12 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			end
 
 			nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.unlock();
-			
 		end
 
 		function nsd_dbleaf_branch_obj=update(nsd_dbleaf_branch_obj, nsd_dbleaf_obj)
 			% UPDATE - update the contents of a NSD_DBLEAF object that is stored in an NSD_DBLEAF_BRANCH
 			%
-			% NSD_DBLEAF_BRANCH_OBJ = UPDATE(NSD_DBLEAF_BRANCH_OBJ, NSD_DBLEAF_OBJ
+			% NSD_DBLEAF_BRANCH_OBJ = UPDATE(NSD_DBLEAF_BRANCH_OBJ, NSD_DBLEAF_OBJ)
 			%
 			% Update the record of an NSD_DBLEAF object that is already stored in a NSD_DBLEAF_BRANCH
 			%
@@ -309,7 +307,6 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				end;
 
 				nsd_dbleaf_branch_obj.unlock();
-
 		end % update()
 		
 		function [indexes,md] = search(nsd_dbleaf_branch_obj, varargin)
@@ -407,8 +404,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 
 			md = nsd_dbleaf_branch_obj.metadata();
 			n = numel(md);
-
-		end % numitems
+		end % numitems()
 
 		function nsd_dbleaf_branch_obj = writeobjectfile(nsd_dbleaf_branch_obj, thedirname, locked, metad)
 			% WRITEOBJECTFILE - write the object data to the disk
