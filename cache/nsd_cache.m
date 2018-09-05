@@ -156,6 +156,16 @@ classdef nsd_cache < handle
 
 		end % remove
 
+		function nsd_cache_obj = clear(nsd_cache_obj)
+			% CLEAR - clear data from an NSD_CACHE
+			%
+			% NSD_CACHE_OBJ = CLEAR(NSD_CACHE_OBJ)
+			%
+			% Clears all entries from the NSD_CACHE object NSD_CACHE_OBJ.
+			%
+				nsd_cache_obj = nsd_cache_obj.remove(1:numel(nsd_cache_obj.table),[]);
+		end % clear
+
 		function nsd_cache_obj = freebytes(nsd_cache_obj, freebytes)
 			% FREEBYTES - remove the lowest priority entries from the cache to free a certain amount of memory
 			%

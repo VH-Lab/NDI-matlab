@@ -217,90 +217,45 @@ classdef nsd_epochset
 				end;
                 end % epoch2str()
 
-		% overlap table functions
-
-		function ot = overlaptable(nsd_epochset_obj_a, nsd_epochset_obj_b)
-			% OVERLAPTABLE - compute overlaps among two NSD_EPOCHSET objects
-			%
-			% OT = OVERLAPTABLE(NSD_EPOCHSET_OBJ_A, NSD_EPOCHSET_OBJ_B)
-			%
-			% OT is a matrix that has size NUMEPOCHS(NSD_EPOCHSET_OBJ_A) x NUMEPOCHS(NSD_EPOCHSET_OBJ_B)
-			% and each entry OT(i,j) is 
-			%    1 : If epoch i of NSD_EPOCHSET_OBJ_A overlaps NSD_EPOCHSET_OBJ_B
-			%    0 : If epoch i of NSD_EPOCHSET_OBJ_A does NOT overlap NSD_EPOCHSET_OBJ_B
-			%  NaN : If it is unknown if epoch i of NSD_EPOCHSET_OBJ_A overlaps NSD_EPOCHSET_OBJ_B.
-			%
-			% Two epochs are said to overlap if the time interval of epoch 1 (in absolute time) overlaps 
-			% that of epoch 2.
-			%
-				cached_ot = cached_overlaptable(nsd_epochset_obj_a, nsd_epochset_obj_b);
-				if isempty(cached_ot),
-					ot = nsd_epochset_obj_a.buildoverlaptable(nsd_epochset_obj_b);
-					[et_a,hash_a] = cached_epochtable(nsd_epochset_obj_a);
-					[et_b,hash_b] = cached_epochtable(nsd_epochset_obj_b);
-					[cache_a,key_a] = getcache(nsd_epochset_obj_a);
-					[cache_b,key_b] = getcache(nsd_epochset_obj_a);
-					if ~isempty(cache_a) & ~isempty(cache_b),
-						overlaptable_type = ['overlaptable-' key_b];
-						priority = 1; % use higher than normal priority
-						cache_a.add(key,overlaptable_type,...
-							struct('overlaptable',ot,'hashvalue_a',hash_a,'hashvalue_b',hash_b),...
-							priority);
-					end
-				else,
-					ot = cached_ot;
-				end;
-		end % overlaptable
-
-		function ot = buildoverlaptable(nsd_epochset_obj_a, nsd_epochset_obj_b)
-			% BUILDOVERLAPTABLE - compute overlap table among two NSD_EPOCHSET objects
-			%
-			% OT = BUILTOVERLAPTABLE(NSD_EPOCHSET_OBJ_A, NSD_EPOCHSET_OBJ_B)
-			%
-			% OT is a matrix that has size NUMEPOCHS(NSD_EPOCHSET_OBJ_A) x NUMEPOCHS(NSD_EPOCHSET_OBJ_B)
-			% and each entry OT(i,j) is 
-			%    1 : If epoch i of NSD_EPOCHSET_OBJ_A overlaps NSD_EPOCHSET_OBJ_B
-			%    0 : If epoch i of NSD_EPOCHSET_OBJ_A does NOT overlap NSD_EPOCHSET_OBJ_B
-			%  NaN : If it is unknown if epoch i of NSD_EPOCHSET_OBJ_A overlaps NSD_EPOCHSET_OBJ_B.
-			%
-			% Two epochs are said to overlap if the time interval of epoch 1 (in absolute time) overlaps 
-			% that of epoch 2.
-			%
-			% In the abstract class, the table is all NaN.
-			%
-				ot = NaN(numepochs(nsd_epochset_obj_a),numepochs(nsd_epochset_obj_b));
-		end % buildoverlaptable
-
-		function [ot]=cached_overlaptable(nsd_epochset_obj_a, nsd_epochset_obj_b)
-			% CACHED_OVERLAPTABLE - return the cached overlap table of an NSD_EPOCHSET object
-			%
-			% [OT] = CACHED_OVERLAPTABLE(NSD_EPOCHSET_OBJ_A, NSD_EPOCHSET_OBJ_B)
-			%
-			% Return the cached version of the overlaptable, if it exists and is up-to-date
-			% (that is, the hash numbers from the EPOCHTABLEs of NSD_EPOCHSET_OBJ_A and NSD_EPOCHSET_OBJ_B
-			% have not changed). If there is no cached version, or if it is not up-to-date, OT will be empty.
-			% If the cached OT is present and not up-to-date, it is deleted.
-			%
-			%
-				ot = [];
-				[cache_a,key_a] = getcache(nsd_epochset_obj_a);
-				[cache_b,key_b] = getcache(nsd_epochset_obj_b);
-				if ( ~isempty(cache_a) & ~isempty(key_a) & ~isempty(cache_b) & ~isempty(key_b) ),
-					overlaptable_type = ['overlaptable-' key_b];
-					ot_data = cache.lookup(key,overlaptable_type);
-					if ~isempty(ot_data),
-						if matchedepochtable(nsd_epochset_obj_a, ot_data(1).hashvalue_a) & ...
-							matchedepochtable(nsd_epochset_obj_b, ot_data(1).hashvalue_b),
-							ot = ot_data(1).data.overlaptable;
-						else,
-							cache_a.remove(key,overlaptable_type); % it's out of date, clean it up
-						end
-					end
-				end
-		end % cached_overlaptable
-
 		% epochgraph
 
+		function nodes = epochnodes(nsd_epochset_obj, indexes)
+			% EPOCHNODES - return all epoch nodes from an NSD_EPOCHSET object
+			%
+			% NODES = EPOCHNODES(NSD_EPOCHSET)
+			%    or
+			% NODES = EPOCHNODES(NSD_EPOCHSET, INDEXES)
+			%
+			% Return all EPOCHNODES for an NSD_EPOCHSET. EPOCHNODES consist of the
+			% following fields:
+			% Fieldname:                | Description
+			% ------------------------------------------------------------------------
+			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
+			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
+			%                           |   This epoch ID uniquely specifies the epoch.
+			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
+			% 'epoch_clock'             | A SINGLE NSD_CLOCKTYPE entry that describes the clock type of this node.
+			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
+			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
+			%
+			%
+			% EPOCHNODES are closely related to EPOCHTABLE entries, except that only 1 NSD_CLOCKTYPE is
+			% permitted per epoch node. If an entry in epoch table contains multiple NSD_CLOCKTYPE entries,
+			% then each one will have its own epoch node. This aids in the construction of the EPOCHGRAPH 
+			% that helps the system map time from one epoch to another.
+			%
+				et = epochtable(nsd_epochset_obj);
+				nodes = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+
+				for i=1:numel(et),
+					for j=1:numel(et(i).epoch_clock),
+						newnode = et(i);
+						newnode.epoch_clock = et(i).epoch_clock{j};
+					end
+					nodes(end+1) = newnode;
+				end
+			end % epochnodes
+				
 		function [cost, mapping] = epochgraph(nsd_epochset_obj)
 			% EPOCHGRAPH - graph of the mapping and cost of converting time among epochs
 			%
@@ -328,7 +283,7 @@ classdef nsd_epochset
 						cache.add(key,epochgraph_type,data,priority);
 					end
 				end;
-		end % overlaptable
+		end % epochgraph
 
 		function [cost, mapping] = buildepochgraph(nsd_epochset_obj)
 			% BUILDEPOCHGRAPH - compute the epochgraph among epochs for an NSD_EPOCHSET object
@@ -337,12 +292,11 @@ classdef nsd_epochset
 			%
 			% Compute the cost and the mapping among epochs in the EPOCHTABLE for an NSD_EPOCHSET object
 			%
-			% COST is an MxM matrix where M is the number of ordered pairs of (epochs, clocktypes).
+			% COST is an MxM matrix where M is the number of EPOCHNODES.
 			% For example, if there is one epoch with clock types 'dev_local_time' and 'utc', then M is 2.
 			% Each entry COST(i,j) indicates whether there is a mapping between (epoch, clocktype) i to j.
 			% The cost of each transformation is normally 1 operation. 
 			% MAPPING is the NSD_TIMEMAPPING object that describes the mapping.
-			%
 			%
 			% In the abstract class, the following NSD_CLOCKTYPEs, if they exist, are linked across epochs with 
 			% a cost of 1 and a linear mapping rule with shift 1 and offset 0:
@@ -354,7 +308,8 @@ classdef nsd_epochset
 			%   'dev_global_time' -> 'approx_dev_global_time'
 			%
 			%
-			% See also: NSD_CLOCKTYPE, NSD_CLOCKTYPE/NSD_CLOCKTYPE, NSD_TIMEMAPPING, NSD_TIMEMAPPING/NSD_TIMEMAPPING
+			% See also: NSD_CLOCKTYPE, NSD_CLOCKTYPE/NSD_CLOCKTYPE, NSD_TIMEMAPPING, NSD_TIMEMAPPING/NSD_TIMEMAPPING, 
+			% NSD_EPOCHSET/EPOCHNODES
 
 					% Developer note: some subclasses will have the ability to go across different clock types,
 					% such as going from 'dev_local_time' to 'utc'. Those subclasses will likely want to
@@ -362,22 +317,18 @@ classdef nsd_epochset
 
 				trivial_mapping = nsd_timemapping([ 1 0 ]);
 
-				et = epochtable(nsd_epochset_obj);
-				epochclocklist = {};
-				for i=1:numel(et),
-					epochclocklist = cat(1,epochclocklist,et(i).epoch_clock);
-				end
+				nodes = epochnodes(nsd_epochset_obj);
 
-				cost = zeros(numel(epochclocklist));
-				mapping = cell(numel(epochclocklist));
+				cost = zeros(numel(nodes));
+				mapping = cell(numel(nodes));
 
-				for i=1:numel(epochclocklist),
-					for j=1:numel(epochclocklist),
+				for i=1:numel(nodes),
+					for j=1:numel(nodes),
 						if j==i,
 							cost(i,j) = 1;
 							mapping{i,j} = trivial_mapping;
 						else,
-							[cost(i,j),mapping{i,j}] = epochclocklist{i}.epochgraph_edge(epochclocklist{j});
+							[cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
 						end
 					end
 				end
@@ -404,7 +355,7 @@ classdef nsd_epochset
 					epochgraph_type = ['epochgraph-hashvalue'];
 					eg_data = cache.lookup(key,epochgraph_type);
 					if ~isempty(eg_data),
-						if matchedepochtable(nsd_epochset_obj, eg_data(1).hashvalue), 
+						if matchedepochtable(nsd_epochset_obj, eg_data(1).data.hashvalue);
 							cost = eg_data(1).data.cost;
 							mapping = eg_data(1).data.mapping;
 						else,

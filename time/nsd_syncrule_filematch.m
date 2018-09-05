@@ -1,7 +1,6 @@
 classdef nsd_syncrule_filematch < nsd_syncrule
 
         properties (SetAccess=protected,GetAccess=public),
-		parameters;        % parameters, a structure
         end % properties
         properties (SetAccess=protected,GetAccess=protected)
         end % properties
@@ -27,8 +26,36 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 				else,
 					parameters = varargin{1};
 				end
-				nsd_syncrule_filematch_obj.parameters = parameters;
+				nsd_syncrule_filematch_obj = nsd_syncrule_filematch_obj@nsd_syncrule(parameters);
 		end
+
+		function [b,msg] = isvalidparameters(nsd_syncrule_filemath_obj, parameters)
+			% ISVALIDPARAMETERS - determine if a parameter structure is valid for a given NSD_SYNCRULE_FILEMATCH
+			%
+			% [B,MSG] = ISVALIDPARAMETERS(NSD_SYNCRULE_FILEMATCH_OBJ, PARAMETERS)
+			%
+			% Returns 1 if PARAMETERS is a valid parameter structure for NSD_SYNCRULE_FILEMATCH.
+			% Returns 0 otherwise.
+			%
+			% If there is an error, MSG contains an error message.
+			%
+			% PARAMETERS should be a structure with the following entries:
+			% Field (default)              | Description
+			% -------------------------------------------------------------------
+			% number_fullpath_matches (2)  | The number of full path matches of the underlying 
+			%                              |  filenames that must match in order for the epochs to match.
+			%
+			% See also: NSD_SYNCRULE/SETPARAMETERS
+
+				[b,msg] = hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
+				if b,
+					if ~isnumeric(parameters.number_fullpath_matches),
+						b = 0;
+						msg = 'number_fullpath_matches must be a number.';
+					end
+				end
+				return;
+		end % isvalidparameters
 
 		function ees = eligibleepochsets(nsd_syncrule_filematch_obj)
 			% ELIGIBLEEPOCHSETS - return a cell array of eligible NSD_EPOCHSET class names for NSD_SYNCRULE_FILEMATCH
@@ -40,7 +67,9 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 			% If EES is empty, then no information is conveyed about which NSD_EPOCHSET subtypes can be
 			% processed by the NSD_SYNCRULE_FILEMATCH. (That is, it is not the case that the NSD_SYNCTABLE cannot use any classes.)
 			%
-			% The abstract class NSD_SYNCRULE_FILEMATCH always returns empty.
+			% NSD_SYNCRULE_FILEMATCH returns {'nsd_iodevice'} (it works with NSD_IODEVICE objects).
+			%
+			% NSD_EPOCHSETS that use the rule must be members or descendents of the classes returned here.
 			%
 			% See also: NSD_SYNCRULE_FILEMATCH/INELIGIBLEEPOCHSETS
 				ees = {'nsd_iodevice'}; % 
@@ -56,7 +85,10 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 			% If IES is empty, then no information is conveyed about which NSD_EPOCHSET subtypes cannot be
 			% processed by the NSD_SYNCRULE_FILEMATCH. (That is, it is not the case that the NSD_SYNCTABLE can use any class.)
 			%
-			% The abstract class NSD_SYNCRULE_FILEMATCH always returns empty.
+			% NSD_SYNCRULE_FILEMATCH does not work with NSD_EPOCHSET, NSD_EPOCHSETPARAM, or NSD_FILETREE classes.
+			%
+			% NSD_EPOCHSETS that use the rule must not be members of the classes returned here, but may be descendents of those
+			% classes.
 			%
 			% See also: NSD_SYNCRULE_FILEMATCH/ELIGIBLEEPOCHSETS
 				ies = cat(2,nsd_syncrule_filematch_obj.ineligibleepochsets@nsd_syncrule(),...
@@ -75,7 +107,6 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 			%
 			% Otherwise, COST and MAPPING are empty.
 			%
-			% In the abstract class, COST and MAPPING are always empty.
 				cost = [];
 				mapping = [];
 
@@ -97,3 +128,4 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 
 	end % methods
 end % classdef nsd_syncrule_filematch
+

@@ -16,8 +16,50 @@ classdef nsd_syncrule < nsd_base
 			% Creates a new NSD_SYNCRULE object with the given PARAMETERS (a structure).
 			% This is an abstract class, so PARAMETERS must be empty.
 			%
-				nsd_syncrule_obj.parameters = [];
+				parameters = [];
+				if nargin >0,
+					parameters = varargin{1};
+				end;
+				nsd_syncrule_obj = setparameters(nsd_syncrule_obj,parameters);
 		end
+
+		function nsd_syncrule_obj = setparameters(nsd_syncrule_obj, parameters)
+			% SETPARAMETERS - set the parameters for an NSD_SYNCRULE object, checking for valid form
+			%
+			% NSD_SYNCRULE_OBJ = SETPARAMETERS(NSD_SYNCRULE_OBJ, PARAMETERS)
+			%
+			% Sets the 'parameters' field of an NSD_SYNCRULE object, while also checking that
+			% the struct PARAMETERS specifies a valid set of parameters using ISVALIDPARAMETERS.
+			%
+			% See also: NSD_SYNCRULE/ISVALIDPARAMETERS
+			%
+				if nsd_syncrule_obj.isvalidparameters(parameters),
+					nsd_syncrule_obj.parameters = parameters;
+				else,
+					error(['Could not set parameters: ' msg ]); 
+				end
+		end % setparameters
+
+		function [b,msg] = isvalidparameters(nsd_syncrule_obj, parameters)
+			% ISVALIDPARAMETERS - determine if a parameter structure is valid for a given NSD_SYNCRULE
+			%
+			% [B,MSG] = ISVALIDPARAMETERS(NSD_SYNCRULE_OBJ, PARAMETERS)
+			%
+			% Returns 1 if PARAMETERS is a valid parameter structure for NSD_SYNCRULE. Returns 0 otherwise.
+			%
+			% If there is an error, MSG describes the error.
+			%
+			% See also: NSD_SYNCRULE/SETPARAMETERS
+				
+				% developer note:
+				%  Q:Why have this function? Why not just produce an error when applying the rule?
+				%  A:Because syncrules are often set far in advance of being applied to data.
+				%    It is an error one wants to see at the time of setting the rule.
+
+				b = 1; 
+				msg = '';
+				return;
+		end % isvalidparameters
 
 		function ec = eligibleclocks(nsd_syncrule_obj)
 			% ELIGIBLECLOCKS - return a cell array of eligible NSD_CLOCKTYPEs that can be used with NSD_SYNCRULE
@@ -66,6 +108,8 @@ classdef nsd_syncrule < nsd_base
 			% If EES is empty, then no information is conveyed about which NSD_EPOCHSET subtypes can be
 			% processed by the NSD_SYNCRULE. (That is, it is not the case that the NSD_SYNCTABLE cannot use any classes.)
 			%
+			% NSD_EPOCHSETS that use the rule must be members or descendents of the classes returned here.
+			%
 			% The abstract class NSD_SYNCRULE always returns empty.
 			%
 			% See also: NSD_SYNCRULE/INELIGIBLEEPOCHSETS
@@ -81,6 +125,9 @@ classdef nsd_syncrule < nsd_base
 			%
 			% If IES is empty, then no information is conveyed about which NSD_EPOCHSET subtypes cannot be
 			% processed by the NSD_SYNCRULE. (That is, it is not the case that the NSD_SYNCTABLE can use any class.)
+			%
+			% NSD_EPOCHSETS that use the rule must not be members of the classes returned here, but may be descendents of those
+			% classes.
 			%
 			% The abstract class NSD_SYNCRULE always returns empty.
 			%
