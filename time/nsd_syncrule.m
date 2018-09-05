@@ -1,4 +1,4 @@
-classdef nsd_syncrule < nsd_base
+classdef nsd_syncrule
 
         properties (SetAccess=protected,GetAccess=public),
 		parameters;        % parameters, a structure
@@ -60,6 +60,16 @@ classdef nsd_syncrule < nsd_base
 				msg = '';
 				return;
 		end % isvalidparameters
+
+		function b = eq(nsd_syncrule_obj_a, nsd_syncrule_obj_b)
+			% EQ - are two NSD_SYNCRULE objects equal?
+			%
+			% B = EQ(NSD_SYNCRULE_OBJ_A, NSD_SYNCRULE_OBJ_B)
+			%
+			% Returns 1 if the parameters of NSD_SYNCRULE_OBJ_A and NSD_SYNCRULE_OBJ_B are equal.
+			% Otherwise, 0 is returned.
+				b = eqlen(nsd_syncrule_obj_a.parameters,nsd_syncrule_obj_b.parameters);
+		end % eq()
 
 		function ec = eligibleclocks(nsd_syncrule_obj)
 			% ELIGIBLECLOCKS - return a cell array of eligible NSD_CLOCKTYPEs that can be used with NSD_SYNCRULE
@@ -135,19 +145,22 @@ classdef nsd_syncrule < nsd_base
 				ies = {}; % 
 		end % ineligibleepochsets
 
-		function [cost,mapping] = apply(nsd_syncrule_obj, nsd_epochset_obj_a, epochtable_a, nsd_epochset_obj_b, epochtable_b)
+		function [cost,mapping] = apply(nsd_syncrule_obj, nsd_epochset_class_a, epochnode_a, nsd_epochset_class_b, epochnode_b)
 			% APPLY - apply an NSD_SYNCRULE to obtain a cost and NSD_TIMEMAPPING between two NSD_EPOCHSET objects
 			%
-			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_OBJ, NSD_EPOCHEST_OBJ_A, EPOCHTABLE_A, ...
-			%                       NSD_EPOCHSET_OBJ_B, EPOCHTABLE_B)
+			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_OBJ, NSD_EPOCHEST_CLASS_A, EPOCHNODE_A, ...
+			%                       NSD_EPOCHSET_CLASS_B, EPOCHNODE_B)
 			%
-			% Given an NSD_SYNCRULE object, two NSD_EPOCHSET objects a and b, and an epochtable entry of each,
-			% this function attempts to identify whether a time synchronization can be made across these epochs. If so,
+			% Given an NSD_SYNCRULE object, two NSD_EPOCHSET class types, and an epochnode entry of each,
+			% this function attempts to identify whether a time synchronization can be made across these epoch nodes. If so,
 			% a cost COST and an NSD_TIMEMAPPING object MAPPING is returned.
 			%
 			% Otherwise, COST and MAPPING are empty.
 			%
 			% In the abstract class, COST and MAPPING are always empty.
+			%
+			% See also: NSD_EPOCHSET/EPOCHNODES
+			%
 				cost = [];
 				mapping = [];
 		end % apply

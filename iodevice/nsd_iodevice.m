@@ -245,7 +245,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% The CACHE is returned from the associated experiment.
 			% The KEY is the object's objectfilename.
 			%
-			% See also: NSD_FILETREE, NSD_BASE
+			% See also: NSD_IODEVICE, NSD_BASE
 
 				cache = [];
 				key = [];

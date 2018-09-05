@@ -95,13 +95,13 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 					{'nsd_epochset','nsd_epochsetparam','nsd_filetree'}); 
 		end % ineligibleepochsets
 
-		function [cost,mapping] = apply(nsd_syncrule_filematch_obj, nsd_epochset_obj_a, epochtable_a, nsd_epochset_obj_b, epochtable_b)
+		function [cost,mapping] = apply(nsd_syncrule_filematch_obj, nsd_epochset_class_a, epochnode_a, nsd_epochset_class_b, epochnode_b)
 			% APPLY - apply an NSD_SYNCRULE_FILEMATCH to obtain a cost and NSD_TIMEMAPPING between two NSD_EPOCHSET objects
 			%
-			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_FILEMATCH_OBJ, NSD_EPOCHEST_OBJ_A, EPOCHTABLE_A, ...
-			%                       NSD_EPOCHSET_OBJ_B, EPOCHTABLE_B)
+			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_FILEMATCH_OBJ, NSD_EPOCHEST_CLASS_A, EPOCHNODE_A, ...
+			%                       NSD_EPOCHSET_CLASS_B, EPOCHNODE_B)
 			%
-			% Given an NSD_SYNCRULE_FILEMATCH object, two NSD_EPOCHSET objects a and b, and an epochtable entry of each,
+			% Given an NSD_SYNCRULE_FILEMATCH object, two NSD_EPOCHSET class types, and an epochnode entry of each,
 			% this function attempts to identify whether a time synchronization can be made across these epochs. If so,
 			% a cost COST and an NSD_TIMEMAPPING object MAPPING is returned.
 			%
@@ -111,7 +111,9 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 				mapping = [];
 
 				% quick content checks
-				if ~isa(nsd_epochset_obj_a,'nsd_iodevice') | ~isa(nsd_epochset_obj_b,'nsd_iodevice'), return; end;
+				eval(['dummy_a = ' nsd_epochset_class_a '();']);
+				eval(['dummy_b = ' nsd_epochset_class_b '();']);
+				if ~isa(dummy_a,'nsd_iodevice') | ~isa(dummy_b,'nsd_iodevice'), return; end;
 				if isempty(epochtable_a.underlying_epochs), return; end; 
 				if isempty(epochtable_b.underlying_epochs), return; end; 
 				if isempty(epochtable_a.underlying_epochs.underlying), return; end; 
