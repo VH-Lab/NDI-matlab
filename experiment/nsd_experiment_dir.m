@@ -7,12 +7,12 @@ classdef nsd_experiment_dir < nsd_experiment
 	end
 
 	methods
-		function obj = nsd_experiment_dir(reference, path)
-			% NSD_EXPERIMENT_DIR - Create a new NSD_EXPERIMENT_DIR object
+		function nsd_experiment_dir_obj = nsd_experiment_dir(reference, path)
+			% NSD_EXPERIMENT_DIR - Create a new NSD_EXPERIMENT_DIR nsd_experiment_dir_object
 			%
 			%   E = NSD_EXPERIMENT_DIR(REFERENCE, PATHNAME)
 			%
-			% Creates an NSD_EXPERIMENT_DIR object, or an experiment with an
+			% Creates an NSD_EXPERIMENT_DIR nsd_experiment_dir_object, or an experiment with an
 			% associated directory. REFERENCE should be a unique reference for the
 			% experiment and directory PATHNAME.
 			%
@@ -27,49 +27,50 @@ classdef nsd_experiment_dir < nsd_experiment
 					ref = 'temp';
 				end
 
-				obj = obj@nsd_experiment(reference);
-				obj.path = path;
-				d = dir([obj.nsdpathname() filesep 'reference.txt']);
+				nsd_experiment_dir_obj = nsd_experiment_dir_obj@nsd_experiment(reference);
+				nsd_experiment_dir_obj.path = path;
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt']);
 				if ~isempty(d),
-					obj.reference = textfile2char([obj.nsdpathname() filesep 'reference.txt']);
+					nsd_experiment_dir_obj.reference = textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt']);
 				elseif nargin==1,
-					error(['Could not load the REFERENCE field from the path ' obj.nsdpathname() '.']);
+					error(['Could not load the REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
 				end
-				d = dir([obj.nsdpathname() filesep 'iodevice_object_*']);
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'iodevice_nsd_experiment_dir_object_*']);
 				if isempty(d),
-					obj.iodevice = nsd_dbleaf_branch(obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
+					nsd_experiment_dir_obj.iodevice = nsd_dbleaf_branch(nsd_experiment_dir_obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
 				else,
-					obj.iodevice = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
+					nsd_experiment_dir_obj.iodevice = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
-				d = dir([obj.nsdpathname() filesep 'variable_object_*']);
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'variable_nsd_experiment_dir_object_*']);
 				if isempty(d),
-					obj.variable = nsd_variable_branch(obj.nsdpathname(),'variable', 0, 0);
+					nsd_experiment_dir_obj.variable = nsd_variable_branch(nsd_experiment_dir_obj.nsdpathname(),'variable', 0, 0);
 				else,
-					obj.variable = nsd_pickdbleaf([obj.nsdpathname() filesep d(1).name]);
+					nsd_experiment_dir_obj.variable = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
-				d = dir([obj.nsdpathname() filesep '*synctable.nsd']);
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep '*syncgraph.nsd']);
 				if isempty(d),
-					obj.synctable = nsd_synctable(obj);
+					nsd_experiment_dir_obj.syncgraph = nsd_syncgraph(nsd_experiment_dir_obj);
 				else,
-					obj.synctable = nsd_synctable([obj.nsdpathname filesep d(1).name],'OpenFileAndUpdate',obj);
+					nsd_experiment_dir_obj.syncgraph = nsd_synctable([nsd_experiment_dir_obj.nsdpathname filesep d(1).name],...
+						'OpenFileAndUpdate',nsd_experiment_dir_obj);
 				end;
-				str2text([obj.nsdpathname() filesep 'reference.txt'], obj.reference);
+				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt'], nsd_experiment_dir_obj.reference);
 		end
 		
-		function p = getpath(self)
+		function p = getpath(nsd_experiment_dir_obj)
 			% GETPATH - Return the path of the experiment
 			%
-			%   P = GETPATH(SELF)
+			%   P = GETPATH(NSD_EXPERIMENT_DIR_OBJ)
 			%
 			% Returns the path of an NSD_EXPERIMENT_DIR object.
 			%
 			% The path is some sort of reference to the storage location of
 			% the experiment. This might be a URL, or a file directory.
 			%
-				p = self.path;
+				p = nsd_experiment_dir_obj.path;
                 end
 
-		function p = nsdpathname(self)
+		function p = nsdpathname(nsd_experiment_dir_obj)
 			% NDSPATHNAME - Return the path of the NSD files within the experiment
 			%
 			% P = NSDPATHNAME(NSD_EXPERIMENT_DIR_OBJ)
@@ -79,7 +80,7 @@ classdef nsd_experiment_dir < nsd_experiment
 			% It is the NSD_EXPERIMENT_DIR object's path plus [filesep '.nsd' ]
 
 				nsd_dir = '.nsd';
-				p = [self.path filesep nsd_dir ];
+				p = [nsd_experiment_dir_obj.path filesep nsd_dir ];
 				if ~exist(p,'dir'),
 					mkdir(p);
 				end

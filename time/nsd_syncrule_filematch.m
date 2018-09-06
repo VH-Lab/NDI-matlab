@@ -113,15 +113,14 @@ classdef nsd_syncrule_filematch < nsd_syncrule
 				% quick content checks
 				eval(['dummy_a = ' nsd_epochset_class_a '();']);
 				eval(['dummy_b = ' nsd_epochset_class_b '();']);
-				if ~isa(dummy_a,'nsd_iodevice') | ~isa(dummy_b,'nsd_iodevice'), return; end;
-				if isempty(epochtable_a.underlying_epochs), return; end; 
-				if isempty(epochtable_b.underlying_epochs), return; end; 
-				if isempty(epochtable_a.underlying_epochs.underlying), return; end; 
-				if isempty(epochtable_b.underlying_epochs.underlying), return; end; 
-
+				if ~(isa(dummy_a,'nsd_iodevice')) | ~(isa(dummy_b,'nsd_iodevice')), return; end;
+				if isempty(epochnode_a.underlying_epochs), return; end; 
+				if isempty(epochnode_b.underlying_epochs), return; end; 
+				if isempty(epochnode_a.underlying_epochs.underlying), return; end; 
+				if isempty(epochnode_b.underlying_epochs.underlying), return; end; 
 				% okay, proceed
 
-				common = intersect(epochtable_a.underlying_epochs.underlying,epochtable_b.underlying_epochs.underlying);
+				common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
 				if numel(common)>=nsd_syncrule_filematch_obj.parameters.number_fullpath_matches,
 					cost = 1;
 					mapping = nsd_timemapping([1 0]); % equality

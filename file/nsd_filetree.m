@@ -192,7 +192,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					cache = nsd_filetree_obj.experiment.cache;
 					key = nsd_filetree_obj.objectfilename;
 				end
-		end	
+		end
 
 		function [et] = buildepochtable(nsd_filetree_obj)
 			% EPOCHTABLE - Return an epoch table for NSD_FILETREE

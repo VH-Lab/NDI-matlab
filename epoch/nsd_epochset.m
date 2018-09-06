@@ -61,7 +61,7 @@ classdef nsd_epochset
 			% unless the user calls NSD_EPOCHSET/RESETEPOCHTABLE.
 			%
 				[cached_et, cached_hash] = cached_epochtable(nsd_epochset_obj);
-				if isempty(cached_et),
+				if isempty(cached_et) & ~isstruct(cached_et), % is it not a struct? could be a correctly computed empty epochtable, which would be struct
 					et = nsd_epochset_obj.buildepochtable();
 					hashvalue = hashmatlabvariable(et);
 					[cache,key] = getcache(nsd_epochset_obj);
@@ -230,7 +230,6 @@ classdef nsd_epochset
 			% following fields:
 			% Fieldname:                | Description
 			% ------------------------------------------------------------------------
-			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
@@ -245,16 +244,17 @@ classdef nsd_epochset
 			% that helps the system map time from one epoch to another.
 			%
 				et = epochtable(nsd_epochset_obj);
-				nodes = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+				nodes = emptystruct('epoch_id','epochcontents','epoch_clock','underlying_epochs');
 
 				for i=1:numel(et),
 					for j=1:numel(et(i).epoch_clock),
 						newnode = et(i);
+						newnode = rmfield(newnode,'epoch_number');
 						newnode.epoch_clock = et(i).epoch_clock{j};
 					end
 					nodes(end+1) = newnode;
 				end
-			end % epochnodes
+		end % epochnodes
 				
 		function [cost, mapping] = epochgraph(nsd_epochset_obj)
 			% EPOCHGRAPH - graph of the mapping and cost of converting time among epochs
@@ -319,7 +319,7 @@ classdef nsd_epochset
 
 				nodes = epochnodes(nsd_epochset_obj);
 
-				cost = zeros(numel(nodes));
+				cost = inf(numel(nodes));
 				mapping = cell(numel(nodes));
 
 				for i=1:numel(nodes),

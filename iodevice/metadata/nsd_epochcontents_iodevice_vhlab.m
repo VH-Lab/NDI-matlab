@@ -1,4 +1,4 @@
-classdef nsd_epochcontents_iodevice_vhlab < nsd_epochcontents
+classdef nsd_epochcontents_iodevice_vhlab < nsd_epochcontents_iodevice
 	properties
 	end % properties
 	methods

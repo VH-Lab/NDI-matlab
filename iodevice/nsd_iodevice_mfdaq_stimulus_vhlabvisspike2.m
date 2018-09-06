@@ -32,6 +32,21 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			obj = obj@nsd_iodevice_mfdaq(varargin{:});
 		end; % nsd_iodevice_mfdaq_stimulus_vhlabvisspike2()
 
+		function ec = epochclock(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of NSD_CLOCKTYPE objects (or sub-class members).
+			%
+			% This returns a single clock type 'dev_local'time';
+			%
+			% See also: NSD_CLOCKTYPE
+			%
+				ec = {nsd_clocktype('dev_local_time')};
+		end % epochclock
+
 		function channels = getchannels(thedev)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
 			%

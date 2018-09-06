@@ -5,31 +5,31 @@ classdef nsd_experiment < handle
 		reference         % A string reference for the experiment
 		variable          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
 		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
-		synctable         % An NSD_SYNCTABLE object related to this experiment
+		syncgraph         % An NSD_SYNCGRAPH object related to this experiment
 		cache             % An NSD_CACHE object for the experiment's use
 	end
 	properties (GetAccess=protected, SetAccess = protected)
 	end
 	methods
-		function obj = nsd_experiment(reference)
+		function nsd_experiment_obj = nsd_experiment(reference)
 			% nsd_experiment - Create a new NSD_EXPERIMENT object
 			%
-			%   E=NSD_EXPERIMENT(REFERENCE)
+			%   NSD_EXPERIMENT_OBJ=NSD_EXPERIMENT(REFERENCE)
 			%
-			% Creates a new NSD_EXPERIMENT object E. The experiment has a unique
+			% Creates a new NSD_EXPERIMENT object. The experiment has a unique
 			% reference REFERENCE. This class is an abstract class and typically
-			% an end user will open a specific subclass.
+			% an end user will open a specific subclass such as NSD_EXPERIMENT_DIR.
 			%
 			% NSD_EXPERIMENT objects can access 0 or more NSD_IODEVICE objects.
 			%
 			% See also: NSD_EXPERIMENT/IODEVICE_ADD, NSD_EXPERIMENT/IODEVICE_RM, 
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
-				obj.reference = reference;
-				obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
-				obj.variable = nsd_variable_branch('','variable',0);
-				obj.synctable = nsd_synctable(obj);
-				obj.cache = nsd_cache();
+				nsd_experiment_obj.reference = reference;
+				nsd_experiment_obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
+				nsd_experiment_obj.variable = nsd_variable_branch('','variable',0);
+				nsd_experiment_obj.syncgraph = nsd_syncgraph(nsd_experiment_obj);
+				nsd_experiment_obj.cache = nsd_cache();
 		end
 
 		%%%%%% DEVICE METHODS
@@ -125,6 +125,31 @@ classdef nsd_experiment < handle
 					error(['No variable named ' var.name ' found.']);
 				end
 		end
+
+		function nsd_experiment_obj = syncgraph_addrule(nsd_experiment_obj, rule)
+			% SYNCGRAPH_ADDRULE - add an NSD_SYNCRULE to the syncgraph
+			%
+			% NSD_EXPERIMENT_OBJ = SYNCGRAPH_ADDRULE(NSD_EXPERIMENT_OBJ, RULE)
+			%
+			% Adds the NSD_SYNCRULE RULE to the NSD_SYNCGRAPH of the NSD_EXPERIMENT
+			% object NSD_EXPERIMENT_OBJ. 
+			%
+
+				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.addrule(rule);
+
+		end % syncgraph_addrule
+
+		function nsd_experiment_obj = syncgraph_rmrule(nsd_experiment_obj, index)
+			% SYNCGRAPH_RMRULE - remove an NSD_SYNCRULE from the syncgraph
+			%
+			% NSD_EXPERIMENT_OBJ = SYNCGRAPH_RMRULE(NSD_EXPERIMENT_OBJ, INDEX)
+			%
+			% Removes the INDEXth NSD_SYNCRULE from the NSD_SYNCGRAPH of the NSD_EXPERIMENT
+			% object NSD_EXPERIMENT_OBJ. 
+			%
+				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.removerule(index);
+
+		end % syncgraph_rmrule
 
 		%%%%%% PATH methods
 

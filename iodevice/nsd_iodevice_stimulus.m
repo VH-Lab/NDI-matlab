@@ -23,8 +23,24 @@ classdef nsd_iodevice_stimulus < nsd_iodevice
 			%  NSD_IODEVICE_STIMULUS is an abstract class, and a specific implementation must be called.
 			%
 			obj = obj@nsd_iodevice(varargin{:});
-			obj.clock = nsd_clock('dev_local_time');
 		end % nsd_iodevice_stimulus
+
+		function ec = epochclock(nsd_iodevice_stimulus_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_IODEVICE_STIMULUS_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of NSD_CLOCKTYPE objects (or sub-class members).
+			%
+			% For the generic NSD_IODEVICE_STIMULUS, this returns a single clock
+			% type 'dev_local'time';
+			%
+			% See also: NSD_CLOCKTYPE
+			%
+				ec = {nsd_clocktype('dev_local_time')};
+		end % epochclock
+
 
 		function parameters = get_stimulus_parameters(nsd_iodevice_stimulus_obj, epoch_number)
 			% 

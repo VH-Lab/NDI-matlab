@@ -50,7 +50,11 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				obj.name = name;
 				obj.filetree = thefiletree;
 			end
-			obj.epochcontents_class = 'nsd_epochcontents_iodevice';
+			if isempty(obj.filetree),
+				obj.epochcontents_class = 'nsd_epochcontents_iodevice';
+			else,
+				obj.epochcontents_class = obj.filetree.epochcontents_class;
+			end;
 		end % nsd_iodevice
 
 		%% functions that used to override HANDLE, now just implement equal:
@@ -117,8 +121,6 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% FIELDNAMES is a set of names of the fields/properties of the object
 			% that are being stored.
 			%
-			% For NSD_IODEVICE, this returns the type of clock (NSD_IODEVICE_OBJ.CLOCK.TYPE).
-			%
 			% Note: NSD_IODEVICE objects do not save their NSD_EXPERIMENT property EXPERIMENT. Call
 			% SETPROPERTIES after reading an NSD_IODEVICE from disk to install the NSD_EXPERIMENT.
 			%
@@ -169,6 +171,23 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 		end % deletefileobject
 
 		%%
+
+		function ec = epochclock(nsd_iodevice_obj, epoch_number)
+			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NSD_IODEVICE_OBJ, EPOCH_NUMBER)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of NSD_CLOCKTYPE objects (or sub-class members).
+			%
+			% For the generic NSD_IODEVICE, this returns a single clock
+			% type 'no_time';
+			%
+			% See also: NSD_CLOCKTYPE
+			%
+				ec = {nsd_clocktype('no_time')};
+		end % epochclock
+
 
 		function probes_struct=getprobes(nsd_iodevice_obj)
 			% GETPROBES = Return all of the probes associated with an NSD_IODEVICE object
@@ -266,7 +285,8 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				et = nsd_iodevice_obj.filetree.epochtable;
 				for i=1:numel(et),
 					% developer note: you might ask, why is this here?
-					% this allows future iodevice subclasses to override getepochcontents without also needing to override epochtable
+					%    this allows future iodevice subclasses to override getepochcontents without
+					%    also needing to override epochtable
 					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
 					et(i).epoch_clock = epochclock(nsd_iodevice_obj, et(i).epoch_number);
 				end
@@ -285,7 +305,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				ecfname = nsd_iodevice_obj.filetree.epochcontentsfilename(epochnumber);
                 end % epochcontentsfilename
 
-		function b = verifyepochcontents(nsd_iodevice_obj, epochcontents, number)
+		function [b,msg] = verifyepochcontents(nsd_iodevice_obj, epochcontents, number)
 			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)

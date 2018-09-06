@@ -25,14 +25,14 @@ classdef nsd_cache < handle
 			%
 			% Parameter (default)         | Description
 			% ------------------------------------------------------------
-			% maxMemory (1e9)             | Max memory for cache, in bytes
+			% maxMemory (100e6)           | Max memory for cache, in bytes (100MB default)
 			% replacement_rule ('fifo')   | Replacement rule (see NSD_CACHE/SET_REPLACEMENT_RULE
 			%
 			% Note that the cache is not 'secure', any function can query the data added.
 			%
 			% See also: NAMEVALUEPAIR
 
-				maxMemory = 1e9;
+				maxMemory = 100e6; % 100 MB
 				replacement_rule = 'fifo';
 
 				assign(varargin{:});
@@ -40,7 +40,7 @@ classdef nsd_cache < handle
 				if nargin==0,
 					nsd_cache_obj.maxMemory = maxMemory;
 					nsd_cache_obj.replacement_rule = replacement_rule;
-					nsd_cache_obj.table = emptystruct('key','type','timestamp','priority','bytes','data')
+					nsd_cache_obj.table = emptystruct('key','type','timestamp','priority','bytes','data');
 					return;
 				end;
 
@@ -141,6 +141,7 @@ classdef nsd_cache < handle
 				if isnumeric(index_or_key),
 					index = index_or_key;
 				else,
+					key = index_or_key;
 					index = find ( strcmp(key,{nsd_cache_obj.table.key}) & strcmp(type,{nsd_cache_obj.table.type}) );
 				end
 

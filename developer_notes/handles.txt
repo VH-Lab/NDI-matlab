@@ -64,9 +64,31 @@ It's an nsd_dbleaf_branch, so it should also be NO
 
 
 
+* nsd_syncgraph --
+
+One big question is whether or not it is too slow to copy the epochgraph from
+a cache on each traverse.  If the answer to that question were that it is too
+slow, then there is no point in having it as a standard object. I don't know.
+
+Another issue is that we don't want to rebuild the whole dang graph if a couple
+entries in the epochtable change.
+
+But we also need to be able to rebuild the whole graph, or rebuild the part
+related to a particular epochset.
+
+updateepoch
+
+
+Another issue is, when do we check to see if the syncgraph needs to be updated?
+Do we do it on every conversion?   No, we make people call an update command.
 
 
 
+
+
+
+
+---------
 
 
 Does it work to have objects be data and simply refer to handles?

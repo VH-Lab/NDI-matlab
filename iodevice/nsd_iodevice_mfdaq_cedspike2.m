@@ -76,7 +76,7 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function b = verifyepochcontents(self, epochcontents, number)
+		function [b,msg] = verifyepochcontents(self, epochcontents, number)
 			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHCONTENTS, NUMBER)
@@ -88,7 +88,7 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			% EPOCHCONTENTS is an NSD_EPOCHCONTENTS_IODEVICE object.
 			%
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
-			b = 1;
+			b = 1; msg = '';
 			% UPDATE NEEDED
 			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
 		end

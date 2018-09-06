@@ -109,7 +109,7 @@ classdef nsd_clocktype
 				to_list = {'utc','approx_utc','exp_global_time','approx_exp_global_time',...
 					'dev_global_time','approx_dev_global_time'};
 
-				index = find(  strcmp(nsd_clocktype_a.type,from_list) & strcmp(nsd_clocktype_b.type) );
+				index = find(  strcmp(nsd_clocktype_a.type,from_list) & strcmp(nsd_clocktype_b.type,to_list) );
 				if ~isempty(index),
 					cost = 1;
 					mapping = nsd_timemapping([1 0]); % trivial mapping

@@ -22,15 +22,11 @@ for i=1:numel(vhlabdevnames),
 		exp = nsd_vhlab_makedev(exp, vhlabdevnames{i});
 	end
 	dev = exp.iodevice_load('name',vhlabdevnames{i});
-	devclocks{i} = dev.clock;
 end
 
- % update SYNCTABLE
+ % update SYNCGRAPH
 
-idx1 = find(strcmp('vhspike2', vhlabdevnames));
-idx2 = find(strcmp('vhvis_spike2', vhlabdevnames));
+nsf = nsd_syncrule_filematch(struct('number_fullpath_matches',2));
 
-if ~isempty(idx1)&~isempty(idx2),
-	exp.synctable.add(devclocks{idx1},devclocks{idx2},'equal','',1,[]);
-end
+exp.syncgraph_addrule(nsf);
 

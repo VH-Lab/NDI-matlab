@@ -77,7 +77,7 @@ classdef nsd_synctable < nsd_base
 						end
 					end
 				end
-			end % setproperties()
+		end % setproperties()
 
 		function writedata2objectfile(nsd_synctable_obj, fid)
 			% WRITEDATA2OBJECTFILE - write NSD_SYNCTABLE object file data to the object file FID
