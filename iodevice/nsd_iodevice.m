@@ -211,10 +211,12 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			% all EPOCHCONTENTS objects returned in NSD_IODEVICE/GETEPOCHCONTENTS.
 			% The fields are 'name', 'reference', and 'type'.
 
+				et = epochtable(nsd_iodevice_obj);
+
 				probes_struct = emptystruct('name','reference','type');
-				N = nsd_iodevice_obj.numepochs();
-				for n=1:N,
-					epc = nsd_iodevice_obj.getepochcontents(n);
+				
+				for n=1:numel(et),
+					epc = et(n).epochcontents;
 					if ~isempty(epc),
 						for ec = 1:numel(epc),
 							newentry.name = epc(ec).name;

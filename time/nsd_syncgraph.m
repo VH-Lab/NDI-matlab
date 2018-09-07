@@ -420,6 +420,54 @@ classdef nsd_syncgraph < nsd_base
 				end
 		end % 
 
+		function [devicenode] = inheritedreferentnode2devicenode(nsd_syncgraph_obj, timeref)
+			% INHERITEDREFERENTNODE2DEVICENODE - trace all paths from an NSD_TIMEREFERENCE back to device node
+			%
+			% DEVICENODE = INHERITEDREFERENTNODE2DEVICENODE(NSD_SYNCGRAPH_OBJ, TIMEREF)
+			%
+			% Identifies an epoch node that underlies the referent and time referred to in 
+			% the NSD_TIMEREFERENCE object TIMEREF.
+			%
+			% DEVICENODE is a structure with fields 
+			%   |   'node' - the epochnode objects returned from EPOCHNODES
+			%   |   'objectname' - the object name of this node
+			%   |   'objectclass' - the object class of this node
+			%
+				et = epochtable(timeref.referent);
+				epoch = timeref.epoch;
+				if isempty(timeref.epoch),
+					% do something!
+				end; 
+				if isnumeric(epoch),
+					epoch_number = epoch;
+					if epoch_number > numel(et),
+						error(['Epoch number out of range.']);
+					end
+				else,
+					epoch_number = find(strcmp(epoch,{et.epoch_id}));
+					if isempty(epoch_number)
+						error(['Epoch id does not match any epoch.']);
+					end
+				end
+				if isempty(et(epoch_number).underlying_epochs.underlying),
+					error(['No path.']);
+				end
+				error('WORK HERE NOW');
+				if isa(et(epoch_number).underlying_epochs.underlying{1},'nsd_iodevice'),
+					% we made it
+					node.epoch_id = et(epoch_number).underlying_epochs(1);
+				%	node.epochcontents = et(epoch
+				%	devicenode = struct('node',
+				end
+					
+				
+		end % inheritednode2devicenode
+
+		function [devicenode] = devicenodes2inheritedreferent(nsd_syncgraph_obj, nodes, referent, clocktype)
+
+
+		end % devicenodes2inheritedreferent
+
 		function saveStruct = getsavestruct(nsd_syncgraph_obj)
 			% GETSAVESTRUCT - Create a structure representation of the object that is free of handles and objects
 			%
