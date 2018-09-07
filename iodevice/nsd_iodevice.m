@@ -188,6 +188,17 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				ec = {nsd_clocktype('no_time')};
 		end % epochclock
 
+		function eid = epochid(nsd_iodevice_obj, epoch_number)
+			% EPOCHID - return the epoch id string for an epoch
+			%
+			% EID = EOPCHID(NSD_IODEVICE_OBJ, EPOCH_NUMBER)
+			%
+			% Returns the EPOCHID for epoch with number EPOCH_NUMBER.
+			% In NSD_IODEVICE, this is determined by the associated
+			% NSD_FILETREE object.
+			%
+				eid = nsd_iodevice_obj.filetree.epochid(epoch_number);
+		end % epochid
 
 		function probes_struct=getprobes(nsd_iodevice_obj)
 			% GETPROBES = Return all of the probes associated with an NSD_IODEVICE object

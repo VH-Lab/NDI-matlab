@@ -1,5 +1,13 @@
 classdef nsd_syncgraph < nsd_base
 
+
+		% devnotes: 
+		%            (1) need to decide how to handle non-epoch clocks
+		%            (2) adding/removing should update the cache unless it is told not to
+		%                  right now everything works but would be inefficient if we added/removed device during experiment
+		
+
+
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NSD_EXPERIMENT object
 		rules		% cell array of NSD_SYNCRULE objects to apply
@@ -25,6 +33,11 @@ classdef nsd_syncgraph < nsd_base
 	
 				nsd_syncgraph_obj.experiment = experiment;
 
+				if nargin==2,
+					if strcmp(lower(varargin{2}),lower('OpenFile')),
+						nsd_syncgraph_obj = nsd_syncgraph_obj.readobjectfile(varargin{1});
+					end
+				end
 		end % nsd_syncgraph
 
 		function nsd_syncgraph_obj = addrule(nsd_syncgraph_obj, nsd_syncrule_obj)
@@ -90,7 +103,7 @@ classdef nsd_syncgraph < nsd_base
 			%
 				[ginfo, hashvalue] = cached_graphinfo(nsd_syncgraph_obj);
 				if isempty(ginfo),
-					ginfo = nsd_syncgraph.buildgraphinfo();
+					ginfo = nsd_syncgraph_obj.buildgraphinfo();
 					hashvalue = hashmatlabvariable(ginfo);
 					[cache,key] = getcache(nsd_syncgraph_obj);
 					if ~isempty(cache),
@@ -98,7 +111,6 @@ classdef nsd_syncgraph < nsd_base
 						cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
 					end
 				end
-
 		end % graphinfo
 				
 		function [ginfo] = buildgraphinfo(nsd_syncgraph_obj)
@@ -120,11 +132,13 @@ classdef nsd_syncgraph < nsd_base
 			%                        |   converting between node i and j.
 			% mapping                | A cell matrix with NSD_TIMEMAPPING objects that describes the
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
+			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
 
 				ginfo.nodes = emptystruct('node','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
+				ginfo.diG = [];
 
 				d = nsd_syncgraph_obj.experiment.iodevice_load('name','(.*)');
 				if ~iscell(d), d = {d}; end; % make sure we are a cell
@@ -135,6 +149,27 @@ classdef nsd_syncgraph < nsd_base
 
 		end % buildgraphinfo
 
+		function [ginfo,hashvalue]=cached_graphinfo(nsd_syncgraph_obj)
+			% CACHED_GRAPHINFO - return the cached graph info of an NSD_SYNCGRAPH object
+			%
+			% [GINFO, HASHVALUE] = CACHED_EPOCHTABLE(NSD_SYNCGRAPH_OBJ)
+			%
+			% Return the cached version of the graph info, if it exists, along with its HASHVALUE
+			% (a hash number generated from the graph info). If there is no cached version,
+			% GINFO and HASHVALUE will be empty.
+			%
+				ginfo = [];
+				hashvalue = [];
+				[cache,key] = getcache(nsd_syncgraph_obj);
+				if (~isempty(cache) & ~isempty(key)),
+					table_entry = cache.lookup(key,'syncgraph-hash');
+					if ~isempty(table_entry),
+						ginfo = table_entry(1).data.graphinfo;
+						hashvalue = table_entry(1).data.hashvalue;
+					end;
+				end
+		end % cached_epochtable
+
 		function ginfo = addepoch(nsd_syncgraph_obj, nsd_iodevice_obj, ginfo)
 			% ADDEPOCH - add an NSD_EPOCHSET to the graph
 			% 
@@ -142,6 +177,7 @@ classdef nsd_syncgraph < nsd_base
 			%
 			% Adds an NSD_EPOCHSET to the NSD_SYNCGRAPH
 			%
+			% Note: this does not update the cache
 			% 
 				% Step 1: make sure we have the right kind of input object
 				if ~isa(nsd_iodevice_obj, 'nsd_iodevice'),
@@ -178,6 +214,8 @@ classdef nsd_syncgraph < nsd_base
 				for i=1:newn, % add nodes
 					ginfo.nodes(end+1) = struct('node',newnodes(i),'objectname', oname,'objectclass',oclass);
 				end
+
+					% developer note: will probably have to change G to a sparse matrix with zero meaning 'no connection'
 
 				ginfo.G = [ ginfo.G inf(oldn,newn); inf(newn,oldn) newcost ] ;
 				ginfo.mapping = [ ginfo.mapping cell(oldn,newn) ; cell(newn,oldn) newmapping];
@@ -228,6 +266,10 @@ classdef nsd_syncgraph < nsd_base
 						end
 					end
 				end
+
+				Gtable = ginfo.G;
+				Gtable(find(isinf(Gtable))) = 0;
+				ginfo.diG = digraph(Gtable);
 			
 		end % addepoch
 
@@ -237,8 +279,10 @@ classdef nsd_syncgraph < nsd_base
 			% GINFO = REMOVEEPOCHS(NSD_SYNCGRAPH_OBJ, NSD_IODEVICE_OBJ, GINFO)
 			%
 			% Remove all epoch nodes from the graph that are contributed by NSD_IODEVICE_OBJ
+			%
+			% Note: this does not update the cache
 
-				tf = find(strcmp(nsd_iodevice_obj.name,{ginfo.nodes.objectnames}));
+				tf = find(strcmp(nsd_iodevice_obj.name,{ginfo.nodes.objectname}));
 
 				keep = setdiff(1:numel(ginfo.nodes));
 
@@ -246,14 +290,135 @@ classdef nsd_syncgraph < nsd_base
 				ginfo.mapping = ginfo.mapping(keep,keep);
 				ginfo.nodes = ginfo.nodes(keep);
 				
+				Gtable = ginfo.G;
+				Gtable(find(isinf(Gtable))) = 0;
+				ginfo.diG = digraph(Gtable);
+
 		end % removeepoch
 
 		function nsd_syncgraph_obj = update(nsd_syncgraph_obj)
 		end % update
 
-		function b = uptodate(nsd_syncgraph_obj)
+		function b = isuptodate(nsd_syncgraph_obj)
 
-		end % uptodate
+		end % isuptodate
+
+		function [t_out, timeref_out, msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
+			% TIME_CONVERT - convert time from one NSD_TIMEREFERENCE to another
+			%
+			% [T_OUT, TIMEREF_OUT, MSG] = TIME_CONVERT(NSD_SYNCGRAPH_OBJ, TIMEREF_IN, T_IN, REFERENT_OUT, CLOCKTYPE_OUT)
+			%
+			% Attempts to convert a time T_IN that is referred to by NSD_TIMEREFERENCE object TIMEREF_IN 
+			% to T_OUT that is referred to by the requested REFERENT_OUT object (must be type NSD_EPOCHSET and NSD_BASE)
+			% with the requested NSD_CLOCKTYPE CLOCKTYPE_OUT.
+			% 
+			% T_OUT is the output time with respect to the NSD_TIMEREFERENCE TIMEREF_OUT that incorporates REFERENT_OUT
+			% and CLOCKTYPE_OUT with the appropriate epoch and time reference.
+			%
+			% If the conversion cannot be made, T_OUT is empty and MSG contains a text message describing
+			% why the conversion could not be made.
+			%
+				t_out = [];
+				timeref_out = [];
+				msg = '';
+
+				if isempty(timeref_in.epoch)
+					error(['Right now we do not support non-epoch input time...soon!']);
+				end
+
+				ginfo = graphinfo(nsd_syncgraph_obj);
+
+				% STEP 1: identify the source node
+
+				sourcenodeindex = [];
+
+				sourcenodesearch = find(strcmp(timeref_in.referent.name, {ginfo.nodes.objectname}));
+
+				if isempty(sourcenodesearch),
+						msg = ['Could not find any epoch nodes from referent ' timeref_in.referent.name '.'];
+						return;
+				end
+
+				in_epochid = [];
+
+				if ~isempty(timeref_in.epoch),
+					if isnumeric(timeref_in.epoch) % we have an epoch number
+						in_epochid = epochid(timeref_in.referent, timeref_in.epoch);
+					else,
+						in_epochid = thetimeref.epoch;
+					end
+				else,
+					% we would figure this out from start and stop times
+				end
+
+				% now find the node
+
+				sourcenodesearch2 = [];
+
+				for i=1:numel(sourcenodesearch),
+					if strcmp(in_epochid, ginfo.nodes(sourcenodesearch(i)).node.epoch_id),
+						sourcenodesearch2(end+1) = i;
+					end
+				end
+
+				% should be a single item now
+				if numel(sourcenodesearch2)>1,
+					msg = ['expected epoch to reduce to single node, but it did not.'];
+				elseif numel(sourcenodesearch2)==0,
+					msg = ['no such source epoch found in nsd_syncgraph.'];
+				else,
+					sourcenodeindex = sourcenodesearch(sourcenodesearch2);
+				end
+
+				if isempty(sourcenodeindex), return; end; % if we did not find it, we failed
+
+				% STEP 2: narrow the search for the destination node. It has to match our referent and it has to 
+				%     match the requested clock type
+
+				destinationnodesearch = find(strcmp(referent_out.name, {ginfo.nodes.objectname}));
+				if isempty(destinationnodesearch),
+					msg = ['Cold not find any epoch nodes from referent ' referent_out.name '.'];
+					return;
+				end
+
+				destinationnodesearch2 = [];
+
+				for i=1:numel(destinationnodesearch),
+					if clocktype_out == ginfo.nodes(destinationnodesearch(i)).node.epoch_clock,
+						destinationnodesearch2(end+1) = i;
+					end
+				end
+
+				destinationnodeindexes = destinationnodesearch(destinationnodesearch2);
+
+				if isempty(destinationnodeindexes),
+					msg = 'No candidate output epoch nodes';
+				end
+
+				% STEP 3: are there any paths from our source to any of the candidate destinations?
+
+				D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
+				indexes = find(~isinf(D));
+				if numel(indexes)>1,
+					msg = 'too many matches, do not know what to do.'; 
+					return
+				end
+
+				destinationnodeindex = destinationnodeindexes(indexes);
+
+				% make the timeref_out based on the node we found, use timeref of 0
+				timeref_out = nsd_timereference(referent_out, ginfo.nodes(destinationnodeindex).node.epoch_clock, ...
+					ginfo.nodes(destinationnodeindex).node.epoch_id, 0);
+
+				path = shortestpath(ginfo.diG, sourcenodeindex, destinationnodeindex);
+
+				if ~isempty(path),
+					t_out = t_in-timeref_in.time;
+					for i=1:numel(path)-1,
+						t_out = ginfo.mapping{path(i),path(i+1)}.map(t_out);
+					end
+				end
+		end % 
 
 		function saveStruct = getsavestruct(nsd_syncgraph_obj)
 			% GETSAVESTRUCT - Create a structure representation of the object that is free of handles and objects
@@ -401,7 +566,7 @@ classdef nsd_syncgraph < nsd_base
 				cache = [];
 				key = [];
 				if isa(nsd_syncgraph_obj.experiment,'handle'),
-					exp = nsd_iodevice_obj.experiment();
+					exp = nsd_syncgraph_obj.experiment();
 					cache = exp.cache;
 					key = nsd_syncgraph_obj.objectfilename;
 				end

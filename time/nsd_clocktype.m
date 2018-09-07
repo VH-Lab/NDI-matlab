@@ -116,6 +116,18 @@ classdef nsd_clocktype
 				end
 		end  % epochgraph_edge
 
+		function b = needsepoch(nsd_clocktype_obj)
+			% NEEDSEPOCH - does this clocktype need an epoch for full description?
+			%
+			% B = NEEDSEPOCH(NSD_CLOCKTYPE_OBJ)
+			%
+			% Does this NSD_CLOCKTYPE object need an epoch in order to specify time?
+			%
+			% Returns 1 for 'dev_local_time', 0 otherwise.
+			%
+				b = strcmp(nsd_clocktype_obj,'dev_local_time');
+		end % needsepoch
+
 		function b = eq(nsd_clocktype_obj_a, nsd_clocktype_obj_b)
 			% EQ - are two NSD_CLOCKTYPE objects equal?
 			%
