@@ -222,7 +222,7 @@ classdef nsd_epochset
 		function [nodes,underlyingnodes] = epochnodes(nsd_epochset_obj)
 			% EPOCHNODES - return all epoch nodes from an NSD_EPOCHSET object
 			%
-			% [NODES,UNDERLYINGNODES] = EPOCHNODES(NSD_EPOCHSET)
+			% [NODES,UNDERLYINGNODES] = EPOCHNODES(NSD_EPOCHSET_OBJ)
 			%
 			% Return all EPOCHNODES for an NSD_EPOCHSET. EPOCHNODES consist of the
 			% following fields:
@@ -234,18 +234,23 @@ classdef nsd_epochset
 			% 'epoch_clock'             | A SINGLE NSD_CLOCKTYPE entry that describes the clock type of this node.
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_id', and 'epochcontents'
+			% 'objectname'              | A string containing the 'name' field of NSD_EPOCHSET_OBJ, if it exists. If there is no
+			%                           |   'name' field, then 'unknown' is used.
+			% 'objectclass'             | The object class name of the NSD_EPOCHSET_OBJ.
 			%
-			% EPOCHNODES are closely related to EPOCHTABLE entries, except that only 1 NSD_CLOCKTYPE is
-			% permitted per epoch node. If an entry in epoch table contains multiple NSD_CLOCKTYPE entries,
-			% then each one will have its own epoch node. This aids in the construction of the EPOCHGRAPH 
-			% that helps the system map time from one epoch to another.
+			% EPOCHNODES are related to EPOCHTABLE entries, except 
+			%    a) only 1 NSD_CLOCKTYPE is permitted per epoch node. If an entry in epoch table contains
+			%       multiple NSD_CLOCKTYPE entries, then each one will have its own epoch node. This aids
+			%       in the construction of the EPOCHGRAPH that helps the system map time from one epoch to another.
+			%    b) EPOCHNODES contain identifying information (objectname and objectclass) to help
+			%       in identifying the epoch nodes across NSD_EPOCHSET objects. 
 			%
 			% UNDERLYINGNODES are nodes that are directly linked to this NSD_EPOCHSET's node via 'underlying' epochs.
 			%
 				et = epochtable(nsd_epochset_obj);
-				nodes = emptystruct('epoch_id','epochcontents','epoch_clock','underlying_epochs');
+				nodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock','underlying_epochs', 'objectname', 'objectclass');
 				if nargout>1, % only build this if we are asked to do so
-					underlyingnodes = emptystruct('epoch_id','epochcontents','epoch_clock','underlying_epochs');
+					underlyingnodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock', 'underlying_epochs');
 				end
 
 				for i=1:numel(et),
@@ -253,8 +258,10 @@ classdef nsd_epochset
 						newnode = et(i);
 						newnode = rmfield(newnode,'epoch_number');
 						newnode.epoch_clock = et(i).epoch_clock{j};
+						newnode.objectname = epochsetname(nsd_epochset_obj);
+						newnode.objectclass = class(nsd_epochset_obj);
+						nodes(end+1) = newnode;
 					end
-					nodes(end+1) = newnode;
 					if nargout>1,
 						newunodes = underlyingepochnodes(nsd_epochset_obj,epochnode);
 						underlyingnodes = cat(2,underlyingnodes,newunodes);
@@ -262,7 +269,24 @@ classdef nsd_epochset
 				end
 		end % epochnodes
 
-		function [unodes,objectname,objectclass,cost,mapping] = underlyingepochnodes(nsd_epochset_obj, epochnode)
+		function name = epochsetname(nsd_epochset_obj)
+			% EPOCHSETNAME - the name of the NSD_EPOCHSET object, for EPOCHNODES
+			%
+			% NAME = EPOCHSETNAME(NSD_EPOCHSET_OBJ)
+			%
+			% Returns the object name that is used when creating epoch nodes.
+			%
+			% If the class has a 'name' property, that property is used.
+			% Otherwise, 'unknown' is used.
+			%
+				name = 'unknown';
+				% default behavior is to use the 'name' field
+				if any(strcmp('name',fieldnames(nsd_epochset_obj))),
+					name = getfield(nsd_epochset_obj,'name');
+				end
+		end % epochsetname
+
+		function [unodes,cost,mapping] = underlyingepochnodes(nsd_epochset_obj, epochnode)
 			% UNDERLYINGEPOCHNODES - find all the underlying epochnodes of a given epochnode
 			%
 			% [UNODES,OBJECTNAME, OBJECTCLASS, COST,MAPPING] = UNDERLYINGEPOCHNODES(NSD_EPOCHSET_OBJ, EPOCHNODE)
@@ -275,40 +299,31 @@ classdef nsd_epochset
 			% See also: ISSYNCGRAPHROOT
 			%
 				unodes = epochnode;
-				objectname = {'unknown'};
-				if isfield(nsd_epochset_obj,'name'),
-					objectname{end} = nsd_epochset_obj.name;
-				end
-				objectclass{1} = class(nsd_epochset_obj);
-				cost = [1];   % cost has size NxN, where N is the number of underlying nodes + 1 (the search node)
+				cost = [1];   % cost has size NxN, where N is (the number of underlying nodes + 1) (1 is the search node)
 				trivial_map = nsd_timemapping([1 0]);
 				mapping = {trivial_map};  % we can get to ourself
 
 				if ~issyncgraphroot(nsd_epochset_obj),
 					for i=1:numel(epochnode.underlying_epochs),
-						for j=1:numel(epochnode.underlying_epochs.epoch_clock),
-							unode_here = emptystruct(fieldnames(unodes));
-							unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
-							unode_here(1).epochcontents = epochnode.underlying_epochs(i).epochcontents;
-							unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
-							if isa(epochnode.underlying_epochs(i).underlying,'nsd_epochset'),
-								etd = epochtable(epochnode.underlying_epochs(i).underlying);
-								z = find(strcmp(unode_here.epoch_id, {etd.epoch_id}));
-								if ~isempty(z),
-									unode_here(1).underlying_epochs = etd(z);
-									unode_here(1).underlying_epochs = rmfield(unode_here(1).underlying_epochs,'epoch_number');
+						for j=1:numel(epochnode.underlying_epochs(i).epoch_clock),
+							if epochnode.underlying_epochs(i).epoch_clock{j}==epochnode.epoch_clock,
+								% we have found a new unode, build it and add it
+								unode_here = emptystruct(fieldnames(unodes));
+								unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
+								unode_here(1).epochcontents = epochnode.underlying_epochs(i).epochcontents;
+								unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
+								if isa(epochnode.underlying_epochs(i).underlying,'nsd_epochset'),
+									etd = epochtable(epochnode.underlying_epochs(i).underlying);
+									z = find(strcmp(unode_here.epoch_id, {etd.epoch_id}));
+									if ~isempty(z),
+										unode_here(1).underlying_epochs = etd(z);
+										unode_here(1).underlying_epochs = rmfield(unode_here(1).underlying_epochs,'epoch_number');
+									end
 								end
-							end
-							if unode_here(1).epoch_clock==epochnode.epoch_clock,
+								unode_here(1).objectclass = class(epochnode.underlying_epochs(i).underlying);
+								unode_here(1).objectname = epochnode.underlying_epochs(i).underlying.epochsetname;
 
-								% okay, we have found a new node, add it 
 								unodes(end+1) = unode_here;
-
-								objectclass{end+1} = class(epochnode.underlying_epochs(i).underlying);
-								objectname{end+1} = {'unknown'};
-								if isfield(epochnode.underlying_epochs(i).underlying,'name'),
-									objectname{end} = epochnode.underlying_epochs(i).underlying.name;
-								end
 
 								% and add costs
 
@@ -319,7 +334,6 @@ classdef nsd_epochset
 								cost(numel(unodes),numel(unodes)) = 1; %  % connect to self
 								mapping{numel(unodes),numel(unodes)} = trivial_map;
 
-								% now add the underlying nodes of the newly added underlying node, down to when issyncgraphroot == 1
 				
 								% developer node: if we ever have multiple devices underlying an epoch,
 								%                 then  this needs editing
@@ -327,6 +341,8 @@ classdef nsd_epochset
 								if numel(epochnode.underlying_epochs(i).underlying) > 1,
 									error(['The day has come. More than one NSD_EPOCHSET underlying an epoch. Updating needed. Tell the developers.']);
 								end;
+
+								% now add the underlying nodes of the newly added underlying node, down to when issyncgraphroot == 1
 
 								if isa(epochnode.underlying_epochs(i).underlying,'nsd_epochset'),
 									if ~issyncgraphroot(epochnode.underlying_epochs(i).underlying)
@@ -343,7 +359,7 @@ classdef nsd_epochset
 											end
 										end
 										if match,
-											[unodes_d, objectname_d, objectclass_d, cost_d, mapping_d] = ...
+											[unodes_d, cost_d, mapping_d] = ...
 												underylingepochnodes(epochnode.underlying_epochs(i).underlying);
 
 											% incorporate new costs; 
@@ -354,8 +370,6 @@ classdef nsd_epochset
 												cell(numel(unodes_d)-1,numel(unodes)) cell(numel(unodes_d)-1,numel(unodes_d)-1) ];
 											mapping(numel(unodes):numel(unodes)+numel(unodes_d),numel(unodes):numel(unodes_d)) = mapping_d;
 											unodes = cat(2,unodes,unodes_d);
-											objectname = cat(2,objectname,objectname_d);
-											objectclass = cat(2,objectclass,objectclass_d);
 										end
 									end
 								end

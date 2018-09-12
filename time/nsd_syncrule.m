@@ -145,15 +145,14 @@ classdef nsd_syncrule
 				ies = {}; % 
 		end % ineligibleepochsets
 
-		function [cost,mapping] = apply(nsd_syncrule_obj, nsd_epochset_class_a, epochnode_a, nsd_epochset_class_b, epochnode_b)
+		function [cost,mapping] = apply(nsd_syncrule_obj, epochnode_a, epochnode_b)
 			% APPLY - apply an NSD_SYNCRULE to obtain a cost and NSD_TIMEMAPPING between two NSD_EPOCHSET objects
 			%
-			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_OBJ, NSD_EPOCHEST_CLASS_A, EPOCHNODE_A, ...
-			%                       NSD_EPOCHSET_CLASS_B, EPOCHNODE_B)
+			% [COST, MAPPING] = APPLY(NSD_SYNCRULE_OBJ, EPOCHNODE_A, EPOCHNODE_B)
 			%
-			% Given an NSD_SYNCRULE object, two NSD_EPOCHSET class types, and an epochnode entry of each,
-			% this function attempts to identify whether a time synchronization can be made across these epoch nodes. If so,
-			% a cost COST and an NSD_TIMEMAPPING object MAPPING is returned.
+			% Given an NSD_SYNCRULE object and two epochnodes returned from NSD_EPOCHSET/EPOCHNODES
+			% this function attempts to identify whether a time synchronization can be made across
+			% these epoch nodes. If so, a cost COST and an NSD_TIMEMAPPING object MAPPING is returned.
 			%
 			% Otherwise, COST and MAPPING are empty.
 			%

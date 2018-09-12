@@ -160,6 +160,18 @@ classdef nsd_probe < nsd_epochset
 				end
 		end
 
+		function name = epochsetname(nsd_probe_obj)
+			% EPOCHSETNAME - the name of the NSD_EPOCHSET object, for EPOCHNODES
+			%
+			% NAME = EPOCHSETNAME(NSD_PROBE_OBJ)
+			%
+			% Returns the object name that is used when creating epoch nodes.
+			%
+			% For NSD_PROBE objects, this is the string 'probe: ' followed by
+			% PROBESTRING(NSD_PROBE_OBJ).
+				name = ['probe: ' probestring(nsd_probe_obj)];
+		end % epochsetname
+
 		function probestr = probestring(nsd_probe_obj)
 			% PROBESTRING - Produce a human-readable probe string
 			%

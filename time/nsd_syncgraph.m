@@ -92,10 +92,7 @@ classdef nsd_syncgraph < nsd_base
 			% The graph information GINFO is a structure with the following fields:
 			% Fieldname              | Description
 			% ---------------------------------------------------------------------
-			% nodes                  | A structure describing the epochnodes. It has fields
-			%                        |   'node' - the epochnode objects returned from EPOCHNODES
-			%                        |   'objectname' - the object name of this node
-			%                        |   'objectclass' - the object class of this node
+			% nodes                  | The epochnodes (see NSD_EPOCHSET/EPOCHNODE)
 			% G                      | The epoch node graph adjacency matrix. G(i,j) is the cost of
 			%                        |   converting between node i and j.
 			% mapping                | A cell matrix with NSD_TIMEMAPPING objects that describes the
@@ -120,10 +117,7 @@ classdef nsd_syncgraph < nsd_base
 			% The graph information GINFO is a structure with the following fields:
 			% Fieldname              | Description
 			% ---------------------------------------------------------------------
-			% nodes                  | A structure describing the epochnodes. It has fields
-			%                        |   'node' - the epochnode objects returned from EPOCHNODES
-			%                        |   'objectname' - the object name of this node
-			%                        |   'objectclass' - the object class of this node
+			% nodes                  | The epochnodes (see NSD_EPOCHSET/EPOCHNODE)
 			% G                      | The epoch node graph adjacency matrix. G(i,j) is the cost of
 			%                        |   converting between node i and j.
 			% mapping                | A cell matrix with NSD_TIMEMAPPING objects that describes the
@@ -131,7 +125,7 @@ classdef nsd_syncgraph < nsd_base
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
 
-				ginfo.nodes = emptystruct('node','objectname','objectclass');
+				ginfo.nodes = emptystruct('epoch_id','epochcontents','epoch_clock','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
 				ginfo.diG = [];
@@ -181,8 +175,6 @@ classdef nsd_syncgraph < nsd_base
 				end
 		end % set_cached_graphinfo
 
-
-
 		function ginfo = addepoch(nsd_syncgraph_obj, nsd_iodevice_obj, ginfo)
 			% ADDEPOCH - add an NSD_EPOCHSET to the graph
 			% 
@@ -196,9 +188,6 @@ classdef nsd_syncgraph < nsd_base
 				if ~isa(nsd_iodevice_obj, 'nsd_iodevice'),
 					error(['The input NSD_IODEVICE_OBJ must be of class NSD_IODEVICE or a subclass.']);
 				end
-
-				oname = nsd_iodevice_obj.name;
-				oclass = class(nsd_iodevice_obj);
 
 				% Step 2: make sure it is not duplicative
 
@@ -224,9 +213,7 @@ classdef nsd_syncgraph < nsd_base
 				oldn = numel(ginfo.nodes);
 				newn = numel(newnodes);
 
-				for i=1:newn, % add nodes
-					ginfo.nodes(end+1) = struct('node',newnodes(i),'objectname', oname,'objectclass',oclass);
-				end
+				ginfo.nodes = cat(2,ginfo.nodes(:)',newnodes(:)');
 
 					% developer note: will probably have to change G to a sparse matrix with zero meaning 'no connection'
 
@@ -242,9 +229,9 @@ classdef nsd_syncgraph < nsd_base
 					for j=oldn+1:oldn+newn,
 						if i~=j,
 							[ginfo.G(i,j),ginfo.mapping{i,j}] = ...
-							ginfo.nodes(i).node.epoch_clock.epochgraph_edge(ginfo.nodes(j).node.epoch_clock);
+								ginfo.nodes(i).epoch_clock.epochgraph_edge(ginfo.nodes(j).epoch_clock);
 							[ginfo.G(j,i),ginfo.mapping{j,i}] = ...
-							ginfo.nodes(j).node.epoch_clock.epochgraph_edge(ginfo.nodes(i).node.epoch_clock);
+								ginfo.nodes(j).epoch_clock.epochgraph_edge(ginfo.nodes(i).epoch_clock);
 						end;
 					end
 				end
@@ -265,9 +252,7 @@ classdef nsd_syncgraph < nsd_base
 								lowcost = Inf;
 								mappinghere = [];
 								for k=1:numel(nsd_syncgraph_obj.rules),
-									[c,m] = apply(nsd_syncgraph_obj.rules{k},ginfo.nodes(i_).objectclass, ...
-											ginfo.nodes(i_).node, ...
-											ginfo.nodes(j_).objectclass, ginfo.nodes(j_).node);
+									[c,m] = apply(nsd_syncgraph_obj.rules{k}, ginfo.nodes(i_), ginfo.nodes(j_));
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
@@ -304,50 +289,51 @@ classdef nsd_syncgraph < nsd_base
 				% do we search for duplicates?
 
 				for i=1:numel(enodes),
-					index = find_epochnode(nsd_syncgraph_info, ginfo, nsd_epochset_obj.name, ...
-						class(nsd_epochset_obj), enodes(i).epoch_id, enodes(i).epoch_clock);
+					index = nsd_findepochnode(nsd_syncgraph_info, enodes(i), ginfo.node);
+
 					if ~isempty(index), % we don't have this one
 
-					underlying_nodes = underlyingepochnodes(nsd_epochset_obj, enodes(i));
+						underlying_nodes = underlyingepochnodes(nsd_epochset_obj, enodes(i));
 
-					[u_nodes,u_objectname,u_objectclass,u_cost,u_mapping] = underlyingepochnodes(nsd_epochset_obj, enodes(i));
+						[u_nodes,u_objectname,u_objectclass,u_cost,u_mapping] = underlyingepochnodes(nsd_epochset_obj, enodes(i));
 
-					% now we have a set of things to add to the graph
+						% now we have a set of things to add to the graph
 
-					index = {};
-					u_node_connected = [];
-					for j=1:numel(u_nodes),
-						index{j} = find_epochnode(nsd_syncgraph_info, ginfo, u_objectname{j}, u_objectclass{j}, ...
-							u_nodes(j).epoch_id, u_nodes(j).epoch_clock);
-						u_node_connected(i) = ~isempty(index{j});
-					end
-
-					if ~u_node_connected(1), % if we are already connected, what are we doing here?
-						% need to insert items that aren't already in the graph into the graph, connecting them to the things that are in the graph
-						% add row and column of all inf's, then loop over making connections
-
-						% developer question: should we bother to check for links that matter?
-						%                     right now, let's check that the first epochnode is connected at all
-
-						g_cost = u_cost;
-						g_cost(find(isinf(g_cost))) = 0;
-						localgraph = digraph(g_cost);
-					
-						conneced_to_main = find(u_node_connected);
-
-						D = distances(1,connected_to_main);
-						D_here = setdiff(find(~isinf(D(1,:))),1);
-						need_to_add = [];
-						for j=1:numel(D_here),
-							path = shortestpath(localgraph,1,D_here(j));
-							need_to_add = cat(2,need_to_add,path(:)');
+						index = {};
+						u_node_connected = [];
+						for j=1:numel(u_nodes),
+							index{j} = find_epochnode(nsd_syncgraph_info, ginfo, u_objectname{j}, u_objectclass{j}, ...
+								u_nodes(j).epoch_id, u_nodes(j).epoch_clock);
+							u_node_connected(i) = ~isempty(index{j});
 						end
-						need_to_add = setdiff(unique(need_to_add), u_node_connected); 
-						
-						% what are numbers of nodes in terms of the new adjacency matrix?
 
-						disp('WORKING HERE');
+						if ~u_node_connected(1), % if we are already connected, what are we doing here?
+							% need to insert items that aren't already in the graph into the graph, connecting them to the things that are in the graph
+							% add row and column of all inf's, then loop over making connections
+
+							% developer question: should we bother to check for links that matter?
+							%                     right now, let's check that the first epochnode is connected at all
+
+							g_cost = u_cost;
+							g_cost(find(isinf(g_cost))) = 0;
+							localgraph = digraph(g_cost);
 						
+							conneced_to_main = find(u_node_connected);
+
+							D = distances(1,connected_to_main);
+							D_here = setdiff(find(~isinf(D(1,:))),1);
+							need_to_add = [];
+							for j=1:numel(D_here),
+								path = shortestpath(localgraph,1,D_here(j));
+								need_to_add = cat(2,need_to_add,path(:)');
+							end
+							need_to_add = setdiff(unique(need_to_add), u_node_connected); 
+							
+							% what are numbers of nodes in terms of the new adjacency matrix?
+
+							disp('WORKING HERE');
+							
+						end
 					end
 				end
 
@@ -382,51 +368,6 @@ classdef nsd_syncgraph < nsd_base
 		function b = isuptodate(nsd_syncgraph_obj)
 
 		end % isuptodate
-
-
-		function [index] = find_epochnode(nsd_syncgraph_obj, ginfo, nsd_epochset_objname, nsd_epochset_classname, epoch_id, nsd_clocktype_obj)
-			% FIND_EPOCHNODE - find the index number of graphinfo that matches an epochnode
-			%
-			% INDEX = FIND_EPOCHNODE(NSD_SYNCGRAPH_OBJ, GINFO, NSD_EPOCHSET_OBJNAME, NSD_EPOCHSET_CLASSNAME, EPOCH_ID, NSD_CLOCKTYPE_OBJ)
-			%
-			% Looks for the occurence of an epochnode in GINFO whose object name matches NSD_EPOCHSET_OBJNAME, whose
-			% EPOCH_ID matches EPOCH_ID, whose class type matches NSD_EPOCHSET_CLASSNAME, and whose clock type matches NSD_CLOCKTYPE_OBJ.
-			%
-			% See also: NSD_SYNCGRAPH/GRAPHINFO
-			%
-				index = [];
-
-				nodesearch = find(strcmp(nsd_epochset_objname, {ginfo.nodes.objectname}));
-
-				if isempty(nodesearch), 
-					return;
-				end;
-
-				nodesearch2 = [];
-				for i=1:numel(nodesearch),
-					if strcmp(epoch_id, ginfo.nodes(nodesearch(i)).node.epoch_id),
-						nodesearch2(end+1) = i;
-					end
-				end
-
-				if isempty(nodesearch2), 
-					return;
-				end;
-
-				nodesearch = nodesearch(nodesearch2);
-
-				nodesearch2 = [];
-				for i=1:numel(nodesearch),
-					if nsd_clocktype_obj==ginfo.nodes(nodesearch(i)).node.epoch_clock,
-						nodesearch2(end+1) = i;
-					end;
-				end;
-
-				if ~isempty(nodesearch2),
-					index = nodesearch(nodesearch2);
-				end
-
-		end % find_epochnode
 
 		function [t_out, timeref_out, msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
 			% TIME_CONVERT - convert time from one NSD_TIMEREFERENCE to another
@@ -465,14 +406,18 @@ classdef nsd_syncgraph < nsd_base
 
 				% STEP 1: identify the source node
 
-				sourcenodeindex = find_epochnode(nsd_syncgraph_obj, ginfo, timeref_in.referent.name, ...
-					 class(timeref_in.referent), in_epochid, timeref_in.clocktype);
+				sourcenodeindex = nsd_findepochnode(...
+					struct('objectname',epochsetname(timeref_in.reference), 'objectclass', class(timeref_in.referent), ...
+						'epoch_id',in_epochid, 'epoch_clock', timeref_in.clocktype),...
+					ginfo.nodes);
 
 				% should be a single item now
 				if numel(sourcenodeindex)>1,
-					msg = ['expected epoch to reduce to single node, but it did not.'];
+					msg = ['expected start epochnode to be a single node, but it is not.'];
+					return;
 				elseif numel(sourcenodeindex)==0,
 					msg = ['no such source epoch found in nsd_syncgraph.'];
+					return;
 				end
 
 				if isempty(sourcenodeindex), return; end; % if we did not find it, we failed
@@ -480,24 +425,13 @@ classdef nsd_syncgraph < nsd_base
 				% STEP 2: narrow the search for the destination node. It has to match our referent and it has to 
 				%     match the requested clock type
 
-				destinationnodesearch = find(strcmp(referent_out.name, {ginfo.nodes.objectname}));
-				if isempty(destinationnodesearch),
-					msg = ['Cold not find any epoch nodes from referent ' referent_out.name '.'];
-					return;
-				end
-
-				destinationnodesearch2 = [];
-
-				for i=1:numel(destinationnodesearch),
-					if clocktype_out == ginfo.nodes(destinationnodesearch(i)).node.epoch_clock,
-						destinationnodesearch2(end+1) = i;
-					end
-				end
-
-				destinationnodeindexes = destinationnodesearch(destinationnodesearch2);
+				destinationnodeindexes = nsd_findepochnode(...
+					struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), 'epoch_clock', clocktype_out), ...
+					ginfo.nodes);
 
 				if isempty(destinationnodeindexes),
 					msg = 'No candidate output epoch nodes';
+					return;
 				end
 
 				% STEP 3: are there any paths from our source to any of the candidate destinations?
@@ -512,8 +446,8 @@ classdef nsd_syncgraph < nsd_base
 				destinationnodeindex = destinationnodeindexes(indexes);
 
 				% make the timeref_out based on the node we found, use timeref of 0
-				timeref_out = nsd_timereference(referent_out, ginfo.nodes(destinationnodeindex).node.epoch_clock, ...
-					ginfo.nodes(destinationnodeindex).node.epoch_id, 0);
+				timeref_out = nsd_timereference(referent_out, ginfo.nodes(destinationnodeindex).epoch_clock, ...
+					ginfo.nodes(destinationnodeindex).epoch_id, 0);
 
 				path = shortestpath(ginfo.diG, sourcenodeindex, destinationnodeindex);
 
@@ -523,55 +457,7 @@ classdef nsd_syncgraph < nsd_base
 						t_out = ginfo.mapping{path(i),path(i+1)}.map(t_out);
 					end
 				end
-		end % 
-
-		function [devicenode] = inheritedreferentnode2devicenode(nsd_syncgraph_obj, timeref)
-			% INHERITEDREFERENTNODE2DEVICENODE - trace all paths from an NSD_TIMEREFERENCE back to device node
-			%
-			% DEVICENODE = INHERITEDREFERENTNODE2DEVICENODE(NSD_SYNCGRAPH_OBJ, TIMEREF)
-			%
-			% Identifies an epoch node that underlies the referent and time referred to in 
-			% the NSD_TIMEREFERENCE object TIMEREF.
-			%
-			% DEVICENODE is a structure with fields 
-			%   |   'node' - the epochnode objects returned from EPOCHNODES
-			%   |   'objectname' - the object name of this node
-			%   |   'objectclass' - the object class of this node
-			%
-				et = epochtable(timeref.referent);
-				epoch = timeref.epoch;
-				if isempty(timeref.epoch),
-					% do something!
-				end; 
-				if isnumeric(epoch),
-					epoch_number = epoch;
-					if epoch_number > numel(et),
-						error(['Epoch number out of range.']);
-					end
-				else,
-					epoch_number = find(strcmp(epoch,{et.epoch_id}));
-					if isempty(epoch_number)
-						error(['Epoch id does not match any epoch.']);
-					end
-				end
-				if isempty(et(epoch_number).underlying_epochs.underlying),
-					error(['No path.']);
-				end
-				error('WORK HERE NOW');
-				if isa(et(epoch_number).underlying_epochs.underlying{1},'nsd_iodevice'),
-					% we made it
-					node.epoch_id = et(epoch_number).underlying_epochs(1);
-				%	node.epochcontents = et(epoch
-				%	devicenode = struct('node',
-				end
-					
-				
-		end % inheritednode2devicenode
-
-		function [devicenode] = devicenodes2inheritedreferent(nsd_syncgraph_obj, nodes, referent, clocktype)
-
-
-		end % devicenodes2inheritedreferent
+		end % time_convert()
 
 		function saveStruct = getsavestruct(nsd_syncgraph_obj)
 			% GETSAVESTRUCT - Create a structure representation of the object that is free of handles and objects
