@@ -214,7 +214,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 
 				all_epochs = nsd_filetree_obj.selectfilegroups();
 
-				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
+				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
 				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
 
 				for i=1:numel(all_epochs),
@@ -222,7 +222,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					et_here(1).underlying_epochs = ue;
 					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
 					et_here(1).underlying_epochs(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
-					et_here(1).underlying_epochs(1).epoch_number = i;
+					et_here(1).underlying_epochs(1).epoch_clock = nsd_clocktype('no_time'); % filetree does not keep time
 					et_here(1).epoch_number = i;
 					et_here(1).epochcontents = getepochcontents(nsd_filetree_obj,i);
 					et_here(1).epoch_clock = epochclock(nsd_filetree_obj,i);

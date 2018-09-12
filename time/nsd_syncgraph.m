@@ -105,11 +105,7 @@ classdef nsd_syncgraph < nsd_base
 				if isempty(ginfo),
 					ginfo = nsd_syncgraph_obj.buildgraphinfo();
 					hashvalue = hashmatlabvariable(ginfo);
-					[cache,key] = getcache(nsd_syncgraph_obj);
-					if ~isempty(cache),
-						priority = 1;
-						cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
-					end
+					set_cached_graphinfo(nsd_syncgraph_obj, ginfo, hashvalue);
 				end
 		end % graphinfo
 				
@@ -169,6 +165,23 @@ classdef nsd_syncgraph < nsd_base
 					end;
 				end
 		end % cached_epochtable
+
+		function set_cached_graphinfo(nsd_syncgraph_obj, ginfo, hashvalue)
+			% SET_CACHED_GRAPHINFO
+			%
+			% SET_CACHED_GRAPHINFO(NSD_SYNCGRAPH_OBJ, GINFO, HASHVALUE)
+			%
+			% Set the cached graph info. Opposite of CACHE_GRAPHINFO.
+			% 
+			% See also: CACHE_GRAPHINFO
+				[cache,key] = getcache(nsd_syncgraph_obj);
+				if ~isempty(cache),
+					priority = 1;
+					cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
+				end
+		end % set_cached_graphinfo
+
+
 
 		function ginfo = addepoch(nsd_syncgraph_obj, nsd_iodevice_obj, ginfo)
 			% ADDEPOCH - add an NSD_EPOCHSET to the graph
@@ -273,6 +286,73 @@ classdef nsd_syncgraph < nsd_base
 			
 		end % addepoch
 
+		function ginfo = addunderlyingepochs(nsd_syncgraph_obj, nsd_epochset_obj, ginfo)
+			% ADDUNDERLYINGEPOCH - add an NSD_EPOCHSET to the graph
+			% 
+			% NEW_GINFO = ADDUNDERLYINGEPOCHS(NSD_SYNCGRAPH_OBJ, NSD_EPOCHSET_OBJ, GINFO)
+			%
+			% Adds an NSD_EPOCHSET to the NSD_SYNCGRAPH
+			%
+			% Note: this DOES update the cache
+			% 
+				% Step 1: make sure we have the right kind of input object
+				if ~isa(nsd_epochset_obj, 'nsd_epochset'),
+					error(['The input NSD_EPOCHSET_OBJ must be of class NSD_EPOCHSET or a subclass.']);
+				end;
+
+				enodes = epochnodes(nsd_epochset_obj);
+				% do we search for duplicates?
+
+				for i=1:numel(enodes),
+					index = find_epochnode(nsd_syncgraph_info, ginfo, nsd_epochset_obj.name, ...
+						class(nsd_epochset_obj), enodes(i).epoch_id, enodes(i).epoch_clock);
+					if ~isempty(index), % we don't have this one
+
+					underlying_nodes = underlyingepochnodes(nsd_epochset_obj, enodes(i));
+
+					[u_nodes,u_objectname,u_objectclass,u_cost,u_mapping] = underlyingepochnodes(nsd_epochset_obj, enodes(i));
+
+					% now we have a set of things to add to the graph
+
+					index = {};
+					u_node_connected = [];
+					for j=1:numel(u_nodes),
+						index{j} = find_epochnode(nsd_syncgraph_info, ginfo, u_objectname{j}, u_objectclass{j}, ...
+							u_nodes(j).epoch_id, u_nodes(j).epoch_clock);
+						u_node_connected(i) = ~isempty(index{j});
+					end
+
+					if ~u_node_connected(1), % if we are already connected, what are we doing here?
+						% need to insert items that aren't already in the graph into the graph, connecting them to the things that are in the graph
+						% add row and column of all inf's, then loop over making connections
+
+						% developer question: should we bother to check for links that matter?
+						%                     right now, let's check that the first epochnode is connected at all
+
+						g_cost = u_cost;
+						g_cost(find(isinf(g_cost))) = 0;
+						localgraph = digraph(g_cost);
+					
+						conneced_to_main = find(u_node_connected);
+
+						D = distances(1,connected_to_main);
+						D_here = setdiff(find(~isinf(D(1,:))),1);
+						need_to_add = [];
+						for j=1:numel(D_here),
+							path = shortestpath(localgraph,1,D_here(j));
+							need_to_add = cat(2,need_to_add,path(:)');
+						end
+						need_to_add = setdiff(unique(need_to_add), u_node_connected); 
+						
+						% what are numbers of nodes in terms of the new adjacency matrix?
+
+						disp('WORKING HERE');
+						
+					end
+				end
+
+		end % addunderlyingnodes
+
 		function ginfo = removeepoch(nsd_syncgraph_obj, nsd_iodevice_obj, ginfo)
 			% REMOVEEPOCHS - remove an NSD_EPOCHSET from the graph
 			%
@@ -303,6 +383,51 @@ classdef nsd_syncgraph < nsd_base
 
 		end % isuptodate
 
+
+		function [index] = find_epochnode(nsd_syncgraph_obj, ginfo, nsd_epochset_objname, nsd_epochset_classname, epoch_id, nsd_clocktype_obj)
+			% FIND_EPOCHNODE - find the index number of graphinfo that matches an epochnode
+			%
+			% INDEX = FIND_EPOCHNODE(NSD_SYNCGRAPH_OBJ, GINFO, NSD_EPOCHSET_OBJNAME, NSD_EPOCHSET_CLASSNAME, EPOCH_ID, NSD_CLOCKTYPE_OBJ)
+			%
+			% Looks for the occurence of an epochnode in GINFO whose object name matches NSD_EPOCHSET_OBJNAME, whose
+			% EPOCH_ID matches EPOCH_ID, whose class type matches NSD_EPOCHSET_CLASSNAME, and whose clock type matches NSD_CLOCKTYPE_OBJ.
+			%
+			% See also: NSD_SYNCGRAPH/GRAPHINFO
+			%
+				index = [];
+
+				nodesearch = find(strcmp(nsd_epochset_objname, {ginfo.nodes.objectname}));
+
+				if isempty(nodesearch), 
+					return;
+				end;
+
+				nodesearch2 = [];
+				for i=1:numel(nodesearch),
+					if strcmp(epoch_id, ginfo.nodes(nodesearch(i)).node.epoch_id),
+						nodesearch2(end+1) = i;
+					end
+				end
+
+				if isempty(nodesearch2), 
+					return;
+				end;
+
+				nodesearch = nodesearch(nodesearch2);
+
+				nodesearch2 = [];
+				for i=1:numel(nodesearch),
+					if nsd_clocktype_obj==ginfo.nodes(nodesearch(i)).node.epoch_clock,
+						nodesearch2(end+1) = i;
+					end;
+				end;
+
+				if ~isempty(nodesearch2),
+					index = nodesearch(nodesearch2);
+				end
+
+		end % find_epochnode
+
 		function [t_out, timeref_out, msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
 			% TIME_CONVERT - convert time from one NSD_TIMEREFERENCE to another
 			%
@@ -326,21 +451,6 @@ classdef nsd_syncgraph < nsd_base
 					error(['Right now we do not support non-epoch input time...soon!']);
 				end
 
-				ginfo = graphinfo(nsd_syncgraph_obj);
-
-				% STEP 1: identify the source node
-
-				sourcenodeindex = [];
-
-				sourcenodesearch = find(strcmp(timeref_in.referent.name, {ginfo.nodes.objectname}));
-
-				if isempty(sourcenodesearch),
-						msg = ['Could not find any epoch nodes from referent ' timeref_in.referent.name '.'];
-						return;
-				end
-
-				in_epochid = [];
-
 				if ~isempty(timeref_in.epoch),
 					if isnumeric(timeref_in.epoch) % we have an epoch number
 						in_epochid = epochid(timeref_in.referent, timeref_in.epoch);
@@ -351,23 +461,18 @@ classdef nsd_syncgraph < nsd_base
 					% we would figure this out from start and stop times
 				end
 
-				% now find the node
+				ginfo = graphinfo(nsd_syncgraph_obj);
 
-				sourcenodesearch2 = [];
+				% STEP 1: identify the source node
 
-				for i=1:numel(sourcenodesearch),
-					if strcmp(in_epochid, ginfo.nodes(sourcenodesearch(i)).node.epoch_id),
-						sourcenodesearch2(end+1) = i;
-					end
-				end
+				sourcenodeindex = find_epochnode(nsd_syncgraph_obj, ginfo, timeref_in.referent.name, ...
+					 class(timeref_in.referent), in_epochid, timeref_in.clocktype);
 
 				% should be a single item now
-				if numel(sourcenodesearch2)>1,
+				if numel(sourcenodeindex)>1,
 					msg = ['expected epoch to reduce to single node, but it did not.'];
-				elseif numel(sourcenodesearch2)==0,
+				elseif numel(sourcenodeindex)==0,
 					msg = ['no such source epoch found in nsd_syncgraph.'];
-				else,
-					sourcenodeindex = sourcenodesearch(sourcenodesearch2);
 				end
 
 				if isempty(sourcenodeindex), return; end; % if we did not find it, we failed

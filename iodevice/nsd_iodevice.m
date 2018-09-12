@@ -297,9 +297,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 			%
 				et = nsd_iodevice_obj.filetree.epochtable;
 				for i=1:numel(et),
-					% developer note: you might ask, why is this here?
-					%    this allows future iodevice subclasses to override getepochcontents without
-					%    also needing to override epochtable
+					% need slight adjustment from filetree epochtable
 					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
 					et(i).epoch_clock = epochclock(nsd_iodevice_obj, et(i).epoch_number);
 				end

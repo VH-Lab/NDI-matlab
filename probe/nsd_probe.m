@@ -81,7 +81,7 @@ classdef nsd_probe < nsd_epochset
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
+				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
 				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
 
 				% pull all the devices from the experiment and look for device strings that match this probe
@@ -95,17 +95,18 @@ classdef nsd_probe < nsd_epochset
 					d_et{d} = epochtable(D{d});
 
 					for n=1:numel(d_et{d}),
-						underlying_epochs = emptystruct('underlying','epoch_number','epoch_id','epochcontents');
+						underlying_epochs = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
 						underlying_epochs(1).underlying = D{d};
-						if nsd_probe_obj.epochcontentsmatch(d_et{d}(n).epochcontents),
-							underlying_epochs.epoch_number = n;
+						if any(nsd_probe_obj.epochcontentsmatch(d_et{d}(n).epochcontents)),
+							%underlying_epochs.epoch_number = n;
 							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
 							underlying_epochs.epochcontents = d_et{d}(n).epochcontents;
+							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
 							et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
-							et_(1).epoch_number = numel(et);
+							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epochcontents = []; % not applicable for nsd_probe objects
-							et_(1).epoch_clock = {epochclock(nsd_probe_obj)}; % 'inherited'
+							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
 							et_(1).underlying_epochs = underlying_epochs;
 							et(end+1) = et_;
 						end
@@ -120,10 +121,23 @@ classdef nsd_probe < nsd_epochset
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The NSD_PROBE class always returns NSD_CLOCKTYPE('inherited')
+			% The NSD_PROBE class always returns the clock type(s) of the device it is based on
 			%
-				ec = nsd_clocktype('inherited');
+				et = epochtable(nsd_probe_obj);
+				ec = et(epoch_number).epoch_clock;
 		end % epochclock
+
+		function b = issyncgraphroot(nsd_epochset_obj)
+			% ISSYNCGRAPHROOT - should this object be a root in an NSD_SYNCGRAPH epoch graph?
+			%
+			% B = ISSYNCGRAPHROOT(NSD_EPOCHSET_OBJ)
+			%
+			% This function tells an NSD_SYNCGRAPH object whether it should continue 
+			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
+			%
+			% For NSD_PROBE this returns 0 so that the underlying NSD_IODEVICE epochs are added.
+				b = 0;
+		end % issyncgraphroot
 
                 function [cache,key] = getcache(nsd_probe_obj)
 			% GETCACHE - return the NSD_CACHE and key for NSD_PROBE
@@ -215,9 +229,9 @@ classdef nsd_probe < nsd_epochset
 			% Returns 1 if the NSD_EPOCHCONTENTS object EPOCHCONTENTS is a match for
 			% the NSD_PROBE_OBJ probe and 0 otherwise.
 			%
-				b = strcmp(epochcontents.name,nsd_probe_obj.name) && ...
-					(epochcontents.reference==nsd_probe_obj.reference) &&  ...
-					strcmp(lower(epochcontents.type),lower(nsd_probe_obj.type));  % we have a match
+				b = strcmp(nsd_probe_obj.name,{epochcontents.name}) & ...
+					([epochcontents.reference]==nsd_probe_obj.reference) &  ...
+					strcmp(lower(nsd_probe_obj.type),lower({epochcontents.type}));  % we have a match
 		end % epochcontentsmatch()
 
 	end % methods
