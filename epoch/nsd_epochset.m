@@ -21,10 +21,6 @@ classdef nsd_epochset
 
 		end % nsd_epochset
 
-		% okay, suppose we had
-
-		%deleteepoch
-
 		function n = numepochs(nsd_epochset_obj)
 			% NUMEPOCHS - Number of epochs of NSD_EPOCHSET
 			% 
@@ -33,9 +29,7 @@ classdef nsd_epochset
 			% Returns the number of epochs in the NSD_EPOCHSET object NSD_EPOCHSET_OBJ.
 			%
 			% See also: EPOCHTABLE
-
 				n = numel(epochtable(nsd_epochset_obj));
-
 		end % numepochs
 
 		function [et,hashvalue] = epochtable(nsd_epochset_obj)
@@ -178,10 +172,18 @@ classdef nsd_epochset
 			% NSD_IODEVICE) will override this method.
 			%
 				et = epochtable(nsd_epochset_obj);
-				if epoch_number > numel(et), 
-					error(['epoch_number out of range (number of epochs==' int2str(numel(et)) ')']);
+				if isnumeric(epoch_number),
+					if epoch_number > numel(et), 
+						error(['epoch_number out of range (number of epochs==' int2str(numel(et)) ')']);
+					end
+					eid = et(epoch_number).epoch_id; 
+				else,  % verify the epoch_id string
+					index = find(strcmpi(epoch_number,{et.epoch_id}));
+					if isempty(index),
+						error(['epoch_number is a string but does not correspond to any epoch_id']);
+					end
+					eid = et(index).epoch_id; % gets the capitalization exactly right
 				end
-				eid = et(epoch_number).epoch_id; 
 		end % epochid
 
 		function ec = epochclock(nsd_epochset_obj, epoch_number)

@@ -193,14 +193,14 @@ classdef nsd_probe < nsd_epochset
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
 			%   DEV is a 1xC cell array of NSD_IODEVICE objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
-			%   DEVEPOCH is a 1xC array with the number of the probe's EPOCH on each device
+			%   DEVEPOCH is a 1xC array with the epoch id of the probe's EPOCH on each device
 			%   CHANNELTYPE is a cell array of the type of each channel
 			%   CHANNELLIST is the channel number of each channel.
 			%
 				et = epochtable(nsd_probe_obj);
 
 				if ischar(epoch_number_or_id),
-					epoch_number = strcmpi(epoch_number_or_id, {et.epochid});
+					epoch_number = find(strcmpi(epoch_number_or_id, {et.epoch_id}));
 					if isempty(epoch_number),
 						error(['Could not identify epoch with id ' epoch_number_or_id '.']);
 					end
@@ -214,7 +214,7 @@ classdef nsd_probe < nsd_epochset
 
 				dev = {};
 				devname = {};
-				devepoch = [];
+				devepoch = {};
 				channeltype = {};
 				channellist = [];
 				
@@ -224,7 +224,7 @@ classdef nsd_probe < nsd_epochset
 						[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
 						dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
 						devname = cat(2,devname,devname_here);
-						devepoch = cat(2,devepoch,et(i).underlying_epochs(j).epoch_number);
+						devepoch = cat(2,devepoch,{et(i).underlying_epochs(j).epoch_id});
 						channeltype = cat(2,channeltype,channeltype_here);
 						channellist = cat(2,channellist,channellist_here);
 					end

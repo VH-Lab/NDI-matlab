@@ -21,36 +21,37 @@ classdef nsd_probe_mfdaq < nsd_probe
 
 		end % nsd_probe_mfdaq
 
-		function [data,t] = read_epochsamples(self, epoch, s0, s1)
+		function [data,t,timeref_out] = read_epochsamples(nsd_probe_mfdaq_obj, epoch, s0, s1)
 		%  READ_EPOCHSAMPLES - read the data from a specified epoch
 		%
-		%  [DATA, T] = READ_EPOCHSAMPLES(NSD_PROBE_MFDAQ_OBJ, EPOCH ,S0, S1)
+		%  [DATA, T, TIMEREF_OUT] = READ_EPOCHSAMPLES(NSD_PROBE_MFDAQ_OBJ, EPOCH ,S0, S1)
 		%
 		%  EPOCH is the epoch number to read from.
 		%
 		%  DATA will have one column per channel.
-		%
 		%  T is the time of each sample, relative to the beginning of the epoch.
+		%  TIMEREF_OUT is an NSD_TIMEREFERENCE object that describes the epoch.
 		%
 		%  
-			[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch);
+			[dev,devname,devepoch,channeltype,channel]=nsd_probe_mfdaq_obj.getchanneldevinfo(epoch);
+			eid = epochid(epoch);
 
 			if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
 			if numel(equnique(dev))>1, error(['At present, do not know how to mix devices.']); end;
 
 			if nargout>=1,
-				[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch(1), s0, s1);
+				[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
 			end
 			if nargout>=2,
-				[t] = readchannels_epochsamples(dev{1}, {'time'}, 1, devepoch(1), s0, s1);
+				[t] = readchannels_epochsamples(dev{1}, {'time'}, 1, devepoch{1}, s0, s1);
 			end
 			if nargout>=3,
-				clock = dev{1}.clock;
+				timeref_out = nsd_timereference(nsd_probe_mfdaq_obj, nsd_clocktype('dev_local_time'), eid, 0);
 			end
 
 		end % read_epochsamples()
 
-		function [data,t,timeref] = read(self, timeref_or_epoch, t0, t1)
+		function [data,t,timeref] = read(nsd_probe_mfdaq_obj, timeref_or_epoch, t0, t1)
 			%  READ - read the probe data based on specified time relative to an epoch or clock
 			%
 			%  [DATA,T,TIMEREF] = READ(NSD_PROBE_MFDAQ_OBJ, TIMEREF_OR_EPOCH, T0, T1)
@@ -61,35 +62,35 @@ classdef nsd_probe_mfdaq < nsd_probe
 			%
 			%  DATA is the data collection for the probe. It will have one column per channel.
 			%
-			%  T is the time of each sample, relative to the beginning of the epoch.
-			%
-			%  TIMEREF is an NSD_TIMEREFERENCE object to the time values T. When possible, the
-			%  TIMEREF is in the same units as TIMEREF_OR_EPOCH.
-			%
+			%  T is the time of each sample, in units of TIMEREF if it is an NSD_TIMEREFERENCE object or
+			%  in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 			%
 				if isa(timeref_or_epoch,'nsd_timereference'),
 					timeref = timeref_or_epoch;
-					error(['this function does not handle working with clocks yet.']);
 				else,
-					epoch = timeref_or_epoch,
-					[dev,devname,devepoch,channeltype,channel]=self.getchanneldevinfo(epoch),
-					sr = samplerate(dev{1}, devepoch(1), channeltype, channel);
-					if numel(unique(sr))~=1,
-						error(['Do not know how to handle multiple sampling rates across channels.']);
-					end;
-					sr = unique(sr);
-					s0 = 1+round(sr*t0);
-					s1 = 1+round(sr*t1);
+					timeref = nsd_timereference(nsd_probe_mfdaq_obj, nsd_clocktype('dev_local_time'), timeref_or_epoch, 0);
 				end;
+				
+				[epoch_t0_out, epoch_timeref, msg] = nsd_probe_mfdaq_obj.experiment.syncgraph.time_convert(timeref, t0, nsd_probe_mfdaq_obj, nsd_clocktype('dev_local_time'));
+				[epoch_t1_out, epoch_timeref, msg] = nsd_probe_mfdaq_obj.experiment.syncgraph.time_convert(timeref, t1, nsd_probe_mfdaq_obj, nsd_clocktype('dev_local_time'));
+
+				epoch = epoch_timeref.epoch;
+
+				[dev,devname,devepoch,channeltype,channel]=nsd_probe_mfdaq_obj.getchanneldevinfo(epoch),
+				sr = samplerate(dev{1}, devepoch{1}, channeltype, channel);
+				if numel(unique(sr))~=1,
+					error(['Do not know how to handle multiple sampling rates across channels.']);
+				end;
+				sr = unique(sr);
+				s0 = 1+round(sr*epoch_t0_out);
+				s1 = 1+round(sr*epoch_t1_out);
 
 				if nargout>=1,
-					[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch(1), s0, s1);
+					[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev{1}, 'time', 1, devepoch(1), s0, s1);
-				end
-				if nargout>=3,
-					timeref = nsd_timereference(dev{1}.clock, epoch, 0);
+					[t] = readchannels_epochsamples(dev{1}, 'time', 1, devepoch{1}, s0, s1);
+					t = nsd_probe_mfdaq_obj.experiment.syncgraph.time_convert(epoch_timeref, t, timeref.referent, timeref.clocktype);
 				end
 		end %read()
 

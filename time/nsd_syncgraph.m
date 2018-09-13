@@ -389,7 +389,7 @@ classdef nsd_syncgraph < nsd_base
 					if isnumeric(timeref_in.epoch) % we have an epoch number
 						in_epochid = epochid(timeref_in.referent, timeref_in.epoch);
 					else,
-						in_epochid = thetimeref.epoch;
+						in_epochid = timeref_in.epoch;
 					end
 				else,
 					% we would figure this out from start and stop times
