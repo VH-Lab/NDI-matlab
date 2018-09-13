@@ -335,7 +335,6 @@ classdef nsd_syncgraph < nsd_base
 				ginfo.diG = digraph(Gtable);
 
 				nsd_syncgraph_obj.set_cached_graphinfo(ginfo);
-
 		end % addunderlyingnodes
 
 		function ginfo = removeepoch(nsd_syncgraph_obj, nsd_iodevice_obj, ginfo)
@@ -360,13 +359,6 @@ classdef nsd_syncgraph < nsd_base
 				ginfo.diG = digraph(Gtable);
 
 		end % removeepoch
-
-		function nsd_syncgraph_obj = update(nsd_syncgraph_obj)
-		end % update
-
-		function b = isuptodate(nsd_syncgraph_obj)
-
-		end % isuptodate
 
 		function [t_out, timeref_out, msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
 			% TIME_CONVERT - convert time from one NSD_TIMEREFERENCE to another
