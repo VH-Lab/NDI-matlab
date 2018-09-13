@@ -197,7 +197,6 @@ classdef nsd_probe < nsd_epochset
 			%   CHANNELTYPE is a cell array of the type of each channel
 			%   CHANNELLIST is the channel number of each channel.
 			%
-
 				et = epochtable(nsd_probe_obj);
 
 				if ischar(epoch_number_or_id),

@@ -171,10 +171,17 @@ classdef nsd_epochset
 			% ID = EPOCHID (NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
 			% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
-			% If it doesn't exist, it is created.
+			% If it doesn't exist, it should be created.
 			%
+			% The abstract class just queries the EPOCHTABLE.
+			% Most classes that manage epochs themselves (NSD_FILETREE,
+			% NSD_IODEVICE) will override this method.
 			%
-				eid = ''; % abstract class;
+				et = epochtable(nsd_epochset_obj);
+				if epoch_number > numel(et), 
+					error(['epoch_number out of range (number of epochs==' int2str(numel(et)) ')']);
+				end
+				eid = et(epoch_number).epoch_id; 
 		end % epochid
 
 		function ec = epochclock(nsd_epochset_obj, epoch_number)

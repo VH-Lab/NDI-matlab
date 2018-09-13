@@ -18,15 +18,15 @@ classdef nsd_timereference
 			% Creates a new NSD_TIME_REFERENCE object. The REFERENT, EPOCH, and TIME must
 			% specify a unique time. 
 			%
-			% REFERENT is an NSD_CLOCK_IODEVICE, NSD_IODEVICE, NSD_PROBE object, etc; any subclass of NSD_EPOCHSET and NSD_BASE
+			% REFERENT is any subclass of NSD_EPOCHSET object (NSD_IODEVICE, NSD_PROBE, etc...)
 			% TYPE is the time type, can be 'utc', 'exp_global_time', or 'dev_global_time' or 'dev_local_time'
 			% If TYPE is 'dev_local_time', then the EPOCH identifier is necessary. Otherwise, it can be empty.
 			% If EPOCH is specified, then TIME is taken to be relative to the EPOCH number of the
 			% device associated with CLOCK, even if the device keeps universal or time.
 			%
 				
-				if ~ ( isa(referent,'nsd_epochset') & isa(referent,'nsd_base') ),
-					error(['referent must be a subclass of NSD_EPOCHSET and NSD_BASE.']);
+				if ~ ( isa(referent,'nsd_epochset') ),
+					error(['referent must be a subclass of NSD_EPOCHSET.']);
 				end
 
 				if ~isa(clocktype,'nsd_clocktype'),

@@ -101,8 +101,7 @@ classdef nsd_syncgraph < nsd_base
 				[ginfo, hashvalue] = cached_graphinfo(nsd_syncgraph_obj);
 				if isempty(ginfo),
 					ginfo = nsd_syncgraph_obj.buildgraphinfo();
-					hashvalue = hashmatlabvariable(ginfo);
-					set_cached_graphinfo(nsd_syncgraph_obj, ginfo, hashvalue);
+					set_cached_graphinfo(nsd_syncgraph_obj, ginfo);
 				end
 		end % graphinfo
 				
@@ -160,17 +159,19 @@ classdef nsd_syncgraph < nsd_base
 				end
 		end % cached_epochtable
 
-		function set_cached_graphinfo(nsd_syncgraph_obj, ginfo, hashvalue)
+		function set_cached_graphinfo(nsd_syncgraph_obj, ginfo)
 			% SET_CACHED_GRAPHINFO
 			%
-			% SET_CACHED_GRAPHINFO(NSD_SYNCGRAPH_OBJ, GINFO, HASHVALUE)
+			% SET_CACHED_GRAPHINFO(NSD_SYNCGRAPH_OBJ, GINFO)
 			%
 			% Set the cached graph info. Opposite of CACHE_GRAPHINFO.
 			% 
 			% See also: CACHE_GRAPHINFO
 				[cache,key] = getcache(nsd_syncgraph_obj);
 				if ~isempty(cache),
+					hashvalue = hashmatlabvariable(ginfo);
 					priority = 1;
+					cache.remove(key,'syncgraph-hash');
 					cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
 				end
 		end % set_cached_graphinfo
@@ -289,53 +290,51 @@ classdef nsd_syncgraph < nsd_base
 				% do we search for duplicates?
 
 				for i=1:numel(enodes),
-					index = nsd_findepochnode(nsd_syncgraph_info, enodes(i), ginfo.node);
+					index = nsd_findepochnode(enodes(i), ginfo.nodes);
 
-					if ~isempty(index), % we don't have this one
+					if isempty(index), % we don't have this one, we need to add it
 
 						underlying_nodes = underlyingepochnodes(nsd_epochset_obj, enodes(i));
 
-						[u_nodes,u_objectname,u_objectclass,u_cost,u_mapping] = underlyingepochnodes(nsd_epochset_obj, enodes(i));
+						[u_nodes,u_cost,u_mapping] = underlyingepochnodes(nsd_epochset_obj, enodes(i));
 
 						% now we have a set of things to add to the graph
 
-						index = {};
-						u_node_connected = [];
+						u_node_index_in_main = NaN(numel(u_nodes),1);
 						for j=1:numel(u_nodes),
-							index{j} = find_epochnode(nsd_syncgraph_info, ginfo, u_objectname{j}, u_objectclass{j}, ...
-								u_nodes(j).epoch_id, u_nodes(j).epoch_clock);
-							u_node_connected(i) = ~isempty(index{j});
-						end
-
-						if ~u_node_connected(1), % if we are already connected, what are we doing here?
-							% need to insert items that aren't already in the graph into the graph, connecting them to the things that are in the graph
-							% add row and column of all inf's, then loop over making connections
-
-							% developer question: should we bother to check for links that matter?
-							%                     right now, let's check that the first epochnode is connected at all
-
-							g_cost = u_cost;
-							g_cost(find(isinf(g_cost))) = 0;
-							localgraph = digraph(g_cost);
-						
-							conneced_to_main = find(u_node_connected);
-
-							D = distances(1,connected_to_main);
-							D_here = setdiff(find(~isinf(D(1,:))),1);
-							need_to_add = [];
-							for j=1:numel(D_here),
-								path = shortestpath(localgraph,1,D_here(j));
-								need_to_add = cat(2,need_to_add,path(:)');
+							myindex = nsd_findepochnode(u_nodes(j), ginfo.nodes);
+							if ~isempty(myindex),
+								u_node_index_in_main(j) = myindex;
 							end
-							need_to_add = setdiff(unique(need_to_add), u_node_connected); 
-							
-							% what are numbers of nodes in terms of the new adjacency matrix?
-
-							disp('WORKING HERE');
-							
 						end
+
+						nodenumbers2_1 = u_node_index_in_main; % what are the node numbers in the nodes to be added? or NaN if not there
+						nanshere = find(isnan(nodenumbers2_1));
+						nodenumbers2_1(nanshere) = numel(ginfo.nodes)+(1:numel(nanshere));
+
+						[newG, G_indexes, numnewnodes] = mergegraph(ginfo.G, u_cost, nodenumbers2_1);
+							% update mapping cell matrix, too
+						mapping_upperright = cell(size(ginfo.G,1), numnewnodes);
+						mapping_upperright(G_indexes.upper_right.merged) = u_mapping(G_indexes.upper_right.G2);
+						mapping_lowerleft = cell(numnewnodes,size(ginfo.G,1));
+						mapping_lowerleft(G_indexes.lower_left.merged) = u_mapping(G_indexes.lower_left.G2);
+						mapping_lowerright = u_mapping(G_indexes.lower_right);
+
+						ginfo.nodes = cat(2,ginfo.nodes,u_nodes(nanshere));
+						ginfo.G = newG;
+						ginfo.mapping = [ginfo.mapping mapping_upperright ; mapping_lowerleft mapping_lowerright ];
+
+						% developer question: should we bother to check for links that matter?
+						%                     right now, let's check that the first epochnode is connected at all
+
 					end
 				end
+
+				Gtable = ginfo.G;
+				Gtable(find(isinf(Gtable))) = 0;
+				ginfo.diG = digraph(Gtable);
+
+				nsd_syncgraph_obj.set_cached_graphinfo(ginfo);
 
 		end % addunderlyingnodes
 
@@ -388,6 +387,8 @@ classdef nsd_syncgraph < nsd_base
 				timeref_out = [];
 				msg = '';
 
+				% Step 0: check inputs
+
 				if isempty(timeref_in.epoch)
 					error(['Right now we do not support non-epoch input time...soon!']);
 				end
@@ -407,7 +408,7 @@ classdef nsd_syncgraph < nsd_base
 				% STEP 1: identify the source node
 
 				sourcenodeindex = nsd_findepochnode(...
-					struct('objectname',epochsetname(timeref_in.reference), 'objectclass', class(timeref_in.referent), ...
+					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent), ...
 						'epoch_id',in_epochid, 'epoch_clock', timeref_in.clocktype),...
 					ginfo.nodes);
 
@@ -416,7 +417,9 @@ classdef nsd_syncgraph < nsd_base
 					msg = ['expected start epochnode to be a single node, but it is not.'];
 					return;
 				elseif numel(sourcenodeindex)==0,
-					msg = ['no such source epoch found in nsd_syncgraph.'];
+					% we do not have the node; add it and try again.
+					nsd_syncgraph_obj.addunderlyingepochs(timeref_in.referent,ginfo);
+					[t_out,timeref_out,msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
 					return;
 				end
 
@@ -430,7 +433,16 @@ classdef nsd_syncgraph < nsd_base
 					ginfo.nodes);
 
 				if isempty(destinationnodeindexes),
-					msg = 'No candidate output epoch nodes';
+					% no candidate output nodes, see if any are there any from that referent
+					any_referent_outs = nsd_findepochnode(...
+						struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out)), ...
+						ginfo.nodes);
+					if isempty(any_referent_outs), % add the referent to the table and try again
+						nsd_syncgraph_obj.addunderlyingepochs(referent_out,ginfo);
+						[t_out,timeref_out,msg] = time_convert(nsd_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
+					else,
+						msg = ['Could not find any such destination node.'];
+					end;
 					return;
 				end
 
