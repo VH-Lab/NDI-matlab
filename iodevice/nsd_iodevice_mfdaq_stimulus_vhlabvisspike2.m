@@ -71,7 +71,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannels()
 
-		function data = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
+		function data = readevents_epochsamples(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, n, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
@@ -91,7 +91,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			%  
 			data = {};
 
-			filelist = self.filetree.getepochfiles(n);
+			filelist = nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filetree.getepochfiles(n);
 			pathname = {};
 			fname = {};
 			ext = {};
@@ -118,8 +118,8 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			end;
 
 			for i=1:numel(channel),
-				%self.mfdaq_prefix(channeltype{i}),
-				switch (self.mfdaq_prefix(channeltype{i})),
+				%nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
+				switch (nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
 					case 'mk',
 						% put them together, alternating stimtimes and stimofftimes in the final product
 						time1 = [stimtimes(:)' ; stimofftimes(:)'];
@@ -160,7 +160,27 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 
 		end % readevents_epochsamples()
 
-                function sr = samplerate(self, epoch, channeltype, channel)
+		function t0t1 = t0_t1(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NSD_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NSD_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			%
+			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
+			%
+				filelist = getepochfiles(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filetree, epoch_number);
+				filename = nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.cedspike2filelist2smrfile(filelist);
+				header = read_CED_SOMSMR_header(filename);
+
+				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
+				t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
+				t0t1 = {[t0 t1]};
+		end % t0t1
+
+		function sr = samplerate(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch, channeltype, channel)
 			%
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
@@ -185,23 +205,44 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
 			%
 
-			filelist = nsd_iodevice_stimulus_obj.filetree.getepochfiles(epoch_number);
-			pathname = {};
-			fname = {};
-			ext = {};
-			for i=1:numel(filelist),
-				[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
-			end
+				filelist = nsd_iodevice_stimulus_obj.filetree.getepochfiles(epoch_number);
+				pathname = {};
+				fname = {};
+				ext = {};
+				for i=1:numel(filelist),
+					[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
+				end
 
-			index = find(strcmp('stims',fname));
-			[ss,mti]=getstimscript(pathname{index});
+				index = find(strcmp('stims',fname));
+				[ss,mti]=getstimscript(pathname{index});
 
-			parameters = {};
-			for i=1:numStims(ss),
-				parameters{i} = getparameters(get(ss,i));
-			end;
+				parameters = {};
+				for i=1:numStims(ss),
+					parameters{i} = getparameters(get(ss,i));
+				end;
 		end
 
 	end; % methods
+
+	methods (Static)  % helper functions
+		function smrfile = cedspike2filelist2smrfile(filelist)
+			% CEDSPIKE2SPIKELIST2SMRFILE - Identify the .SMR file out of a file list
+			%
+			% FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
+			%
+			% Given a cell array of strings FILELIST with full-path file names,
+			% this function identifies the first file with an extension '.smr' (case insensitive)
+			% and returns the result in FILENAME (full-path file name).
+				for k=1:numel(filelist),
+					[pathpart,filenamepart,extpart] = fileparts(filelist{k});
+					if strcmpi(extpart,'.smr'),
+						smrfile = filelist{k}; % assume only 1 file
+						return;
+					end; % got the .smr file
+				end
+				error(['Could not find any .smr file in the file list.']);
+		end
+
+	end % static methods
 end
 

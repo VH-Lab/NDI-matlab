@@ -188,6 +188,21 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 				ec = {nsd_clocktype('no_time')};
 		end % epochclock
 
+		function t0t1 = t0_t1(nsd_epochset_obj, epoch_number)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NSD_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
+			%
+				t0t1 = {[NaN NaN]};
+		end % t0t1
+
 		function eid = epochid(nsd_iodevice_obj, epoch_number)
 			% EPOCHID - return the epoch id string for an epoch
 			%
@@ -300,6 +315,7 @@ classdef nsd_iodevice < nsd_dbleaf & nsd_epochset_param
 					% need slight adjustment from filetree epochtable
 					et(i).epochcontents = getepochcontents(nsd_iodevice_obj,et(i).epoch_number);
 					et(i).epoch_clock = epochclock(nsd_iodevice_obj, et(i).epoch_number);
+					et(i).t0_t1 = t0_t1(nsd_iodevice_obj, et(i).epoch_number);
 				end
 		end % epochtable
 

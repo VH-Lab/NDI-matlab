@@ -24,7 +24,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			obj = obj@nsd_iodevice_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(self)
+		function channels = getchannels(nsd_iodevice_mfdaq_intan_obj)
 		% GETCHANNELS - List the channels that are available on this Intan device
 		%
 		%  CHANNELS = GETCHANNELS(THEDEV)
@@ -40,7 +40,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(self.filetree);
+			N = numepochs(nsd_iodevice_mfdaq_intan_obj.filetree);
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -48,14 +48,14 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = self.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = nsd_iodevice_mfdaq_intan_obj.mfdaq_channeltypes;
 
 			for n=1:N,
 
 				% then, open RHD files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(self.filetree, n);
+				filelist = getepochfiles(nsd_iodevice_mfdaq_intan_obj.filetree, n);
 
 				filename = filelist{1}; % assume only 1 file
 
@@ -67,12 +67,12 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 
 				for k=1:length(intan_channel_types),
 					if isfield(header,intan_channel_types{k}),
-						channel_type_entry = self.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
+						channel_type_entry = nsd_iodevice_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
 						channel = getfield(header, intan_channel_types{k});
 						num = numel(channel);             %% number of channels with specific type
 						for p = 1:numel(channel),
 							newchannel.type = channel_type_entry;
-							newchannel.name = self.intanname2mfdaqname(self,...
+							newchannel.name = nsd_iodevice_mfdaq_intan_obj.intanname2mfdaqname(nsd_iodevice_mfdaq_intan_obj,...
 								channel_type_entry,...
 								channel(p).native_channel_name); 
 							match = 0;
@@ -89,7 +89,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochcontents(self, epochcontents, number)
+		function [b,msg] = verifyepochcontents(nsd_iodevice_mfdaq_intan_obj, epochcontents, number)
 		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 		%
 		%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
@@ -104,10 +104,10 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			b = 1;
 			msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
+			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,nsd_iodevice_mfdaq_intan_obj.name);
 		end
 
-		function filename = filenamefromepochfiles(self, filename)
+		function filename = filenamefromepochfiles(nsd_iodevice_mfdaq_intan_obj, filename)
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
 			[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
 			index = find(tf);
@@ -120,7 +120,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			end
 		end % filenamefromepoch
 
-		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(nsd_iodevice_mfdaq_intan_obj, channeltype, channel, epoch, s0, s1)
 		%  FUNCTION READ_CHANNELS - read the data based on specified channels
 		%
 		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
@@ -133,15 +133,15 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = self.filetree.getepochfiles(epoch);
-			filename = self.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
+			filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+			filename = nsd_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
 				error(['Only one type of channel may be read per function call at present.']);
 			end
-			intanchanneltype = self.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
+			intanchanneltype = nsd_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
-			sr = self.samplerate(epoch, channeltype, channel);
+			sr = nsd_iodevice_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -155,22 +155,51 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 
 		end % readchannels_epochsamples
 
-		function sr = samplerate(self, epoch, channeltype, channel)
-		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
-		%
-		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
-		%
-		% SR is the list of sample rate from specified channels
+		function sr = samplerate(nsd_iodevice_mfdaq_intan_obj, epoch, channeltype, channel)
+			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
+			%
+			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
+			%
+			% SR is the list of sample rate from specified channels
 
-			filename = self.filetree.getepochfiles(epoch);
-			filename = self.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
+				filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+				filename = nsd_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
-			head = read_Intan_RHD2000_header(filename);
-			for i=1:numel(channeltype),
-				freq_fieldname = self.mfdaqchanneltype2intanfreqheader(channeltype{i});
-				sr(i) = getfield(head.frequency_parameters,freq_fieldname);
-			end
+				head = read_Intan_RHD2000_header(filename);
+				for i=1:numel(channeltype),
+					freq_fieldname = nsd_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype{i});
+					sr(i) = getfield(head.frequency_parameters,freq_fieldname);
+				end
 		end % samplerate()
+
+		function t0t1 = t0_t1(nsd_iodevice_mfdaq_intan_obj, epoch_number)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NSD_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
+			%
+				filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+				filename = nsd_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+
+				header = read_Intan_RHD2000_header(filename);
+
+				[blockinfo, bytes_per_block, bytes_present, num_data_blocks] = Intan_RHD2000_blockinfo(filename, header);
+
+				total_samples = 60 * num_data_blocks;
+				total_time = total_samples / header.frequency_parameters.amplifier_sample_rate; % in seconds
+
+				t0 = 0;
+				t1 = total_time-1/header.frequency_parameters.amplifier_sample_rate;
+
+				t0t1 = {[t0 t1]};
+					% developer note: in the Intan acquisition software, one can define a time offset; right now we aren't considering that
+		end % t0t1
 
 	end % methods
 
@@ -245,10 +274,10 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			end
 		end % mfdaqchanneltype2intanchanneltype()
 
-		function [ channame ] = intanname2mfdaqname(self, type, name )
+		function [ channame ] = intanname2mfdaqname(nsd_iodevice_mfdaq_intan_obj, type, name )
 		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NSD_IODEVICE_MFDAQ format.
 		%
-		% MFDAQNAME = INTANNAME2MFDAQNAME(SELF, MFDAQTYPE, NAME)
+		% MFDAQNAME = INTANNAME2MFDAQNAME(NSD_IODEVICE_MFDAQ_INTAN, MFDAQTYPE, NAME)
 		%   
 		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
 		% NSD_IODEVICE_MFDAQ channel type string (see NSD_DEVICE_MFDAQ), this function
@@ -257,7 +286,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [self.mfdaq_prefix(type) int2str(chan)];
+			channame = [nsd_iodevice_mfdaq_intan_obj.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()
 

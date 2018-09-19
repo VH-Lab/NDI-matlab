@@ -45,6 +45,8 @@ classdef nsd_epochset
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
 			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
+			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NSD_CLOCKTYPE, the start and stop
+			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%
@@ -83,14 +85,16 @@ classdef nsd_epochset
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
 			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
+			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NSD_CLOCKTYPE, the start and stop
+			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_id', 'epochcontents', and 'epoch_clock'
 			%
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NSD_EPOCHSET/RESETEPOCHTABLE.
 			%
-				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1', 'underlying_epochs');
 		end % buildepochtable
 
 		function [et,hashvalue]=cached_epochtable(nsd_epochset_obj)
@@ -196,10 +200,25 @@ classdef nsd_epochset
 			%
 			% The abstract class always returns NSD_CLOCKTYPE('no_time')
 			%
-			% See also: NSD_CLOCKTYPE
+			% See also: NSD_CLOCKTYPE, T0_T1
 			%
 				ec = {nsd_clocktype('no_time')};
 		end % epochclock
+
+		function t0t1 = t0_t1(nsd_epochset_obj, epoch_number)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NSD_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
+			%
+				t0t1 = {[NaN NaN]};
+		end % t0t1
 
 		function s = epoch2str(nsd_epochset_obj, number)
 			% EPOCH2STR - convert an epoch number or id to a string
@@ -241,6 +260,7 @@ classdef nsd_epochset
 			%                           |   This epoch ID uniquely specifies the epoch.
 			% 'epochcontents'           | Any contents information for each epoch, usually of type NSD_EPOCHCONTENTS or empty.
 			% 'epoch_clock'             | A SINGLE NSD_CLOCKTYPE entry that describes the clock type of this node.
+			% 't0_t1'                   | The times [t0 t1] of the beginning and end of the epoch in units of 'epoch_clock'
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_id', and 'epochcontents'
 			% 'objectname'              | A string containing the 'name' field of NSD_EPOCHSET_OBJ, if it exists. If there is no
@@ -257,9 +277,9 @@ classdef nsd_epochset
 			% UNDERLYINGNODES are nodes that are directly linked to this NSD_EPOCHSET's node via 'underlying' epochs.
 			%
 				et = epochtable(nsd_epochset_obj);
-				nodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock','underlying_epochs', 'objectname', 'objectclass');
+				nodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
 				if nargout>1, % only build this if we are asked to do so
-					underlyingnodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock', 'underlying_epochs');
+					underlyingnodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock', 't0_t1', 'underlying_epochs');
 				end
 
 				for i=1:numel(et),
@@ -267,6 +287,7 @@ classdef nsd_epochset
 						newnode = et(i);
 						newnode = rmfield(newnode,'epoch_number');
 						newnode.epoch_clock = et(i).epoch_clock{j};
+						newnode.t0_t1 = et(i).t0_t1{j};
 						newnode.objectname = epochsetname(nsd_epochset_obj);
 						newnode.objectclass = class(nsd_epochset_obj);
 						nodes(end+1) = newnode;
@@ -321,6 +342,7 @@ classdef nsd_epochset
 								unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
 								unode_here(1).epochcontents = epochnode.underlying_epochs(i).epochcontents;
 								unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
+								unode_here(1).t0_t1 = epochnode.underlying_epochs(i).t0_t1{j};
 								if isa(epochnode.underlying_epochs(i).underlying,'nsd_epochset'),
 									etd = epochtable(epochnode.underlying_epochs(i).underlying);
 									z = find(strcmp(unode_here.epoch_id, {etd.epoch_id}));

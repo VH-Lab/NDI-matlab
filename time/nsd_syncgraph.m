@@ -124,7 +124,7 @@ classdef nsd_syncgraph < nsd_base
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
 
-				ginfo.nodes = emptystruct('epoch_id','epochcontents','epoch_clock','underlying_epochs','objectname','objectclass');
+				ginfo.nodes = emptystruct('epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
 				ginfo.diG = [];

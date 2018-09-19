@@ -78,11 +78,13 @@ classdef nsd_probe < nsd_epochset
 			%                           |   This uniquely specifies the epoch.
 			% 'epochcontents'           | The epochcontents object from each epoch
                         % 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
+                        % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NSD_CLOCKTYPE, the start and stop
+                        %                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the experiment and look for device strings that match this probe
 
@@ -102,11 +104,13 @@ classdef nsd_probe < nsd_epochset
 							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
 							underlying_epochs.epochcontents = d_et{d}(n).epochcontents;
 							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
+							underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
 							et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epochcontents = []; % not applicable for nsd_probe objects
 							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
+							et_(1).t0_t1 = d_et{d}(n).t0_t1; % inherit the time
 							et_(1).underlying_epochs = underlying_epochs;
 							et(end+1) = et_;
 						end

@@ -25,7 +25,7 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			obj = obj@nsd_iodevice_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(self)
+		function channels = getchannels(nsd_iodevice_mfdaq_cedspike2_obj)
 			% GETCHANNELS - List the channels that are available on this device
 			%
 			%  CHANNELS = GETCHANNELS(THEDEV)
@@ -41,17 +41,17 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(self.filetree);
+			N = numepochs(nsd_iodevice_mfdaq_cedspike2_obj.filetree);
 
-			multifunctiondaq_channel_types = self.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = nsd_iodevice_mfdaq_cedspike2_obj.mfdaq_channeltypes;
 
 			for n=1:N,
 
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(self.filetree, n);
-				filename = self.cedspike2filelist2smrfile(filelist);
+				filelist = getepochfiles(nsd_iodevice_mfdaq_cedspike2_obj.filetree, n);
+				filename = nsd_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
 
 				header = read_CED_SOMSMR_header(filename);
 
@@ -60,8 +60,8 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 				end;
 
 				for k=1:length(header.channelinfo),
-					newchannel.type = self.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
-					newchannel.name = [ self.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.type = nsd_iodevice_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
+					newchannel.name = [ nsd_iodevice_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
 					match = 0;
 					for kk=1:length(channels),
 						if eqlen(channels(kk),newchannel)
@@ -76,7 +76,7 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochcontents(self, epochcontents, number)
+		function [b,msg] = verifyepochcontents(nsd_iodevice_mfdaq_cedspike2_obj, epochcontents, number)
 			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
 			%
 			%   B = VERIFYEPOCHCONTENTS(NSD_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHCONTENTS, NUMBER)
@@ -90,10 +90,10 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			% See also: NSD_IODEVICE, NSD_EPOCHCONTENTS_IODEVICE
 			b = 1; msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,self.name);
+			% b = isa(epochcontents, 'nsd_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,nsd_iodevice_mfdaq_cedspike2_obj.name);
 		end
 
-		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(nsd_iodevice_mfdaq_cedspike2_obj, channeltype, channel, epoch, s0, s1)
 			%  FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
 			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
@@ -106,10 +106,10 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
-			filename = self.filetree.getepochfiles(epoch);
-			filename = self.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
+			filename = nsd_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
+			filename = nsd_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); 
 
-			sr = self.samplerate(epoch, channeltype, channel);
+			sr = nsd_iodevice_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -130,7 +130,27 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 
 		end % readchannels_epochsamples
 
-		function data = readevents_epoch(self, channeltype, channel, epoch, t0, t1)
+		function t0t1 = t0_t1(nsd_iodevice_mfdaq_cedspike2_obj, epoch_number)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NSD_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NSD_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			%
+			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
+			%
+				filelist = getepochfiles(nsd_iodevice_mfdaq_cedspike2_obj.filetree, epoch_number);
+				filename = nsd_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
+				header = read_CED_SOMSMR_header(filename);
+
+				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
+				t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
+				t0t1 = {[t0 t1]};
+		end % t0t1
+
+		function data = readevents_epoch(nsd_iodevice_mfdaq_cedspike2_obj, channeltype, channel, epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
@@ -146,7 +166,7 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-				filename = self.filetree.getepochfiles(epoch);
+				filename = nsd_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
 				filename = filename{1}; % don't know how to handle multiple filenames coming back
 				if numel(channel)>1,
 					data = {};
@@ -161,15 +181,15 @@ classdef nsd_iodevice_mfdaq_cedspike2 < nsd_iodevice_mfdaq
 				end
 		end % readevents_epoch()
 
-		function sr = samplerate(self, epoch, channeltype, channel)
+		function sr = samplerate(nsd_iodevice_mfdaq_cedspike2_obj, epoch, channeltype, channel)
 		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 		%
 		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
 		%
 		% SR is the list of sample rate from specified channels
 
-			filename = self.filetree.getepochfiles(epoch);
-			filename = self.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
+			filename = nsd_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
+			filename = nsd_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
 
 			sr = [];
 			for i=1:numel(channel),

@@ -207,6 +207,8 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
                         %                           |   This uniquely specifies the epoch.
 			% 'epochcontents'           | The epochcontents object from each epoch
 			% 'epoch_clock'             | A cell array of NSD_CLOCKTYPE objects that describe the type of clocks available
+			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NSD_CLOCKTYPE, the start and stop
+			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
                         % 'underlying_epochs'       | A structure array of the nsd_epochset objects that comprise these epochs.
                         %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
 			%                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
@@ -215,21 +217,22 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 				all_epochs = nsd_filetree_obj.selectfilegroups();
 
 				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','underlying_epochs');
+				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
 
 				for i=1:numel(all_epochs),
 					et_here = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 					et_here(1).underlying_epochs = ue;
 					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
 					et_here(1).underlying_epochs(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
-					et_here(1).underlying_epochs(1).epoch_clock = nsd_clocktype('no_time'); % filetree does not keep time
+					et_here(1).underlying_epochs(1).epoch_clock = {nsd_clocktype('no_time')}; % filetree does not keep time
+					et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filetree does not keep time
 					et_here(1).epoch_number = i;
 					et_here(1).epochcontents = getepochcontents(nsd_filetree_obj,i);
 					et_here(1).epoch_clock = epochclock(nsd_filetree_obj,i);
+					et_here(1).t0_t1 = t0_t1(nsd_filetree_obj,i);
 					et_here(1).epoch_id = epochid(nsd_filetree_obj, i, all_epochs{i});
 					et(end+1) = et_here;
 				end
-
 		end % epochtable
 
 		function id = epochid(nsd_filetree_obj, epoch_number, epochfiles)
@@ -480,7 +483,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 			%  Uses the FILEPARAMETERS (see NSD_FILETREE/SETFILEPARAMETERS) to identify recording
 			%  epochs under the EXPERIMENT path.
 			%
-			%  See also: GETEPOCHID
+			%  See also: EPOCHID
 			%
 				% developer note: possibility of caching this with some timeout -- 2018-08-31 we did it!!!
 

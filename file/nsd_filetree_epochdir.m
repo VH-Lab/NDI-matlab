@@ -93,10 +93,10 @@ classdef nsd_filetree_epochdir < nsd_filetree
 
 		%% methods overriding NSD_EPOCHSET
 
-		function id = epochid(self, epoch_number, epochfiles)
+		function id = epochid(nsd_filetree_epochdir_obj, epoch_number, epochfiles)
 		% EPOCHID = Get the epoch identifier for a particular epoch
 		%
-		% ID = EPOCHID(SELF, EPOCH_NUMBER, [EPOCHFILES])
+		% ID = EPOCHID(NSD_FILETREE_EPOCHDIR_OBJ, EPOCH_NUMBER, [EPOCHFILES])
 		%
 		% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
 		% For the NSD_FILETREE_EPOCHDIR object, each EPOCH is organized in its own subdirectory,
@@ -112,7 +112,7 @@ classdef nsd_filetree_epochdir < nsd_filetree
 		% Then ID is 't00001'
 		%
 			if nargin < 3,
-				epochfiles = getepochfiles(self, epoch_number);
+				epochfiles = getepochfiles(nsd_filetree_epochdir_obj, epoch_number);
 			end
 			[pathdir,filename] = fileparts(epochfiles{1});
 			[abovepath, id] = fileparts(pathdir);
@@ -120,10 +120,10 @@ classdef nsd_filetree_epochdir < nsd_filetree
 
 		%% methods overriding NSD_FILETREE
 	
-		function [epochfiles] = selectfilegroups(self)
+		function [epochfiles] = selectfilegroups(nsd_filetree_epochdir_obj)
 			% SELECTFILEGROUPS - Return groups of files that will comprise epochs
 			%
-			% EPOCHFILES = SELECTFILEGROUPS(SELF)
+			% EPOCHFILES = SELECTFILEGROUPS(NSD_FILETREE_EPOCHDIR_OBJ)
 			%
 			% Return the files that comprise epochs.
 			%
@@ -135,8 +135,8 @@ classdef nsd_filetree_epochdir < nsd_filetree
 			%
 			% See also: NSD_FILETREE/SETFILEPARAMETERS
 			%
-				exp_path = self.path();
-				epochfiles = findfilegroups(exp_path, self.fileparameters.filematch,...
+				exp_path = nsd_filetree_epochdir_obj.path();
+				epochfiles = findfilegroups(exp_path, nsd_filetree_epochdir_obj.fileparameters.filematch,...
 					'SearchParent',0,'SearchDepth',1);
 		end % selectfilegroups
 
