@@ -15,7 +15,7 @@ classdef nsd_probe_timeseries_stimulator < nsd_probe_timeseries
 			% reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			% probe (a string that must start with a letter and contain no white space).
 			%
-				obj = obj@nsd_probe(experiment, name, reference, type);
+				obj = obj@nsd_probe_timeseries(experiment, name, reference, type);
 		end % nsd_probe_timeseries_stimulator()
 
 		function [data, t, timeref] = readtimeseriesepoch(nsd_probe_timeseries_stimulator_obj, epoch, t0, t1)

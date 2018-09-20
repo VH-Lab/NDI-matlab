@@ -18,7 +18,6 @@ classdef nsd_probe_timeseries < nsd_probe
 			%  NSD_PROBE_TIMESERIES is an abstract class, and a specific implementation must be called.
 			%
 				obj = obj@nsd_probe(experiment, name, reference, type);
-
 		end % nsd_probe_timeseries
 
 		function [data, t, timeref] = readtimeseries(nsd_probe_timeseries_obj, timeref_or_epoch, t0, t1)

@@ -216,6 +216,8 @@ classdef nsd_probe < nsd_epochset
 		 			error(['Epoch number ' epoch_number ' out of range 1..' int2str(numel(et)) '.']);
 				end;
 
+				et = et(epoch_number);
+
 				dev = {};
 				devname = {};
 				devepoch = {};
