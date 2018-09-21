@@ -114,7 +114,7 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 				stimsetuptimes = [];
 				stimcleartimes = [];
 				if numel(mti)~=numel(stimtimes),
-					error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') as compared to what is expected from the content of stims.mat file (' int2str(length(mti)) ').']);
+					error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' int2str(length(mti)) ') in ' pathname{1} '.']);
 				end
 
 				for i=1:numel(mti),
