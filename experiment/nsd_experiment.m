@@ -134,9 +134,7 @@ classdef nsd_experiment < handle
 			% Adds the NSD_SYNCRULE RULE to the NSD_SYNCGRAPH of the NSD_EXPERIMENT
 			% object NSD_EXPERIMENT_OBJ. 
 			%
-
 				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.addrule(rule);
-
 		end % syncgraph_addrule
 
 		function nsd_experiment_obj = syncgraph_rmrule(nsd_experiment_obj, index)

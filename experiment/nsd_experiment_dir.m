@@ -35,13 +35,13 @@ classdef nsd_experiment_dir < nsd_experiment
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
 				end
-				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'iodevice_nsd_experiment_dir_object_*']);
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'iodevice_object_*']);
 				if isempty(d),
 					nsd_experiment_dir_obj.iodevice = nsd_dbleaf_branch(nsd_experiment_dir_obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
 				else,
 					nsd_experiment_dir_obj.iodevice = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
-				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'variable_nsd_experiment_dir_object_*']);
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),
 					nsd_experiment_dir_obj.variable = nsd_variable_branch(nsd_experiment_dir_obj.nsdpathname(),'variable', 0, 0);
 				else,
@@ -51,8 +51,8 @@ classdef nsd_experiment_dir < nsd_experiment
 				if isempty(d),
 					nsd_experiment_dir_obj.syncgraph = nsd_syncgraph(nsd_experiment_dir_obj);
 				else,
-					nsd_experiment_dir_obj.syncgraph = nsd_synctable([nsd_experiment_dir_obj.nsdpathname filesep d(1).name],...
-						'OpenFileAndUpdate',nsd_experiment_dir_obj);
+					nsd_experiment_dir_obj.syncgraph = nsd_experiment_dir_obj.syncgraph.readobjectfile(...
+						[nsd_experiment_dir_obj.nsdpathname filesep d(1).name]);
 				end;
 				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt'], nsd_experiment_dir_obj.reference);
 		end

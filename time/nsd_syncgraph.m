@@ -1,13 +1,5 @@
 classdef nsd_syncgraph < nsd_base
 
-
-		% devnotes: 
-		%            (1) need to decide how to handle non-epoch clocks
-		%            (2) adding/removing should update the cache unless it is told not to
-		%                  right now everything works but would be inefficient if we added/removed device during experiment
-		
-
-
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NSD_EXPERIMENT object
 		rules		% cell array of NSD_SYNCRULE objects to apply
@@ -33,11 +25,12 @@ classdef nsd_syncgraph < nsd_base
 	
 				nsd_syncgraph_obj.experiment = experiment;
 
-				if nargin==2,
+				if nargin>=2,
 					if strcmp(lower(varargin{2}),lower('OpenFile')),
 						nsd_syncgraph_obj = nsd_syncgraph_obj.readobjectfile(varargin{1});
 					end
 				end
+
 		end % nsd_syncgraph
 
 		function nsd_syncgraph_obj = addrule(nsd_syncgraph_obj, nsd_syncrule_obj)
@@ -72,6 +65,9 @@ classdef nsd_syncgraph < nsd_base
 						error('Input not of type NSD_SYNCRULE.');
 					end
 				end
+				if ~isempty(nsd_syncgraph_obj.experiment),
+					nsd_syncgraph_obj.writeobjectfile(nsd_syncgraph_obj.experiment.nsdpathname);
+				end
 		end % addrule()
 
 		function nsd_syncgraph_obj = removerule(nsd_syncgraph_obj, index)
@@ -83,6 +79,9 @@ classdef nsd_syncgraph < nsd_base
 			%
 				n = numel(nsd_syncgraph_obj.rules);
 				nsd_syncgraph_obj.rules = nsd_syncgraph_obj.rules(setdiff(1:n),index);
+				if ~isempty(nsd_syncgraph_obj.experiment),
+					nsd_syncgraph_obj.writeobjectfile(nsd_syncgraph_obj.experiment.nsdpathname);
+				end
 		end % removerule()
 
 		function [ginfo,hashvalue] = graphinfo(nsd_syncgraph_obj);
@@ -123,7 +122,6 @@ classdef nsd_syncgraph < nsd_base
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
-
 				ginfo.nodes = emptystruct('epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
@@ -135,7 +133,6 @@ classdef nsd_syncgraph < nsd_base
 				for i=1:numel(d),
 					ginfo = nsd_syncgraph_obj.addepoch(d{i}, ginfo);
 				end
-
 		end % buildgraphinfo
 
 		function [ginfo,hashvalue]=cached_graphinfo(nsd_syncgraph_obj)
@@ -488,8 +485,8 @@ classdef nsd_syncgraph < nsd_base
 
 				saveStruct.rules = emptystruct('class','parameters');
 				for i=1:numel(nsd_syncgraph_obj.rules),
-					saveStruct.rules(end+1) = struct('class',class(nsd_syncgraph_obj.rules(i)), ...
-						'parameters', nsd_syncgraph_obj.rules(i).parameters);
+					saveStruct.rules(end+1) = struct('class',class(nsd_syncgraph_obj.rules{i}), ...
+						'parameters', nsd_syncgraph_obj.rules{i}.parameters);
 				end
 
 		end % getsavestruct()
@@ -543,7 +540,7 @@ classdef nsd_syncgraph < nsd_base
 				saveStructString = saveStructString(:)'; % make sure we are a 'row'
 				fclose(fid);
 				saveStruct = mlstr2var(saveStructString);
-				fn = fieldnames(saveStruct);
+				fn = setdiff(fieldnames(saveStruct),'experiment');
 				values = {};
 				for i=1:numel(fn),
 					values{i} = getfield(saveStruct,fn{i});
@@ -573,7 +570,7 @@ classdef nsd_syncgraph < nsd_base
 							if isstruct(values{i}),
 								obj.rules = {};
 								for v=1:numel(values{i}),
-									eval(['obj.rules{v}=' values(v).class '(values(v).parameters);']);
+									eval(['obj.rules{v}=' values{i}(v).class '(values{i}(v).parameters);']);
 								end
 								properties_set{end+1} = 'rules';
 							else,
