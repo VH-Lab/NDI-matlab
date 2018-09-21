@@ -46,13 +46,13 @@ classdef nsd_probe_timeseries_stimulator < nsd_probe_timeseries
 			% See also: NSD_PROBE_TIMESERIES/READTIMESERIES
 			%
 				[dev,devname,devepoch,channeltype,channel]=nsd_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
+				eid = nsd_probe_timeseries_stimulator_obj.epochid(epoch);
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
+					% developer note: it would be pretty easy to extend this, just loop over the devices
+				[edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
 
 				channel_labels = getchannels(dev{1});
-
-				[edata] = readevents(dev{1},channeltype,channel,devepoch(epoch),t0,t1);
-
 				for i=1:numel(channeltype),
 					switch channel_labels(i).name,
 						case 'mk1', % stimonoff
@@ -70,12 +70,11 @@ classdef nsd_probe_timeseries_stimulator < nsd_probe_timeseries
 					end
 				end
 
-				data.parameters = get_stimulus_parameters(dev{1},devepoch(epoch));
+				data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
-				timeref_out = nsd_timereference(nsd_probe_timeseries_stimulator_obj, nsd_clocktype('dev_local_time'), epochid(epoch), 0);
+				timeref_out = nsd_timereference(nsd_probe_timeseries_stimulator_obj, nsd_clocktype('dev_local_time'), eid, 0);
 
 		end %readtimeseriesepoch()
-
 	end; % methods
 end
 

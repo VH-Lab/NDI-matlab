@@ -62,7 +62,6 @@ classdef nsd_probe < nsd_epochset
 				obj.name = name;
 				obj.reference = reference;
 				obj.type = type;
-
 		end % nsd_probe
 
 		function et = buildepochtable(nsd_probe_obj)
@@ -226,13 +225,15 @@ classdef nsd_probe < nsd_epochset
 				
 				for i = 1:numel(et),
 					for j=1:numel(et(i).underlying_epochs),
-						devstr = nsd_iodevicestring(et(i).underlying_epochs(j).epochcontents.devicestring);
-						[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
-						dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
-						devname = cat(2,devname,devname_here);
-						devepoch = cat(2,devepoch,{et(i).underlying_epochs(j).epoch_id});
-						channeltype = cat(2,channeltype,channeltype_here);
-						channellist = cat(2,channellist,channellist_here);
+						for k=1:numel(et(i).underlying_epochs(j).epochcontents),
+							devstr = nsd_iodevicestring(et(i).underlying_epochs(j).epochcontents(k).devicestring);
+							[devname_here, channeltype_here, channellist_here] = devstr.nsd_iodevicestring2channel();
+							dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
+							devname = cat(2,devname,devname_here);
+							devepoch = cat(2,devepoch,{et(i).underlying_epochs(j).epoch_id});
+							channeltype = cat(2,channeltype,channeltype_here);
+							channellist = cat(2,channellist,channellist_here);
+						end
 					end
 				end
 

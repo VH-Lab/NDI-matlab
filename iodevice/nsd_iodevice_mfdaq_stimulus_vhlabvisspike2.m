@@ -71,92 +71,100 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannels()
 
-		function data = readevents_epochsamples(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, n, t0, t1)
+		function data = readevents_epochsamples(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
 			%  SELF is the NSD_IODEVICE_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
-			%  CHANNELTYPE is(are) the type(s) of channel(s) to read
+			%  CHANNELTYPE is a cell array of strings describing the the type(s) of channel(s) to read
 			%  ('event','marker', etc)
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
-			%  EPOCH is the epoch number 
+			%  EPOCH is the epoch number or ID string
 			%
 			%  DATA is a two-column vector; the first column has the time of the event. The second
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%  
-			data = {};
+				data = {};
 
-			filelist = nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filetree.getepochfiles(n);
-			pathname = {};
-			fname = {};
-			ext = {};
-			for i=1:numel(filelist),
-				[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
-			end
-
-			% do the decoding
-			[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
-			[ss,mti]=getstimscript(pathname{1});
-			stimofftimes = [];
-			stimsetuptimes = [];
-			stimcleartimes = [];
-			if numel(mti)~=numel(stimtimes),
-				error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') as compared to what is expected from the content of stims.mat file (' int2str(length(mti)) ').']);
-			end
-
-			for i=1:numel(mti),
-				% spike2time = mactime + timeshift
-				timeshift = stimtimes(i) - mti{i}.startStopTimes(2);
-				stimofftimes(i) = mti{i}.startStopTimes(3) + timeshift;
-				stimsetuptimes(i) = mti{i}.startStopTimes(1) + timeshift;
-				stimcleartimes(i) = mti{i}.startStopTimes(4) + timeshift;
-			end;
-
-			for i=1:numel(channel),
-				%nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
-				switch (nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
-					case 'mk',
-						% put them together, alternating stimtimes and stimofftimes in the final product
-						time1 = [stimtimes(:)' ; stimofftimes(:)'];
-						data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
-						time1 = reshape(time1,numel(time1),1);
-						data1 = reshape(data1,numel(data1),1);
-						ch{1} = [time1 data1];
-						
-						time2 = [stimtimes(:)];
-						data2 = [stimid(:)];
-						ch{2} = [time2 data2];
-
-						time3 = [stimsetuptimes(:)' ; stimcleartimes(:)'];
-						data3 = [ones(size(stimsetuptimes(:)')) ; -1*ones(size(stimcleartimes(:)'))];
-						time3 = reshape(time3,numel(time3),1);
-						data3 = reshape(data3,numel(data3),1);
-						ch{3} = [time3 data3];
-
-						data{i} = ch{channel(i)};
-					case 'e',
-						if channel(i)==1, % frametimes
-							allframetimes = cat(1,frametimes{:});
-							data{end+1} = [allframetimes(:) ones(size(allframetimes(:)))];
-						elseif channel(i)==2, % vertical refresh
-							vr = load(filelist{find(strcmp('verticalblanking',fname))},'-ascii');
-							data{end+1} = [vr(:) ones(size(vr(:)))];
-						elseif channel(i)==3, % background trigger, simulated
-							data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
-						end
-					otherwise,
-						error(['Unknown channel.']);
+				eid = nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.epochid(epoch);
+				et = epochtable(nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj);
+				epoch_number = find(strcmp(eid,{et.epoch_id}));
+				if isempty(epoch_number),
+					error(['No such epoch ' eid '.']);
 				end
-			end
 
-			if numel(data)==1,% if only 1 channel entry to return, make it non-cell
-				data = data{1};
-			end; 
+				filelist = et(epoch_number).underlying_epochs.underlying;
+
+				pathname = {};
+				fname = {};
+				ext = {};
+				for i=1:numel(filelist),
+					[pathname{i},fname{i},ext{i}] = fileparts(filelist{i});
+				end
+
+				% do the decoding
+				[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
+				[ss,mti]=getstimscript(pathname{1});
+				stimofftimes = [];
+				stimsetuptimes = [];
+				stimcleartimes = [];
+				if numel(mti)~=numel(stimtimes),
+					error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') as compared to what is expected from the content of stims.mat file (' int2str(length(mti)) ').']);
+				end
+
+				for i=1:numel(mti),
+					% spike2time = mactime + timeshift
+					timeshift = stimtimes(i) - mti{i}.startStopTimes(2);
+					stimofftimes(i) = mti{i}.startStopTimes(3) + timeshift;
+					stimsetuptimes(i) = mti{i}.startStopTimes(1) + timeshift;
+					stimcleartimes(i) = mti{i}.startStopTimes(4) + timeshift;
+				end;
+
+				for i=1:numel(channel),
+					%nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
+					switch (nsd_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
+						case 'mk',
+							% put them together, alternating stimtimes and stimofftimes in the final product
+							time1 = [stimtimes(:)' ; stimofftimes(:)'];
+							data1 = [ones(size(stimtimes(:)')) ; -1*ones(size(stimofftimes(:)'))];
+							time1 = reshape(time1,numel(time1),1);
+							data1 = reshape(data1,numel(data1),1);
+							ch{1} = [time1 data1];
+							
+							time2 = [stimtimes(:)];
+							data2 = [stimid(:)];
+							ch{2} = [time2 data2];
+
+							time3 = [stimsetuptimes(:)' ; stimcleartimes(:)'];
+							data3 = [ones(size(stimsetuptimes(:)')) ; -1*ones(size(stimcleartimes(:)'))];
+							time3 = reshape(time3,numel(time3),1);
+							data3 = reshape(data3,numel(data3),1);
+							ch{3} = [time3 data3];
+
+							data{i} = ch{channel(i)};
+						case 'e',
+							if channel(i)==1, % frametimes
+								allframetimes = cat(1,frametimes{:});
+								data{end+1} = [allframetimes(:) ones(size(allframetimes(:)))];
+							elseif channel(i)==2, % vertical refresh
+								vr = load(filelist{find(strcmp('verticalblanking',fname))},'-ascii');
+								data{end+1} = [vr(:) ones(size(vr(:)))];
+							elseif channel(i)==3, % background trigger, simulated
+								data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
+							end
+						otherwise,
+							error(['Unknown channel.']);
+					end
+				end
+
+				if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+					data = data{1};
+				end; 
 
 		end % readevents_epochsamples()
 
