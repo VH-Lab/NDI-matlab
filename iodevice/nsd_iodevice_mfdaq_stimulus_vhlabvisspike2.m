@@ -109,7 +109,19 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 
 				% do the decoding
 				[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
+				mappingfile1 = [pathname{1} filesep 'stimtimes2stimtimes_mapping.txt'];
+				if exist(mappingfile1,'file'),
+					mapping = load(mappingfile1,'-ascii');
+					stimid = stimid(dropnan(mapping));
+					stimtimes = stimtimes(dropnan(mapping));
+					frametimes = frametimes(dropnan(mapping));
+				end
 				[ss,mti]=getstimscript(pathname{1});
+				mappingfile2 = [pathname{1} filesep 'mti2stimtimes_mapping.txt'];
+				if exist(mappingfile2,'file'),
+					mapping = load(mappingfile2,'-ascii');
+					mti = mti(dropnan(mapping));
+				end
 				stimofftimes = [];
 				stimsetuptimes = [];
 				stimcleartimes = [];
