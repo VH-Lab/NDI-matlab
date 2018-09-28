@@ -90,6 +90,32 @@ classdef nsd_app
 				end
 		end % myvarpath
 
+		function mpe = myvarpathepoch(nsd_app_obj, obj, epoch)
+			% MYVARPATHEPOCH - return the standard variable path for my application underneath the EPOCH of a given NSD_EPOCHSET object
+			%
+			% MPE = MYVARPATHEPOCH(NSD_APP_OBJ, OBJ, EPOCH)
+			%
+			% Returns the standard variable path for variables related to NSD_EPOCHSET objects at a given EPOCH,
+			% which can be a number or an EPOCHID string.
+			%
+			% If there is no standard location for saving variables for objects of the same type as OBJ, then empty is returned for MP.
+			%
+			% If not empty, MPE ends in an NSD_BRANCHSEP.
+			%
+				mpe = '';
+				if ~isa(obj,'nsd_epochset'),
+					return; % needs to be an NSD_EPOCHSET
+				end
+
+				epochstring = obj.epochid(epoch);
+
+				mpe = nsd_app_obj.myvarpath;
+				if ~isempty(emp),
+					mpe = [mpe 'Epoch ' epochstring nsd_branchsep];
+				end
+
+		end % myvarpathepoch()
+
 		% functions related to probe variables
 
 		function pvp = probevarpath(nsd_app_obj, probe)
@@ -105,7 +131,7 @@ classdef nsd_app
 		end % probevarpath
 
 		function pvb = probevarbranch(nsd_app_obj, probe)
-			% PROBEVARBRANCH - return/create the NSD_VARIABLE_BRANCH path
+			% PROBEVARBRANCH - return/create the NSD_VARIABLE_BRANCH for an NSD_PROBE object
 			%
 			% PVB = PROBEVARBRANCH(NSD_APP_OBJ, PROBE)
 			%

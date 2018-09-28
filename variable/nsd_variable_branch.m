@@ -118,7 +118,7 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 				while differences>0,
 					indexes = strfind(path,[nsd_branchsep nsd_branchsep]); % look for doubles, eliminate
 					path = path(setdiff(1:numel(path),indexes));
-					differences = (numel(index)==0);
+					differences = ~isempty(indexes);
 				end
 
 				names = split(path,nsd_branchsep);

@@ -97,7 +97,7 @@ classdef nsd_probe_timeseries_mfdaq < nsd_probe_timeseries
 			%
 				[dev, devname, devepoch, channeltype, channellist] = nsd_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch),
 				if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
-				sr = dev{1}.samplerate(devepoch, channeltype, channellist);
+				sr = dev{1}.samplerate(devepoch{1}, channeltype{1}, channellist(1));
 		end
 
 	end; % methods
