@@ -145,7 +145,26 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 				mds.is_nsd_dbleaf_branch = 1;
 		end
 
-		function nsd_dbleaf_branch_obj=add(nsd_dbleaf_branch_obj, newobj)
+		function nsd_dbleaf_branch_obj = addreplace(nsd_dbleaf_branch_obj, newobj)
+			% ADDREPLACE - Add an item to an NSD_DBLEAF_BRANCH, replacing any existing item if necessary
+			%
+			% NSD_DBLEAF_BRANCH_OBJ = ADDREPLACE(NSD_DBLEAF_BRANCH_OBJ, NEWOBJ)
+			%
+			% Adds the item NEWOBJ to the NSD_DBLEAF_BEANCH NSD_DBLEAF_BRANCH_OBJ. If an object with
+			% the same name as NEWOBJ already exists in NSD_DBLEAF_BRANCH_OBJ, then it is removed first.
+			%
+			% See also: NSD_DBLEAF_BRANCH/ADD, NSD_DBLEAF_BRANCH/REMOVE
+			%
+				[indexes,md] = nsd_dbleaf_branch_obj.search('name', newobj.name);
+				if ~isempty(indexes),
+					for i=1:numel(indexes),
+						nsd_dbleaf_branch_obj = nsd_dbleaf_branch_obj.remove(md(indexes(i)).objectfilename);
+					end
+				end;
+				nsd_dbleaf_branch_obj = nsd_dbleaf_branch_obj.add(newobj);
+		end % addreplace
+
+		function nsd_dbleaf_branch_obj = add(nsd_dbleaf_branch_obj, newobj)
 			% ADD - Add an item to an NSD_DBLEAF_BRANCH
 			%
 			% NSD_DBLEAF_BRANCH_OBJ = ADD(NSD_DBLEAF_BRANCH_OBJ, NEWOBJ)
@@ -231,39 +250,37 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%
 			% See also: NSD_DBLEAF_BRANCH/REMOVE, NSD_DBLEAF_BRANCH/SEARCH, NSD_DBLEAF_BRANCH/LOAD
 			%
-			%
+				[nsd_dbleaf_branch_obj,b] = nsd_dbleaf_branch_obj.lock();
 
-			[nsd_dbleaf_branch_obj,b] = nsd_dbleaf_branch_obj.lock();
+				if ~b,
+					error(['Tried to lock metadata but the file was in use! Error! Delete ' ...
+						nsd_dbleaf_branch_obj.lockfilename(nsd_dbleaf_branch_obj.path) ...
+						' if a program was interrupted while writing metadata.']);
+				end;
 
-			if ~b,
-				error(['Tried to lock metadata but the file was in use! Error! Delete ' ...
-					nsd_dbleaf_branch_obj.lockfilename(nsd_dbleaf_branch_obj.path) ...
-					' if a program was interrupted while writing metadata.']);
-			end;
+				% ok, now we know we have the lock
+				[indexes,md]=nsd_dbleaf_branch_obj.search('objectfilename',objectfilename);
+				if isempty(indexes),
+					nsd_dbleaf_branch_obj = nsd_dbleaf_branch_obj.unlock();
+					error(['No such object ' objectfilename '.']);
+				end
 
-			% ok, now we know we have the lock
-			[indexes,md]=nsd_dbleaf_branch_obj.search('objectfilename',objectfilename);
-			if isempty(indexes),
-				nsd_dbleaf_branch_obj = nsd_dbleaf_branch_obj.unlock();
-				error(['No such object ' objectfilename '.']);
-			end
+				tokeep = setdiff(1:numel(md),indexes);
+				md = md(tokeep);
+				
+				if nsd_dbleaf_branch_obj.memory, 
+					% update memory
+					nsd_dbleaf_branch_obj.mdmemory = md;
+					nsd_dbleaf_branch_obj.leaf = nsd_dbleaf_branch_obj.leaf(tokeep);
+				else,
+					% update the file
+					nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile(nsd_dbleaf_branch_obj.path,1,md); % we have the lock
+					% delete the leaf from disk
+					theleaf = nsd_pickdbleaf([nsd_dbleaf_branch_obj.dirname() filesep objectfilename]);
+					theleaf.deleteobjectfile(nsd_dbleaf_branch_obj.dirname());
+				end
 
-			tokeep = setdiff(1:numel(md),indexes);
-			md = md(tokeep);
-			
-			if nsd_dbleaf_branch_obj.memory, 
-				% update memory
-				nsd_dbleaf_branch_obj.mdmemory = md;
-				nsd_dbleaf_branch_obj.leaf = nsd_dbleaf_branch_obj.leaf(tokeep);
-			else,
-				% update the file
-				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.writeobjectfile(nsd_dbleaf_branch_obj.path,1,md); % we have the lock
-				% delete the leaf from disk
-				theleaf = nsd_pickdbleaf([nsd_dbleaf_branch_obj.dirname() filesep objectfilename]);
-				theleaf.deleteobjectfile(nsd_dbleaf_branch_obj.dirname());
-			end
-
-			nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.unlock();
+				nsd_dbleaf_branch_obj=nsd_dbleaf_branch_obj.unlock();
 		end
 
 		function nsd_dbleaf_branch_obj=update(nsd_dbleaf_branch_obj, nsd_dbleaf_obj)
@@ -327,25 +344,25 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			%     indexes = search(nsd_dbleaf_branch_obj, 'class','nsd_spikedata');
 			%     indexes = search(nsd_dbleaf_branch_obj, 'class','nsd_spike(*.)');
 			%
-			md = nsd_dbleaf_branch_obj.metadata();  % undocumented second output
-			if isempty(md)
-				indexes = [];
-				return;
-			end;
-			indexes = 1:numel(md);
-			for i=1:2:numel(varargin),
-				if ~isfield(md,varargin{i}),
-					error([varargin{i} ' is not a field of the metadata.']);
+				md = nsd_dbleaf_branch_obj.metadata();  % undocumented second output
+				if isempty(md)
+					indexes = [];
+					return;
 				end;
-				if ischar(varargin{i+1}),
-					tests = regexpi(eval(['{md.' varargin{i} '};']), varargin{i+1}, 'forceCellOutput');
-					matches_here = ~(cellfun(@isempty, tests));
-				else,
-					matches_here = cellfun(@(x) eq(x,varargin{i+1}), eval(['{md.' varargin{i} '};']));
+				indexes = 1:numel(md);
+				for i=1:2:numel(varargin),
+					if ~isfield(md,varargin{i}),
+						error([varargin{i} ' is not a field of the metadata.']);
+					end;
+					if ischar(varargin{i+1}),
+						tests = regexpi(eval(['{md.' varargin{i} '};']), varargin{i+1}, 'forceCellOutput');
+						matches_here = ~(cellfun(@isempty, tests));
+					else,
+						matches_here = cellfun(@(x) eq(x,varargin{i+1}), eval(['{md.' varargin{i} '};']));
+					end;
+					indexes = intersect(indexes,find(matches_here));
+					if isempty(indexes), break; end; % if we are out of matches, no reason to keep searching
 				end;
-				indexes = intersect(indexes,find(matches_here));
-				if isempty(indexes), break; end; % if we are out of matches, no reason to keep searching
-			end;
 		end % search
 
 		function obj = load(nsd_dbleaf_branch_obj, varargin)
@@ -366,7 +383,7 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% 
 
 			md = [];
-			if numel(varargin)>=2,
+			if numel(varargin)>=2 | numel(varargin)==0,
 				[indexes, md] = search(nsd_dbleaf_branch_obj,varargin{:});
 			else,
 				indexes = varargin{1};

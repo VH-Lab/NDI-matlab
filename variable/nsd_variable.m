@@ -106,7 +106,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 			obj.description=description;
 			obj.history=history;
 			if ~isempty(parent),
-				parent.add(obj);
+				parent.addreplace(obj);
 			end;
 			if ~isempty(loadfilename),
 				obj = obj.readobjectfile(loadfilename);
