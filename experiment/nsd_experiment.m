@@ -3,7 +3,7 @@ classdef nsd_experiment < handle
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
-		variable          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
+		database          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
 		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
 		syncgraph         % An NSD_SYNCGRAPH object related to this experiment
 		cache             % An NSD_CACHE object for the experiment's use
