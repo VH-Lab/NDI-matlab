@@ -27,7 +27,7 @@ classdef nsd_experiment < handle
 
 				nsd_experiment_obj.reference = reference;
 				nsd_experiment_obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
-				nsd_experiment_obj.variable = nsd_variable_branch('','variable',0);
+				nsd_experiment_obj.database = nsd_variable_branch('','database',0);
 				nsd_experiment_obj.syncgraph = nsd_syncgraph(nsd_experiment_obj);
 				nsd_experiment_obj.cache = nsd_cache();
 		end
@@ -91,32 +91,32 @@ classdef nsd_experiment < handle
 				end
 		end % ioiodevice_load()	
 
-		% NSD_VARIABLE METHODS
+		% DATABASE / NSD_VARIABLE METHODS
 
-		function nsd_experiment_obj = variable_add(nsd_experiment_obj, var)
-			%VARIABLE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
+		function nsd_experiment_obj = database_add(nsd_experiment_obj, var)
+			%DATABASE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = VARIABLE_ADD(NSD_EXPERIMENT_OBJ, VAR)
+			%   NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, VAR)
 			%
 			% Adds the NSD_VARIABLE VAR to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
 			%
-			% The variable can be accessed by referencing NSD_EXPERIMENT_OBJ.variable
+			% The variable can be accessed by referencing NSD_EXPERIMENT_OBJ.database
 			%  
-			% See also: VARIABLE_RM, NSD_EXPERIMENT
+			% See also: DATABASE_RM, NSD_EXPERIMENT
 
 				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_branch'), error(['var is not an NSD_VARIABLE']); end;
 				nsd_experiment_obj.variable.add(var);
 		end
 
-		function nsd_experiment_obj = variable_rm(nsd_experiment_obj, var)
-			% VARIABLE_RM - Remove an NSD_VARIABLE from an NSD_EXPERIMENT object
+		function nsd_experiment_obj = database_rm(nsd_experiment_obj, var)
+			% DATABASE_RM - Remove an NSD_VARIABLE from an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = VARIABLE_RM(NSD_EXPERIMENT_OBJ, VAR)
+			%   NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, VAR)
 			%
 			% 
-			% Removes the variable VAR from the experiment variable list.
+			% Removes the variable VAR from the NSD_EXPERIMENT_OBJ.database.
 			%
-			% See also: VARIABLE_ADD, NSD_EXPERIMENT
+			% See also: DATABASE_ADD, NSD_EXPERIMENT
 			
 				leaf = nsd_experiment_obj.variable.load('name',var.name);
 				if ~isempty(leaf),
@@ -170,16 +170,24 @@ classdef nsd_experiment < handle
 
 		%%%%%% REFERENCE methods
 
-		function probes = getprobes(nsd_experiment_obj)
+		function probes = getprobes(nsd_experiment_obj, varargin)
 			% GETPROBES - Return all NSD_PROBES that are found in NSD_IODEVICE epoch contents entries
 			%
-			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ)
+			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ, ...)
 			%
 			% Examines all NSD_IODEVICE entries in the NSD_EXPERIMENT_OBJ's device array
 			% and returns all NSD_PROBE entries that can be constructed from each device's
 			% NSD_EPOCHCONENTS entries.
 			%
 			% PROBES is a cell array of NSD_PROBE objects.
+			%
+			% One can pass additional arguments that specify the classnames of the probes
+			% that are returned:
+			%
+			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ, CLASSMATCH1, CLASSMATCH2, ...)
+			%
+			% Only probes that are members of the classes CLASSMATCH1, CLASSMATCH2, etc., are
+			% returned.
 			%
 				probestruct = [];
 				devs = nsd_experiment_obj.iodevice_load('name','(.*)');
@@ -191,6 +199,19 @@ classdef nsd_experiment < handle
 				end
 				probestruct = equnique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, nsd_experiment_obj);
+				if numel(varargin)>0,
+					include = [];
+					for i=1:numel(probes),
+						includehere = 1;
+						for j=1:numel(varargin),
+							includehere = includehere & isa(probes{i},varargin{j});
+						end
+						if includehere,
+							include(end+1) = i;
+						end
+					end
+					probes = probes(include);
+				end
 		end % getprobes
 
 	end % methods

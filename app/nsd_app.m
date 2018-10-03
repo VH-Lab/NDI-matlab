@@ -60,7 +60,7 @@ classdef nsd_app
 				if nargin<4,
 					lastisvar = 0;
 				end
-				[nsd_variable_obj,nsd_variable_parent_obj] = nsd_app_obj.experiment.variable.path2nsd_variable(path,createit,lastisvar);
+				[nsd_variable_obj,nsd_variable_parent_obj] = nsd_app_obj.experiment.database.path2nsd_variable(path,createit,lastisvar);
 
 		end % path2var()
 
@@ -172,7 +172,7 @@ classdef nsd_app
 			% Returns an NSD_VARIABLE_BRANCH object that contains variables related to
 			% a specific NSD_PROBE object PROBE.
 			%
-				pvb = probe.experiment.variable.path2nsd_variable(probevarpath(nsd_app_obj,probe),1);
+				pvb = probe.experiment.database.path2nsd_variable(probevarpath(nsd_app_obj,probe),1);
 		end % probevarbranch
 
 	end % methods

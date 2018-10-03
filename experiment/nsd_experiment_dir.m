@@ -43,9 +43,9 @@ classdef nsd_experiment_dir < nsd_experiment
 				end;
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'variable_object_*']);
 				if isempty(d),
-					nsd_experiment_dir_obj.variable = nsd_variable_branch(nsd_experiment_dir_obj.nsdpathname(),'variable', 0, 0);
+					nsd_experiment_dir_obj.database = nsd_variable_branch(nsd_experiment_dir_obj.nsdpathname(),'variable', 0, 0);
 				else,
-					nsd_experiment_dir_obj.variable = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
+					nsd_experiment_dir_obj.database = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep '*syncgraph.nsd']);
 				if isempty(d),

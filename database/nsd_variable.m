@@ -12,9 +12,9 @@ classdef nsd_variable < nsd_dbleaf_branch
 	% Examples:
 	%	% if exp is an NSD_EXPERIMENT object
 	%		% BRANCHES a.k.a. subdirectories
-	%	myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
+	%	myvardir = nsd_variable_branch(exp.database,'Animal parameters');
 	%		% or
-	%	myvardir = exp.variable.load_createbranch('Animal parameters'); % loads it if it is already there, creates it otherwise
+	%	myvardir = exp.database.load_createbranch('Animal parameters'); % loads it if it is already there, creates it otherwise
 	%
 	%		% DOUBLE ARRAYS
 	%	myvar = nsd_variable(myvardir, 'Animal age','double','Animal age in days', ...

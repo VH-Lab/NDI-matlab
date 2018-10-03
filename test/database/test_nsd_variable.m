@@ -1,10 +1,10 @@
 function test_nsd_variable(dirname)
-% TEST_NSD_VARIABLE - Test the functionality of the NSD_VARIABLE object
+% TEST_NSD_VARIABLE - Test the functionality of the NSD_VARIABLE object and the NSD_EXPERIMENT database
 %
 %  TEST_NSD_VARIABLE([DIRNAME])
 %
 %  Given a directory, this function tries to create some 
-%  NSD_VARIABLE objects in the experiment. The test function
+%  NSD_VARIABLE objects in the experiment DATABASE. The test function
 %  removes them on completion.
 %
 %  If DIRNAME is not provided, the default directory
@@ -27,16 +27,16 @@ exp = nsd_experiment_dir('exp1',dirname);
 
 disp(['Now clearing out any old variables...']);
 
-findmyvar = load(exp.variable,'name','Animal parameters');
+findmyvar = load(exp.database,'name','Animal parameters');
 if ~isempty(findmyvar),
-	exp.variable_rm(findmyvar);
+	exp.database_rm(findmyvar);
 end
 
 disp(['Now we will add a variable of each allowed type...'])
 
 disp(['First, we will add a variable branch (a collection of variables)...'])
 
-myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
+myvardir = nsd_variable_branch(exp.database,'Animal parameters');
 
 disp(['Second, we will add a variable to the branch ...'])
 
@@ -64,7 +64,7 @@ disp(['..........................']);
 disp(['Now, we will access all of our saved variables:']);
 
 disp(['First, the branch...'])
-findmydir = load(exp.variable,'name','Animal parameters'),
+findmydir = load(exp.database,'name','Animal parameters'),
 
 disp(['Second, the variable...'])
 findmyvar = load(findmydir,'name','Animal age')
@@ -92,5 +92,5 @@ findmystructvar = updatedata(findmystructvar,mydata);
 findmystructvar = load(findmydir,'type','Test: A test structure');
 findmystructvar.data
 
-exp.variable_rm(myvardir);
+exp.database_rm(myvardir);
 

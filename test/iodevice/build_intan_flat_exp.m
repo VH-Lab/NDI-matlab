@@ -36,7 +36,7 @@ exp.iodevice_add(dev1);
  
   % Step 3: let's add a variable
 
-myvardir = nsd_variable_branch(exp.variable,'Animal parameters');
+myvardir = nsd_variable_branch(exp.database,'Animal parameters');
 myvar = nsd_variable(myvardir, 'Animal age','double','Animal age', 30,'The age of the animal at the time of the experiment (days)','');
 
   % Now let's print some statistics
