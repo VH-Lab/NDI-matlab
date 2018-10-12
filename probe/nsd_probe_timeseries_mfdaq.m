@@ -5,7 +5,7 @@ classdef nsd_probe_timeseries_mfdaq < nsd_probe_timeseries
 	end
 
 	methods
-		function obj = nsd_probe_timeseries_mfdaq(experiment, name, reference, type)
+		function obj = nsd_probe_timeseries_mfdaq(varargin)
 			% NSD_PROBE - create a new NSD_PROBE object
 			%
 			%  OBJ = NSD_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
@@ -17,7 +17,7 @@ classdef nsd_probe_timeseries_mfdaq < nsd_probe_timeseries
 			%
 			%  NSD_PROBE is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@nsd_probe_timeseries(experiment, name, reference, type);
+				obj = obj@nsd_probe_timeseries(varargin{:});
 		end % nsd_probe_timeseries_mfdaq
 
 		function [data,t,timeref_out] = read_epochsamples(nsd_probe_timeseries_mfdaq_obj, epoch, s0, s1)

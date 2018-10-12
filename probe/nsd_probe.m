@@ -45,10 +45,17 @@ classdef nsd_probe < nsd_epochset
 			%  NSD_PROBE is an abstract class, and a specific implementation must be called.
 			%
 
-				if ~isa(experiment, 'nsd_experiment'),
+				if nargin==0,
+					experiment = [];
+					name = [];
+					reference = 1;
+					type = 'empty';
+				end
+
+				if ~isempty(experiment) & ~isa(experiment, 'nsd_experiment'),
 					error(['experiment must be a member of the NSD_EXPERIMENT class.']);
 				end
-				if ~islikevarname(name),
+				if ~isempty(name) & ~islikevarname(name),
 					error(['name must start with a letter and contain no whitespace']);
 				end
 				if ~islikevarname(type),

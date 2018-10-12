@@ -5,7 +5,7 @@ classdef nsd_probe_timeseries < nsd_probe
 	end
 
 	methods
-		function obj = nsd_probe_timeseries(experiment, name, reference, type)
+		function obj = nsd_probe_timeseries(varargin)
 			% NSD_PROBE_TIMESERIES - create a new NSD_PROBE_TIMESERIES object
 			%
 			%  OBJ = NSD_PROBE_TIMESERIES(EXPERIMENT, NAME, REFERENCE, TYPE)
@@ -17,7 +17,7 @@ classdef nsd_probe_timeseries < nsd_probe
 			%
 			%  NSD_PROBE_TIMESERIES is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@nsd_probe(experiment, name, reference, type);
+				obj = obj@nsd_probe(varargin{:});
 		end % nsd_probe_timeseries
 
 		function [data, t, timeref] = readtimeseries(nsd_probe_timeseries_obj, timeref_or_epoch, t0, t1)

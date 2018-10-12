@@ -170,6 +170,73 @@ classdef nsd_experiment < handle
 
 		%%%%%% REFERENCE methods
 
+		function obj = findexpobj(nsd_experiment_obj, obj_name, obj_classname)
+			% FINEXPDOBJ - search an NSD_EXPERIMENT for a specific object given name and classname
+			%
+			% OBJ = FINDEXPOBJ(NSD_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
+			%
+			% Examines the IODEVICE list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
+			% and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).
+			%
+				obj = [];
+
+				z = []; 
+				try
+					z=feval(obj_classname);
+				end;
+
+				tryiodevice = 0;
+				trydatabase = 0;
+				tryprobelist = 0;
+
+				if isempty(z),
+					tryiodevice = 1;
+					trydatabase = 1;
+					tryprobelist = 1;
+				else,
+					if isa(z,'nsd_probe'),
+						tryprobelist = 1;
+					elseif isa(z,'nsd_iodevice'),
+						tryiodevice = 1;
+					else,
+						trydatabase = 1;
+					end
+				end
+
+				if tryiodevice,
+					obj_here = nsd_experiment_obj.iodevice.load('name',obj_name);
+					if ~isempty(obj_here),
+						if strcmp(class(obj_here),obj_classname),
+							% it is our match
+							obj = obj_here;
+							return
+						end
+					end
+				end
+
+				if trydatabase,
+					obj_here = nsd_experiment_obj.database.load('name',obj_name);
+					if ~isempty(obj_here),
+						if strcmp(class(obj_here),obj_classname),
+							% it is our match
+							obj = obj_here
+							return
+						end
+					end
+				end
+
+				if tryprobelist,
+					probes = nsd_experiment_obj.getprobes();
+					for i=1:numel(probes),
+						if strcmp(class(probes{i}),obj_classname) & strcmp(probes{i}.epochsetname,obj_name),
+							obj = probes{i}; 
+							return;
+						end
+					end
+				end
+
+		end % findexpobj
+
 		function probes = getprobes(nsd_experiment_obj, varargin)
 			% GETPROBES - Return all NSD_PROBES that are found in NSD_IODEVICE epoch contents entries
 			%
