@@ -184,10 +184,16 @@ classdef nsd_experiment < handle
 			% One can pass additional arguments that specify the classnames of the probes
 			% that are returned:
 			%
-			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ, CLASSMATCH1, CLASSMATCH2, ...)
+			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ, CLASSMATCH )
 			%
-			% Only probes that are members of the classes CLASSMATCH1, CLASSMATCH2, etc., are
+			% only probes that are members of the classes CLASSMATCH etc., are
 			% returned.
+			%
+			% PROBES = GETPROBES(NSD_EXPERIMENT_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
+			%
+			% returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
+			% has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type'.
+			%
 			%
 				probestruct = [];
 				devs = nsd_experiment_obj.iodevice_load('name','(.*)');
@@ -199,12 +205,31 @@ classdef nsd_experiment < handle
 				end
 				probestruct = equnique(probestruct);
 				probes = nsd_probestruct2probe(probestruct, nsd_experiment_obj);
-				if numel(varargin)>0,
+
+				if numel(varargin)==1,
 					include = [];
 					for i=1:numel(probes),
-						includehere = 1;
-						for j=1:numel(varargin),
-							includehere = includehere & isa(probes{i},varargin{j});
+						includehere = isa(probes{i},varargin{1});
+						if includehere,
+							include(end+1) = i;
+						end
+					end
+					probes = probes(include);
+				elseif numel(varargin)>1,
+					include = [];
+					for i=1:numel(probes),
+						includehere = 1; 
+						fn = fieldnames(probes{i});
+						for j=1:2:numel(varargin),
+							includehere = includehere & ~isempty(intersect(fn,varargin{j}));
+							if includehere,
+								value = getfield(probes{i},varargin{j});
+								if ischar(varargin{j+1}),
+									includehere = strcmp(value,varargin{j+1});
+								else,
+									includehere = (value==varargin{j+1});
+								end
+							end
 						end
 						if includehere,
 							include(end+1) = i;

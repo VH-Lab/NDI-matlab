@@ -115,12 +115,18 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 			%
 			%  DATA is the data collection for specific channels
 
+			error('this function presently does not work, needs to know how to get to experiment');
+
 			if isa(timeref_or_epoch,'nsd_timereference'),
-				[t0,epoch0] = self.timeconvert(timeref_or_epoch,t0);
-				[t1,epoch1] = self.timeconvert(timeref_or_epoch,t1);
-				if epoch0~=epoch1,
+				exp = self.experiment;
+				[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
+					self,nsd_clocktype('devlocal'));
+				[t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...
+					self,nsd_clocktype('dev_local_time'));
+				if epoch0_timeref.epoch~=epoch1_timeref.epoch,
 					error(['Do not know how to read across epochs yet; request spanned ' ...
-						 self.filetree.epoch2str(epoch0) ' and ' self.filetree.epoch2str(epoch1) '.']);
+						 self.filetree.epoch2str(epoch0_timeref.epoch) ...
+						' and ' self.filetree.epoch2str(epoch1_timeref.epoch) '.']);
 				end
 				epoch = epoch0;
 			else,

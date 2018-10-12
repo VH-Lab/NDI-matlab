@@ -87,7 +87,13 @@ classdef nsd_epochcontents_iodevice_vhlab < nsd_epochcontents_iodevice
 					tf_name = strcmp(nsd_struct(i).name,{ref_struct.name});
 					tf_ref = [nsd_struct(i).ref == [ref_struct.ref]];
 					index = intersect(tf_name,tf_ref);
-					if numel(index)~=1, error(['Cannot find exclusive match for name/ref in reference.txt file.']); end;
+					if numel(index)~=1,
+						disp(['Error: Looking for name ' nsd_struct(i).name ' and ref ' int2str(nsd_struct(i).ref) '.']);
+						disp(['Ref struct is '])
+						ref_struct,
+						disp(['Looking in filename ' filename]);
+						error(['Cannot find exclusive match for name/ref in reference.txt file.']);
+					end;
 					ec_type = ref_struct(index).type;
 					if isempty(intersect({nsd_probetype2object.type},ec_type)),
 						error(['Unknown type ' ec_type '.']);
