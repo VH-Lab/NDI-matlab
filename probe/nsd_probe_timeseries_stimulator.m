@@ -41,7 +41,7 @@ classdef nsd_probe_timeseries_stimulator < nsd_probe_timeseries
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
 			%    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF].
 			% 
-			% TIMEREF is an NSD_TIMEREFERENT object that refers to this EPOCH.
+			% TIMEREF is an NSD_TIMEREFERENCE object that refers to this EPOCH.
 			%
 			% See also: NSD_PROBE_TIMESERIES/READTIMESERIES
 			%
@@ -72,7 +72,7 @@ classdef nsd_probe_timeseries_stimulator < nsd_probe_timeseries
 
 				data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
-				timeref_out = nsd_timereference(nsd_probe_timeseries_stimulator_obj, nsd_clocktype('dev_local_time'), eid, 0);
+				timeref = nsd_timereference(nsd_probe_timeseries_stimulator_obj, nsd_clocktype('dev_local_time'), eid, 0);
 
 		end %readtimeseriesepoch()
 	end; % methods

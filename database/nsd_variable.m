@@ -55,7 +55,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 			%                  NSD_VARIABLE_BRANCH), usually the variable list associated with an NSD_EXPERIMENT
 			%                  or its children.
 			%  NAME        - the name for the variable; may be any string
-			%  DATACLASS   - a string describing the data; it may be 'double', 'char', or 'bin', 'file', or 'struct'
+			%  DATACLASS   - a string describing the data; it may be 'double', 'char', or 'bin', 'file', 'struct', or 'mlstruct'
 			%  TYPE        - a string describing the type of data stored, for other programs to read	
 			%                  (e.g., 'Spike times')
 			%  DATA        - the data to be stored
@@ -98,7 +98,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 
 			obj = obj@nsd_dbleaf_branch(parent, name, classnames, isflat, isinmemory,0);
 			if ~obj.allowedclass(dataclass),
-				error(['class must be ''double'', ''char'', ''bin'', ''file'', or ''struct''']);
+				error(['class must be ''double'', ''char'', ''bin'', ''file'', ''struct'', or ''mlstruct''']);
 			end
 			obj.dataclass=dataclass;
 			obj.data=data;
@@ -125,7 +125,7 @@ classdef nsd_variable < nsd_dbleaf_branch
 				b = 0;
 
 				switch(lower(dataclass)),
-					case {'double','char','bin','file','struct'},
+					case {'double','char','bin','file','struct','mlstruct'},
 						b = 1;
 				end
 		end % allowedclass
@@ -250,6 +250,10 @@ classdef nsd_variable < nsd_dbleaf_branch
 						case 'struct',
 							fclose(fid);
 							saveStructArray(nsd_variable_obj.filename,nsd_variable_obj.data, 1);
+						case 'mlstruct',
+							s = struct2mlstr(nsd_variable_obj.data);
+							writeplainmat(fid, s);
+							fclose(fid);
 						otherwise,
 							writeplainmat(fid, nsd_variable_obj.data);
 							fclose(fid);
@@ -316,6 +320,9 @@ classdef nsd_variable < nsd_dbleaf_branch
 						% do nothing
 					case 'struct',
 						nsd_variable_obj.data = loadStructArray(nsd_variable_obj.filename);
+					case 'mlstruct',
+						s = readplainmat(fid);
+						nsd_variable_obj.data = mlstr2var(s);
 					otherwise,
 						nsd_variable_obj.data = readplainmat(fid);
 				end

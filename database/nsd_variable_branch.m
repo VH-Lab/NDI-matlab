@@ -113,13 +113,17 @@ classdef nsd_variable_branch < nsd_dbleaf_branch
 				end;
 
 				obj = [];
+				parent_obj = [];
 
-				differences = 1; % if the user passes '//' change it to '/' like in unix (extra path separator)
-				while differences>0,
-					indexes = strfind(path,[nsd_branchsep nsd_branchsep]); % look for doubles, eliminate
-					path = path(setdiff(1:numel(path),indexes));
-					differences = ~isempty(indexes);
+				if isempty(path),
+					return;
 				end
+
+				indexes = findstr(path,[nsd_branchsep nsd_branchsep]);
+				path(indexes) = [];
+				if path(end)==nsd_branchsep, % do not end in a branch for this function
+					path(end) = [];
+				end;
 
 				names = split(path,nsd_branchsep);
 

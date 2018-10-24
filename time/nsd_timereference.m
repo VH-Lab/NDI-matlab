@@ -63,14 +63,14 @@ classdef nsd_timereference
 		end % nsd_time_reference
 
 		function a = nsd_timereference_struct(nsd_timeref_obj)
-			% NSD_TIMEREFERENCE_STRUCT - return a structure that describes an NSD_TIMEREFERENCE object
+			% NSD_TIMEREFERENCE_STRUCT - return a structure that describes an NSD_TIMEREFERENCE object that lacks Matlab objects
 			%
 			% A = NSD_TIMEREFERENCE_STRUCT(NSD_TIMEREF_OBJ)
 			%
 			% Returns a structure with the following fields:
 			% Fieldname                      | Description
 			% --------------------------------------------------------------------------------
-			% referent_epochsetname             | The epochsetname() of the referent
+			% referent_epochsetname          | The epochsetname() of the referent
 			% referent_classname             | The classname of the referent
 			% clocktype_string               | The value of the clocktype
 			% epoch                          | The epoch (either a string or a number)
