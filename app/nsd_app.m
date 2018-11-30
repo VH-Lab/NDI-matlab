@@ -1,4 +1,4 @@
-classdef nsd_app 
+classdef nsd_app
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment % the NSD_EXPERIMENT object that the app will operate on
@@ -7,7 +7,7 @@ classdef nsd_app
 
 	methods
 		function nsd_app_obj = nsd_app(varargin)
-			% NSD_APP - create a new NSD_APP object 
+			% NSD_APP - create a new NSD_APP object
 			%
 			% NSD_APP_OBJ = NSD_APP(EXPERIMENT)
 			%
@@ -32,23 +32,23 @@ classdef nsd_app
 
 		function [nsd_variable_obj, nsd_variable_parent_obj] = path2var(nsd_app_obj, path, createit, lastisvar)
 			%  [VAROBJ,PARENT_OBJ] = PAATH2VAR(NSD_APP_OBJ, PATH, [CREATEIT], [LASTIS_NSDVARIABLE])
-			% 
+			%
 			%  Given a PATH of NSD_BRANCH_OBJECT names such as ['mydir1/mydir2/mydir3'],
 			%  this function returns in OBJ the NSD_VARIABLE_BRANCH object or NSD_VARIABLE object
 			%  at the end of the path. The NSD_VARIABLE_BRANCH that is the parent of OBJ is returned
 			%  in PARENT_OBJ.
-			% 
+			%
 			%  For example, if PATH is ['mydir1/mydir2/mydir3'], then the function
 			%  returns the NSD_VARIABLE_BRANCH object or NSD_VARIABLE object named
 			%  'mydir3' that is a branch of 'mydir2', which is a branch of 'mydir1'.
-			% 
+			%
 			%  If CREATEIT is 1, then the paths will be created.  If CREATEIT is not
 			%  specified, it is taken to be 0.
-			% 
+			%
 			%  If LASTIS_NSDVARIABLE is 1, then the last object is not created as an NSD_VARIABLE_BRANCH
 			%  object if it does not exist. This allows a user to specify an NSD_VARIABLE object as the
 			%  last entry of the path and to create the rest of the path.
-			% 
+			%
 			%  If there is no object at that path and CREATEIT is 0, then OBJ will be empty.
 			%
 			%  This function is a shortcut wrapper for NSD_VARIABLE_BRANCH/PATH2NSD_VARIABLE.
@@ -93,16 +93,16 @@ classdef nsd_app
 			%
 			% AN = VARAPPNAME(NSD_APP_OBJ)
 			%
-			% Returns the name of the app modified for use as a variable name, either as 
+			% Returns the name of the app modified for use as a variable name, either as
 			% a Matlab variable or a name in a path.
 			%
 				an = nsd_app_obj.name;
 				if ~isvarname(an),
 					an = matlab.lang.makeValidName(an);
 				end
-		end % 
+		end %
 
-		function mp = myvarpath(nsd_app_obj, obj)
+		function mp = myvarpath(nsd_app_obj, obj) % suggest to rename to appvarpath, myvarpath is hard to remember with all methods
 			% MYVARPATH - return the standard variable path for my application underneath a given object
 			%
 			% MP = MYVARPATH(NSD_APP_OBJ, OBJ)
@@ -154,7 +154,7 @@ classdef nsd_app
 
 		function pvp = probevarpath(nsd_app_obj, probe)
 			% PROBEVARPATH - return the NSD_VARIABLE_BRANCH path for probe variables
-			% 
+			%
 			% PVP = PROBEVARPATH(NSD_APP_OBJ, PROBE)
 			%
 			% Return the experiment variable path for variables related to the
