@@ -52,3 +52,21 @@ Experiment /
 		Probe_name_#
 
 
+
+
+Question: how to do the following
+
+
+Suppose we have only 1 animal in the experiment
+	I would like that to mean that all probes are related to THAT animal, even if there is no explicit representation
+	But if you searched, how would you find all probes that were related to that animal? The database has to know it
+
+
+
+
+
+
+
+
+
+
