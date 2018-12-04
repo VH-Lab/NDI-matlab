@@ -1,0 +1,54 @@
+
+
+reference/
+
+	probe/
+		probe__name__#
+
+	animal/
+		animal_1/
+			animal_1_unplannedmetadata
+
+
+vs.
+
+
+mydoc.probe__name_#
+
+
+what are advantages?  Hierarchy allows unplanned relationships. Is this true?
+	
+
+Need docs and doc files
+
+Big question: what is database structure? Hierarchical or not?
+
+
+Experiment_reference   
+
+Need hierarchical viewing for the user, underlying database structure doesn't matter
+
+Experiment / 
+	Probe/
+		Probe_Name_#/
+			metadata
+			applicationname_data/
+				
+
+	animal/
+		animal_1/
+			animal_1_metadata
+
+
+
+
+	neuron/
+		Probe_Name_#/
+			(itemized list)
+			Neuron Doc is an NSD_EPOCHSET, maybe an NSD_PROBE_TIMESERIES
+
+	region/
+		Region Doc is an NSD_EPOCHSET, maybe an NSD_PROBE_TIMESERIES
+		Probe_name_#
+
+
