@@ -9,8 +9,7 @@ classdef nsd_database
 
 	properties (SetAccess=protected,GetAccess=public)
 		path % The file system or remote path to the database
-		reference % The reference string for the database
-		pwd % The present working directory 
+		experiment_unique_reference % The reference string for the database
 	end % properties
 
 	methods
@@ -24,20 +23,31 @@ classdef nsd_database
 			%
 			
 			path = '';
-			reference = '';
+			experiment_unique_reference = '';
 			pwd = nsd_branchsep;
 			if nargin>0,
 				path = vargin{1};
 			end
 			if nargin>1,
-				reference = varargin{1};
+				experiment_unique_reference = varargin{1};
 			end
 
 			nsd_database_obj.path = path;
-			nsd_database_obj.reference = reference;
+			nsd_database_obj.experiment_unique_reference = experiment_unique_reference;
 		end % nsd_database
 
-		function nsd_database_obj = add(nsd_database_obj, nsd_document_obj, dbpath, varargin)
+		function nsd_document_obj = newdocument(nsd_database_obj, document_type)
+			% NEWDOCUMENT - obtain a new/blank NSD_DOCUMENT object that can be used with a NSD_DATABASE
+			% 
+			% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_DATABASE_OBJ [, DOCUMENT_TYPE])
+			%
+			% Creates a new/blank NSD_DOCUMENT document object that can be used with this
+			% NSD_DATABASE.
+			%
+				nsd_document_obj = nsd_document('experiment_unique_refrence', document_type);
+		end % newdocument
+
+		function nsd_database_obj = add(nsd_database_obj, nsd_document_obj, varargin)
 			% ADD - add an NSD_DOCUMENT to the database at a given path
 			%
 			% NSD_DATABASE_OBJ = ADD(NSD_DATABASE_OBJ, NSD_DOCUMENT_OBJ, DBPATH, ...)
@@ -59,14 +69,13 @@ classdef nsd_database
 		function nsd_document_obj = read(nsd_database_obj, dbpath, varargin)
 			% READ - read an NSD_DOCUMENT from an NSD_DATABASE at a given db path
 			%
-			% NSD_DOCUMENT_OBJ = READ(NSD_DATABASE_OBJ, DBPATH, ...)
+			% NSD_DOCUMENT_OBJ = READ(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID, [VERSION]) 
 			%
-			% Read the NSD_DOCUMENT object at the location specified by DBPATH.
+			% Read the NSD_DOCUMENT object with the document ID specified by NSD_DOCUMENT_ID. If VERSION
+			% is provided (a 32-bit unsigned integer), then only the version that is equal to VERSION is returned.
+			% Otherwise, the latest version is returned.
 			%
-			% If there is no NSD_DOCUMENT object at that location, then empty is returned ([]).
-			%
-			% If DBPATH is a database directory, then a cell array of strings containing the document names
-			% in the directory is returned. If it is an empty directory, then an empty cell array is returned ({}).
+			% If there is no NSD_DOCUMENT object with that ID, then empty is returned ([]).
 			%
 			% This function also accepts name/value pairs that modify its behavior:
 			% Parameter (default)      | Description
@@ -74,13 +83,16 @@ classdef nsd_database
 			% See also: NAMEVALUEPAIR 
 		end % read()
 
-		function nsd_database_obj = remove(nsd_database_obj, dbpath)
+		function nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
 			% REMOVE - remove a document from an NSD_DATABASE
 			%
-			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, DBPATH)
+			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID) 
+			%     or
+			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID, VERSIONS)
 			%
-			% Removes the NSD_DOCUMENT object at the path DBPATH for the database NSD_DATABASE_OBJ.
-			%
+			% Removes the NSD_DOCUMENT object with the 'document unique reference' equal
+			% to NSD_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
+			% the entries in VERSIONS are removed.
 			%
 
 		end % remove()
@@ -147,6 +159,6 @@ classdef nsd_database
 		end % dosearch()
 
 	end % Methods (Access=Protected) protected methods
-end
+end % classdef
 
 
