@@ -2,21 +2,6 @@ classdef nsd_document
 	%NSD_DOCUMENT - NSD_database storage item, general purpose data and parameter storage
 	% The NSD_DOCUMENT datatype for storing results in the NSD_DATABASE
 	%
-	% The nsd_document_properties field is a structure with properties that are required of all
-	% NSD_DOCUMENT objects. These include:
-	% Field (default value)           | Description
-	% -----------------------------------------------------------------------------------
-	% experiment_unique_reference     | The experiment's unique reference ID
-	%         (no default)   
-	% document_unique_reference       | This document's unique reference id
-	% name ('generic')                | The document's name
-	% type ('generic')                | The document's type
-	% document_version (1)            | The document's version (32-bit unsigned integer numbered from 1)
-	% datestamp (current time)        | The document's creation time (for this version) in ISO 8601 (UTC required)
-	% database_version (1)            | The version of the database for which the document was created
-	% hasbinaryfile (0)               | Should the document have a separate space for storing binary data?
-	% validation_schema (no default)  | The validation schema target
-	%
 
 	properties (SetAccess=protected,GetAccess=public)
 		document_properties % a struct with the fields for the document
@@ -26,6 +11,11 @@ classdef nsd_document
 		function nsd_document_obj = nsd_document(document_type, varargin)
 			% NSD_DOCUMENT - create a new NSD_DATABASE object
 			%
+			% NSD_DOCUMENT_OBJ = NSD_DOCUMENT(DOCUMENT_TYPE, 'PARAM1', VALUE1, ...)
+			%
+			%
+			%
+
 				if nargin<1,
 					document_type = 'nsd_document';
 				end
@@ -34,6 +24,15 @@ classdef nsd_document
 				
 				document_properties.nsd_document.document_unique_reference = [num2hex(now) '_' num2hex(rand)];
 				document_properties.nsd_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
+
+				if numel(varargin)==1, % see if user put it all as one cell array
+					if iscell(varargin{1}),
+						varargin = varargin{1};
+					end
+				end
+				if mod(numel(varargin),2)~=0,
+					error(['Variable inputs must be name/value pairs'.']);
+				end;
 
 				for i=1:2:numel(varargin), % assign variable arguments
 					try,
