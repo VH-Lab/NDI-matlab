@@ -19,26 +19,31 @@ classdef nsd_document
 	%
 
 	properties (SetAccess=protected,GetAccess=public)
-		nsd_document_properties % a struct with the fields for the document
+		document_properties % a struct with the fields for the document
 	end
 
 	methods
 		function nsd_document_obj = nsd_document(document_type, varargin)
 			% NSD_DOCUMENT - create a new NSD_DATABASE object
 			%
+				if nargin<1,
+					document_type = 'nsd_document';
+				end
 
-				nsd_document_obj = nsd_document.readblankdefinition('document_type');
-				experiment_unique_reference = '';
-				document_unique_reference = [num2hex(now) '_' num2hex(rand)];
-				document_version = uint32(1);
-				datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
-				hasbinaryfile = 0;
+				document_properties = nsd_document.readblankdefinition(document_type);
+				
+				document_properties.nsd_document.document_unique_reference = [num2hex(now) '_' num2hex(rand)];
+				document_properties.nsd_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
-				nsd_document_properties = emptystruct;
+				for i=1:2:numel(varargin), % assign variable arguments
+					try,
+						eval(['document_properties.' varargin{i} '= varargin{i+1};']);
+					catch,
+						error(['Could not assign document_properties.' varargin{i} '.']);
+					end
+				end
 
-				assign(varargin{:});
-
-				nsd_document_obj.nsd_document_properties.nsd_document = emptystruct;
+				nsd_document_obj.document_properties = document_properties;
 
 		end % nsd_document() creator
 
@@ -155,6 +160,10 @@ classdef nsd_document
 						filesepconversion(jsonfilelocationstring(s+numel(searchString):end), nsd_filesep, filesep)];
 				else,
 					filename = jsonfilelocationstring;
+					[p,n,e] = fileparts(filename);
+					if isempty(e),
+						filename = [filename '.json'];
+					end;
 					if ~exist(filename,'file'),
 						filename2 = [nsddocumentpath filesep filename];
 						if ~exist(filename2,'file'),

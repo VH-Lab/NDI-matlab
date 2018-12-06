@@ -1,14 +1,13 @@
 {
-	"document_classes": [
-		{
-			"definition":					"$NSDDOCUMENTPATH\/nsd_document_probe_app.json",
-			"validation":					"$NSDSCHEMAPATH\/nsd_document_probe_app_schema.json"
-		},
-			"definition":					"$NSDDOCUMENTPATH\/app\/markgarbage\/validinterval.json",
-			"validation":					"$NSDSCHEMAPATH\/nsd_document_probe_app_schema.json"
-			"document_version":				1
-		}
-	]
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/apps\/markgarbage\/validinterval.json",
+		"validation":						"$NSDSCHEMAPATH\/apps\/markgarbage\/validinterval_schema.json",
+		"class_name":						"markgarbage-valid_interval",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_probe_app.json" }
+		]
+	},
 	"valid_interval": [
 		{
 			"timeref_structt0": {
