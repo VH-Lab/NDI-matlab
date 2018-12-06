@@ -1,0 +1,33 @@
+{
+	"document_classes": [
+		{
+			"definition":					"$NSDDOCUMENTPATH\/nsd_document_probe_app.json",
+			"validation":					"$NSDSCHEMAPATH\/nsd_document_probe_app_schema.json"
+		},
+			"definition":					"$NSDDOCUMENTPATH\/app\/markgarbage\/validinterval.json",
+			"validation":					"$NSDSCHEMAPATH\/nsd_document_probe_app_schema.json"
+			"document_version":				1
+		}
+	]
+	"valid_interval": [
+		{
+			"timeref_structt0": {
+				"referent_epochsetname":		"",
+				"referent_classname":			"",
+				"clocktypestring":			"",
+				"epoch":				"",
+				"time":					""
+			},
+			"t0":						0,
+			"timeref_structt1": {
+				"referent_epochsetname":		"",
+				"referent_classname":			"",
+				"clocktypestring":			"",
+				"epoch":				"",
+				"time":					""
+			},
+			"t1":						0
+		}
+	]
+}
+

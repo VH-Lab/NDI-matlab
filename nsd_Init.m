@@ -11,4 +11,6 @@ addpath(genpath(mynsdpath));
 nsd_globals;
 
 nsdpath = mynsdpath;
+nsddocumentpath = [nsdpath filesep 'database_documents'];
+nsddocumentschemapath = [nsdpath filesep 'database_documents'];
 nsd_probetype2objectinit;

@@ -26,33 +26,19 @@ classdef nsd_document
 		function nsd_document_obj = nsd_document(document_type, varargin)
 			% NSD_DOCUMENT - create a new NSD_DATABASE object
 			%
+
+				nsd_document_obj = nsd_document.readblankdefinition('document_type');
 				experiment_unique_reference = '';
 				document_unique_reference = [num2hex(now) '_' num2hex(rand)];
-				name = 'generic';
-				type = 'generic';
 				document_version = uint32(1);
 				datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
-				database_version = 1;
 				hasbinaryfile = 0;
-				validation_schema = '$NSDSCHEMAROOT/nsd_document_schema.json';
 
 				nsd_document_properties = emptystruct;
 
 				assign(varargin{:});
 
-				nsd_core_properties = var2struct( ...
-						'experiment_unique_reference', ...
-						'document_unique_reference', ...
-						'name', ...
-						'type', ...
-						'document_version', ...
-						'datestamp', ...
-						'database_version', ...
-						'hasbinaryfile', ...
-						'validation_schema' ...
-						);
-
-				nsd_document_obj.nsd_document_properties.nsd_core_properties = nsd_core_properties;
+				nsd_document_obj.nsd_document_properties.nsd_document = emptystruct;
 
 		end % nsd_document() creator
 
@@ -73,5 +59,121 @@ classdef nsd_document
 				bf = [];
 		end % getbinaryfileobj() 
 	end % methods
+
+	methods (Static)
+		function s = readblankdefinition(jsonfilelocationstring, s)
+			% READBLANKDEFINITION - read a blank JSON class definitions from a file location string
+			%
+			% S = READBLANKDEFINITION(JSONFILELOCATIONSTRING)
+			%
+			% Given a JSONFILELOCATIONSTRING, this function creates a blank document using the JSON definitions.
+			%
+			% A JSONFILELOCATIONSTRING can be:
+			%	a) a url
+			%	b) a filename (full path)
+			%       c) a filename referenced with respect to $NSDDOCUMENTPATH
+			%
+			% See also: READJSONFILELOCATION
+			%
+				s_is_empty = 0;
+				if nargin<2,
+					s_is_empty = 1;
+					s = emptystruct;
+				end
+
+				% Step 1): read the information we have here
+
+				t = nsd_document.readjsonfilelocation(jsonfilelocationstring);
+				j = jsondecode(t);
+
+				% Step 2): integrate the new information into the document we are building onto 
+
+				% Step 2a): Do we need to integrate this or do we already have same class and at least as good of a version?
+				need_to_integrate = 1;
+				if isfield(s,'document_superclass_data') & isfield(j,'document_class'),
+					% dev note: assuming document_superclass_data reads correctly by matlab jsondecode as STRUCT 
+					for k=1:numel(s.document_superclass_data)
+						item = celloritem(s.document_superclass_data,k);
+						if strcmp(j.document_class.class_name,item.class_name) & j.document_class.class_version<=item.class_version,
+							need_to_integrate = 0;
+							break;
+						end 
+					end
+				end
+
+				% Step 2b): Now integate if we need to
+
+				if isfield(j,'document_superclass_data'),
+					error(['Newly built object should not have field ''document_superclass_data''.']);
+				end
+
+				if need_to_integrate,
+					if isempty(s),
+						s(1).document_class = j.document_class;
+						s(1).document_superclass_data = {};
+					else,
+						s(1).document_superclass_data{end+1} = j.document_class;
+					end
+					j_ = rmfield(j, 'document_class');
+					s = structmerge(s, j_);
+				else,
+					return;
+				end
+
+				if isfield(j,'document_class'),
+					if isfield(j.document_class,'superclasses'),
+						for i=1:numel(j.document_class.superclasses),
+							item = celloritem(j.document_class.superclasses, i, 1);
+							s = nsd_document.readblankdefinition(item.definition, s);
+						end
+					end
+				end
+
+				if s_is_empty, % discard document_superclass_data
+					s = rmfield(s,'document_superclass_data');
+				end
+		
+		end % readblankdefinition() 
+
+		function t = readjsonfilelocation(jsonfilelocationstring)
+			% READJSONFILELOCATION - return the text from a json file location string in NSD
+			%
+			% T = READJSONFILELOCATION(JSONFILELOCATIONSTRING)
+			%
+			% A JSONFILELOCATIONSTRING can be:
+			%      a) a url
+			%      b) a filename (full path)
+			%      c) a relative filename with respect to $NSDDOCUMENTPATH
+			%      d) a filename referenced with respect to $NSDDOCUMENTPATH
+			%
+				nsd_globals;
+
+				searchString = '$NSDDOCUMENTPATH';
+				s = strfind(jsonfilelocationstring, searchString);
+				if ~isempty(s), % insert the location
+					filename = [nsddocumentpath filesep ...
+						filesepconversion(jsonfilelocationstring(s+numel(searchString):end), nsd_filesep, filesep)];
+				else,
+					filename = jsonfilelocationstring;
+					if ~exist(filename,'file'),
+						filename2 = [nsddocumentpath filesep filename];
+						if ~exist(filename2,'file'),
+							error(['Cannot find file ' filename '.']);
+						else,
+							filename = filename2;
+						end
+					end
+				end
+
+				% filename could be url or filename
+
+				if isurl(filename),
+					t = urlread(filename);
+				else,
+					t = textfile2char(filename);
+				end
+		end
+
+	end % methods Static
 end % classdef
 

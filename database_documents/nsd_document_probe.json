@@ -1,0 +1,16 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/nsd_document_probe.json",
+		"validation":						"$NSDSCHEMAPATH\/nsd_document_probe_schema.json",
+		"class_name":						"nsd_document_probe",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NSDDOCUMENTPATH\/nsd_document.json" }
+		]
+	},
+	"probe": {
+		"name":							"",
+		"reference":						""
+	}
+}
+
