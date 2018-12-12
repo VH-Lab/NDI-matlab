@@ -4,8 +4,6 @@ classdef nsd_database
 	% 
 	%
 	% 
-		% questions: how to handle really large documents: seek, read, write?
-		%            answer: create a document type that has seek, read, and write
 
 	properties (SetAccess=protected,GetAccess=public)
 		path % The file system or remote path to the database
@@ -24,7 +22,7 @@ classdef nsd_database
 			
 			path = '';
 			experiment_unique_reference = '';
-			pwd = nsd_branchsep;
+
 			if nargin>0,
 				path = vargin{1};
 			end
@@ -44,7 +42,8 @@ classdef nsd_database
 			% Creates a new/blank NSD_DOCUMENT document object that can be used with this
 			% NSD_DATABASE.
 			%
-				nsd_document_obj = nsd_document('experiment_unique_refrence', document_type);
+				nsd_document_obj = nsd_document(document_type, ...
+						'experiment_unique_refrence', experiment_unique_reference);
 		end % newdocument
 
 		function nsd_database_obj = add(nsd_database_obj, nsd_document_obj, varargin)
@@ -57,33 +56,35 @@ classdef nsd_database
 			% This function also accepts name/value pairs that modify its behavior:
 			% Parameter (default)      | Description
 			% -------------------------------------------------------------------------
-			% 'CreatePath' (1)         | Create the antecedent path if it does not exist
 			% 'Update'  (1)            | If document exists, update it. If 0, an error is 
 			%                          |   generated if a document at DBPATH exists.
 			% 
 			% See also: NAMEVALUEPAIR 
-				CreatePath = 1;
+				Update = 1;
 				assign(varargin{:});
+				add_parameters = var2struct('Update');
+				nsd_database_obj = do_add(nsd_database_obj, nsd_document_obj, add_parameters);
 		end % add()
 
-		function nsd_document_obj = read(nsd_database_obj, dbpath, varargin)
+		function [nsd_document_obj, version] = read(nsd_database_obj, nsd_document_id, version )
 			% READ - read an NSD_DOCUMENT from an NSD_DATABASE at a given db path
 			%
 			% NSD_DOCUMENT_OBJ = READ(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID, [VERSION]) 
 			%
 			% Read the NSD_DOCUMENT object with the document ID specified by NSD_DOCUMENT_ID. If VERSION
-			% is provided (a 32-bit unsigned integer), then only the version that is equal to VERSION is returned.
+			% is provided (an integer) then only the version that is equal to VERSION is returned.
 			% Otherwise, the latest version is returned.
 			%
 			% If there is no NSD_DOCUMENT object with that ID, then empty is returned ([]).
 			%
-			% This function also accepts name/value pairs that modify its behavior:
-			% Parameter (default)      | Description
-			% -------------------------------------------------------------------------
-			% See also: NAMEVALUEPAIR 
+				if nargin<3,
+					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document);
+				else,
+					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document, version);
+				end
 		end % read()
 
-		function nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
+		function [nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
 			% REMOVE - remove a document from an NSD_DATABASE
 			%
 			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID) 
@@ -94,69 +95,41 @@ classdef nsd_database
 			% to NSD_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
 			% the entries in VERSIONS are removed.
 			%
-
+				if nargin<3,
+					nsd_document_obj = do_remove(nsd_database_obj, nsd_document);
+				else,
+					nsd_document_obj = do_remove(nsd_database_obj, nsd_document, version);
+				end
 		end % remove()
 
-		function nsd_document_objs = search(nsd_database_obj, varargin)
+		function [nsd_document_objs,versions] = search(nsd_database_obj, searchparams)
 			% SEARCH - search for an NSD_DOCUMENT from an NSD_DATABASE
 			%
-			% DOCUMENT_OBJS = SEARCH(NSD_DATABASE_OBJ, 'PARAM1', VALUE1, 'PARAM2', VALUE2, ...)
+			% [DOCUMENT_OBJS,VERSIONS] = SEARCH(NSD_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
 			%
 			% Searches metadata parameters PARAM1, PARAM2, etc of NDS_DOCUMENT entries within an NSD_DATABASE_OBJ.
 			% If VALUEN is a string, then a regular expression is evaluated to determine the match. If VALUEN is not
 			% a string, then the items must match exactly.
 			% If PARAMN1 begins with a dash, then VALUEN indicates the value of one of these special parameters:
 			%
-			% Parameter (default)               | Description
-			% ----------------------------------------------------------------------------
-			% -SearchDir (pwd)                  | Search in this directory (default is pwd)
-			% -RecursiveSearch (1)              | Search recursively
-			% 
-			%
 			% This function returns a cell array of NSD_DOCUMENT objects. If no documents match the
-			% query, then an empty cell array ({}) is returned.
+			% query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
+			% of each NSD_DOCUMENT.
 			% 
-				SearchDir = nsd_database_obj.pwd;
-				RecursiveSearch = 1;
-				for i=1:2:numel(varargin),
-					if numel(varargin{i})>1,
-						if varargin{i}(1)=='-',
-							assign({ varargin{i}(2:end) , varargin{i+1} } );
-						end
-					end
-				end
-
-				searchOptions = var2struct('SearchDir','RecursiveSearch');
-
-				nsd_document_objs = nsd_database_obj.do_search(searchOptions,varargin);
-
+				[nsd_document_objs, versions] = nsd_database_obj.do_search(searchOptions,varargin);
 		end % search()
 
-		function nsd_database_obj = setpwd(nsd_database_obj, varargin)
-			% SETPWD - set the present working directory of an NSD_DATABASE
-			%
-			% NSD_DATABASE_OBJ = SETPWD(NSD_DATABASE_OBJ, ...)
-			%
-			% Sets the present working directory of an NSD_DATABASE. The PWD can be
-			% read directly from the object:
-			% 	NSD_DATABASE_OBJ.pwd
-			%
-			% This function also accepts name/value pairs that modify its behavior:
-			% Parameter (default)      | Description
-			% -------------------------------------------------------------------------
-			% 'CreatePath' (1)         | Create the path if it does not exist
-			% 
-			% See also: NAMEVALUEPAIR 
-
-				CreatePath = 1;
-				assign(varargin{:});
-
-		end % setpwd()
 	end % methods nsd_database
 
 	methods (Access=Protected)
-		function nsd_document_objs = dosearch(nsd_database_obj, searchparameters, varargin) 
-		end % dosearch()
+		function nsd_database_obj = do_add(nsd_database_obj, nsd_document_obj, add_parameters)
+		end % do_add
+		function [nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document, version);
+		end % do_read
+		function nsd_document_obj = do_remove(nsd_database_obj, nsd_document)
+		end % do_remove
+		function [nsd_document_objs,versions] = do_search(nsd_database_obj, searchparameters, searchparams) 
+		end % do_search()
 
 	end % Methods (Access=Protected) protected methods
 end % classdef
