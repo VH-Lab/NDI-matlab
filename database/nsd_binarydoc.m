@@ -3,8 +3,8 @@ classdef nsd_binarydoc < handle
 	properties (SetAccess=protected, GetAccess=public)
 	end  % protected, accessible
 
-	methods % public
-		function nsd_binarydoc_obj = nsd_binarydoc(varargin)
+	methods (Abstract) 
+		%nsd_binarydoc_obj = nsd_binarydoc(varargin)
 			% NSD_BINARYDOC - create a new NSD_BINARYDOC object
 			%
 			% NSD_BINARYDOC_OBJ = NSD_BINARYDOC()
@@ -12,19 +12,19 @@ classdef nsd_binarydoc < handle
 			% This is an abstract class, so the creator does nothing.
 			%
 
-		end; % nsd_binarydoc()
+		%end; % nsd_binarydoc()
 
-		function b = fopen(nsd_binarydoc_obj)
+		nsd_binarydoc_obj = fopen(nsd_binarydoc_obj)
 			% FOPEN - open the NSD_BINARYDOC for reading/writing
 			%
-			% B = FOPEN(NSD_BINARYDOC_OBJ)
+			% FOPEN(NSD_BINARYDOC_OBJ)
 			%
 			% Open the file record associated with NSD_BINARYDOC_OBJ.
 			%
 
-		end; % fopen()
+		%end; % fopen()
 			
-		function fseek(nsd_binarydoc_obj, location, reference)
+		fseek(nsd_binarydoc_obj, location, reference)
 			% FSEEK - move to a location within the file stream 
 			%
 			% FSEEK(NSD_BINARYDOC_OBJ, LOCATION, REFERENCE)
@@ -37,9 +37,9 @@ classdef nsd_binarydoc < handle
 			%    'eof'  - end of file 
 			%
 			% See also: FSEEK, FTELL, NSD_BINARYDOC/FTELL
-		end % fseek()
+		%end % fseek()
 
-		function location = ftell(nsd_binarydoc_obj)
+		location = ftell(nsd_binarydoc_obj)
 			% FSEEK - move to a location within the file stream 
 			%
 			% FSEEK(NSD_BINARYDOC_OBJ)
@@ -47,9 +47,9 @@ classdef nsd_binarydoc < handle
 			% Returns the current LOCATION (in bytes) in a file stream.
 			%
 			% See also: FSEEK, FTELL, NSD_BINARYDOC/FSEEK
-		end % ftell()
+		%end % ftell()
 
-		function b = feof(nsd_binarydoc_obj)
+		b = feof(nsd_binarydoc_obj)
 			% FEOF - is an NSD_BINARYDOC at the end of file?
 			%
 			% B = FEOF(NSD_BINARYDOC_OBJ)
@@ -58,10 +58,9 @@ classdef nsd_binarydoc < handle
 			% file stream NSD_BINARYDOC_OBJ, and 0 otherwise.
 			%
 			% See also: FEOF, FSEEK, NSD_BINARYDOC/FSEEK
-				b = 1;
-		end % feof
+		%end % feof
 
-		function count = fwrite(nsd_binarydoc_obj, data, precision, skip)
+		count = fwrite(nsd_binarydoc_obj, data, precision, skip)
 			% FWRITE - write data to an NSD_BINARYDOC
 			% FOPEN - open the NSD_BINARYDOC for reading/writing
 			%
@@ -69,11 +68,9 @@ classdef nsd_binarydoc < handle
 			%
 			% 
 			% See also: FWRITE
-				count = 0;
+		%end; % fwrite()
 
-		end; % fwrite()
-
-		function [data, count] = fread(nsd_binarydoc_obj, count, precision, skip)
+		[data, count] = fread(nsd_binarydoc_obj, count, precision, skip)
 			% FREAD - read data from an NSD_BINARYDOC
 			%
 			% [DATA, COUNT] = FREAD(NSD_BINARYDOC_OBJ, COUNT, [PRECISION],[SKIP])
@@ -82,18 +79,20 @@ classdef nsd_binarydoc < handle
 			% The actual COUNT is returned, along with the DATA.
 			%
 			% See also: FREAD
-				data = [];
-				count = 0;
-		end; % fread()
+		%end; % fread()
 
-		function fclose(nsd_binarydoc_obj)
+		nsd_binarydoc_obj = fclose(nsd_binarydoc_obj)
 			%FCLOSE - close an NSD_BINARYDOC
 			%
 			% FCLOSE(NSD_BINARYDOC_OBJ)
 			%
 			% 
 
-		end; % fclose
+		%end; % fclose()
+
+	end; % Abstract methods
+
+	methods
 
 		function delete(nsd_binarydoc_obj)
 		% DELETE - close an NSD_BINARYDOC and delete its handle
@@ -106,6 +105,6 @@ classdef nsd_binarydoc < handle
 			delete@handle(nsd_binarydoc_obj); % call superclass
 		end; % delete()	
 
-	end % public methods
+	end % methods
 
 end

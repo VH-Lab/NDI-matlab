@@ -10,6 +10,8 @@
 % -------------------------------------------------------------------------
 % nsdpath                  | The path of the NSD distribution on this machine.
 %                          |   (Initialized by nsd_Init.m)
+% nsdcommonpath            | The path to the package nsd_common
+%                          |   (Initialized by nsd_Init.m)
 % nsddocumentpath          | The path of the NSD document definitions
 %                          |   (Initialized by nsd_Init.m)
 % nsddocumentschemapath    | The path of the NSD document validation schema
@@ -20,6 +22,7 @@
 %
 
 global nsdpath
+global nsdcommonpath
 global nsd_probetype2object
 global nsddocumentpath
 global nsddocumentschemapath
