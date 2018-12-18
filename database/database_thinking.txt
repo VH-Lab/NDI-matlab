@@ -8,11 +8,3 @@ Suppose we have only 1 animal in the experiment
 	But if you searched, how would you find all probes that were related to that animal? The database has to know it
 
 
-
-
-
-
-
-
-
-

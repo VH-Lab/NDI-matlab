@@ -3,7 +3,8 @@ classdef nsd_experiment < handle
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
-		database          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
+		unique_reference  % A unique code that uniquely identifies this experiment
+		database          % An NSD_DATABASE associated with this experiment
 		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
 		syncgraph         % An NSD_SYNCGRAPH object related to this experiment
 		cache             % An NSD_CACHE object for the experiment's use
@@ -26,8 +27,9 @@ classdef nsd_experiment < handle
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
 				nsd_experiment_obj.reference = reference;
+				nsd_experiment_obj.unique_reference = [num2hex(now) '_' num2hex(rand)];
 				nsd_experiment_obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
-				nsd_experiment_obj.database = nsd_variable_branch('','database',0);
+				nsd_experiment_obj.database = [];
 				nsd_experiment_obj.syncgraph = nsd_syncgraph(nsd_experiment_obj);
 				nsd_experiment_obj.cache = nsd_cache();
 		end
@@ -98,14 +100,14 @@ classdef nsd_experiment < handle
 			%
 			%   NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, VAR)
 			%
-			% Adds the NSD_VARIABLE VAR to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
+			% Adds the NSD_DOCUMENT VAR to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
 			%
 			% The variable can be accessed by referencing NSD_EXPERIMENT_OBJ.database
 			%  
 			% See also: DATABASE_RM, NSD_EXPERIMENT
 
-				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_branch'), error(['var is not an NSD_VARIABLE']); end;
-				nsd_experiment_obj.variable.add(var);
+				if ~isa(var,'nsd_document'), error(['var is not an NSD_DOCUMENT']); end;
+				nsd_experiment_obj.database.add(var);
 		end
 
 		function nsd_experiment_obj = database_rm(nsd_experiment_obj, var)
@@ -113,14 +115,13 @@ classdef nsd_experiment < handle
 			%
 			%   NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, VAR)
 			%
-			% 
-			% Removes the variable VAR from the NSD_EXPERIMENT_OBJ.database.
+			% Removes the NSD_DOCUMENT VAR from the NSD_EXPERIMENT_OBJ.database.
 			%
 			% See also: DATABASE_ADD, NSD_EXPERIMENT
 			
-				leaf = nsd_experiment_obj.variable.load('name',var.name);
-				if ~isempty(leaf),
-					nsd_experiment_obj.variable.remove(leaf.objectfilename);
+				doc = nsd_experiment_obj.db.search('name',var.name);
+				if ~isempty(doc),
+					nsd_experiment_obj.variable.remove(doc.unique_id(var));
 				else,
 					error(['No variable named ' var.name ' found.']);
 				end
@@ -191,7 +192,7 @@ classdef nsd_experiment < handle
 
 				if isempty(z),
 					tryiodevice = 1;
-					trydatabase = 1;
+					trydatabase = 0;
 					tryprobelist = 1;
 				else,
 					if isa(z,'nsd_probe'),
@@ -199,7 +200,7 @@ classdef nsd_experiment < handle
 					elseif isa(z,'nsd_iodevice'),
 						tryiodevice = 1;
 					else,
-						trydatabase = 1;
+						trydatabase = 0;
 					end
 				end
 
@@ -209,17 +210,6 @@ classdef nsd_experiment < handle
 						if strcmp(class(obj_here),obj_classname),
 							% it is our match
 							obj = obj_here;
-							return
-						end
-					end
-				end
-
-				if trydatabase,
-					obj_here = nsd_experiment_obj.database.load('name',obj_name);
-					if ~isempty(obj_here),
-						if strcmp(class(obj_here),obj_classname),
-							% it is our match
-							obj = obj_here
 							return
 						end
 					end

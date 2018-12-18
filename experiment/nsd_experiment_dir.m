@@ -35,18 +35,22 @@ classdef nsd_experiment_dir < nsd_experiment
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
 				end
+				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']);
+				if ~isempty(d),
+					nsd_experiment_dir_obj.unique_reference = textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']);
+				elseif nargin==1,
+					error(['Could not load the UNIQUE REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
+				end
+
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'iodevice_object_*']);
 				if isempty(d),
 					nsd_experiment_dir_obj.iodevice = nsd_dbleaf_branch(nsd_experiment_dir_obj.nsdpathname(),'iodevice',{'nsd_iodevice'},1);
 				else,
 					nsd_experiment_dir_obj.iodevice = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
-				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'variable_object_*']);
-				if isempty(d),
-					nsd_experiment_dir_obj.database = nsd_variable_branch(nsd_experiment_dir_obj.nsdpathname(),'variable', 0, 0);
-				else,
-					nsd_experiment_dir_obj.database = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
-				end;
+
+				nsd_experiment_dir_obj.database = nsd_opendatabase(nsd_experiment_dir_obj.nsdpathname(), [nsd_experiment_dir_obj.reference '_' nsd_experiment_dir_obj.unique_reference]);
+
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep '*syncgraph.nsd']);
 				if isempty(d),
 					nsd_experiment_dir_obj.syncgraph = nsd_syncgraph(nsd_experiment_dir_obj);
@@ -54,7 +58,9 @@ classdef nsd_experiment_dir < nsd_experiment
 					nsd_experiment_dir_obj.syncgraph = nsd_experiment_dir_obj.syncgraph.readobjectfile(...
 						[nsd_experiment_dir_obj.nsdpathname filesep d(1).name]);
 				end;
+
 				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt'], nsd_experiment_dir_obj.reference);
+				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt'], nsd_experiment_dir_obj.unique_reference);
 		end
 		
 		function p = getpath(nsd_experiment_dir_obj)

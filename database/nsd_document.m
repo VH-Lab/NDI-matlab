@@ -12,7 +12,8 @@ classdef nsd_document
 			% NSD_DOCUMENT - create a new NSD_DATABASE object
 			%
 			% NSD_DOCUMENT_OBJ = NSD_DOCUMENT(DOCUMENT_TYPE, 'PARAM1', VALUE1, ...)
-			%
+			%   or
+			% NSD_DOCUMENT_OBJ = NSD_DOCUMENT(MATLAB_STRUCT)
 			%
 			%
 
@@ -20,25 +21,29 @@ classdef nsd_document
 					document_type = 'nsd_document';
 				end
 
-				document_properties = nsd_document.readblankdefinition(document_type);
-				
-				document_properties.nsd_document.document_unique_reference = [num2hex(now) '_' num2hex(rand)];
-				document_properties.nsd_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
+				if isstruct(document_type),
+					document_properties = document_type;
+				else,  % create blank from definitions
+					document_properties = nsd_document.readblankdefinition(document_type);
+					
+					document_properties.nsd_document.document_unique_reference = [num2hex(now) '_' num2hex(rand)];
+					document_properties.nsd_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
-				if numel(varargin)==1, % see if user put it all as one cell array
-					if iscell(varargin{1}),
-						varargin = varargin{1};
+					if numel(varargin)==1, % see if user put it all as one cell array
+						if iscell(varargin{1}),
+							varargin = varargin{1};
+						end
 					end
-				end
-				if mod(numel(varargin),2)~=0,
-					error(['Variable inputs must be name/value pairs'.']);
-				end;
+					if mod(numel(varargin),2)~=0,
+						error(['Variable inputs must be name/value pairs'.']);
+					end;
 
-				for i=1:2:numel(varargin), % assign variable arguments
-					try,
-						eval(['document_properties.' varargin{i} '= varargin{i+1};']);
-					catch,
-						error(['Could not assign document_properties.' varargin{i} '.']);
+					for i=1:2:numel(varargin), % assign variable arguments
+						try,
+							eval(['document_properties.' varargin{i} '= varargin{i+1};']);
+						catch,
+							error(['Could not assign document_properties.' varargin{i} '.']);
+						end
 					end
 				end
 
@@ -62,6 +67,17 @@ classdef nsd_document
 			%
 				bf = [];
 		end % getbinaryfileobj() 
+
+		function uid = doc_unique_id(nsd_document_obj)
+			% DOC_UNIQUE_ID - return the document unique identifier for an NSD_DOCUMENT
+			% 
+			% UID = DOC_UNIQUE_ID(NSD_DOCUMENT_OBJ)
+			%
+			% Returns the unique id of an NSD_DOCUMENT
+			% (Found at NSD_DOCUMENT_OBJ.documentproperties.document_unique_reference)
+			%
+				uid = nsd_document_obj.document_properties.nsd_document.document_unique_reference;
+		end % doc_unique_id()
 	end % methods
 
 	methods (Static)

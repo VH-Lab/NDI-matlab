@@ -24,10 +24,10 @@ classdef nsd_database
 			experiment_unique_reference = '';
 
 			if nargin>0,
-				path = vargin{1};
+				path = varargin{1};
 			end
 			if nargin>1,
-				experiment_unique_reference = varargin{1};
+				experiment_unique_reference = varargin{2};
 			end
 
 			nsd_database_obj.path = path;
@@ -42,8 +42,11 @@ classdef nsd_database
 			% Creates a new/blank NSD_DOCUMENT document object that can be used with this
 			% NSD_DATABASE.
 			%
+				if nargin<2,
+					document_type = 'nsd_document';
+				end;
 				nsd_document_obj = nsd_document(document_type, ...
-						'experiment_unique_refrence', experiment_unique_reference);
+						'experiment_unique_refrence', nsd_database_obj.experiment_unique_reference);
 		end % newdocument
 
 		function nsd_database_obj = add(nsd_database_obj, nsd_document_obj, varargin)
@@ -84,7 +87,7 @@ classdef nsd_database
 				end
 		end % read()
 
-		function [nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
+		function nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
 			% REMOVE - remove a document from an NSD_DATABASE
 			%
 			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID) 
@@ -96,9 +99,9 @@ classdef nsd_database
 			% the entries in VERSIONS are removed.
 			%
 				if nargin<3,
-					nsd_document_obj = do_remove(nsd_database_obj, nsd_document);
+					nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id);
 				else,
-					nsd_document_obj = do_remove(nsd_database_obj, nsd_document, version);
+					nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id, versions);
 				end
 		end % remove()
 
@@ -116,19 +119,20 @@ classdef nsd_database
 			% query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
 			% of each NSD_DOCUMENT.
 			% 
-				[nsd_document_objs, versions] = nsd_database_obj.do_search(searchOptions,varargin);
+				searchOptions = {};
+				[nsd_document_objs, versions] = nsd_database_obj.do_search(searchOptions,searchparams);
 		end % search()
 
 	end % methods nsd_database
 
-	methods (Access=Protected)
+	methods (Access=protected)
 		function nsd_database_obj = do_add(nsd_database_obj, nsd_document_obj, add_parameters)
 		end % do_add
-		function [nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document, version);
+		function [nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document_id, version);
 		end % do_read
-		function nsd_document_obj = do_remove(nsd_database_obj, nsd_document)
+		function nsd_document_obj = do_remove(nsd_database_obj, nsd_document_id, versions)
 		end % do_remove
-		function [nsd_document_objs,versions] = do_search(nsd_database_obj, searchparameters, searchparams) 
+		function [nsd_document_objs,versions] = do_search(nsd_database_obj, searchoptions, searchparams) 
 		end % do_search()
 
 	end % Methods (Access=Protected) protected methods
