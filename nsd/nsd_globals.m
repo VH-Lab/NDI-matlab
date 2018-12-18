@@ -19,6 +19,8 @@
 % nsd_probetype2object     | A structure with fields 'type' and 'classname'
 %                          |   that describes the default NSD_PROBE classname
 %                          |   to use to create a probe for a given type.
+% nsd_databasehierarchy    | A structure that describes the order in which to
+%                          |   attempt to open databases in the experiment path
 %
 
 global nsdpath
@@ -26,4 +28,5 @@ global nsdcommonpath
 global nsd_probetype2object
 global nsddocumentpath
 global nsddocumentschemapath
+global nsd_databasehierarchy
 

@@ -10,8 +10,14 @@ addpath(genpath(mynsdpath));
 
 nsd_globals;
 
+ % paths
+
 nsdpath = mynsdpath;
 nsdcommonpath = [nsdpath filesep 'nsd_common'];
 nsddocumentpath = [nsdcommonpath filesep 'database_documents'];
 nsddocumentschemapath = [nsdcommonpath filesep 'database_documents'];
+
+ % initialization
+
 nsd_probetype2objectinit;
+nsd_databasehierarchyinit;
