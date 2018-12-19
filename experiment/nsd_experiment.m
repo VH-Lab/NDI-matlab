@@ -34,6 +34,20 @@ classdef nsd_experiment < handle
 				nsd_experiment_obj.cache = nsd_cache();
 		end
 
+		%%%%%% REFERENCE METHODS
+	
+		function refstr = unique_reference_string(nsd_experiment_obj)
+			% UNIQUE_REFERENCE_STRING - return the unique reference string for this experiment
+			%
+			% REFSTR = UNIQUE_REFERENCE_STRING(NSD_EXPERIMENT_OBJ)
+			%
+			% Returns the unique reference string for the NSD_EXPERIMENT.
+			% REFSTR is a combination of the REFERENCE property of NSD_EXPERIMENT_OBJ
+			% and the UNIQUE_REFERENCE property of NSD_EXPERIMENT_OBJ, joined with a '_'.
+
+				refstr = [nsd_experiment_obj.reference '_' nsd_experiment_obj.unique_reference];
+		end % unique_reference_string()
+
 		%%%%%% DEVICE METHODS
 
 		function nsd_experiment_obj = iodevice_add(nsd_experiment_obj, dev)
@@ -51,7 +65,8 @@ classdef nsd_experiment < handle
 					error(['dev is not a nsd_iodevice']);
 				end;
 				nsd_experiment_obj.iodevice.add(dev);
-			end 
+		end;
+
 		function nsd_experiment_obj = iodevice_rm(nsd_experiment_obj, dev)
 			% IODEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
 			%
@@ -66,8 +81,8 @@ classdef nsd_experiment < handle
 					nsd_experiment_obj.iodevice.remove(leaf.objectfilename);
 				else,
 					error(['No iodevice named ' dev.name ' found.']);
-				end
-			end
+				end;
+		end;
 
 		function dev = iodevice_load(nsd_experiment_obj, varargin)
 			% LOAD - Load iodevice objects from an NSD_EXPERIMENT
@@ -89,24 +104,48 @@ classdef nsd_experiment < handle
 				else,
 					for i=1:numel(dev),
 						dev{i}=dev{i}.setexperiment(nsd_experiment_obj);
-					end
-				end
-		end % ioiodevice_load()	
+					end;
+				end;
+		end; % iodevice_load()	
 
-		% DATABASE / NSD_VARIABLE METHODS
+		% NSD_DATABASE / NSD_DOCUMENT METHODS
 
-		function nsd_experiment_obj = database_add(nsd_experiment_obj, var)
+		function nsd_document_obj = newdocument(nsd_experiment_obj, document_type, varargin)
+		% NEWDOCUMENT - create a new NSD_DATABASE document of type NSD_DOCUMENT
+		%
+		% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_EXPERIMENT_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)
+		%
+		% Creates an empty database document NSD_DOCUMENT_OBJ. DOCUMENT_TYPE is
+		% an optional argument and can be any type that confirms to the .json
+		% files in $NSD_COMMON/database_documents/*, a URL to such a file, or
+		% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
+		% to be 'nsd_document.json'.
+		%
+		% If additional PROPERTY values are specified, they are set to the VALUES indicated.
+		%
+		% Example: mydoc = nsd_experiment_obj.newdocument('nsd_document','nsd_document.name','myname');
+		%
+			if nargin<2,
+				document_type = 'nsd_document.json';
+			end
+			inputs = cat(2,varargin,{'nsd_document.experiment_unique_reference', nsd_experiment_obj.unique_reference_string()});
+			nsd_document_obj = nsd_document(document_type, inputs);
+		end; %newdocument()
+
+		function nsd_experiment_obj = database_add(nsd_experiment_obj, document)
 			%DATABASE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, VAR)
+			% NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, NSD_DOCUMENT_OBJ)
 			%
-			% Adds the NSD_DOCUMENT VAR to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
+			% Adds the NSD_DOCUMENT NSD_DOCUMENT_OBJ to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
 			%
-			% The variable can be accessed by referencing NSD_EXPERIMENT_OBJ.database
+			% The variable can be queried by referencing NSD_EXPERIMENT_OBJ.database
 			%  
-			% See also: DATABASE_RM, NSD_EXPERIMENT
+			% See also: DATABASE_RM, NSD_EXPERIMENT, NSD_DATABASE, NSD_DATABASE/SEARCH
 
-				if ~isa(var,'nsd_document'), error(['var is not an NSD_DOCUMENT']); end;
+				if ~isa(var,'nsd_document'),
+					error(['var is not an NSD_DOCUMENT']);
+				end;
 				nsd_experiment_obj.database.add(var);
 		end
 
@@ -136,7 +175,7 @@ classdef nsd_experiment < handle
 			% object NSD_EXPERIMENT_OBJ. 
 			%
 				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.addrule(rule);
-		end % syncgraph_addrule
+		end; % syncgraph_addrule
 
 		function nsd_experiment_obj = syncgraph_rmrule(nsd_experiment_obj, index)
 			% SYNCGRAPH_RMRULE - remove an NSD_SYNCRULE from the syncgraph
@@ -148,7 +187,7 @@ classdef nsd_experiment < handle
 			%
 				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.removerule(index);
 
-		end % syncgraph_rmrule
+		end; % syncgraph_rmrule
 
 		%%%%%% PATH methods
 
@@ -167,7 +206,7 @@ classdef nsd_experiment < handle
 			%
 			% See also: NSD_EXPERIMENT
 			p = [];
-		end
+		end;
 
 		%%%%%% REFERENCE methods
 
@@ -201,8 +240,8 @@ classdef nsd_experiment < handle
 						tryiodevice = 1;
 					else,
 						trydatabase = 0;
-					end
-				end
+					end;
+				end;
 
 				if tryiodevice,
 					obj_here = nsd_experiment_obj.iodevice.load('name',obj_name);
@@ -210,9 +249,9 @@ classdef nsd_experiment < handle
 						if strcmp(class(obj_here),obj_classname),
 							% it is our match
 							obj = obj_here;
-							return
-						end
-					end
+							return;
+						end;
+					end;
 				end
 
 				if tryprobelist,
@@ -221,11 +260,11 @@ classdef nsd_experiment < handle
 						if strcmp(class(probes{i}),obj_classname) & strcmp(probes{i}.epochsetname,obj_name),
 							obj = probes{i}; 
 							return;
-						end
-					end
+						end;
+					end;
 				end
 
-		end % findexpobj
+		end; % findexpobj
 
 		function probes = getprobes(nsd_experiment_obj, varargin)
 			% GETPROBES - Return all NSD_PROBES that are found in NSD_IODEVICE epoch contents entries
@@ -269,8 +308,8 @@ classdef nsd_experiment < handle
 						includehere = isa(probes{i},varargin{1});
 						if includehere,
 							include(end+1) = i;
-						end
-					end
+						end;
+					end;
 					probes = probes(include);
 				elseif numel(varargin)>1,
 					include = [];
@@ -285,16 +324,16 @@ classdef nsd_experiment < handle
 									includehere = strcmp(value,varargin{j+1});
 								else,
 									includehere = (value==varargin{j+1});
-								end
-							end
-						end
+								end;
+							end;
+						end;
 						if includehere,
 							include(end+1) = i;
-						end
-					end
+						end;
+					end;
 					probes = probes(include);
-				end
-		end % getprobes
-
-	end % methods
+				end;
+		end; % getprobes
+	end; % methods
 end % classdef
+

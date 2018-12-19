@@ -9,11 +9,10 @@
 	"nsd_document": {
 		"experiment_unique_reference":				"",
 		"document_unique_reference":				"",
-		"name":							"generic",
-		"type":							"generic",
+		"name":							"",
+		"type":							"",
 		"datestamp":						"2018-12-05T18:36:47.241Z",
-		"database_version":					1,
-		"hasbinaryfile":					0
+		"database_version":					1
 	}
 }
 

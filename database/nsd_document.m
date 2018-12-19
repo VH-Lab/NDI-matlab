@@ -71,6 +71,32 @@ classdef nsd_document
 			%
 				uid = nsd_document_obj.document_properties.nsd_document.document_unique_reference;
 		end % doc_unique_id()
+
+		function nsd_document_obj = setproperties(nsd_document_obj, varargin)
+			% SETPROPERTIES - Set property values of an NSD_DOCUMENT object
+			%
+			% NSD_DOCUMENT_OBJ = SETPROPERTIES(NSD_DOCUMENT_OBJ, 'PROPERTY1', VALUE1, ...)
+			%
+			% Sets the property values of NSD_DOCUMENT_OBJ.	PROPERTY values should be expressed
+			% relative to NSD_DOCUMENT_OBJ.document_properties (see example).
+			%
+			% See also: NSD_DOCUMENT, NSD_DOCUMENT/NSD_DOCUMENT		
+			%
+			% Example:
+			%   mydoc = mydoc.setproperties('nsd_document.name','mydoc name');
+
+				newproperties = nsd_document_obj.document_properties;
+				for i=1:2:numel(varargin),
+					try,
+						eval(['newproperties.' varargin{i} '=varargin{i+1};']);
+					catch,
+						error(['Error in assigning ' varargin{i} '.']);
+					end
+				end
+				
+				nsd_document_obj.document_properties = newproperties;
+		end; % setproperties
+
 	end % methods
 
 	methods (Static)

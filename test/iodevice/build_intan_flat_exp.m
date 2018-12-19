@@ -14,7 +14,7 @@ function build_intan_flat_exp(dirname)
 
 if nargin<1,
 	nsd_globals;
-	dirname = [nsdexampleexppath filesep 'exp1_eg_saved'];
+	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['creating a new experiment object...']);

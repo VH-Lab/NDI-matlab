@@ -31,13 +31,13 @@ classdef nsd_experiment_dir < nsd_experiment
 				nsd_experiment_dir_obj.path = path;
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt']);
 				if ~isempty(d),
-					nsd_experiment_dir_obj.reference = textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt']);
+					nsd_experiment_dir_obj.reference = strtrim(textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt']));
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
 				end
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
-					nsd_experiment_dir_obj.unique_reference = textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']);
+					nsd_experiment_dir_obj.unique_reference = strtrim(textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']));
 				elseif nargin==1,
 					error(['Could not load the UNIQUE REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
 				end
@@ -49,7 +49,7 @@ classdef nsd_experiment_dir < nsd_experiment
 					nsd_experiment_dir_obj.iodevice = nsd_pickdbleaf([nsd_experiment_dir_obj.nsdpathname() filesep d(1).name]);
 				end;
 
-				nsd_experiment_dir_obj.database = nsd_opendatabase(nsd_experiment_dir_obj.nsdpathname(), [nsd_experiment_dir_obj.reference '_' nsd_experiment_dir_obj.unique_reference]);
+				nsd_experiment_dir_obj.database = nsd_opendatabase(nsd_experiment_dir_obj.nsdpathname(), nsd_experiment_dir_obj.unique_reference_string());
 
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep '*syncgraph.nsd']);
 				if isempty(d),
@@ -61,7 +61,7 @@ classdef nsd_experiment_dir < nsd_experiment
 
 				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'reference.txt'], nsd_experiment_dir_obj.reference);
 				str2text([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt'], nsd_experiment_dir_obj.unique_reference);
-		end
+		end;
 		
 		function p = getpath(nsd_experiment_dir_obj)
 			% GETPATH - Return the path of the experiment
@@ -74,7 +74,7 @@ classdef nsd_experiment_dir < nsd_experiment
 			% the experiment. This might be a URL, or a file directory.
 			%
 				p = nsd_experiment_dir_obj.path;
-                end
+                end;
 
 		function p = nsdpathname(nsd_experiment_dir_obj)
 			% NDSPATHNAME - Return the path of the NSD files within the experiment
@@ -89,8 +89,8 @@ classdef nsd_experiment_dir < nsd_experiment
 				p = [nsd_experiment_dir_obj.path filesep nsd_dir ];
 				if ~exist(p,'dir'),
 					mkdir(p);
-				end
-		end
+				end;
+		end;
 
 		function b = eq(nsd_experiment_dir_obj_a, nsd_experiment_dir_obj_b)
 			% EQ - Are two NSD_EXPERIMENT_DIR objects equivalent?
@@ -104,10 +104,9 @@ classdef nsd_experiment_dir < nsd_experiment
 				b = strcmp(nsd_experiment_dir_obj_a.reference,nsd_experiment_dir_obj_b.reference);
 				if b,
 					b = strcmp(nsd_experiment_dir_obj_a.path,nsd_experiment_dir_obj_b.path);
-				end
-		end % eq
-
-	end % methods
+				end;
+		end; % eq
+	end; % methods
 
 end % classdef
 

@@ -14,7 +14,7 @@ frame_number = 1;
 %default.
 if nargin < 1
     nsd_globals
-    example_directory = [nsdexampleexppath];
+    example_directory = [nsdexampleexperpath];
     input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
     output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];
     if exist(output_dir_name) ~=7

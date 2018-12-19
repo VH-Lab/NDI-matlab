@@ -1,4 +1,4 @@
-function nsd_testvhlabsetup(dirname)
+function exp = nsd_testvhlabsetup(dirname)
 % NSD_TESTVHLABSETUP - display a variety of information about an NSD experiment
 %
 % EXP = NSD_TESTVHLABSETUP(DIRNAME)

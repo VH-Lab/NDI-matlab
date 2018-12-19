@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/nsd_document_subject.json",
+		"validation":						"$NSDSCHEMAPATH\/nsd_document_subject_schema.json",
+		"class_name":						"nsd_document_subject",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document.json" }
+		]
+        },
+	"subject": {
+		"identifier":						"",
+		"species":						"",
+		"strain":						"",
+		"variant":						""
+	}
+}
+
