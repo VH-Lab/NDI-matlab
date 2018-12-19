@@ -62,12 +62,6 @@ classdef nsd_document
 				b = 1; % for now, skip this
 		end % validate()
 
-		function bf = getbinaryfile(nsd_document_obj);
-			% GETBINARYFILE - Get the binary file object for an NSD_DOCUMENT_OBJ
-			%
-				bf = [];
-		end % getbinaryfileobj() 
-
 		function uid = doc_unique_id(nsd_document_obj)
 			% DOC_UNIQUE_ID - return the document unique identifier for an NSD_DOCUMENT
 			% 

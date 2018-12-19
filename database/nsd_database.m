@@ -87,6 +87,28 @@ classdef nsd_database
 				end
 		end % read()
 
+		function [nsd_binarydoc, version] = binarydoc(nsd_database_obj, nsd_document_or_id, version)
+			% BINARYDOC - return an NSD_BINARYDOC that corresponds to a document id
+			%
+			% [NSD_BINARYDOC_OBJ, VERSION] = BINARYDOC(NSD_DATABASE_OBJ, NSD_DOCUMENT_OR_ID, [VERSION])
+			%
+			% Return the NSD_BINARYDOC object and VERSION that corresponds to an NSD_DOCUMENT and
+			% the requested version (the latest version is used if the argument is omitted).
+			% NSD_DOCUMENT_OR_ID can be either the document id of an NSD_DOCUMENT or an NSD_DOCUMENT object itsef.
+			%
+				if isa(nsd_document_or_id,'nsd_document'),
+					nsd_document_id = nsd_document_or_id.doc_unique_id();
+				else,
+					nsd_document_id = nsd_document_or_id;
+				end
+				if nargin<3,
+					[nsd_document_obj,version] = nsd_database_obj.read(nsd_document_id);
+				else,
+					[nsd_document_obj,version] = nsd_database_obj.read(nsd_document_id, version);
+				end;
+				nsd_binarydoc = do_binarydoc(nsd_database_obj, nsd_document_id, version);
+		end; % binarydoc
+
 		function nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
 			% REMOVE - remove a document from an NSD_DATABASE
 			%
@@ -134,6 +156,8 @@ classdef nsd_database
 		end % do_remove
 		function [nsd_document_objs,versions] = do_search(nsd_database_obj, searchoptions, searchparams) 
 		end % do_search()
+		function [nsd_binarydocobj] = do_binarydoc(nsd_database_obj, nsd_document_id, version) 
+		end % do_binarydoc()
 
 	end % Methods (Access=Protected) protected methods
 end % classdef
