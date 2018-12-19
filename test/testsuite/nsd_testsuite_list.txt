@@ -1,0 +1,5 @@
+code	runit
+test_nsd_cache	1
+test_nsd_dbleaf_branch(0)	1
+test_nsd_dbleaf_branch(1)	1
+

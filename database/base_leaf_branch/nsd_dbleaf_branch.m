@@ -702,7 +702,8 @@ classdef nsd_dbleaf_branch < nsd_dbleaf
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
 				if nargin<2 & nsd_dbleaf_branch_obj.memory,
-					error(['This branch is in memory only, so to delete any files we need to know which directory it may be stored in.']);
+					warning(['This branch is in memory only, so to delete any files we need to know which directory it may be stored in.']);
+                    return
 				elseif nargin<2,
 					thedirname = nsd_dbleaf_branch_obj.path;
 				end
