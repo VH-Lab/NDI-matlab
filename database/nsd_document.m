@@ -25,8 +25,7 @@ classdef nsd_document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = nsd_document.readblankdefinition(document_type);
-					
-					document_properties.nsd_document.document_unique_reference = [num2hex(now) '_' num2hex(rand)];
+					document_properties.nsd_document.document_unique_reference = nsd_unique_id;
 					document_properties.nsd_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array

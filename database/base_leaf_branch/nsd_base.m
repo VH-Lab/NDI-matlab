@@ -30,7 +30,7 @@ classdef nsd_base
 			%  
 			% See also: NSD_DBLEAF, NSD_BASE
 
-			obj.objectfilename = ['object_' num2hex(now) '_' num2hex(rand) '' ]; 
+			obj.objectfilename = ['object_' nsd_unique_id() ];
 			obj.lockfid = [];
 
 			if nargin<2,

@@ -7,27 +7,26 @@ function output = nsd_testsuite
 % 'nsd_testsuite_list.txt'. This file is a tab-delimited table
 % that can be loaded with LOADSTRUCTARRAY with fields
 % Field name          | Description
-% -----------------------------------------------------------------
+% --------------------------------------------------------------------------
 % code                | The code to be run (as a Matlab evaluation)
 % runit               | Should we run it? 0/1
+% comment             | A comment string describing the test
 %
 % OUTPUT is a structure of outcomes. It includes the following fields:
 % Field name          | Descriptopn
-% -----------------------------------------------------------------
-% outcome             | Success is 1, failure is 0.
+% --------------------------------------------------------------------------
+% outcome             | Success is 1, failure is 0. -1 means it was not run.
 % errormsg            | Any error message
-% code                | The code that was run
 %
 
-jobs = loadStructArray('nsd_testsuite_list.txt');
+jobs = loadStructArray('nsd_testsuite_list.txt'),
 
-output = emptystruct('outcome','errormsg','code');
+output = emptystruct('outcome','errormsg');
 
 for i=1:numel(jobs),
 	output_here = output([]);
 	output_here(1).errormsg = '';
 	output_here(1).outcome = 0;
-	output_here(1).code = jobs(i).code;
 	if jobs(i).runit,
 		try,
 			eval(jobs(i).code);
@@ -38,18 +37,28 @@ for i=1:numel(jobs),
 	else,
 			output_here(1).outcome = -1; % not run
 	end;
-	output(end+1) = output_here;
+	output(i) = output_here;
 end
+
+disp(sprintf('\n'));
+disp(sprintf('\n'));
+disp(['--------------------------------------------']);
+disp(sprintf('\n'));
+disp('TESTSUITE OUTCOME');
 
 for i=1:numel(output),
 	if output(i).outcome>0,
-		beginstr = ['SUCCESS: '];
+		beginstr = ['  SUCCESS: '];
 		endstr = '';
 	elseif output(i).outcome==0,
-		beginstr = ['FAILURE: '];
-		endstr = output(i).errormsg;
+		beginstr = ['  FAILURE: '];
+		endstr = ['Error: ' output(i).errormsg];
 	end;
-	if output(i).outcome > 
-		disp([beginstr ', Code: ' output(i).code ' ' endstr]);
+	if output(i).outcome >= 0, 
+		disp([beginstr jobs(i).code ' (' jobs(i).comment ')']);
+		if ~isempty(endstr),
+			disp(['      ' endstr]);
+		end
 	end;
-end
+end;
+

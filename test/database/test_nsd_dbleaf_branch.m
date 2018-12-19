@@ -17,6 +17,7 @@ if ~testing_memory,
 		mkdir(dirname);
 	else,
 		rmdir(dirname,'s'); % clear this directory
+		mkdir(dirname);
 	end;
 else,
 	dirname = '';

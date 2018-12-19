@@ -27,7 +27,7 @@ classdef nsd_experiment < handle
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
 				nsd_experiment_obj.reference = reference;
-				nsd_experiment_obj.unique_reference = [num2hex(now) '_' num2hex(rand)];
+				nsd_experiment_obj.unique_reference = nsd_unique_id;
 				nsd_experiment_obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
 				nsd_experiment_obj.database = [];
 				nsd_experiment_obj.syncgraph = nsd_syncgraph(nsd_experiment_obj);

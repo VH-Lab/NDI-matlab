@@ -38,7 +38,11 @@ classdef nsd_epochcontents_iodevice < nsd_epochcontents
 			end
 
 			if nargin==1,
-				nsd_struct= loadStructArray(name_);
+				% name_ should be a filename
+				nsd_struct = [];
+				if exist(name_,'file'),
+					nsd_struct= loadStructArray(name_);
+				end;
 				if isempty(nsd_struct),
 					nsd_struct = emptystruct('name','reference','type','devicestring');
 				end

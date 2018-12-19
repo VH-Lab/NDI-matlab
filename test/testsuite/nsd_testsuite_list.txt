@@ -1,5 +1,6 @@
-code	runit
-test_nsd_cache	1
-test_nsd_dbleaf_branch(0)	1
-test_nsd_dbleaf_branch(1)	1
-
+code	runit	comment
+test_nsd_cache	1	Tests cache
+test_nsd_dbleaf_branch(0)	1	Tests dbleaf_branch on disk
+test_nsd_dbleaf_branch(1)	1	Tests dbleaf_branch in memory only
+test_nsd_variable	0	Tests nsd_variable; nsd_variable has just been depricated so needs update
+test_nsd_filetree	1	Tests basic functions of nsd_filetree

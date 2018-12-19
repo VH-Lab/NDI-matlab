@@ -13,7 +13,7 @@ function test_nsd_probe(dirname)
 
 if nargin<1,
 	nsd_globals;
-	dirname = [nsdexampleexppath filesep 'exp1_eg_saved'];
+	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading experiment from directory ' dirname ' ...']);
