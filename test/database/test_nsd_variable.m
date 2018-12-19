@@ -17,9 +17,7 @@ nsd_globals;
 test_struct = 0;
 
 if nargin<1,
-	mydirectory = [nsdpath filesep 'tools' filesep 'NSD' ...
-                filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp1_eg'];
+	dirname = [nsdexampleexperpath filesep 'exp1_eg'];
 end;
 
 disp(['Creating a new experiment object in directory ' dirname '.']);

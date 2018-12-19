@@ -15,9 +15,7 @@ function test_sg_flat(dirname)
 	if nargin < 1,
 
 		nsd_globals
-
-		mydirectory = [nsdpath filesep 'example_experiments' ];
-		dirname = [mydirectory filesep 'exp_sg'];
+		dirname = [nsdexampleexppath filesep 'exp_sg'];
 	end;
 
 	disp(['creating a new experiment object...']);
@@ -67,6 +65,5 @@ function test_sg_flat(dirname)
 	plot_multichan(data,1:30000,400); %(data, timeframe, height)
 
 	exp.iodevice_rm(dev1); % remove the device so the demo works again
-
 end
 

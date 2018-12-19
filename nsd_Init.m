@@ -16,8 +16,10 @@ nsdpath = mynsdpath;
 nsdcommonpath = [nsdpath filesep 'nsd_common'];
 nsddocumentpath = [nsdcommonpath filesep 'database_documents'];
 nsddocumentschemapath = [nsdcommonpath filesep 'database_documents'];
+nsdexampleexperpath = [nsdcommonpath filesep 'example_experiments'];
 
  % initialization
 
 nsd_probetype2objectinit;
 nsd_databasehierarchyinit;
+

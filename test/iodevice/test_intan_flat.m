@@ -15,8 +15,7 @@ function test_intan_flat(dirname)
 if nargin<1,
 	nsd_globals;
 
-	mydirectory = [nsdpath filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp1_eg'];
+	dirname = [nsdexampleexppath filesep 'exp1_eg'];
 end;
 
 disp(['creating a new experiment object...']);

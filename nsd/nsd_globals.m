@@ -16,6 +16,7 @@
 %                          |   (Initialized by nsd_Init.m)
 % nsddocumentschemapath    | The path of the NSD document validation schema
 %                          |   (Initialized by nsd_Init.m)
+% nsdexampleexperpath      | The path to the NSD example experiments
 % nsd_probetype2object     | A structure with fields 'type' and 'classname'
 %                          |   that describes the default NSD_PROBE classname
 %                          |   to use to create a probe for a given type.
@@ -25,8 +26,10 @@
 
 global nsdpath
 global nsdcommonpath
-global nsd_probetype2object
 global nsddocumentpath
 global nsddocumentschemapath
+global nsdexampleexperpath
+
+global nsd_probetype2object
 global nsd_databasehierarchy
 
