@@ -133,7 +133,7 @@ classdef nsd_experiment < handle
 		end; %newdocument()
 
 		function nsd_experiment_obj = database_add(nsd_experiment_obj, document)
-			%DATABASE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
+			%DATABASE_ADD - Add an NSD_DOCUMENT to an NSD_EXPERIMENT object
 			%
 			% NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, NSD_DOCUMENT_OBJ)
 			%
@@ -143,28 +143,30 @@ classdef nsd_experiment < handle
 			%  
 			% See also: DATABASE_RM, NSD_EXPERIMENT, NSD_DATABASE, NSD_DATABASE/SEARCH
 
-				if ~isa(var,'nsd_document'),
-					error(['var is not an NSD_DOCUMENT']);
+				if ~isa(document,'nsd_document'),
+					error(['document is not an NSD_DOCUMENT']);
 				end;
-				nsd_experiment_obj.database.add(var);
-		end
+				nsd_experiment_obj.database.add(document);
+		end; % database_add()
 
-		function nsd_experiment_obj = database_rm(nsd_experiment_obj, var)
-			% DATABASE_RM - Remove an NSD_VARIABLE from an NSD_EXPERIMENT object
+		function nsd_experiment_obj = database_rm(nsd_experiment_obj, doc_unique_id)
+			% DATABASE_RM - Remove an NSD_DOCUMENT with a given document ID from an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, VAR)
+			% NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, DOC_UNIQUE_ID)
 			%
-			% Removes the NSD_DOCUMENT VAR from the NSD_EXPERIMENT_OBJ.database.
+			% Removes an NSD_DOCUMENT with document id DOC_UNIQUE_ID from the
+			% NSD_EXPERIMENT_OBJ.database. If an NSD_DOCUMENT is passed instead of
+			% DOC_UNIQUE_ID, then its id is retrieved.
 			%
 			% See also: DATABASE_ADD, NSD_EXPERIMENT
 			
-				doc = nsd_experiment_obj.db.search('name',var.name);
-				if ~isempty(doc),
-					nsd_experiment_obj.variable.remove(doc.unique_id(var));
-				else,
-					error(['No variable named ' var.name ' found.']);
-				end
-		end
+				if isa(doc_unique_id, 'nsd_document'),
+					doc_unique_id = doc_unique_id.doc_unique_id(); % well that's confusing but correct
+				end;
+				if ~isempty(doc_unique_id),
+					nsd_experiment_obj.database.remove(doc_unique_id);
+				end;
+		end; % database_rm
 
 		function nsd_experiment_obj = syncgraph_addrule(nsd_experiment_obj, rule)
 			% SYNCGRAPH_ADDRULE - add an NSD_SYNCRULE to the syncgraph

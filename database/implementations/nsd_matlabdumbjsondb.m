@@ -20,10 +20,23 @@ classdef  nsd_matlabdumbjsondb < nsd_database
 		% See also: DUMBJSONDB, DUMBJSONDB/DUMBJSONDB
 			nsd_matlabdumbjsondb_obj = nsd_matlabdumbjsondb_obj@nsd_database(varargin{:});
 			nsd_matlabdumbjsondb_obj.db = dumbjsondb(varargin{3:end},...
-				'dirname','.dumbjsondb','unique_object_id_field','nsd_document.document_unique_reference');
+				'dirname','dumbjsondb','unique_object_id_field','nsd_document.document_unique_reference');
 		end; % nsd_matlabdumbjsondb()
 
 	end 
+
+	methods, % public
+		function docids = alldocids(nsd_matlabdumbjsondb_obj)
+			% ALLDOCIDS - return all document unique reference numbers for the database
+			%
+			% DOCIDS = ALLDOCIDS(NSD_MATLABDUMBJSONDB_OBJ)
+			%
+			% Return all document unique reference strings as a cell array of strings. If there
+			% are no documents, empty is returned.
+			%
+				docids = nsd_matlabdumbjsondb_obj.db.alldocids();
+		end; % alldocids()
+	end;
 
 	methods (Access=protected),
 
@@ -74,5 +87,4 @@ classdef  nsd_matlabdumbjsondb < nsd_database
 		end; % do_binarydoc()
 
 	end;
-
 end

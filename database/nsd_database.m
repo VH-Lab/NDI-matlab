@@ -127,6 +127,17 @@ classdef nsd_database
 				end
 		end % remove()
 
+		function docids = alldocids(nsd_database_obj)
+			% ALLDOCIDS - return all document unique reference numbers for the database
+			%
+			% DOCIDS = ALLDOCIDS(NSD_DATABASE_OBJ)
+			%
+			% Return all document unique reference strings as a cell array of strings. If there
+			% are no documents, empty is returned.
+			%
+				docids = {}; % needs to be overridden
+		end; % alldocids()
+
 		function [nsd_document_objs,versions] = search(nsd_database_obj, searchparams)
 			% SEARCH - search for an NSD_DOCUMENT from an NSD_DATABASE
 			%
