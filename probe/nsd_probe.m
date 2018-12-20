@@ -44,7 +44,6 @@ classdef nsd_probe < nsd_epochset
 			%
 			%  NSD_PROBE is an abstract class, and a specific implementation must be called.
 			%
-
 				if nargin==0,
 					experiment = [];
 					name = [];
@@ -277,10 +276,8 @@ classdef nsd_probe < nsd_epochset
 				if nargin>2,
 					newdoc = nsd_probe_obj.experiment.newdocument('nsd_document_epochid',...
 						'epochid', epochid);
-					error(['need document concatenation'])
+					nsd_document_obj = nsd_document_obj + newdoc;
 				end
 		end;
-
-
 	end % methods
 end
