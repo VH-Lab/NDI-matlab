@@ -20,6 +20,17 @@ end;
 disp(['creating a new experiment object...']);
 exp = nsd_experiment_dir('exp1',dirname);
 
+ % remove everything from the experiment to start
+exp.database.clear('yes'); % use it only if you mean it
+
+dev = exp.iodevice_load('name','(.*)'), 
+if ~isempty(dev) & ~iscell(dev),
+	dev = {dev};
+end;
+for i=1:numel(dev),
+	exp.iodevice_rm(dev{i});
+end;
+
 disp(['Now adding our acquisition iodevice (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
@@ -32,10 +43,19 @@ dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 dev1 = nsd_iodevice_mfdaq_intan('intan1',dt);
 exp.iodevice_add(dev1);
  
-  % Step 3: let's add a variable
+  % Step 3: let's add a document
 
-myvardir = nsd_variable_branch(exp.database,'Animal parameters');
-myvar = nsd_variable(myvardir, 'Animal age','double','Animal age', 30,'The age of the animal at the time of the experiment (days)','');
+doc = exp.newdocument('nsd_document_subjectmeasurement',...
+	'nsd_document.name','Animal statistics',...
+	'subject.id','vhlab12345', ...
+	'subject.species','Mus musculus',...
+	'subjectmeasurement.measurement','age',...
+	'subjectmeasurement.value',30,...
+	'subjectmeasurement.datestamp','2017-03-17T19:53:57.066Z'...
+	);
+
+ % add it here
+exp.database_add(doc);
 
   % Now let's print some statistics
 
@@ -60,5 +80,4 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-
-
+test_intan_flat_saved(dirname)

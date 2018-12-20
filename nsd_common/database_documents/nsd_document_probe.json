@@ -10,7 +10,8 @@
 	},
 	"probe": {
 		"name":							"",
-		"reference":						""
+		"reference":						"",
+		"type":							""
 	}
 }
 

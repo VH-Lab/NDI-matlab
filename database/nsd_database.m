@@ -81,32 +81,47 @@ classdef nsd_database
 			% If there is no NSD_DOCUMENT object with that ID, then empty is returned ([]).
 			%
 				if nargin<3,
-					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document);
+					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document_id);
 				else,
-					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document, version);
+					[nsd_document_obj, version] = do_read(nsd_database_obj, nsd_document_id, version);
 				end
 		end % read()
 
-		function [nsd_binarydoc, version] = binarydoc(nsd_database_obj, nsd_document_or_id, version)
-			% BINARYDOC - return an NSD_BINARYDOC that corresponds to a document id
+		function [nsd_binarydoc_obj, version] = openbinarydoc(nsd_database_obj, nsd_document_or_id, version)
+			% OPENBINARYDOC - open and lock an NSD_BINARYDOC that corresponds to a document id
 			%
 			% [NSD_BINARYDOC_OBJ, VERSION] = BINARYDOC(NSD_DATABASE_OBJ, NSD_DOCUMENT_OR_ID, [VERSION])
 			%
-			% Return the NSD_BINARYDOC object and VERSION that corresponds to an NSD_DOCUMENT and
+			% Return the open NSD_BINARYDOC object and VERSION that corresponds to an NSD_DOCUMENT and
 			% the requested version (the latest version is used if the argument is omitted).
 			% NSD_DOCUMENT_OR_ID can be either the document id of an NSD_DOCUMENT or an NSD_DOCUMENT object itsef.
 			%
+			% Note that this NSD_BINARYDOC_OBJ must be closed and unlocked with NSD_DATABASE/CLOSEBINARYDOC.
+			% The locked nature of the binary doc is a property of the database, not the document, which is why
+			% the database is needed.
+			% 
 				if isa(nsd_document_or_id,'nsd_document'),
 					nsd_document_id = nsd_document_or_id.doc_unique_id();
 				else,
 					nsd_document_id = nsd_document_or_id;
-				end
+				end;
 				if nargin<3,
 					[nsd_document_obj,version] = nsd_database_obj.read(nsd_document_id);
 				else,
 					[nsd_document_obj,version] = nsd_database_obj.read(nsd_document_id, version);
 				end;
-				nsd_binarydoc = do_binarydoc(nsd_database_obj, nsd_document_id, version);
+				nsd_binarydoc_obj = do_openbinarydoc(nsd_database_obj, nsd_document_id, version);
+		end; % binarydoc
+
+		function [nsd_binarydoc_obj] = closebinarydoc(nsd_database_obj, nsd_binarydoc_obj)
+			% CLOSEBINARYDOC - close and unlock an NSD_BINARYDOC 
+			%
+			% [NSD_BINARYDOC_OBJ] = CLOSEBINARYDOC(NSD_DATABASE_OBJ, NSD_BINARYDOC_OBJ)
+			%
+			% Close and lock an NSD_BINARYDOC_OBJ. The NSD_BINARYDOC_OBJ must be unlocked in the
+			% database, which is why it is necessary to call this function through the database.
+			%
+				nsd_binarydoc_obj = do_closebinarydoc(nsd_database_obj, nsd_binarydoc_obj);
 		end; % binarydoc
 
 		function nsd_database_obj = remove(nsd_database_obj, nsd_document_id, versions)
@@ -138,6 +153,31 @@ classdef nsd_database
 				docids = {}; % needs to be overridden
 		end; % alldocids()
 
+		function clear(nsd_database_obj, areyousure)
+			% CLEAR - remove/delete all records from an NSD_DATABASE
+			% 
+			% CLEAR(NSD_DATABASE_OBJ, [AREYOUSURE])
+			%
+			% Removes all documents from the DUMBJSONDB object.
+			% 
+			% Use with care. If AREYOUSURE is 'yes' then the
+			% function will proceed. Otherwise, it will not.
+			%
+			% See also: NSD_DATABASE/REMOVE
+
+				if nargin<2,
+					areyousure = 'no';
+				end;
+				if strcmpi(areyousure,'Yes')
+					ids = nsd_database_obj.alldocids;
+					for i=1:numel(ids), 
+						nsd_database_obj.remove(ids{i}) % remove the entry
+					end
+				else,
+					disp(['Not clearing because user did not indicate he/she is sure.']);
+				end;
+		end % clear
+
 		function [nsd_document_objs,versions] = search(nsd_database_obj, searchparams)
 			% SEARCH - search for an NSD_DOCUMENT from an NSD_DATABASE
 			%
@@ -167,8 +207,10 @@ classdef nsd_database
 		end % do_remove
 		function [nsd_document_objs,versions] = do_search(nsd_database_obj, searchoptions, searchparams) 
 		end % do_search()
-		function [nsd_binarydocobj] = do_binarydoc(nsd_database_obj, nsd_document_id, version) 
-		end % do_binarydoc()
+		function [nsd_binarydoc_obj] = do_openbinarydoc(nsd_database_obj, nsd_document_id, version) 
+		end % do_openbinarydoc()
+		function [nsd_binarydoc_obj] = do_closebinarydoc(nsd_database_obj, nsd_binarydoc_obj) 
+		end % do_closebinarydoc()
 
 	end % Methods (Access=Protected) protected methods
 end % classdef

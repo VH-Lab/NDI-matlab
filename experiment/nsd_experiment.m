@@ -156,10 +156,16 @@ classdef nsd_experiment < handle
 			%
 			% Removes an NSD_DOCUMENT with document id DOC_UNIQUE_ID from the
 			% NSD_EXPERIMENT_OBJ.database. If an NSD_DOCUMENT is passed instead of
-			% DOC_UNIQUE_ID, then its id is retrieved.
+			% DOC_UNIQUE_ID, then its id is retrieved. If it is a cell array of NSD_DOCUMENT
+			% devices, then they are removed in turn.
 			%
 			% See also: DATABASE_ADD, NSD_EXPERIMENT
-			
+				if iscell(doc_unique_id),
+					for i=1:numel(doc_unique_id), 
+						nsd_exeriment_obj.database.remove(doc_unique_id{i});
+					end;
+					return;
+				end;
 				if isa(doc_unique_id, 'nsd_document'),
 					doc_unique_id = doc_unique_id.doc_unique_id(); % well that's confusing but correct
 				end;

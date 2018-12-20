@@ -65,7 +65,8 @@ classdef  nsd_matlabdumbjsondb < nsd_database
 			if nargin<3,
 				versions = [];
 			end;
-			nsd_matlabdumbjsondb_obj = nsd_matlabdumbjsondb_obj.db.read(nsd_document_id, versions);
+			nsd_matlabdumbjsondb_obj = nsd_matlabdumbjsondb_obj.db.remove(nsd_document_id, versions);
+			
 		end; % do_remove
 
 		function [nsd_document_objs,doc_versions] = do_search(nsd_matlabdumbjsondb_obj, searchoptions, searchparams)
@@ -76,15 +77,26 @@ classdef  nsd_matlabdumbjsondb < nsd_database
 			end;
 		end; % do_search()
 
-		function [nsd_binarydoc_obj] = do_binarydoc(nsd_matlabdumbjsondb_obj, nsd_document_id, version)
+		function [nsd_binarydoc_obj] = do_openbinarydoc(nsd_matlabdumbjsondb_obj, nsd_document_id, version)
 			nsd_binarydoc_obj = [];
-			fid = nsd_matlabdumbjsondb_obj.openbinaryfile(nsd_document_id, version);
+			fid = nsd_matlabdumbjsondb_obj.db.openbinaryfile(nsd_document_id, version);
 			if fid>0,
 				[filename,permission,machineformat,encoding] = fopen(fid);
 				nsd_binarydoc_obj = nsd_binarydoc_matfid('fid',fid,'fullpathfilename',filename,...
 					'machineformat',machineformat,'permission',permission);
+				nsd_binarydoc_obj.frewind(); % move to beginning of the file
 			end
 		end; % do_binarydoc()
 
+		function [nsd_binarydoc_matfid_obj] = do_closebinarydoc(nsd_matlabdumbjsondb_obj, nsd_binarydoc_matfid_obj)
+			% DO_CLOSEBINARYDOC - close and unlock an NSD_BINARYDOC_MATFID_OBJ
+			%
+			% NSD_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NSD_MATLABDUMBJSONDB_OBJ, NSD_BINARYDOC_MATFID_OBJ)
+			%
+			% Close and unlock the binary file associated with NSD_BINARYDOC_OBJ.
+			%	
+				nsd_matlabdumbjsondb_obj.db.closebinaryfile(nsd_binarydoc_matfid_obj.fid);
+				nsd_binarydoc_matfid_obj.fclose(); 
+		end; % do_closebinarydoc()
 	end;
 end

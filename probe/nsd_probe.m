@@ -261,5 +261,26 @@ classdef nsd_probe < nsd_epochset
 					strcmp(lower(nsd_probe_obj.type),lower({epochcontents.type}));  % we have a match
 		end % epochcontentsmatch()
 
+		function nsd_document_obj = newdocument(nsd_probe_obj, epochid)
+			% NEWDOCUMENT - return a new database document of type NSD_DOCUMENT based on a probe
+			%
+			% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_PROBE_OBJ, [EPOCHID])
+			%
+			% Fill out the fields of an NSD_DOCUMENT_OBJ of type 'nsd_document_probe'
+			% with the corresponding 'name' and 'reference' fields of the probe NSD_PROBE_OBJ.
+			% If EPOCHID is provided, then an EPOCHID field is filled out as well
+			% in accordance to 'nsd_document_epochid'.
+			%
+				nsd_document_obj = nsd_probe_obj.experiment.newdocument('nsd_document_probe',...
+					'probe.name',probe.name,'probe.type',probe.type,'probe.reference',probe.reference);
+
+				if nargin>2,
+					newdoc = nsd_probe_obj.experiment.newdocument('nsd_document_epochid',...
+						'epochid', epochid);
+					error(['need document concatenation'])
+				end
+		end;
+
+
 	end % methods
 end
