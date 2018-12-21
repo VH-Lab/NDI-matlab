@@ -97,6 +97,29 @@ classdef nsd_document
 				nsd_document_obj.document_properties = newproperties;
 		end; % setproperties
 
+		function nsd_document_obj_out = plus(nsd_document_obj_a, nsd_document_obj_b)
+			% PLUS - merge two NSD_DOCUMENT objects
+			%
+			% NSD_DOCUMENT_OBJ_OUT = PLUS(NSD_DOCUMENT_OBJ_A, NSD_DOCUMENT_OBJ_B)
+			%
+			% Merges the NSD_DOCUMENT objects A and B. First, the 'document_class'
+			% superclasses are merged. Then, the fields that are in B but are not in A
+			% are added to A. The result is returned in NSD_DOCUMENT_OBJ_OUT.
+			% Note that any fields that A has that are also in B will be preserved; no elements of
+			% those fields of B will be combined with A.
+			%
+				nsd_document_obj_out = nsd_document_obj_a;
+				% Step 1): Merge superclasses
+				nsd_document_obj_out.document_properties.document_class.superclasses = ...
+					(cat(1,nsd_document_obj_out.document_properties.document_class.superclasses,...
+						nsd_document_obj_b.document_properties.document_class.superclasses));
+
+				% Step 2): Merge the other fields
+				otherproperties = rmfield(nsd_document_obj_b.document_properties, 'document_class');
+				nsd_document_obj_out.document_properties = structmerge(nsd_document_obj_out.document_properties,...
+					otherproperties);
+		end % plus() 
+
 	end % methods
 
 	methods (Static)
