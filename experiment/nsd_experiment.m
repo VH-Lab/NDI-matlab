@@ -3,7 +3,8 @@ classdef nsd_experiment < handle
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
-		database          % An array of NSD_VARIABLE_BRANCH objects associated with this experiment
+		unique_reference  % A unique code that uniquely identifies this experiment
+		database          % An NSD_DATABASE associated with this experiment
 		iodevice          % An array of NSD_IODEVICE objects associated with this experiment
 		syncgraph         % An NSD_SYNCGRAPH object related to this experiment
 		cache             % An NSD_CACHE object for the experiment's use
@@ -26,11 +27,26 @@ classdef nsd_experiment < handle
 			%   NSD_EXPERIMENT/GETPATH, NSD_EXPERIMENT/GETREFERENCE
 
 				nsd_experiment_obj.reference = reference;
+				nsd_experiment_obj.unique_reference = nsd_unique_id;
 				nsd_experiment_obj.iodevice = nsd_dbleaf_branch('','device',{'nsd_iodevice'},1);
-				nsd_experiment_obj.database = nsd_variable_branch('','database',0);
+				nsd_experiment_obj.database = [];
 				nsd_experiment_obj.syncgraph = nsd_syncgraph(nsd_experiment_obj);
 				nsd_experiment_obj.cache = nsd_cache();
 		end
+
+		%%%%%% REFERENCE METHODS
+	
+		function refstr = unique_reference_string(nsd_experiment_obj)
+			% UNIQUE_REFERENCE_STRING - return the unique reference string for this experiment
+			%
+			% REFSTR = UNIQUE_REFERENCE_STRING(NSD_EXPERIMENT_OBJ)
+			%
+			% Returns the unique reference string for the NSD_EXPERIMENT.
+			% REFSTR is a combination of the REFERENCE property of NSD_EXPERIMENT_OBJ
+			% and the UNIQUE_REFERENCE property of NSD_EXPERIMENT_OBJ, joined with a '_'.
+
+				refstr = [nsd_experiment_obj.reference '_' nsd_experiment_obj.unique_reference];
+		end % unique_reference_string()
 
 		%%%%%% DEVICE METHODS
 
@@ -49,7 +65,8 @@ classdef nsd_experiment < handle
 					error(['dev is not a nsd_iodevice']);
 				end;
 				nsd_experiment_obj.iodevice.add(dev);
-			end 
+		end;
+
 		function nsd_experiment_obj = iodevice_rm(nsd_experiment_obj, dev)
 			% IODEVICE_RM - Remove a sampling device from an NSD_EXPERIMENT object
 			%
@@ -64,8 +81,8 @@ classdef nsd_experiment < handle
 					nsd_experiment_obj.iodevice.remove(leaf.objectfilename);
 				else,
 					error(['No iodevice named ' dev.name ' found.']);
-				end
-			end
+				end;
+		end;
 
 		function dev = iodevice_load(nsd_experiment_obj, varargin)
 			% LOAD - Load iodevice objects from an NSD_EXPERIMENT
@@ -87,44 +104,75 @@ classdef nsd_experiment < handle
 				else,
 					for i=1:numel(dev),
 						dev{i}=dev{i}.setexperiment(nsd_experiment_obj);
-					end
-				end
-		end % ioiodevice_load()	
+					end;
+				end;
+		end; % iodevice_load()	
 
-		% DATABASE / NSD_VARIABLE METHODS
+		% NSD_DATABASE / NSD_DOCUMENT METHODS
 
-		function nsd_experiment_obj = database_add(nsd_experiment_obj, var)
-			%DATABASE_ADD - Add an NSD_VARIABLE to an NSD_EXPERIMENT object
+		function nsd_document_obj = newdocument(nsd_experiment_obj, document_type, varargin)
+		% NEWDOCUMENT - create a new NSD_DATABASE document of type NSD_DOCUMENT
+		%
+		% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_EXPERIMENT_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)
+		%
+		% Creates an empty database document NSD_DOCUMENT_OBJ. DOCUMENT_TYPE is
+		% an optional argument and can be any type that confirms to the .json
+		% files in $NSD_COMMON/database_documents/*, a URL to such a file, or
+		% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
+		% to be 'nsd_document.json'.
+		%
+		% If additional PROPERTY values are specified, they are set to the VALUES indicated.
+		%
+		% Example: mydoc = nsd_experiment_obj.newdocument('nsd_document','nsd_document.name','myname');
+		%
+			if nargin<2,
+				document_type = 'nsd_document.json';
+			end
+			inputs = cat(2,varargin,{'nsd_document.experiment_unique_reference', nsd_experiment_obj.unique_reference_string()});
+			nsd_document_obj = nsd_document(document_type, inputs);
+		end; %newdocument()
+
+		function nsd_experiment_obj = database_add(nsd_experiment_obj, document)
+			%DATABASE_ADD - Add an NSD_DOCUMENT to an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, VAR)
+			% NSD_EXPERIMENT_OBJ = DATABASE_ADD(NSD_EXPERIMENT_OBJ, NSD_DOCUMENT_OBJ)
 			%
-			% Adds the NSD_VARIABLE VAR to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
+			% Adds the NSD_DOCUMENT NSD_DOCUMENT_OBJ to the NSD_EXPERIMENT NSD_EXPERIMENT_OBJ
 			%
-			% The variable can be accessed by referencing NSD_EXPERIMENT_OBJ.database
+			% The variable can be queried by referencing NSD_EXPERIMENT_OBJ.database
 			%  
-			% See also: DATABASE_RM, NSD_EXPERIMENT
+			% See also: DATABASE_RM, NSD_EXPERIMENT, NSD_DATABASE, NSD_DATABASE/SEARCH
 
-				if ~isa(var,'nsd_variable')|~isa(var,'nsd_variable_branch'), error(['var is not an NSD_VARIABLE']); end;
-				nsd_experiment_obj.variable.add(var);
-		end
+				if ~isa(document,'nsd_document'),
+					error(['document is not an NSD_DOCUMENT']);
+				end;
+				nsd_experiment_obj.database.add(document);
+		end; % database_add()
 
-		function nsd_experiment_obj = database_rm(nsd_experiment_obj, var)
-			% DATABASE_RM - Remove an NSD_VARIABLE from an NSD_EXPERIMENT object
+		function nsd_experiment_obj = database_rm(nsd_experiment_obj, doc_unique_id)
+			% DATABASE_RM - Remove an NSD_DOCUMENT with a given document ID from an NSD_EXPERIMENT object
 			%
-			%   NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, VAR)
+			% NSD_EXPERIMENT_OBJ = DATABASE_RM(NSD_EXPERIMENT_OBJ, DOC_UNIQUE_ID)
 			%
-			% 
-			% Removes the variable VAR from the NSD_EXPERIMENT_OBJ.database.
+			% Removes an NSD_DOCUMENT with document id DOC_UNIQUE_ID from the
+			% NSD_EXPERIMENT_OBJ.database. If an NSD_DOCUMENT is passed instead of
+			% DOC_UNIQUE_ID, then its id is retrieved. If it is a cell array of NSD_DOCUMENT
+			% devices, then they are removed in turn.
 			%
 			% See also: DATABASE_ADD, NSD_EXPERIMENT
-			
-				leaf = nsd_experiment_obj.variable.load('name',var.name);
-				if ~isempty(leaf),
-					nsd_experiment_obj.variable.remove(leaf.objectfilename);
-				else,
-					error(['No variable named ' var.name ' found.']);
-				end
-		end
+				if iscell(doc_unique_id),
+					for i=1:numel(doc_unique_id), 
+						nsd_exeriment_obj.database.remove(doc_unique_id{i});
+					end;
+					return;
+				end;
+				if isa(doc_unique_id, 'nsd_document'),
+					doc_unique_id = doc_unique_id.doc_unique_id(); % well that's confusing but correct
+				end;
+				if ~isempty(doc_unique_id),
+					nsd_experiment_obj.database.remove(doc_unique_id);
+				end;
+		end; % database_rm
 
 		function nsd_experiment_obj = syncgraph_addrule(nsd_experiment_obj, rule)
 			% SYNCGRAPH_ADDRULE - add an NSD_SYNCRULE to the syncgraph
@@ -135,7 +183,7 @@ classdef nsd_experiment < handle
 			% object NSD_EXPERIMENT_OBJ. 
 			%
 				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.addrule(rule);
-		end % syncgraph_addrule
+		end; % syncgraph_addrule
 
 		function nsd_experiment_obj = syncgraph_rmrule(nsd_experiment_obj, index)
 			% SYNCGRAPH_RMRULE - remove an NSD_SYNCRULE from the syncgraph
@@ -147,7 +195,7 @@ classdef nsd_experiment < handle
 			%
 				nsd_experiment_obj.syncgraph = nsd_experiment_obj.syncgraph.removerule(index);
 
-		end % syncgraph_rmrule
+		end; % syncgraph_rmrule
 
 		%%%%%% PATH methods
 
@@ -166,7 +214,7 @@ classdef nsd_experiment < handle
 			%
 			% See also: NSD_EXPERIMENT
 			p = [];
-		end
+		end;
 
 		%%%%%% REFERENCE methods
 
@@ -191,7 +239,7 @@ classdef nsd_experiment < handle
 
 				if isempty(z),
 					tryiodevice = 1;
-					trydatabase = 1;
+					trydatabase = 0;
 					tryprobelist = 1;
 				else,
 					if isa(z,'nsd_probe'),
@@ -199,9 +247,9 @@ classdef nsd_experiment < handle
 					elseif isa(z,'nsd_iodevice'),
 						tryiodevice = 1;
 					else,
-						trydatabase = 1;
-					end
-				end
+						trydatabase = 0;
+					end;
+				end;
 
 				if tryiodevice,
 					obj_here = nsd_experiment_obj.iodevice.load('name',obj_name);
@@ -209,20 +257,9 @@ classdef nsd_experiment < handle
 						if strcmp(class(obj_here),obj_classname),
 							% it is our match
 							obj = obj_here;
-							return
-						end
-					end
-				end
-
-				if trydatabase,
-					obj_here = nsd_experiment_obj.database.load('name',obj_name);
-					if ~isempty(obj_here),
-						if strcmp(class(obj_here),obj_classname),
-							% it is our match
-							obj = obj_here
-							return
-						end
-					end
+							return;
+						end;
+					end;
 				end
 
 				if tryprobelist,
@@ -231,11 +268,11 @@ classdef nsd_experiment < handle
 						if strcmp(class(probes{i}),obj_classname) & strcmp(probes{i}.epochsetname,obj_name),
 							obj = probes{i}; 
 							return;
-						end
-					end
+						end;
+					end;
 				end
 
-		end % findexpobj
+		end; % findexpobj
 
 		function probes = getprobes(nsd_experiment_obj, varargin)
 			% GETPROBES - Return all NSD_PROBES that are found in NSD_IODEVICE epoch contents entries
@@ -279,8 +316,8 @@ classdef nsd_experiment < handle
 						includehere = isa(probes{i},varargin{1});
 						if includehere,
 							include(end+1) = i;
-						end
-					end
+						end;
+					end;
 					probes = probes(include);
 				elseif numel(varargin)>1,
 					include = [];
@@ -295,16 +332,16 @@ classdef nsd_experiment < handle
 									includehere = strcmp(value,varargin{j+1});
 								else,
 									includehere = (value==varargin{j+1});
-								end
-							end
-						end
+								end;
+							end;
+						end;
 						if includehere,
 							include(end+1) = i;
-						end
-					end
+						end;
+					end;
 					probes = probes(include);
-				end
-		end % getprobes
-
-	end % methods
+				end;
+		end; % getprobes
+	end; % methods
 end % classdef
+

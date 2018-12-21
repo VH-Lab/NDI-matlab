@@ -1,7 +1,8 @@
 function multiple_epoch_directory = test_nsd_iodevice_image_tiffstack_multipleepoch()
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
-example_directory = [userpath filesep 'tools' filesep 'NSD' filesep 'example_experiments'];
+nsd_globals;
+example_directory = [nsdexampleexperpath];
 input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
 example_exp = nsd_experiment_dir('exp1',input_dir_name);
 example_filetree = nsd_filetree(example_exp,'.*\.tif\>');

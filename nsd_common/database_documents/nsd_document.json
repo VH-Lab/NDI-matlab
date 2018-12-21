@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/nsd_document.json",
+		"validation":						"$NSDSCHEMAPATH\/nsd_document_schema.json",
+		"class_name":						"nsd_document",
+		"class_version":					1,
+		"superclasses": [ ]
+	},
+	"nsd_document": {
+		"experiment_unique_reference":				"",
+		"document_unique_reference":				"",
+		"name":							"",
+		"type":							"",
+		"datestamp":						"2018-12-05T18:36:47.241Z",
+		"database_version":					1
+	}
+}
+

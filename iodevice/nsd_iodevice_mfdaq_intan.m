@@ -159,15 +159,21 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
+			% CHANNELTYPE can be either a string or a cell array of
+			% strings the same length as the vector CHANNEL.
+			% If CHANNELTYPE is a single string, then it is assumed that
+			% that CHANNELTYPE applies to every entry of CHANNEL.
 			%
 			% SR is the list of sample rate from specified channels
-
+			%
+				sr = [];
 				filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
 				filename = nsd_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				head = read_Intan_RHD2000_header(filename);
-				for i=1:numel(channeltype),
-					freq_fieldname = nsd_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype{i});
+				for i=1:numel(channel),
+					channeltype_here = celloritem(channeltype,i);
+					freq_fieldname = nsd_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
 					sr(i) = getfield(head.frequency_parameters,freq_fieldname);
 				end
 		end % samplerate()
@@ -184,7 +190,7 @@ classdef nsd_iodevice_mfdaq_intan < nsd_iodevice_mfdaq
 			%
 			% See also: NSD_CLOCKTYPE, EPOCHCLOCK
 			%
-				filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+				filename = nsd_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch_number);
 				filename = nsd_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				header = read_Intan_RHD2000_header(filename);

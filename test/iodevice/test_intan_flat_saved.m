@@ -13,9 +13,7 @@ function test_intan_flat_saved(dirname)
 
 if nargin<1,
 	nsd_globals;
-
-	mydirectory = [nsdpath filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp1_eg_saved'];
+	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
@@ -47,9 +45,3 @@ plot(time,data);
 ylabel('Data');
 xlabel('Time (s)');
 box off;
-
-findmydir = load(exp.database,'name','Animal parameters'),
-
-findmyvar = load(findmydir,'name','Animal age')
-
-keyboard

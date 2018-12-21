@@ -1,21 +1,26 @@
-function test_nsd_dbleaf_branch(dirname)
+function test_nsd_dbleaf_branch(testing_memory)
 % TEST_NSD_DBLEAF_BRANCH - Test and demonstrate use of NSD_DBLEAF and NSD_DBLEAF_BRANCH classes
 %
-%  TEST_NDS_DBLEAF_BRANCH(DIRNAME)
+%  TEST_NDS_DBLEAF_BRANCH(TESTING_MEMORY)
 %
-% Performs tests and demonstrations of the NSD_DBLEAF class and NSD_DBLEAF_BRANCH classes
-% while saving data in the directory DIRNAME (full path specification).
-%
-% If DIRNAME is empty, then TEST_NSD_DBLEAF_BRANCH tests the memory version
+% Performs tests and demonstrations of the NSD_DBLEAF class and
+% NSD_DBLEAF_BRANCH classes. If MEMORY is 1, then the test is done
+% in memory. If TESTING_MEMORY is 0, then the test is done on disk
+% at the directory [NSDTESTPATH filesep 'test_nsd_dbleaf_branch_dir'].
 %
 
-testing_memory = isempty(dirname);
 
 if ~testing_memory,
-	disp(['Start with a blank directory:'])
-
-	try, rmdir(dirname,'s'); end;
-	try, mkdir(dirname); end;
+	nsd_globals
+	dirname = [nsdtestpath filesep 'test_nsd_dbleaf_branch_dir'];
+	if ~exist(dirname),
+		mkdir(dirname);
+	else,
+		rmdir(dirname,'s'); % clear this directory
+		mkdir(dirname);
+	end;
+else,
+	dirname = '';
 end;
 
   % create an NSD_DBLEAF object

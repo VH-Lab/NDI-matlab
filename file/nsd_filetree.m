@@ -254,7 +254,7 @@ classdef nsd_filetree < nsd_base & nsd_epochset_param
 					id = text2cellstr(eidfname);
 					id = id{1};
 				else,
-					id = ['epoch_' num2hex(now) '_' num2hex(rand)];
+					id = ['epoch_' nsd_unique_id];
 					str2text(eidfname,id);
 				end
 		end %epochid()

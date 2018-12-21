@@ -270,7 +270,7 @@ classdef nsd_iodevice_mfdaq_sg < nsd_iodevice_mfdaq
             %reading from channel 1 in list returned
             %Reads nTrodes
             %WARNING channeltype hard coded, ask Steve
-            if (strcmp(nsd_iodevice_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(nsd_device_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
+            if (strcmp(nsd_iodevice_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(nsd_iodevice_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
 
                 data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 

@@ -44,7 +44,6 @@ classdef nsd_probe < nsd_epochset
 			%
 			%  NSD_PROBE is an abstract class, and a specific implementation must be called.
 			%
-
 				if nargin==0,
 					experiment = [];
 					name = [];
@@ -261,5 +260,45 @@ classdef nsd_probe < nsd_epochset
 					strcmp(lower(nsd_probe_obj.type),lower({epochcontents.type}));  % we have a match
 		end % epochcontentsmatch()
 
+		function nsd_document_obj = newdocument(nsd_probe_obj, epochid)
+			% NEWDOCUMENT - return a new database document of type NSD_DOCUMENT based on a probe
+			%
+			% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_PROBE_OBJ, [EPOCHID])
+			%
+			% Fill out the fields of an NSD_DOCUMENT_OBJ of type 'nsd_document_probe'
+			% with the corresponding 'name' and 'reference' fields of the probe NSD_PROBE_OBJ.
+			% If EPOCHID is provided, then an EPOCHID field is filled out as well
+			% in accordance to 'nsd_document_epochid'.
+			%
+				nsd_document_obj = nsd_probe_obj.experiment.newdocument('nsd_document_probe',...
+					'probe.name',nsd_probe_obj.name,'probe.type',nsd_probe_obj.type,...
+					'probe.reference',nsd_probe_obj.reference);
+
+				if nargin>1,
+					newdoc = nsd_probe_obj.experiment.newdocument('nsd_document_epochid',...
+						'epochid', epochid);
+					nsd_document_obj = nsd_document_obj + newdoc;
+				end
+		end; % newdocument
+
+		function sq = searchquery(nsd_probe_obj, epochid)
+			% SEARCHQUERY - return a search query for an NSD_DOCUMENT based on this probe
+			%
+			% SQ = SEARCHQUERY(NSD_PROBE_OBJ, [EPOCHID])
+			%
+			% Returns a search query for the fields of an NSD_DOCUMENT_OBJ of type 'nsd_document_probe'
+			% with the corresponding 'name' and 'reference' fields of the probe NSD_PROBE_OBJ.
+			% If EPOCHID is provided, then an EPOCHID field is filled out as well.
+			%
+				sq = {'nsd_document.experiment_unique_reference',...
+					nsd_probe_obj.experiment.unique_reference_string(),...
+					'probe.name',nsd_probe_obj.name,...
+					'probe.type',nsd_probe_obj.type,...
+					'probe.reference',nsd_probe_obj.reference};
+
+				if nargin>1,
+					sq = cat(2,sq,{'epochid',epochid});
+				end
+		end;
 	end % methods
 end

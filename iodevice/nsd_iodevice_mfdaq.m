@@ -171,7 +171,7 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 		end % readevents
 
 		function [data, timeref] = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
-			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
 			%  [DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
@@ -193,13 +193,17 @@ classdef nsd_iodevice_mfdaq < nsd_iodevice
 		end % readevents_epochsamples
 
                 function sr = samplerate(self, epoch, channeltype, channel)
-			%
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
 			%
 			% SR is an array of sample rates from the specified channels
 			%
+			% CHANNELTYPE can be either a string or a cell array of
+			% strings the same length as the vector CHANNEL.
+			% If CHANNELTYPE is a single string, then it is assumed that
+			% that CHANNELTYPE applies to every entry of CHANNEL.
+			% 
 			% Note: in the abstract class NSD_IODEVICE_MFDAQ, this returns empty.
 			sr = [];  % this is an abstract class
 		end

@@ -13,9 +13,7 @@ function test_nsd_probe(dirname)
 
 if nargin<1,
 	nsd_globals;
-
-	mydirectory = [nsdpath filesep 'example_experiments' ];
-	dirname = [mydirectory filesep 'exp1_eg_saved'];
+	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading experiment from directory ' dirname ' ...']);
@@ -40,3 +38,4 @@ plot(time,data(:,1));
 ylabel('Data on channel 1 of probe 1');
 xlabel('Time (s)');
 box off;
+

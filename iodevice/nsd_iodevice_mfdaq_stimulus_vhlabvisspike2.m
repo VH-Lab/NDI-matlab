@@ -208,7 +208,6 @@ classdef nsd_iodevice_mfdaq_stimulus_vhlabvisspike2 < nsd_iodevice_mfdaq & nsd_i
 			%
 			% SR is an array of sample rates from the specified channels
 			%
-
 			   %so, these are all events, and it doesn't much matter, so
 			   % let's make a guess that should apply well in all cases
 
