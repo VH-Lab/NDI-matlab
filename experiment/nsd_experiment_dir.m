@@ -38,8 +38,9 @@ classdef nsd_experiment_dir < nsd_experiment
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
 					nsd_experiment_dir_obj.unique_reference = strtrim(textfile2char([nsd_experiment_dir_obj.nsdpathname() filesep 'unique_reference.txt']));
-				elseif nargin==1,
-					error(['Could not load the UNIQUE REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '.']);
+				else,
+					warning(['Could not load the UNIQUE REFERENCE field from the path ' nsd_experiment_dir_obj.nsdpathname() '. Making one']);
+					nsd_experiment_dir_obj.unique_reference = nsd_unique_id();
 				end
 
 				d = dir([nsd_experiment_dir_obj.nsdpathname() filesep 'iodevice_object_*']);

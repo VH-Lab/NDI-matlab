@@ -135,11 +135,35 @@ classdef nsd_database
 			% to NSD_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
 			% the entries in VERSIONS are removed.
 			%
-				if nargin<3,
-					nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id);
-				else,
-					nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id, versions);
-				end
+			% If an NSD_DOCUMENT is passed instead of an ID, then the NSD_DOCUMENT_ID is extracted
+			% using NSD_DOCUMENT/DOC_UNIQUE_ID. If a cell array of NSD_DOCUMENT is passed instead, then
+			% all of the documents are removed.
+			%
+				if isempty(nsd_document_id),
+					return; % nothing to do
+				end;
+
+				nsd_document_id_list = {};
+				
+				if ~iscell(nsd_document_id),
+					nsd_document_id = {nsd_document_id};
+				end;
+				
+				for i=1:numel(nsd_document_id)
+					if isa(nsd_document_id{i}, 'nsd_document'),
+						nsd_document_id_list{end+1} = nsd_document_id{i}.doc_unique_id();
+					else,
+						nsd_document_id_list{end+1} = nsd_document_id{i};
+					end;
+				end;
+
+				for i=1:numel(nsd_document_id_list),
+					if nargin<3,
+						nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id_list{i});
+					else,
+						nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id{i}, versions);
+					end;
+				end;
 		end % remove()
 
 		function docids = alldocids(nsd_database_obj)
