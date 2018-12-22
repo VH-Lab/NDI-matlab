@@ -59,4 +59,4 @@ Still in early development
 
 ## Test code
 
-There is a set of test code that one can run all at once using the function `nsd_testsuite.m`.
+There is a set of test code that one can run all at once using the function `nsd_testsuite.m`. The directory `test` contains a number of subdirectories with test code. The file `nsd_testsuite_list.txt` has an up-to-date list of the test functions that are current.
