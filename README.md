@@ -57,3 +57,6 @@ Still in early development
 
 - Most of the time, class names should include the full parentage of the object, starting with the basic classes for NSD: nsd_experiment, nsd_iodevice, nsd_probe. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called `nsd_iodevice_mfdaq_mycompany` to indicate that the object is descended from the `nsd_iodevice` and `nsd_iodevice_mfdaq` objects. Let's make exceptions if putting the full parentage gets cumbersome without adding clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes `nsd_experiment`, `nsd_database`, and `nsd_iodevice`).
 
+## Test code
+
+There is a set of test code that one can run all at once using the function `nsd_testsuite.m`.
