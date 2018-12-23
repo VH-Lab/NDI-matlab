@@ -43,6 +43,13 @@ Still in early development
       - `nsd_matlabdumbjsondb`: A Matlab implementation of a very simple database (`dumbjsondb` in https://github.com/VH-Lab/vhlab-toolbox-matlab)
       - `nsd_binarydoc_matfid`: A Matlab implementation for reading/writing files that are on the machine's filesystem
 
+- Timing objects
+   - `nsd_clocktype`: Types of clocks (such as UTC, local, global, global experiment)
+   - `nsd_timemapping`: a mapping between epochs and iodevices
+   - `nsd_syncgraph`: an object that finds mappings from one device and epoch to another using all known timing relationships among iodevices
+   - `nsd_syncrule`: A rule for describing the relationship between data collected on different iodevices
+   - `nsd_syncrule_filematch`: A rule that describes a timing relationship as "equal" if two epochs contain raw data files in common
+
 ## Conventions
 
 - Channels, samples, and other quantities are numbered from 1..N
