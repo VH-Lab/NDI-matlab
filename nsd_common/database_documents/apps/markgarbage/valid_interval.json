@@ -5,7 +5,9 @@
 		"class_name":						"markgarbage-valid_interval",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_probe_app.json" }
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_probe.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_app.json" }
 		]
 	},
 	"valid_interval": [
