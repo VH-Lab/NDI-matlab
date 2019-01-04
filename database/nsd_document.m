@@ -216,20 +216,28 @@ classdef nsd_document
 					filename = [nsddocumentpath filesep ...
 						filesepconversion(jsonfilelocationstring(s+numel(searchString):end), nsd_filesep, filesep)];
 				else,
-					filename = jsonfilelocationstring;
-					[p,n,e] = fileparts(filename);
-					if isempty(e),
+					% first, guess that it is a complete path from $NSDDOCUMENTPATH
+					filename = [nsddocumentpath filesep filesepconversion(jsonfilelocationstring,nsd_filesep,filesep)];
+					if ~exist(filename,'file'),
+						% try adding extension
 						filename = [filename '.json'];
 					end;
-					if ~exist(filename,'file'),
-						filename2 = [nsddocumentpath filesep filename];
-						if ~exist(filename2,'file'),
-							error(['Cannot find file ' filename '.']);
-						else,
-							filename = filename2;
-						end
-					end
-				end
+					if ~exist(filename,'file'), 
+						filename = jsonfilelocationstring;
+						[p,n,e] = fileparts(filename);
+						if isempty(e),
+							filename = [filename '.json'];
+						end;
+						if ~exist(filename,'file'),
+							filename2 = [nsddocumentpath filesep filename];
+							if ~exist(filename2,'file'),
+								error(['Cannot find file ' filename '.']);
+							else,
+								filename = filename2;
+							end;
+						end;
+					end;
+				end;
 
 				% filename could be url or filename
 

@@ -37,7 +37,6 @@ if isempty(db),
 		if ~isempty(nsd_databasehierarchy(i).newcode),
 			evalstr = strrep(nsd_databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
 			evalstr = strrep(evalstr,'EXPERIMENT_REFERENCE',experiment_unique_reference);
-			evalstr,
 			eval(evalstr);
 		end;
 		break;

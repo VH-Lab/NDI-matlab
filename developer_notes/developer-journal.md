@@ -14,8 +14,8 @@ We wondered if the file reading could somehow be encapsulated in the database ra
 
 ### 2019-01-04
 
-I need to keep making progress on our analysis of Arani's intracelluar data. I will put development questions aside and just use the system for a few days.
+I need to keep making progress on our analysis of Arani's intracellular data. I will put development questions aside and just use the system for a few days.
 
 I will keep working on the draft paper, but only 30 minutes/day
 
-
+I will only fix small bugs in code and docs needed to propel work on intracellular data

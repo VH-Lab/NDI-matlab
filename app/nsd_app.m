@@ -27,7 +27,6 @@ classdef nsd_app
 				nsd_app_obj.name = name;
 		end % nsd_app()
 
-
 		% functions related to generic variables
 
 		function an = varappname(nsd_app_obj)
@@ -36,86 +35,38 @@ classdef nsd_app
 			% AN = VARAPPNAME(NSD_APP_OBJ)
 			%
 			% Returns the name of the app modified for use as a variable name, either as
-			% a Matlab variable or a name in a path.
+			% a Matlab variable or a name in a document.
 			%
 				an = nsd_app_obj.name;
 				if ~isvarname(an),
 					an = matlab.lang.makeValidName(an);
-				end
-		end %
+				end;
+		end; % varappname ()
 
-		function mp = myvarpath(nsd_app_obj, obj) % suggest to rename to appvarpath, myvarpath is hard to remember with all methods
-			% MYVARPATH - return the standard variable path for my application underneath a given object
+		function c = searchquery(nsd_app_obj)
+			% SEARCHQUERY - return a search query for an NSD_DOCUMENT related to this app
 			%
-			% MP = MYVARPATH(NSD_APP_OBJ, OBJ)
+			% C = SEARCHQUERY(NSD_APP_OBJ)
 			%
-			% Returns the standard variable path for the application
-			% NSD_APP_OBJ to be placed near the NSD object OBJ.
+			% Returns a cell array of strings that allow the creation or searching of an
+			% NSD_DATABASE document for this app with field 'app' that has subfield 'name' equal
+			% to the app's VARAPPNAME.
 			%
-			% For example, if OBJ is an NSD_PROBE object, then this function
-			% calls NSD_APP/PROVEVARPATH.
-			%
-			% If there is no standard location for saving variables for objects of the
-			% same type as OBJ, then empty is returned for MP.
-			%
-			% If not empty, MP ends in an NSD_BRANCHSEP.
-			%
-				mp = nsd_app_obj.varpath(obj);
-				if ~isempty(mp),
-					mp = [mp nsd_app_obj.varappname nsd_branchsep];
-				end
-		end % myvarpath
+				c = {'nsd_document.experiment_unique_reference', ...
+					nsd_app_obj.experiment.unique_reference_string(), ...
+					'app.name',nsd_app_obj.varappname() };
+		end;
 
-		function mpe = myvarpathepoch(nsd_app_obj, obj, epoch)
-			% MYVARPATHEPOCH - return the standard variable path for my application underneath the EPOCH of a given NSD_EPOCHSET object
+		function nsd_document_obj = newdocument(nsd_app_obj)
+			% NEWDOCUMENT - return a new database document of type NSD_DOCUMENT based on an app
 			%
-			% MPE = MYVARPATHEPOCH(NSD_APP_OBJ, OBJ, EPOCH)
+			% NSD_DOCUMENT_OBJ = NEWDOCUMENT(NSD_APP_OBJ)
 			%
-			% Returns the standard variable path for variables related to NSD_EPOCHSET objects at a given EPOCH,
-			% which can be a number or an EPOCHID string.
+			% Creates a blank NSD_DOCUMENT object of type 'nsd_document_app'. The 'app.name' field
+			% is filled out with the name of NSD_APP_OBJ.VARAPPNAME().
 			%
-			% If there is no standard location for saving variables for objects of the same type as OBJ, then empty is returned for MP.
-			%
-			% If not empty, MPE ends in an NSD_BRANCHSEP.
-			%
-				mpe = '';
-				if ~isa(obj,'nsd_epochset'),
-					return; % needs to be an NSD_EPOCHSET
-				end
-
-				epochstring = obj.epochid(epoch);
-
-				mpe = nsd_app_obj.myvarpath(obj);
-				if ~isempty(mpe),
-					mpe = [mpe 'Epoch ' epochstring nsd_branchsep];
-				end
-
-		end % myvarpathepoch()
-
-		% functions related to probe variables
-
-		function pvp = probevarpath(nsd_app_obj, probe)
-			% PROBEVARPATH - return the NSD_VARIABLE_BRANCH path for probe variables
-			%
-			% PVP = PROBEVARPATH(NSD_APP_OBJ, PROBE)
-			%
-			% Return the experiment variable path for variables related to the
-			% NSD_PROBE object PROBE.
-			%
-			% See also: PROBEVARBRANCH
-				pvp = ['probe' nsd_branchsep probe.probestring nsd_branchsep];
-		end % probevarpath
-
-		function pvb = probevarbranch(nsd_app_obj, probe)
-			% PROBEVARBRANCH - return/create the NSD_VARIABLE_BRANCH for an NSD_PROBE object
-			%
-			% PVB = PROBEVARBRANCH(NSD_APP_OBJ, PROBE)
-			%
-			% Returns an NSD_VARIABLE_BRANCH object that contains variables related to
-			% a specific NSD_PROBE object PROBE.
-			%
-				pvb = probe.experiment.database.path2nsd_variable(probevarpath(nsd_app_obj,probe),1);
-		end % probevarbranch
-
-	end % methods
+				c = { 'app.name',nsd_app_obj.varappname() };
+				nsd_document_obj = nsd_app_obj.experiment.newdocument('nsd_document_app', c{:});
+		end;
+	end; % methods
 end

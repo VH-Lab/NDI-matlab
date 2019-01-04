@@ -130,13 +130,15 @@ classdef nsd_database
 			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID) 
 			%     or
 			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT_ID, VERSIONS)
+			%     or 
+			% NSD_DATABASE_OBJ = REMOVE(NSD_DATABASE_OBJ, NSD_DOCUMENT) 
 			%
 			% Removes the NSD_DOCUMENT object with the 'document unique reference' equal
 			% to NSD_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
 			% the entries in VERSIONS are removed.
 			%
-			% If an NSD_DOCUMENT is passed instead of an ID, then the NSD_DOCUMENT_ID is extracted
-			% using NSD_DOCUMENT/DOC_UNIQUE_ID. If a cell array of NSD_DOCUMENT is passed instead, then
+			% If an NSD_DOCUMENT is passed, then the NSD_DOCUMENT_ID is extracted using
+			% NSD_DOCUMENT/DOC_UNIQUE_ID. If a cell array of NSD_DOCUMENT is passed instead, then
 			% all of the documents are removed.
 			%
 				if isempty(nsd_document_id),
