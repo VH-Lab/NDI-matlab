@@ -27,8 +27,9 @@ classdef nsd_app_spikesorter < nsd_app
         function spike_sort(nsd_app_spikesorter_obj, name, type, extraction_name, sort_name, sorting_params) %, sorting_params)
 
 			% Extracts probe with name
-			probes = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type) % can add reference
-			probes = probes{1}
+			probes = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
+			% TODO add for loop to extract multiple probes
+			probe = probes{1};
 			%If extraction_params was inputed as a struct then no need to parse it
             if isstruct(sorting_params)
                 sorting_parameters = sorting_params;
@@ -37,16 +38,27 @@ classdef nsd_app_spikesorter < nsd_app
                 sorting_parameters = loadStructArray(sorting_params);
                 % Consider saving in some var_branch_within probe_branch
             else
-                error('unable to handle extraction_params.');
+                error('unable to handle sorting_params.');
             end
 
-			% Integrate for loop for multiple probes
+			% Clear sort within probe with sort_name
+			nsd_app_spikesorter_obj.clear_sort(probe, sort_name);
 
-			extraction_path = [nsd_app_spikesorter_obj.probevarpath(probes) 'nsd_app_spikeextractor' nsd_branchsep extraction_name];
-			swvariable = nsd_app_spikesorter_obj.experiment.database.path2nsd_variable([extraction_path nsd_branchsep 'spikewaves'], 0, 1);
-			concatenated_waves = readvhlspikewaveformfile(swvariable.filename());
-			stvariable = nsd_app_spikesorter_obj.experiment.database.path2nsd_variable([extraction_path nsd_branchsep 'spiketimes'], 0, 1);
-			concatenated_spiketimes = readspiketimesfile(stvariable.filename());
+			% Create sorting parameters nsd_doc
+			sorting_parameters_doc = nsd_app_spikesorter_obj.experiment.newdocument('apps/spikesorter/sorting_parameters', 'sorting_parameters', sorting_parameters) ...
+				+ probe.newdocument() + nsd_app_spikesorter_obj.newdocument();
+
+			% Add doc to database
+			nsd_app_spikesorter_obj.experiment.database.add(sorting_parameters_doc);
+
+
+			% Read spikewaves here
+			spike_extractor = nsd_app_spikeextractor(nsd_app_spikesorter_obj.experiment);
+			spikes = spike_extractor.load_spikes(probe, extraction_name);
+			spikesamples = size(spikes,1);
+			nchannels = size(spikes,2);
+			nspikes = size(spikes,3);
+			concatenated_waves = reshape(spikes,[spikesamples*nchannels,nspikes]);
 
 			%% Spike Features (PCA)
 
@@ -77,16 +89,52 @@ classdef nsd_app_spikesorter < nsd_app
 	        figure(101);
 	        hist(clusterids);
 
+			% Create spike_clusters nsd_doc
+			spike_clusters_doc = nsd_app_spikesorter_obj.experiment.newdocument('apps/spikesorter/spike_clusters', ...
+			'spike_clusters.sort_name', sort_name, ...
+			'spike_clusters.sorting_parameters_file_id', sorting_parameters_doc.doc_unique_id(), ...
+			'spike_clusters.clusterids', clusterids, ...
+			'spike_clusters.numclusters', numclusters) ...
+				+ probe.newdocument() + nsd_app_spikesorter_obj.newdocument();
 
-
-	        clustering_data = var_clustering_data.data;
-	        clustering_data.clusterids = clusterids;
-	        clustering_data.numclusters = numclusters;
-	        var_clustering_data = updatedata(var_clustering_data, clustering_data);
+			% Add doc to database
+			nsd_app_spikesorter_obj.experiment.database.add(spike_clusters_doc);
 
 		end %function
 
+		function b = clear_sort(nsd_app_spikesorter_obj, nsd_probe_obj, sort_name)
+			% CLEAR_SORTING - clear all 'sorted spikes' records for an NSD_PROBE_OBJ from experiment database
+			%
+			% B = CLEAR_SORTING(NSD_APP_SPIKESORTER_OBJ, NSD_EPOCHSET_OBJ)
+			%
+			% Clears all sorting entries from the experiment database for object NSD_PROBE_OBJ.
+			%
+			% Returns 1 on success, 0 otherwise.
+			%%%
+			% See also: NSD_APP_MARKGARBAGE/MARKVALIDINTERVAL, NSD_APP_MARKGARBAGE/SAVEALIDINTERVAL, ...
+			%      NSD_APP_MARKGARBAGE/LOADVALIDINTERVAL
 
+			% Look for any docs matching extraction name and remove them
+			% Concatenate app query parameters and sort_name parameter
+			searchq = cat(2,nsd_app_spikesorter_obj.searchquery(), ...
+				{'spike_sort.sort_name', sort_name});
+
+			% Concatenate probe query parameters
+			searchq = cat(2, searchq, nsd_probe_obj.searchquery());
+
+			% Search and get any docs
+			mydoc = nsd_app_spikesorter_obj.experiment.database.search(searchq);
+
+			% Remove the docs
+			if ~isempty(mydoc),
+
+				for i=1:numel(mydoc),
+					nsd_app_spikesorter_obj.experiment.database.remove(mydoc{i}.doc_unique_id)
+				end
+				warning(['removed ' num2str(i) ' doc(s) with same extraction name'])
+				b = 1;
+			end
+		end % clearvalidinteraval()
 
 		% developer note: it would be great to have a 'markinvalidinterval' companion
 		function b = markvalidinterval(nsd_app_markgarbage_obj, nsd_epochset_obj, t0, timeref_t0, t1, timeref_t1)

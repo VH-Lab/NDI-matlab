@@ -25,17 +25,20 @@ classdef nsd_app_spikeextractor < nsd_app
 		end % nsd_app_spikeextractor() creator
 
         function spike_extract_probes(nsd_app_spikeextractor_obj, name, type, extraction_name, extraction_params) %, sorting_params)
-
+			% extraction_params is a struct or a string address to file
 			% Extracts probe with name
-			probes = nsd_app_spikeextractor_obj.experiment.getprobes('name',name,'type',type); % can add reference
+			probes = nsd_app_spikeextractor_obj.experiment.getprobes('name', name, 'type', type); % can add reference
 
 			% Need to pass in the extraction parameters and sorting parameters
 
+			% TODO Handle an nsd_document
+
 			%If extraction_params was inputed as a struct then no need to parse it
             if isstruct(extraction_params)
+
                 extraction_parameters = extraction_params;
                 % Consider saving in some var_branch_within probe_branch
-            elseif isa(extraction_params, 'char')
+            elseif isa(extraction_params, 'char') % TODO fix loading struct to loading an nsd doc
                 extraction_parameters = loadStructArray(extraction_params);
                 % Consider saving in some var_branch_within probe_branch
             else
@@ -153,11 +156,30 @@ classdef nsd_app_spikeextractor < nsd_app
 			            % WARNING POTENTIAL SOURCE OF BUGS AS NOT ALWAYS WILL WE BE READING AT BEGINNING OF FILE
 			            % SO REMEMBER TO ADD OPTION FOR FULL REWRITE OF FILES
 			            if start_time==1
-% 							if isempty(nsd_app_spikeextractor_obj.loadspikewaves(probe))
-% 								nsd_app_spikeextractor_obj.clearspikewaves(probe)
-% 							end
+							% Clear extraction within probe with extraction_name
+							nsd_app_spikeextractor_obj.clear_extraction(probe, extraction_name)
 
-							[current_waveforms_file, current_spiketimes_file] = nsd_app_spikeextractor_obj.create_extraction_varbranch(probe, extraction_name, extraction_parameters)
+							% Create extraction parameters nsd_doc
+							extraction_parameters_doc = nsd_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/extraction_parameters', 'extraction_parameters', extraction_parameters) ...
+								+ probe.newdocument() + nsd_app_spikeextractor_obj.newdocument();
+							% Create spikes nsd_doc
+							spikes_doc = nsd_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spikes', ...
+							'spike_extraction.extraction_name', extraction_name, ...
+							'spike_extraction.extraction_parameters_file_id', extraction_parameters_doc.doc_unique_id()) ...
+								+ probe.newdocument() + nsd_app_spikeextractor_obj.newdocument();
+
+							times_doc = nsd_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/times', ...
+							'spike_extraction.extraction_name', extraction_name, ...
+							'spike_extraction.extraction_parameters_file_id', extraction_parameters_doc.doc_unique_id()) ...
+								+ probe.newdocument() + nsd_app_spikeextractor_obj.newdocument();
+
+							% Add docs to database
+							nsd_app_spikeextractor_obj.experiment.database.add(extraction_parameters_doc);
+							nsd_app_spikeextractor_obj.experiment.database.add(spikes_doc);
+							nsd_app_spikeextractor_obj.experiment.database.add(times_doc);
+
+							% WARNING spike extractor varbranch here
+							%[current_waveforms_file, current_spiketimes_file] = nsd_app_spikeextractor_obj.create_extraction_varbranch(probe, extraction_name, extraction_parameters)
 			                %Create variable file waveforms within spike_extraction to store waveforms
 			                %disp(['creating waveforms variable file within spike_extraction...']);
 			                %current_waveforms_file = nsd_variable(spike_extraction, ['spikewaves_epoch_' int2str(n)],'file','spikewaves',[],'Extracted spike waveforms binary file','extracted by nsd_app_spikeextractor');
@@ -191,21 +213,95 @@ classdef nsd_app_spikeextractor < nsd_app
 			                % parameters.samplingrate           : The sampling rate (float32)
 			                % (first 512 bytes are free for additional header use)
 
+							% TODO handle the nsd_document way
+							%if ~isempty(nsd_app_spikeextractor_obj.loadspikes)
+
+							%end
+							%probes{prb}.newdocument(,'')
 							%Filename of variable file current_waveforms_file
-			                spikewavesfilename = current_waveforms_file.filename();
+
+							spikewaves_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc)
+
+			                %spikewavesfilename = current_waveforms_file.filename();
 			                %disp(['spikewaves filename: ' spikewavesfilename]);
 			                %Add header to variable file current_waveforms_file
 			                %Stores spikewavesfid
-			                spikewavesfid = newvhlspikewaveformfile(spikewavesfilename, fileparameters);
-							fclose(spikewavesfid);
+			                %spikewavesfid = newvhlspikewaveformfile(spikewavesfilename, fileparameters);
+							%fclose(spikewavesfid);
+
+							% write header
+							spikewaves_binarydoc_fid.fseek(0,'bof');                                            % now at 0 bytes
+							spikewaves_binarydoc_fid.fwrite(uint8(fileparameters.numchannels),'uint8');         % now at 1 byte
+							spikewaves_binarydoc_fid.fwrite(int8(fileparameters.S0),'int8');                    % now at 2 bytes
+							spikewaves_binarydoc_fid.fwrite(int8(fileparameters.S1),'int8');                    % now at 3 bytes
+
+							if length(fileparameters.name)>80,
+								fileparameters.name = fileparameters.name(1:80);
+							end;
+							spikewaves_binarydoc_fid.fwrite(fileparameters.name,'char');
+							spikewaves_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.name)),'char');    % now at 83 bytes
+
+							spikewaves_binarydoc_fid.fwrite(uint8(fileparameters.ref),'uint8');                 % now at 84 bytes
+
+							if length(fileparameters.comment)>80,
+								fileparameters.comment = fileparameters.comment(1:80);
+							end;
+
+							spikewaves_binarydoc_fid.fwrite(fileparameters.comment,'char');
+							spikewaves_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.comment)),'char');      % now at 164 bytes
+							spikewaves_binarydoc_fid.fwrite(single(fileparameters.samplingrate),'float32');      % now at 168 bytes
+
+							% about to write byte 168; we want to fill up to 512 with 0's
+							%  this is 512-168+1 bytes
+							spikewaves_binarydoc_fid.fwrite(zeros(1,512-168),'uint8');
+
+							spikewaves_binarydoc_fid.fseek(512,'bof');
+
+							% Close the spikewaves doc
+							nsd_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid)
 
 							%Filename of variable file current_spiketimes_file
-			                spiketimesfilename = current_spiketimes_file.filename();
+			                %spiketimesfilename = current_spiketimes_file.filename();
 			                %disp(['spiketimes filename: ' spiketimesfilename]);
 			                %Add header to variable file current_waveforms_file
 			                %Stores spikewavesfid
-			                spiketimesfid = newspiketimesfile(spiketimesfilename, fileparameters);
-							fclose(spiketimesfid);
+			                %spiketimesfid = newspiketimesfile(spiketimesfilename, fileparameters);
+							%fclose(spiketimesfid);
+
+							spiketimes_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc)
+
+							% write header
+							spiketimes_binarydoc_fid.fseek(0,'bof');                                        % now at 0 bytes
+							spiketimes_binarydoc_fid.fwrite(uint8(fileparameters.numchannels),'uint8');         % now at 1 byte
+							spiketimes_binarydoc_fid.fwrite(int8(fileparameters.S0),'int8');                    % now at 2 bytes
+							spiketimes_binarydoc_fid.fwrite(int8(fileparameters.S1),'int8');                    % now at 3 bytes
+
+							if length(fileparameters.name)>80,
+							   fileparameters.name = fileparameters.name(1:80);
+							end;
+
+							spiketimes_binarydoc_fid.fwrite(fileparameters.name,'char');
+							spiketimes_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.name)),'char');    % now at 83 bytes
+
+							spiketimes_binarydoc_fid.fwrite(uint8(fileparameters.ref),'uint8');                 % now at 84 bytes
+
+							if length(fileparameters.comment)>80,
+							   fileparameters.comment = fileparameters.comment(1:80);
+							end;
+
+							spiketimes_binarydoc_fid.fwrite(fileparameters.comment,'char');
+							spiketimes_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.comment)),'char'); % now at 164 bytes
+
+							spiketimes_binarydoc_fid.fwrite(single(fileparameters.samplingrate),'float32');      % now at 168 bytes
+
+							% about to write byte 168; we want to fill up to 512 with 0's
+							%  this is 512-168+1 bytes
+							spiketimes_binarydoc_fid.fwrite(zeros(1,512-168),'uint8');
+
+							spiketimes_binarydoc_fid.fseek(512,'bof');
+
+							% Close the spiketimes doc
+							nsd_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid)
 			            end
 			            %Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 			            waveforms = permute(waveforms, [2 3 1]);
@@ -262,10 +358,24 @@ classdef nsd_app_spikeextractor < nsd_app
 			            %interpolated_waveforms = permute(interpolated_waveforms, [2 3 1]);
 
 			            %Store epoch waveforms in file
-			            addvhlspikewaveformfile(current_waveforms_file.filename(), interpolated_waveforms);
-			            %finalwaves = cat()
+
+			            %addvhlspikewaveformfile(current_waveforms_file.filename(), interpolated_waveforms);
+						% TODO open every time or keep open?
+						spikewaves_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc);
+						[num_samples,numchannels,num_waveforms] = size(interpolated_waveforms);
+						% we need the spikes waveforms to be represented in the columns of the matrix
+						% this means we need to push all of the channels into 1 dimension
+						interpolated_waveforms = single(reshape(interpolated_waveforms,num_samples*numchannels,num_waveforms));
+						spikewaves_binarydoc_fid.fseek(0,'eof');  % go to the end
+						spikewaves_binarydoc_fid.fwrite(single(interpolated_waveforms),'float32');
+						nsd_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid);
+						%finalwaves = cat()
 			      		%Store epoch spike times in file
-			      		addspiketimesfile(current_spiketimes_file.filename(), locs);
+			      		%addspiketimesfile(current_spiketimes_file.filename(), locs);
+						spiketimes_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc);
+						spiketimes_binarydoc_fid.fseek(0,'eof');  % go to the end
+						spiketimes_binarydoc_fid.fwrite(double(locs),'float32');
+						nsd_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid);
 			            %finaltimes = [finaltimes locs];
 			            %Update start_time
 			            start_time = start_time + read_size * sample_rate - overlap * sample_rate;
@@ -276,66 +386,6 @@ classdef nsd_app_spikeextractor < nsd_app
 			end %prb
 		end %function
 
-
-
-		% developer note: it would be great to have a 'markinvalidinterval' companion
-		function b = markvalidinterval(nsd_app_markgarbage_obj, nsd_epochset_obj, t0, timeref_t0, t1, timeref_t1)
-			% MARKVALIDINTERVAL - mark a valid intervalin an epoch (all else is garbage)
-			%
-			% B = MARKVALIDINTERVAL(NSD_APP_MARKGARBAGE_APP, NSD_EPOCHSET_OBJ, T0, TIMEREF_T0, ...
-			%	T1, TIMEREF_T1)
-			%
-			% Saves a variable marking a valid interval from T0 to T1 with respect
-			% to an NSD_TIMEREFERENCE object TIMEREF_T0 (for T0) and TIMEREF_T1 (for T1) for
-			% an NSD_EPOCHSET object NSD_EPOCHSET_OBJ.  Examples of NSD_EPOCHSET objects include
-			% NSD_IODEVICE and NSD_PROBE and their subclasses.
-			%
-			% TIMEREF_T0 and TIMEREF_T1 are saved as a name and type for looking up later.
-			%
-				% developer note: might be good idea to make sure these times exist at saving
-				validinterval.timeref_structt0 = timeref_t0.nsd_timereference_struct();
-				validinterval.t0 = t0;
-				validinterval.timeref_structt1 = timeref_t1.nsd_timereference_struct();
-				validinterval.t1 = t1;
-
-				b = nsd_app_markgarbage_obj.savevalidinterval(nsd_epochset_obj, validinterval);
-
-		end % markvalidinterval()
-
-		function b = createspikewaves_variable(nsd_app_spikeextractor_obj, nsd_probe_obj)
-			% SAVESPIKEWAVES - save a  spikewaves file to the experiment database
-			%
-			% B = SAVESPIKEWAVES(NSD_APP_SPIKEEXTRACTOR, NSD_PROBE_OBJ, SPIKEWAVESFILE)
-			%
-			% Saves a SPIKEWAVESFILE to an experment database, in the appropriate place for
-			% the NSD_PROBE_OBJ data.
-			%
-			% If the entry is a duplicate, it is not saved but b is still 1.
-			%
-			%%% implement lists of spike_extractions, many-to-many problem between extraction names and probes
-				b = 1;
-
-				sw = nsd_app_spikeextractor_obj.loadspikewaves(nsd_probe_obj);
-				% match = -1;
-				% for i=1:numel(vi),
-				% 	if eqlen(vi(i),intervalstruct),
-				% 		match = i;
-				% 		return;
-				% 	end;
-				% end
-				%
-				% % if we are here, we found no match
-				% vi(end+1) = intervalstruct;
-
-				nsd_app_spikeextractor_obj.clearspikewaves(nsd_probe_obj);
-				mp = nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj);
-
-				[v, parent] = nsd_app_spikeextractor_obj.path2var(mp,1,0);
-				myvar = nsd_variable(parent,'spikewaves','file','spikewaves',spikewavesfile,'Spikewaves vhlab file', 'Added by app call');
-
-		end % savevalidinterval()
-
-		% WARNING clear extraction instead
 		function b = clear_extraction(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
 			% CLEARSPIKEWAVES - clear all 'spikewaves' records for an NSD_PROBE_OBJ from experiment database
 			%
@@ -348,120 +398,140 @@ classdef nsd_app_spikeextractor < nsd_app
 			% See also: NSD_APP_MARKGARBAGE/MARKVALIDINTERVAL, NSD_APP_MARKGARBAGE/SAVEALIDINTERVAL, ...
 			%      NSD_APP_MARKGARBAGE/LOADVALIDINTERVAL
 
-				b = 1;
-				mp = nsd_app_spikeextractor_obj.extraction_path(nsd_probe_obj, extraction_name);
-				[v,parent] = nsd_app_spikeextractor_obj.path2var(mp,0,0);
-				if ~isempty(v),
-					try,
-						parent.remove(v.objectfilename);
-					catch,
-						b = 0;
-					end;
+			% Look for any docs matching extraction name and remove them
+			% Concatenate app query parameters and extraction_name parameter
+			searchq = cat(2,nsd_app_spikeextractor_obj.searchquery(), ...
+				{'spike_extraction.extraction_name', extraction_name});
+
+			% Concatenate probe query parameters
+			searchq = cat(2, searchq, nsd_probe_obj.searchquery());
+
+			% Search and get any docs
+			mydoc = nsd_app_spikeextractor_obj.experiment.database.search(searchq);
+
+			% Remove the docs
+			if ~isempty(mydoc),
+
+				for i=1:numel(mydoc),
+					nsd_app_spikeextractor_obj.experiment.database.remove(mydoc{i}.doc_unique_id)
 				end
+				warning(['removed ' num2str(i) ' doc(s) with same extraction name'])
+				b = 1;
+			end
 		end % clearvalidinteraval()
 
-		function [sw, st] = create_extraction_varbranch(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name, extraction_parameters, overwrite)
-			% CREATE_SPIKEWAVES_VARIABLE - Builds varbranch at probe/extraction_name path and returns nsd variable
+		function concatenated_spikes = load_spikes(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
+			% LOADSPIKES - Load all spikewaves records from experiment database
 			%
-			% SW, ST = CREATE_SPIKEWAVES_VARIABLE(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ, EXTRACTION_NAME)
-			%
-			% Loads stored spikewaves generated by NSD_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
-			%
-
-				swpath = nsd_app_spikeextractor_obj.spikewavesvariablepath(nsd_probe_obj, extraction_name);
-				stpath = nsd_app_spikeextractor_obj.spiketimesvariablepath(nsd_probe_obj, extraction_name);
-				[swvariable, swparent] = nsd_app_spikeextractor_obj.path2var(swpath,0,1);
-				[stvariable, stparent] = nsd_app_spikeextractor_obj.path2var(stpath,0,1);
-
-				% If no variables exist yet, using or since if incomplete vars it is useless
-				if isempty(swvariable) || isempty(stvariable)
-					[parent] = nsd_app_spikeextractor_obj.path2var(nsd_app_spikeextractor_obj.extraction_path(nsd_probe_obj, extraction_name),1,0);
-					str = 'y';
-				% If both sw and st exist, ask if overwrite
-				else
-					prompt = 'Are you sure you want to overwrite existing extraction? y/n [y]: ';
-					str = input(prompt,'s');
-					if isempty(str)
-    					str = 'y';
-					end
-					if strcmp(str,'y')
-						disp(['Overwriting "' extraction_name '" extraction...'])
-					end
-				end
-				% Create both vars and add extraction paramaeters to branch
-				if strcmp(str,'y')
-					sw = nsd_variable(parent,'spikewaves','file','spikewaves',[],'Spikewaves vhlab file', 'Added by app call');
-					st = nsd_variable(parent,'spiketimes','file','spiketimes',[],'Spiketimes vhlab file', 'Added by app call');
-					p = nsd_variable(parent,'extraction_parameters','struct','parameters',extraction_parameters,'extraction parameters for vhlab spike extractor', 'Added by app call');
-				end
-
-		end % create_spikewaves_variable()
-
-		function sw = loadspikewaves(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
-			% LOADSPIKEWAVES - Load all spikewaves records from experiment database
-			%
-			% SW = LOADSPIKEWAVES(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ)
+			% SW = LOADSPIKES(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ, EXTRACTION_NAME)
 			%
 			% Loads stored spikewaves generated by NSD_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
 			%
-				spikewaves = [];
-                keyboard
-				mp = nsd_app_spikeextractor_obj.spikewavesvariablepath(nsd_probe_obj, extraction_name);
-				v = nsd_app_spikeextractor_obj.path2var(mp,0,1);
-				if ~isempty(v),
-					sw = readvhlspikewaveformfile(v.filename);
-				end
-		end % loadspikewaves()
+				spikes_searchq = cat(2, nsd_app_spikeextractor_obj.searchquery(), ...
+					{'document_class.class_name','spikes'});
+				spikes_searchq = cat(2, spikes_searchq, nsd_probe_obj.searchquery());
+				spikes_searchq = cat(2, spikes_searchq, ...
+					{'spike_extraction.extraction_name',extraction_name});
+				docs = nsd_app_spikeextractor_obj.experiment.database.search(spikes_searchq);
 
-		function st = loadspiketimes(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
+				% TODO How to get them in order? maybe add epoch_number to spikes and times nsd_doc
+				if ~isempty(docs)
+					% TODO make sure multiple epochs work
+					for i=1:numel(docs)
+						spikes_doc = nsd_app_spikeextractor_obj.experiment.database.read(docs{i}.doc_unique_id)
+						spikewaves_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc);
+						waveforms = [];
+
+						header_size = 512; % 512 bytes in the header
+
+						 % step 1 - read header
+						spikewaves_binarydoc_fid.fseek(0,'bof');
+						parameters.numchannels = spikewaves_binarydoc_fid.fread(1,'uint8');      % now at 1 byte
+						parameters.S0 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 2 bytes
+						parameters.S1 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 3 bytes
+						parameters.name = spikewaves_binarydoc_fid.fread(80,'char');             % now at 83 bytes
+						parameters.name = char(parameters.name(find(parameters.name)))';
+						parameters.ref = spikewaves_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
+						parameters.comment = spikewaves_binarydoc_fid.fread(80,'char');          % now at 164 bytes
+						parameters.comment = char(parameters.comment(find(parameters.comment)))';
+						parameters.samplingrate= double(spikewaves_binarydoc_fid.fread(1,'float32'));
+
+						% step 2 - read the waveforms
+						my_wave_start = 1;
+					 	my_wave_end = Inf;
+						% each data points takes 4 bytes; the number of samples is equal to the number of channels
+						%       multiplied by the number of samples taken from each channel, which is S1-S0+1
+						samples_per_channel = parameters.S1-parameters.S0+1;
+						wave_size = parameters.numchannels * samples_per_channel;
+
+						data_size = 4; % 32 bit floats
+
+						if my_wave_start>0,
+							spikewaves_binarydoc_fid.fseek(header_size+data_size*(my_wave_start-1)*wave_size,'bof'); % move to the right place in the file
+							data_size_to_read = (my_wave_end-my_wave_start+1)*wave_size;
+							waveforms = spikewaves_binarydoc_fid.fread(data_size_to_read,'float32');
+							waves_actually_read = length(waveforms)/(parameters.numchannels*samples_per_channel);
+							if abs(waves_actually_read-round(waves_actually_read))>0.0001,
+								error(['Got an odd number of samples for these spikes. Corrupted file perhaps?']);
+							end;
+							concatenated_spikes = reshape(waveforms,samples_per_channel,parameters.numchannels,waves_actually_read);
+						end;
+						% TODO make sure multiple epochs work
+						%if i > 1
+						%	waveforms = cat(2,)
+					end
+					%warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
+				end
+		end % load_spikes()
+
+		function concatenated_times = load_times(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
 			% LOADSPIKETIMES - Load all  spiketimes records from experiment database
 			%
-			% ST = LOADSPIKETIMES(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ)
+			% ST = LOADSPIKETIMES(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ, EXTRACTION_NAME)
 			%
 			% Loads stored spiketimes generated by NSD_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
 			%
-				spiketimes = []
-				mp = nsd_app_spikeextractor_obj.spiketimesvariablepath(nsd_probe_obj, extraction_name);
-				v = nsd_app_spikeextractor_obj.path2var(mp,0,1);
-				if ~isempty(v),
-					st = readspiketimesfile(v.filename);
+			times_searchq = cat(2, nsd_app_spikeextractor_obj.searchquery(), ...
+				{'document_class.class_name','times'});
+			times_searchq = cat(2, times_searchq, nsd_probe_obj.searchquery());
+			times_searchq = cat(2, times_searchq, ...
+				{'spike_extraction.extraction_name',extraction_name});
+			docs = nsd_app_spikeextractor_obj.experiment.database.search(times_searchq);
+
+			% TODO How to get them in order? maybe add epoch_number to times and times nsd_doc
+			if ~isempty(docs)
+				% TODO make sure multiple epochs work
+				for i=1:numel(docs)
+					times_doc = nsd_app_spikeextractor_obj.experiment.database.read(docs{i}.doc_unique_id)
+					spiketimes_binarydoc_fid = nsd_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc);
+
+					% step 1 - read header
+					spiketimes_binarydoc_fid.fseek(0,'bof');
+					parameters.numchannels = spiketimes_binarydoc_fid.fread(1,'uint8');      % now at 1 byte
+					parameters.S0 = spiketimes_binarydoc_fid.fread(1,'int8');                % now at 2 bytes
+					parameters.S1 = spiketimes_binarydoc_fid.fread(1,'int8');                % now at 3 bytes
+					parameters.name = spiketimes_binarydoc_fid.fread(80,'char');             % now at 83 bytes
+					parameters.name = char(parameters.name(find(parameters.name)))';
+					parameters.ref = spiketimes_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
+					parameters.comment = spiketimes_binarydoc_fid.fread(80,'char');          % now at 164 bytes
+					parameters.comment = char(parameters.comment(find(parameters.comment)))';
+					parameters.samplingrate = double(spiketimes_binarydoc_fid.fread(1,'float32'));
+
+					spiketimes_binarydoc_fid.fseek( 512, 'bof');
+
+					spiketimes = spiketimes_binarydoc_fid.fread(Inf,'float32');
+					epoch = [parameters.ref];
+					% 1xspiketimes
+					epocharray = repmat(epoch, [1, size(spiketimes, 1)]);
+
+					concatenated_times = cat(1, epocharray, spiketimes');
+					% TODO make sure multiple epochs work
+					%if i > 1
+					%	waveforms = cat(2,)
 				end
+				%warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
+			end
 		end % loadspiketimes()
-
-		function mp = extraction_path(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
-			% SPIKEWAVESVARIABLEPATH - returns the path of a  interval variable within the experiment database
-			%
-			% MP = SPIKEWAVESVARIABLEPATH(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ)
-			%
-			% Returns the path of the  interval variable for NSD_PROBE_OBJ in the experiment database.
-			%
-				nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj)
-				mp = [nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj) extraction_name]
-				% mp = [nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj) 'spikewaves'] % previously type of
-		end
-
-		function mp = spikewavesvariablepath(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
-			% SPIKEWAVESVARIABLEPATH - returns the path of a  interval variable within the experiment database
-			%
-			% MP = SPIKEWAVESVARIABLEPATH(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ)
-			%
-			% Returns the path of the  interval variable for NSD_PROBE_OBJ in the experiment database.
-			%
-				nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj)
-				mp = [nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj) extraction_name nsd_branchsep 'spikewaves']
-				% mp = [nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj) 'spikewaves'] % previously type of
-		end
-
-		function mp = spiketimesvariablepath(nsd_app_spikeextractor_obj, nsd_probe_obj, extraction_name)
-			% SPIKETIMESVARIABLEPATH - returns the path of a  interval variable within the experiment database
-			%
-			% MP = SPIKETIMESVARIABLEPATH(NSD_APP_SPIKEEXTRACTOR_OBJ, NSD_PROBE_OBJ)
-			%
-			% Returns the path of the  interval variable for NSD_PROBE_OBJ in the experiment database.
-			%
-				nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj)
-				mp = [nsd_app_spikeextractor_obj.myvarpath(nsd_probe_obj) extraction_name nsd_branchsep 'spiketimes']
-		end
 
 	end % methods
 

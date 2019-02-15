@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/apps\/spikesorter\/sorting_parameters.json",
+		"validation":						"$NSDSCHEMAPATH\/apps\/spikesorter\/sorting_parameters_schema.json",
+		"class_name":						"spikesorter-spikes",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_probe.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_app.json" }
+		]
+	},
+	"sorting_parameters": {
+		"min_rng": 0,
+		"num_pca_features": 0
+	}
+}

@@ -1,0 +1,2 @@
+min_rng	num_pca_features
+10	10

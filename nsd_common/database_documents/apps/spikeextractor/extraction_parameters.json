@@ -1,0 +1,24 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/apps\/spikeextractor\/extraction_parameters.json",
+		"validation":						"$NSDSCHEMAPATH\/apps\/spikeextractor\/extraction_parameters_schema.json",
+		"class_name":						"spikeextractor-extraction_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_probe.json" },
+			{ "definition":				"$NSDDOCUMENTPATH\/nsd_document_app.json" }
+		]
+	},
+	"extraction_parameters": {
+		"reference": 0,
+		"center_range": 0,
+		"interpolation": 0,
+		"overlap": 0,
+		"read_size": 0,
+		"refractory_samples": 0,
+		"spike_sample_start": 0,
+		"spike_sample_end": 0,
+		"start_time": 0
+	}
+}
