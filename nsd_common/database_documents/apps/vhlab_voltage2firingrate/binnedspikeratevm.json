@@ -1,0 +1,30 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/binnedspikeratevm.json",
+		"validation":						"$NSDSCHEMAPATH\/apps\/vhlab_voltage2firingrate\/binnedspikeratevm.json",
+		"class_name":						"vhlab_voltage2firingrate-binnedspikeratevm",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_probe.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_epochid.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_app.json" }
+		]
+	},
+	"binnedspikeratevm": {
+		"parameters": {
+			"vm_baseline_smooth_id":			0,
+			"binsize":					"0.030",
+			"vm_baseline_correction":			"0",
+			"vm_baseline_correct_time":			"0",
+			"vm_baseline_correct_func":			"median",
+			"number_of_points":				0
+		},
+		"voltage_observations":					"",
+		"firingrate_observations":				"",
+		"stimids":						"",
+		"timepoints":						"",
+		"exactbintime":						""
+	}
+}
+
