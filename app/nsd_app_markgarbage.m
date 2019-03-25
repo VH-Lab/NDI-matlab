@@ -128,8 +128,8 @@ classdef nsd_app_markgarbage < nsd_app
 				if ~isempty(mydoc),
 					for i=1:numel(mydoc),
 						vi = cat(1,vi,mydoc{i}.document_properties.valid_interval);
-					end
-				end
+					end;
+				end;
 		end % loadvalidinterval()
 
 		function [intervals] = identifyvalidintervals(nsd_app_markgarbage_obj, nsd_epochset_obj, timeref, t0, t1)
@@ -142,25 +142,42 @@ classdef nsd_app_markgarbage < nsd_app
 			% valid snips of data within the range T0 T1 (with respect to NSD_TIMEREFERENCE object TIMEREF).
 			% INTERVALS has time with respect to TIMEREF.
 			%
-				interval = [t0 t1];
+				% disp(['Call of identifyvalidintervals..']);
+				baseline_interval = [t0 t1];
+				explicitly_good_intervals = [];
 				vi = nsd_app_markgarbage_obj.loadvalidinterval(nsd_epochset_obj);
 				if isempty(vi),
 					return;
-				end
+				end;
 				for i=1:size(vi,1),
 					% for each marked valid region
 					%    Can we project the marked valid region into this timeref?
-					%       If not, the region is valid, we have no restrictions to add
-					%       If so, then we check to see if the end points are greater or less than t0, t1, and snip out
-
-					
-
-
-				end
+						interval_t0_timeref = nsd_timereference(nsd_app_markgarbage_obj.experiment, vi(i).timeref_structt0);
+						interval_t1_timeref = nsd_timereference(nsd_app_markgarbage_obj.experiment, vi(i).timeref_structt1);
+						[epoch_t0_out, epoch_t0_timeref, msg_t0] = ...
+								nsd_app_markgarbage_obj.experiment.syncgraph.time_convert(interval_t0_timeref, ...
+									vi(i).t0, timeref.referent, timeref.clocktype);
+						[epoch_t1_out, epoch_t1_timeref, msg_t1] = ...
+								nsd_app_markgarbage_obj.experiment.syncgraph.time_convert(interval_t1_timeref, ...
+									vi(i).t1, timeref.referent, timeref.clocktype);
+						if isempty(epoch_t0_out) | isempty(epoch_t1_out),
+							% so we say the region is valid, we have no restrictions to add
+						elseif ~strcmp(epoch_t0_timeref.epoch,timeref.epoch) | ~strcmp(epoch_t1_timeref.epoch,timeref.epoch),
+							% we can find a match but not in the right epoch
+						else, % we have to carve out a bit of this region
+							% do we need to check that epoch_t0_timeref matches our timeref? I think it is guaranteed
+							explicitly_good_intervals = interval_add(explicitly_good_intervals, [epoch_t0_out epoch_t1_out]);
+						end;
+				end;
+				if isempty(explicitly_good_intervals),
+					intervals = baseline_interval;
+				else,
+					intervals = explicitly_good_intervals;
+				end;
 				
-		end % identifyvalidinterval
+		end; % identifyvalidinterval
 
-	end % methods
+	end; % methods
 
 end % nsd_app_markgarbage
 

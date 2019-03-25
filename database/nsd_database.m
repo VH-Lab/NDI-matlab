@@ -161,9 +161,9 @@ classdef nsd_database
 
 				for i=1:numel(nsd_document_id_list),
 					if nargin<3,
-						nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id_list{i});
+						do_remove(nsd_database_obj, nsd_document_id_list{i});
 					else,
-						nsd_database_obj = do_remove(nsd_database_obj, nsd_document_id{i}, versions);
+						do_remove(nsd_database_obj, nsd_document_id{i}, versions);
 					end;
 				end;
 		end % remove()

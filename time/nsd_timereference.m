@@ -1,5 +1,5 @@
 classdef nsd_timereference
-% NSD_TIME_REFERENCE - a class for specifying time relative to an NSD_CLOCK
+% NSD_TIMEREFERENCE - a class for specifying time relative to an NSD_CLOCK
 % 
 % 
 	properties (SetAccess=protected, GetAccess=public)
@@ -37,7 +37,7 @@ classdef nsd_timereference
 					experiment = referent; % 1st argument
 					timeref_struct = clocktype; % 2nd argument
 					referent = experiment.findexpobj(timeref_struct.referent_epochsetname,timeref_struct.referent_classname);
-					clocktype = nsd_clocktype(timeref_struct.clocktype_string);
+					clocktype = nsd_clocktype(timeref_struct.clocktypestring);
 					epoch = timeref_struct.epoch;
 					time = timeref_struct.time;
 				end;
@@ -72,7 +72,7 @@ classdef nsd_timereference
 			% --------------------------------------------------------------------------------
 			% referent_epochsetname          | The epochsetname() of the referent
 			% referent_classname             | The classname of the referent
-			% clocktype_string               | The value of the clocktype
+			% clocktypestring                | The value of the clocktype
 			% epoch                          | The epoch (either a string or a number)
 			% time                           | The time
 			% 
