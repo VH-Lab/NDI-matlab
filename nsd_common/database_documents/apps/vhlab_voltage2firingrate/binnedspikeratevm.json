@@ -13,7 +13,7 @@
 	},
 	"binnedspikeratevm": {
 		"parameters": {
-			"vm_baseline_smooth_id":			0,
+			"vmspikefilteringparameters_id":		0,
 			"binsize":					"0.030",
 			"vm_baseline_correction":			"0",
 			"vm_baseline_correct_time":			"0",
