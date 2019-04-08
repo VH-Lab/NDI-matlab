@@ -24,7 +24,7 @@ classdef nsd_app_spikesorter < nsd_app
 
 		end % nsd_app_spikesorter() creator
 
-        function spike_sort(nsd_app_spikesorter_obj, name, type, extraction_name, sort_name, sorting_params) %, sorting_params)
+    function spike_sort(nsd_app_spikesorter_obj, name, type, extraction_name, sort_name, sorting_params) %, sorting_params)
 
 			% Extracts probe with name
 			probes = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
@@ -79,15 +79,32 @@ classdef nsd_app_spikesorter < nsd_app
 			projected_waveforms = concatenated_waves * [eigenvectors];
 
 			%Features used in klustakwik_cluster
-		    pca_coefficients = projected_waveforms(:, 1:sorting_parameters.num_pca_features);
+		  pca_coefficients = projected_waveforms(:, 1:sorting_parameters.num_pca_features);
 
 			disp('KlustarinKwikly...');
+			[clusterids,numclusters] = klustakwik_cluster(pca_coefficients,3,25,5,0);
 
-	        [clusterids,numclusters] = klustakwik_cluster(pca_coefficients,3,25,5,0);
-	        %cluster_spikewaves_gui('waves', concatenated_waves); % 'EpochStartSamples', epoch_start_samples, 'EpochNames', epoch_names);
-	        disp('Done clustering.');
-	        figure(101);
-	        hist(clusterids);
+			%interpolation coming from reading parameters
+			interpolation = 3;
+			disp('Cluster_spikewaves_gui testing...')
+			[~, ~, ~, ~, channellist_in_probe] = getchanneldevinfo(probe, 1);
+	    waveparameters = struct;
+	    waveparameters.numchannels = numel(channellist_in_probe);
+	    waveparameters.S0 = -9 * interpolation;
+	    waveparameters.S1 = 20 * interpolation;
+	    waveparameters.name = '';
+	    waveparameters.ref = 1;
+	    waveparameters.comment = '';
+	    waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
+
+
+		 	waves = nsd_app_spikesorter_obj.load_spikes(name, type, extraction_name)
+			cluster_spikewaves_gui('waveparameters', waveparameters, 'clusterids', clusterids, 'wavetimes', concatenated_spiketimes(:), 'waves', waves);
+
+	     % 'EpochStartSamples', epoch_start_samples, 'EpochNames', epoch_names);
+	    disp('Done clustering.');
+	    figure(101);
+	    hist(clusterids);
 
 			% Create spike_clusters nsd_doc
 			spike_clusters_doc = nsd_app_spikesorter_obj.experiment.newdocument('apps/spikesorter/spike_clusters', ...
@@ -136,7 +153,11 @@ classdef nsd_app_spikesorter < nsd_app
 			end
 		end % clearvalidinteraval()
 
-		% developer note: it would be great to have a 'markinvalidinterval' companion
+		function spikes = load_spikes(nsd_app_spikesorter_obj, name, type, extraction_name)
+			probe = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type) % can add reference
+			spikes = nsd_app_spikeextractor(nsd_app_spikesorter_obj.experiment).load_spikes(probe{1}, extraction_name)
+		end
+
 		function b = markvalidinterval(nsd_app_markgarbage_obj, nsd_epochset_obj, t0, timeref_t0, t1, timeref_t1)
 			% MARKVALIDINTERVAL - mark a valid intervalin an epoch (all else is garbage)
 			%

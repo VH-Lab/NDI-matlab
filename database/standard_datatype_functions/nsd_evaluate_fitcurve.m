@@ -7,7 +7,6 @@ function [y, varargout] = nsd_evaluate_fitcurve(fitcurve_doc, varargin)
 %
 % 
  
-keyboard
  % Step 1: extract information from document
 
 fit_equation = fitcurve_doc.document_properties.fitcurve.fit_equation;
@@ -38,7 +37,7 @@ for i=1:numel(fit_parameter_names),
 	fit_parameter_names{i} = strtrim(fit_parameter_names{i});
 end;
 
-fit_parameter_values = fitcurve_document_proprties.fitcurve.fit_parameters;
+fit_parameter_values = fitcurve_doc.document_properties.fitcurve.fit_parameters;
 if ischar(fit_parameter_values),
 	fit_parameter_values = str2mat(fit_parameter_values);
 end;
@@ -53,20 +52,20 @@ end;
 fit_equation_mod = fit_equation;
 
 for i=1:numel(fit_parameter_names),
-	fit_equation_mod = strrep(fit_equation_mod,fit_parameter_names{i},['nsd_evaluate_fitcurve_' fit_parameter_names{i}]);
+	fit_equation_mod = regexprep(fit_equation_mod,['(?<![\w\d])' fit_parameter_names{i} '(?![\w\d])'],['nsd_evaluate_fitcurve_' fit_parameter_names{i}]);
 	assign(['nsd_evaluate_fitcurve_' fit_parameter_names{i}], fit_parameter_values(i));
 end;
 
-for i=1:numel(fit_dependent_variables),
-	fit_equation_mod = strrep(fit_equation_mod,fit_dependent_variables{i},['nsd_evaluate_fitcurve_' fit_dependent_variables{i}]);
-	assign(['nsd_evaluate_fitcurve_' fit_dependent_variables{i}], varargin{i});
-end;
-
 for i=1:numel(fit_independent_variables),
-	fit_equation_mod = strrep(fit_equation_mod,fit_dependent_variables{i},['nsd_evaluate_fitcurve_' fit_independent_variables{i}]);
+	fit_equation_mod = regexprep(fit_equation_mod,['(?<![\w\d])' fit_independent_variables{i} '(?![\w\d])'],['nsd_evaluate_fitcurve_' fit_independent_variables{i}]);
+	assign(['nsd_evaluate_fitcurve_' fit_independent_variables{i}], varargin{i});
 end;
 
-eval(fit_equation_mod);
+for i=1:numel(fit_dependent_variables),
+	fit_equation_mod = regexprep(fit_equation_mod,['(?<![\w\d])' fit_dependent_variables{i} '(?![\w\d])'],['nsd_evaluate_fitcurve_' fit_dependent_variables{i}]);
+end;
 
-assign(y, eval(['nsd_evaluate_fitcurve_' fit_independent_variables{i}])); 
+eval([fit_equation_mod ';']);
+
+assign('y', eval(['nsd_evaluate_fitcurve_' fit_dependent_variables{i}])); 
 

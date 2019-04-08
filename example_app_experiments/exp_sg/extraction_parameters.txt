@@ -1,2 +1,0 @@
-reference	center_range	interpolation	overlap	read_size	refractory_samples	spike_sample_start	spike_sample_end	start_time
-1	10	3	0.05	30	10	-9	20	1
