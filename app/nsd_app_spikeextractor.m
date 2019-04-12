@@ -529,6 +529,7 @@ classdef nsd_app_spikeextractor < nsd_app
 					% TODO make sure multiple epochs work
 					%if i > 1
 					%	waveforms = cat(2,)
+					nsd_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid);
 				end
 				%warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
 			end

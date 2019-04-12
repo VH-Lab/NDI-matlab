@@ -59,7 +59,7 @@ classdef nsd_app_spikesorter < nsd_app
 			nchannels = size(spikes,2);
 			nspikes = size(spikes,3);
 			concatenated_waves = reshape(spikes,[spikesamples*nchannels,nspikes]);
-
+			concatenated_waves = concatenated_waves';
 			%% Spike Features (PCA)
 
 			% get covariance matrix of the TRANSPOSE of spike array (waveforms need
@@ -98,8 +98,14 @@ classdef nsd_app_spikesorter < nsd_app
 	    waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
 
 
-		 	waves = nsd_app_spikesorter_obj.load_spikes(name, type, extraction_name)
-			cluster_spikewaves_gui('waveparameters', waveparameters, 'clusterids', clusterids, 'wavetimes', concatenated_spiketimes(:), 'waves', waves);
+		 	spikewaves = nsd_app_spikesorter_obj.load_spikes(name, type, extraction_name);
+			times = nsd_app_spikesorter_obj.load_times(name, type, extraction_name);
+			spikeclusterids = clusterids;
+			spiketimes = times(2,:);
+			keyboard
+			size(spikewaves)
+			size(spiketimes)
+			cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
 
 	     % 'EpochStartSamples', epoch_start_samples, 'EpochNames', epoch_names);
 	    disp('Done clustering.');
@@ -154,8 +160,13 @@ classdef nsd_app_spikesorter < nsd_app
 		end % clearvalidinteraval()
 
 		function spikes = load_spikes(nsd_app_spikesorter_obj, name, type, extraction_name)
-			probe = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type) % can add reference
-			spikes = nsd_app_spikeextractor(nsd_app_spikesorter_obj.experiment).load_spikes(probe{1}, extraction_name)
+			probe = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
+			spikes = nsd_app_spikeextractor(nsd_app_spikesorter_obj.experiment).load_spikes(probe{1}, extraction_name);
+		end
+
+		function spikes = load_times(nsd_app_spikesorter_obj, name, type, extraction_name)
+			probe = nsd_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
+			spikes = nsd_app_spikeextractor(nsd_app_spikesorter_obj.experiment).load_times(probe{1}, extraction_name);
 		end
 
 		function b = markvalidinterval(nsd_app_markgarbage_obj, nsd_epochset_obj, t0, timeref_t0, t1, timeref_t1)
