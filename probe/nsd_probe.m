@@ -8,6 +8,7 @@ classdef nsd_probe < nsd_epochset
 % even control of a stimulator. 
 %
 % A probe is uniquely identified by 3 fields:
+%    experiment- the experiment where the probe is used
 %    name      - the name of the probe
 %    reference - the reference number of the probe
 %    type      - the type of probe (see type NSD_PROBETYPE2OBJECTINIT)
@@ -121,7 +122,7 @@ classdef nsd_probe < nsd_epochset
 						end
 					end
 				end
-		end % epochtable
+		end % buildepochtable
 
 		function ec = epochclock(nsd_probe_obj, epoch_number)
 			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
@@ -132,8 +133,8 @@ classdef nsd_probe < nsd_epochset
 			%
 			% The NSD_PROBE class always returns the clock type(s) of the device it is based on
 			%
-				et = epochtable(nsd_probe_obj);
-				ec = et(epoch_number).epoch_clock;
+				et = nsd_probe_obj.epochtableentry(epoch_number);
+				ec = et.epoch_clock;
 		end % epochclock
 
 		function b = issyncgraphroot(nsd_epochset_obj)
@@ -144,7 +145,7 @@ classdef nsd_probe < nsd_epochset
 			% This function tells an NSD_SYNCGRAPH object whether it should continue 
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For NSD_PROBE this returns 0 so that the underlying NSD_IODEVICE epochs are added.
+			% For NSD_EPOCHSET and NSD_PROBE this returns 0 so that the underlying NSD_IODEVICE epochs are added.
 				b = 0;
 		end % issyncgraphroot
 
@@ -170,7 +171,7 @@ classdef nsd_probe < nsd_epochset
 		end
 
 		function name = epochsetname(nsd_probe_obj)
-			% EPOCHSETNAME - the name of the NSD_EPOCHSET object, for EPOCHNODES
+			% EPOCHSETNAME - the name of the NSD_PROBE object, for EPOCHNODES
 			%
 			% NAME = EPOCHSETNAME(NSD_PROBE_OBJ)
 			%

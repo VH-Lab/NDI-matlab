@@ -1,0 +1,33 @@
+{
+	"document_class": {
+		"definition":							"$NSDDOCUMENTPATH\/data\/stimulus_response_summary.json",
+		"validation":							"$NSDSCHEMAPATH\/data\/stimulus_response_summary.json",
+		"class_name":							"data-stimulus-response-summary",
+		"class_version":						1,
+		"superclasses": [
+			{ "definition":						"$NSDDOCUMENTPATH\/nsd_document.json" }
+		]
+	},
+	"stimulus_response_summary": {
+		"independent_axis_units":					"",
+		"independent_axis_label":					"",
+		"independent_axis_parameter":					"",
+		"response_units":						"",
+		"response_label":						"",
+		"independent_axis_values":					"",
+		"mean_responses":						"",
+		"stddev_responses":						"",
+		"stderr_responses":						"",
+		"individual_responses":  [
+			[]
+		],
+		"blank_response": {
+			"mean_responses":					"",
+			"stddev_responses":					"",
+			"stderr_responses":					"",
+			"individual_responses":					[]
+		}
+	}
+}
+
+

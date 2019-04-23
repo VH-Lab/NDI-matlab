@@ -1,0 +1,29 @@
+{
+	"document_class": {
+		"definition":						"$NSDDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
+		"validation":						"$NSDSCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
+		"class_name":						"vhlab_voltage2firingrate-vmspikefilteringparameters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_probe.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_epochid.json" },
+			{ "definition":					"$NSDDOCUMENTPATH\/nsd_document_app.json" }
+		]
+	},
+	"vmspikefilteringparameters": {
+		"sampling_rate": 					0,
+		"new_sampling_rate": 					0,
+		"threshold":						"0.030",
+		"spiketimes":						"",
+		"filter_algorithm":					"0",
+		"filter_algorithm_parameters": [ {
+				"filter_algorithm_parameter_name": 	"",
+				"filter_algorithm_parameter_value": 	""
+			}
+		],
+		"rm60Hz":						1,
+		"refract":						0.0025
+	}
+}
+

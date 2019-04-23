@@ -169,7 +169,8 @@ classdef nsd_epochset
 			% ID = EPOCHID (NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
 			% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
-			% If it doesn't exist, it should be created.
+			% If it doesn't exist, it should be created. EPOCH_NUMBER can be
+			% a number of an EPOCH ID string.
 			%
 			% The abstract class just queries the EPOCHTABLE.
 			% Most classes that manage epochs themselves (NSD_FILETREE,
@@ -190,6 +191,24 @@ classdef nsd_epochset
 				end
 		end % epochid
 
+		function et_entry = epochtableentry(nsd_epochset_obj, epoch_number)
+			% EPOCHTABLEENTRY - return the entry of the EPOCHTABLE that corresonds to an EPOCHID
+			%
+			% ET_ENTRY = EPOCHTABLEENTRY(NSD_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
+			%
+			% Returns the EPOCHTABLE entry associated with the NSD_EPOCHSET object
+			% that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
+			% epoch or the EPOCHID of the epoch.
+			%
+				et = nsd_epochset_obj.epochtable();
+				eid = nsd_epochset_obj.epochid(epoch_number);
+				index = find(strcmpi(eid,{et.epoch_id}));
+				if isempty(index),
+					error(['epoch_number does not correspond to a valid epoch.']);
+				end;
+				et_entry = et(index);
+		end % epochtableentry
+
 		function ec = epochclock(nsd_epochset_obj, epoch_number)
 			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
 			%
@@ -206,7 +225,7 @@ classdef nsd_epochset
 		end % epochclock
 
 		function t0t1 = t0_t1(nsd_epochset_obj, epoch_number)
-			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			% T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
 			% T0T1 = T0_T1(NSD_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
