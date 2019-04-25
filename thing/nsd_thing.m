@@ -9,22 +9,13 @@ classef nsd_thing < nsd_epochset % or should it be nsd_epochset? or should it be
 	end % properties
 
 	methods
-
 		function nsd_thing_obj = nsd_thing(thing_name, nsd_probe_obj)
-
 			if ~isa(nsd_probe_obj, 'nsd_probe'),
 				error(['NSD_PROBE_OBJ must be of type NSD_PROBE']);
 			end;
-			nsd_thing_obj.experiment = nsd_probe_obj.experiment;
-			nsd_thing_obj.name = nsd_probe_obj.name;
-			nsd_thing_obj.reference = nsd_probe_obj.reference;
-			nsd_thing_obj.
-			nsd_thing_obj.thing_name = thing_name;
-			if ~isa(experiment, 'nsd_experiment'),
-				error(['EXPERIMENT must be of type NSD_EXPERIMENT.']);
-			end;
-		end; % nsd_thing
-
+			nsd_thing_obj.name = nsd_probe_obj.thing_name;
+			nsd_thing_obj.probe = nsd_probe_obj;
+		end; % nsd_thing()
 
 	% NSD_EPOCHSET methods
 
@@ -64,18 +55,6 @@ classef nsd_thing < nsd_epochset % or should it be nsd_epochset? or should it be
 			% For NSD_THING objects, this is NSD_THING/THINGSTRING. 
 				name = nsd_thing_obj.thingstring;
 		end; % epochsetname
-
-		function thingstr = thingstring(nsd_thing_obj)
-			% THINGSTRING - Produce a human-readable thing string
-			%
-			% THINGSTR = THINGSTRING(NSD_THING_OBJ)
-			%
-			% Returns the name as a human-readable string.
-			%
-			% For NSD_THING objects, this is the string 'thing: ' followed by its name
-			% 
-				name = ['thing: ' name];
-		end; %thingstring() 
 
 		function ec = epochclock(nsd_thing_obj, epoch_number)
 			% EPOCHCLOCK - return the NSD_CLOCKTYPE objects for an epoch
@@ -178,9 +157,61 @@ classef nsd_thing < nsd_epochset % or should it be nsd_epochset? or should it be
 
 		end; % buildepochtable
 
+		%% unique NSD_THING methods
+
+		function thingstr = thingstring(nsd_thing_obj)
+			% THINGSTRING - Produce a human-readable thing string
+			%
+			% THINGSTR = THINGSTRING(NSD_THING_OBJ)
+			%
+			% Returns the name as a human-readable string.
+			%
+			% For NSD_THING objects, this is the string 'thing: ' followed by its name
+			% 
+				name = ['thing: ' name];
+		end; %thingstring() 
+
+		function nsd_thing_obj = addepoch(nsd_thing_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
+			% ADDEPOCH - add an epoch to the NSD_THING
+			%
+			% NSD_THING_OBJ = ADDEPOCH(NSD_THING_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
+			%
+			% Registers the data for an epoch with the NSD_THING_OBJ.
+			%
+			% Inputs:
+			%   NSD_THING_OBJ: The NSD_THING object to modify
+			%   EPOCHID:       The name of the epoch to add; should match the name of an epoch from the probe
+			%   EPOCHCLOCK:    The epoch clock; must be a single clock type that matches one of the clock types
+			%                     of the probe
+			%   T0_T1:         The starting time and ending time of the existence of information about the THING on
+			%                     the probe, in units of the epock clock
+			%   TIMEPOINTS:    the time points to be added to this epoch; can also be the string 'probe' which means the
+			%                     points are read directly from the probe (must be Tx1). Timepoints must be in the units
+			%                     of the EPOCHCLOCK.
+			%   DATAPOINTS:    the data points that accompany each timepoint (must be TxXxY...), or can be 'probe' to 
+			%                     read from the probe
+			%   
+
+		end; % addepoch()
+
+
+		function et_added = loadaddedepochs(nsd_thing_obj)
+			% LOADADDEDEPOCHS - load the added epochs from an NSD_THING
+			%
+			% ET_ADDED = LOADADDEDEOPCHS(NSD_THING_OBJ)
+			%
+			% Load the EPOCHTABLE that consists of added/registered epochs that provide information
+			% about the NSD_THING.
+			%
+			% 
+
+				% loads from database
+				
+
+		end; % LOADEDEPOCHS(NSD_THING_OBJ)
+
 	% newdocument
 	% searchquery
- 
 
 	end; % methods
 
