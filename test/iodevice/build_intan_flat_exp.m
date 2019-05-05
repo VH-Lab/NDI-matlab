@@ -9,16 +9,16 @@ function build_intan_flat_exp(dirname)
 %  in the experiment record.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NSDPATH]/example_experiments/exp1_eg_saved is used.
+%  [NDIPATH]/example_experiments/exp1_eg_saved is used.
 %
 
 if nargin<1,
-	nsd_globals;
-	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
+	ndi_globals;
+	dirname = [ndiexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['creating a new experiment object...']);
-exp = nsd_experiment_dir('exp1',dirname);
+exp = ndi_experiment_dir('exp1',dirname);
 
  % remove everything from the experiment to start
 exp.database.clear('yes'); % use it only if you mean it
@@ -36,17 +36,17 @@ disp(['Now adding our acquisition iodevice (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
+dt = ndi_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
-dev1 = nsd_iodevice_mfdaq_intan('intan1',dt);
+dev1 = ndi_iodevice_mfdaq_intan('intan1',dt);
 exp.iodevice_add(dev1);
  
   % Step 3: let's add a document
 
-doc = exp.newdocument('nsd_document_subjectmeasurement',...
-	'nsd_document.name','Animal statistics',...
+doc = exp.newdocument('ndi_document_subjectmeasurement',...
+	'ndi_document.name','Animal statistics',...
 	'subject.id','vhlab12345', ...
 	'subject.species','Mus musculus',...
 	'subjectmeasurement.measurement','age',...

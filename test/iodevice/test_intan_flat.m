@@ -8,28 +8,28 @@ function test_intan_flat(dirname)
 %  as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NSDPATH]/example_experiments/exp1_eg is used.
+%  [NDIPATH]/example_experiments/exp1_eg is used.
 %
 %
 
 if nargin<1,
-	nsd_globals;
-	dirname = [nsdexampleexperpath filesep 'exp1_eg'];
+	ndi_globals;
+	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 end;
 
 disp(['creating a new experiment object...']);
-exp = nsd_experiment_dir('exp1',dirname);
+exp = ndi_experiment_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp, '.*\.rhd\>');  % look for .rhd files
+dt = ndi_filetree(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the iodevice object and add it to the experiment:
 
-dev1 = nsd_iodevice_mfdaq_intan('intan1',dt);
+dev1 = ndi_iodevice_mfdaq_intan('intan1',dt);
 exp.iodevice_add(dev1);
 
   % Now let's print some statistics

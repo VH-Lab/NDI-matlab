@@ -1,0 +1,38 @@
+[
+	{
+		"type":"n-trode","classname":"ndi_probe_timeseries_mfdaq"
+	} ,{
+		"type":"electrode-$","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"patch","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"patch-Vm","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"patch-I","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"patch-attached","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"sharp","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"sharp-Vm","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"sharp-I","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"wide-field-imaging","classname":"ndi_probe_timage"
+	},{
+		"type":"2-photon-imaging","classname":"ndi_probe_timage"
+	},{
+		"type":"1-photon-imaging","classname":"ndi_probe_timage"
+	},{
+		"type":"brightfield-imaging","classname":"ndi_probe_image"
+	},{
+		"type":"lick-spout","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"intraoral-cannula","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"reward-well","classname":"ndi_probe_timeseries_mfdaq"
+	},{
+		"type":"stimulator","classname":"ndi_probe_timeseries_stimulator"
+	}
+]
+

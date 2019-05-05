@@ -1,17 +1,17 @@
 Why does X need to be a handle?
 
 
-* nsd_base --
+* ndi_base --
 	It doesn't. It is just a unique label. It can be an instance.
 
 Conclusion: NO
 
-* nsd_leaf --
-	nsd_leaf objects are just a nsd_base with a name. It can be an instance, does not need to update (and it won't if there are multiple copies).
+* ndi_leaf --
+	ndi_leaf objects are just a ndi_base with a name. It can be an instance, does not need to update (and it won't if there are multiple copies).
 
 Conclusion: NO
 
-* nsd_dbleaf_branch --
+* ndi_dbleaf_branch --
 
 	These objects can be on disk or in memory. What if we have a huge one
 in memory? We don't want every instance to need to copy it.
@@ -28,20 +28,20 @@ copies that might be bad. How could this happen, potentially?
 Conclusion: NO
 
 
-* nsd_filetree --
+* ndi_filetree --
 
 Need to refer back to the experiment as a handle, that's all, so not really
 
 Conclusion: NO
 
-* nsd_iodevice
+* ndi_iodevice
 
-Like nsd_filetree, it needs to refer back to the experiment as a handle. But, we don't want to have lots of copies of them (because its messy), and
+Like ndi_filetree, it needs to refer back to the experiment as a handle. But, we don't want to have lots of copies of them (because its messy), and
 they are really tiny in memory. So no handle.
 
 Conclusion: NO
 
-* nsd_experiment --
+* ndi_experiment --
 
 	I would say because it is the top of a tree of data; you need it to
 reference all of the other stuff; it maintains the relative-ness of all the
@@ -58,12 +58,12 @@ But what if I want to open 10000 experiments? 10000 handles?
 
 Conclusion: YES, it should be a handle
 
-* nsd_variable
+* ndi_variable
 
-It's an nsd_dbleaf_branch, so it should also be NO
+It's an ndi_dbleaf_branch, so it should also be NO
 
 
-* nsd_syncgraph --
+* ndi_syncgraph --
 
 One big question is whether or not it is too slow to copy the epochgraph from
 a cache on each traverse.  If the answer to that question were that it is too

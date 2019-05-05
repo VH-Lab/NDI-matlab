@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/times.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/times_schema.json",
+		"class_name":						"spikeextractor-times",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"spike_extraction": {
+		"extraction_name": "",
+		"extraction_parameters_file_id": ""
+	}
+}

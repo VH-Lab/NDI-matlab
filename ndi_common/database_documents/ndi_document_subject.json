@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_subject.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_subject_schema.json",
+		"class_name":						"ndi_document_subject",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+        },
+	"subject": {
+		"identifier":						"",
+		"species":						"",
+		"strain":						"",
+		"variant":						""
+	}
+}
+

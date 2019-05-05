@@ -1,0 +1,48 @@
+function ndi_test_spikeextractor
+% NDI_TEST_SPIKEEXTRACTOR - Test the functionality of the apps 'ndi_spikeextractor' and 'ndi_spikesort' with example data
+%
+% Tests the NDI_APP_SPIKEEXTRACTOR on example data in 
+% [NDICOMMONPATH]/example_app_experiments/exp_sg
+%
+
+ % find our directory
+
+ndi_globals;
+mydirectory = [ndicommonpath filesep 'example_app_experiments'];
+dirname = [mydirectory filesep 'exp_sg'];
+
+
+disp(['creating a new experiment object...']);
+E = ndi_experiment_dir('exp1', dirname);
+
+% remove any old acq devices
+
+devs = E.iodevice_load('name','(.*)');
+for i=1:numel(devs),
+	E.iodevice_rm(celloritem(devs,i));
+end;
+
+
+disp(['Now adding our acquisition device (SpikeGadgets):']);
+ft = ndi_filetree(E, '.*\.rec\>');  % look for .rec files
+dev1 = ndi_iodevice_mfdaq_sg('SpikeGadgets', ft);
+E.iodevice_add(dev1);
+
+eparams = [dirname filesep 'extraction_parameters.txt'];
+sparams = [dirname filesep 'sorting_parameters.txt'];
+
+spike_extractor = ndi_app_spikeextractor(E);
+spike_sorter = ndi_app_spikesorter(E);
+
+ % I'd add something here that clears out any old extraction variables; see ndi_app_markgarbage/clearvalidinterval
+
+spike_extractor.spike_extract_probes('Tetrode7', 'n-trode', 'test', eparams);
+
+probes = E.getprobes('name','Tetrode7');
+myprobe = probes{1}; 
+
+catspikes = spike_extractor.load_spikes(myprobe,'test'),
+
+spike_sorter.spike_sort('Tetrode7', 'n-trode', 'test', 'test_sort', sparams);
+
+

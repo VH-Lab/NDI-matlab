@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter\/sorting_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter\/sorting_parameters_schema.json",
+		"class_name":						"spikesorter-spikes",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"sorting_parameters": {
+		"min_rng": 0,
+		"num_pca_features": 0
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/extraction_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/extraction_parameters_schema.json",
+		"class_name":						"spikeextractor-extraction_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"extraction_parameters": {
+		"reference": 0,
+		"center_range": 0,
+		"interpolation": 0,
+		"overlap": 0,
+		"read_size": 0,
+		"refractory_samples": 0,
+		"spike_sample_start": 0,
+		"spike_sample_end": 0,
+		"start_time": 0
+	}
+}

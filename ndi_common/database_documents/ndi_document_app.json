@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_app.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_app_schema.json",
+		"class_name":						"ndi_document_app",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+        },
+	"app": {
+		"name":							""
+	}
+}
+

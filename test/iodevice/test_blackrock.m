@@ -8,28 +8,28 @@ function test_blackrock_flat(dirname)
 %  as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NSDPATH]/example_experiments/exp_blackrock is used.
+%  [NDIPATH]/example_experiments/exp_blackrock is used.
 %
 %
 
 if nargin<1,
-	nsd_globals;
-	dirname = [nsdexampleexperpath filesep 'exp_blackrock'];
+	ndi_globals;
+	dirname = [ndiexampleexperpath filesep 'exp_blackrock'];
 end;
 
 disp(['creating a new experiment object...']);
-exp = nsd_experiment_dir('exp1',dirname);
+exp = ndi_experiment_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (blackrock):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = nsd_filetree(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
+dt = ndi_filetree(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
 
   % Step 2: create the iodevice object and add it to the experiment:
 
-dev1 = nsd_iodevice_mfdaq_blackrock('blackrock1',dt);
+dev1 = ndi_iodevice_mfdaq_blackrock('blackrock1',dt);
 exp.iodevice_add(dev1);
 
   % Now let's print some statistics

@@ -8,16 +8,16 @@ function test_intan_flat_saved(dirname)
 %  data from channel 1, as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NSDPATH]/example_experiments/exp1_eg_saved is used.
+%  [NDIPATH]/example_experiments/exp1_eg_saved is used.
 %
 
 if nargin<1,
-	nsd_globals;
-	dirname = [nsdexampleexperpath filesep 'exp1_eg_saved'];
+	ndi_globals;
+	dirname = [ndiexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
-exp = nsd_experiment_dir(dirname);
+exp = ndi_experiment_dir(dirname);
 
 disp(['Now looking for iodevice Intan1']);
 

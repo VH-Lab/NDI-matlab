@@ -1,0 +1,13 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_epochid.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_epochid_schema.json",
+		"class_name":						"ndi_document_epochid",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"epochid":							""
+}
+

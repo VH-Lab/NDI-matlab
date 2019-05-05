@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_projectvar.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_projectvar_schema.json",
+		"class_name":						"ndi_document_projectvar",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+        },
+	"projectvar": {
+		"project":						"",
+		"user":							"",
+		"lab":							"",
+		"description":						"",
+		"data":							""
+	}
+}
+

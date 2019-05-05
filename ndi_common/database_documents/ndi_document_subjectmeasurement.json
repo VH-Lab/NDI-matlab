@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_subjectmeasurement.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_subjectmeasurement_schema.json",
+		"class_name":						"ndi_document_subjectmeasurement",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_subject.json" }
+		]
+        },
+	"subjectmeasurement": {
+		"measurement":						"",
+		"value":						"",
+		"datestamp":						""
+	}
+}
+

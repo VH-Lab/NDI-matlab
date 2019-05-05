@@ -1,15 +1,15 @@
 # Probe
 
-In NSD, a **probe** is an instrument for observing or manipulating the experimental environment. Types of probes include recording or stimulating electrodes and the display or recording of information (whether visual, auditory, olfactory, gustatory, temperature, etc). Probes are distinct from **devices**, which are digital input/output devices that perform digital sampling or control of probes.
+In NDI, a **probe** is an instrument for observing or manipulating the experimental environment. Types of probes include recording or stimulating electrodes and the display or recording of information (whether visual, auditory, olfactory, gustatory, temperature, etc). Probes are distinct from **devices**, which are digital input/output devices that perform digital sampling or control of probes.
 
-The probes that are acquired or controlled in any device epoch are listed in the `nsd_epochcontents` object for that epoch. They include the following fields:
+The probes that are acquired or controlled in any device epoch are listed in the `ndi_epochcontents` object for that epoch. They include the following fields:
 
-`nsd_epochcontents` fields:
+`ndi_epochcontents` fields:
 
    * **name**: A name for the probe, must start with a letter and contain no whitespace but otherwise unrestricted
-   * **reference**: A reference for the probe; identical reference numbers indicate that NSD should try to combine data; (for example, if you move an electrode, one should change the reference number to indicate that the probe is being used differently); can be any non-negative integer
+   * **reference**: A reference for the probe; identical reference numbers indicate that NDI should try to combine data; (for example, if you move an electrode, one should change the reference number to indicate that the probe is being used differently); can be any non-negative integer
    * **type**: The type of probe; must be a string that begins with a letter and has no whitespace; there are standard types (see below) but users can use any valid string for type.
-   * **devicestring**: A string that indicates the device (and channels) that have a digital record of the probe (see `nsd_devicestring`)
+   * **devicestring**: A string that indicates the device (and channels) that have a digital record of the probe (see `ndi_devicestring`)
 
 Standard types:
 
