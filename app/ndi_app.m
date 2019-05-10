@@ -1,4 +1,4 @@
-classdef ndi_app
+classdef ndi_app < ndi_documentservice
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment % the NDI_EXPERIMENT object that the app will operate on

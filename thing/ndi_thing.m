@@ -1,4 +1,4 @@
-classef ndi_thing < ndi_epochset % or should it be ndi_epochset? or should it be ndi_probe?
+classef ndi_thing < ndi_epochset & ndi_documentservice 
 % NDI_THING - define or examine a thing in the experiment
 %
 	properties (SetAccess=protected, GetAccess=public)
@@ -154,7 +154,6 @@ classef ndi_thing < ndi_epochset % or should it be ndi_epochset? or should it be
 					et_(1).underlying_epochs = underlying_epochs;
 					et(end+1) = et_;
 				end
-
 		end; % buildepochtable
 
 		%% unique NDI_THING methods
@@ -194,7 +193,6 @@ classef ndi_thing < ndi_epochset % or should it be ndi_epochset? or should it be
 
 		end; % addepoch()
 
-
 		function et_added = loadaddedepochs(ndi_thing_obj)
 			% LOADADDEDEPOCHS - load the added epochs from an NDI_THING
 			%
@@ -204,14 +202,44 @@ classef ndi_thing < ndi_epochset % or should it be ndi_epochset? or should it be
 			% about the NDI_THING.
 			%
 			% 
-
 				% loads from database
 				
 
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
 
-	% newdocument
-	% searchquery
+	%%% NDI_DOCUMENTSERVICE methods
+
+		function ndi_document_obj = newdocument(ndi_thing_obj, epochid)
+			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a thing
+			%
+			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_THING_OBJ, [EPOCHID])
+			%
+			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
+			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ and the 
+			% 'name', 'type', and 'reference' fields of its underlying NDI_PROBE_OBJ. 
+			% If EPOCHID is provided, then an EPOCHID field is filled out as well
+			% in accordance to 'ndi_document_epochid'.
+			%
+				ndi_document_obj = ndi_thing_obj.experiment.newdocument('ndi_document_thing',...
+					'thing.ndi_thing_class', class(ndi_thing_obj), ...
+					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type) + 
+						ndi_thing_obj.probe.newdocument();
+		end; % newdocument
+
+		function sq = searchquery(ndi_thing_obj)
+			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this thing
+			%
+			% SQ = SEARCHQUERY(NDI_THING_OBJ)
+			%
+			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
+			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ.
+			%
+				sq = ndi_thing_obj.probe.searchquery();
+				sq = cat(2,sq, ...
+					{'thing.name',ndi_thing_obj.name,...
+					 'thing.type',ndi_thing_obj.type,...
+					 'thing.ndi_thing_class', classname(ndi_thing_obj) });
+		end;
 
 	end; % methods
 

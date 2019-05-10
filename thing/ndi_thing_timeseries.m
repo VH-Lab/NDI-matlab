@@ -10,7 +10,7 @@ classef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 			if ~isa(ndi_probe_obj, 'ndi_probe'),
 				error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
 			end;
-			ndi_thing_obj.name = ndi_probe_obj.thing_name;
+			ndi_thing_obj.name = thing_name;
 			ndi_thing_obj.probe = ndi_probe_obj;
 		end; % ndi_thing_timeseries()
 

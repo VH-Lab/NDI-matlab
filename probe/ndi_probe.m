@@ -1,4 +1,4 @@
-classdef ndi_probe < ndi_epochset
+classdef ndi_probe < ndi_epochset & ndi_documentservice
 % NDI_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
