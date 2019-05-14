@@ -39,4 +39,3 @@ classef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 
 end % classdef
 
-

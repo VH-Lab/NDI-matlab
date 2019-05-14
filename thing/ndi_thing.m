@@ -5,16 +5,27 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 		name
 		type
 		probe    % we need the probe so we can resolve timerefs
+		direct   % is it direct from a probe (1) or do observations need to be added by other software?
 
 	end % properties
 
 	methods
 		function ndi_thing_obj = ndi_thing(thing_name, ndi_probe_obj)
-			if ~isa(ndi_probe_obj, 'ndi_probe'),
-				error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
-			end;
-			ndi_thing_obj.name = ndi_probe_obj.thing_name;
-			ndi_thing_obj.probe = ndi_probe_obj;
+			% NDI_THING_OBJ = NDI_THING - creator for NDI_THING
+			%
+			% NDI_THING_OBJ = NDI_THING(THING_NAME, NDI_PROBE_OBJ)
+			%    or
+			% NDI_THING_OBJ = NDI_THING(THING_DOCUMENT, NDI_EXPERIMENT_OBJ)
+			%
+			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
+			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
+			%
+				% NEED EDIT HERE
+				if ~isa(ndi_probe_obj, 'ndi_probe'),
+					error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
+				end;
+				ndi_thing_obj.name = ndi_probe_obj.thing_name;
+				ndi_thing_obj.probe = ndi_probe_obj;
 		end; % ndi_thing()
 
 	% NDI_EPOCHSET methods
@@ -134,22 +145,33 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 				% 
 				% here figure out the epochs that are present
 				% for now, punt
-				epochs_here = 1:numel(probe_et); 
-				probe_et = probe_et(epochs_here);
 
-				for n=1:numel(probe_et),
+				if nsd_thing_obj.direct,
+					ib = 1:numel(probe_et);
+					ia = 1:numel(probe_et);
+				else,
+					et_added = ndi_thing_obj.loadaddedepochs();
+					[c,ia,ib] = intersect({et_added.epoch_id}, {probe_et.epoch_id});
+				end
+
+				for n=1:numel(ia),
 					et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 					et_(1).epoch_number = n;
-					et_(1).epoch_id = probe_et(n).epoch_id;
+					et_(1).epoch_id = probe_et(ib(n)).epoch_id;
 					et_(1).epochcontents = []; % not applicable for ndi_thing objects
-					et_(1).epoch_clock = probe_et(n).epoch_clock;
-					et_(1).t0_t1 = probe_et(n).t0_t1;  % this should really be something else, the thing might not entirely overlap the probe
+					if nsd_thing_obj.direct,
+						et_(1).epoch_clock = probe_et(ib(n)).epoch_clock;
+						et_(1).t0_t1 = probe_et(ib(n)).t0_t1; 
+					else,
+						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
+						et_(1).t0_t1 = et_added(ia(n).t0_t1);
+					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-					underlying_epochs(1).underlying = epochs_here(n);
-					underlying_epochs.epoch_id = probe_et(n).epoch_id;
-					underlying_epochs.epochcontents = probe_et(n).epochcontents;
-					underlying_epochs.epoch_clock = probe_et(n).epoch_clock;
-					underlying_epochs.t0_t1 = probe_et(n).t0_t1;
+					underlying_epochs(1).underlying = probe_et(ib(n));
+					underlying_epochs.epoch_id = probe_et(ib(n)).epoch_id;
+					underlying_epochs.epochcontents = probe_et(ib(n)).epochcontents;
+					underlying_epochs.epoch_clock = probe_et(ib(n)).epoch_clock;
+					underlying_epochs.t0_t1 = probe_et(ib(n)).t0_t1;
 				
 					et_(1).underlying_epochs = underlying_epochs;
 					et(end+1) = et_;
@@ -169,6 +191,18 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			% 
 				name = ['thing: ' name];
 		end; %thingstring() 
+
+		function E = experiment(ndi_thing_obj)
+			% EXPERIMENT - the NDI_EXPERIMENT object associated with an NDI_THING
+			%
+			% E = EXPERIMENT(NDI_THING_OBJ)
+			%
+			% Return the NDI_EXPERIMENT associated with an NDI_THING.
+			%
+			% (Returns the thing's probe's 'experiment' parameter.)
+			%
+				E = nsd_thing_obj.probe.experiment;
+		end; % experiment
 
 		function ndi_thing_obj = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
 			% ADDEPOCH - add an epoch to the NDI_THING
@@ -190,7 +224,13 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			%   DATAPOINTS:    the data points that accompany each timepoint (must be TxXxY...), or can be 'probe' to 
 			%                     read from the probe
 			%   
-
+				if ndi_thing_obj.direct,
+					error(['Cannot add external observations to an NDI_THING that is directly based on NDI_PROBE.']);
+				end;
+				E = [];
+				if ~isempty(ndi_thing_obj.probe),
+					E = ndi_thing_obj.probe.experiment; 
+				end;
 		end; % addepoch()
 
 		function et_added = loadaddedepochs(ndi_thing_obj)
@@ -202,10 +242,46 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			% about the NDI_THING.
 			%
 			% 
+				et_added = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
+				if nsd_thing_obj.direct,
+					% nothing can be added
+					return; 
+				end;
 				% loads from database
-				
+				thing_doc = ndi_thing_obj.load_thing_doc();
+				if ~isempty(thing_doc),
+					sq = {'thing_epoch.thing_unique_reference', ...
+						thing_doc.document_properties.ndi_document.document_unique_reference};
+					E = ndi_thing_obj.experiment();
+					epochdocs = E.database.search(sq);
 
+					if ~isempty(epochdocs),
+						for i=1:numel(epochdocs),
+							newet.epoch_number = i;
+							newet.epoch_id = epochdocs{i}.document_properties.epoch.epochid;
+							newet.epochcontents = '';
+							newet.epoch_clock = epochdocs{i}.document_properties.thing_epoch.epoch_clock;
+							newet.t0_t1 = epochdocs{i}.document_properties.thing_epoch.t0_t1;
+							newet.underlyingepochs = []; % leave this for buildepochtable
+						end;
+						et_added(end+1) = newt;
+					end
+				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
+
+		function thing_doc = load_thing_doc(ndi_thing_obj)
+			% LOAD_THING_DOC - load a thing doc from the experiment database
+			%
+			% THING_DOC = LOAD_THING_DOC(NDI_THING_OBJ)
+			%
+			% Load an NDI_DOCUMENT that is based on the NDI_THING object.
+			%
+			% Returns empty if there is no such document.
+			%
+				sq = ndi_thing_obj.searchquery();
+				E = ndi_thing_obj.experiment;
+				thing_doc = E.database.search(sq);
+		end; % load_thing_doc
 
 	%%% NDI_DOCUMENTSERVICE methods
 
@@ -220,7 +296,7 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
-				ndi_document_obj = ndi_thing_obj.experiment.newdocument('ndi_document_thing',...
+				ndi_document_obj = newdocument(ndi_thing_obj.experiment(), 'ndi_document_thing',...
 					'thing.ndi_thing_class', class(ndi_thing_obj), ...
 					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type) + 
 						ndi_thing_obj.probe.newdocument();
