@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_thing_epoch.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_thing_epoch_schema.json",
+		"class_name":						"ndi_document_thing",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document_epoch.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json" }
+		]
+	},
+	"thing_epoch": {
+		"thing_unique_reference":				"",
+		"epoch_clock":						"",
+		"t0_t1":						""
+	}
+}
+

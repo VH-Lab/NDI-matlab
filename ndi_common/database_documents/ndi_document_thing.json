@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_thing.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_thing_schema.json",
+		"class_name":						"ndi_document_thing",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" }
+		]
+	},
+	"thing": {
+		"ndi_thing_class":					"ndi_thing",
+		"name":							"",
+		"type":							"",
+		"direct":						0
+	}
+}
+

@@ -274,7 +274,6 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 				ndi_document_obj = ndi_probe_obj.experiment.newdocument('ndi_document_probe',...
 					'probe.name',ndi_probe_obj.name,'probe.type',ndi_probe_obj.type,...
 					'probe.reference',ndi_probe_obj.reference);
-
 				if nargin>1,
 					newdoc = ndi_probe_obj.experiment.newdocument('ndi_document_epochid',...
 						'epochid', epochid);
@@ -303,3 +302,5 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 		end;
 	end % methods
 end
+
+

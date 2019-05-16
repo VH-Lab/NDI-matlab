@@ -281,7 +281,7 @@ classdef ndi_experiment < handle
 			%
 			% Examines all NDI_IODEVICE entries in the NDI_EXPERIMENT_OBJ's device array
 			% and returns all NDI_PROBE entries that can be constructed from each device's
-			% NDI_EPOCHCONENTS entries.
+			% NDI_EPOCHCONTENTS entries.
 			%
 			% PROBES is a cell array of NDI_PROBE objects.
 			%
@@ -342,6 +342,33 @@ classdef ndi_experiment < handle
 					probes = probes(include);
 				end;
 		end; % getprobes
+
+		function things = getthings(ndi_experiment_obj, varargin);
+		% GETTHINGS - Return all NDI_THING objects that are found in experiment database
+			%
+			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, ...)
+			%
+			% Examines all the database of NDI_EXPERIMENT_OBJ and returns all NDI_THING
+			% entries.
+			%
+			% THINGS is a cell array of NDI_PROBE objects.
+			%
+			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
+			%
+			% returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
+			% has a value of VALUE2, etc. Properties of things are 'thing.name', 'thing.type',
+			% 'thing.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
+			% 
+
+				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
+						'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()}, ...
+					varargin{:}); 
+				doc = ndi_experiment_obj.database.search(sq);
+				things = {};
+				for i=1:numel(doc),
+					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);
+				end;
+		end; % getthings()
 	end; % methods
 end % classdef
 

@@ -1,48 +1,62 @@
-classef ndi_thing < ndi_epochset & ndi_documentservice 
+classdef ndi_thing < ndi_epochset & ndi_documentservice 
 % NDI_THING - define or examine a thing in the experiment
 %
-	properties (SetAccess=protected, GetAccess=public)
+	properties (GetAccess=public, SetAccess=protected)
 		name
 		type
 		probe    % we need the probe so we can resolve timerefs
 		direct   % is it direct from a probe (1) or do observations need to be added by other software?
 
-	end % properties
+	end; % properties
 
 	methods
-		function ndi_thing_obj = ndi_thing(thing_name, ndi_probe_obj)
+		function ndi_thing_obj = ndi_thing(varargin)
 			% NDI_THING_OBJ = NDI_THING - creator for NDI_THING
 			%
-			% NDI_THING_OBJ = NDI_THING(THING_NAME, NDI_PROBE_OBJ)
+			% NDI_THING_OBJ = NDI_THING(THING_NAME, THING_TYPE, NDI_PROBE_OBJ, DIRECT)
 			%    or
 			% NDI_THING_OBJ = NDI_THING(THING_DOCUMENT, NDI_EXPERIMENT_OBJ)
 			%
 			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
 			%
-				% NEED EDIT HERE
+				if numel(varargin)==4,
+					% first type
+					ndi_thing_class = 'ndi_thing';
+					thing_name = varargin{1};
+					thing_type = varargin{2};
+					ndi_probe_obj = varargin{3};
+					direct = logical(varargin{4});
+				elseif numel(varargin)==2,
+					if ~isa(varargin{1},'ndi_document'),
+						error(['When 2 input arguments are given, 1st input argument must be an NDI_DOCUMENT.']);
+					end;
+					if ~isfield(varargin{1}.document_properties,'thing'),
+						error(['This document does not have parameters ''thing''.']);
+					end;
+					ndi_thing_class = varargin{1}.document_properties.thing.ndi_thing_class;
+					thing_name = varargin{1}.document_properties.thing.name;
+					thing_type = varargin{1}.document_properties.thing.type;
+					ndi_experiment_obj = varargin{2};
+					ndi_probe_obj = ndi_document2probe(varargin{1}, ndi_experiment_obj);
+					if ischar(varargin{1}.document_properties.thing.direct),
+						direct = logical(eval(varargin{1}.document_properties.thing.direct));
+					else,
+						direct = logical(varargin{1}.document_properties.thing.direct);
+					end;
+				else,
+					error(['Improper number of input arguments']);
+				end;
 				if ~isa(ndi_probe_obj, 'ndi_probe'),
 					error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
 				end;
-				ndi_thing_obj.name = ndi_probe_obj.thing_name;
+				ndi_thing_obj.name = thing_name;
+				ndi_thing_obj.type = thing_type;
 				ndi_thing_obj.probe = ndi_probe_obj;
+				ndi_thing_obj.direct = direct;
 		end; % ndi_thing()
 
-	% NDI_EPOCHSET methods
-
-		function ec = epochclock(ndi_thing_obj, epoch_number)
-			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
-			%
-			% EC = EPOCHCLOCK(NDI_THING_OBJ, EPOCH_NUMBER)
-			%
-			% Return the clock types available for this epoch.
-			%
-			% The NDI_THING class always returns the clock type(s) of the probe it is based on
-			%
-				% make sure to call it by epochid because epoch_number of probe might not
-				% match the ndi_thing, if the thing is sometimes not recorded by the probe (when it's hiding)
-				ec = ndi_thing_obj.probe.epochclock(ndi_thing_obj.epochid(epoch_number));
-		end; % epochclock
+	% NDI_EPOCHSET-based methods
 
 		function b = issyncgraphroot(ndi_thing_obj)
 			% ISSYNCGRAPHROOT - should this object be a root in an NDI_SYNCGRAPH epoch graph?
@@ -76,7 +90,7 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% The NDI_THING class always returns the clock type(s) of the probe it is based on
 			%
-				et = epochtableentry(ndi_thing_obj.probe, epoch_number);
+				et = epochtableentry(ndi_thing_obj, epoch_number);
 				ec = et.epoch_clock;
 		end; % epochclock()
 
@@ -201,13 +215,13 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% (Returns the thing's probe's 'experiment' parameter.)
 			%
-				E = nsd_thing_obj.probe.experiment;
+				E = ndi_thing_obj.probe.experiment;
 		end; % experiment
 
-		function ndi_thing_obj = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
+		function [ndi_thing_obj, epochdoc] = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1)
 			% ADDEPOCH - add an epoch to the NDI_THING
 			%
-			% NDI_THING_OBJ = ADDEPOCH(NDI_THING_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
+			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
 			%
 			% Registers the data for an epoch with the NDI_THING_OBJ.
 			%
@@ -218,19 +232,30 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			%                     of the probe
 			%   T0_T1:         The starting time and ending time of the existence of information about the THING on
 			%                     the probe, in units of the epock clock
-			%   TIMEPOINTS:    the time points to be added to this epoch; can also be the string 'probe' which means the
-			%                     points are read directly from the probe (must be Tx1). Timepoints must be in the units
-			%                     of the EPOCHCLOCK.
-			%   DATAPOINTS:    the data points that accompany each timepoint (must be TxXxY...), or can be 'probe' to 
-			%                     read from the probe
+			% Outputs:
+			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%   
+				epochdoc = [];
 				if ndi_thing_obj.direct,
 					error(['Cannot add external observations to an NDI_THING that is directly based on NDI_PROBE.']);
 				end;
-				E = [];
-				if ~isempty(ndi_thing_obj.probe),
-					E = ndi_thing_obj.probe.experiment; 
-				end;
+				E = ndi_thing_obj.experiment();
+				if ~isempty(E),
+					thingdoc = E.database.search(ndi_thing_obj.search());
+					if isempty(thingdoc),
+						error(['NDI_THING is not part of the database.']);
+					elseif numel(thingdoc)>1,
+						error(['More than one document corresponds to this NDI_THING; shouldn''t happen.']);
+					else,
+						thingdoc = thingdoc{1};
+					end;
+					epochdoc = E.newdocument('ndi_document_thing_epoch', 'thing_epoch.thing_unique_reference', ...
+						thingdoc.document_properties.ndi_document.document_unique_id, ...
+						'thing_epoch.epochclock', epochclock, 'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
+					if nargout<2,
+						E.database_add(epochdoc);
+					end;
+				end
 		end; % addepoch()
 
 		function et_added = loadaddedepochs(ndi_thing_obj)
@@ -265,7 +290,7 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 							newet.underlyingepochs = []; % leave this for buildepochtable
 						end;
 						et_added(end+1) = newt;
-					end
+					end;
 				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
 
@@ -296,10 +321,12 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
-				ndi_document_obj = newdocument(ndi_thing_obj.experiment(), 'ndi_document_thing',...
+				ndi_document_obj = ndi_document('ndi_document_thing',...
 					'thing.ndi_thing_class', class(ndi_thing_obj), ...
-					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type) + 
-						ndi_thing_obj.probe.newdocument();
+					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type,...
+					'thing.direct',ndi_thing_obj.direct) + ...
+					ndi_thing_obj.probe.newdocument() + ...
+					newdocument(ndi_thing_obj.experiment(), 'ndi_document', 'ndi_document.type','ndi_thing');
 		end; % newdocument
 
 		function sq = searchquery(ndi_thing_obj)
@@ -314,7 +341,8 @@ classef ndi_thing < ndi_epochset & ndi_documentservice
 				sq = cat(2,sq, ...
 					{'thing.name',ndi_thing_obj.name,...
 					 'thing.type',ndi_thing_obj.type,...
-					 'thing.ndi_thing_class', classname(ndi_thing_obj) });
+					 'thing.ndi_thing_class', classname(ndi_thing_obj), ...
+					'ndi_document.type','ndi_thing' });
 		end;
 
 	end; % methods
