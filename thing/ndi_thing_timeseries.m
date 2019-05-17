@@ -1,4 +1,4 @@
-classef ndi_thing_timeseries < ndi_thing & ndi_timeseries
+classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 % NDI_THING - define or examine a thing in the experiment
 %
 	properties (SetAccess=protected, GetAccess=public)
@@ -6,12 +6,8 @@ classef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 	end % properties
 
 	methods
-		function ndi_thing_timeseries_obj = ndi_thing_timeseries(thing_name, ndi_probe_obj)
-			if ~isa(ndi_probe_obj, 'ndi_probe'),
-				error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
-			end;
-			ndi_thing_obj.name = thing_name;
-			ndi_thing_obj.probe = ndi_probe_obj;
+		function ndi_thing_timeseries_obj = ndi_thing_timeseries(varargin)
+			ndi_thing_timeseries_obj = ndi_thing_timeseries_obj@ndi_thing(varargin{:});
 		end; % ndi_thing_timeseries()
 
 		%%%%% NDI_TIMESERIES methods
@@ -72,8 +68,6 @@ classef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					E = ndi_thing_obj.probe.experiment;
 				end;
 		end; % addepoch()
-
 	end; % methods
-
 end % classdef
 
