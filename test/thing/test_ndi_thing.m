@@ -33,16 +33,24 @@ if ~isempty(doc),
 end;
 
 p = E.getprobes(); % should return 1 probe
+[d,t] = readtimeseries(p{1}, 1, -Inf, Inf);
+ % low-pass filter
+[b,a]=cheby1(4,0.8,[0.1 300]/(0.5*1/median(diff(t))));
+d_filter = filtfilt(b,a,d);
 
 mything = ndi_thing_timeseries('mydirectthing','field', p{1}, 1);
 doc = mything.newdocument();
 E.database_add(doc);
 
+f = openbinarydoc(E.database,doc),
+error('vhsb_write must preserve open state')
+vhsb_write(f,t,d_filter,'use_filelock',0);
+f.fclose();
+E.database.closebinarydoc(f);
+
 thethings = E.getthings();
 
 thethings{1},
-
-
 
 
 % remove the thing document

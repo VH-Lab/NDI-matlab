@@ -23,6 +23,7 @@ classdef ndi_app_stimulus_response < ndi_app
 
 		end % ndi_app_stimulus_response() creator
 
+
 		function doc = compute_stimulus_response_summary(ndi_app_stimulus_response_obj, ndi_probe_stim, ndi_timeseries_obj, timeref, t0, t1, varargin)
 			% COMPUTE_STIMULUS_RESPONSE_SUMMARY - compute responses to a stimulus set
 			%

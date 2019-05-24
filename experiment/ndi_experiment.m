@@ -108,7 +108,7 @@ classdef ndi_experiment < handle
 				end;
 		end; % iodevice_load()	
 
-		% NDI_DATABASE / NDI_DOCUMENT METHODS
+		% NDI_DOCUMENTSERVICE methods
 
 		function ndi_document_obj = newdocument(ndi_experiment_obj, document_type, varargin)
 		% NEWDOCUMENT - create a new NDI_DATABASE document of type NDI_DOCUMENT
@@ -132,17 +132,42 @@ classdef ndi_experiment < handle
 			ndi_document_obj = ndi_document(document_type, inputs);
 		end; %newdocument()
 
+		function sq = searchquery(ndi_experiment_obj)
+		% SEARCHQUERY - return a search query for database objects in this experiment
+		%
+		% SQ = SEARCHQUERY(NDI_EXPERIMENT_OBJ)
+		%
+		% Returns a search query that will match all NDI_DOCUMENT objects that were generated
+		% by this experiment.
+		%
+		% SQ = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+		% 
+		% Example: mydoc = ndi_experiment_obj.newdocument('ndi_document','ndi_document.name','myname');
+		%
+			sq = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+		end; %searchquery()
+
+		% NDI_DATABASE / NDI_DOCUMENT methods
+
 		function ndi_experiment_obj = database_add(ndi_experiment_obj, document)
 			%DATABASE_ADD - Add an NDI_DOCUMENT to an NDI_EXPERIMENT object
 			%
 			% NDI_EXPERIMENT_OBJ = DATABASE_ADD(NDI_EXPERIMENT_OBJ, NDI_DOCUMENT_OBJ)
 			%
-			% Adds the NDI_DOCUMENT NDI_DOCUMENT_OBJ to the NDI_EXPERIMENT NDI_EXPERIMENT_OBJ
-			%
-			% The variable can be queried by referencing NDI_EXPERIMENT_OBJ.database
+			% Adds the NDI_DOCUMENT NDI_DOCUMENT_OBJ to the NDI_EXPERIMENT NDI_EXPERIMENT_OBJ.
+			% NDI_DOCUMENT_OBJ can also be a cell array of NDI_DOCUMENT objects, which will all be added
+			% in turn.
+			% 
+			% The database can be queried by calling NDI_EXPERIMENT_OBJ/SEARCH
 			%  
-			% See also: DATABASE_RM, NDI_EXPERIMENT, NDI_DATABASE, NDI_DATABASE/SEARCH
+			% See also: DATABASE_RM, NDI_EXPERIMENT, NDI_DATABASE, NDI_EXPERIMENT/SEARCH
 
+				if iscell(document),
+					for i=1:numel(document),
+						ndi_experiment_obj.database_add(document{i});
+					end;
+					return;
+				end;
 				if ~isa(document,'ndi_document'),
 					error(['document is not an NDI_DOCUMENT']);
 				end;
@@ -173,6 +198,19 @@ classdef ndi_experiment < handle
 					ndi_experiment_obj.database.remove(doc_unique_id);
 				end;
 		end; % database_rm
+
+		function ndi_document_obj = database_search(ndi_experiment_obj, searchparameters)
+			% DATABASE_SEARCH - Search for an NDI_DOCUMENT in a database of an NDI_EXPERIMENT object
+			%
+			% NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_EXPERIMENT_OBJ, SEARCHPARAMETERS)
+			%
+			% Given search parameters, which are a cell list {'PARAM1', VALUE1, 'PARAM2, VALUE2, ...},
+			% the database associated with the NDI_EXPERIMENT object is searched.
+			%
+			% Matches are returned in a cell list NDI_DOCUMENT_OBJ.
+			%
+				ndi_document_obj = ndi_experiment_obj.database.search(searchparameters);
+		end % database_search();
 
 		function ndi_experiment_obj = syncgraph_addrule(ndi_experiment_obj, rule)
 			% SYNCGRAPH_ADDRULE - add an NDI_SYNCRULE to the syncgraph

@@ -60,7 +60,7 @@ classdef ndi_database
 			% Parameter (default)      | Description
 			% -------------------------------------------------------------------------
 			% 'Update'  (1)            | If document exists, update it. If 0, an error is 
-			%                          |   generated if a document at DBPATH exists.
+			%                          |   generated if a document with the same ID exists
 			% 
 			% See also: NAMEVALUEPAIR 
 				Update = 1;

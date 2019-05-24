@@ -95,6 +95,7 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 			%
 			% Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
 			%	
+                ndi_binarydoc_matfid_obj.fid
 				ndi_matlabdumbjsondb_obj.db.closebinaryfile(ndi_binarydoc_matfid_obj.fid);
 				ndi_binarydoc_matfid_obj.fclose(); 
 		end; % do_closebinarydoc()
