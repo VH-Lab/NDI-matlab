@@ -77,13 +77,13 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 			end;
 		end; % do_search()
 
-		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_matlabdumbjsondb_obj, ndi_document_id, version)
+		function [ndi_binarydoc_obj, key] = do_openbinarydoc(ndi_matlabdumbjsondb_obj, ndi_document_id, version)
 			ndi_binarydoc_obj = [];
-			fid = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
+			[fid, key] = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
 			if fid>0,
 				[filename,permission,machineformat,encoding] = fopen(fid);
 				ndi_binarydoc_obj = ndi_binarydoc_matfid('fid',fid,'fullpathfilename',filename,...
-					'machineformat',machineformat,'permission',permission);
+					'machineformat',machineformat,'permission',permission, 'doc_unique_id', ndi_document_id, 'key', key);
 				ndi_binarydoc_obj.frewind(); % move to beginning of the file
 			end
 		end; % do_binarydoc()
@@ -91,12 +91,12 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_matlabdumbjsondb_obj, ndi_binarydoc_matfid_obj)
 			% DO_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC_MATFID_OBJ
 			%
-			% NDI_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NDI_MATLABDUMBJSONDB_OBJ, NDI_BINARYDOC_MATFID_OBJ)
+			% NDI_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NDI_MATLABDUMBJSONDB_OBJ, NDI_BINARYDOC_MATFID_OBJ, KEY, NDI_DOCUMENT_ID)
 			%
 			% Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
 			%	
-                ndi_binarydoc_matfid_obj.fid
-				ndi_matlabdumbjsondb_obj.db.closebinaryfile(ndi_binarydoc_matfid_obj.fid);
+				ndi_matlabdumbjsondb_obj.db.closebinaryfile(ndi_binarydoc_matfid_obj.fid, ...
+					ndi_binarydoc_matfid_obj.key, ndi_binarydoc_matfid_obj.doc_unique_id);
 				ndi_binarydoc_matfid_obj.fclose(); 
 		end; % do_closebinarydoc()
 	end;

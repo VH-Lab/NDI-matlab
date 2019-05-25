@@ -1,6 +1,8 @@
 classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
 
-	properties, 
+	properties,
+		key            %  The key that is created when the binary doc is locked
+		doc_unique_id  %  The document unique id
 	end;
 
 	methods,
@@ -13,8 +15,13 @@ classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
 			%
 			% See also: FILEOBJ, FILEOBJ/FILEOBJ
 			%
+				key = '';
+				doc_unique_id = '';
+				assign(varargin{:});
 				ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@fileobj(varargin{:});
 				ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
+				ndi_binarydoc_matfid_obj.key = key;
+				ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
 		end; % ndi_binarydoc_matfid() creator
 
 		function ndi_binarydoc_matfid_obj = fclose(ndi_binarydoc_matfid_obj)
@@ -25,7 +32,6 @@ classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
 			% the database.
 			%
 				ndi_binarydoc_matfid_obj.fclose@fileobj();
-				ndi_binarydoc_matfid_obj.fullpathfilename = '';
 				ndi_binarydoc_matfid_obj.permission = 'r';
 		end % fclose()
 	end;

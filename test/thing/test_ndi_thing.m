@@ -42,10 +42,8 @@ mything = ndi_thing_timeseries('mydirectthing','field', p{1}, 1);
 doc = mything.newdocument();
 E.database_add(doc);
 
-f = openbinarydoc(E.database,doc),
-error('vhsb_write must preserve open state')
+[f] = openbinarydoc(E.database,doc),
 vhsb_write(f,t,d_filter,'use_filelock',0);
-f.fclose();
 E.database.closebinarydoc(f);
 
 thethings = E.getthings();
