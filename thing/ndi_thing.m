@@ -156,11 +156,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 
 				probe_et = ndi_thing_obj.probe.epochtable();
 
-				% 
-				% here figure out the epochs that are present
-				% for now, punt
-
-				if nsd_thing_obj.direct,
+				if ndi_thing_obj.direct,
 					ib = 1:numel(probe_et);
 					ia = 1:numel(probe_et);
 				else,
@@ -168,17 +164,18 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					[c,ia,ib] = intersect({et_added.epoch_id}, {probe_et.epoch_id});
 				end
 
+
 				for n=1:numel(ia),
 					et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
 					et_(1).epoch_number = n;
 					et_(1).epoch_id = probe_et(ib(n)).epoch_id;
 					et_(1).epochcontents = []; % not applicable for ndi_thing objects
-					if nsd_thing_obj.direct,
+					if ndi_thing_obj.direct,
 						et_(1).epoch_clock = probe_et(ib(n)).epoch_clock;
 						et_(1).t0_t1 = probe_et(ib(n)).t0_t1; 
 					else,
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
-						et_(1).t0_t1 = et_added(ia(n).t0_t1);
+						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
 					underlying_epochs(1).underlying = probe_et(ib(n));
@@ -203,7 +200,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% For NDI_THING objects, this is the string 'thing: ' followed by its name
 			% 
-				name = ['thing: ' name];
+				thingstr = ['thing: ' ndi_thing_obj.name];
 		end; %thingstring() 
 
 		function E = experiment(ndi_thing_obj)
@@ -232,8 +229,6 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%                     of the probe
 			%   T0_T1:         The starting time and ending time of the existence of information about the THING on
 			%                     the probe, in units of the epock clock
-			% Outputs:
-			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%   
 				epochdoc = [];
 				if ndi_thing_obj.direct,
@@ -241,7 +236,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end;
 				E = ndi_thing_obj.experiment();
 				if ~isempty(E),
-					thingdoc = E.database.search(ndi_thing_obj.search());
+					thingdoc = E.database.search(ndi_thing_obj.searchquery());
 					if isempty(thingdoc),
 						error(['NDI_THING is not part of the database.']);
 					elseif numel(thingdoc)>1,
@@ -250,11 +245,9 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 						thingdoc = thingdoc{1};
 					end;
 					epochdoc = E.newdocument('ndi_document_thing_epoch', 'thing_epoch.thing_unique_reference', ...
-						thingdoc.document_properties.ndi_document.document_unique_id, ...
-						'thing_epoch.epochclock', epochclock, 'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
-					if nargout<2,
-						E.database_add(epochdoc);
-					end;
+						thingdoc.document_properties.ndi_document.document_unique_reference, ...
+						'thing_epoch.epoch_clock', epochclock.ndi_clocktype2char(), 'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
+					E.database_add(epochdoc);
 				end
 		end; % addepoch()
 
@@ -268,7 +261,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% 
 				et_added = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
-				if nsd_thing_obj.direct,
+				if ndi_thing_obj.direct,
 					% nothing can be added
 					return; 
 				end;
@@ -282,14 +275,15 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 
 					if ~isempty(epochdocs),
 						for i=1:numel(epochdocs),
+							clear newet;
 							newet.epoch_number = i;
-							newet.epoch_id = epochdocs{i}.document_properties.epoch.epochid;
+							newet.epoch_id = epochdocs{i}.document_properties.epochid;
 							newet.epochcontents = '';
-							newet.epoch_clock = epochdocs{i}.document_properties.thing_epoch.epoch_clock;
-							newet.t0_t1 = epochdocs{i}.document_properties.thing_epoch.t0_t1;
-							newet.underlyingepochs = []; % leave this for buildepochtable
+							newet.epoch_clock = {ndi_clocktype(epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
+							newet.t0_t1 = {epochdocs{i}.document_properties.thing_epoch.t0_t1};
+							newet.underlying_epochs = []; % leave this for buildepochtable
 						end;
-						et_added(end+1) = newt;
+						et_added(end+1) = newet;
 					end;
 				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
@@ -306,6 +300,9 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				sq = ndi_thing_obj.searchquery();
 				E = ndi_thing_obj.experiment;
 				thing_doc = E.database.search(sq);
+				if ~isempty(thing_doc),
+					thing_doc = thing_doc{1};
+				end;
 		end; % load_thing_doc
 
 	%%% NDI_DOCUMENTSERVICE methods
@@ -341,7 +338,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				sq = cat(2,sq, ...
 					{'thing.name',ndi_thing_obj.name,...
 					 'thing.type',ndi_thing_obj.type,...
-					 'thing.ndi_thing_class', classname(ndi_thing_obj), ...
+					 'thing.ndi_thing_class', class(ndi_thing_obj), ...
 					'ndi_document.type','ndi_thing' });
 		end;
 

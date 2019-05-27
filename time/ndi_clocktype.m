@@ -128,6 +128,16 @@ classdef ndi_clocktype
 				b = strcmp(ndi_clocktype_obj,'dev_local_time');
 		end % needsepoch
 
+		function str = ndi_clocktype2char(ndi_clocktype_obj)
+			% NDI_CLOCKTYPE2CHAR - produce the NDI_CLOCKTOP's type as a string
+			%
+			% STR = NDI_CLOCKTYPE2CHAR(NDI_CLOCKTYPE_OBJ)
+			%
+			% Return a string STR equal to the NDI_CLOCKTYPE object's type parameter.
+			%
+				str = ndi_clocktype_obj.type;
+		end % ndi_clocktype2char()
+
 		function b = eq(ndi_clocktype_obj_a, ndi_clocktype_obj_b)
 			% EQ - are two NDI_CLOCKTYPE objects equal?
 			%

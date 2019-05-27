@@ -25,7 +25,7 @@ E = ndi_experiment_dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 
-doc = E.database.search({'thing.name','mything'});
+doc = E.database.search({'ndi_document.type','ndi_thing(.*)'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc_unique_id(doc{i}));
@@ -38,18 +38,36 @@ p = E.getprobes(); % should return 1 probe
 [b,a]=cheby1(4,0.8,[0.1 300]/(0.5*1/median(diff(t))));
 d_filter = filtfilt(b,a,d);
 
-mything = ndi_thing_timeseries('mydirectthing','field', p{1}, 1);
-doc = mything.newdocument();
+mything1 = ndi_thing_timeseries('mydirectthing','field', p{1}, 1);
+doc = mything1.newdocument();
 E.database_add(doc);
 
-[f] = openbinarydoc(E.database,doc),
-vhsb_write(f,t,d_filter,'use_filelock',0);
-E.database.closebinarydoc(f);
+et = p{1}.epochtable;
+mything2 = ndi_thing_timeseries('myindirectthing','lfp', p{1}, 0);
+doc2 = mything2.newdocument();
+E.database_add(doc2);
+[mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter,1);
+mydoc.document_properties.thing_epoch
 
-thethings = E.getthings();
+et_t1 = mything1.epochtable();
+et_t2 = mything2.epochtable();
 
-thethings{1},
+keyboard
 
+thing1 = E.getthings('thing.name','mydirectthing'),
+thing2 = E.getthings('thing.name','myindirectthing'),
+
+[d1,t1] = readtimeseries(thing1{1},1,-Inf,Inf);
+[d2,t2] = readtimeseries(thing2{1},1,-Inf,Inf); % filtered data
+
+figure
+plot(t1,d1);
+hold on
+plot(t2,d2,'g');
+xlabel('Time (s)');
+ylabel('Voltage (V)');
+title(['Raw data is blue, filtered is green']);
+box off;
 
 % remove the thing document
 
@@ -59,5 +77,4 @@ if ~isempty(doc),
 		E.database_rm(doc_unique_id(doc{i}));
 	end;
 end;
-
 

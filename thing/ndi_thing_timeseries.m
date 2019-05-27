@@ -31,15 +31,40 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 				if ndi_thing_timeseries_obj.direct,
 					[data,t,timeref] = ndi_thing_timeseries_obj.probe.readtimeseries(timeref_or_epoch, t0, t1);
 				else,
+					if isa(timeref_or_epoch,'ndi_timereference'),
+						timeref = timeref_or_epoch;
+					else,
+						timeref = ndi_timereference(ndi_thing_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
+					end;
+
+					[epoch_t0_out, epoch_timeref, msg] = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(timeref, t0, ...
+							ndi_thing_timeseries_obj, ndi_clocktype('dev_local_time'));
+					[epoch_t1_out, epoch_timeref, msg] = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(timeref, t1, ...
+							ndi_thing_timeseries_obj, ndi_clocktype('dev_local_time'));
+
+	                                epoch = epoch_timeref.epoch;
+
+
+					
+					% deal with this soon
+					data = [];
+					t = [];
+					timeref = [];
+
+
+					if isnumeric(t),
+						t = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, t, ...
+							timeref.referent, timeref.clocktype);
+					end;
 				end;
 		end %readtimeseries()
 
 		%%%%% NDI_THING methods
 
-		function [ndi_thing_obj, epochdoc] = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1, timepoints, datapoints, series)
+		function [ndi_thing_timeseries_obj, epochdoc] = addepoch(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints, series)
 			% ADDEPOCH - add an epoch to the NDI_THING
 			%
-			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
+			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
 			%
 			% Registers the data for an epoch with the NDI_THING_OBJ.
 			%
@@ -58,15 +83,15 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 			% Outputs:
 			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%  
-				if ndi_thing_obj.direct,
+				if ndi_thing_timeseries_obj.direct,
 					error(['Cannot add external observations to an NDI_THING that is directly based on NDI_PROBE.']);
 				end;
 				[ndi_thing_timeseries_obj, epochdoc] = addepoch@ndi_thing(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1);
 					
-				E = [];
-				if ~isempty(ndi_thing_obj.probe),
-					E = ndi_thing_obj.probe.experiment;
-				end;
+				E = ndi_thing_timeseries_obj.experiment();
+				f = openbinarydoc(E.database,epochdoc);
+				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
+				E.database.closebinarydoc(f);
 		end; % addepoch()
 	end; % methods
 end % classdef

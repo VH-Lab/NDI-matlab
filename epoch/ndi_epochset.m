@@ -371,6 +371,8 @@ classdef ndi_epochset
 									end
 								end
 								unode_here(1).objectclass = class(epochnode.underlying_epochs(i).underlying);
+								epochnode.underlying_epochs(i).underlying
+								unode_here(1)
 								unode_here(1).objectname = epochnode.underlying_epochs(i).underlying.epochsetname;
 
 								unodes(end+1) = unode_here;

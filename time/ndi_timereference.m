@@ -78,7 +78,7 @@ classdef ndi_timereference
 			% 
 				a.referent_epochsetname = ndi_timeref_obj.referent.epochsetname();
 				a.referent_classname = class(ndi_timeref_obj.referent);
-				a.clocktypestring = ndi_timeref_obj.clocktype.type;
+				a.clocktypestring = ndi_timeref_obj.clocktype.ndi_clocktype2char();
 				a.epoch = ndi_timeref_obj.epoch;
 				a.time = ndi_timeref_obj.time;
 		end % ndi_timereference_struct

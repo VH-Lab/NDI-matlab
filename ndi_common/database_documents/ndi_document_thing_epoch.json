@@ -6,7 +6,7 @@
 		"class_version":					1,
 		"superclasses": [
 			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document_epoch.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
 			{  "definition":				"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json" }
 		]
 	},
