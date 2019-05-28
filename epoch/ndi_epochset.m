@@ -266,7 +266,7 @@ classdef ndi_epochset
 
 		% epochgraph
 
-		function [nodes,underlyingnodes] = epochnodes(ndi_epochset_obj)
+		function [nodes, underlyingnodes] = epochnodes(ndi_epochset_obj)
 			% EPOCHNODES - return all epoch nodes from an NDI_EPOCHSET object
 			%
 			% [NODES,UNDERLYINGNODES] = EPOCHNODES(NDI_EPOCHSET_OBJ)
@@ -338,7 +338,7 @@ classdef ndi_epochset
 		function [unodes,cost,mapping] = underlyingepochnodes(ndi_epochset_obj, epochnode)
 			% UNDERLYINGEPOCHNODES - find all the underlying epochnodes of a given epochnode
 			%
-			% [UNODES,OBJECTNAME, OBJECTCLASS, COST,MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
+			% [UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
 			%
 			% Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
 			% (an NDI_EPOCHSET object with ISSYNGRAPHROOT that returns 1).
@@ -371,8 +371,6 @@ classdef ndi_epochset
 									end
 								end
 								unode_here(1).objectclass = class(epochnode.underlying_epochs(i).underlying);
-								epochnode.underlying_epochs(i).underlying
-								unode_here(1)
 								unode_here(1).objectname = epochnode.underlying_epochs(i).underlying.epochsetname;
 
 								unodes(end+1) = unode_here;
@@ -400,7 +398,6 @@ classdef ndi_epochset
 									if ~issyncgraphroot(epochnode.underlying_epochs(i).underlying)
 										% we need to go deeper
 
-										disp('this is still untested, so pay attention!');
 										epochnode_d = epochnodes(epochnode.underlying_epochs(i).underlying);
 										match = 0;
 										z = find(strcmp(epochnode.underlying_epochs(i).epoch_id, {epochnode_d.epoch_id}));
@@ -412,16 +409,19 @@ classdef ndi_epochset
 										end
 										if match,
 											[unodes_d, cost_d, mapping_d] = ...
-												underylingepochnodes(epochnode.underlying_epochs(i).underlying);
+												underlyingepochnodes(epochnode.underlying_epochs(i).underlying, epochnode_d(match));
+
+											% unodes_d(1) is already in our list
 
 											% incorporate new costs; 
 											cost = [ cost inf(numel(unodes),numel(unodes_d)-1) ; ...
 												inf(numel(unodes_d)-1,numel(unodes)) zeros(numel(unodes_d)-1,numel(unodes_d)-1) ];
-											cost(numel(unodes):numel(unodes)+numel(unodes_d),numel(unodes):numel(unodes_d)) = cost_d;
+											cost(numel(unodes):numel(unodes)+numel(unodes_d)-1,numel(unodes):numel(unodes)+numel(unodes_d)-1) = ...
+												cost_d+cost(numel(unodes),numel(unodes));
 											mapping = [ mapping cell(numel(unodes),numel(unodes_d)-1) ; ...
 												cell(numel(unodes_d)-1,numel(unodes)) cell(numel(unodes_d)-1,numel(unodes_d)-1) ];
-											mapping(numel(unodes):numel(unodes)+numel(unodes_d),numel(unodes):numel(unodes_d)) = mapping_d;
-											unodes = cat(2,unodes,unodes_d);
+											mapping(numel(unodes):numel(unodes)+numel(unodes_d)-1,numel(unodes):numel(unodes)+numel(unodes_d)-1) = mapping_d;
+											unodes = cat(2,unodes,unodes_d(2:end)); % unodes_d(1) already in our list
 										end
 									end
 								end

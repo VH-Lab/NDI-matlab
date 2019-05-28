@@ -35,7 +35,7 @@ end;
 p = E.getprobes(); % should return 1 probe
 [d,t] = readtimeseries(p{1}, 1, -Inf, Inf);
  % low-pass filter
-[b,a]=cheby1(4,0.8,[0.1 300]/(0.5*1/median(diff(t))));
+[b,a]=cheby1(4,0.8,[300]/(0.5*1/median(diff(t))),'low');
 d_filter = filtfilt(b,a,d);
 
 mything1 = ndi_thing_timeseries('mydirectthing','field', p{1}, 1);
@@ -47,15 +47,12 @@ mything2 = ndi_thing_timeseries('myindirectthing','lfp', p{1}, 0);
 doc2 = mything2.newdocument();
 E.database_add(doc2);
 [mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter,1);
-mydoc.document_properties.thing_epoch
 
 et_t1 = mything1.epochtable();
 et_t2 = mything2.epochtable();
 
-keyboard
-
-thing1 = E.getthings('thing.name','mydirectthing'),
-thing2 = E.getthings('thing.name','myindirectthing'),
+thing1 = E.getthings('thing.name','mydirectthing');
+thing2 = E.getthings('thing.name','myindirectthing');
 
 [d1,t1] = readtimeseries(thing1{1},1,-Inf,Inf);
 [d2,t2] = readtimeseries(thing2{1},1,-Inf,Inf); % filtered data

@@ -42,16 +42,23 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					[epoch_t1_out, epoch_timeref, msg] = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(timeref, t1, ...
 							ndi_thing_timeseries_obj, ndi_clocktype('dev_local_time'));
 
-	                                epoch = epoch_timeref.epoch;
+					% now we know the epoch to read, finally!
 
+					thing_doc = ndi_thing_timeseries_obj.load_thing_doc();
+					sq = {'thing_epoch.thing_unique_reference', ...
+						thing_doc.document_properties.ndi_document.document_unique_reference, ...
+						'epochid', epoch_timeref.epoch};
+					E = ndi_thing_timeseries_obj.experiment();
+					epochdoc = E.database_search(sq);
+					if numel(epochdoc)~=1,
+						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch ', or found too many.']);
+					end;
+					epochdoc = epochdoc{1};
 
+					f = openbinarydoc(E.database,epochdoc);
+					[data,t] = vhsb_read(f,epoch_t0_out,epoch_t1_out);
+					E.database.closebinarydoc(f);
 					
-					% deal with this soon
-					data = [];
-					t = [];
-					timeref = [];
-
-
 					if isnumeric(t),
 						t = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, t, ...
 							timeref.referent, timeref.clocktype);

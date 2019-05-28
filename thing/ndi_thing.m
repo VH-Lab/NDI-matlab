@@ -178,7 +178,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-					underlying_epochs(1).underlying = probe_et(ib(n));
+					underlying_epochs(1).underlying = ndi_thing_obj.probe;
 					underlying_epochs.epoch_id = probe_et(ib(n)).epoch_id;
 					underlying_epochs.epochcontents = probe_et(ib(n)).epochcontents;
 					underlying_epochs.epoch_clock = probe_et(ib(n)).epoch_clock;
