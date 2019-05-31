@@ -68,10 +68,10 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 
 		%%%%% NDI_THING methods
 
-		function [ndi_thing_timeseries_obj, epochdoc] = addepoch(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints, series)
+		function [ndi_thing_timeseries_obj, epochdoc] = addepoch(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
 			% ADDEPOCH - add an epoch to the NDI_THING
 			%
-			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
+			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
 			%
 			% Registers the data for an epoch with the NDI_THING_OBJ.
 			%

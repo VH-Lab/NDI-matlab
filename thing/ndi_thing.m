@@ -251,10 +251,10 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end
 		end; % addepoch()
 
-		function et_added = loadaddedepochs(ndi_thing_obj)
+		function [et_added, epochdocs] = loadaddedepochs(ndi_thing_obj)
 			% LOADADDEDEPOCHS - load the added epochs from an NDI_THING
 			%
-			% ET_ADDED = LOADADDEDEOPCHS(NDI_THING_OBJ)
+			% [ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_THING_OBJ)
 			%
 			% Load the EPOCHTABLE that consists of added/registered epochs that provide information
 			% about the NDI_THING.
@@ -299,11 +299,33 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 				sq = ndi_thing_obj.searchquery();
 				E = ndi_thing_obj.experiment;
-				thing_doc = E.database.search(sq);
-				if ~isempty(thing_doc),
-					thing_doc = thing_doc{1};
+				thing_doc = E.database_search(sq);
+				if numel(thing_doc)>1,
+					error(['More than one document matches the THING definition. This should not happen.']);
+				elseif ~isempty(thing_doc),
+					thing_doc = thing_doc{1},
 				end;
 		end; % load_thing_doc
+
+		function thing_docs = load_all_thing_docs(ndi_thing_obj)
+			% LOAD_ALL_THING_DOCS - load all of the NDI_THING objects from an experiment database
+			%
+			% THING_DOCS = LOAD_ALL_THING_DOCS(NDI_THING_OBJ)
+			%
+			% Loads the NDI_DOCUMENT that is based on the NDI_THING object and any associated
+			% epoch documents.
+			%
+				thing_doc = ndi_thing_obj.load_thing_doc();
+				if ~isempty(thing_doc),
+					sq = {'thing_epoch.thing_unique_reference', ...
+						thing_doc.document_properties.ndi_document.document_unique_reference};
+					E = ndi_thing_obj.experiment();
+					epochdocs = E.database.search(sq);
+				else,
+					epochdocs = {};
+				end;
+				thing_docs = cat(1, {thing_doc}, epochdocs(:));
+		end; % LOAD_ALL_THING_DOCS
 
 	%%% NDI_DOCUMENTSERVICE methods
 
@@ -318,11 +340,15 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
+				input_args = {};
+				if nargin>1,
+					input_args{end+1} = epochid;
+				end;
 				ndi_document_obj = ndi_document('ndi_document_thing',...
 					'thing.ndi_thing_class', class(ndi_thing_obj), ...
 					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type,...
 					'thing.direct',ndi_thing_obj.direct) + ...
-					ndi_thing_obj.probe.newdocument() + ...
+					ndi_thing_obj.probe.newdocument(input_args{:}) + ...
 					newdocument(ndi_thing_obj.experiment(), 'ndi_document', 'ndi_document.type','ndi_thing');
 		end; % newdocument
 

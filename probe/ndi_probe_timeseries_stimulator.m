@@ -62,8 +62,10 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 						case 'mk2',
 							data.stimid = edata{i}(:,2);
 						case 'mk3',
-							t.stimopenclose(1,:) = edata{i}( find(edata{i}(:,2)==1) , 1)'; 
-							t.stimopenclose(2,:) = edata{i}( find(edata{i}(:,2)==1) , 1)'; 
+							% ASSUMPTION: the number of off events will be the same size as the on events; 
+							%   might not be true if a recording is cut-off mid presentation
+							t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)==1) , 1); 
+							t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
 						case {'e1','e2','e3'}, % not saved
 						otherwise,
 							error(['Unknown channel.']);

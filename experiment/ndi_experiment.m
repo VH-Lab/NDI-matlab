@@ -187,7 +187,7 @@ classdef ndi_experiment < handle
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
 				if iscell(doc_unique_id),
 					for i=1:numel(doc_unique_id), 
-						ndi_exeriment_obj.database.remove(doc_unique_id{i});
+						ndi_experiment_obj.database.remove(doc_unique_id{i});
 					end;
 					return;
 				end;

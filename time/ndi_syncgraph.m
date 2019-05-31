@@ -283,7 +283,7 @@ classdef ndi_syncgraph < ndi_base
 					error(['The input NDI_EPOCHSET_OBJ must be of class NDI_EPOCHSET or a subclass.']);
 				end;
 
-				enodes = epochnodes(ndi_epochset_obj);
+                enodes = epochnodes(ndi_epochset_obj);
 				% do we search for duplicates?
 
 				for i=1:numel(enodes),
@@ -434,7 +434,7 @@ classdef ndi_syncgraph < ndi_base
 					end;
 					return;
 				end
-
+                
 				% STEP 3: are there any paths from our source to any of the candidate destinations?
 
 				D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
@@ -442,6 +442,9 @@ classdef ndi_syncgraph < ndi_base
 				if numel(indexes)>1,
 					msg = 'too many matches, do not know what to do.'; 
 					return
+				elseif numel(indexes)==0,
+					msg = 'Cannot get there from here, no path';
+					return;
 				end
 
 				destinationnodeindex = destinationnodeindexes(indexes);

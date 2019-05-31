@@ -54,8 +54,6 @@ classdef ndi_app_tuning_response < ndi_app
 				doc_stim = ndi_app_tuning_response_obj.experiment.database_search( cat(2,sq_e,sq_probe,sq_stim) );
 				doc_tune   = ndi_app_tuning_response_obj.experiment.database_search( cat(2,sq_e,sq_probe,sq_tune) );
 
-				
-
 				if reset,
 					% delete existing documents
 					ndi_app_tuning_response_obj.experiment.database_rm(existing_doc_stim);

@@ -23,7 +23,6 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 		end % ndi_app_stimulus_decoder() creator
 
-
 		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_probe_stim, reset)
 			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_PROBE stimulus probe
 			%
@@ -47,18 +46,19 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				newdocs = {};
 				existingdocs = {};
 
+				E = ndi_app_stimulus_decoder_obj.experiment;
 
 				sq_probe = ndi_probe_stim.searchquery();
-				sq_e = ndi_app_stimulus_decoder_obj.app.experiment.searchquery();
-				sq_stim =  {'ndi_document.class_name','ndi_document_stimulus' };
-				sq_tune = {'ndi_document.class_name','ndi_document_tuningcurve'};
-				existing_doc_stim = ndi_app_stimulus_decoder_obj.experiment.database_search( cat(2,sq_e,sq_probe,sq_stim) );
-				existing_doc_tune   = ndi_app_stimulus_decoder_obj.experiment.database_search( cat(2,sq_e,sq_probe,sq_tune) );
+				sq_e = E.searchquery();
+				sq_stim =  {'document_class.class_name','ndi_document_stimulus' };
+				sq_tune = {'document_class.class_name','ndi_document_stimulus_tuningcurve'};
+				existing_doc_stim = E.database_search( cat(2,sq_e,sq_probe,sq_stim) );
+				existing_doc_tune = E.database_search( cat(2,sq_e,sq_probe,sq_tune) );
 
 				if reset,
 					% delete existing documents
-					ndi_app_stimulus_decoder_obj.experiment.database_rm(existing_doc_stim);
-					ndi_app_stimulus_decoder_obj.experiment.database_rm(existing_doc_tune);
+					E.database_rm(existing_doc_stim);
+					E.database_rm(existing_doc_tune);
 					existing_doc_stim = {};
 					existing_doc_tune = {};
 				end;
@@ -84,14 +84,23 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					for k=1:numel(data.parameters),
 						mystim(k) = struct('parameters',data.parameters{k});
 					end;
-					nd = ndi_app_stimulus_decoder_obj.newdocument('stimulus/ndi_document_stimulus.json','presentation_order',data.stimid,'stimulus',mystim) + ...
-						ndi_probe_stim.newdocument(epochsremaining{j});
-					newdoc{end+1} = nd;
+					presentation_time = emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
+					for z=1:numel(t.stimon),
+						timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
+								'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
+								'stimclose', t.stimopenclose(z,2) );
+						presentation_time(end+1) = timestruct;
+					end;
+
+					nd = E.newdocument('stimulus/ndi_document_stimulus.json',...
+							'presentation_order', data.stimid, 'presentation_time', presentation_time, 'stimuli',mystim) + ...
+						ndi_probe_stim.newdocument(epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+					newdocs{end+1} = nd;
 
 					% tuning curve
 
-					isblank = structfindfield(ds.parameters,'isblank',1);
-					notblank = setdiff(1:numel(ds.parameters),isblank);
+					isblank = structfindfield(data.parameters,'isblank',1);
+					notblank = setdiff(1:numel(data.parameters),isblank);
 
 					whatvaries = structwhatvaries(data.parameters(notblank));
 
@@ -99,14 +108,14 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					tuning_curve.control_stimulus_id = isblank;
 
 					nd2 = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve) + ndi_probe_stim.newdocument(epochsremaining{j});
-					newdoc{end+1} = nd2;
+					newdocs{end+1} = nd2;
 				end;
 
-				ndi_app_stimulus_decoder_obj.experiment.database_add(newdoc);
+				E.database_add(newdocs);
 		end % 
 
 	end; % methods
 
-end % ndi_app_stimulus_response
+end % ndi_app_stimulus_decoder
 
 
