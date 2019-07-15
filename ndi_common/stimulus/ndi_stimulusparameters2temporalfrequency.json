@@ -1,0 +1,11 @@
+[
+	{
+		"parameter_name":					"tFrequency",
+		"temporalFrequencyMultiplier":				1,
+		"temporalFrequencyAdder":				0
+	},	{
+		"parameter_name":					"temporalFrequency",
+		"temporalFrequencyMultiplier":				1,
+		"temporalFrequencyAdder":				0
+	}
+]

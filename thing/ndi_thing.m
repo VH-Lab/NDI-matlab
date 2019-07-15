@@ -303,7 +303,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				if numel(thing_doc)>1,
 					error(['More than one document matches the THING definition. This should not happen.']);
 				elseif ~isempty(thing_doc),
-					thing_doc = thing_doc{1},
+					thing_doc = thing_doc{1};
 				end;
 		end; % load_thing_doc
 

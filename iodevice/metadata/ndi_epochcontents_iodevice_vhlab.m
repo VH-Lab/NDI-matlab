@@ -96,7 +96,13 @@ classdef ndi_epochcontents_iodevice_vhlab < ndi_epochcontents_iodevice
 					end;
 					ec_type = ref_struct(index).type;
 					if isempty(intersect({ndi_probetype2object.type},ec_type)),
-						error(['Unknown type ' ec_type '.']);
+						% examine vhlab table
+						if strcmpi(ec_type,'singleEC'),
+							ec_type = 'n-trode';
+						else,
+							error(['Unknown type ' ec_type '.']);
+
+						end;
 					end
 					nextentry = ndi_epochcontents_iodevice_vhlab(ndi_struct(i).name,...
 							ndi_struct(i).ref,...

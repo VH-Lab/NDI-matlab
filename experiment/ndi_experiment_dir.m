@@ -27,6 +27,10 @@ classdef ndi_experiment_dir < ndi_experiment
 					ref = 'temp';
 				end
 
+				if ~exist(path,'dir'),
+					error(['Directory ' path ' does not exist.']);
+				end;
+
 				ndi_experiment_dir_obj = ndi_experiment_dir_obj@ndi_experiment(reference);
 				ndi_experiment_dir_obj.path = path;
 				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt']);

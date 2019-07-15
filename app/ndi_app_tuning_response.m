@@ -50,10 +50,10 @@ classdef ndi_app_tuning_response < ndi_app
 				% find all stimulus records from the stimulus probe
 				sq_probe = ndi_probe_stim.searchquery();
 				sq_e = E.searchquery();
-				sq_stim =  {'document_class.class_name','ndi_document_stimulus' };
-				sq_tune = {'document_class.class_name','ndi_document_tuningcurve'};
+				sq_stim  = {'document_class.class_name','ndi_document_stimulus' };
+				sq_tune  = {'document_class.class_name','ndi_document_tuningcurve'};
 				doc_stim = E.database_search( cat(2,sq_e,sq_probe,sq_stim) );
-				doc_tune   = E.database_search( cat(2,sq_e,sq_probe,sq_tune) );
+				doc_tune = E.database_search( cat(2,sq_e,sq_probe,sq_tune) );
 
 				ndi_ts_epochs = {};
 
@@ -69,7 +69,6 @@ classdef ndi_app_tuning_response < ndi_app
 					% ASSUMPTION: each stimulus probe epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first one as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
-						doc_stim{i}.document_properties,
 						stim_timeref = ndi_timereference(ndi_probe_stim, ...
 							ndi_clocktype(doc_stim{i}.document_properties.presentation_time(1).clocktype), ...
 							doc_stim{i}.document_properties.epochid, doc_stim{i}.document_properties.presentation_time(1).onset);
@@ -83,15 +82,15 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 				end;
 
-
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
 						% okay, now how to analyze these stims?
 						% 
-						% we are short on time so let's just use our tools to analyze a whole tuning curve
+						% want to calculate F0, F1, F2
+						% want to do this for regularly sampled and timestamp type data
 
-
-
+						ndi_ts_epochs{i}
+						doc_stim{i}.document_properties
 
 
 
@@ -108,7 +107,7 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			%
 			%
-			% Uses the app NDI_APP_MARKGARBAGE to limit analysis to intervals that have been
+			% Note: Uses the app NDI_APP_MARKGARBAGE to limit analysis to intervals that have been
 			% marked as valid or have not been marked invalid.
 			%
 			%
@@ -156,11 +155,11 @@ classdef ndi_app_tuning_response < ndi_app
 
 				assign(varargin{:});
 
-				[data,t_raw,timeref] = readtimeseries(sharpprobe, timeref, t0, t0);
+				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, t0, t0);
 
 				gapp = ndi_app_markgarbage(ndi_app_stimulus_response_obj.experiment);
 				vi = gapp.loadvalidinterval(sharpprobe);
-				interval = gapp.identifyvalidintervals(sharpprobe,timeref,t0,t1)
+				interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,t0,t1)
 
 				[ds, ts, timeref_]=stimprobe.readtimeseries(timeref,interval(1,1),interval(1,2));
 				[data,t_raw,timeref] = readtimeseries(sharpprobe, timeref, interval(1,1), interval(1,2));
