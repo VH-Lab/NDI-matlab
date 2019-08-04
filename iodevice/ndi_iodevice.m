@@ -57,6 +57,34 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			end;
 		end % ndi_iodevice
 
+		%% GUI functions
+
+		function obj = ndi_iodevice_gui_createnew(ndi_iodevice_obj)
+			% NDI_IODEVICE_GUI_CREATENEW - function for creating a new NDI_IODEVICE object based on a template
+			% 
+			% OBJ = NDI_IODEVICE_GUI_CREATENEW(NDI_IODEVICE_OBJ)
+			%
+			% This function will bring up a graphical window to prompt the user to input
+			% parameters needed to define a new NDI_IODEVICE object.
+			%
+			%
+				error(['Not implemented yet.']);
+				% insert code here
+		end;
+
+		function obj = ndi_iodevice_gui_edit(ndi_iodevice_obj)
+			% NDI_IODEVICE_GUI_EDIT - function for editing an NDI_IODEVICE object
+			% 
+			% OBJ = NDI_IODEVICE_GUI_EDIT(NDI_IODEVICE_OBJ)
+			%
+			% This function will bring up a graphical window to prompt the user to input
+			% parameters that edit the NDI_IODEVICE_OBJ and return a new object.
+			%
+			%
+				error(['Not implemented yet.']);
+				% insert code here
+		end;
+
 		%% functions that used to override HANDLE, now just implement equal:
 
 		function b = eq(ndi_iodevice_obj_a, ndi_iodevice_obj_b)
