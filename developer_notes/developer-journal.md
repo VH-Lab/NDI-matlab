@@ -2,6 +2,19 @@
 
 This is a journal of developer thoughts. It is not a change log (that is in git) or an issue list.
 
+### 2019-08-05
+
+Current workflow to change object names:
+
+searchreplacefiles_shell('*.txt',upper('epochcontents'),upper('epochprobemap'))
+
+(need to change .txt, .m, object* files typically)
+
+filenamesearchreplace(pwd,{'epochcontents'},{'epochprobemap'},'deleteOriginals',1,'noOp',1,'recursive',1)
+
+(need to set noOp to 0 to make it run)
+
+
 ### 2019-01-03
 
 We had the kick-off meeting with Squishymedia today. 
