@@ -51,7 +51,7 @@ function test_sg_flat(dirname)
 	disp(['The sample rate of digital channel 1 in epoch 1 is ' num2str(sr_d) '.']);
 	disp(['The sample rate of analog channel 1 in epoch 1 is ' num2str(sr_a) '.']);
 
-	tetrodes = dev1.getepochcontents(1);
+	tetrodes = dev1.getepochprobemap(1);
 
 	disp(['We will now plot the data for ' tetrodes(1).devicestring()]);
 

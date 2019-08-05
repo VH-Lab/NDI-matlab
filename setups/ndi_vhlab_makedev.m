@@ -41,33 +41,33 @@ end
 
 fileparameters = {'reference.txt'};
 objectclass = 'ndi_iodevice_mfdaq';
-epochcontentsclass = 'ndi_epochcontents_iodevice_vhlab';
+epochprobemapclass = 'ndi_epochprobemap_iodevice_vhlab';
 
 switch devname,
 	case 'vhintan',
 		fileparameters{end+1} = '.*\.rhd\>';
 		fileparameters{end+1} = 'vhintan_channelgrouping.txt'; 
 		objectclass = [objectclass '_intan'];
-		epochcontentsfileparameters = {'vhintan_channelgrouping.txt'};
+		epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
 	case 'vhspike2',
 		fileparameters{end+1} = '.*\.smr\>';
 		fileparameters{end+1} = 'vhspike2_channelgrouping.txt'; 
 		objectclass = [objectclass '_cedspike2'];
-		epochcontentsfileparameters = {'vhspike2_channelgrouping.txt'};
+		epochprobemapfileparameters = {'vhspike2_channelgrouping.txt'};
 	case 'vhvis_spike2'
 		fileparameters{end+1} = 'stimtimes.txt';
 		fileparameters{end+1} = 'verticalblanking.txt';
 		fileparameters{end+1} = 'stims.mat';
 		fileparameters{end+1} = 'spike2data.smr'; 
 		objectclass = [objectclass '_stimulus_vhlabvisspike2'];
-		epochcontentsfileparameters = {'stimtimes.txt'}; 
+		epochprobemapfileparameters = {'stimtimes.txt'}; 
 
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
 end
 
-ft = ndi_filenavigator_epochdir(exp, fileparameters, epochcontentsclass, epochcontentsfileparameters);
+ft = ndi_filenavigator_epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['mydev = ' objectclass '(devname, ft);']);
 

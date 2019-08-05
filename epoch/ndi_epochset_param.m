@@ -3,36 +3,36 @@ classdef ndi_epochset_param < ndi_epochset
 %
 
 	properties (SetAccess=protected,GetAccess=public)
-		epochcontents_class  % The (sub)class of NDI_EPOCHCONTENTS_IODEVICE to be used; NDI_EPOCHCONTS is the default; a string
+		epochprobemap_class  % The (sub)class of NDI_EPOCHPROBEMAP_IODEVICE to be used; NDI_EPOCHCONTS is the default; a string
 		
 	end % properties
 
 	methods
 
-		function obj = ndi_epochset_param(epochcontents_class_)
+		function obj = ndi_epochset_param(epochprobemap_class_)
 			% NDI_EPOCHSET_PARAM - Constructor for NDI_EPOCHSET_PARAM objects
 			%
-			% NDI_EPOCHSET_PARAM_OBJ = NDI_EPOCHSET_PARAM(EPOCHCONTENTS_CLASS)
+			% NDI_EPOCHSET_PARAM_OBJ = NDI_EPOCHSET_PARAM(EPOCHPROBEMAP_CLASS)
 			%
 			% Create a new NDI_EPOCHSET_PARAM object. It has one optional input argument,
-			% EPOCHCONTENTS_CLASS, a string, that specifies the name of the class or subclass
-			% of NDI_EPOCHCONTENTS_IODEVICE to be used.
+			% EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
+			% of NDI_EPOCHPROBEMAP_IODEVICE to be used.
 			%
 				if nargin==0,
-					obj.epochcontents_class = 'ndi_epochcontents_iodevice';
+					obj.epochprobemap_class = 'ndi_epochprobemap_iodevice';
 				else,
-					obj.epochcontents_class = epochcontents_class_;
+					obj.epochprobemap_class = epochprobemap_class_;
 				end
 		end % ndi_epochset_param
 
-		%% EPOCHCONTENTS methods
+		%% EPOCHPROBEMAP methods
 
-		function ecfname = epochcontentsfilename(ndi_epochset_param_obj, epochnumber)
-			% EPOCHCONTENTSFILENAME - return the filename for the NDI_EPOCHCONTENTS_IODEVICE file for an epoch
+		function ecfname = epochprobemapfilename(ndi_epochset_param_obj, epochnumber)
+			% EPOCHPROBEMAPFILENAME - return the filename for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
+			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NDI_EPOCHSET_PARAM_OBJ epoch EPOCH_NUMBER_OR_ID.
+			% Returns the EPOCHPROBEMAPFILENAME for the NDI_EPOCHSET_PARAM_OBJ epoch EPOCH_NUMBER_OR_ID.
 			% If there is no epoch NUMBER, an error is generated. The file name is returned with
 			% a full path.
 			%
@@ -40,33 +40,33 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 			%
 				error('Abstract class, no filenames');
-		end % epochcontentsfilename
+		end % epochprobemapfilename
 
-		function [b,msg] = verifyepochcontents(ndi_epochset_param_obj, epochcontents, number)
-			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is appropriate for the NDI_EPOCHSET_PARAM object
+		function [b,msg] = verifyepochprobemap(ndi_epochset_param_obj, epochprobemap, number)
+			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is appropriate for the NDI_EPOCHSET_PARAM object
 			%
-			%   [B,MSG] = VERIFYEPOCHCONTENTS(NDI_EPOCHSET_PARAM, EPOCHCONTENTS, EPOCH_NUMBER_OR_ID)
+			%   [B,MSG] = VERIFYEPOCHPROBEMAP(NDI_EPOCHSET_PARAM, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
 			%
-			% Examines the NDI_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given 
+			% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given 
 			% epoch number or epoch id EPOCH_NUMBER_OR_ID.
 			%
-			% For the abstract class EPOCHCONTENTS is always valid as long as EPOCHCONTENTS is an
-			% NDI_EPOCHCONTENTS_IODEVICE object.
+			% For the abstract class EPOCHPROBEMAP is always valid as long as EPOCHPROBEMAP is an
+			% NDI_EPOCHPROBEMAP_IODEVICE object.
 			%
 			% If B is 0, then the error message is returned in MSG.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHCONTENTS_IODEVICE
+			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
 				msg = '';
-				b = isa(epochcontents, 'ndi_epochcontents');
+				b = isa(epochprobemap, 'ndi_epochprobemap');
 				if ~b,
-					msg = 'epochcontents is not a member of the class NDI_EPOCHCONTENTS_IODEVICE; it must be.';
+					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_IODEVICE; it must be.';
 				end
-                end % verifyepochcontents()
+                end % verifyepochprobemap()
 
-		function epochcontents = getepochcontents(ndi_epochset_param_obj, N)
-			% GETEPOCHCONTENTS - Return the epoch record for a given ndi_filenavigator and epoch number
+		function epochprobemap = getepochprobemap(ndi_epochset_param_obj, N)
+			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi_filenavigator and epoch number
 			%
-			%  EPOCHCONTENTS = GETEPOCHCONTENTS(SELF, N, IODEVICENAME)
+			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(SELF, N, IODEVICENAME)
 			%
 			% Inputs:
 			%     SELF - the data tree object
@@ -74,44 +74,44 @@ classdef ndi_epochset_param < ndi_epochset
 			%     DEVICENAME - The NDI name of the device
 			%
 			% Output:
-			%     EPOCHCONTENTS - The epoch record information associated with epoch N for device with name DEVICENAME
+			%     EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
 			%
 			%
-				epochcontentsfile_fullpath = epochcontentsfilename(ndi_epochset_param_obj, N);
-				eval(['epochcontents = ' ndi_epochset_param_obj.epochcontents_class '(epochcontentsfile_fullpath);']);
-				[b,msg]=verifyepochcontents(ndi_epochset_param_obj,epochcontents);
+				epochprobemapfile_fullpath = epochprobemapfilename(ndi_epochset_param_obj, N);
+				eval(['epochprobemap = ' ndi_epochset_param_obj.epochprobemap_class '(epochprobemapfile_fullpath);']);
+				[b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap);
 				if ~b,
-					error(['The epochcontents are not valid for this object: ' msg]);
+					error(['The epochprobemap are not valid for this object: ' msg]);
 				end
 		end
 
-		function setepochcontents(ndi_epochset_param_obj, epochcontents, number, overwrite)
-			% SETEPOCHCONTENTS - Sets the epoch record of a particular epoch
+		function setepochprobemap(ndi_epochset_param_obj, epochprobemap, number, overwrite)
+			% SETEPOCHPROBEMAP - Sets the epoch record of a particular epoch
 			%
-			%   SETEPOCHCONTENTS(NDI_EPOCHSET_PARAM_OBJ, EPOCHCONTENTS, NUMBER, [OVERWRITE])
+			%   SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
 			%
-			% Sets or replaces the NDI_EPOCHCONTENTS_IODEVICE for NDI_EPOCHSET_PARAM_OBJ with EPOCHCONTENTS for the epoch
+			% Sets or replaces the NDI_EPOCHPROBEMAP_IODEVICE for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
 			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 			% Otherwise, an error is given if there is an existing epoch record.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHCONTENTS_IODEVICE
+			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
 
 				if nargin<4,
 					overwrite = 0;
 				end
 
-				[b,msg] = verifyepochcontents(ndi_epochset_param_obj,epochcontents,number);
+				[b,msg] = verifyepochprobemap(ndi_epochset_param_obj,epochprobemap,number);
 
 				if b,
-					ecfname = ndi_epochset_param_obj.epochcontentsfilename(number);
+					ecfname = ndi_epochset_param_obj.epochprobemapfilename(number);
 					if exist(ecfname,'file') & ~overwrite,
-						error(['epochcontents file exists and overwrite was not requested.']);
+						error(['epochprobemap file exists and overwrite was not requested.']);
 					end
-					epochcontents.savetofile(ecfname);
+					epochprobemap.savetofile(ecfname);
 				else,
-					error(['Invalid epochcontents: ' msg '.']);
+					error(['Invalid epochprobemap: ' msg '.']);
 				end
-		end % setepochcontents()
+		end % setepochprobemap()
 
 		%% TAG methods
 

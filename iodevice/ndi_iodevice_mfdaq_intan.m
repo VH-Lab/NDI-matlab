@@ -89,22 +89,22 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochcontents(ndi_iodevice_mfdaq_intan_obj, epochcontents, number)
-		% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+		function [b,msg] = verifyepochprobemap(ndi_iodevice_mfdaq_intan_obj, epochprobemap, number)
+		% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 		%
-		%   B = VERIFYEPOCHCONTENTS(NDI_IODEVICE_MFDAQ_INTAN_OBJ, EPOCHCONTENTS, NUMBER)
+		%   B = VERIFYEPOCHPROBEMAP(NDI_IODEVICE_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, NUMBER)
 		%
-		% Examines the NDI_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
+		% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given device
 		% epoch NUMBER.
 		%
-		% For the abstract class NDI_IODEVICE, EPOCHCONTENTS is always valid as long as
-		% EPOCHCONTENTS is an NDI_EPOCHCONTENTS_IODEVICE object.
+		% For the abstract class NDI_IODEVICE, EPOCHPROBEMAP is always valid as long as
+		% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_IODEVICE object.
 		%
-		% See also: NDI_IODEVICE, NDI_EPOCHCONTENTS_IODEVICE
+		% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
 			b = 1;
 			msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochcontents, 'ndi_epochcontents_iodevice') && strcmp(epochcontents.type,'rhd') && strcmp(epochcontents.devicestring,ndi_iodevice_mfdaq_intan_obj.name);
+			% b = isa(epochprobemap, 'ndi_epochprobemap_iodevice') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_iodevice_mfdaq_intan_obj.name);
 		end
 
 		function filename = filenamefromepochfiles(ndi_iodevice_mfdaq_intan_obj, filename)

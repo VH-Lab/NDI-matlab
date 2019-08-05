@@ -205,8 +205,8 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
             sr = str2num(fileconfig.samplingRate);
         end
 
-        function epochcontents = getepochcontents(self, epoch)
-            % GETEPOCHCONTENTS returns struct with probe information
+        function epochprobemap = getepochprobemap(self, epoch)
+            % GETEPOCHPROBEMAP returns struct with probe information
             % name, reference, n-trode, channels
             %
 
@@ -214,8 +214,8 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
 			filename = filename{1}; %no need to adjust for epoch, channels and tetrodes remain the same
             fileconfig = read_SpikeGadgets_config(filename);
             nTrodes = fileconfig.nTrodes;
-            %List where epochcontents objects will be stored
-            epochcontents = [];
+            %List where epochprobemap objects will be stored
+            epochprobemap = [];
 
             for i=1:length(nTrodes)
                 name = strcat('Tetrode', nTrodes(i).id);
@@ -231,9 +231,9 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
                 devicestringobject = ndi_iodevicestring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
                 devicestringstring = devicestringobject.devicestring();
                 %
-                obj = ndi_epochcontents_iodevice(name,reference,type,devicestringstring);
+                obj = ndi_epochprobemap_iodevice(name,reference,type,devicestringstring);
                 %Append each newly made object to end of list
-                epochcontents = [epochcontents obj];
+                epochprobemap = [epochprobemap obj];
             end
 
         end

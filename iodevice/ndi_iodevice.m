@@ -51,9 +51,9 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 				obj.filenavigator = thefilenavigator;
 			end
 			if isempty(obj.filenavigator),
-				obj.epochcontents_class = 'ndi_epochcontents_iodevice';
+				obj.epochprobemap_class = 'ndi_epochprobemap_iodevice';
 			else,
-				obj.epochcontents_class = obj.filenavigator.epochcontents_class;
+				obj.epochprobemap_class = obj.filenavigator.epochprobemap_class;
 			end;
 		end % ndi_iodevice
 
@@ -251,7 +251,7 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			% Returns all probes associated with the NDI_IODEVICE object NDI_DEVICE_OBJ
 			%
 			% This function returns a structure with fields of all unique probes across
-			% all EPOCHCONTENTS objects returned in NDI_IODEVICE/GETEPOCHCONTENTS.
+			% all EPOCHPROBEMAP objects returned in NDI_IODEVICE/GETEPOCHPROBEMAP.
 			% The fields are 'name', 'reference', and 'type'.
 
 				et = epochtable(ndi_iodevice_obj);
@@ -259,7 +259,7 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 				probes_struct = emptystruct('name','reference','type');
 				
 				for n=1:numel(et),
-					epc = et(n).epochcontents;
+					epc = et(n).epochprobemap;
 					if ~isempty(epc),
 						for ec = 1:numel(epc),
 							newentry.name = epc(ec).name;
@@ -300,13 +300,13 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 		%
 		%   DELETEEPOCH(NDI_IODEVICE_OBJ, NUMBER ... [REMOVEDATA])
 		%
-		% Deletes the data and NDI_EPOCHCONTENTS_IODEVICE and epoch data for epoch NUMBER.
+		% Deletes the data and NDI_EPOCHPROBEMAP_IODEVICE and epoch data for epoch NUMBER.
 		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
 		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
 		%
 		% In the abstract class, this command takes no action.
 		%
-		% See also: NDI_IODEVICE, NDI_EPOCHCONTENTS_IODEVICE
+		% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
 			error(['Not implemented yet.']);
 		end % deleteepoch()
 
@@ -341,53 +341,53 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 				et = ndi_iodevice_obj.filenavigator.epochtable;
 				for i=1:numel(et),
 					% need slight adjustment from filenavigator epochtable
-					et(i).epochcontents = getepochcontents(ndi_iodevice_obj,et(i).epoch_number);
+					et(i).epochprobemap = getepochprobemap(ndi_iodevice_obj,et(i).epoch_number);
 					et(i).epoch_clock = epochclock(ndi_iodevice_obj, et(i).epoch_number);
 					et(i).t0_t1 = t0_t1(ndi_iodevice_obj, et(i).epoch_number);
 				end
 		end % epochtable
 
-		function ecfname = epochcontentsfilename(ndi_iodevice_obj, epochnumber)
-			% EPOCHCONTENTSFILENAME - return the filename for the NDI_EPOCHCONTENTS_IODEVICE file for an epoch
+		function ecfname = epochprobemapfilename(ndi_iodevice_obj, epochnumber)
+			% EPOCHPROBEMAPFILENAME - return the filename for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NDI_IODEVICE_OBJ, EPOCH_NUMBER_OR_ID)
+			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_IODEVICE_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NDI_IODEVICE epoch EPOCH_NUMBER_OR_ID.
+			% Returns the EPOCHPROBEMAPFILENAME for the NDI_IODEVICE epoch EPOCH_NUMBER_OR_ID.
 			% If there is no epoch NUMBER, an error is generated. The file name is returned with
 			% a full path.
 			%
 			%
-				ecfname = ndi_iodevice_obj.filenavigator.epochcontentsfilename(epochnumber);
-                end % epochcontentsfilename
+				ecfname = ndi_iodevice_obj.filenavigator.epochprobemapfilename(epochnumber);
+                end % epochprobemapfilename
 
-		function [b,msg] = verifyepochcontents(ndi_iodevice_obj, epochcontents, number)
-			% VERIFYEPOCHCONTENTS - Verifies that an EPOCHCONTENTS is compatible with a given device and the data on disk
+		function [b,msg] = verifyepochprobemap(ndi_iodevice_obj, epochprobemap, number)
+			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 			%
-			%   B = VERIFYEPOCHCONTENTS(NDI_IODEVICE_OBJ, EPOCHCONTENTS, NUMBER)
+			%   B = VERIFYEPOCHPROBEMAP(NDI_IODEVICE_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the NDI_EPOCHCONTENTS_IODEVICE EPOCHCONTENTS and determines if it is valid for the given device
+			% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
-			% For the abstract class NDI_IODEVICE, EPOCHCONTENTS is always valid as long as
-			% EPOCHCONTENTS is an NDI_EPOCHCONTENTS_IODEVICE object.
+			% For the abstract class NDI_IODEVICE, EPOCHPROBEMAP is always valid as long as
+			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_IODEVICE object.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHCONTENTS_IODEVICE
+			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
 				msg = '';
-				b = isa(epochcontents, 'ndi_epochcontents_iodevice');
+				b = isa(epochprobemap, 'ndi_epochprobemap_iodevice');
 				if ~b,
-					msg = 'epochcontents is not a member of the class NDI_EPOCHCONTENTS_IODEVICE; it must be.';
+					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_IODEVICE; it must be.';
 					return;
 				end;
 
-				for i=1:numel(epochcontents),
+				for i=1:numel(epochprobemap),
 					try,
-						thedevicestring = ndi_iodevicestring(epochcontents(i).devicestring);
+						thedevicestring = ndi_iodevicestring(epochprobemap(i).devicestring);
 					catch,
 						b = 0;
-						msg = ['Error evaluating devicestring ' epochcontents(i).devicestring '.'];
+						msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
                                         end
                                 end
-		end % verifyepochcontents
+		end % verifyepochprobemap
 
 		function etfname = epochtagfilename(ndi_epochset_param_obj, epochnumber)
 			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch

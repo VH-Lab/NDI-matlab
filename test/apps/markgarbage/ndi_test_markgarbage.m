@@ -22,7 +22,7 @@ disp(['Now adding our acquisition device (intan):']);
   %         files in any organization within the directory
 
 dt = ndi_filenavigator(exp, {'.*\.rhd\>','.*\.epochmetadata\>'},...
-		'ndi_epochcontents_iodevice','.*\.epochmetadata\>');  % look for .rhd files
+		'ndi_epochprobemap_iodevice','.*\.epochmetadata\>');  % look for .rhd files
 
   % Step 2: create the iodevice object and add it to the experiment:
 

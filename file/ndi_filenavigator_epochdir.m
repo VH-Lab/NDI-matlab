@@ -15,7 +15,7 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 		function obj = ndi_filenavigator_epochdir(varargin)
 		% NDI_FILENAVIGATOR_EPOCHDIR - Create a new NDI_FILENAVIGATOR_EPOCHDIR object that is associated with an experiment and device
 		%
-		%   OBJ = NDI_FILENAVIGATOR_EPOCHDIR(EXP, [FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
+		%   OBJ = NDI_FILENAVIGATOR_EPOCHDIR(EXP, [FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%
 		% Creates a new NDI_FILENAVIGATOR_EPOCHDIR object that negotiates the data tree of device's data that is
 		% stored in an experiment EXP.
@@ -25,10 +25,10 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 		% Inputs: EXP - an NDI_EXPERIMENT ; FILEPARAMETERS - the files that are recorded in each epoch
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
-		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'ndi_epochcontents_iodevice' is used by default
-		%      EPOCHCONTENTS_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
-		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHCONTENTSFILEPARAMETERS). By default, the file location
-		%          specified in NDI_FILENAVIGATOR/EPOCHCONTENTSFILENAME is used
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_iodevice' is used by default
+		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
+		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
+		%          specified in NDI_FILENAVIGATOR/EPOCHPROBEMAPFILENAME is used
 		%
 		% Output: OBJ - an NDI_FILENAVIGATOR_EPOCHDIR object
 		%
@@ -37,7 +37,7 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 			obj = obj@ndi_filenavigator(varargin{:});
 		end
 
-		% in NDI_BASE, need to change epochcontentsfilename to defaultepochcontentsfilename
+		% in NDI_BASE, need to change epochprobemapfilename to defaultepochprobemapfilename
 
 		%% methods overriding NDI_BASE
 
@@ -75,12 +75,12 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 									else,
 										obj.fileparameters = [];
 									end;
-								case 'epochcontents_fileparameters',
+								case 'epochprobemap_fileparameters',
 									if ~isempty(values{i}),
 										fp = eval(values{i});
-										obj = obj.setepochcontentsfileparameters(fp);
+										obj = obj.setepochprobemapfileparameters(fp);
 									else,
-										obj.epochcontents_fileparameters = [];
+										obj.epochprobemap_fileparameters = [];
 									end
 							otherwise,
 								error(['Do not know how to set property ' properties{i}(2:end) '.']);

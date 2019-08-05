@@ -4,14 +4,14 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 	properties (GetAccess=public, SetAccess=protected)
 		experiment                    % The NDI_EXPERIMENT to be examined (handle)
 		fileparameters                % The parameters for finding files (see NDI_FILENAVIGATOR/SETFILEPARAMETERS)
-		epochcontents_fileparameters  % The parameters for finding the epochcontents files (see NDI_FILENAVIGATOR/SETEPOCHCONTENTSFILEPARAMETERS)
+		epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS)
 	end
 
 	methods
-	        function obj = ndi_filenavigator(experiment_, fileparameters_, epochcontents_class_, epochcontents_fileparameters_)
+	        function obj = ndi_filenavigator(experiment_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
 		% NDI_FILENAVIGATOR - Create a new NDI_FILENAVIGATOR object that is associated with an experiment and iodevice
 		%
-		%   OBJ = NDI_FILENAVIGATOR(EXPERIMENT, [ FILEPARAMETERS, EPOCHCONTENTS_CLASS, EPOCHCONTENTS_FILEPARAMETERS])
+		%   OBJ = NDI_FILENAVIGATOR(EXPERIMENT, [ FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%
 		% Creates a new NDI_FILENAVIGATOR object that negotiates the data tree of iodevice's data that is
 		% stored at the file path PATH.
@@ -21,10 +21,10 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
-		%      EPOCHCONTENTS_CLASS: the class of epoch_record to be used; 'ndi_epochcontents_iodevice' is used by default
-		%      EPOCHCONTENTS_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
-		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHCONTENTSFILEPARAMETERS). By default, the file location
-		%          specified in NDI_FILENAVIGATOR/EPOCHCONTENTSFILENAME is used
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_iodevice' is used by default
+		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
+		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
+		%          specified in NDI_FILENAVIGATOR/EPOCHPROBEMAPFILENAME is used
 		%
 		% Output: OBJ - an NDI_FILENAVIGATOR object
 		%
@@ -48,15 +48,15 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			end;
 
 			if nargin > 2,
-				obj.epochcontents_class = epochcontents_class_;
+				obj.epochprobemap_class = epochprobemap_class_;
 			else,
-				obj.epochcontents_class = 'ndi_epochcontents_iodevice';
+				obj.epochprobemap_class = 'ndi_epochprobemap_iodevice';
 			end;
 
 			if nargin > 3,
-				obj = obj.setepochcontentsfileparameters(epochcontents_fileparameters_);
+				obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
 			else,
-				obj.epochcontents_fileparameters = {};
+				obj.epochprobemap_fileparameters = {};
 			end;
 		end;
 
@@ -70,7 +70,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			% Returns 1 if the NDI_FILENAVIGATOR objects are equivalent, and 0 otherwise.
 			% This equivalency does not depend on NDI_FILENAVIGATOR_OBJ_A and NDI_FILENAVIGATOR_OBJ_B are 
 			% the same HANDLE objects. They can be equivalent and occupy different places in memory.
-				parameternames = {'experiment','fileparameters','epochcontents_class','epochcontents_fileparameters'};
+				parameternames = {'experiment','fileparameters','epochprobemap_class','epochprobemap_fileparameters'};
 				b = 1;
 				for i=1:numel(parameternames),
 					b = b & eqlen(getfield(ndi_filenavigator_obj_a,parameternames{i}),getfield(ndi_filenavigator_obj_b,parameternames{i}));
@@ -92,7 +92,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			% FIELDNAMES is a set of names of the fields/properties of the object
 			% that are being stored.
 			%
-			% For NDI_FILENAVIGATOR, this returns file parameters, epochcontents, and epochcontents_fileparameters.
+			% For NDI_FILENAVIGATOR, this returns file parameters, epochprobemap, and epochprobemap_fileparameters.
 			%
 			% Note: NDI_FILENAVIGATOR objects do not save their NDI_EXPERIMENT property EXPERIMENT. Call
 			% SETPROPERTIES after reading an NDI_FILENAVIGATOR from disk to install the NDI_EXPERIMENT.
@@ -108,18 +108,18 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 					fp = [];
 				end
 
-				if isstruct(ndi_filenavigator_obj.epochcontents_fileparameters),
-					efp = cell2str(ndi_filenavigator_obj.epochcontents_fileparameters.filematch);
+				if isstruct(ndi_filenavigator_obj.epochprobemap_fileparameters),
+					efp = cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch);
 				else,
 					efp = [];
 				end
 
 				data{end+1} = fp;
 				fieldnames{end+1} = '$fileparameters';
-				data{end+1} = ndi_filenavigator_obj.epochcontents_class;
-				fieldnames{end+1} = 'epochcontents_class';
+				data{end+1} = ndi_filenavigator_obj.epochprobemap_class;
+				fieldnames{end+1} = 'epochprobemap_class';
 				data{end+1} = efp;
-				fieldnames{end+1} = '$epochcontents_fileparameters';
+				fieldnames{end+1} = '$epochprobemap_fileparameters';
 		end % stringdatatosave
 
 		function [obj,properties_set] = setproperties(ndi_filenavigator_obj, properties, values)
@@ -156,12 +156,12 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 									else,
 										obj.fileparameters = [];
 									end;
-								case 'epochcontents_fileparameters',
+								case 'epochprobemap_fileparameters',
 									if ~isempty(values{i}),
 										fp = eval(values{i});
-										obj = obj.setepochcontentsfileparameters(fp);
+										obj = obj.setepochprobemapfileparameters(fp);
 									else,
-										obj.epochcontents_fileparameters = [];
+										obj.epochprobemap_fileparameters = [];
 									end
 								otherwise,
 									error(['Do not know how to set property ' properties{i}(2:end) '.']);
@@ -205,29 +205,29 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
                         % 'epoch_number'            | The number of the epoch (may change)
                         % 'epoch_id'                | The epoch ID code (will never change once established)
                         %                           |   This uniquely specifies the epoch.
-			% 'epochcontents'           | The epochcontents object from each epoch
+			% 'epochprobemap'           | The epochprobemap object from each epoch
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
 			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
                         % 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
-                        %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
+                        %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochprobemap'
 			%                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
 			%                           |   match those of NDI_FILENAVIGATOR_OBJ
 
 				all_epochs = ndi_filenavigator_obj.selectfilegroups();
 
-				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
+				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				for i=1:numel(all_epochs),
-					et_here = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+					et_here = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
 					et_here(1).underlying_epochs = ue;
 					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
 					et_here(1).underlying_epochs(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
 					et_here(1).underlying_epochs(1).epoch_clock = {ndi_clocktype('no_time')}; % filenavigator does not keep time
 					et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filenavigator does not keep time
 					et_here(1).epoch_number = i;
-					et_here(1).epochcontents = getepochcontents(ndi_filenavigator_obj,i);
+					et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i);
 					et_here(1).epoch_clock = epochclock(ndi_filenavigator_obj,i);
 					et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
 					et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
@@ -260,16 +260,16 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		end %epochid()
 
 		function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
-			% EPOCHCONTENTSFILENAME - return the file path for the NDI_EPOCHCONTENTS_IODEVICE file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file path for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
+			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the EPOCHPROBEMAPFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NDI_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
+			% the NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
 				if nargin<3, % undocumented 3rd argument
@@ -283,34 +283,34 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 				end
 		end % epochidfilename()
 
-		function ecfname = epochcontentsfilename(ndi_filenavigator_obj, number)
-			% EPOCHCONTENTSFILENAME - return the file name for the NDI_EPOCHCONTENTS_IODEVICE file for an epoch
+		function ecfname = epochprobemapfilename(ndi_filenavigator_obj, number)
+			% EPOCHPROBEMAPFILENAME - return the file name for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
 			%
-			% ECFNAME = EPOCHCONTENTSFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
+			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the EPOCHCONTENTSFILENAME for the NDI_FILENAVIGATOR NDI_FILENAVIGATOR_OBJ for epoch NUMBER.
+			% Returns the EPOCHPROBEMAPFILENAME for the NDI_FILENAVIGATOR NDI_FILENAVIGATOR_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. The file name is returned with
 			% a full path. NUMBER cannot be an epoch_id.
 			%
 			% The file name is determined by examining if the user has specified any
-			% EPOCHCONTENTS_FILEPARAMETERS; if not, then the DEFAULTEPOCHCONTENTSFILENAME is used.
+			% EPOCHPROBEMAP_FILEPARAMETERS; if not, then the DEFAULTEPOCHPROBEMAPFILENAME is used.
 			%
-			% See also: NDI_FILENAVIGATOR/SETEPOCHCONTENTSFILEPARAMETERS, NDI_FILENAVIGATOR/DEFAULTEPOCHCONTENTSFILENAME
+			% See also: NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS, NDI_FILENAVIGATOR/DEFAULTEPOCHPROBEMAPFILENAME
 			%
 				% default   
-				ecfname = defaultepochcontentsfilename(ndi_filenavigator_obj, number);
+				ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number);
 
-				% see if we need to use a different name based on EPOCHCONTENTS_FILEPARAMETERS
+				% see if we need to use a different name based on EPOCHPROBEMAP_FILEPARAMETERS
 
-				if ~isempty(ndi_filenavigator_obj.epochcontents_fileparameters),
+				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
 					epochfiles = ndi_filenavigator_obj.getepochfiles_number(number);
 					fn = {};
 					for i=1:length(epochfiles),
 						[pa,name,ext] = fileparts(epochfiles{i});
 						fn{i} = [name ext];
 					end;
-					for i=1:numel(ndi_filenavigator_obj.epochcontents_fileparameters.filematch),
-						tf = strcmp_substitution(ndi_filenavigator_obj.epochcontents_fileparameters.filematch{i}, fn);
+					for i=1:numel(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch),
+						tf = strcmp_substitution(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch{i}, fn);
 						indexes = find(tf);
 						if numel(indexes)>0,
 							ecfname = epochfiles{indexes(1)};
@@ -318,22 +318,22 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 						end;
 					end
 				end;
-		end % epochcontentsfilename
+		end % epochprobemapfilename
 
-		function ecfname = defaultepochcontentsfilename(ndi_filenavigator_obj, number)
-			% DEFAULTEPOCHCONTENTSFILENAME - return the default file name for the NDI_EPOCHCONTENTS_IODEVICE file for an epoch
+		function ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number)
+			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
 			%
-			% ECFNAME = DEFAULTEPOCHCONTENTSFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
+			% ECFNAME = DEFAULTEPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the default EPOCHCONTENTSFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the default EPOCHPROBEMAPFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. NUMBER cannot be an epoch id.
 			%
-			% In the base class, NDI_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the default NDI_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochcontents.ndi.'.
-			% This may be overridden if there is an EPOCHCONTENTS_FILEPARAMETERS set.
+			% the default NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
+			% This may be overridden if there is an EPOCHPROBEMAP_FILEPARAMETERS set.
 			%
-			% See also: NDI_FILENAVIGATOR/SETEPOCHCONTENTSFILEPARAMETERS
+			% See also: NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
@@ -342,9 +342,9 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 					error(['No files in epoch number ' ndi_filenavigator_obj.epoch2str(number) '.']);
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
-					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochcontents.ndi'];
+					ecfname = [parentdir filesep '.' filename '.' fmstr '.epochprobemap.ndi'];
 				end
-		end % defaultepochcontentsfilename
+		end % defaultepochprobemapfilename
 
 		function etfname = epochtagfilename(ndi_filenavigator_obj, epoch_number_or_id, epochfiles)
 			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
@@ -355,9 +355,9 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			% EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
 			% an error is generated.
 			%
-			% In the base class, NDI_EPOCHCONTENTS_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHCONTENTS_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
+			% the NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
@@ -406,12 +406,12 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 				ndi_filenavigator_obj.fileparameters = thefileparameters;
 		end %setfileparameters()
 
-		function ndi_filenavigator_obj = setepochcontentsfileparameters(ndi_filenavigator_obj, theepochcontentsfileparameters)
-			% SETEPOCHCONTENTSFILEPARAMETERS - Set the epoch record fileparameters field of a NDI_FILENAVIGATOR object
+		function ndi_filenavigator_obj = setepochprobemapfileparameters(ndi_filenavigator_obj, theepochprobemapfileparameters)
+			% SETEPOCHPROBEMAPFILEPARAMETERS - Set the epoch record fileparameters field of a NDI_FILENAVIGATOR object
 			%
-			%  NDI_FILENAVIGATOR_OBJ = SETEPOCHCONTENTSFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEEPOCHCONTENTSFILEPARAMETERS)
+			%  NDI_FILENAVIGATOR_OBJ = SETEPOCHPROBEMAPFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEEPOCHPROBEMAPFILEPARAMETERS)
 			%
-			%  THEEPOCHCONTENTSFILEPARAMETERS is a string or cell list of strings that specifies the epoch record
+			%  THEEPOCHPROBEMAPFILEPARAMETERS is a string or cell list of strings that specifies the epoch record
 			%  file. By default, if no parameters are specified, the epoch record file is located at:
 			%   [EXP]/.ndi/device_name/epoch_NNNNNNNNN.ndierf, where [EXP] is the experiment's path.
 			%
@@ -419,18 +419,18 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			%  NDI_FILENAVIGATOR/GETEPOCHS. The search parameter should be a regular expression or a set of regular
 			%  expressions such as:
 			%
-			%         Example: theepochcontentsfileparameters = '.*\.ext\>'
-			%         Example: theepochcontentsfileparameters = {'myfile1.ext1', 'myfile2.ext2'}
-			%         Example: theepochcontentsfileparameters = {'#.ext1',  'myfile#.ext2'} (# is the same, unknown string)
+			%         Example: theepochprobemapfileparameters = '.*\.ext\>'
+			%         Example: theepochprobemapfileparameters = {'myfile1.ext1', 'myfile2.ext2'}
+			%         Example: theepochprobemapfileparameters = {'#.ext1',  'myfile#.ext2'} (# is the same, unknown string)
 			%
-				if isa(theepochcontentsfileparameters,'char'),
-					theepochcontentsfileparameters = {theepochcontentsfileparameters};
+				if isa(theepochprobemapfileparameters,'char'),
+					theepochprobemapfileparameters = {theepochprobemapfileparameters};
 				end;
-				if isa(theepochcontentsfileparameters,'cell'),
-					theepochcontentsfileparameters = struct('filematch',{theepochcontentsfileparameters});
+				if isa(theepochprobemapfileparameters,'cell'),
+					theepochprobemapfileparameters = struct('filematch',{theepochprobemapfileparameters});
 				end;
-				ndi_filenavigator_obj.epochcontents_fileparameters = theepochcontentsfileparameters;
-		end % setepochcontentsfileparameters()
+				ndi_filenavigator_obj.epochprobemap_fileparameters = theepochprobemapfileparameters;
+		end % setepochprobemapfileparameters()
 
 		function thepath = path(ndi_filenavigator_obj)
 			% PATH - Return the file path for the NDI_FILENAVIGATOR object

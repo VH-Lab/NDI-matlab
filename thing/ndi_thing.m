@@ -142,15 +142,15 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% 'epoch_number'            | The number of the epoch (may change)
 			% 'epoch_id'                | The epoch ID code (will never change once established)
 			%                           |   This uniquely specifies the epoch.
-			% 'epochcontents'           | The epochcontents object from each epoch
+			% 'epochprobemap'           | The epochprobemap object from each epoch
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
 			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the experiment and look for device strings that match this probe
 
@@ -166,10 +166,10 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 
 
 				for n=1:numel(ia),
-					et_ = emptystruct('epoch_number','epoch_id','epochcontents','underlying_epochs');
+					et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
 					et_(1).epoch_id = probe_et(ib(n)).epoch_id;
-					et_(1).epochcontents = []; % not applicable for ndi_thing objects
+					et_(1).epochprobemap = []; % not applicable for ndi_thing objects
 					if ndi_thing_obj.direct,
 						et_(1).epoch_clock = probe_et(ib(n)).epoch_clock;
 						et_(1).t0_t1 = probe_et(ib(n)).t0_t1; 
@@ -177,10 +177,10 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
-					underlying_epochs = emptystruct('underlying','epoch_id','epochcontents','epoch_clock');
+					underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
 					underlying_epochs(1).underlying = ndi_thing_obj.probe;
 					underlying_epochs.epoch_id = probe_et(ib(n)).epoch_id;
-					underlying_epochs.epochcontents = probe_et(ib(n)).epochcontents;
+					underlying_epochs.epochprobemap = probe_et(ib(n)).epochprobemap;
 					underlying_epochs.epoch_clock = probe_et(ib(n)).epoch_clock;
 					underlying_epochs.t0_t1 = probe_et(ib(n)).t0_t1;
 				
@@ -260,7 +260,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% about the NDI_THING.
 			%
 			% 
-				et_added = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1','underlying_epochs');
+				et_added = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 				if ndi_thing_obj.direct,
 					% nothing can be added
 					return; 
@@ -278,7 +278,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 							clear newet;
 							newet.epoch_number = i;
 							newet.epoch_id = epochdocs{i}.document_properties.epochid;
-							newet.epochcontents = '';
+							newet.epochprobemap = '';
 							newet.epoch_clock = {ndi_clocktype(epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
 							newet.t0_t1 = {epochdocs{i}.document_properties.thing_epoch.t0_t1};
 							newet.underlying_epochs = []; % leave this for buildepochtable

@@ -43,12 +43,12 @@ classdef ndi_epochset
 			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epochcontents'           | Any contents information for each epoch, usually of type NDI_EPOCHCONTENTS or empty.
+			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
 			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
-			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochcontents'
+			%                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochprobemap'
 			%
 			% HASHVALUE is the hashed value of the epochtable. One can check to see if the epochtable
 			% has changed with NDI_EPOCHSET/MATCHEDEPOCHTABLE.
@@ -83,18 +83,18 @@ classdef ndi_epochset
 			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epochcontents'           | Any contents information for each epoch, usually of type NDI_EPOCHCONTENTS or empty.
+			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
 			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
-			%                           |   It contains fields 'underlying', 'epoch_id', 'epochcontents', and 'epoch_clock'
+			%                           |   It contains fields 'underlying', 'epoch_id', 'epochprobemap', and 'epoch_clock'
 			%
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NDI_EPOCHSET/RESETEPOCHTABLE.
 			%
-				ue = emptystruct('underlying','epoch_id','epochcontents','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epochcontents','epoch_clock','t0_t1', 'underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1', 'underlying_epochs');
 		end % buildepochtable
 
 		function [et,hashvalue]=cached_epochtable(ndi_epochset_obj)
@@ -277,11 +277,11 @@ classdef ndi_epochset
 			% ------------------------------------------------------------------------
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epochcontents'           | Any contents information for each epoch, usually of type NDI_EPOCHCONTENTS or empty.
+			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A SINGLE NDI_CLOCKTYPE entry that describes the clock type of this node.
 			% 't0_t1'                   | The times [t0 t1] of the beginning and end of the epoch in units of 'epoch_clock'
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
-			%                           |   It contains fields 'underlying', 'epoch_id', and 'epochcontents'
+			%                           |   It contains fields 'underlying', 'epoch_id', and 'epochprobemap'
 			% 'objectname'              | A string containing the 'name' field of NDI_EPOCHSET_OBJ, if it exists. If there is no
 			%                           |   'name' field, then 'unknown' is used.
 			% 'objectclass'             | The object class name of the NDI_EPOCHSET_OBJ.
@@ -296,9 +296,9 @@ classdef ndi_epochset
 			% UNDERLYINGNODES are nodes that are directly linked to this NDI_EPOCHSET's node via 'underlying' epochs.
 			%
 				et = epochtable(ndi_epochset_obj);
-				nodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
+				nodes = emptystruct('epoch_id', 'epochprobemap', 'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
 				if nargout>1, % only build this if we are asked to do so
-					underlyingnodes = emptystruct('epoch_id', 'epochcontents', 'epoch_clock', 't0_t1', 'underlying_epochs');
+					underlyingnodes = emptystruct('epoch_id', 'epochprobemap', 'epoch_clock', 't0_t1', 'underlying_epochs');
 				end
 
 				for i=1:numel(et),
@@ -359,7 +359,7 @@ classdef ndi_epochset
 								% we have found a new unode, build it and add it
 								unode_here = emptystruct(fieldnames(unodes));
 								unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
-								unode_here(1).epochcontents = epochnode.underlying_epochs(i).epochcontents;
+								unode_here(1).epochprobemap = epochnode.underlying_epochs(i).epochprobemap;
 								unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
 								unode_here(1).t0_t1 = epochnode.underlying_epochs(i).t0_t1{j};
 								if isa(epochnode.underlying_epochs(i).underlying,'ndi_epochset'),

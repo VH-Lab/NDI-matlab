@@ -15,7 +15,7 @@ function index = ndi_findepochnode(epochnode, epochnodearray)
 % nodes that match the other criteria. If EPOCHNODE is fully filled, then
 % only exact matches are returned.
 %
-% Note: at present, the 'epochcontents' field is not compared.
+% Note: at present, the 'epochprobemap' field is not compared.
 % 
 % See also: NDI_EPOCHSET/EPOCHNODES
 

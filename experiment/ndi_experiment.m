@@ -319,7 +319,7 @@ classdef ndi_experiment < handle
 			%
 			% Examines all NDI_IODEVICE entries in the NDI_EXPERIMENT_OBJ's device array
 			% and returns all NDI_PROBE entries that can be constructed from each device's
-			% NDI_EPOCHCONTENTS entries.
+			% NDI_EPOCHPROBEMAP entries.
 			%
 			% PROBES is a cell array of NDI_PROBE objects.
 			%
