@@ -1,32 +1,32 @@
-% function d = sAPI_image_tiffstack(name,thefiletree, exp)
+% function d = sAPI_image_tiffstack(name,thefilenavigator, exp)
 %
 % sAPI_image_tiffstack_struct = struct([]);
-% S = sAPI_image(name,thefiletree,exp);
+% S = sAPI_image(name,thefilenavigator,exp);
 %
 % d = class(sAPI_image_tiffstack_struct, 'sAPI_image_tiffstack',S);
 
 classdef ndi_image_tiffstack < handle & ndi_iodevice_mfdaq
 % SAPI_IMAGE_TIFFSTACK - Create a new SAPI_IMAGE_TIFFSTACK object
 %
-%  D = SAPI_IMAGE_TIFFSTACK(NAME, THEFILETREE,EXP)
+%  D = SAPI_IMAGE_TIFFSTACK(NAME, THEFILENAVIGATOR,EXP)
 %
 %  Creates a new SAPI_IMAGE_TIFFSTACK object with NAME, THEDATAREE and associated EXP.
 %
    properties
    end
    methods
-      function obj = ndi_image_tiffstack(obj,exp,name,thefiletree,reference)
+      function obj = ndi_image_tiffstack(obj,exp,name,thefilenavigator,reference)
         if nargin==1 || nargin ==2 || nargin ==3,
             error(['Not enough input arguments.']);
         elseif nargin==4,
             obj.exp = exp;
             obj.name = name;
-            obj.filetree = thefiletree;
+            obj.filenavigator = thefilenavigator;
             obj.reference = 'time';
         elseif nargin==5,
             obj.exp = exp;
             obj.name = name;
-            obj.filetree = thefiletree;
+            obj.filenavigator = thefilenavigator;
             obj.reference = reference;
         else,
             error(['Too many input arguments.']);

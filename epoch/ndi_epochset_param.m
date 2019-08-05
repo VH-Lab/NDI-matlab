@@ -64,7 +64,7 @@ classdef ndi_epochset_param < ndi_epochset
                 end % verifyepochcontents()
 
 		function epochcontents = getepochcontents(ndi_epochset_param_obj, N)
-			% GETEPOCHCONTENTS - Return the epoch record for a given ndi_filetree and epoch number
+			% GETEPOCHCONTENTS - Return the epoch record for a given ndi_filenavigator and epoch number
 			%
 			%  EPOCHCONTENTS = GETEPOCHCONTENTS(SELF, N, IODEVICENAME)
 			%

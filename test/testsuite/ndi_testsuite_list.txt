@@ -3,7 +3,7 @@ test_ndi_cache	1	Tests cache
 test_ndi_dbleaf_branch(0)	1	Tests dbleaf_branch on disk
 test_ndi_dbleaf_branch(1)	1	Tests dbleaf_branch in memory only
 test_ndi_document	1	Tests ndi_document and the database
-test_ndi_filetree	1	Tests basic functions of ndi_filetree
+test_ndi_filenavigator	1	Tests basic functions of ndi_filenavigator
 test_intan_flat	1	Tests Intan iodevice
 build_intan_flat_exp	1	Tests saving experiment parameters, documents
 test_sg_flat	1	Tests reading from SpikeGadgets ndi_iodevice_mfdaq_sg
@@ -11,4 +11,4 @@ test_ndi_probe	1	Tests basic probe functions
 test_ndi_thing	1	Test basic nsd_thing functions
 test_ndi_device_image_tiffstack	0	Not in current testing stream
 test_ndi_image_tiffstack_multipleepoch	0	Not in current testing stream
-test_ndi_filetree_fileIDfunction	0	Note in current testing stream
+test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream

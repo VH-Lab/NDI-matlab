@@ -85,14 +85,14 @@ classdef ndi_syncrule_filematch < ndi_syncrule
 			% If IES is empty, then no information is conveyed about which NDI_EPOCHSET subtypes cannot be
 			% processed by the NDI_SYNCRULE_FILEMATCH. (That is, it is not the case that the NDI_SYNCTABLE can use any class.)
 			%
-			% NDI_SYNCRULE_FILEMATCH does not work with NDI_EPOCHSET, NDI_EPOCHSETPARAM, or NDI_FILETREE classes.
+			% NDI_SYNCRULE_FILEMATCH does not work with NDI_EPOCHSET, NDI_EPOCHSETPARAM, or NDI_FILENAVIGATOR classes.
 			%
 			% NDI_EPOCHSETS that use the rule must not be members of the classes returned here, but may be descendents of those
 			% classes.
 			%
 			% See also: NDI_SYNCRULE_FILEMATCH/ELIGIBLEEPOCHSETS
 				ies = cat(2,ndi_syncrule_filematch_obj.ineligibleepochsets@ndi_syncrule(),...
-					{'ndi_epochset','ndi_epochsetparam','ndi_filetree'}); 
+					{'ndi_epochset','ndi_epochsetparam','ndi_filenavigator'}); 
 		end % ineligibleepochsets
 
 		function [cost,mapping] = apply(ndi_syncrule_filematch_obj, epochnode_a, epochnode_b)

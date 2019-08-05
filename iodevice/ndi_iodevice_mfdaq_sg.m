@@ -17,10 +17,10 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         function obj = ndi_iodevice_mfdaq_sg(varargin)
             % NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
             %
-            %  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILETREE)
+            %  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
             %
             %  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
-            %  filetree THEFILETREE.
+            %  filenavigator THEFILENAVIGATOR.
             %
             %
 
@@ -29,13 +29,13 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         end
 
         function channels = getchannels(self)
-            %Calculate number of epochs in filetree
-            N = numepochs(self.filetree);
+            %Calculate number of epochs in filenavigator
+            N = numepochs(self.filenavigator);
 
             fileconfig = [];
 
             for n=1:N
-                filelist = getepochfiles(self.filetree, n);
+                filelist = getepochfiles(self.filenavigator, n);
 
                 filename = filelist{1};
 
@@ -110,12 +110,12 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
 
         function channels = getchannelsdetailed(self)
 
-            N = numepochs(self.filetree);
+            N = numepochs(self.filenavigator);
 
             fileconfig = [];
 
             for n=1:N
-                filelist = getepochfiles(self.filetree, n);
+                filelist = getepochfiles(self.filenavigator, n);
 
                 filename = filelist{1};
 
@@ -195,7 +195,7 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         % CHANNELTYPE and CHANNEL not used in this case since it is the
 		% same for all channels in this device
 
-			filename = self.filetree.getepochfiles(epoch);
+			filename = self.filenavigator.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
 			fileconfig = read_SpikeGadgets_config(filename);
@@ -210,7 +210,7 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
             % name, reference, n-trode, channels
             %
 
-            filename = self.filetree.getepochfiles(epoch);
+            filename = self.filenavigator.getepochfiles(epoch);
 			filename = filename{1}; %no need to adjust for epoch, channels and tetrodes remain the same
             fileconfig = read_SpikeGadgets_config(filename);
             nTrodes = fileconfig.nTrodes;
@@ -255,7 +255,7 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
             %
             %  DATA is the channel data (each column contains data from an indvidual channel)
             %
-            filename = self.filetree.getepochfiles(epoch);
+            filename = self.filenavigator.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
             header = read_SpikeGadgets_config(filename);

@@ -17,10 +17,10 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 		function obj = ndi_iodevice_mfdaq_cedspike2(varargin)
 			% NDI_IODEVICE_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
 			%
-			%  D = NDI_IODEVICE_MFDAQ_CEDSPIKE2(NAME,THEFILETREE)
+			%  D = NDI_IODEVICE_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
 			%
 			%  Creates a new NDI_IODEVICE_MFDAQ_CEDSPIKE2 object with name NAME and associated
-			%  filetree THEFILETREE.
+			%  filenavigator THEFILENAVIGATOR.
 			%
 			obj = obj@ndi_iodevice_mfdaq(varargin{:})
 		end
@@ -41,7 +41,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(ndi_iodevice_mfdaq_cedspike2_obj.filetree);
+			N = numepochs(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator);
 
 			multifunctiondaq_channel_types = ndi_iodevice_mfdaq_cedspike2_obj.mfdaq_channeltypes;
 
@@ -50,7 +50,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filetree, n);
+				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator, n);
 				filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
 
 				header = read_CED_SOMSMR_header(filename);
@@ -106,7 +106,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
+			filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
 			filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); 
 
 			sr = ndi_iodevice_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
@@ -141,7 +141,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filetree, epoch_number);
+				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator, epoch_number);
 				filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
 				header = read_CED_SOMSMR_header(filename);
 
@@ -166,7 +166,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-				filename = ndi_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
+				filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
 				filename = filename{1}; % don't know how to handle multiple filenames coming back
 				if numel(channel)>1,
 					data = {};
@@ -188,7 +188,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 		%
 		% SR is the list of sample rate from specified channels
 
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.filetree.getepochfiles(epoch);
+			filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
 			filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
 
 			sr = [];

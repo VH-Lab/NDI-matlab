@@ -1,5 +1,5 @@
 function test_sg_flat(dirname)
-%TEST_SG_FLAT - Test the functionality of the SpikeGadgets driver and a filetree with a flat organization
+%TEST_SG_FLAT - Test the functionality of the SpikeGadgets driver and a filenavigator with a flat organization
 %
 % TEST_SG_FLAT([DIRNAME])
 %
@@ -25,7 +25,7 @@ function test_sg_flat(dirname)
 	  % Step 1: Prepare the data tree; we will just look for .rec
 	  %         files in any organization within the directory
 
-	dt = ndi_filetree(exp, '.*\.rec\>');  % look for .rec files
+	dt = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
 
 	  % Step 2: create the iodevice object and add it to the experiment:
 

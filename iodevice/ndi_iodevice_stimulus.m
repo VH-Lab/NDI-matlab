@@ -1,7 +1,7 @@
 classdef ndi_iodevice_stimulus < ndi_iodevice
 % NDI_IODEVICE_STIMULUS - Create a new NDI_DEVICE_STIMULUS class handle object
 %
-%  D = NDI_IODEVICE_STIMULUS(NAME, THEFILETREE)
+%  D = NDI_IODEVICE_STIMULUS(NAME, THEFILENAVIGATOR)
 %
 %  Creates a new NDI_IODEVICE_STIMULUS object with name and specific file tree object.
 %  This is an abstract class that is overridden by specific devices.
@@ -14,10 +14,10 @@ classdef ndi_iodevice_stimulus < ndi_iodevice
 		function obj = ndi_iodevice_stimulus(varargin)
 			% NDI_IODEVICE_STIMULUS - create a new NDI_DEVICE_STIMULUS object
 			%
-			%  OBJ = NDI_IODEVICE_STIMULUS(NAME, THEFILETREE)
+			%  OBJ = NDI_IODEVICE_STIMULUS(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates an NDI_IODEVICE_STIMULUS with name NAME and NDI_FILETREE
-			%  THEFILETREE. THEFILETREE is an interface object to the raw data files
+			%  Creates an NDI_IODEVICE_STIMULUS with name NAME and NDI_FILENAVIGATOR
+			%  THEFILENAVIGATOR. THEFILENAVIGATOR is an interface object to the raw data files
 			%  on disk that are read by the NDI_IODEVICE_STIMULUS.
 			%
 			%  NDI_IODEVICE_STIMULUS is an abstract class, and a specific implementation must be called.

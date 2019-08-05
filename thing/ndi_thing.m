@@ -120,7 +120,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% The CACHE is returned from the associated experiment.
 			% The KEY is the probe's PROBESTRING plus the name of the THING.
 			%
-			% See also: NDI_FILETREE, NDI_BASE
+			% See also: NDI_FILENAVIGATOR, NDI_BASE
 
 				cache = [];
 				key = [];

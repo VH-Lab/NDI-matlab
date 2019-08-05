@@ -1,23 +1,23 @@
 classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 % NDI_IODEVICE - Create a new NDI_DEVICE class handle object
 %
-%  D = NDI_IODEVICE(NAME, THEFILETREE)
+%  D = NDI_IODEVICE(NAME, THEFILENAVIGATOR)
 %
 %  Creates a new NDI_IODEVICE object with name and specific data tree object.
 %  This is an abstract class that is overridden by specific devices.
 
 	properties (GetAccess=public, SetAccess=protected)
-		filetree   % The NDI_FILETREE associated with this device
+		filenavigator   % The NDI_FILENAVIGATOR associated with this device
 	end
 
 	methods
-		function obj = ndi_iodevice(name,thefiletree)
+		function obj = ndi_iodevice(name,thefilenavigator)
 		% NDI_IODEVICE - create a new NDI_DEVICE object
 		%
-		%  OBJ = NDI_IODEVICE(NAME, THEFILETREE)
+		%  OBJ = NDI_IODEVICE(NAME, THEFILENAVIGATOR)
 		%
 		%  Creates an NDI_IODEVICE with name NAME and NDI_IODEVICE
-		%  THEFILETREE. THEFILETREE is an interface object to the raw data files
+		%  THEFILENAVIGATOR. THEFILENAVIGATOR is an interface object to the raw data files
 		%  on disk that are read by the NDI_IODEVICE.
 		%
 		%  NDI_IODEVICE is an abstract class, and a specific implementation must be called.
@@ -27,16 +27,16 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 
 			if nargin==0, % undocumented 0 argument creator
 				name = '';
-				thefiletree = [];
+				thefilenavigator = [];
 			elseif nargin==2,
-				if ischar(thefiletree), % it is a command
+				if ischar(thefilenavigator), % it is a command
 					loadfromfile = 1;
 					filename = name;
 					name='';
-					if ~strcmp(lower(thefiletree), lower('OpenFile')),
+					if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
 						error(['Unknown command.']);
 					else,
-						thefiletree=[];
+						thefilenavigator=[];
 					end
 				end;
 			else,
@@ -48,12 +48,12 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 				obj = obj.readobjectfile(filename);
 			else,
 				obj.name = name;
-				obj.filetree = thefiletree;
+				obj.filenavigator = thefilenavigator;
 			end
-			if isempty(obj.filetree),
+			if isempty(obj.filenavigator),
 				obj.epochcontents_class = 'ndi_epochcontents_iodevice';
 			else,
-				obj.epochcontents_class = obj.filetree.epochcontents_class;
+				obj.epochcontents_class = obj.filenavigator.epochcontents_class;
 			end;
 		end % ndi_iodevice
 
@@ -111,12 +111,12 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 
 				obj=readobjectfile@ndi_dbleaf(ndi_iodevice_obj, fname);
 				[dirname] = fileparts(fname); % same parent directory
-				subdirname = [dirname filesep obj.objectfilename '.filetree.device.ndi'];
+				subdirname = [dirname filesep obj.objectfilename '.filenavigator.device.ndi'];
 				f = dir([subdirname filesep 'object_*']);
 				if isempty(f),
-					error(['Could not find filetree file!']);
+					error(['Could not find filenavigator file!']);
 				end
-				obj.filetree=ndi_filetree_readfromfile([subdirname filesep f(1).name]);
+				obj.filenavigator=ndi_filenavigator_readfromfile([subdirname filesep f(1).name]);
 		end % readobjectfile
 
 		function obj = writeobjectfile(ndi_iodevice_obj, dirname, islocked)
@@ -134,9 +134,9 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 				end
 
 				obj=writeobjectfile@ndi_dbleaf(ndi_iodevice_obj, dirname, islocked);
-				subdirname = [dirname filesep obj.objectfilename '.filetree.device.ndi'];
+				subdirname = [dirname filesep obj.objectfilename '.filenavigator.device.ndi'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
-				obj.filetree.writeobjectfile(subdirname);
+				obj.filenavigator.writeobjectfile(subdirname);
 		end % writeobjectfile
 
 		function [data, fieldnames] = stringdatatosave(ndi_iodevice_obj)
@@ -192,7 +192,7 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			% B is 1 if the process succeeds, 0 otherwise.
 			%
 				b = 1;
-				subdirname = [thedirname filesep ndi_iodevice_obj.objectfilename '.filetree.device.ndi'];
+				subdirname = [thedirname filesep ndi_iodevice_obj.objectfilename '.filenavigator.device.ndi'];
 				rmdir(subdirname,'s');
 				b = b&deleteobjectfile@ndi_dbleaf(ndi_iodevice_obj, thedirname);
 
@@ -238,9 +238,9 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			%
 			% Returns the EPOCHID for epoch with number EPOCH_NUMBER.
 			% In NDI_IODEVICE, this is determined by the associated
-			% NDI_FILETREE object.
+			% NDI_FILENAVIGATOR object.
 			%
-				eid = ndi_iodevice_obj.filetree.epochid(epoch_number);
+				eid = ndi_iodevice_obj.filenavigator.epochid(epoch_number);
 		end % epochid
 
 		function probes_struct=getprobes(ndi_iodevice_obj)
@@ -280,17 +280,17 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			% Return the NDI_EXPERIMENT object associated with the NDI_IODEVICE of the
 			% NDI_IODEVICE object.
 			%
-				exp = ndi_iodevice_obj.filetree.experiment;
+				exp = ndi_iodevice_obj.filenavigator.experiment;
 		end % experiment()
 
 		function ndi_iodevice_obj=setexperiment(ndi_iodevice_obj, experiment)
-			% SETEXPERIMENT - set the EXPERIMENT for an NDI_IODEVICE object's filetree (type NDI_IODEVICE)
+			% SETEXPERIMENT - set the EXPERIMENT for an NDI_IODEVICE object's filenavigator (type NDI_IODEVICE)
 			%
 			% NDI_IODEVICE_OBJ = SETEXPERIMENT(NDI_DEVICE_OBJ, PATH)
 			%
 			% Set the EXPERIMENT property of an NDI_IODEVICE object's NDI_IODEVICE object
 			%	
-				ndi_iodevice_obj.filetree = setproperties(ndi_iodevice_obj.filetree,{'experiment'},{experiment});
+				ndi_iodevice_obj.filenavigator = setproperties(ndi_iodevice_obj.filenavigator,{'experiment'},{experiment});
 		end % setpath()
 
 		%% functions that override NDI_EPOCHSET, NDI_EPOCHSET_PARAM
@@ -338,9 +338,9 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			%
 			% Returns the epoch table for NDI_IODEVICE_OBJ
 			%
-				et = ndi_iodevice_obj.filetree.epochtable;
+				et = ndi_iodevice_obj.filenavigator.epochtable;
 				for i=1:numel(et),
-					% need slight adjustment from filetree epochtable
+					% need slight adjustment from filenavigator epochtable
 					et(i).epochcontents = getepochcontents(ndi_iodevice_obj,et(i).epoch_number);
 					et(i).epoch_clock = epochclock(ndi_iodevice_obj, et(i).epoch_number);
 					et(i).t0_t1 = t0_t1(ndi_iodevice_obj, et(i).epoch_number);
@@ -357,7 +357,7 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 			% a full path.
 			%
 			%
-				ecfname = ndi_iodevice_obj.filetree.epochcontentsfilename(epochnumber);
+				ecfname = ndi_iodevice_obj.filenavigator.epochcontentsfilename(epochnumber);
                 end % epochcontentsfilename
 
 		function [b,msg] = verifyepochcontents(ndi_iodevice_obj, epochcontents, number)
@@ -392,11 +392,11 @@ classdef ndi_iodevice < ndi_dbleaf & ndi_epochset_param
 		function etfname = epochtagfilename(ndi_epochset_param_obj, epochnumber)
 			% EPOCHTAGFILENAME - return the file path for the tag file for an epoch
 			%
-			% ETFNAME = EPOCHTAGFILENAME(NDI_FILETREE_OBJ, EPOCHNUMBER)
+			% ETFNAME = EPOCHTAGFILENAME(NDI_FILENAVIGATOR_OBJ, EPOCHNUMBER)
 			%
 			% In this base class, empty is returned because it is an abstract class.
 			%
-				etfname = ndi_epochset_param.obj.filetree.epochtagfilename(epochnumber);
+				etfname = ndi_epochset_param.obj.filenavigator.epochtagfilename(epochnumber);
                 end % epochtagfilename()
 
 	end % methods

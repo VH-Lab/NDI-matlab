@@ -11,15 +11,15 @@ classdef ndi_iodevice_image_tiffstack < ndi_iodevice_image
     methods
         %Constructoe requiers only name and data tree as it uses the super
         %constructor
-        function obj = ndi_iodevice_image_tiffstack(name, filetree)
-                obj = obj@ndi_iodevice_image(name,filetree);
+        function obj = ndi_iodevice_image_tiffstack(name, filenavigator)
+                obj = obj@ndi_iodevice_image(name,filenavigator);
                 cache = {};
         end
 
         %This function returns a specific frame at position 'i' in epoch
-        %number 'n'. It acesses the file using the filetree
+        %number 'n'. It acesses the file using the filenavigator
         function im = frame(obj,n,i)
-            [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
+            [epochn_directory, fileID] = obj.filenavigator.getepochfiles(n);
             epochn_tiff_file = epochn_directory{1}; %gets the string vector with the files path
             fileStatus = obj.checkFile(epochn_tiff_file, fileID);%checks if the file exists, and whether it changed.
 
@@ -64,7 +64,7 @@ classdef ndi_iodevice_image_tiffstack < ndi_iodevice_image
             end%fileStatus
         end%im=frame(obj,n,i)
         function num = numFrame(obj,n)
-            [epochn_directory, fileID] = obj.filetree.getepochfiles(n);
+            [epochn_directory, fileID] = obj.filenavigator.getepochfiles(n);
             epochn_tiff_file = epochn_directory{1};
             fileStatus = obj.checkFile(epochn_tiff_file, fileID);
             if fileStatus == 1%In case the file exists, but its content has changed, the function displays an error.

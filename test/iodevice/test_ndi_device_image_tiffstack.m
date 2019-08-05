@@ -30,10 +30,10 @@ end
 
 %creating a new experiment object
 example_exp = ndi_experiment_dir('exp1',input_dir_name);
-%creating a new filetree that looks for .tif files.
-example_filetree = ndi_filetree(example_exp,'.*\.tif\>');
+%creating a new filenavigator that looks for .tif files.
+example_filenavigator = ndi_filenavigator(example_exp,'.*\.tif\>');
 %creating an image_tiffstack iodevice object
-example_device = ndi_iodevice_image_tiffstack('sampleDevice',example_filetree);
+example_device = ndi_iodevice_image_tiffstack('sampleDevice',example_filenavigator);
 
 
 disp('Counting the number of frames in the first epoch');

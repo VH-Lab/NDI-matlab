@@ -173,7 +173,7 @@ classdef ndi_epochset
 			% a number of an EPOCH ID string.
 			%
 			% The abstract class just queries the EPOCHTABLE.
-			% Most classes that manage epochs themselves (NDI_FILETREE,
+			% Most classes that manage epochs themselves (NDI_FILENAVIGATOR,
 			% NDI_IODEVICE) will override this method.
 			%
 				et = epochtable(ndi_epochset_obj);

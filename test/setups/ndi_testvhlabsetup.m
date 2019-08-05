@@ -16,7 +16,7 @@ devs = exp.iodevice_load('name','(.*)');
 for i=1:numel(devs),
 	mydev = celloritem(devs,i),
 
-	disp(['Number of epochs here: ' int2str(numepochs(mydev.filetree)) '.'])
+	disp(['Number of epochs here: ' int2str(numepochs(mydev.filenavigator)) '.'])
 end
 
 probes = getprobes(exp),

@@ -24,7 +24,7 @@ end;
 
 
 disp(['Now adding our acquisition device (SpikeGadgets):']);
-ft = ndi_filetree(E, '.*\.rec\>');  % look for .rec files
+ft = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
 dev1 = ndi_iodevice_mfdaq_sg('SpikeGadgets', ft);
 E.iodevice_add(dev1);
 

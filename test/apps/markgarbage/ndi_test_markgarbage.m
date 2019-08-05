@@ -21,7 +21,7 @@ disp(['Now adding our acquisition device (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filetree(exp, {'.*\.rhd\>','.*\.epochmetadata\>'},...
+dt = ndi_filenavigator(exp, {'.*\.rhd\>','.*\.epochmetadata\>'},...
 		'ndi_epochcontents_iodevice','.*\.epochmetadata\>');  % look for .rhd files
 
   % Step 2: create the iodevice object and add it to the experiment:

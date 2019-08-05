@@ -16,10 +16,10 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 		function obj = ndi_iodevice_mfdaq_intan(varargin)
 		% NDI_IODEVICE_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
 		%
-		%  D = NDI_IODEVICE_MFDAQ_INTAN(NAME,THEFILETREE)
+		%  D = NDI_IODEVICE_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
 		%
 		%  Creates a new NDI_IODEVICE_MFDAQ_INTAN object with name NAME and associated
-		%  filetree THEFILETREE.
+		%  filenavigator THEFILENAVIGATOR.
 		%
 			obj = obj@ndi_iodevice_mfdaq(varargin{:})
 		end
@@ -40,7 +40,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(ndi_iodevice_mfdaq_intan_obj.filetree);
+			N = numepochs(ndi_iodevice_mfdaq_intan_obj.filenavigator);
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -55,7 +55,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 				% then, open RHD files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(ndi_iodevice_mfdaq_intan_obj.filetree, n);
+				filelist = getepochfiles(ndi_iodevice_mfdaq_intan_obj.filenavigator, n);
 
 				filename = filelist{1}; % assume only 1 file
 
@@ -133,7 +133,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = ndi_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+			filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
 			filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
@@ -167,7 +167,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			% SR is the list of sample rate from specified channels
 			%
 				sr = [];
-				filename = ndi_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch);
+				filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
 				filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				head = read_Intan_RHD2000_header(filename);
@@ -190,7 +190,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filename = ndi_iodevice_mfdaq_intan_obj.filetree.getepochfiles(epoch_number);
+				filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch_number);
 				filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				header = read_Intan_RHD2000_header(filename);

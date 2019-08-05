@@ -6,8 +6,8 @@ classdef (Abstract) ndi_iodevice_image < ndi_device
     end
 
     methods
-        function obj = ndi_iodevice_image(name,filetree)
-            obj = obj@ndi_iodevice(name,filetree);
+        function obj = ndi_iodevice_image(name,filenavigator)
+            obj = obj@ndi_iodevice(name,filenavigator);
         end
     end
     

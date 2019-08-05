@@ -25,7 +25,7 @@ disp(['Now adding our acquisition device (blackrock):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filetree(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
+dt = ndi_filenavigator(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
 
   % Step 2: create the iodevice object and add it to the experiment:
 

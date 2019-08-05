@@ -1,5 +1,5 @@
-function test_ndi_filetree
-% TEST_FILETREE - A test function for the ndi_filetree class
+function test_ndi_filenavigator
+% TEST_FILENAVIGATOR - A test function for the ndi_filenavigator class
 %
 %   Creates an experiment based on a test directory in vhtools_mltbx_toolsbox.
 %   Then it finds the number of epochs and returns the files associated with epoch N=2.
@@ -15,7 +15,7 @@ ls(mydirectory)
 
 exp = ndi_experiment_dir('myexperiment',mydirectory);
 
-ft = ndi_filetree(exp, {'myfile_#.ext1','myfile_#.ext2'});
+ft = ndi_filenavigator(exp, {'myfile_#.ext1','myfile_#.ext2'});
 
 n = numepochs(ft);
 
@@ -25,7 +25,7 @@ disp(['File paths of epoch 2 are as follows: ']);
 
 f = getepochfiles(ft,2),
 
-disp(['the ndi_filetree object fields:'])
+disp(['the ndi_filenavigator object fields:'])
 
 ft,
 

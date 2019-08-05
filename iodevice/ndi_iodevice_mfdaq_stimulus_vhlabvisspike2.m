@@ -25,9 +25,9 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 		function obj = ndi_iodevice_mfdaq_stimulus_vhlabvisspike2(varargin)
 			% NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Create a new multifunction DAQ object
 			%
-			%  D = NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2(NAME, THEFILETREE)
+			%  D = NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILETREE.
+			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@ndi_iodevice_mfdaq(varargin{:});
 		end; % ndi_iodevice_mfdaq_stimulus_vhlabvisspike2()
@@ -191,7 +191,7 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filelist = getepochfiles(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filetree, epoch_number);
+				filelist = getepochfiles(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filenavigator, epoch_number);
 				filename = ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.cedspike2filelist2smrfile(filelist);
 				header = read_CED_SOMSMR_header(filename);
 
@@ -224,7 +224,7 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
 			%
 
-				filelist = ndi_iodevice_stimulus_obj.filetree.getepochfiles(epoch_number);
+				filelist = ndi_iodevice_stimulus_obj.filenavigator.getepochfiles(epoch_number);
 				pathname = {};
 				fname = {};
 				ext = {};

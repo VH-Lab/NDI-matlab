@@ -32,9 +32,9 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 		function obj = ndi_iodevice_mfdaq(varargin)
 			% NDI_IODEVICE_MFDAQ - Create a new multifunction DAQ object
 			%
-			%  D = NDI_IODEVICE_MFDAQ(NAME, THEFILETREE)
+			%  D = NDI_IODEVICE_MFDAQ(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILETREE.
+			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
 			obj = obj@ndi_iodevice(varargin{:});
 		end; % ndi_iodevice_mfdaq
@@ -125,8 +125,8 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 					self,ndi_clocktype('dev_local_time'));
 				if epoch0_timeref.epoch~=epoch1_timeref.epoch,
 					error(['Do not know how to read across epochs yet; request spanned ' ...
-						 self.filetree.epoch2str(epoch0_timeref.epoch) ...
-						' and ' self.filetree.epoch2str(epoch1_timeref.epoch) '.']);
+						 self.filenavigator.epoch2str(epoch0_timeref.epoch) ...
+						' and ' self.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
 				end
 				epoch = epoch0;
 			else,
