@@ -7,28 +7,32 @@
 %
 
 classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
 
     properties
     end
 
     methods
         function obj = ndi_iodevice_mfdaq_sg(varargin)
-            % NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
-            %
-            %  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
-            %
-            %  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
-            %  filenavigator THEFILENAVIGATOR.
-            %
-            %
+        % NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
+        %
+        %  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
+        %
+        %  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
+        %  filenavigator THEFILENAVIGATOR.
+        %
+        %
 
 			obj = obj@ndi_iodevice_mfdaq(varargin{:});
 
         end
 
         function channels = getchannels(self)
+        % GETCHANNELS - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER
+		%
+		% CHANNELS = GETCHANNELS(SELF)
+		%
+		% CHANNELS is a STRUCT
+        
             %Calculate number of epochs in filenavigator
             N = numepochs(self.filenavigator);
 
@@ -109,12 +113,17 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         end
 
         function channels = getchannelsdetailed(self)
+        % GETCHANNELSDETAILED - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER WITH EXTRA DETAILS
+		%
+		% CHANNELS = GETCHANNELSDETAILED(SELF)
+		%
+		% CHANNELS is a STRUCT
 
-            N = numepochs(self.filenavigator);
+            nEpochs = numepochs(self.filenavigator);
 
             fileconfig = [];
 
-            for n=1:N
+            for n=1:nEpochs
                 filelist = getepochfiles(self.filenavigator, n);
 
                 filename = filelist{1};
@@ -206,9 +215,9 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         end
 
         function epochprobemap = getepochprobemap(self, epoch)
-            % GETEPOCHPROBEMAP returns struct with probe information
-            % name, reference, n-trode, channels
-            %
+        % GETEPOCHPROBEMAP returns struct with probe information
+        % name, reference, n-trode, channels
+        %
 
             filename = self.filenavigator.getepochfiles(epoch);
 			filename = filename{1}; %no need to adjust for epoch, channels and tetrodes remain the same
@@ -239,22 +248,22 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
         end
 
         function data = readchannels_epochsamples(self,channeltype, channels, epoch, s0, s1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
-            %
-            %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
-            %
-            %  CHANNELTYPE is the type of channel to read
-            %  'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'
-            %
-            %  CHANNEL is a vector of the channel numbers to
-            %  read beginning from 1 if 'etrodeftrode' is channeltype,
-            %  if channeltype is 'analog_in' channel is an array with the
-            %  string names of analog channels 'Ain1'through 8
-            %
-            %  EPOCH is
-            %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
-            %
+        % FUNCTION READ_CHANNELS - read the data based on specified channels
+        %
+        % DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+        %
+        % CHANNELTYPE is the type of channel to read
+        % 'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'
+        %
+        % CHANNEL is a vector of the channel numbers to
+        % read beginning from 1 if 'etrodeftrode' is channeltype,
+        % if channeltype is 'analog_in' channel is an array with the
+        % string names of analog channels 'Ain1'through 8
+        %
+        % EPOCH is
+        %
+        % DATA is the channel data (each column contains data from an indvidual channel)
+        %
             filename = self.filenavigator.getepochfiles(epoch);
 			filename = filename{1}; % don't know how to handle multiple filenames coming back
 
