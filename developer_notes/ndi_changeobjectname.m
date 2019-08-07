@@ -13,6 +13,8 @@ function ndi_changeobjectname(ndi_distribution_path, oldname, newname, varargin)
 %       in the files and directory names.
 %
 %
+% IMPORTANT: Remeber to run NDI_TESTSUITE on a FRESH install (fresh github clone) to test your changes.
+%
 % This behavior of this function is also modifyable by including name/value pairs:
 % Parameter (default)              | Description
 % -------------------------------------------------------------------------------
