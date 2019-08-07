@@ -17,16 +17,16 @@ E = ndi_experiment_dir('exp1', dirname);
 
 % remove any old acq devices
 
-devs = E.iodevice_load('name','(.*)');
+devs = E.daqsystem_load('name','(.*)');
 for i=1:numel(devs),
-	E.iodevice_rm(celloritem(devs,i));
+	E.daqsystem_rm(celloritem(devs,i));
 end;
 
 
 disp(['Now adding our acquisition device (SpikeGadgets):']);
 ft = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
-dev1 = ndi_iodevice_mfdaq_sg('SpikeGadgets', ft);
-E.iodevice_add(dev1);
+dev1 = ndi_daqsystem_mfdaq_sg('SpikeGadgets', ft);
+E.daqsystem_add(dev1);
 
 eparams = [dirname filesep 'extraction_parameters.txt'];
 sparams = [dirname filesep 'sorting_parameters.txt'];

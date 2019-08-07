@@ -1,20 +1,20 @@
-% NDI_IODEVICESTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_IODEVICE
+% NDI_DAQSYSTEMSTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_DAQSYSTEM
 %
-%  NDI_IODEVICESTRING
+%  NDI_DAQSYSTEMSTRING
 %
-%  A 'devicestring' is a part of an NDI_EPOCHPROBEMAP_IODEVICE that indicates the channel types and
+%  A 'devicestring' is a part of an NDI_EPOCHPROBEMAP_DAQSYSTEM that indicates the channel types and
 %  channel numbers that correspond to a particular record.
 %
 %  For example, one may specify that a 4-channel extracellular recording with name
 %  'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-%  on channels 27-28 and 45 and 88 with the following ndi_epochprobemap_iodevice entry:
+%  on channels 27-28 and 45 and 88 with the following ndi_epochprobemap_daqsystem entry:
 %           name: 'ctx'
 %      reference: 1
 %           type: 'extracellular_electrode-4'
 %   devicestring: 'mydevice:ai27-28,45,88
 %
 %  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
-%  NDI_IODEVICE object, CT is the channel type identifier, and #### is a list of channels.
+%  NDI_DAQSYSTEM object, CT is the channel type identifier, and #### is a list of channels.
 %  The #### list of channels should be numbered from 1, and can use the symbols '-' to
 %  indicate a sequential run of channels, and ',' to separate channels.
 %  
@@ -24,10 +24,10 @@
 %     ''               corresponds to []  % if the device doesn't have channels
 %
 % 
-%  See also: NDI_IODEVICESTRING/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
+%  See also: NDI_DAQSYSTEMSTRING/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 %
 
-classdef ndi_iodevicestring
+classdef ndi_daqsystemstring
 	properties (GetAccess=public, SetAccess=protected)
 		devicename    % The name of the device
 		channeltype   % The type of channels that are used by the device
@@ -35,20 +35,20 @@ classdef ndi_iodevicestring
 	end
 
 	methods
-		function obj = ndi_iodevicestring(devicename, channeltype, channellist)
-			% NDI_IODEVICESTRING - Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list
+		function obj = ndi_daqsystemstring(devicename, channeltype, channellist)
+			% NDI_DAQSYSTEMSTRING - Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list
 			%
-			% DEVSTR = NDI_IODEVICESTRING(DEVICENAME, CHANNELTYPE, CHANNELLIST)
-			%    or DEVSTR = NDI_IODEVICESTRING(DEVSTRING)
+			% DEVSTR = NDI_DAQSYSTEMSTRING(DEVICENAME, CHANNELTYPE, CHANNELLIST)
+			%    or DEVSTR = NDI_DAQSYSTEMSTRING(DEVSTRING)
 			%
-			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_IODEVICE from a DEVICENAME,
+			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_DAQSYSTEM from a DEVICENAME,
 			% a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
 			%
 			% Inputs:
 			%    In the first form:
-			%      DEVICENAME should be the name of an NDI_IODEVICE
+			%      DEVICENAME should be the name of an NDI_DAQSYSTEM
 			%      CHANNEL_PREFIX should be the prefix for a particular type of channel. These channel type will vary from
-			%          device to device. For example, a NDI_IODEVICE_MULTICHANNELDAQ might use:
+			%          device to device. For example, a NDI_DAQSYSTEM_MULTICHANNELDAQ might use:
 			%            'ai' - analog input
 			%            'ao' - analog output (it is an 'o' like 'oh', not 0)
 			%            'di' - digital input
@@ -62,25 +62,25 @@ classdef ndi_iodevicestring
 			%
 			% Examples:
 			%
-			%      myndi_iodevicestring1 = ndi_devicestring('mydevice','ai',[1:5 7 23])
-			%      myndi_iodevicestring2 = ndi_devicestring('mydevice:ai1-5,7,23');
+			%      myndi_daqsystemstring1 = ndi_devicestring('mydevice','ai',[1:5 7 23])
+			%      myndi_daqsystemstring2 = ndi_devicestring('mydevice:ai1-5,7,23');
 			%
-			% See also: NDI_IODEVICESTRING
+			% See also: NDI_DAQSYSTEMSTRING
 			%
 				if nargin==1,
 					% it is a string
-					[obj.devicename, obj.channeltype, obj.channellist] = ndi_iodevicestring2channel(obj,devicename);
+					[obj.devicename, obj.channeltype, obj.channellist] = ndi_daqsystemstring2channel(obj,devicename);
 				else,
 					obj.devicename = devicename;
 					obj.channeltype = channeltype;
 					obj.channellist = channellist;
 				end;
-		end % ndi_iodevicestring
+		end % ndi_daqsystemstring
 
-		function [devicename, channeltype, channel] = ndi_iodevicestring2channel(self, devstr)
-			% NDI_IODEVICESTRING2CHANNELS - Convert an ndi_iodevicestring to device, channel type, channel list
+		function [devicename, channeltype, channel] = ndi_daqsystemstring2channel(self, devstr)
+			% NDI_DAQSYSTEMSTRING2CHANNELS - Convert an ndi_daqsystemstring to device, channel type, channel list
 			%
-			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_IODEVICESTRING2CHANNEL(SELF, DEVSTR)
+			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)
 			%
 			% Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
 			% (CHANNEL) of a device string.
@@ -93,11 +93,11 @@ classdef ndi_iodevicestring
 			%    CHANNELLIST is an array of the channel numbers
 			%
 			% Example:
-			%    devstr = ndi_iodevicestring('mydevice:ai1-5,13,18');
-			%    [devicename, channeltype, channel] = ndi_iodevicestring2channel(devstr);
+			%    devstr = ndi_daqsystemstring('mydevice:ai1-5,13,18');
+			%    [devicename, channeltype, channel] = ndi_daqsystemstring2channel(devstr);
 			%    % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]
 			%
-			% See also: NDI_IODEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
+			% See also: NDI_DAQSYSTEMSTRING, NDI_DEVICESTRING/DEVICESTRING
 			%
 				if nargin<2,
 					devstr = self.devicestring();
@@ -116,28 +116,28 @@ classdef ndi_iodevicestring
 					mysubstr = devstr(separators(i)+1:separators(i+1)-1);
 					firstnumber = find(  ~isletter(mysubstr), 1);
 					if isempty(firstnumber),
-						error(['No number in ndi_iodevice substring: ' mysubstr '.']);
+						error(['No number in ndi_daqsystem substring: ' mysubstr '.']);
 					end
 					channelshere = str2intseq(mysubstr(firstnumber:end));
 					channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
 					channel = cat(2,channel,channelshere(:)');
 				end
-		end % ndi_iodevicestring2channel
+		end % ndi_daqsystemstring2channel
 
 		function devstr = devicestring(self);
-			% DEVICESTRING - Produce an NDI_IODEVICESTRING character string 
+			% DEVICESTRING - Produce an NDI_DAQSYSTEMSTRING character string 
 			%
 			% DEVSTR = DEVICESTRING(SELF)
 			%
-			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_IODEVICE from an NDI_IODEVICESTRING object.
+			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_DAQSYSTEM from an NDI_DAQSYSTEMSTRING object.
 			%
 			% Inputs:
-			%    SELF - an NDI_IODEVICESTRING object
+			%    SELF - an NDI_DAQSYSTEMSTRING object
 			% Outputs:
 			%    DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23'
 			%
 			%
-			% See also: NDI_IODEVICESTRING
+			% See also: NDI_DAQSYSTEMSTRING
 				devstr = [self.devicename ':'];
 				prevchanneltype = '';
 				newchannellist = [];

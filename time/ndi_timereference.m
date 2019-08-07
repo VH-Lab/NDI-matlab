@@ -3,7 +3,7 @@ classdef ndi_timereference
 % 
 % 
 	properties (SetAccess=protected, GetAccess=public)
-		referent % the NDI_IODEVICE, NDI_PROBE,... that is referred to (must be a subclass of NDI_EPOCHSET)
+		referent % the NDI_DAQSYSTEM, NDI_PROBE,... that is referred to (must be a subclass of NDI_EPOCHSET)
 		clocktype % the NDI_CLOCKTYPE: can be 'utc', 'exp_global_time', 'dev_global_time', or 'dev_local_time'
 		epoch % the epoch that may be referred to (required if the time type is 'dev_local_time')
 		time  % the time of the referent that is referred to
@@ -18,7 +18,7 @@ classdef ndi_timereference
 			% Creates a new NDI_TIME_REFERENCE object. The REFERENT, EPOCH, and TIME must
 			% specify a unique time. 
 			%
-			% REFERENT is any subclass of NDI_EPOCHSET object (NDI_IODEVICE, NDI_PROBE, etc...)
+			% REFERENT is any subclass of NDI_EPOCHSET object (NDI_DAQSYSTEM, NDI_PROBE, etc...)
 			% TYPE is the time type, can be 'utc', 'exp_global_time', or 'dev_global_time' or 'dev_local_time'
 			% If TYPE is 'dev_local_time', then the EPOCH identifier is necessary. Otherwise, it can be empty.
 			% If EPOCH is specified, then TIME is taken to be relative to the EPOCH number of the

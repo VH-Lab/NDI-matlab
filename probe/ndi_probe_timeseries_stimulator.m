@@ -1,5 +1,5 @@
 classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
-% NDI_PROBE_TIMESERIES_STIMULATOR - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_IODEVICE_STIMULUS objects
+% NDI_PROBE_TIMESERIES_STIMULATOR - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end

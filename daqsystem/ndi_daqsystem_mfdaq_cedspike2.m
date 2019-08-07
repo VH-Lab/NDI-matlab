@@ -1,5 +1,5 @@
-classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
-% NDI_IODEVICE_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
+classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
+% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from CED Spike2 .SMR or .SON file formats.
 %
@@ -14,18 +14,18 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 	end % properties
 
 	methods
-		function obj = ndi_iodevice_mfdaq_cedspike2(varargin)
-			% NDI_IODEVICE_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
+		function obj = ndi_daqsystem_mfdaq_cedspike2(varargin)
+			% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
 			%
-			%  D = NDI_IODEVICE_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
+			%  D = NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ_CEDSPIKE2 object with name NAME and associated
+			%  Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
-			obj = obj@ndi_iodevice_mfdaq(varargin{:})
+			obj = obj@ndi_daqsystem_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(ndi_iodevice_mfdaq_cedspike2_obj)
+		function channels = getchannels(ndi_daqsystem_mfdaq_cedspike2_obj)
 			% GETCHANNELS - List the channels that are available on this device
 			%
 			%  CHANNELS = GETCHANNELS(THEDEV)
@@ -41,17 +41,17 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator);
+			N = numepochs(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator);
 
-			multifunctiondaq_channel_types = ndi_iodevice_mfdaq_cedspike2_obj.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq_cedspike2_obj.mfdaq_channeltypes;
 
 			for n=1:N,
 
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator, n);
-				filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
+				filelist = getepochfiles(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator, n);
+				filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
 
 				header = read_CED_SOMSMR_header(filename);
 
@@ -60,8 +60,8 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 				end;
 
 				for k=1:length(header.channelinfo),
-					newchannel.type = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
-					newchannel.name = [ ndi_iodevice_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.type = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
+					newchannel.name = [ ndi_daqsystem_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
 					match = 0;
 					for kk=1:length(channels),
 						if eqlen(channels(kk),newchannel)
@@ -76,24 +76,24 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochprobemap(ndi_iodevice_mfdaq_cedspike2_obj, epochprobemap, number)
+		function [b,msg] = verifyepochprobemap(ndi_daqsystem_mfdaq_cedspike2_obj, epochprobemap, number)
 			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 			%
-			%   B = VERIFYEPOCHPROBEMAP(NDI_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, NUMBER)
+			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given device
+			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
-			% For the abstract class NDI_IODEVICE, EPOCHPROBEMAP is always valid as long as
-			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_IODEVICE object.
+			% For the abstract class NDI_DAQSYSTEM, EPOCHPROBEMAP is always valid as long as
+			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
+			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
 			b = 1; msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochprobemap, 'ndi_epochprobemap_iodevice') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_iodevice_mfdaq_cedspike2_obj.name);
+			% b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_daqsystem_mfdaq_cedspike2_obj.name);
 		end
 
-		function data = readchannels_epochsamples(ndi_iodevice_mfdaq_cedspike2_obj, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_cedspike2_obj, channeltype, channel, epoch, s0, s1)
 			%  FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
 			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
@@ -106,10 +106,10 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); 
+			filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
+			filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); 
 
-			sr = ndi_iodevice_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
+			sr = ndi_daqsystem_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -130,10 +130,10 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 
 		end % readchannels_epochsamples
 
-		function t0t1 = t0_t1(ndi_iodevice_mfdaq_cedspike2_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_cedspike2_obj, epoch_number)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
-			% T0T1 = T0_T1(NDI_IODEVICE_MFDAQ_CEDSPIKE2_OBJ, EPOCH_NUMBER)
+			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCH_NUMBER)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
 			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
@@ -141,8 +141,8 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filelist = getepochfiles(ndi_iodevice_mfdaq_cedspike2_obj.filenavigator, epoch_number);
-				filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
+				filelist = getepochfiles(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator, epoch_number);
+				filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
 				header = read_CED_SOMSMR_header(filename);
 
 				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
@@ -150,7 +150,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function data = readevents_epoch(ndi_iodevice_mfdaq_cedspike2_obj, channeltype, channel, epoch, t0, t1)
+		function data = readevents_epoch(ndi_daqsystem_mfdaq_cedspike2_obj, channeltype, channel, epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
@@ -166,7 +166,7 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-				filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
+				filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
 				filename = filename{1}; % don't know how to handle multiple filenames coming back
 				if numel(channel)>1,
 					data = {};
@@ -181,15 +181,15 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 				end
 		end % readevents_epoch()
 
-		function sr = samplerate(ndi_iodevice_mfdaq_cedspike2_obj, epoch, channeltype, channel)
+		function sr = samplerate(ndi_daqsystem_mfdaq_cedspike2_obj, epoch, channeltype, channel)
 		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 		%
 		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
 		%
 		% SR is the list of sample rate from specified channels
 
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_iodevice_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
+			filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
+			filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
 
 			sr = [];
 			for i=1:numel(channel),
@@ -221,11 +221,11 @@ classdef ndi_iodevice_mfdaq_cedspike2 < ndi_iodevice_mfdaq
 		end
 
 		function channeltype = cedspike2headertype2mfdaqchanneltype(cedspike2channeltype)
-		% CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_IODEVICE_MFDAQ channel types 
+		% CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQSYSTEM_MFDAQ channel types 
 		%
 		% CHANNELTYPE = CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE(CEDSPIKE2CHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard NDI_IODEVICE_MFDAQ channel type
+		% Given an Intan header file type, returns the standard NDI_DAQSYSTEM_MFDAQ channel type
 
 			switch (cedspike2channeltype),
 				case {1,9},

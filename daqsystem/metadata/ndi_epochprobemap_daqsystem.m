@@ -1,17 +1,17 @@
-classdef ndi_epochprobemap_iodevice < ndi_epochprobemap
+classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 	properties
 		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
 		type          % The type of recording that is present in the data
-		devicestring  % An NDI_IODEVICESTRING that indicates the device and channels that comprise the data
+		devicestring  % An NDI_DAQSYSTEMSTRING that indicates the device and channels that comprise the data
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_iodevice(name_, reference_, type_, devicestring_)
-			% NDI_EPOCHPROBEMAP_IODEVICE - Create a new ndi_epochprobemap_iodevice object
+		function obj = ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_)
+			% NDI_EPOCHPROBEMAP_DAQSYSTEM - Create a new ndi_epochprobemap_daqsystem object
 			%
-			% MYNDI_EPOCHPROBEMAP_IODEVICE = NDI_EPOCHPROBEMAP(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(NAME, REFERENCE, TYPE, DEVICESTRING)
 			%
-			% Creates a new NDI_EPOCHPROBEMAP_IODEVICE with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -23,11 +23,11 @@ classdef ndi_epochprobemap_iodevice < ndi_epochprobemap
 			%
 			% The function has an alternative form:
 			%
-			%   MYNDI_EPOCHPROBEMAP_IODEVICE = NDI_EPOCHPROBEMAP(FILENAME)
+			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(FILENAME)
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-			% one line per NDI_EPOCHPROBEMAP_IODEVICE entry.
+			% one line per NDI_EPOCHPROBEMAP_DAQSYSTEM entry.
 			%
 
 			if nargin==0, % undocumented 0 input constructor
@@ -52,14 +52,14 @@ classdef ndi_epochprobemap_iodevice < ndi_epochprobemap
 				end;
 				obj = [];
 				for i=1:length(ndi_struct),
-					nextentry = ndi_epochprobemap_iodevice(ndi_struct(i).name,...
+					nextentry = ndi_epochprobemap_daqsystem(ndi_struct(i).name,...
 							ndi_struct(i).reference,...
 							ndi_struct(i).type, ...
 							ndi_struct(i).devicestring);
 					obj = cat(1,obj,nextentry);
 				end;
 				if isempty(obj),
-					obj = ndi_epochprobemap_iodevice;
+					obj = ndi_epochprobemap_daqsystem;
 					obj = obj([]);
 				end
 				return;
@@ -76,7 +76,7 @@ classdef ndi_epochprobemap_iodevice < ndi_epochprobemap
 			% reference, check for errors
 
 			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
-				error(['reference of ndi_epochprobemap_iodevice must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of ndi_epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -93,12 +93,12 @@ classdef ndi_epochprobemap_iodevice < ndi_epochprobemap
 			obj.devicestring = devicestring_;
 		end;
 
-		function savetofile(ndi_epochprobemap_iodevice_obj, filename)
-		%  SAVETOFILE - Write ndi_epochprobemap_iodevice object array to disk
+		function savetofile(ndi_epochprobemap_daqsystem_obj, filename)
+		%  SAVETOFILE - Write ndi_epochprobemap_daqsystem object array to disk
 		%
-                %  SAVETOFILE(NDI_EPOCHPROBEMAP_IODEVICE_OBJ, FILENAME)
+                %  SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
 		%
-		%  Writes the NDI_EPOCHPROBEMAP_IODEVICE object to disk in filename FILENAME (full path).
+		%  Writes the NDI_EPOCHPROBEMAP_DAQSYSTEM object to disk in filename FILENAME (full path).
 		%
 		%
 			fn = {'name','reference','type','devicestring'};

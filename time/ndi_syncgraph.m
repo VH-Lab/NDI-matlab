@@ -127,7 +127,7 @@ classdef ndi_syncgraph < ndi_base
 				ginfo.mapping = {};
 				ginfo.diG = [];
 
-				d = ndi_syncgraph_obj.experiment.iodevice_load('name','(.*)');
+				d = ndi_syncgraph_obj.experiment.daqsystem_load('name','(.*)');
 				if ~iscell(d), d = {d}; end; % make sure we are a cell
 
 				for i=1:numel(d),
@@ -173,30 +173,30 @@ classdef ndi_syncgraph < ndi_base
 				end
 		end % set_cached_graphinfo
 
-		function ginfo = addepoch(ndi_syncgraph_obj, ndi_iodevice_obj, ginfo)
+		function ginfo = addepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
 			% ADDEPOCH - add an NDI_EPOCHSET to the graph
 			% 
-			% NEW_GINFO = ADDEPOCH(NDI_SYNCGRAPH_OBJ, NDI_IODEVICE_OBJ, GINFO)
+			% NEW_GINFO = ADDEPOCH(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 			%
 			% Adds an NDI_EPOCHSET to the NDI_SYNCGRAPH
 			%
 			% Note: this does not update the cache
 			% 
 				% Step 1: make sure we have the right kind of input object
-				if ~isa(ndi_iodevice_obj, 'ndi_iodevice'),
-					error(['The input NDI_IODEVICE_OBJ must be of class NDI_IODEVICE or a subclass.']);
+				if ~isa(ndi_daqsystem_obj, 'ndi_daqsystem'),
+					error(['The input NDI_DAQSYSTEM_OBJ must be of class NDI_DAQSYSTEM or a subclass.']);
 				end
 
 				% Step 2: make sure it is not duplicative
 
 				if numel(ginfo)>0,
-					tf = strcmp(ndi_iodevice_obj.name,{ginfo.nodes.objectname});
+					tf = strcmp(ndi_daqsystem_obj.name,{ginfo.nodes.objectname});
 				else,
 					tf = [];
 				end
 				if any(tf), % we already have this object
 					% in the future, we'll make this method that saves time. For initial development, we'll complain
-					%ginfo = updateepochs(ndi_syncgraph_obj, ndi_iodevice_obj, ginfo);
+					%ginfo = updateepochs(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo);
 					%return;
 					error(['This graph already has epochs from ' name '.']);
 				end
@@ -205,8 +205,8 @@ classdef ndi_syncgraph < ndi_base
 
 					% Step 3.1: add the within-device graph to our graph
 
-				newnodes = ndi_iodevice_obj.epochnodes();
-				[newcost,newmapping] = ndi_iodevice_obj.epochgraph;
+				newnodes = ndi_daqsystem_obj.epochnodes();
+				[newcost,newmapping] = ndi_daqsystem_obj.epochgraph;
 
 				oldn = numel(ginfo.nodes);
 				newn = numel(newnodes);
@@ -334,16 +334,16 @@ classdef ndi_syncgraph < ndi_base
 				ndi_syncgraph_obj.set_cached_graphinfo(ginfo);
 		end % addunderlyingnodes
 
-		function ginfo = removeepoch(ndi_syncgraph_obj, ndi_iodevice_obj, ginfo)
+		function ginfo = removeepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
 			% REMOVEEPOCHS - remove an NDI_EPOCHSET from the graph
 			%
-			% GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_IODEVICE_OBJ, GINFO)
+			% GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 			%
-			% Remove all epoch nodes from the graph that are contributed by NDI_IODEVICE_OBJ
+			% Remove all epoch nodes from the graph that are contributed by NDI_DAQSYSTEM_OBJ
 			%
 			% Note: this does not update the cache
 
-				tf = find(strcmp(ndi_iodevice_obj.name,{ginfo.nodes.objectname}));
+				tf = find(strcmp(ndi_daqsystem_obj.name,{ginfo.nodes.objectname}));
 
 				keep = setdiff(1:numel(ginfo.nodes));
 

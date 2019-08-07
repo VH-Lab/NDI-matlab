@@ -9,11 +9,11 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 
 	methods
 	        function obj = ndi_filenavigator(experiment_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
-		% NDI_FILENAVIGATOR - Create a new NDI_FILENAVIGATOR object that is associated with an experiment and iodevice
+		% NDI_FILENAVIGATOR - Create a new NDI_FILENAVIGATOR object that is associated with an experiment and daqsystem
 		%
 		%   OBJ = NDI_FILENAVIGATOR(EXPERIMENT, [ FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%
-		% Creates a new NDI_FILENAVIGATOR object that negotiates the data tree of iodevice's data that is
+		% Creates a new NDI_FILENAVIGATOR object that negotiates the data tree of daqsystem's data that is
 		% stored at the file path PATH.
 		%
 		% Inputs:
@@ -21,7 +21,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
-		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_iodevice' is used by default
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_daqsystem' is used by default
 		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
 		%          specified in NDI_FILENAVIGATOR/EPOCHPROBEMAPFILENAME is used
@@ -50,7 +50,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			if nargin > 2,
 				obj.epochprobemap_class = epochprobemap_class_;
 			else,
-				obj.epochprobemap_class = 'ndi_epochprobemap_iodevice';
+				obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
 			end;
 
 			if nargin > 3,
@@ -260,16 +260,16 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		end %epochid()
 
 		function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
-			% EPOCHPROBEMAPFILENAME - return the file path for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file path for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the EPOCHPROBEMAPFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the EPOCHPROBEMAPFILENAME for the NDI_DAQSYSTEM NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
+			% the NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
 				if nargin<3, % undocumented 3rd argument
@@ -284,7 +284,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		end % epochidfilename()
 
 		function ecfname = epochprobemapfilename(ndi_filenavigator_obj, number)
-			% EPOCHPROBEMAPFILENAME - return the file name for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file name for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
@@ -321,16 +321,16 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 		end % epochprobemapfilename
 
 		function ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number)
-			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
+			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
 			%
 			% ECFNAME = DEFAULTEPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the default EPOCHPROBEMAPFILENAME for the NDI_IODEVICE NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the default EPOCHPROBEMAPFILENAME for the NDI_DAQSYSTEM NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. NUMBER cannot be an epoch id.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the default NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
+			% the default NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
 			% This may be overridden if there is an EPOCHPROBEMAP_FILEPARAMETERS set.
 			%
 			% See also: NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS
@@ -355,9 +355,9 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			% EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
 			% an error is generated.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_IODEVICE data is stored as a hidden file in the same directory
+			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHPROBEMAP_IODEVICE data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
+			% the NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);

@@ -27,14 +27,14 @@ disp(['Now adding our acquisition device (blackrock):']);
 
 dt = ndi_filenavigator(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
 
-  % Step 2: create the iodevice object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the experiment:
 
-dev1 = ndi_iodevice_mfdaq_blackrock('blackrock1',dt);
-exp.iodevice_add(dev1);
+dev1 = ndi_daqsystem_mfdaq_blackrock('blackrock1',dt);
+exp.daqsystem_add(dev1);
 
   % Now let's print some statistics
 
-disp(['The channels we have on this iodevice are the following:']);
+disp(['The channels we have on this daqsystem are the following:']);
 
 disp ( struct2table(getchannels(dev1)) );
 
@@ -55,5 +55,5 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-exp.iodevice_rm(dev1); % remove the iodevice so the demo can run again
+exp.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 

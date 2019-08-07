@@ -1,4 +1,4 @@
-Needs to have a conceptually clear logical interface (analogies: probes, iodevices, epochs, database)
+Needs to have a conceptually clear logical interface (analogies: probes, daqsystems, epochs, database)
 
 Needs to be independent of platform
 

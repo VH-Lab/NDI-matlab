@@ -19,13 +19,13 @@ end;
 disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
 exp = ndi_experiment_dir(dirname);
 
-disp(['Now looking for iodevice Intan1']);
+disp(['Now looking for daqsystem Intan1']);
 
-dev1 = exp.iodevice_load('name','Intan1'),
+dev1 = exp.daqsystem_load('name','Intan1'),
 
   % Now let's print some statistics
 
-disp(['The channels we have on this iodevice are the following:']);
+disp(['The channels we have on this daqsystem are the following:']);
 
 disp ( struct2table(getchannels(dev1)) );
 

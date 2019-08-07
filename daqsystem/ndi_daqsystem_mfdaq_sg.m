@@ -1,4 +1,4 @@
-% NDI_IODEVICE_MFDAQ_SG - Device driver for SpikeGadgets .rec video file format
+% NDI_DAQSYSTEM_MFDAQ_SG - Device driver for SpikeGadgets .rec video file format
 %
 % This class reads data from video files .rec that spikegadgets use
 %
@@ -6,22 +6,22 @@
 %
 %
 
-classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
+classdef ndi_daqsystem_mfdaq_sg < ndi_daqsystem_mfdaq
 
 	properties
 	end
 
 	methods
-		function obj = ndi_iodevice_mfdaq_sg(varargin)
-			% NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
+		function obj = ndi_daqsystem_mfdaq_sg(varargin)
+			% NDI_DAQSYSTEM_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
 			%
-			%  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
+			%  D = NDI_DAQSYSTEM_MFDAQ_SG(NAME,THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
+			%  Creates a new NDI_DAQSYSTEM_MFDAQ_SG object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
 			%
-				obj = obj@ndi_iodevice_mfdaq(varargin{:});
+				obj = obj@ndi_daqsystem_mfdaq(varargin{:});
 		end
 
 		function channels = getchannels(self)
@@ -230,10 +230,10 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
                     channels = [channels nTrodes(i).channelInfo(j).packetLocation + 1];
                 end
                 %Object that deals with channels
-                devicestringobject = ndi_iodevicestring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
+                devicestringobject = ndi_daqsystemstring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
                 devicestringstring = devicestringobject.devicestring();
                 %
-                obj = ndi_epochprobemap_iodevice(name,reference,type,devicestringstring);
+                obj = ndi_epochprobemap_daqsystem(name,reference,type,devicestringstring);
                 %Append each newly made object to end of list
                 epochprobemap = [epochprobemap obj];
             end
@@ -272,7 +272,7 @@ classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
             %reading from channel 1 in list returned
             %Reads nTrodes
             %WARNING channeltype hard coded, ask Steve
-            if (strcmp(ndi_iodevice_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi_iodevice_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
+            if (strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
 
                 data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 

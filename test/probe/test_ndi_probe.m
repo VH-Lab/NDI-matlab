@@ -19,7 +19,7 @@ end;
 disp(['reading experiment from directory ' dirname ' ...']);
 exp = ndi_experiment_dir(dirname);
 
-%dev1 = load(exp.iodevice,'name','Intan1');
+%dev1 = load(exp.daqsystem,'name','Intan1');
 
 probes = getprobes(exp);
 

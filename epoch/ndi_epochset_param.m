@@ -3,7 +3,7 @@ classdef ndi_epochset_param < ndi_epochset
 %
 
 	properties (SetAccess=protected,GetAccess=public)
-		epochprobemap_class  % The (sub)class of NDI_EPOCHPROBEMAP_IODEVICE to be used; NDI_EPOCHCONTS is the default; a string
+		epochprobemap_class  % The (sub)class of NDI_EPOCHPROBEMAP_DAQSYSTEM to be used; NDI_EPOCHCONTS is the default; a string
 		
 	end % properties
 
@@ -16,10 +16,10 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 			% Create a new NDI_EPOCHSET_PARAM object. It has one optional input argument,
 			% EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
-			% of NDI_EPOCHPROBEMAP_IODEVICE to be used.
+			% of NDI_EPOCHPROBEMAP_DAQSYSTEM to be used.
 			%
 				if nargin==0,
-					obj.epochprobemap_class = 'ndi_epochprobemap_iodevice';
+					obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
 				else,
 					obj.epochprobemap_class = epochprobemap_class_;
 				end
@@ -28,7 +28,7 @@ classdef ndi_epochset_param < ndi_epochset
 		%% EPOCHPROBEMAP methods
 
 		function ecfname = epochprobemapfilename(ndi_epochset_param_obj, epochnumber)
-			% EPOCHPROBEMAPFILENAME - return the filename for the NDI_EPOCHPROBEMAP_IODEVICE file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the filename for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
 			%
@@ -47,26 +47,26 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 			%   [B,MSG] = VERIFYEPOCHPROBEMAP(NDI_EPOCHSET_PARAM, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
 			%
-			% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given 
+			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given 
 			% epoch number or epoch id EPOCH_NUMBER_OR_ID.
 			%
 			% For the abstract class EPOCHPROBEMAP is always valid as long as EPOCHPROBEMAP is an
-			% NDI_EPOCHPROBEMAP_IODEVICE object.
+			% NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 			%
 			% If B is 0, then the error message is returned in MSG.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
+			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
 				msg = '';
 				b = isa(epochprobemap, 'ndi_epochprobemap');
 				if ~b,
-					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_IODEVICE; it must be.';
+					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_DAQSYSTEM; it must be.';
 				end
                 end % verifyepochprobemap()
 
 		function epochprobemap = getepochprobemap(ndi_epochset_param_obj, N)
 			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi_filenavigator and epoch number
 			%
-			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(SELF, N, IODEVICENAME)
+			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(SELF, N, DAQSYSTEMNAME)
 			%
 			% Inputs:
 			%     SELF - the data tree object
@@ -90,11 +90,11 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 			%   SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
 			%
-			% Sets or replaces the NDI_EPOCHPROBEMAP_IODEVICE for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
+			% Sets or replaces the NDI_EPOCHPROBEMAP_DAQSYSTEM for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
 			% numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
 			% Otherwise, an error is given if there is an existing epoch record.
 			%
-			% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
+			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
 
 				if nargin<4,
 					overwrite = 0;

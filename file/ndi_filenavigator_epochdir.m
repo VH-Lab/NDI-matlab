@@ -25,14 +25,14 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 		% Inputs: EXP - an NDI_EXPERIMENT ; FILEPARAMETERS - the files that are recorded in each epoch
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
-		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_iodevice' is used by default
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_daqsystem' is used by default
 		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
 		%          specified in NDI_FILENAVIGATOR/EPOCHPROBEMAPFILENAME is used
 		%
 		% Output: OBJ - an NDI_FILENAVIGATOR_EPOCHDIR object
 		%
-		% See also: NDI_EXPERIMENT, NDI_IODEVICE
+		% See also: NDI_EXPERIMENT, NDI_DAQSYSTEM
 		%
 			obj = obj@ndi_filenavigator(varargin{:});
 		end

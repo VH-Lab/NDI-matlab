@@ -22,18 +22,18 @@ disp(['Now adding our acquisition device (intan):']);
   %         files in any organization within the directory
 
 dt = ndi_filenavigator(exp, {'.*\.rhd\>','.*\.epochmetadata\>'},...
-		'ndi_epochprobemap_iodevice','.*\.epochmetadata\>');  % look for .rhd files
+		'ndi_epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
 
-  % Step 2: create the iodevice object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the experiment:
 
   % if it is there from before, remove it
-devs = exp.iodevice_load('name','(.*)');
+devs = exp.daqsystem_load('name','(.*)');
 for i=1:numel(devs), 
-	exp.iodevice_rm(celloritem(devs,i));
+	exp.daqsystem_rm(celloritem(devs,i));
 end;
 
-dev1 = ndi_iodevice_mfdaq_intan('intan1',dt);
-exp.iodevice_add(dev1);
+dev1 = ndi_daqsystem_mfdaq_intan('intan1',dt);
+exp.daqsystem_add(dev1);
 
   % Step 3: create a markgarbage app
 
@@ -61,6 +61,6 @@ box off;
 
 disp(['Now cleaning the example so it can be run again...']);
 
-exp.iodevice_rm(dev1); % remove the iodevice so the demo can run again
+exp.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 
 

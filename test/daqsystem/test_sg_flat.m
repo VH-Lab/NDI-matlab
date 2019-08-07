@@ -27,17 +27,17 @@ function test_sg_flat(dirname)
 
 	dt = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
 
-	  % Step 2: create the iodevice object and add it to the experiment:
+	  % Step 2: create the daqsystem object and add it to the experiment:
 
-	dev1 = exp.iodevice_load('name','sgtest');
+	dev1 = exp.daqsystem_load('name','sgtest');
 	if isempty(dev1),
-		dev1 = ndi_iodevice_mfdaq_sg('sgtest',dt);
-		exp.iodevice_add(dev1);
+		dev1 = ndi_daqsystem_mfdaq_sg('sgtest',dt);
+		exp.daqsystem_add(dev1);
 	end
 
 	  % Now let's print some statistics
 
-	disp(['The channels we have on this iodevice are the following:']);
+	disp(['The channels we have on this daqsystem are the following:']);
 
 	disp ( struct2table(getchannels(dev1)) );
 
@@ -55,7 +55,7 @@ function test_sg_flat(dirname)
 
 	disp(['We will now plot the data for ' tetrodes(1).devicestring()]);
 
-	[~,~,channels] = ndi_iodevicestring2channel(ndi_iodevicestring(tetrodes(1).devicestring));
+	[~,~,channels] = ndi_daqsystemstring2channel(ndi_daqsystemstring(tetrodes(1).devicestring));
 	data = readchannels_epochsamples(dev1, {'analog_in'}, channels, 1, 1, 30000); %(device,channeltype,channels,epoch,s0,s1)
 	%time = readchannels_epochsamples(dev1,{'timestamp'},1,1,0,Inf);
 
@@ -66,6 +66,6 @@ function test_sg_flat(dirname)
 	%Plots all samples read from all four channels
 	plot_multichan(data,1:30000,400); %(data, timeframe, height)
 
-	exp.iodevice_rm(dev1); % remove the device so the demo works again
+	exp.daqsystem_rm(dev1); % remove the device so the demo works again
 end
 

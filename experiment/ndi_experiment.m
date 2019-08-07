@@ -5,7 +5,7 @@ classdef ndi_experiment < handle
 		reference         % A string reference for the experiment
 		unique_reference  % A unique code that uniquely identifies this experiment
 		database          % An NDI_DATABASE associated with this experiment
-		iodevice          % An array of NDI_IODEVICE objects associated with this experiment
+		daqsystem          % An array of NDI_DAQSYSTEM objects associated with this experiment
 		syncgraph         % An NDI_SYNCGRAPH object related to this experiment
 		cache             % An NDI_CACHE object for the experiment's use
 	end
@@ -21,14 +21,14 @@ classdef ndi_experiment < handle
 			% reference REFERENCE. This class is an abstract class and typically
 			% an end user will open a specific subclass such as NDI_EXPERIMENT_DIR.
 			%
-			% NDI_EXPERIMENT objects can access 0 or more NDI_IODEVICE objects.
+			% NDI_EXPERIMENT objects can access 0 or more NDI_DAQSYSTEM objects.
 			%
-			% See also: NDI_EXPERIMENT/IODEVICE_ADD, NDI_EXPERIMENT/IODEVICE_RM, 
+			% See also: NDI_EXPERIMENT/DAQSYSTEM_ADD, NDI_EXPERIMENT/DAQSYSTEM_RM, 
 			%   NDI_EXPERIMENT/GETPATH, NDI_EXPERIMENT/GETREFERENCE
 
 				ndi_experiment_obj.reference = reference;
 				ndi_experiment_obj.unique_reference = ndi_unique_id;
-				ndi_experiment_obj.iodevice = ndi_dbleaf_branch('','device',{'ndi_iodevice'},1);
+				ndi_experiment_obj.daqsystem = ndi_dbleaf_branch('','device',{'ndi_daqsystem'},1);
 				ndi_experiment_obj.database = [];
 				ndi_experiment_obj.syncgraph = ndi_syncgraph(ndi_experiment_obj);
 				ndi_experiment_obj.cache = ndi_cache();
@@ -50,46 +50,46 @@ classdef ndi_experiment < handle
 
 		%%%%%% DEVICE METHODS
 
-		function ndi_experiment_obj = iodevice_add(ndi_experiment_obj, dev)
-			%IODEVICE_ADD - Add a sampling device to a NDI_EXPERIMENT object
+		function ndi_experiment_obj = daqsystem_add(ndi_experiment_obj, dev)
+			%DAQSYSTEM_ADD - Add a sampling device to a NDI_EXPERIMENT object
 			%
-			%   NDI_EXPERIMENT_OBJ = IODEVICE_ADD(NDI_EXPERIMENT_OBJ, DEV)
+			%   NDI_EXPERIMENT_OBJ = DAQSYSTEM_ADD(NDI_EXPERIMENT_OBJ, DEV)
 			%
 			% Adds the device DEV to the NDI_EXPERIMENT NDI_EXPERIMENT_OBJ
 			%
 			% The devices can be accessed by referencing NDI_EXPERIMENT_OBJ.device
 			%  
-			% See also: IODEVICE_RM, NDI_EXPERIMENT
+			% See also: DAQSYSTEM_RM, NDI_EXPERIMENT
 
-				if ~isa(dev,'ndi_iodevice'),
-					error(['dev is not a ndi_iodevice']);
+				if ~isa(dev,'ndi_daqsystem'),
+					error(['dev is not a ndi_daqsystem']);
 				end;
-				ndi_experiment_obj.iodevice.add(dev);
+				ndi_experiment_obj.daqsystem.add(dev);
 		end;
 
-		function ndi_experiment_obj = iodevice_rm(ndi_experiment_obj, dev)
-			% IODEVICE_RM - Remove a sampling device from an NDI_EXPERIMENT object
+		function ndi_experiment_obj = daqsystem_rm(ndi_experiment_obj, dev)
+			% DAQSYSTEM_RM - Remove a sampling device from an NDI_EXPERIMENT object
 			%
-			%   NDI_EXPERIMENT_OBJ = IODEVICE_RM(NDI_EXPERIMENT_OBJ, DEV)
+			%   NDI_EXPERIMENT_OBJ = DAQSYSTEM_RM(NDI_EXPERIMENT_OBJ, DEV)
 			%
 			% Removes the device DEV from the device list.
 			%
-			% See also: IODEVICE_ADD, NDI_EXPERIMENT
+			% See also: DAQSYSTEM_ADD, NDI_EXPERIMENT
 			
-				leaf = ndi_experiment_obj.iodevice.load('name',dev.name);
+				leaf = ndi_experiment_obj.daqsystem.load('name',dev.name);
 				if ~isempty(leaf),
-					ndi_experiment_obj.iodevice.remove(leaf.objectfilename);
+					ndi_experiment_obj.daqsystem.remove(leaf.objectfilename);
 				else,
-					error(['No iodevice named ' dev.name ' found.']);
+					error(['No daqsystem named ' dev.name ' found.']);
 				end;
 		end;
 
-		function dev = iodevice_load(ndi_experiment_obj, varargin)
-			% LOAD - Load iodevice objects from an NDI_EXPERIMENT
+		function dev = daqsystem_load(ndi_experiment_obj, varargin)
+			% LOAD - Load daqsystem objects from an NDI_EXPERIMENT
 			%
-			% DEV = IODEVICE_LOAD(NDI_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
+			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
-			% DEV = IODEVICE_LOAD(NDI_EXPERIMENT_OBJ, INDEXES)
+			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, INDEXES)
 			%
 			% Returns the device object(s) in the NDI_EXPERIMENT at index(es) INDEXES or
 			% searches for an object whose metadata parameters PARAMS1, PARAMS2, and so on, match
@@ -98,7 +98,7 @@ classdef ndi_experiment < handle
 			% If more than one object is requested, then DEV will be a cell list of matching objects.
 			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 			%
-				dev = ndi_experiment_obj.iodevice.load(varargin{:});
+				dev = ndi_experiment_obj.daqsystem.load(varargin{:});
 				if numel(dev)==1,
 					dev=dev.setexperiment(ndi_experiment_obj);
 				else,
@@ -106,7 +106,7 @@ classdef ndi_experiment < handle
 						dev{i}=dev{i}.setexperiment(ndi_experiment_obj);
 					end;
 				end;
-		end; % iodevice_load()	
+		end; % daqsystem_load()	
 
 		% NDI_DOCUMENTSERVICE methods
 
@@ -261,7 +261,7 @@ classdef ndi_experiment < handle
 			%
 			% OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
 			%
-			% Examines the IODEVICE list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
+			% Examines the DAQSYSTEM list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
 			% and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).
 			%
 				obj = [];
@@ -271,26 +271,26 @@ classdef ndi_experiment < handle
 					z=feval(obj_classname);
 				end;
 
-				tryiodevice = 0;
+				trydaqsystem = 0;
 				trydatabase = 0;
 				tryprobelist = 0;
 
 				if isempty(z),
-					tryiodevice = 1;
+					trydaqsystem = 1;
 					trydatabase = 0;
 					tryprobelist = 1;
 				else,
 					if isa(z,'ndi_probe'),
 						tryprobelist = 1;
-					elseif isa(z,'ndi_iodevice'),
-						tryiodevice = 1;
+					elseif isa(z,'ndi_daqsystem'),
+						trydaqsystem = 1;
 					else,
 						trydatabase = 0;
 					end;
 				end;
 
-				if tryiodevice,
-					obj_here = ndi_experiment_obj.iodevice.load('name',obj_name);
+				if trydaqsystem,
+					obj_here = ndi_experiment_obj.daqsystem.load('name',obj_name);
 					if ~isempty(obj_here),
 						if strcmp(class(obj_here),obj_classname),
 							% it is our match
@@ -313,11 +313,11 @@ classdef ndi_experiment < handle
 		end; % findexpobj
 
 		function probes = getprobes(ndi_experiment_obj, varargin)
-			% GETPROBES - Return all NDI_PROBES that are found in NDI_IODEVICE epoch contents entries
+			% GETPROBES - Return all NDI_PROBES that are found in NDI_DAQSYSTEM epoch contents entries
 			%
 			% PROBES = GETPROBES(NDI_EXPERIMENT_OBJ, ...)
 			%
-			% Examines all NDI_IODEVICE entries in the NDI_EXPERIMENT_OBJ's device array
+			% Examines all NDI_DAQSYSTEM entries in the NDI_EXPERIMENT_OBJ's device array
 			% and returns all NDI_PROBE entries that can be constructed from each device's
 			% NDI_EPOCHPROBEMAP entries.
 			%
@@ -338,7 +338,7 @@ classdef ndi_experiment < handle
 			%
 			%
 				probestruct = [];
-				devs = ndi_experiment_obj.iodevice_load('name','(.*)');
+				devs = ndi_experiment_obj.daqsystem_load('name','(.*)');
 				if ~isempty(devs),
 					probestruct = getprobes(celloritem(devs,1));
 				end

@@ -1,4 +1,4 @@
-% NDI_IODEVICE_MFDAQ_INTAN - Device driver for Intan Technologies RHD file format
+% NDI_DAQSYSTEM_MFDAQ_INTAN - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from Intan Technologies .RHD file format.
 %
@@ -6,25 +6,25 @@
 %
 %
 
-classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
+classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi_iodevice_mfdaq_intan(varargin)
-		% NDI_IODEVICE_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
+		function obj = ndi_daqsystem_mfdaq_intan(varargin)
+		% NDI_DAQSYSTEM_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
 		%
-		%  D = NDI_IODEVICE_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
+		%  D = NDI_DAQSYSTEM_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
 		%
-		%  Creates a new NDI_IODEVICE_MFDAQ_INTAN object with name NAME and associated
+		%  Creates a new NDI_DAQSYSTEM_MFDAQ_INTAN object with name NAME and associated
 		%  filenavigator THEFILENAVIGATOR.
 		%
-			obj = obj@ndi_iodevice_mfdaq(varargin{:})
+			obj = obj@ndi_daqsystem_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(ndi_iodevice_mfdaq_intan_obj)
+		function channels = getchannels(ndi_daqsystem_mfdaq_intan_obj)
 		% GETCHANNELS - List the channels that are available on this Intan device
 		%
 		%  CHANNELS = GETCHANNELS(THEDEV)
@@ -40,7 +40,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(ndi_iodevice_mfdaq_intan_obj.filenavigator);
+			N = numepochs(ndi_daqsystem_mfdaq_intan_obj.filenavigator);
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -48,14 +48,14 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = ndi_iodevice_mfdaq_intan_obj.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq_intan_obj.mfdaq_channeltypes;
 
 			for n=1:N,
 
 				% then, open RHD files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(ndi_iodevice_mfdaq_intan_obj.filenavigator, n);
+				filelist = getepochfiles(ndi_daqsystem_mfdaq_intan_obj.filenavigator, n);
 
 				filename = filelist{1}; % assume only 1 file
 
@@ -67,12 +67,12 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 
 				for k=1:length(intan_channel_types),
 					if isfield(header,intan_channel_types{k}),
-						channel_type_entry = ndi_iodevice_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
+						channel_type_entry = ndi_daqsystem_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
 						channel = getfield(header, intan_channel_types{k});
 						num = numel(channel);             %% number of channels with specific type
 						for p = 1:numel(channel),
 							newchannel.type = channel_type_entry;
-							newchannel.name = ndi_iodevice_mfdaq_intan_obj.intanname2mfdaqname(ndi_iodevice_mfdaq_intan_obj,...
+							newchannel.name = ndi_daqsystem_mfdaq_intan_obj.intanname2mfdaqname(ndi_daqsystem_mfdaq_intan_obj,...
 								channel_type_entry,...
 								channel(p).native_channel_name); 
 							match = 0;
@@ -89,25 +89,25 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochprobemap(ndi_iodevice_mfdaq_intan_obj, epochprobemap, number)
+		function [b,msg] = verifyepochprobemap(ndi_daqsystem_mfdaq_intan_obj, epochprobemap, number)
 		% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 		%
-		%   B = VERIFYEPOCHPROBEMAP(NDI_IODEVICE_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, NUMBER)
+		%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, NUMBER)
 		%
-		% Examines the NDI_EPOCHPROBEMAP_IODEVICE EPOCHPROBEMAP and determines if it is valid for the given device
+		% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
 		% epoch NUMBER.
 		%
-		% For the abstract class NDI_IODEVICE, EPOCHPROBEMAP is always valid as long as
-		% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_IODEVICE object.
+		% For the abstract class NDI_DAQSYSTEM, EPOCHPROBEMAP is always valid as long as
+		% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 		%
-		% See also: NDI_IODEVICE, NDI_EPOCHPROBEMAP_IODEVICE
+		% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
 			b = 1;
 			msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochprobemap, 'ndi_epochprobemap_iodevice') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_iodevice_mfdaq_intan_obj.name);
+			% b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_daqsystem_mfdaq_intan_obj.name);
 		end
 
-		function filename = filenamefromepochfiles(ndi_iodevice_mfdaq_intan_obj, filename)
+		function filename = filenamefromepochfiles(ndi_daqsystem_mfdaq_intan_obj, filename)
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
 			[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
 			index = find(tf);
@@ -120,7 +120,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			end
 		end % filenamefromepoch
 
-		function data = readchannels_epochsamples(ndi_iodevice_mfdaq_intan_obj, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_intan_obj, channeltype, channel, epoch, s0, s1)
 		%  FUNCTION READ_CHANNELS - read the data based on specified channels
 		%
 		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
@@ -133,15 +133,15 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
+			filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
+			filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
 				error(['Only one type of channel may be read per function call at present.']);
 			end
-			intanchanneltype = ndi_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
+			intanchanneltype = ndi_daqsystem_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
-			sr = ndi_iodevice_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
+			sr = ndi_daqsystem_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -155,7 +155,7 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 
 		end % readchannels_epochsamples
 
-		function sr = samplerate(ndi_iodevice_mfdaq_intan_obj, epoch, channeltype, channel)
+		function sr = samplerate(ndi_daqsystem_mfdaq_intan_obj, epoch, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
@@ -167,18 +167,18 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			% SR is the list of sample rate from specified channels
 			%
 				sr = [];
-				filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
-				filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+				filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
+				filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				head = read_Intan_RHD2000_header(filename);
 				for i=1:numel(channel),
 					channeltype_here = celloritem(channeltype,i);
-					freq_fieldname = ndi_iodevice_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
+					freq_fieldname = ndi_daqsystem_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
 					sr(i) = getfield(head.frequency_parameters,freq_fieldname);
 				end
 		end % samplerate()
 
-		function t0t1 = t0_t1(ndi_iodevice_mfdaq_intan_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_intan_obj, epoch_number)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
@@ -190,8 +190,8 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filename = ndi_iodevice_mfdaq_intan_obj.filenavigator.getepochfiles(epoch_number);
-				filename = ndi_iodevice_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+				filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch_number);
+				filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				header = read_Intan_RHD2000_header(filename);
 
@@ -212,11 +212,11 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 	methods (Static)  % helper functions
 
 		function intanchanheadertype = mfdaqchanneltype2intanheadertype(channeltype)
-		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the NDI_IODEVICE_MFDAQ channel types and Intan headers
+		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the NDI_DAQSYSTEM_MFDAQ channel types and Intan headers
 		%
 		% INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
 		% 
-		% Given a standard NDI_IODEVICE_MFDAQ channel type, returns the name of the type as
+		% Given a standard NDI_DAQSYSTEM_MFDAQ channel type, returns the name of the type as
 		% indicated in Intan header files.
 
 			switch (channeltype),
@@ -235,11 +235,11 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 		end % mfdaqchanneltype2intanheadertype()
 
 		function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
-		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_IODEVICE_MFDAQ channel types 
+		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQSYSTEM_MFDAQ channel types 
 		%
 		% CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard NDI_IODEVICE_MFDAQ channel type
+		% Given an Intan header file type, returns the standard NDI_DAQSYSTEM_MFDAQ channel type
 
 			switch (intanchanneltype),
 				case {'amplifier_channels'},
@@ -280,19 +280,19 @@ classdef ndi_iodevice_mfdaq_intan < ndi_iodevice_mfdaq
 			end
 		end % mfdaqchanneltype2intanchanneltype()
 
-		function [ channame ] = intanname2mfdaqname(ndi_iodevice_mfdaq_intan_obj, type, name )
-		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NDI_IODEVICE_MFDAQ format.
+		function [ channame ] = intanname2mfdaqname(ndi_daqsystem_mfdaq_intan_obj, type, name )
+		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NDI_DAQSYSTEM_MFDAQ format.
 		%
-		% MFDAQNAME = INTANNAME2MFDAQNAME(NDI_IODEVICE_MFDAQ_INTAN, MFDAQTYPE, NAME)
+		% MFDAQNAME = INTANNAME2MFDAQNAME(NDI_DAQSYSTEM_MFDAQ_INTAN, MFDAQTYPE, NAME)
 		%   
 		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
-		% NDI_IODEVICE_MFDAQ channel type string (see NDI_DEVICE_MFDAQ), this function
-		% produces an NDI_IODEVICE_MFDAQ channel name (e.g., 'ai1').
+		% NDI_DAQSYSTEM_MFDAQ channel type string (see NDI_DEVICE_MFDAQ), this function
+		% produces an NDI_DAQSYSTEM_MFDAQ channel name (e.g., 'ai1').
 		%  
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [ndi_iodevice_mfdaq_intan_obj.mfdaq_prefix(type) int2str(chan)];
+			channame = [ndi_daqsystem_mfdaq_intan_obj.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()
 

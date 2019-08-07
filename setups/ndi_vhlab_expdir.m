@@ -17,11 +17,11 @@ vhlabdevnames = ndi_vhlab_makedev;
 devclocks = {};
 
 for i=1:numel(vhlabdevnames),
-	dev = exp.iodevice_load('name',vhlabdevnames{i});
+	dev = exp.daqsystem_load('name',vhlabdevnames{i});
 	if isempty(dev),
 		exp = ndi_vhlab_makedev(exp, vhlabdevnames{i});
 	end
-	dev = exp.iodevice_load('name',vhlabdevnames{i});
+	dev = exp.daqsystem_load('name',vhlabdevnames{i});
 end
 
  % update SYNCGRAPH
