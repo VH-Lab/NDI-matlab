@@ -67,12 +67,12 @@ classdef ndi_syncrule_filematch < ndi_syncrule
 			% If EES is empty, then no information is conveyed about which NDI_EPOCHSET subtypes can be
 			% processed by the NDI_SYNCRULE_FILEMATCH. (That is, it is not the case that the NDI_SYNCTABLE cannot use any classes.)
 			%
-			% NDI_SYNCRULE_FILEMATCH returns {'ndi_iodevice'} (it works with NDI_IODEVICE objects).
+			% NDI_SYNCRULE_FILEMATCH returns {'ndi_daqsystem'} (it works with NDI_DAQSYSTEM objects).
 			%
 			% NDI_EPOCHSETS that use the rule must be members or descendents of the classes returned here.
 			%
 			% See also: NDI_SYNCRULE_FILEMATCH/INELIGIBLEEPOCHSETS
-				ees = {'ndi_iodevice'}; % 
+				ees = {'ndi_daqsystem'}; % 
 		end % eligibleepochsets
 
 		function ies = ineligibleepochsets(ndi_syncrule_filematch_obj)
@@ -112,7 +112,7 @@ classdef ndi_syncrule_filematch < ndi_syncrule
 				% quick content checks
 				eval(['dummy_a = ' epochnode_a.objectclass '();']);
 				eval(['dummy_b = ' epochnode_b.objectclass '();']);
-				if ~(isa(dummy_a,'ndi_iodevice')) | ~(isa(dummy_b,'ndi_iodevice')), return; end;
+				if ~(isa(dummy_a,'ndi_daqsystem')) | ~(isa(dummy_b,'ndi_daqsystem')), return; end;
 				if isempty(epochnode_a.underlying_epochs), return; end; 
 				if isempty(epochnode_b.underlying_epochs), return; end; 
 				if isempty(epochnode_a.underlying_epochs.underlying), return; end; 

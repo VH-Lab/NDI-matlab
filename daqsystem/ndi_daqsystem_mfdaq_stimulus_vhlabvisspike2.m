@@ -1,4 +1,4 @@
-% NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Device object for vhlab visual stimulus computer
+% NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Device object for vhlab visual stimulus computer
 %
 % This device reads the 'stimtimes.txt', 'verticalblanking.txt', 'stims.mat', and 'spike2data.smr' files
 % that are present in directories where a VHLAB stimulus computer (running NewStim/RunExperiment)
@@ -14,7 +14,7 @@
 % e3              | pretime trigger
 %
 
-classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_iodevice_stimulus
+classdef ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2 < ndi_daqsystem_mfdaq & ndi_daqsystem_stimulus
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -22,20 +22,20 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 	end
 
 	methods
-		function obj = ndi_iodevice_mfdaq_stimulus_vhlabvisspike2(varargin)
-			% NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Create a new multifunction DAQ object
+		function obj = ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2(varargin)
+			% NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Create a new multifunction DAQ object
 			%
-			%  D = NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2(NAME, THEFILENAVIGATOR)
+			%  D = NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHLABVISSPIKE2(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILENAVIGATOR.
+			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-			obj = obj@ndi_iodevice_mfdaq(varargin{:});
-		end; % ndi_iodevice_mfdaq_stimulus_vhlabvisspike2()
+			obj = obj@ndi_daqsystem_mfdaq(varargin{:});
+		end; % ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2()
 
-		function ec = epochclock(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
+		function ec = epochclock(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
 			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
 			%
-			% EC = EPOCHCLOCK(NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
+			% EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
 			%
 			% Return the clock types available for this epoch as a cell array
 			% of NDI_CLOCKTYPE objects (or sub-class members).
@@ -71,12 +71,12 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannels()
 
-		function data = readevents_epochsamples(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epoch, t0, t1)
+		function data = readevents_epochsamples(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
-			%  SELF is the NDI_IODEVICE_MFDAQ_STIMULUS_VHVISSPIKE2 object.
+			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
 			%  CHANNELTYPE is a cell array of strings describing the the type(s) of channel(s) to read
 			%  ('event','marker', etc)
@@ -91,8 +91,8 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			%  
 				data = {};
 
-				eid = ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.epochid(epoch);
-				et = epochtable(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj);
+				eid = ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj.epochid(epoch);
+				et = epochtable(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj);
 				epoch_number = find(strcmp(eid,{et.epoch_id}));
 				if isempty(epoch_number),
 					error(['No such epoch ' eid '.']);
@@ -138,8 +138,8 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 				end;
 
 				for i=1:numel(channel),
-					%ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
-					switch (ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
+					%ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
+					switch (ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
 						case 'mk',
 							% put them together, alternating stimtimes and stimofftimes in the final product
 							time1 = [stimtimes(:)' ; stimofftimes(:)'];
@@ -180,10 +180,10 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 
 		end % readevents_epochsamples()
 
-		function t0t1 = t0_t1(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj, epoch_number)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
-			% T0T1 = T0_T1(NDI_IODEVICE_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
+			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
 			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
@@ -191,8 +191,8 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filelist = getepochfiles(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.filenavigator, epoch_number);
-				filename = ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj.cedspike2filelist2smrfile(filelist);
+				filelist = getepochfiles(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj.filenavigator, epoch_number);
+				filename = ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj.cedspike2filelist2smrfile(filelist);
 				header = read_CED_SOMSMR_header(filename);
 
 				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
@@ -200,7 +200,7 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function sr = samplerate(ndi_iodevice_mfdaq_stimulus_vhlabvisspike2_obj, epoch, channeltype, channel)
+		function sr = samplerate(ndi_daqsystem_mfdaq_stimulus_vhlabvisspike2_obj, epoch, channeltype, channel)
 			%
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
@@ -214,9 +214,9 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			sr = 1e-4 * ones(size(channel));
 		end
 
-		function parameters = get_stimulus_parameters(ndi_iodevice_stimulus_obj, epoch_number)
+		function parameters = get_stimulus_parameters(ndi_daqsystem_stimulus_obj, epoch_number)
 			%
-			% PARAMETERS = NDI_GET_STIMULUS_PARAMETERS(NDI_IODEVICE_STIMULUS_OBJ, EPOCH_NUMBER)
+			% PARAMETERS = NDI_GET_STIMULUS_PARAMETERS(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCH_NUMBER)
 			%
 			% Returns the parameters (array, struct array, or cell array) associated with the
 			% stimulus or stimuli that were prepared to be presented in epoch EPOCH_NUMBER.
@@ -224,7 +224,7 @@ classdef ndi_iodevice_mfdaq_stimulus_vhlabvisspike2 < ndi_iodevice_mfdaq & ndi_i
 			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
 			%
 
-				filelist = ndi_iodevice_stimulus_obj.filenavigator.getepochfiles(epoch_number);
+				filelist = ndi_daqsystem_stimulus_obj.filenavigator.getepochfiles(epoch_number);
 				pathname = {};
 				fname = {};
 				ext = {};

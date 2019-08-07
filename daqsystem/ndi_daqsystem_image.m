@@ -1,4 +1,4 @@
-classdef (Abstract) ndi_iodevice_image < ndi_iodevice
+classdef (Abstract) ndi_daqsystem_image < ndi_daqsystem
     %This is an abstract superclass of all imaging device drivers
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
@@ -6,8 +6,8 @@ classdef (Abstract) ndi_iodevice_image < ndi_iodevice
     end
 
     methods
-        function obj = ndi_iodevice_image(name,filenavigator)
-            obj = obj@ndi_iodevice(name,filenavigator);
+        function obj = ndi_daqsystem_image(name,filenavigator)
+            obj = obj@ndi_daqsystem(name,filenavigator);
         end
     end
 

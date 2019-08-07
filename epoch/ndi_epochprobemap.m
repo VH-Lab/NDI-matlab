@@ -12,11 +12,11 @@ classdef ndi_epochprobemap
 			%
 			% The function has an alternative form:
 			%
-			%   MYNDI_EPOCHPROBEMAP_IODEVICE = NDI_EPOCHPROBEMAP(FILENAME)
+			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(FILENAME)
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-			% one line per NDI_EPOCHPROBEMAP_IODEVICE entry.
+			% one line per NDI_EPOCHPROBEMAP_DAQSYSTEM entry.
 
 
 		end % creator

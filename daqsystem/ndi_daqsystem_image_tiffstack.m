@@ -1,5 +1,5 @@
-classdef ndi_iodevice_image_tiffstack < ndi_iodevice_image
-    %ndi_iodevice_image_tiffstack is a driver used to read images from a tif
+classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
+    %ndi_daqsystem_image_tiffstack is a driver used to read images from a tif
     %format.
     %   This class is able to return a frame at a specific epoch, and the numnber of
     %   frames in a specific epoch.
@@ -11,8 +11,8 @@ classdef ndi_iodevice_image_tiffstack < ndi_iodevice_image
     methods
         %Constructoe requiers only name and data tree as it uses the super
         %constructor
-        function obj = ndi_iodevice_image_tiffstack(name, filenavigator)
-                obj = obj@ndi_iodevice_image(name,filenavigator);
+        function obj = ndi_daqsystem_image_tiffstack(name, filenavigator)
+                obj = obj@ndi_daqsystem_image(name,filenavigator);
                 cache = {};
         end
 

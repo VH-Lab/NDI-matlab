@@ -34,7 +34,7 @@ Need to refer back to the experiment as a handle, that's all, so not really
 
 Conclusion: NO
 
-* ndi_iodevice
+* ndi_daqsystem
 
 Like ndi_filenavigator, it needs to refer back to the experiment as a handle. But, we don't want to have lots of copies of them (because its messy), and
 they are really tiny in memory. So no handle.

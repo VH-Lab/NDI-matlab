@@ -1,6 +1,6 @@
-% NDI_IODEVICE_MFDAQ - Multifunction DAQ object class
+% NDI_DAQSYSTEM_MFDAQ - Multifunction DAQ object class
 %
-% The NDI_IODEVICE_MFDAQ object class.
+% The NDI_DAQSYSTEM_MFDAQ object class.
 %
 % This object allows one to address multifunction data acquisition systems that
 % sample a variety of data types potentially simultaneously. 
@@ -18,10 +18,10 @@
 % 'mark', or 'mk'             | Mark channel (contains value at specified times)
 % 
 %
-% See also: NDI_IODEVICE_MFDAQ/NDI_IODEVICE_MFDAQ
+% See also: NDI_DAQSYSTEM_MFDAQ/NDI_DAQSYSTEM_MFDAQ
 %
 
-classdef ndi_iodevice_mfdaq < ndi_iodevice
+classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -29,27 +29,27 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 	end
 
 	methods
-		function obj = ndi_iodevice_mfdaq(varargin)
-			% NDI_IODEVICE_MFDAQ - Create a new multifunction DAQ object
+		function obj = ndi_daqsystem_mfdaq(varargin)
+			% NDI_DAQSYSTEM_MFDAQ - Create a new multifunction DAQ object
 			%
-			%  D = NDI_IODEVICE_MFDAQ(NAME, THEFILENAVIGATOR)
+			%  D = NDI_DAQSYSTEM_MFDAQ(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_IODEVICE_MFDAQ object with NAME, and FILENAVIGATOR.
+			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-			obj = obj@ndi_iodevice(varargin{:});
-		end; % ndi_iodevice_mfdaq
+			obj = obj@ndi_daqsystem(varargin{:});
+		end; % ndi_daqsystem_mfdaq
 
 		% functions that override ndi_epochset
 
-                function ec = epochclock(ndi_iodevice_mfdaq_obj, epoch_number)
+                function ec = epochclock(ndi_daqsystem_mfdaq_obj, epoch_number)
                         % EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
                         %
-                        % EC = EPOCHCLOCK(NDI_IODEVICE_MFDAQ_OBJ, EPOCH_NUMBER)
+                        % EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH_NUMBER)
                         %
                         % Return the clock types available for this epoch as a cell array
                         % of NDI_CLOCKTYPE objects (or sub-class members).
 			% 
-			% For the generic NDI_IODEVICE_MFDAQ, this returns a single clock
+			% For the generic NDI_DAQSYSTEM_MFDAQ, this returns a single clock
 			% type 'dev_local'time';
 			%
 			% See also: NDI_CLOCKTYPE
@@ -204,14 +204,14 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 			% If CHANNELTYPE is a single string, then it is assumed that
 			% that CHANNELTYPE applies to every entry of CHANNEL.
 			% 
-			% Note: in the abstract class NDI_IODEVICE_MFDAQ, this returns empty.
+			% Note: in the abstract class NDI_DAQSYSTEM_MFDAQ, this returns empty.
 			sr = [];  % this is an abstract class
 		end
 
 		function [t_prime, epochnumber_prime] = timeconvert_old(self, clock, t, epochnumber)
-			% TIMECONVERT - convert time to NDI_IODEVICE_MFDAQ 'dev_local_time'
+			% TIMECONVERT - convert time to NDI_DAQSYSTEM_MFDAQ 'dev_local_time'
 			%
-			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NDI_IODEVICE_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])
+			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NDI_DAQSYSTEM_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])
 			%
 			%Given an NDI_CLOCK CLOCK, a time T, and, if CLOCK is a 'dev_local_time' type of clock,
 			%an EPOCHNUMBER, convert time to device's local 'dev_local_time' clock. EPOCHNUMBER_PRIME is the
@@ -220,7 +220,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 			%
 				ismyclock = 0;
 				% is this clock already linked to my device??
-				if isa(clock,'ndi_clock_iodevice'),
+				if isa(clock,'ndi_clock_daqsystem'),
 					if clock.device==self,
 						ismyclock = 1;
 					end
@@ -228,7 +228,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 
 				if ~ismyclock, % need to send out to sync table for conversion
 					exp = self.experiment;
-					myclock = ndi_clock_iodevice('dev_local_time',self); % MORE HERE
+					myclock = ndi_clock_daqsystem('dev_local_time',self); % MORE HERE
 					if nargin<4,
 						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t); % more here!
 					else,
@@ -237,7 +237,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 					return;
 				end
 
-				if isa(clock,'ndi_clock_iodevice_epoch'), % don't need epochnumber, we know it already
+				if isa(clock,'ndi_clock_daqsystem_epoch'), % don't need epochnumber, we know it already
 					t_prime = t;
 					epochnumber_prime = clock.epoch;
 					return
@@ -262,12 +262,12 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 
 	methods (Static), % functions that don't need the object
 		function ct = mfdaq_channeltypes
-			% MFDAQ_CHANNELTYPES - channel types for NDI_IODEVICE_MFDAQ objects
+			% MFDAQ_CHANNELTYPES - channel types for NDI_DAQSYSTEM_MFDAQ objects
 			%
-			%  CT = MFDAQ_CHANNELTYPES - channel types for NDI_IODEVICE_MFDAQ objects
+			%  CT = MFDAQ_CHANNELTYPES - channel types for NDI_DAQSYSTEM_MFDAQ objects
 			%
 			%  Returns a cell array of strings of supported channels of the
-			%  NDI_IODEVICE_MFDAQ class. These are the following:
+			%  NDI_DAQSYSTEM_MFDAQ class. These are the following:
 			%
 			%  Channel type:       | Description: 
 			%  -------------------------------------------------------------
@@ -278,7 +278,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 			%  digital_out         | Digital output channel
 			%  marker              | 
 			%
-			% See also: NDI_IODEVICE_MFDAQ/MFDAQ_TYPE
+			% See also: NDI_DAQSYSTEM_MFDAQ/MFDAQ_TYPE
 			ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out', 'marker', 'event', 'time' };
 		end;
 
@@ -301,7 +301,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 			% 'mark', 'marker', or 'mk'   | 'mk'
 			% 'event' or 'e'              | 'e'
 			%
-			% See also: NDI_IODEVICE_MFDAQ/MFDAQ_TYPE
+			% See also: NDI_DAQSYSTEM_MFDAQ/MFDAQ_TYPE
 			%
 				switch channeltype,
 					case {'analog_in','ai'},
@@ -342,7 +342,7 @@ classdef ndi_iodevice_mfdaq < ndi_iodevice
 			% 'mark', 'marker', or 'mk'   | 'mark'
 			% 'event' or 'e'              | 'event'
 			%
-			% See also: NDI_IODEVICE_MFDAQ/MFDAQ_PREFIX
+			% See also: NDI_DAQSYSTEM_MFDAQ/MFDAQ_PREFIX
 			%
 				switch channeltype,
 					case {'analog_in','ai'},

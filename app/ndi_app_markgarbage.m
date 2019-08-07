@@ -33,7 +33,7 @@ classdef ndi_app_markgarbage < ndi_app
 			% Saves a variable marking a valid interval from T0 to T1 with respect
 			% to an NDI_TIMEREFERENCE object TIMEREF_T0 (for T0) and TIMEREF_T1 (for T1) for
 			% an NDI_EPOCHSET object NDI_EPOCHSET_OBJ.  Examples of NDI_EPOCHSET objects include
-			% NDI_IODEVICE and NDI_PROBE and their subclasses.
+			% NDI_DAQSYSTEM and NDI_PROBE and their subclasses.
 			%
 			% TIMEREF_T0 and TIMEREF_T1 are saved as a name and type for looking up later.
 			%

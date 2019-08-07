@@ -7,8 +7,8 @@ disp(['creating a new experiment object...']);
 exp = ndi_experiment_dir('exp1', dirname);
 disp(['Now adding our acquisition device (SpikeGadgets):']);
 filenav = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
-dev1 = ndi_iodevice_mfdaq_sg('SpikeGadgets', filenav);
-exp.iodevice_add(dev1);
+dev1 = ndi_daqsystem_mfdaq_sg('SpikeGadgets', filenav);
+exp.daqsystem_add(dev1);
 spike_extractor = ndi_app_spikeextractor(exp);
 spike_sorter = ndi_app_spikesorter(exp);
 spike_extractor.spike_extract_probes('Tetrode7', 'n-trode', 'test', 'ndi_common/example_app_experiments/exp_sg/extraction_parameters.txt')

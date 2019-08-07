@@ -1,13 +1,13 @@
-classdef ndi_epochprobemap_iodevice_vhlab < ndi_epochprobemap_iodevice
+classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 	properties
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_iodevice_vhlab(name_, reference_, type_, devicestring_)
-			% NDI_EPOCHPROBEMAP_IODEVICE_VHLAB - Create a new ndi_epochprobemap_iodevice object derived from the vhlab device implementation
+		function obj = ndi_epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_)
+			% NDI_EPOCHPROBEMAP_DAQSYSTEM_VHLAB - Create a new ndi_epochprobemap_daqsystem object derived from the vhlab device implementation
 			%
-			% MYNDI_EPOCHPROBEMAP_IODEVICE = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING)
 			%
-			% Creates a new NDI_EPOCHPROBEMAP_IODEVICE with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -17,7 +17,7 @@ classdef ndi_epochprobemap_iodevice_vhlab < ndi_epochprobemap_iodevice
 			% DEVICESTRING is a string that indicates the channels that were used to acquire
 			% this record.
 			% 
-			%   MYNDI_EPOCHPROBEMAP_IODEVICE = NDI_EPOCHPROBEMAP_VHLAB(FILENAME)
+			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(FILENAME)
 			% 
 			% Here, FILENAME is assumed to be a (full path) tab-delimitted text file in the style of 
 			% 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING) 
@@ -44,14 +44,14 @@ classdef ndi_epochprobemap_iodevice_vhlab < ndi_epochprobemap_iodevice
 				devicestring_ = 'a';
 			end
 
-			obj = obj@ndi_epochprobemap_iodevice(name_, reference_, type_, devicestring_);
+			obj = obj@ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_);
 
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
 				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
 					mylist = {'mk1','mk2','mk3','e1','e2','e3'};
 					for i=1:numel(mylist),
-						nextentry = ndi_epochprobemap_iodevice_vhlab('vhvis_spike2',...
+						nextentry = ndi_epochprobemap_daqsystem_vhlab('vhvis_spike2',...
 							1,...
 							['stimulator'  ] , ...  % type
 							['vhvis_spike2' ':' mylist{i}]);  % device string
@@ -104,7 +104,7 @@ classdef ndi_epochprobemap_iodevice_vhlab < ndi_epochprobemap_iodevice
 
 						end;
 					end
-					nextentry = ndi_epochprobemap_iodevice_vhlab(ndi_struct(i).name,...
+					nextentry = ndi_epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
 							ndi_struct(i).ref,...
 							ec_type, ...  % type
 							[vhdevice_string ':ai' intseq2str(ndi_struct(i).channel_list)]);  % device string
@@ -116,11 +116,11 @@ classdef ndi_epochprobemap_iodevice_vhlab < ndi_epochprobemap_iodevice
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write ndi_epochprobemap_iodevice object array to disk
+		%  SAVETOFILE - Write ndi_epochprobemap_daqsystem object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the NDI_EPOCHPROBEMAP_IODEVICE_VHLAB object to disk in filename FILENAME (full path).
+		%  Writes the NDI_EPOCHPROBEMAP_DAQSYSTEM_VHLAB object to disk in filename FILENAME (full path).
 		%
 		%  
 			error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);

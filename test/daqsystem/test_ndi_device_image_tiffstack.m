@@ -1,4 +1,4 @@
-function test_ndi_iodevice_image_tiffstack( input_file_directory )
+function test_ndi_daqsystem_image_tiffstack( input_file_directory )
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -32,8 +32,8 @@ end
 example_exp = ndi_experiment_dir('exp1',input_dir_name);
 %creating a new filenavigator that looks for .tif files.
 example_filenavigator = ndi_filenavigator(example_exp,'.*\.tif\>');
-%creating an image_tiffstack iodevice object
-example_device = ndi_iodevice_image_tiffstack('sampleDevice',example_filenavigator);
+%creating an image_tiffstack daqsystem object
+example_device = ndi_daqsystem_image_tiffstack('sampleDevice',example_filenavigator);
 
 
 disp('Counting the number of frames in the first epoch');

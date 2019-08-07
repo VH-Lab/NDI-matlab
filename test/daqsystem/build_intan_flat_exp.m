@@ -23,15 +23,15 @@ exp = ndi_experiment_dir('exp1',dirname);
  % remove everything from the experiment to start
 exp.database.clear('yes'); % use it only if you mean it
 
-dev = exp.iodevice_load('name','(.*)'), 
+dev = exp.daqsystem_load('name','(.*)'), 
 if ~isempty(dev) & ~iscell(dev),
 	dev = {dev};
 end;
 for i=1:numel(dev),
-	exp.iodevice_rm(dev{i});
+	exp.daqsystem_rm(dev{i});
 end;
 
-disp(['Now adding our acquisition iodevice (intan):']);
+disp(['Now adding our acquisition daqsystem (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
@@ -40,8 +40,8 @@ dt = ndi_filenavigator(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
-dev1 = ndi_iodevice_mfdaq_intan('intan1',dt);
-exp.iodevice_add(dev1);
+dev1 = ndi_daqsystem_mfdaq_intan('intan1',dt);
+exp.daqsystem_add(dev1);
  
   % Step 3: let's add a document
 

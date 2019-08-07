@@ -4,7 +4,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
 % or to STIMULATE.
 %
-% Typically, a probe is associated with an NDI_IODEVICE that performs data acquisition or
+% Typically, a probe is associated with an NDI_DAQSYSTEM that performs data acquisition or
 % even control of a stimulator. 
 %
 % A probe is uniquely identified by 3 fields:
@@ -94,7 +94,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 
 				% pull all the devices from the experiment and look for device strings that match this probe
 
-				D = ndi_probe_obj.experiment.iodevice_load('name','(.*)');
+				D = ndi_probe_obj.experiment.daqsystem_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 
 				d_et = {};
@@ -145,7 +145,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			% This function tells an NDI_SYNCGRAPH object whether it should continue 
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For NDI_EPOCHSET and NDI_PROBE this returns 0 so that the underlying NDI_IODEVICE epochs are added.
+			% For NDI_EPOCHSET and NDI_PROBE this returns 0 so that the underlying NDI_DAQSYSTEM epochs are added.
 				b = 0;
 		end % issyncgraphroot
 
@@ -201,7 +201,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			%
 			% Given an NDI_PROBE object and an EPOCH number, this function returns the corresponding channel and device info.
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
-			%   DEV is a 1xC cell array of NDI_IODEVICE objects for each channel
+			%   DEV is a 1xC cell array of NDI_DAQSYSTEM objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
 			%   DEVEPOCH is a 1xC array with the epoch id of the probe's EPOCH on each device
 			%   CHANNELTYPE is a cell array of the type of each channel
@@ -234,8 +234,8 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 					for j=1:numel(et(i).underlying_epochs),
 						for k=1:numel(et(i).underlying_epochs(j).epochprobemap),
 							if ndi_probe_obj.epochprobemapmatch(et(i).underlying_epochs(j).epochprobemap(k)),
-								devstr = ndi_iodevicestring(et(i).underlying_epochs(j).epochprobemap(k).devicestring);
-								[devname_here, channeltype_here, channellist_here] = devstr.ndi_iodevicestring2channel();
+								devstr = ndi_daqsystemstring(et(i).underlying_epochs(j).epochprobemap(k).devicestring);
+								[devname_here, channeltype_here, channellist_here] = devstr.ndi_daqsystemstring2channel();
 								dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
 								devname = cat(2,devname,devname_here);
 								devepoch = cat(2,devepoch,{et(i).underlying_epochs(j).epoch_id});

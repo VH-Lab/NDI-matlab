@@ -174,7 +174,7 @@ classdef ndi_epochset
 			%
 			% The abstract class just queries the EPOCHTABLE.
 			% Most classes that manage epochs themselves (NDI_FILENAVIGATOR,
-			% NDI_IODEVICE) will override this method.
+			% NDI_DAQSYSTEM) will override this method.
 			%
 				et = epochtable(ndi_epochset_obj);
 				if isnumeric(epoch_number),
@@ -550,7 +550,7 @@ classdef ndi_epochset
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
 			% For NDI_EPOCHSET objects, this returns 1. For some object types (NDI_PROBE, for example)
-			% this will return 0 so that the underlying NDI_IODEVICE epochs are added.
+			% this will return 0 so that the underlying NDI_DAQSYSTEM epochs are added.
 				b = 1;
 		end % issyncgraphroot
 		

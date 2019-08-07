@@ -47,11 +47,11 @@ classdef ndi_experiment_dir < ndi_experiment
 					ndi_experiment_dir_obj.unique_reference = ndi_unique_id();
 				end
 
-				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'iodevice_object_*']);
+				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'daqsystem_object_*']);
 				if isempty(d),
-					ndi_experiment_dir_obj.iodevice = ndi_dbleaf_branch(ndi_experiment_dir_obj.ndipathname(),'iodevice',{'ndi_iodevice'},1);
+					ndi_experiment_dir_obj.daqsystem = ndi_dbleaf_branch(ndi_experiment_dir_obj.ndipathname(),'daqsystem',{'ndi_daqsystem'},1);
 				else,
-					ndi_experiment_dir_obj.iodevice = ndi_pickdbleaf([ndi_experiment_dir_obj.ndipathname() filesep d(1).name]);
+					ndi_experiment_dir_obj.daqsystem = ndi_pickdbleaf([ndi_experiment_dir_obj.ndipathname() filesep d(1).name]);
 				end;
 
 				ndi_experiment_dir_obj.database = ndi_opendatabase(ndi_experiment_dir_obj.ndipathname(), ndi_experiment_dir_obj.unique_reference_string());

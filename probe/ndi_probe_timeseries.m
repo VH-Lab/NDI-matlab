@@ -1,5 +1,5 @@
 classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
-% NDI_PROBE_TIMESERIES - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_IODEVICE_MFDAQ objects
+% NDI_PROBE_TIMESERIES - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_DAQSYSTEM_MFDAQ objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end

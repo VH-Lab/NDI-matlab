@@ -11,7 +11,7 @@ exp = ndi_experiment_dir(dirname);
 
 
  % now print all devices
-devs = exp.iodevice_load('name','(.*)');
+devs = exp.daqsystem_load('name','(.*)');
 
 for i=1:numel(devs),
 	mydev = celloritem(devs,i),
