@@ -1,4 +1,4 @@
-% NDI_DAQSYSTEM_MFDAQ_INTAN - Device driver for Intan Technologies RHD file format
+% NDI_DAQREADER_MFDAQ_INTAN - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from Intan Technologies .RHD file format.
 %
@@ -6,28 +6,28 @@
 %
 %
 
-classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
+classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi_daqsystem_mfdaq_intan(varargin)
-		% NDI_DAQSYSTEM_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
+		function obj = ndi_daqreader_mfdaq_intan(varargin)
+		% NDI_DAQREADER_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
 		%
-		%  D = NDI_DAQSYSTEM_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
+		%  D = NDI_DAQREADER_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
 		%
-		%  Creates a new NDI_DAQSYSTEM_MFDAQ_INTAN object with name NAME and associated
+		%  Creates a new NDI_DAQREADER_MFDAQ_INTAN object with name NAME and associated
 		%  filenavigator THEFILENAVIGATOR.
 		%
-			obj = obj@ndi_daqsystem_mfdaq(varargin{:})
+			obj = obj@ndi_daqreader_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(ndi_daqsystem_mfdaq_intan_obj)
-		% GETCHANNELS - List the channels that are available on this Intan device
+		function channels = getchannelsepoch(ndi_daqreader_mfdaq_intan_obj, epochfiles)
+		% GETCHANNELSEPOCH - List the channels that are available on this Intan device for a given set of files
 		%
-		%  CHANNELS = GETCHANNELS(THEDEV)
+		%  CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHFILES)
 		%
 		%  Returns the channel list of acquired channels in this experiment
 		%
@@ -40,74 +40,54 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 
 			channels = emptystruct('name','type');
 
-			N = numepochs(ndi_daqsystem_mfdaq_intan_obj.filenavigator);
-
 			intan_channel_types = {
 				'amplifier_channels'
 				'aux_input_channels'
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq_intan_obj.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = ndi_daqreader_mfdaq.mfdaq_channeltypes;
 
-			for n=1:N,
+			% open RHD files, and examine the headers for all channels present
+			%   for any new channel that hasn't been identified before,
+			%   add it to the list
 
-				% then, open RHD files, and examine the headers for all channels present
-				%   for any new channel that hasn't been identified before,
-				%   add it to the list
-				filelist = getepochfiles(ndi_daqsystem_mfdaq_intan_obj.filenavigator, n);
+			filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+			header = read_Intan_RHD2000_header(filename);
 
-				filename = filelist{1}; % assume only 1 file
-
-				header = read_Intan_RHD2000_header(filename);
-
-				if isempty(channels),
-					channels = struct('name','t1','type','time');
-				end;
-
-				for k=1:length(intan_channel_types),
-					if isfield(header,intan_channel_types{k}),
-						channel_type_entry = ndi_daqsystem_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(intan_channel_types{k});
-						channel = getfield(header, intan_channel_types{k});
-						num = numel(channel);             %% number of channels with specific type
-						for p = 1:numel(channel),
-							newchannel.type = channel_type_entry;
-							newchannel.name = ndi_daqsystem_mfdaq_intan_obj.intanname2mfdaqname(ndi_daqsystem_mfdaq_intan_obj,...
-								channel_type_entry,...
-								channel(p).native_channel_name); 
-							match = 0;
-							for kk=1:length(channels),
-								if eqlen(channels(kk),newchannel)
-									match = 1;
-									break;
-								end;
-							end;
-							if ~match, channels(end+1) = newchannel; end;
-						end
+			for k=1:length(intan_channel_types),
+				if isfield(header,intan_channel_types{k}),
+					channel_type_entry = ndi_daqreader_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(...
+							intan_channel_types{k});
+					channel = getfield(header, intan_channel_types{k});
+					num = numel(channel);             %% number of channels with specific type
+					for p = 1:numel(channel),
+						newchannel.type = channel_type_entry;
+						newchannel.name = ndi_daqreader_mfdaq_intan_obj.intanname2mfdaqname(...
+							ndi_daqreader_mfdaq_intan_obj,...
+							channel_type_entry,...
+							channel(p).native_channel_name); 
+						channels(end+1) = newchannel;
 					end
 				end
 			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochprobemap(ndi_daqsystem_mfdaq_intan_obj, epochprobemap, number)
+		function [b,msg] = verifyepochprobemap(ndi_daqreader_mfdaq_intan_obj, epochprobemap, epochfiles)
 		% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 		%
-		%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, NUMBER)
+		%   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, EPOCHFILES)
 		%
-		% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
-		% epoch NUMBER.
+		% Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
+		% with epoch files EPOCHFILES.
 		%
-		% For the abstract class NDI_DAQSYSTEM, EPOCHPROBEMAP is always valid as long as
-		% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
-		%
-		% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
+		% See also: NDI_DAQREADER, NDI_EPOCHPROBEMAP_DAQREADER
 			b = 1;
 			msg = '';
 			% UPDATE NEEDED
-			% b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_daqsystem_mfdaq_intan_obj.name);
 		end
 
-		function filename = filenamefromepochfiles(ndi_daqsystem_mfdaq_intan_obj, filename)
+		function filename = filenamefromepochfiles(ndi_daqreader_mfdaq_intan_obj, filename)
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
 			[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
 			index = find(tf);
@@ -120,28 +100,28 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 			end
 		end % filenamefromepoch
 
-		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_intan_obj, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_intan_obj, channeltype, channel, epochfiles, s0, s1)
 		%  FUNCTION READ_CHANNELS - read the data based on specified channels
 		%
-		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
 		%
 		%  CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
 		%
 		%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 		%
-		%  EPOCH is 
+		%  EPOCH is set of epoch files
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); % don't know how to handle multiple filenames coming back
+			filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
 				error(['Only one type of channel may be read per function call at present.']);
 			end
-			intanchanneltype = ndi_daqsystem_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
+			intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
-			sr = ndi_daqsystem_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
+			sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -155,10 +135,10 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 
 		end % readchannels_epochsamples
 
-		function sr = samplerate(ndi_daqsystem_mfdaq_intan_obj, epoch, channeltype, channel)
+		function sr = samplerate(ndi_daqreader_mfdaq_intan_obj, epochfiles, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 			%
-			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
+			% SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
 			% CHANNELTYPE can be either a string or a cell array of
 			% strings the same length as the vector CHANNEL.
 			% If CHANNELTYPE is a single string, then it is assumed that
@@ -167,21 +147,21 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 			% SR is the list of sample rate from specified channels
 			%
 				sr = [];
-				filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
-				filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+				filename = ndi_daqreader_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
+				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(filename); 
 
 				head = read_Intan_RHD2000_header(filename);
 				for i=1:numel(channel),
 					channeltype_here = celloritem(channeltype,i);
-					freq_fieldname = ndi_daqsystem_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
+					freq_fieldname = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
 					sr(i) = getfield(head.frequency_parameters,freq_fieldname);
 				end
 		end % samplerate()
 
-		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_intan_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_daqreader_mfdaq_intan_obj, epochfiles)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
-			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
+			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
 			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
@@ -190,8 +170,7 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filename = ndi_daqsystem_mfdaq_intan_obj.filenavigator.getepochfiles(epoch_number);
-				filename = ndi_daqsystem_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
 
 				header = read_Intan_RHD2000_header(filename);
 
@@ -212,11 +191,11 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 	methods (Static)  % helper functions
 
 		function intanchanheadertype = mfdaqchanneltype2intanheadertype(channeltype)
-		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the NDI_DAQSYSTEM_MFDAQ channel types and Intan headers
+		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the NDI_DAQREADER_MFDAQ channel types and Intan headers
 		%
 		% INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
 		% 
-		% Given a standard NDI_DAQSYSTEM_MFDAQ channel type, returns the name of the type as
+		% Given a standard NDI_DAQREADER_MFDAQ channel type, returns the name of the type as
 		% indicated in Intan header files.
 
 			switch (channeltype),
@@ -235,11 +214,11 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 		end % mfdaqchanneltype2intanheadertype()
 
 		function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
-		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQSYSTEM_MFDAQ channel types 
+		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQREADER_MFDAQ channel types 
 		%
 		% CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard NDI_DAQSYSTEM_MFDAQ channel type
+		% Given an Intan header file type, returns the standard NDI_DAQREADER_MFDAQ channel type
 
 			switch (intanchanneltype),
 				case {'amplifier_channels'},
@@ -280,19 +259,19 @@ classdef ndi_daqsystem_mfdaq_intan < ndi_daqsystem_mfdaq
 			end
 		end % mfdaqchanneltype2intanchanneltype()
 
-		function [ channame ] = intanname2mfdaqname(ndi_daqsystem_mfdaq_intan_obj, type, name )
-		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NDI_DAQSYSTEM_MFDAQ format.
+		function [ channame ] = intanname2mfdaqname(ndi_daqreader_mfdaq_intan_obj, type, name )
+		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NDI_DAQREADER_MFDAQ format.
 		%
-		% MFDAQNAME = INTANNAME2MFDAQNAME(NDI_DAQSYSTEM_MFDAQ_INTAN, MFDAQTYPE, NAME)
+		% MFDAQNAME = INTANNAME2MFDAQNAME(NDI_DAQREADER_MFDAQ_INTAN, MFDAQTYPE, NAME)
 		%   
 		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
-		% NDI_DAQSYSTEM_MFDAQ channel type string (see NDI_DEVICE_MFDAQ), this function
-		% produces an NDI_DAQSYSTEM_MFDAQ channel name (e.g., 'ai1').
+		% NDI_DAQREADER_MFDAQ channel type string (see NDI_DEVICE_MFDAQ), this function
+		% produces an NDI_DAQREADER_MFDAQ channel name (e.g., 'ai1').
 		%  
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [ndi_daqsystem_mfdaq_intan_obj.mfdaq_prefix(type) int2str(chan)];
+			channame = [ndi_daqreader_mfdaq.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()
 
