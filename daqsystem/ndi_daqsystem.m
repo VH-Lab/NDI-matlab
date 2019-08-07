@@ -124,7 +124,12 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 					error(['Could not find filenavigator file!']);
 				end
 				obj.filenavigator=ndi_filenavigator_readfromfile([subdirname filesep f(1).name]);
-				obj.daqreader =ndi_daqreader.readfromfile([subdirname filesep f(1).name]);
+				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
+				f = dir([subdirname filesep 'object_*']);
+				if isempty(f),
+					error(['Could not find daqreader file!']);
+				end
+				obj.daqreader =ndi_daqreader_readfromfile([subdirname filesep f(1).name]);
 		end % readobjectfile
 
 		function obj = writeobjectfile(ndi_daqsystem_obj, dirname, islocked)
@@ -146,6 +151,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
 				obj.filenavigator.writeobjectfile(subdirname);
 				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
+				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
 				obj.daqreader.writeobjectfile(subdirname);
 		end % writeobjectfile
 
@@ -368,7 +374,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				ecfname = ndi_daqsystem_obj.filenavigator.epochprobemapfilename(epochnumber);
                 end % epochprobemapfilename
 
-		function [b,msg] = verifyepochprobemap(ndi_daqsystem_obj, epochprobemap, EPOCH)
+		function [b,msg] = verifyepochprobemap(ndi_daqsystem_obj, epochprobemap, epoch)
 			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 			%
 			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCHPROBEMAP, EPOCH)
@@ -380,9 +386,8 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 			%
 			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
-
-				epochfiles = getepochfiles(ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
-				[b,msg] = ndi_daqsystem_obj.verifyepochprobemap(epochprobemap,epochfiles);
+				epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+				[b,msg] = ndi_daqsystem_obj.daqreader.verifyepochprobemap(epochprobemap,epochfiles);
 		end % verifyepochprobemap
 
 		function etfname = epochtagfilename(ndi_epochset_param_obj, epochnumber)

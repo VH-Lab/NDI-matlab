@@ -22,8 +22,8 @@
 %
 
 classdef ndi_daqsystem_mfdaq < ndi_daqsystem
-	properties (GetAcces=public,SetAccess=protected)
 
+	properties (GetAcces=public,SetAccess=protected)
 	end
 	properties (Access=private) % potential private variables
 	end
@@ -38,8 +38,10 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%  This is an abstract class that is overridden by specific devices.
 				obj = obj@ndi_daqsystem(varargin{:});
 
-				if ~isa(obj.daqreader,'ndi_daqreader_mfdaq'),
-					error(['The DAQREADER for an NDI_DAQSYSTEM_MFDAQ object must be a type of NDI_DAQREADER_MFDAQ.']);
+				if ~isempty(obj.daqreader),
+					if ~isa(obj.daqreader,'ndi_daqreader_mfdaq'),
+						error(['The DAQREADER for an NDI_DAQSYSTEM_MFDAQ object must be a type of NDI_DAQREADER_MFDAQ.']);
+					end;
 				end;
 		end; % ndi_daqsystem_mfdaq
 
@@ -59,7 +61,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			% See also: NDI_CLOCKTYPE
                         %
 				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
-                                ec = ndi_daqsystem_mfdaq_obj.ndi_daqreader.epochclock(epochfiles);
+                                ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
                 end % epochclock
 
 		function channels = getchannels(ndi_daqsystem_mfdaq_obj)
@@ -92,7 +94,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 				for n=1:N,
 					epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, n);
 					channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
-					channels = equnique( [channels;channels_here] );
+					channels = equnique( [channels(:); channels_here(:)] );
 				end
 		end; % getchannels
 
@@ -225,56 +227,6 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 				sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel); 
 		end;
 
-		function [t_prime, epochnumber_prime] = timeconvert_old(ndi_daqsystem_mfdaq_obj, clock, t, epochnumber)
-			% TIMECONVERT - convert time to NDI_DAQSYSTEM_MFDAQ 'dev_local_time'
-			%
-			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NDI_DAQSYSTEM_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])
-			%
-			%Given an NDI_CLOCK CLOCK, a time T, and, if CLOCK is a 'dev_local_time' type of clock,
-			%an EPOCHNUMBER, convert time to device's local 'dev_local_time' clock. EPOCHNUMBER_PRIME is the
-			%epoch number in which time T occurs, and time T_PRIME is the time within the EPOCHNUMBER_PRIME when 
-			%time T occurs.
-			%
-				ismyclock = 0;
-				% is this clock already linked to my device??
-				if isa(clock,'ndi_clock_daqsystem'),
-					if clock.device==ndi_daqsystem_mfdaq_obj,
-						ismyclock = 1;
-					end
-				end
-
-				if ~ismyclock, % need to send out to sync table for conversion
-					exp = ndi_daqsystem_mfdaq_obj.experiment;
-					myclock = ndi_clock_daqsystem('dev_local_time',ndi_daqsystem_mfdaq_obj); % MORE HERE
-					if nargin<4,
-						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t); % more here!
-					else,
-						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t, epochnumber); % more here!
-					end
-					return;
-				end
-
-				if isa(clock,'ndi_clock_daqsystem_epoch'), % don't need epochnumber, we know it already
-					t_prime = t;
-					epochnumber_prime = clock.epoch;
-					return
-				end
-
-				switch clock.type,
-					case 'dev_local_time',
-						t_prime = t;
-						if nargin<4,
-							error(['EPOCHNUMBER must be given if clock is type ''dev_local_time''.']);
-						end
-						epochnumber_prime = epochnumber; % must be given
-					case 'no_time',
-						t_prime = [];
-						epochnumber_prime = [];
-					case {'utc','exp_global_time','dev_global_time'},
-						% need to get start and end time of each epoch, figure out which one has t
-						error(['Do not know how to do this yet. More development needed.']);
-				end
-		end % timeconvert()
 	end; % methods
 
 	methods (Static), % functions that don't need the object

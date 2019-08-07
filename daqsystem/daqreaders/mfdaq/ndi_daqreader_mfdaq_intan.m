@@ -46,7 +46,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = ndi_daqreader_mfdaq.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq.mfdaq_channeltypes;
 
 			% open RHD files, and examine the headers for all channels present
 			%   for any new channel that hasn't been identified before,
@@ -121,7 +121,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			end
 			intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
-			sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epoch, channeltype, channel);
+			sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epochfiles, channeltype, channel);
 			sr_unique = unique(sr); % get all sample rates
 			if numel(sr_unique)~=1,
 				error(['Do not know how to handle different sampling rates across channels.']);
@@ -147,8 +147,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			% SR is the list of sample rate from specified channels
 			%
 				sr = [];
-				filename = ndi_daqreader_mfdaq_intan_obj.filenavigator.getepochfiles(epoch);
-				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(filename); 
+				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
 
 				head = read_Intan_RHD2000_header(filename);
 				for i=1:numel(channel),
@@ -271,7 +270,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [ndi_daqreader_mfdaq.mfdaq_prefix(type) int2str(chan)];
+			channame = [ndi_daqsystem_mfdaq.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()
 

@@ -79,7 +79,7 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 				epochprobemapfile_fullpath = epochprobemapfilename(ndi_epochset_param_obj, N);
 				eval(['epochprobemap = ' ndi_epochset_param_obj.epochprobemap_class '(epochprobemapfile_fullpath);']);
-				[b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap);
+				[b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap, N);
 				if ~b,
 					error(['The epochprobemap are not valid for this object: ' msg]);
 				end
