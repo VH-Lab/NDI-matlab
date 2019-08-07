@@ -8,108 +8,101 @@
 
 classdef ndi_iodevice_mfdaq_sg < ndi_iodevice_mfdaq
 
-    properties
-    end
+	properties
+	end
 
-    methods
-        function obj = ndi_iodevice_mfdaq_sg(varargin)
-        % NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
-        %
-        %  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
-        %
-        %  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
-        %  filenavigator THEFILENAVIGATOR.
-        %
-        %
+	methods
+		function obj = ndi_iodevice_mfdaq_sg(varargin)
+			% NDI_IODEVICE_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
+			%
+			%  D = NDI_IODEVICE_MFDAQ_SG(NAME,THEFILENAVIGATOR)
+			%
+			%  Creates a new NDI_IODEVICE_MFDAQ_SG object with name NAME and associated
+			%  filenavigator THEFILENAVIGATOR.
+			%
+			%
+				obj = obj@ndi_iodevice_mfdaq(varargin{:});
+		end
 
-			obj = obj@ndi_iodevice_mfdaq(varargin{:});
-
-        end
-
-        function channels = getchannels(self)
-        % GETCHANNELS - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER
-		%
-		% CHANNELS = GETCHANNELS(SELF)
-		%
-		% CHANNELS is a STRUCT
+		function channels = getchannels(self)
+			% GETCHANNELS - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER
+			%
+			% CHANNELS = GETCHANNELS(SELF)
+			%
+			% CHANNELS is a STRUCT
         
-            %Calculate number of epochs in filenavigator
-            N = numepochs(self.filenavigator);
+				%Calculate number of epochs in filenavigator
+				N = numepochs(self.filenavigator);
 
-            fileconfig = [];
+				fileconfig = [];
 
-            for n=1:N
-                filelist = getepochfiles(self.filenavigator, n);
+				for n=1:N
+					filelist = getepochfiles(self.filenavigator, n);
+					filename = filelist{1};
 
-                filename = filelist{1};
+					[fileconfig, channels] = read_SpikeGadgets_config(filename);
 
-                [fileconfig, channels] = read_SpikeGadgets_config(filename);
+					for k=1:length(channels)
+						number = 0;
+						name = '';
 
-                for k=1:length(channels)
-                    number = 0;
-                    name = '';
+						%Auxiliary
+						if strcmp(channels(k).name(1),'A')
+							%Input
+							if strcmp(channels(k).name(2),'i')
+								channels(k).type = 'auxiliary';
+								number = sscanf(channels(k).name, 'Ain%d'); 
+								name = strcat('axn',num2str(number));
+								channels(k).number = number;
+									%Output
+							else
+								channels(k).type = 'auxiliary';
+								number = sscanf(channels(k).name, 'Aout%d'); 
+								name = strcat('axo',num2str(number));
+								channels(k).number = number;
+							end
 
-                    %Auxiliary
-                    if strcmp(channels(k).name(1),'A')
-                        %Input
-                        if strcmp(channels(k).name(2),'i')
-                            channels(k).type = 'auxiliary';
-                            number = sscanf(channels(k).name, 'Ain%d'); %number = channels(k).name(4:end);
-                            name = strcat('axn',num2str(number));
-                            channels(k).number = number;
-                        %Output
-                        else
-                            channels(k).type = 'auxiliary';
-                            number = sscanf(channels(k).name, 'Aout%d'); %number = channels(k).name(5:end);
-                            name = strcat('axo',num2str(number));
-                            channels(k).number = number;
-                        end
+						%Digital
+						elseif strcmp(channels(k).name(1),'D')
+							if strcmp(channels(k).name(2),'i') % Input
+								channels(k).type = 'digital_in';
+								number = sscanf(channels(k).name, 'Din%d'); 
+								name = strcat('di',num2str(number));
+								channels(k).number = number;
+							else %Output
+								channels(k).type = 'digital_out';
+								number = sscanf(channels(k).name, 'Dout%d');
+								name = strcat('do',num2str(number));
+								channels(k).number = number;
+							end
+						else	%MCU (digital inputs)
+							channels(k).type = 'digital_in';
+							number = sscanf(channels(k).name, 'MCU_Din%d');
+							number = number + 32; % +32 from previous non MCU inputs
+							name = strcat('di',num2str(number));
+							channels(k).number = number;
+						end
+						channels(k).name = name;
+					end
+				end
 
-                    %Digital
-                    elseif strcmp(channels(k).name(1),'D')
-                        %Input
-                        if strcmp(channels(k).name(2),'i')
-                            channels(k).type = 'digital_in';
-                            number = sscanf(channels(k).name, 'Din%d'); %number = channels(k).name(4:end);
-                            name = strcat('di',num2str(number));
-                            channels(k).number = number;
-                        %Output
-                        else
-                            channels(k).type = 'digital_out';
-                            number = sscanf(channels(k).name, 'Dout%d'); %number = channels(k).name(5:end);
-                            name = strcat('do',num2str(number));
-                            channels(k).number = number;
-                        end
-                    %MCU (digital inputs)
-                    else
-                        channels(k).type = 'digital_in';
-                        number = sscanf(channels(k).name, 'MCU_Din%d'); %str2num(channels(k).name(8:end));
-                        number = number + 32; % +32 from previous non MCU inputs
-                        name = strcat('di',num2str(number));
-                        channels(k).number = number;
-                    end
+				%Adds all nTrodes to the list
+				for i=1:length(fileconfig.nTrodes)
+					for j=1:4 %argument for 4 channels, variable could be used later to deal with this in a more general way
+						channelNumber = fileconfig.nTrodes(i).channelInfo(j).packetLocation;
+						channels(end+1).name = strcat('ai',num2str(channelNumber+1));
+						channels(end).type = 'analog_in';
+						channels(end).number = channelNumber+1;
+					end
+				end
 
-                    channels(k).name = name;
-                end
-            end
-            %Adds all nTrodes to the list
-            for i=1:length(fileconfig.nTrodes)
-                for j=1:4 %argument for 4 channels, variable could be used later to deal with this in a more general way
-                    channelNumber = fileconfig.nTrodes(i).channelInfo(j).packetLocation;
-                    channels(end+1).name = strcat('ai',num2str(channelNumber+1));
-                    channels(end).type = 'analog_in';
-                    channels(end).number = channelNumber+1;
-                end
-            end
+				channels = struct2table(channels);
+				channels = sortrows(channels,{'type','number'});
+				channels = table2struct(channels);
 
-            channels = struct2table(channels);
-            channels = sortrows(channels,{'type','number'});
-            channels = table2struct(channels);
+				remove = {'startbyte','bit','number'};
 
-            remove = {'startbyte','bit','number'};
-
-            channels = rmfield(channels, remove);
-
+				channels = rmfield(channels, remove);
         end
 
         function channels = getchannelsdetailed(self)
