@@ -32,11 +32,11 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 		function obj = ndi_daqreader_mfdaq(varargin)
 			% NDI_DAQREADER_MFDAQ - Create a new multifunction DAQ object
 			%
-			%  D = NDI_DAQREADER_MFDAQ(NAME, THEFILENAVIGATOR)
+			%  D = NDI_DAQREADER_MFDAQ()
 			%
-			%  Creates a new NDI_DAQREADER_MFDAQ object with NAME, and FILENAVIGATOR.
+			%  Creates a new NDI_DAQREADER_MFDAQ object.
 			%  This is an abstract class that is overridden by specific devices.
-			obj = obj@ndi_daqreader(varargin{:});
+				obj = obj@ndi_daqreader(varargin{:});
 		end; % ndi_daqreader_mfdaq
 
 		% functions that override ndi_epochset

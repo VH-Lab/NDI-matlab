@@ -116,10 +116,10 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 		function t0t1 = t0_t1(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
-			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCH_NUMBER)
+			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
 			%
-			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% Return the beginning (t0) and end (t1) times of the EPOCHFILES that define this
+			% epoch in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
 			%
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
