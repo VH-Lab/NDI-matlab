@@ -33,7 +33,7 @@ classdef ndi_daqsystem_stimulus < ndi_daqsystem
 			% Returns the parameters (array, struct array, or cell array) associated with the
 			% stimulus or stimuli that were prepared to be presented in epoch EPOCH_NUMBER.
 			%
-                                epochfiles = ndi_daqsystem_stimulus_obj.filenavigator.getepochfiles(epoch);
+                                epochfiles = ndi_daqsystem_stimulus_obj.filenavigator.getepochfiles(epoch_number);
 				parameters = ndi_daqsystem_stimulus_obj.daqreader.get_stimulus_parameters(epochfiles);
 		end
 	end % methods

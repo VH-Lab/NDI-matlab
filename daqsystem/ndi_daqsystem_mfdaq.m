@@ -206,9 +206,9 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-				timeref = ndi_timereference(ndi_daqsystem_mfdaq_obj, ndi_daqsystem_mfdaq_obj.epoch_clock(epoch), ...
-					epoch, 0);
-				data = ndi_daqsystem_mfdaq.obj.readevents_epoch(channeltype, channel, epochfiles, t0, t1);
+				epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
+				timeref = ndi_timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
+				data = ndi_daqsystem_mfdaq_obj.daqreader.readevents_epoch(channeltype, channel, epochfiles, t0, t1);
 		end; % readevents_epochsamples
 
                 function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)

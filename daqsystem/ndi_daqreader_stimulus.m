@@ -8,7 +8,7 @@ classdef ndi_daqreader_stimulus < ndi_daqreader
 	end
 
 	methods
-		function obj = ndi_daqreader_stimulu(varargin)
+		function obj = ndi_daqreader_stimulus(varargin)
 			% NDI_DAQREADER_STIMULUS - Create a new multifunction DAQ object
 			%
 			%  D = NDI_DAQREADER_STIMULUS()
@@ -29,6 +29,7 @@ classdef ndi_daqreader_stimulus < ndi_daqreader
 			%
 				parameters = {};
                 end; % get_stimulus_parameters()
-	
 
-end;
+
+	end; % methods
+end % classdef

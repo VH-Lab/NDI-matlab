@@ -78,21 +78,21 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 				% UPDATE NEEDED
 		end
 
-		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, s0, s1)
 			%  FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
-			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%
 			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 			%
-			%  EPOCH is 
+			%  EPOCHFILES is the cell array of full path filenames for this epoch
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
-				sr = ndi_daqreader_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
+				sr = ndi_daqreader_mfdaq_cedspike2_obj.samplerate(epochfiles, channeltype, channel);
 				sr_unique = unique(sr); % get all sample rates
 				if numel(sr_unique)~=1,
 					error(['Do not know how to handle different sampling rates across channels.']);

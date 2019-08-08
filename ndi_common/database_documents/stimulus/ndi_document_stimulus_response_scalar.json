@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response_scalar.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_response_scalar_schema.json",
+		"class_name":						"stimulus-ndi_document_stimulus_response_scalar",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"stimulus_document_identifier":					[],
+	"responses": {
+		"stimulus_identifier":					[],
+		"response_type":					[],
+		"response":						[],
+		"control_response":					[],
+	}
+}
+

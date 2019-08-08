@@ -47,7 +47,9 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			end;
 
 			if nargin>=3,
-				warning('might want some sort of checking here')
+				if ~isa(thedaqreader,'ndi_daqreader'),
+					error(['thedaqreader must be of type NDI_DAQREADER.']);
+				end;
 			end;
 				
 			if (nargin==1) | (nargin>3),
@@ -415,8 +417,8 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			%
 			% The NDI_DAQSYSTEM GETEPOCHPROBEMAP checks its DAQREADER object to see if it has a method called
 			% 'GETEPOCHPROBEMAP' that accepts the EPOCHPROBEMAP filename and the EPOCHFILES for that epoch.
-			% If it does have a method by that name, it is called and the output returned. If it does not, then the superclass
-			% (NDI_EPOCHSET_PARAMS/GETEPOCHPROBEMAP) is called.
+			% If it does have a method by that name, it is called and the output returned. If it does not, then the FILENAVIGATOR
+			% parameter's method is called.
 			% 
 				m = methods(ndi_daqsystem_obj.daqreader);
 				if ~isempty(intersect(m,'getepochprobemap')),
@@ -425,7 +427,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 						% it is remarkable that this is allowed in Matlab but it is beautiful
 					epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
 				else,
-					epochprobemap = getepochprobemap@ndi_epochset_param(ndi_daqsystem_obj,epoch);
+					epochprobemap = ndi_daqsystem_obj.filenavigator.getepochprobemap(epoch);
 				end;
 
 		end; % getepochprobemap

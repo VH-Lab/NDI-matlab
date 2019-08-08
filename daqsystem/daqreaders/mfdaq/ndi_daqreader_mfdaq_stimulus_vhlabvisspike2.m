@@ -14,7 +14,7 @@
 % e3              | pretime trigger
 %
 
-classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqsystem_mfdaq & ndi_daqsystem_stimulus
+classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi_daqreader_stimulus
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -70,7 +70,7 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqsystem_mfdaq & ndi
 				channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannelsepoch()
 
-		function data = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
+		function data = readevents_epoch(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
@@ -128,8 +128,8 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqsystem_mfdaq & ndi
 				end;
 
 				for i=1:numel(channel),
-					%ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i}),
-					switch (ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj.mfdaq_prefix(channeltype{i})),
+					ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i}),
+					switch (ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i})),
 						case 'mk',
 							% put them together, alternating stimtimes and stimofftimes in the final product
 							time1 = [stimtimes(:)' ; stimofftimes(:)'];
