@@ -64,22 +64,20 @@ classdef ndi_epochset_param < ndi_epochset
                 end % verifyepochprobemap()
 
 		function epochprobemap = getepochprobemap(ndi_epochset_param_obj, N)
-			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi_filenavigator and epoch number
+			% GETEPOCHPROBEMAP - Return the epoch record for a given NDI_EPOCHSET_PARAM epoch number
 			%
-			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(SELF, N, DAQSYSTEMNAME)
+			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)
 			%
 			% Inputs:
-			%     SELF - the data tree object
-			%     N - the epoch number
-			%     DEVICENAME - The NDI name of the device
+			%     NDI_EPOCHSET_PARAM_OBJ - the NDI_EPOCHSET_PARAM object
+			%     N - the epoch number or identifier
 			%
 			% Output:
 			%     EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
 			%
-			%
 				epochprobemapfile_fullpath = epochprobemapfilename(ndi_epochset_param_obj, N);
 				eval(['epochprobemap = ' ndi_epochset_param_obj.epochprobemap_class '(epochprobemapfile_fullpath);']);
-				[b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap);
+				[b,msg]=verifyepochprobemap(ndi_epochset_param_obj,epochprobemap, N);
 				if ~b,
 					error(['The epochprobemap are not valid for this object: ' msg]);
 				end

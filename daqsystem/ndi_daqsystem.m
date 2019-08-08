@@ -8,17 +8,20 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 
 	properties (GetAccess=public, SetAccess=protected)
 		filenavigator   % The NDI_FILENAVIGATOR associated with this device
+		daqreader       % The NDI_DAQREADER associated with this device
 	end
 
 	methods
-		function obj = ndi_daqsystem(name,thefilenavigator)
+		function obj = ndi_daqsystem(name,thefilenavigator,thedaqreader)
 		% NDI_DAQSYSTEM - create a new NDI_DEVICE object
 		%
-		%  OBJ = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR)
+		%  OBJ = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR, THEDAQREADER)
 		%
-		%  Creates an NDI_DAQSYSTEM with name NAME and NDI_DAQSYSTEM
-		%  THEFILENAVIGATOR. THEFILENAVIGATOR is an interface object to the raw data files
-		%  on disk that are read by the NDI_DAQSYSTEM.
+		%  Creates an NDI_DAQSYSTEM with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
+		%  and NDI_DAQREADER THEDAQREADER.
+		%
+		%  An NDI_FILENAVIGATOR is an interface object to the raw data files
+		%  on disk that are read by the NDI_DAQREADER.
 		%
 		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
 		%
@@ -28,7 +31,9 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			if nargin==0, % undocumented 0 argument creator
 				name = '';
 				thefilenavigator = [];
-			elseif nargin==2,
+				thedaqreader = [];
+			end;
+			if nargin>=2,
 				if ischar(thefilenavigator), % it is a command
 					loadfromfile = 1;
 					filename = name;
@@ -39,8 +44,16 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 						thefilenavigator=[];
 					end
 				end;
-			else,
-				error(['Function requires 2 input arguments exactly.']);
+			end;
+
+			if nargin>=3,
+				if ~isa(thedaqreader,'ndi_daqreader'),
+					error(['thedaqreader must be of type NDI_DAQREADER.']);
+				end;
+			end;
+				
+			if (nargin==1) | (nargin>3),
+				error(['Function requires 2 or 3 input arguments exactly.']);
 			end
 
 			obj = obj@ndi_dbleaf(name);
@@ -49,12 +62,8 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			else,
 				obj.name = name;
 				obj.filenavigator = thefilenavigator;
+				obj.daqreader = thedaqreader;
 			end
-			if isempty(obj.filenavigator),
-				obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
-			else,
-				obj.epochprobemap_class = obj.filenavigator.epochprobemap_class;
-			end;
 		end % ndi_daqsystem
 
 		%% GUI functions
@@ -117,6 +126,12 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 					error(['Could not find filenavigator file!']);
 				end
 				obj.filenavigator=ndi_filenavigator_readfromfile([subdirname filesep f(1).name]);
+				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
+				f = dir([subdirname filesep 'object_*']);
+				if isempty(f),
+					error(['Could not find daqreader file!']);
+				end
+				obj.daqreader =ndi_daqreader_readfromfile([subdirname filesep f(1).name]);
 		end % readobjectfile
 
 		function obj = writeobjectfile(ndi_daqsystem_obj, dirname, islocked)
@@ -137,6 +152,9 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				subdirname = [dirname filesep obj.objectfilename '.filenavigator.device.ndi'];
 				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
 				obj.filenavigator.writeobjectfile(subdirname);
+				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
+				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
+				obj.daqreader.writeobjectfile(subdirname);
 		end % writeobjectfile
 
 		function [data, fieldnames] = stringdatatosave(ndi_daqsystem_obj)
@@ -169,9 +187,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				obj = ndi_daqsystem_obj;
 				properties_set = {};
 				for i=1:numel(properties),
-					if strcmp(properties{i},'$ndiclocktype'),
-						%obj.clock = ndi_clock_daqsystem(values{i},obj); % do nothing, this is gone
-					elseif any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
+					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
 						if properties{i}(1)~='$',
 							eval(['obj.' properties{i} '= values{i};']);
 							properties_set{end+1} = properties{i};
@@ -360,33 +376,20 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				ecfname = ndi_daqsystem_obj.filenavigator.epochprobemapfilename(epochnumber);
                 end % epochprobemapfilename
 
-		function [b,msg] = verifyepochprobemap(ndi_daqsystem_obj, epochprobemap, number)
+		function [b,msg] = verifyepochprobemap(ndi_daqsystem_obj, epochprobemap, epoch)
 			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 			%
-			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCHPROBEMAP, NUMBER)
+			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCHPROBEMAP, EPOCH)
 			%
 			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
-			% epoch NUMBER.
+			% epoch EPOCH.
 			%
 			% For the abstract class NDI_DAQSYSTEM, EPOCHPROBEMAP is always valid as long as
 			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 			%
 			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
-				msg = '';
-				b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem');
-				if ~b,
-					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_DAQSYSTEM; it must be.';
-					return;
-				end;
-
-				for i=1:numel(epochprobemap),
-					try,
-						thedevicestring = ndi_daqsystemstring(epochprobemap(i).devicestring);
-					catch,
-						b = 0;
-						msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
-                                        end
-                                end
+				epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+				[b,msg] = ndi_daqsystem_obj.daqreader.verifyepochprobemap(epochprobemap,epochfiles);
 		end % verifyepochprobemap
 
 		function etfname = epochtagfilename(ndi_epochset_param_obj, epochnumber)
@@ -398,6 +401,36 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			%
 				etfname = ndi_epochset_param.obj.filenavigator.epochtagfilename(epochnumber);
                 end % epochtagfilename()
+
+		function epochprobemap = getepochprobemap(ndi_daqsystem_obj, epoch)
+			% GETEPOCHPROBEMAP - Return the epoch record for an NDI_DAQSYSTEM object
+			%
+			% EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCH)
+			%
+			% Inputs:
+			%     NDI_EPOCHSET_PARAM_OBJ - the NDI_EPOCHSET_PARAM object
+			%     EPOCH - the epoch number or identifier
+			%
+			% Output:
+			%     EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
+			%
+			%
+			% The NDI_DAQSYSTEM GETEPOCHPROBEMAP checks its DAQREADER object to see if it has a method called
+			% 'GETEPOCHPROBEMAP' that accepts the EPOCHPROBEMAP filename and the EPOCHFILES for that epoch.
+			% If it does have a method by that name, it is called and the output returned. If it does not, then the FILENAVIGATOR
+			% parameter's method is called.
+			% 
+				m = methods(ndi_daqsystem_obj.daqreader);
+				if ~isempty(intersect(m,'getepochprobemap')),
+					ecfname = ndi_daqsystem_obj.epochprobemapfilename(epoch);
+					epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+						% it is remarkable that this is allowed in Matlab but it is beautiful
+					epochprobemap = ndi_daqsystem_obj.daqreader.getepochprobemap(ecfname,epochfiles);
+				else,
+					epochprobemap = ndi_daqsystem_obj.filenavigator.getepochprobemap(epoch);
+				end;
+
+		end; % getepochprobemap
 
 	end % methods
 end % ndi_daqsystem classdef

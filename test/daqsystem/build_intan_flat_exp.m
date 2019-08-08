@@ -40,7 +40,7 @@ dt = ndi_filenavigator(exp, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
-dev1 = ndi_daqsystem_mfdaq_intan('intan1',dt);
+dev1 = ndi_daqsystem_mfdaq('intan1',dt,ndi_daqreader_mfdaq_intan());
 exp.daqsystem_add(dev1);
  
   % Step 3: let's add a document

@@ -1,4 +1,4 @@
-classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
+classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 % NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from CED Spike2 .SMR or .SON file formats.
@@ -14,7 +14,7 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 	end % properties
 
 	methods
-		function obj = ndi_daqsystem_mfdaq_cedspike2(varargin)
+		function obj = ndi_daqreader_mfdaq_cedspike2(varargin)
 			% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
 			%
 			%  D = NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
@@ -22,13 +22,13 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 			%  Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
-			obj = obj@ndi_daqsystem_mfdaq(varargin{:})
+			obj = obj@ndi_daqreader_mfdaq(varargin{:})
 		end
 
-		function channels = getchannels(ndi_daqsystem_mfdaq_cedspike2_obj)
+		function channels = getchannelsepoch(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
 			% GETCHANNELS - List the channels that are available on this device
 			%
-			%  CHANNELS = GETCHANNELS(THEDEV)
+			%  CHANNELS = GETCHANNELS(THEDEV, EPOCHFILES)
 			%
 			%  Returns the channel list of acquired channels in this experiment
 			%
@@ -39,19 +39,14 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 			%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
 			%
 
-			channels = emptystruct('name','type');
+				channels = emptystruct('name','type');
 
-			N = numepochs(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator);
-
-			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq_cedspike2_obj.mfdaq_channeltypes;
-
-			for n=1:N,
+				multifunctiondaq_channel_types = ndi_daqSsystem_mfdaq.mfdaq_channeltypes;
 
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
 				%   add it to the list
-				filelist = getepochfiles(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator, n);
-				filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
+				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 
 				header = read_CED_SOMSMR_header(filename);
 
@@ -60,26 +55,16 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 				end;
 
 				for k=1:length(header.channelinfo),
-					newchannel.type = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
-					newchannel.name = [ ndi_daqsystem_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
-					match = 0;
-					for kk=1:length(channels),
-						if eqlen(channels(kk),newchannel)
-							match = 1;
-							break;
-						end;
-					end
-					if ~match,
-						channels(end+1) = newchannel;
-					end
+					newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
+					newchannel.name = [ ndi_daqreader_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					channels(end+1) = newchannel;
 				end
-			end
 		end % getchannels()
 
-		function [b,msg] = verifyepochprobemap(ndi_daqsystem_mfdaq_cedspike2_obj, epochprobemap, number)
+		function [b,msg] = verifyepochprobemap(ndi_daqreader_mfdaq_cedspike2_obj, epochprobemap, epochfiles)
 			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
 			%
-			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, NUMBER)
+			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHFILES)
 			%
 			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
@@ -88,61 +73,58 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
 			%
 			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
-			b = 1; msg = '';
-			% UPDATE NEEDED
-			% b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem') && strcmp(epochprobemap.type,'rhd') && strcmp(epochprobemap.devicestring,ndi_daqsystem_mfdaq_cedspike2_obj.name);
+				b = 1;
+				msg = '';
+				% UPDATE NEEDED
 		end
 
-		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_cedspike2_obj, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, s0, s1)
 			%  FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
-			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%
 			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 			%
-			%  EPOCH is 
+			%  EPOCHFILES is the cell array of full path filenames for this epoch
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
-			filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); 
+				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
+				sr = ndi_daqreader_mfdaq_cedspike2_obj.samplerate(epochfiles, channeltype, channel);
+				sr_unique = unique(sr); % get all sample rates
+				if numel(sr_unique)~=1,
+					error(['Do not know how to handle different sampling rates across channels.']);
+				end;
 
-			sr = ndi_daqsystem_mfdaq_cedspike2_obj.samplerate(epoch, channeltype, channel);
-			sr_unique = unique(sr); % get all sample rates
-			if numel(sr_unique)~=1,
-				error(['Do not know how to handle different sampling rates across channels.']);
-			end;
+				sr = sr_unique;
 
-			sr = sr_unique;
+				t0 = (s0-1)/sr;
+				t1 = (s1-1)/sr;
 
-			t0 = (s0-1)/sr;
-			t1 = (s1-1)/sr;
-
-			for i=1:length(channel), % can only read 1 channel at a time
-				if strcmpi(channeltype,'time'),
-					[dummy,dummy,dummy,dummy,data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
-				else,
-					[data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
+				for i=1:length(channel), % can only read 1 channel at a time
+					if strcmpi(channeltype,'time'),
+						[dummy,dummy,dummy,dummy,data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
+					else,
+						[data(:,i)] = read_CED_SOMSMR_datafile(filename,'',channel(i),t0,t1);
+					end
 				end
-			end
 
 		end % readchannels_epochsamples
 
-		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_cedspike2_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
 			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
-			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCH_NUMBER)
+			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
 			%
-			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% Return the beginning (t0) and end (t1) times of the EPOCHFILES that define this
+			% epoch in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
 			%
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filelist = getepochfiles(ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator, epoch_number);
-				filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filelist);
+				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 				header = read_CED_SOMSMR_header(filename);
 
 				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
@@ -150,24 +132,23 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function data = readevents_epoch(ndi_daqsystem_mfdaq_cedspike2_obj, channeltype, channel, epoch, t0, t1)
+		function data = readevents_epoch(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
 			%
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%
-			%  EPOCH is the epoch number
+			%  EPOCH is the set of epoch files
 			%
 			%  DATA is a two-column vector; the first column has the time of the event. The second
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-				filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
-				filename = filename{1}; % don't know how to handle multiple filenames coming back
+				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 				if numel(channel)>1,
 					data = {};
 					for i=1:numel(channel),
@@ -181,20 +162,19 @@ classdef ndi_daqsystem_mfdaq_cedspike2 < ndi_daqsystem_mfdaq
 				end
 		end % readevents_epoch()
 
-		function sr = samplerate(ndi_daqsystem_mfdaq_cedspike2_obj, epoch, channeltype, channel)
-		% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
-		%
-		% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
-		%
-		% SR is the list of sample rate from specified channels
+		function sr = samplerate(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles, channeltype, channel)
+			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
+			%
+			% SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
+			%
+			% SR is the list of sample rate from specified channels
 
-			filename = ndi_daqsystem_mfdaq_cedspike2_obj.filenavigator.getepochfiles(epoch);
-			filename = ndi_daqsystem_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(filename); % don't know how to handle multiple filenames coming back
+				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 
-			sr = [];
-			for i=1:numel(channel),
-				sr(i) = 1/read_CED_SOMSMR_sampleinterval(filename,[],channel(i));
-			end
+				sr = [];
+				for i=1:numel(channel),
+					sr(i) = 1/read_CED_SOMSMR_sampleinterval(filename,[],channel(i));
+				end
 
 		end % samplerate()
 

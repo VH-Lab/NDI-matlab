@@ -22,8 +22,8 @@
 %
 
 classdef ndi_daqsystem_mfdaq < ndi_daqsystem
-	properties (GetAcces=public,SetAccess=protected)
 
+	properties (GetAcces=public,SetAccess=protected)
 	end
 	properties (Access=private) % potential private variables
 	end
@@ -36,15 +36,21 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-			obj = obj@ndi_daqsystem(varargin{:});
+				obj = obj@ndi_daqsystem(varargin{:});
+
+				if ~isempty(obj.daqreader),
+					if ~isa(obj.daqreader,'ndi_daqreader_mfdaq'),
+						error(['The DAQREADER for an NDI_DAQSYSTEM_MFDAQ object must be a type of NDI_DAQREADER_MFDAQ.']);
+					end;
+				end;
 		end; % ndi_daqsystem_mfdaq
 
 		% functions that override ndi_epochset
 
-                function ec = epochclock(ndi_daqsystem_mfdaq_obj, epoch_number)
+                function ec = epochclock(ndi_daqsystem_mfdaq_obj, epoch)
                         % EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
                         %
-                        % EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH_NUMBER)
+                        % EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH)
                         %
                         % Return the clock types available for this epoch as a cell array
                         % of NDI_CLOCKTYPE objects (or sub-class members).
@@ -54,13 +60,14 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			% See also: NDI_CLOCKTYPE
                         %
-                                ec = {ndi_clocktype('dev_local_time')};
+				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
+                                ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
                 end % epochclock
 
-		function channels = getchannels(thedev)
+		function channels = getchannels(ndi_daqsystem_mfdaq_obj)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
 			%
-			%  CHANNELS = GETCHANNELS(THEDEV)
+			%  CHANNELS = GETCHANNELS(NDI_DAQSYSTEM_MFDAQ_OBJ)
 			%
 			%  Returns the channel list of acquired channels in this experiment
 			%
@@ -79,12 +86,19 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			% 'type'             | The type of data stored in the channel
 			%                    |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')
 			%
-			   % because this is an abstract class, only empty records are returned
 				channels = struct('name',[],'type',[]);  
 				channels = channels([]);
+
+				N = numepochs(ndi_daqsystem_mfdaq_obj);
+
+				for n=1:N,
+					epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, n);
+					channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+					channels = equnique( [channels(:); channels_here(:)] );
+				end
 		end; % getchannels
 
-		function data = readchannels_epochsamples(self, channeltype, channel, epoch, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s0, s1)
 			%  FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
 			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
@@ -97,10 +111,13 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			%  DATA will have one column per channel.
 			%
-			data = [];
+				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+				data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples(channeltype, channel, epochfiles, s0, s1);
 		end % readchannels_epochsamples()
 
-		function data = readchannels(self, channeltype, channel, timeref_or_epoch, t0, t1)
+		function data = readchannels(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
+			   % because this is an abstract class, only empty records are returned
+
 			%  FUNCTION READCHANNELS - read the data based on specified channels
 			%
 			%  DATA = READCHANNELS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
@@ -118,31 +135,31 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			error('this function presently does not work, needs to know how to get to experiment');
 
 			if isa(timeref_or_epoch,'ndi_timereference'),
-				exp = self.experiment;
+				exp = ndi_daqsystem_mfdaq_obj.experiment;
 				[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
-					self,ndi_clocktype('devlocal'));
+					ndi_daqsystem_mfdaq_obj,ndi_clocktype('devlocal'));
 				[t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...
-					self,ndi_clocktype('dev_local_time'));
+					ndi_daqsystem_mfdaq_obj,ndi_clocktype('dev_local_time'));
 				if epoch0_timeref.epoch~=epoch1_timeref.epoch,
 					error(['Do not know how to read across epochs yet; request spanned ' ...
-						 self.filenavigator.epoch2str(epoch0_timeref.epoch) ...
-						' and ' self.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
+						 ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch0_timeref.epoch) ...
+						' and ' ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
 				end
 				epoch = epoch0;
 			else,
 				epoch = timeref_or_epoch;
 			end
-			sr = samplerate(self, epoch, channeltype, channel);
+			sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel);
 			if numel(unique(sr))~=1,
 				error(['Do not know how to handle multiple sampling rates across channels.']);
 			end;
 			sr = unique(sr);
 			s0 = 1+round(sr*t0);
 			s1 = 1+round(sr*t1);
-			[data] = readchannels_epochsamples(self, epoch, channeltype, channel, s0, s1);
+			[data] = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel, s0, s1);
 		end %readchannels()
 
-		function data = readevents(self, channeltype, channel, timeref_or_epoch, t0, t1)
+		function data = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels
 			%
 			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
@@ -166,11 +183,11 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			else,
 				epoch = timeref_or_epoch;
 				%disp('here, about to call readchannels_epochsamples')
-				[data] = readevents_epochsamples(self,channeltype,channel,epoch,t0,t1);
+				[data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
 			end
 		end % readevents
 
-		function [data, timeref] = readevents_epochsamples(self, channeltype, channel, n, t0, t1)
+		function [data, timeref] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
 			%  [DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
@@ -180,7 +197,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
-			%  EPOCH is the epoch number 
+			%  EPOCH is the epoch number or epochID
 			%
 			%  DATA is a two-column vector; the first column has the time of the event. The second
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
@@ -188,11 +205,13 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
-			data = [];
-			timeref = [];
-		end % readevents_epochsamples
+				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+				epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
+				timeref = ndi_timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
+				data = ndi_daqsystem_mfdaq_obj.daqreader.readevents_epoch(channeltype, channel, epochfiles, t0, t1);
+		end; % readevents_epochsamples
 
-                function sr = samplerate(self, epoch, channeltype, channel)
+                function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
@@ -203,61 +222,11 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			% strings the same length as the vector CHANNEL.
 			% If CHANNELTYPE is a single string, then it is assumed that
 			% that CHANNELTYPE applies to every entry of CHANNEL.
-			% 
-			% Note: in the abstract class NDI_DAQSYSTEM_MFDAQ, this returns empty.
-			sr = [];  % this is an abstract class
-		end
 
-		function [t_prime, epochnumber_prime] = timeconvert_old(self, clock, t, epochnumber)
-			% TIMECONVERT - convert time to NDI_DAQSYSTEM_MFDAQ 'dev_local_time'
-			%
-			%[T_PRIME, EPOCHNUMBER_PRIME] = TIMECONVERT(NDI_DAQSYSTEM_MFDAQ_OBJ, CLOCK, T, [EPOCHNUMBER])
-			%
-			%Given an NDI_CLOCK CLOCK, a time T, and, if CLOCK is a 'dev_local_time' type of clock,
-			%an EPOCHNUMBER, convert time to device's local 'dev_local_time' clock. EPOCHNUMBER_PRIME is the
-			%epoch number in which time T occurs, and time T_PRIME is the time within the EPOCHNUMBER_PRIME when 
-			%time T occurs.
-			%
-				ismyclock = 0;
-				% is this clock already linked to my device??
-				if isa(clock,'ndi_clock_daqsystem'),
-					if clock.device==self,
-						ismyclock = 1;
-					end
-				end
+				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+				sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel); 
+		end;
 
-				if ~ismyclock, % need to send out to sync table for conversion
-					exp = self.experiment;
-					myclock = ndi_clock_daqsystem('dev_local_time',self); % MORE HERE
-					if nargin<4,
-						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t); % more here!
-					else,
-						% [t1,epochnumber] = exp.synctable.timeconvert(clock, myclock, t, epochnumber); % more here!
-					end
-					return;
-				end
-
-				if isa(clock,'ndi_clock_daqsystem_epoch'), % don't need epochnumber, we know it already
-					t_prime = t;
-					epochnumber_prime = clock.epoch;
-					return
-				end
-
-				switch clock.type,
-					case 'dev_local_time',
-						t_prime = t;
-						if nargin<4,
-							error(['EPOCHNUMBER must be given if clock is type ''dev_local_time''.']);
-						end
-						epochnumber_prime = epochnumber; % must be given
-					case 'no_time',
-						t_prime = [];
-						epochnumber_prime = [];
-					case {'utc','exp_global_time','dev_global_time'},
-						% need to get start and end time of each epoch, figure out which one has t
-						error(['Do not know how to do this yet. More development needed.']);
-				end
-		end % timeconvert()
 	end; % methods
 
 	methods (Static), % functions that don't need the object
