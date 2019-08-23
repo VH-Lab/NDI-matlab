@@ -22,13 +22,14 @@ classdef ndi_app_spikesorter < ndi_app
 
 		end % ndi_app_spikesorter() creator
 
-		function spike_sort(ndi_app_spikesorter_obj, name, type, extraction_name, sort_name, sorting_params) %, sorting_params)
+		function spike_sort(ndi_app_spikesorter_obj, name, type, epoch, extraction_name, sort_name, sorting_params) %, sorting_params)
 		% SPIKE_SORT - method that sorts spikes from specific probes in experiment to ndi_doc
 		%
 		% SPIKE_SORT(NAME, TYPE, EXTRACTION_NAME, SORT_NAME, SORTING_PARAMS)
 		% NAME is the probe name if any
 		% TYPE is the type of probe if any
 		% combination of NAME and TYPE must return at least one probe from experiment, that has extracted spikes as ndi_docs
+		% EPOCH is an index number to select epoch to extract
 		% EXTRACTION_NAME name given to find ndi_doc in database
 		% SORT_NAME name given to save sort to ndi_doc
 		% SORTING_PARAMS a struct or filepath (tab separated file) with extraction parameters
@@ -63,7 +64,7 @@ classdef ndi_app_spikesorter < ndi_app
 
 			% Read spikewaves here
 			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment);
-			spikes = spike_extractor.load_spikes(probe, extraction_name);
+			spikes = spike_extractor.load_spikes(probe, epoch, extraction_name);
 			spikesamples = size(spikes,1);
 			nchannels = size(spikes,2);
 			nspikes = size(spikes,3);
@@ -106,8 +107,8 @@ classdef ndi_app_spikesorter < ndi_app
 			waveparameters.comment = '';
 			waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
 
-			spikewaves = ndi_app_spikesorter_obj.load_spikes(name, type, extraction_name);
-			times = ndi_app_spikesorter_obj.load_times(name, type, extraction_name);
+			spikewaves = ndi_app_spikesorter_obj.load_spikes(name, type, epoch, extraction_name);
+			times = ndi_app_spikesorter_obj.load_times(name, type, epoch, extraction_name);
 			spikeclusterids = clusterids;
 			spiketimes = times(2,:);
 			% keyboard
