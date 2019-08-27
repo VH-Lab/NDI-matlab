@@ -43,7 +43,7 @@ classdef ndi_experiment_dir < ndi_experiment
 				if ~isempty(d),
 					ndi_experiment_dir_obj.unique_reference = strtrim(textfile2char([ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
-					warning(['Could not load the UNIQUE REFERENCE field from the path ' ndi_experiment_dir_obj.ndipathname() '. Making one']);
+					%warning(['Could not load the UNIQUE REFERENCE field from the path ' ndi_experiment_dir_obj.ndipathname() '. Making one']);
 					ndi_experiment_dir_obj.unique_reference = ndi_unique_id();
 				end
 
