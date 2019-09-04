@@ -1,0 +1,305 @@
+function b = ndi_install(directory, dependencies)
+% NDI_INSTALL - install the NDI distribution and its ancillary directories
+%
+% B = NDI_INSTALL
+%
+% Installs the GitHub distributions necessary to run NDI-matlab.
+% These are installed at [USERPATH filesep 'tools']
+%    (for example, /Users/steve/Documents/MATLAB/tools/)
+%
+% The startup file is edited to add a startup procedure in VHTOOLS.
+%
+% One can also dictate a different install directory by passing a full pathname:
+%
+% B = NDI_INSTALL(PATHNAME)
+%
+% Finally, one can also install either the minimal set of tools needed for NDI (DEPENDENCIES=1),
+% or one can install the standard VHTOOLS suite (DEPENDENCIES=2):
+%
+% B = NDI_INSTALL(PATHNAME, DEPENDENCIES)
+%
+% If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used.
+
+if nargin<1,
+	directory = [userpath filesep 'tools'];
+end;
+
+if isempty(directory),
+	directory = [userpath filesep 'tools'];
+end;
+
+if nargin<2,
+	dependencies = 1;
+end;
+
+if isnumeric(dependencies),
+	switch (dependencies),
+		case 1,
+			dependencies = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/ndi/ndi-matlab-dependencies.json';
+		case 2,
+			dependencies = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/master/vhtools_standard_distribution.json';
+	end;
+end;
+
+t = urlread(dependencies);
+j = jsondecode(t);
+dependencies = j.dependency;
+
+%if ~exist(directory,'dir'),
+%	mkdir(directory);
+%end;
+
+for i=1:numel(dependencies),
+	libparts = split(dependencies{i},'/');
+	disp(['Installing/updating ' dependencies{i} '...']);
+	git_embedded_install([directory filesep libparts{end}],dependencies{i});
+end;
+
+disp(['Examining startup.m file to add startup line.']);
+
+s = which('startup.m');
+
+if ~isempty(s),
+	t = text2cellstr_embedded(s);
+else,
+	s = [userpath filesep 'startup.m'];
+	t = {};
+end;
+
+z = regexp(t,'vhtools_startup','forceCellOutput');
+
+if all(cellfun('isempty',z)),
+	text_to_add = ['run([''' directory filesep 'vhlab_vhtools' filesep 'vhtools_startup.m'']);'];
+	disp(['Adding ' text_to_add ' to startup.m']);
+	t{end+1} = text_to_add;
+	cellstr2text_embedded(s,t);
+else,
+	disp(['startup.m seems to already have needed line. No action taken.']);
+end;
+
+startup
+
+ % embedded version
+
+function b = git_embedded_assert
+% GIT_ASSERT - do we have command line git on this machine?
+%
+% B = GIT_ASSERT
+%
+% Tests for presence of 'git' using SYSTEM.
+%
+%
+
+[status, result] = system('git');
+
+b = (status==0 | status==1) & ~isempty(result);
+
+
+function b = git_embedded_install(dirname, repository)
+% GIT_PULL - pull changes to a git repository
+%
+% B = GIT_PULL(DIRNAME, REPOSITORY)
+%
+% 'Install' is our term for forcing the local directory DIRNAME to match the
+% remote REPOSITORY, either by cloning or pulling the latest changes. Any files
+% in the local directory DIRNAME that don't match the remote REPOSITORY are deleted.
+% 
+% If DIRNAME does not exist, then the repository is cloned.
+% If DIRNAME exists and has local changes, the directory is deleted and cloned fresh.
+% If the DIRNAME exists and has no local changes, the directory is updated by
+% pulling.
+%
+% Note: if you have any local changes, GIT_INSTALL will totally remove them.
+%
+% B is 1 if the operation is successful.
+%
+
+localparentdir = fileparts(dirname);
+
+must_clone = 0;
+
+if ~exist(dirname,'dir'),
+	must_clone = 1;
+end;
+
+status_good = 0;
+if ~must_clone,
+	try,
+		[uptodate,changes,untrackedfiles] = git_embedded_status(dirname);
+		status_good = ~changes & ~untrackedfiles;
+	end;
+end;
+
+if status_good, % we can pull without difficulty
+	b=git_embedded_pull(dirname);
+else,
+	must_clone = 1;
+end;
+
+if must_clone, 
+	if exist(dirname,'dir'), 
+		rmdir(dirname,'s');
+	end;
+	b=git_embedded_clone(repository,localparentdir);
+end;
+
+
+function b = git_embedded_pull(dirname)
+% GIT_PULL - pull changes to a git repository
+%
+% B = GIT_PULL(DIRNAME)
+%
+% Pulls the remote changes to a GIT repository into the local directory
+% DIRNAME.
+%
+% If there are local changes to be committed, the operation may fail and B
+% will be 0.
+%
+
+localparentdir = fileparts(dirname);
+
+ % see if pull succeeds
+
+pull_success = 1; % assume success, and update to failure if need be
+
+if ~exist(dirname,'dir'),
+	pull_success = 0;
+end;
+
+if pull_success, % if we are still going, try to pull
+	[status,results]=system(['git -C ' dirname ' pull']);
+
+	pull_success=(status==0);
+end;
+
+b = pull_success;
+
+
+function b = git_embedded_isgitdirectory(dirname)
+% GIT_ISGITDIRECTORY - is a given directory a GIT directory?
+%
+% B = GIT_ISGITDIRECTORY(DIRNAME)
+%
+% Examines whether DIRNAME is a GIT directory.
+%
+
+if git_embedded_assert,
+	[status,results] = system(['git -C ' dirname ' status']);
+	b = ((status==0) | (status==1)) & ~isempty(results);
+else,
+	error(['GIT not available on system.']);
+end;
+
+
+function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
+% GIT_STATUS - return git working tree status
+%
+% [UPTODATE, CHANGES, UNTRACKED_PRESENT] = GIT_STATUS(DIRNAME)
+%
+% Examines whether a git working tree is up to date with its current branch
+%
+% UPTODATE is 1 if the working tree is up-to-date, and 0 if not.
+% CHANGES is 1 if the working tree has changes to be committed, and 0 if not.
+% UNTRACKED_PRESENT is 1 if there are untracked files present, and 0 if not.
+%
+% An error is generated if DIRNAME is not a GIT directory.
+%
+% See also: GIT_ISGITDIRECTORY
+
+b = git_embedded_isgitdirectory(dirname);
+
+if ~b,
+	error(['Not a GIT directory: ' dirname '.']);
+end;
+
+[status,results] = system(['git -C ' dirname ' status ']); 
+
+uptodate = 0;
+untracked_present = 0;
+
+if status==0,
+	uptodate = ~isempty(strfind(results,'Your branch is up to date with'));
+	changes = ~isempty(strfind(results,'Changes to be committed:'));
+	untracked_present = ~isempty(strfind(results,'untracked files present'));
+else,
+	error(['Error running git status: ' results]);
+end;
+
+
+function b = git_embedded_clone(repository, localparentdir)
+% GIT_CLONE - clone a git repository onto the local computer
+%
+% B = GIT_CLONE(REPOSITORY, LOCALPARENTDIR)
+%
+% Clones a git repository REPOSITORY into the local directory
+% LOCALPARENTDIR.
+%
+% If a folder containing the local repository already exists,
+% an error is returned.
+%
+% B is 1 if the operation is successful.
+%
+
+if ~exist(localparentdir,'dir'),
+	mkdir(localparentdir);
+end;
+
+reponames = split(repository,'/');
+
+localreponame = [localparentdir filesep reponames{end}];
+
+if exist([localreponame],'dir'),
+	error([localreponame ' already exists.']);
+end;
+
+[status,results]=system(['git -C ' localparentdir ' clone ' repository]);
+
+b = (status==0);
+
+
+function c = text2cellstr_embedded(filename)
+% TEXT2CELLSTR - Read a cell array of strings from a text file
+%
+%  C = TEXT2CELLSTR(FILENAME)
+%
+%  Reads a text file and imports each line as an entry 
+%  in a cell array of strings.
+%  
+%  See also: FGETL
+
+c = {};
+
+fid = fopen(filename,'rt');
+
+if fid<0,
+	error(['Could not open file ' filename ' for reading.']);
+end;
+
+while ~feof(fid),
+	c{end+1} = fgetl(fid);
+end;
+fclose(fid);
+
+function cellstr2text_embedded(filename, cs)
+% CELLSTR2TEXT - Write a cell string to a text file
+%
+%   CELLSTR2TEXT(FILENAME, CS)
+%
+%  Writes the cell array of strings CS to the new text file FILENAME.
+%
+%  One entry is written per line.
+%
+
+fid = fopen(filename,'wt');
+
+newline = sprintf('\n');
+
+if fid>=0,
+	for i=1:numel(cs),
+		fwrite(fid,[cs{i} newline],'char');
+	end;
+	fclose(fid);
+else,
+	error(['Could not open ' filename ' for writing.']);
+end;
+
