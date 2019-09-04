@@ -1,0 +1,9 @@
+{
+	"dependency":	[
+		"https://github.com/VH-lab/vhlab_vhtools",
+		"https://github.com/VH-lab/vhlab-toolbox-matlab",
+		"https://github.com/VH-lab/vhlab-library-matlab",
+		"https://github.com/VH-lab/vhlab-thirdparty-matlab",
+		"https://github.com/VH-lab/NDI-matlab" 
+	]
+}

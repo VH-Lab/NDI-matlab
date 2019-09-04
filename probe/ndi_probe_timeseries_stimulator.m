@@ -71,7 +71,7 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 							error(['Unknown channel.']);
 					end
 				end
-				dev{1}
+				%dev{1};
 				data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
 				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
