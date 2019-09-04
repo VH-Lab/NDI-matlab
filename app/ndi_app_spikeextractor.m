@@ -65,11 +65,12 @@ classdef ndi_app_spikeextractor < ndi_app
 				probe = probes{prb};
 				% Calculate number of epochs based on probe
 			    nEpochs = probe.numepochs();
+                disp(['There are ' num2str(nEpochs) 'available for this probe.'])
 			    % Device sample rate
 			    sample_rate = samplerate(probe,1);
 				% For every epoch in probe we read...
-				for 1:1
-					n = epoch % handle epoch selection % temporary move
+				for iter=1:1
+					n = epoch; % handle epoch selection % temporary move
 					start_time = 1; % matlab doesn't zero count annoying
 					endReached = 0; % Variable to know if end of file reached
 					spikewavesfid = -1; % spikewaves file identifier set to (-1) null
@@ -156,7 +157,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			            % SO REMEMBER TO ADD OPTION FOR FULL REWRITE OF FILES
 			            if start_time==1
 							% Clear extraction within probe with extraction_name
-							ndi_app_spikeextractor_obj.clear_extraction(probe, extraction_name)
+							ndi_app_spikeextractor_obj.clear_extraction(probe, epoch, extraction_name)
 
 							% Create extraction parameters ndi_doc
 							extraction_parameters_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/extraction_parameters', 'extraction_parameters', extraction_parameters) ...
@@ -376,9 +377,9 @@ classdef ndi_app_spikeextractor < ndi_app
 
 			% Look for any docs matching extraction name and remove them
 			% Concatenate app query parameters and extraction_name parameter
-			searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
+			searchq = cat(2, ndi_app_spikeextractor_obj.searchquery(), ...
 				{'spike_extraction.extraction_name', extraction_name});
-			spikes_searchq = cat(2, spikes_searchq, ...
+			searchq = cat(2, searchq, ...
 				{'spike_extraction.epoch', epoch});
 			% Concatenate probe query parameters
 			searchq = cat(2, searchq, ndi_probe_obj.searchquery());
