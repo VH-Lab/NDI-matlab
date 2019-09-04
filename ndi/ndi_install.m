@@ -20,6 +20,13 @@ function b = ndi_install(directory, dependencies)
 %
 % If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used.
 
+b = git_embedded_assert;
+
+if ~b,
+	error(['The program git was not detected on the system. Please install git and restart Matlab.']);
+end;
+
+
 if nargin<1,
 	directory = [userpath filesep 'tools'];
 end;
