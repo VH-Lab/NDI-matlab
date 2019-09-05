@@ -169,14 +169,14 @@ classdef ndi_app_spikesorter < ndi_app
 				end
 			end % clear_sort()
 
-			function spikes = load_spikes(ndi_app_spikesorter_obj, name, type, extraction_name)
+			function spikes = load_spikes(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
 				probe = ndi_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
-				spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment).load_spikes(probe{1}, extraction_name);
+				spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment).load_spikes(probe{1}, epoch, extraction_name);
 			end
 
-			function spikes = load_times(ndi_app_spikesorter_obj, name, type, extraction_name)
+			function spikes = load_times(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
 				probe = ndi_app_spikesorter_obj.experiment.getprobes('name',name,'type',type); % can add reference
-				spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment).load_times(probe{1}, extraction_name);
+				spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment).load_times(probe{1}, epoch, extraction_name);
 			end
 
 	end % methods
