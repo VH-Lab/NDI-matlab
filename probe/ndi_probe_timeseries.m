@@ -63,6 +63,16 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 				end;
 		end %readtimeseries()
 
+		function ndi_document_obj = newdocument(ndi_probe_timeseries_obj, varargin)
+			% TODO - need docs here
+				ndi_document_obj = newdocument@ndi_probe(ndi_probe_timeseries_obj, varargin{:});
+		end % newdocument
+
+		function sq = searchquery(ndi_probe_timeseries_obj, varargin)
+			% TODO - need docs here
+				sq = searchquery@ndi_probe(ndi_probe_timeseries_obj, varargin{:});
+		end % newdocument
+
 	end; % methods
 end
 

@@ -1,4 +1,4 @@
-classdef ndi_timeseries
+classdef ndi_timeseries < ndi_documentservice
 % NDI_TIMESERIES - abstract class for managing time series data
 %
         properties (SetAccess=protected,GetAccess=public)
@@ -20,7 +20,7 @@ classdef ndi_timeseries
 			%
 		end % ndi_timeseries()
 
-		function [data, t, timeref] = readtimeseries(ndi_probe_timeseries_obj, timeref_or_epoch, t0, t1)
+		function [data, t, timeref] = readtimeseries(ndi_timeseries_obj, timeref_or_epoch, t0, t1)
 			%  READTIMESERIES - read a time series from this parent object (NDI_TIMESERIES) 
 			%
 			%  [DATA, T, TIMEREF] = READTIMESERIES(NDI_TIMESERIES_OBJ, TIMEREF_OR_EPOCH, T0, T1)
@@ -36,6 +36,59 @@ classdef ndi_timeseries
 			%  NDI_TIMEREFERENCE object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 
 		end; % readtimeseries()
+
+		function sr = sample_rate(ndi_timeseries_obj, epoch)
+			% SAMPLE_RATE - return the sample rate of an NDI_TIMESERIES object
+			%
+			% SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
+			%
+			% Returns the sampling rate of a given NDI_TIMESERIES object for the epoch
+			% EPOCH. EPOCH can be specified as an index or EPOCH_ID.
+			%
+			% If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.
+				sr = -1; % -1 for abstract class
+		end; % sample_rate
+	
+		function samples = time2samples(ndi_timeseries_obj, epoch, times)
+			% TIME2SAMPLES - convert from the timeseries time to sample numbers
+			%
+			% SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
+			%
+			% For a given NDI_TIMESERIES object and a recording epoch EPOCH,
+			% return the sample index numbers SAMPLE that corresponds to the times TIMES.
+			% The first sample in the epoch is 1.
+			% The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
+			% 
+				
+				% TODO: convert times to dev_local_clock 
+				sr = ndi_timeseries_obj.sample_rate(epoch);
+				if sr>0,
+					et = ndi_timeseries_obj.epochtableentry(epoch);
+					samples = 1 + round ((times-et.t0_t1{1}(1))*sr);
+				else,
+					samples = []; % need to be overriden
+				end;
+		end;	
+
+		function times = samples2times(ndi_timeseries_obj, epoch, samples)
+			% TIME2SAMPLES - convert from the timeseries time to sample numbers
+			%
+			% SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
+			%
+			% For a given NDI_TIMESERIES object and a recording epoch EPOCH,
+			% return the sample index numbers SAMPLE that corresponds to the times TIMES.
+			% The first sample in the epoch is 1.
+			% The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
+			% 
+				% TODO: convert times to dev_local_clock 
+				sr = ndi_timeseries_obj.sample_rate(epoch);
+				if sr>0,
+					et = ndi_timeseries_obj.epochtableentry(epoch);
+					times = et.t0_t1{1}(1) + (samples-1)/sr; 
+				else,
+					times = []; % need to be overriden
+				end;
+		end;	
 
 	end % methods
 end % class ndi_timereference
