@@ -6,19 +6,26 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
 	"extraction_parameters": {
-		"reference": 0,
-		"center_range": 0,
-		"interpolation": 0,
-		"overlap": 0,
-		"read_size": 0,
-		"refractory_samples": 0,
-		"spike_sample_start": 0,
-		"spike_sample_end": 0,
-		"start_time": 0
+		"center_range_time": 0.0005,
+		"interpolation": 3,
+		"overlap": 0.5,
+		"read_time": 30,
+		"refractory_time": 0.001,
+		"spike_start_time": -0.00045,
+		"spike_end_time": 0.001,
+		"do_filter": 1,
+		"filter_type": "cheby1high",
+		"filter_low": 0,
+		"filter_high": 300,
+		"filter_order": 4,
+		"filter_ripple": 0.8,
+		"threshold_method": "standard_deviation",
+		"threshold_parameter": -4,
+		"threshold_sign": -1
 	}
 }
+

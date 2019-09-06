@@ -100,6 +100,17 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
 				E.database.closebinarydoc(f);
 		end; % addepoch()
+
+                function ndi_document_obj = newdocument(ndi_thing_timeseries_obj, varargin)
+                        % TODO - need docs here
+                                ndi_document_obj = newdocument@ndi_thing(ndi_thing_timeseries_obj, varargin{:});
+                end % newdocument
+
+                function sq = searchquery(ndi_thing_timeseries_obj, varargin)
+                        % TODO - need docs here
+                                sq = searchquery@ndi_thing(ndi_thing_timeseries_obj, varargin{:});
+                end % searchquery
+
 	end; % methods
 end % classdef
 
