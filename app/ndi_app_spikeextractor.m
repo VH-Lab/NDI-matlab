@@ -65,11 +65,12 @@ classdef ndi_app_spikeextractor < ndi_app
 				probe = probes{prb};
 				% Calculate number of epochs based on probe
 			    nEpochs = probe.numepochs();
+                disp(['There are ' num2str(nEpochs) 'available for this probe.'])
 			    % Device sample rate
 			    sample_rate = samplerate(probe,1);
 				% For every epoch in probe we read...
-				for 1:1
-					n = epoch % handle epoch selection % temporary move
+				for iter=1:1
+					n = epoch; % handle epoch selection % temporary move
 					start_time = 1; % matlab doesn't zero count annoying
 					endReached = 0; % Variable to know if end of file reached
 					spikewavesfid = -1; % spikewaves file identifier set to (-1) null
@@ -156,7 +157,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			            % SO REMEMBER TO ADD OPTION FOR FULL REWRITE OF FILES
 			            if start_time==1
 							% Clear extraction within probe with extraction_name
-							ndi_app_spikeextractor_obj.clear_extraction(probe, extraction_name)
+							ndi_app_spikeextractor_obj.clear_extraction(probe, epoch, extraction_name)
 
 							% Create extraction parameters ndi_doc
 							extraction_parameters_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/extraction_parameters', 'extraction_parameters', extraction_parameters) ...
@@ -247,7 +248,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							spikes_doc.document_properties.ndi_document
 
 							% Close the spikewaves ndi_doc
-							ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid) % pass in the object not fid
+							spikewaves_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid) % pass in the object not fid
 
 							% Times ndi_doc
 							spiketimes_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc)
@@ -283,7 +284,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							spiketimes_binarydoc_fid.fseek(512,'bof');
 
 							% Close the spiketimes ndi_doc
-							ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid)
+							spiketimes_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid)
 			            end
 			            % Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 			            waveforms = permute(waveforms, [2 3 1]);
@@ -376,9 +377,9 @@ classdef ndi_app_spikeextractor < ndi_app
 
 			% Look for any docs matching extraction name and remove them
 			% Concatenate app query parameters and extraction_name parameter
-			searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
+			searchq = cat(2, ndi_app_spikeextractor_obj.searchquery(), ...
 				{'spike_extraction.extraction_name', extraction_name});
-			spikes_searchq = cat(2, spikes_searchq, ...
+			searchq = cat(2, searchq, ...
 				{'spike_extraction.epoch', epoch});
 			% Concatenate probe query parameters
 			searchq = cat(2, searchq, ndi_probe_obj.searchquery());
@@ -466,7 +467,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			end
 		end % load_spikes()
 
-		function concatenated_times = load_times(ndi_app_spikeextractor_obj, ndi_probe_obj, extraction_name)
+		function concatenated_times = load_times(ndi_app_spikeextractor_obj, ndi_probe_obj, epoch, extraction_name)
 		% LOADSPIKETIMES - Load all spiketimes records from experiment database
 		%
 		% ST = LOADSPIKETIMES(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_PROBE_OBJ, EXTRACTION_NAME)
@@ -478,7 +479,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			times_searchq = cat(2, times_searchq, ndi_probe_obj.searchquery());
 			times_searchq = cat(2, times_searchq, ...
 				{'spike_extraction.extraction_name',extraction_name});
-			times_searchq = cat(2, spikes_searchq, ...
+			times_searchq = cat(2, times_searchq, ...
 				{'spike_extraction.epoch', epoch});
 			docs = ndi_app_spikeextractor_obj.experiment.database.search(times_searchq);
 
