@@ -59,7 +59,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				end;
 		end; % filter()
 
-		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_params, extraction_name, redo)
+		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo)
 			% EXTRACT - method that extracts spikes from epochs of an NDI_TIMESERIES_OBJ (such as NDI_PROBE or NDI_THING)
 			%
 			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO])
@@ -78,8 +78,13 @@ classdef ndi_app_spikeextractor < ndi_app
 				elseif ~iscell(epoch),
 					epoch = {epoch};
 				end;
-
-				extraction_doc = ndi_app_spikeextractor_obj.extraction_params_input2extraction_params(extraction_params, extraction_name);
+j
+				extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search('ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)');
+				if isempty(extraction_doc),
+					error(['No spike_extraction_parameters document named ' extraction_name ' found.']);
+				else,
+					extraction_doc = extraction_doc{1};
+				end;
 
 				extraction_doc.document_properties.extraction_parameters
 
@@ -235,14 +240,15 @@ classdef ndi_app_spikeextractor < ndi_app
 				end % epoch n
 		end % extract
 
-		function extraction_params = extraction_params_input2extraction_params(ndi_app_spikeextractor_obj, extraction_params, extraction_name)
-			% EXTRACTION_PARAMS_INPUT2EXTRACTION_PARAMS - process extraction_params input
+		function extraction_doc = add_extraction_doc(ndi_app_spikeextractor_obj, extraction_name, extraction_params)
+			% ADD_EXTRACTION_DOC - add extraction parameters document
 			%
-			% EXTRACTION_PARAMS = EXTRACTION_PARAMS_INPUT2EXTRACTION_PARAMS(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_PARAMS)
+			% EXTRACTION_DOC = ADD_EXTRACTION_DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMS)
 			%
 			% Given EXTRACTION_PARAMS as either a structure or a filename, this function returns
-			% EXTRACTION_PARAMS as an NDI_DOCUMENT and checks its fields. If EXTRACTION_PARAMS is empty,
-			% then the default parameters are returned.
+			% EXTRACTION_DOC parameters as an NDI_DOCUMENT and checks its fields. If EXTRACTION_PARAMS is empty,
+			% then the default parameters are returned. If EXTRACTION_NAME is already the name of an existing
+			% NDI_DOCUMENT then an error is returned.
 			%
 			% EXTRACTION_PARAMS should contain the following fields:
 			% Fieldname              | Description
@@ -268,9 +274,17 @@ classdef ndi_app_spikeextractor < ndi_app
 			%                           |    If "absolute", then this value is taken to be the absolute threshold.
 			% threshold_sign (-1)       | Threshold crossing sign (-1 means high-to-low, 1 means low-to-high)
 			% 
-				if nargin<1,
+				if nargin<3,
 					extraction_params = [];
 				end;
+
+				searchq = {'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'};
+				mydoc = ndi_spikeextractor_app_obj.experiment.database_search(searchq);
+				if ~isempty(mydoc),
+					error([int2str(numel(mydoc)) ' spike_extraction_parameters documents with name ' extraction_name ' already exist.']);
+				end;
+
+				% okay, we can build a new document
 
 				% If extraction_params was inputed as a struct then no need to parse it
 
@@ -308,8 +322,10 @@ classdef ndi_app_spikeextractor < ndi_app
 
 				% now we need to convert to an ndi_document
 
-				extraction_params = ndi_document('apps/spikeextractor/extraction_parameters','extraction_parameters',extraction_params) + ...
+				extraction_doc = ndi_document('apps/spikeextractor/spike_extraction_parameters','spike_extraction_parameters',extraction_params) + ...
 					ndi_app_spikeextractor_obj.newdocument() + ndi_document('ndi_document','name',extraction_name);
+
+				ndi_app_spikeextractor_obj.experiment.database_add(extraction_doc);
 
 		end; % extraction_params_input2_extraction_params
 
