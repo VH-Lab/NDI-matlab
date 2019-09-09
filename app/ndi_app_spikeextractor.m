@@ -118,6 +118,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					sample_rate = ndi_timeseries_obj.samplerate(epoch{n});
 					data_example = ndi_timeseries_obj.read_epochsamples(epoch{n},1,1); % read a single sample
 					start_sample = ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,1));
+					if isnan(start_sample), start_sample = 1; end;
 					read_start_sample = start_sample;
 					end_sample =  ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,2));
 					if isnan(end_sample), end_sample = Inf; end;
@@ -182,7 +183,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					% now read the file in chunks
 					while (~endReached)
-						read_end_sample = ceil(start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
+						read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate) % end sample for chunk to read
 						if read_end_sample > end_sample,
 							read_end_sample = end_sample;
 						end;
@@ -199,6 +200,16 @@ classdef ndi_app_spikeextractor < ndi_app
 
 						if ~isempty(filterstruct),
 							data = ndi_app_spikeextractor_obj.filter(data,filterstruct);
+						end;
+
+						if 0,
+						figure(10);
+						plot(data);
+						hold on;
+						AX=axis;
+						plot([AX(1) AX(2)], [1 1]*extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter,'k--');
+						hold off;
+						pause(2);
 						end;
 
 						% Spike locations stored here
@@ -249,6 +260,8 @@ classdef ndi_app_spikeextractor < ndi_app
 						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 						waveforms = permute(waveforms, [2 3 1]);
 
+						size(waveforms),
+
 						% Interpolation of waveforms, cutting for now
 
 						if 0, % interpolation>1,
@@ -264,8 +277,8 @@ classdef ndi_app_spikeextractor < ndi_app
 					  
 						% Store epoch spike times in file
 						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},locs),'float32');
-						start_sample = round(start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
-								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate);
+						read_start_sample = round(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
+								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate)
 					end % while ~endReached
 
 					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc);
@@ -379,7 +392,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 			% Look for any docs matching extraction name and remove them
 			% Concatenate app query parameters and extraction_name parameter
-			searchq = {'spike_extraction.extraction_name', extraction_name};
+			extract_searchq = {'ndi_document.name', extraction_name,'spike_extraction_parameters.filter_type','(.*)'};
 			extract_doc = ndi_app_spikeextractor_obj.experiment.database.search(extract_searchq);
 			if ~isempty(extract_doc),
 				ndi_app_spikeextractor_obj.experiment.database_rm(extract_doc);
