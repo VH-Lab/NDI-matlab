@@ -261,7 +261,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 					strcmp(lower(ndi_probe_obj.type),lower({epochprobemap.type}));  % we have a match
 		end % epochprobemapmatch()
 
-		function ndi_document_obj = newdocument(ndi_probe_obj, epochid)
+		function ndi_document_obj = newdocument(ndi_probe_obj, varargin) % epochid, varargin)
 			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a probe
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_PROBE_OBJ, [EPOCHID])
@@ -271,6 +271,8 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
+				epochid = varargin{1};
+				%varargin, numel(varargin)
 				ndi_document_obj = ndi_probe_obj.experiment.newdocument('ndi_document_probe',...
 					'probe.name',ndi_probe_obj.name,'probe.type',ndi_probe_obj.type,...
 					'probe.reference',ndi_probe_obj.reference);
