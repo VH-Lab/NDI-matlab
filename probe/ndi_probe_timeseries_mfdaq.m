@@ -95,12 +95,11 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 			% SR is an array of sample rates for the probe NDI_PROBE_TIMESERIES_MFDAQ_OBJ
 			% from epoch number EPOCH.
 			%
-				[dev, devname, devepoch, channeltype, channellist] = ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch),
+				[dev, devname, devepoch, channeltype, channellist] = ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
 				if numel(unique(channeltype))>1, error(['At present, do not know how to mix channel types.']); end;
 				sr = dev{1}.samplerate(devepoch{1}, channeltype{1}, channellist(1));
 		end
 
 	end; % methods
 end
-
 
