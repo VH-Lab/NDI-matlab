@@ -59,14 +59,14 @@ classdef ndi_app_spikeextractor < ndi_app
 				end;
 		end; % filter()
 
-		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo)
+		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
 			% EXTRACT - method that extracts spikes from epochs of an NDI_TIMESERIES_OBJ (such as NDI_PROBE or NDI_THING)
 			%
-			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO])
+			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
 			% NAME is the probe name if any
 			% TYPE is the type of probe if any
 			% combination of NAME and TYPE must return at least one probe from experiment
-			% EPOCH is an index number to select epoch to extract
+			% EPOCH is an index number or id to select epoch to extract, or can be a cell array of epoch number/ids
 			% EXTRACTION_NAME name given to find ndi_doc in database
 			% EXTRACTION_PARAMS a struct or filepath (tab separated file) with extraction parameters
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
@@ -74,6 +74,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				% process input arguments
 
 				if isempty(epoch),
+					et = epochtable(ndi_timeseries_obj);
 					epoch = {et.epoch_id};
 				elseif ~iscell(epoch),
 					epoch = {epoch};
@@ -88,8 +89,12 @@ classdef ndi_app_spikeextractor < ndi_app
 					extraction_doc = extraction_doc{1};
 				end;
 
-				if nargin<6,
+				if nargin<5,
 					redo = 0;
+				end;
+
+				if nargin<6,
+					t0_t1 = repmat([-Inf Inf],numel(epoch),1);
 				end;
 
 				% loop over requested epochs
@@ -98,10 +103,24 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
+					spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
+						{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
+					old_spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
+					spiketimes_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
+						{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
+					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(spiketimes_searchq);
+
+					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo,
+						% we already have this epoch
+						continue; % skip to next epoch
+					end;
+
 					sample_rate = ndi_timeseries_obj.samplerate(epoch{n});
 					data_example = ndi_timeseries_obj.read_epochsamples(epoch{n},1,1); % read a single sample
-					start_time = 1; % matlab doesn't zero count annoying
-					start_sample = 1;
+					start_sample = ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,1));
+					read_start_sample = start_sample;
+					end_sample =  ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,2));
+					if isnan(end_sample), end_sample = Inf; end;
 					endReached = 0; % Variable to know if end of file reached
 
 					% convert from parameter file units of time to samples here
@@ -163,13 +182,18 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					% now read the file in chunks
 					while (~endReached)
-						end_sample = ceil(start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
+						read_end_sample = ceil(start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
+						if read_end_sample > end_sample,
+							read_end_sample = end_sample;
+						end;
 						% Read from probe in epoch n from start_time to end_time
-						data = ndi_timeseries_obj.read_epochsamples(epoch{n},start_sample, end_sample); 
+						data = ndi_timeseries_obj.read_epochsamples(epoch{n},read_start_sample, read_end_sample); 
 						%size(data), end_sample-start_sample+1  % display sizes of data read
 
 						% Checks if endReached by a threshold sample difference (data - (end_time - start_time))
-						if (size(data,1) - ((end_sample - start_sample) + 1)) < 0 % if we got less than we asked for, we are done
+						if (size(data,1) - ((read_end_sample - read_start_sample) + 1)) < 0 % if we got less than we asked for, we are done
+							endReached = 1;
+						elseif read_end_sample==end_sample,
 							endReached = 1;
 						end
 
@@ -340,7 +364,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 		end; % add_extraction_doc
 
-		function b = clear_extraction_parameters(ndi_app_spikeextractor_obj, ndi_timeseries_obj, extraction_name)
+		function b = clear_extraction_parameters(ndi_app_spikeextractor_obj, extraction_name)
 		% CLEAR_EXTRACTION_PARAMETERS - clear all 'spikewaves' records for an NDI_PROBE_OBJ from experiment database
 		%
 		% B = CLEAR_EXTRACTIONPARAMETERS(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_NAME)

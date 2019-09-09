@@ -37,7 +37,7 @@ classdef ndi_timeseries < ndi_documentservice
 
 		end; % readtimeseries()
 
-		function sr = sample_rate(ndi_timeseries_obj, epoch)
+		function sr = samplerate(ndi_timeseries_obj, epoch)
 			% SAMPLE_RATE - return the sample rate of an NDI_TIMESERIES object
 			%
 			% SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
@@ -49,10 +49,10 @@ classdef ndi_timeseries < ndi_documentservice
 				sr = -1; % -1 for abstract class
 		end; % sample_rate
 	
-		function samples = time2samples(ndi_timeseries_obj, epoch, times)
-			% TIME2SAMPLES - convert from the timeseries time to sample numbers
+		function samples = times2samples(ndi_timeseries_obj, epoch, times)
+			% SAMPLES2TIMES - convert from the timeseries time to sample numbers
 			%
-			% SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
+			% SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
 			%
 			% For a given NDI_TIMESERIES object and a recording epoch EPOCH,
 			% return the sample index numbers SAMPLE that corresponds to the times TIMES.
@@ -61,10 +61,14 @@ classdef ndi_timeseries < ndi_documentservice
 			% 
 				
 				% TODO: convert times to dev_local_clock 
-				sr = ndi_timeseries_obj.sample_rate(epoch);
+				sr = ndi_timeseries_obj.samplerate(epoch);
 				if sr>0,
 					et = ndi_timeseries_obj.epochtableentry(epoch);
 					samples = 1 + round ((times-et.t0_t1{1}(1))*sr);
+					g = (isinf(times) & (times < 0));
+					samples(g) = 1;
+					g = (isinf(times) & (times > 0));
+					samples(g) = 1+sr*diff(et.t0_t1{1}(1:2));
 				else,
 					samples = []; % need to be overriden
 				end;
@@ -81,7 +85,7 @@ classdef ndi_timeseries < ndi_documentservice
 			% The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
 			% 
 				% TODO: convert times to dev_local_clock 
-				sr = ndi_timeseries_obj.sample_rate(epoch);
+				sr = ndi_timeseries_obj.samplerate(epoch);
 				if sr>0,
 					et = ndi_timeseries_obj.epochtableentry(epoch);
 					times = et.t0_t1{1}(1) + (samples-1)/sr; 
