@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ_SG - Device driver for SpikeGadgets .rec video file format
+% NDI_DAQREADER_MFDAQ_SPIKEGADGETS - Device driver for SpikeGadgets .rec video file format
 %
 % This class reads data from video files .rec that spikegadgets use
 %
@@ -6,32 +6,32 @@
 %
 %
 
-classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
+classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 
 	properties
 	end
 
 	methods
-		function obj = ndi_daqreader_mfdaq_sg(varargin)
-			% NDI_DAQSYSTEM_MFDAQ_SG - Create a new NDI_DEVICE_MFDAQ_SG object
+		function obj = ndi_daqreader_mfdaq_spikegadgets(varargin)
+			% NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS - Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object
 			%
-			%  D = NDI_DAQSYSTEM_MFDAQ_SG(NAME,THEFILENAVIGATOR)
+			%  D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)
 			%
-			%  Creates a new NDI_DAQSYSTEM_MFDAQ_SG object with name NAME and associated
+			%  Creates a new NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
 			%
 				obj = obj@ndi_daqreader_mfdaq(varargin{:});
 		end
 
-		function channels = getchannelsepoch(ndi_daqreader_mfdaq_sg_obj, epochfiles)
+		function channels = getchannelsepoch(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
 			% GETCHANNELSEPOCH - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER
 			%
-			% CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_SG_OBJ)
+			% CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)
 			%
 			% CHANNELS is a STRUCT
         
-				filename = ndi_daqreader_mfdaq_sg_obj.filenamefromepochfiles(epochfiles); 
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
 				fileconfig = [];
 				[fileconfig, channels] = read_SpikeGadgets_config(filename);
 
@@ -97,14 +97,14 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 				channels = rmfield(channels, remove);
 		end
 
-		function channels = getchannelsepochdetailed(ndi_daqreader_mfdaq_sg_obj, epochfiles)
+		function channels = getchannelsepochdetailed(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
 			% GETCHANNELSDETAILED - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER WITH EXTRA DETAILS
 			%
-			% CHANNELS = GETCHANNELSEPOCHDETAILED(NDI_DAQREADER_MFDAQ_SG_OBJ)
+			% CHANNELS = GETCHANNELSEPOCHDETAILED(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)
 			%
 			% CHANNELS is a STRUCT
 
-				filename = ndi_daqreader_mfdaq_sg_obj.filenamefromepochfiles(epochfiles); 
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
 				fileconfig = [];
 
 				[fileconfig, channels] = read_SpikeGadgets_config(filename);
@@ -172,7 +172,7 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 				channels = table2struct(channels);
 		end
 
-		function sr = samplerate(ndi_daqreader_mfdaq_sg_obj, epochfiles, channeltype, channel)
+		function sr = samplerate(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
@@ -182,7 +182,7 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 			% CHANNELTYPE and CHANNEL not used in this case since it is the
 			% same for all channels in this device
 
-				filename = ndi_daqreader_mfdaq_sg_obj.filenamefromepochfiles(epochfiles); 
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
 
 				fileconfig = read_SpikeGadgets_config(filename);
 
@@ -191,11 +191,11 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 				sr = str2num(fileconfig.samplingRate);
 		end
 
-		function epochprobemap = getepochprobemap(ndi_daqreader_mfdaq_sg_obj, epochmapfilename, epochfiles)
+		function epochprobemap = getepochprobemap(ndi_daqreader_mfdaq_spikegadgets_obj, epochmapfilename, epochfiles)
 		        % GETEPOCHPROBEMAP returns struct with probe information
 		        % name, reference, n-trode, channels
 		        %
-				filename = ndi_daqreader_mfdaq_sg_obj.filenamefromepochfiles(epochfiles);
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles);
 				fileconfig = read_SpikeGadgets_config(filename);
 				nTrodes = fileconfig.nTrodes;
 				%List where epochprobemap objects will be stored
@@ -221,7 +221,7 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 				end
         	end
 
-		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_sg_obj,channeltype, channels, epochfiles, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_spikegadgets_obj,channeltype, channels, epochfiles, s0, s1)
 			% FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
 			% DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
@@ -238,13 +238,13 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 			%
 			% DATA is the channel data (each column contains data from an indvidual channel)
 			%
-				filename = ndi_daqreader_mfdaq_sg_obj.filenamefromepochfiles(epochfiles); 
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
 
 				header = read_SpikeGadgets_config(filename);
 
-				sr = ndi_daqreader_mfdaq_sg_obj.samplerate(epochfiles,channeltype,channels);
+				sr = ndi_daqreader_mfdaq_spikegadgets_obj.samplerate(epochfiles,channeltype,channels);
 
-				detailedchannels = ndi_daqreader_mfdaq_sg_obj.getchannelsepochdetailed(epochfiles);
+				detailedchannels = ndi_daqreader_mfdaq_spikegadgets_obj.getchannelsepochdetailed(epochfiles);
 
 				byteandbit = [];
 
@@ -288,7 +288,7 @@ classdef ndi_daqreader_mfdaq_sg < ndi_daqreader_mfdaq
 				end
 		end % readchannels_epochsamples
 
-		function filename = filenamefromepochfiles(ndi_daqreader_mfdaq_sg_obj, filename)
+		function filename = filenamefromepochfiles(ndi_daqreader_mfdaq_spikegadgets_obj, filename)
 				s1 = ['.*\.rec\>']; % equivalent of *.ext on the command line
 				[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
 				index = find(tf);

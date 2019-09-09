@@ -79,7 +79,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					epoch = {epoch};
 				end;
 
-				extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'}),
+				extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'});
 				if isempty(extraction_doc),
 					error(['No spike_extraction_parameters document named ' extraction_name ' found.']);
 				elseif numel(extraction_doc)>1,
@@ -87,8 +87,6 @@ classdef ndi_app_spikeextractor < ndi_app
 				else,
 					extraction_doc = extraction_doc{1};
 				end;
-
-				extraction_doc.document_properties.spike_extraction_parameters
 
 				if nargin<6,
 					redo = 0;
@@ -98,9 +96,9 @@ classdef ndi_app_spikeextractor < ndi_app
 				for n=1:numel(epoch),
 					% begin an epoch, get ready
 
-					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n}),
+					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
-					sample_rate = ndi_timeseries_obj.samplerate(epoch{n}),
+					sample_rate = ndi_timeseries_obj.samplerate(epoch{n});
 					data_example = ndi_timeseries_obj.read_epochsamples(epoch{n},1,1); % read a single sample
 					start_time = 1; % matlab doesn't zero count annoying
 					start_sample = 1;
@@ -111,13 +109,13 @@ classdef ndi_app_spikeextractor < ndi_app
 					refractory_samples = round(extraction_doc.document_properties.spike_extraction_parameters.refractory_time * sample_rate);
 					spike_sample_start = floor(extraction_doc.document_properties.spike_extraction_parameters.spike_start_time * sample_rate);
 					spike_sample_end = ceil(extraction_doc.document_properties.spike_extraction_parameters.spike_end_time * sample_rate);
-					interpolation = extraction_doc.document_properties.spike_extraction_parameters.interpolation;
+					%interpolation = extraction_doc.document_properties.spike_extraction_parameters.interpolation;
 
 					filterstruct = ndi_app_spikeextractor_obj.makefilterstruct(extraction_doc, sample_rate);
 
 					% Clear extraction within probe with extraction_name
-					ndi_app_spikeextractor_obj.clear_spikewaves_doc(ndi_timeseries_obj, epoch, extraction_name);
-					ndi_app_spikeextractor_obj.clear_spiketimes_doc(ndi_timeseries_obj, epoch, extraction_name);
+					ndi_app_spikeextractor_obj.clear_spikewaves_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
+					ndi_app_spikeextractor_obj.clear_spiketimes_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
 
 					% Create spikes ndi_doc
 					spikes_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spikewaves', ...
@@ -125,7 +123,6 @@ classdef ndi_app_spikeextractor < ndi_app
 							'spikewaves.extraction_parameters_file_id', extraction_doc.doc_unique_id(),...
 							'epochid', epoch_string) ...
 							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
-					spikes_doc.document_properties
 
 					% Create times ndi_doc
 					times_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spiketimes', ...
@@ -133,27 +130,27 @@ classdef ndi_app_spikeextractor < ndi_app
 							'spiketimes.extraction_parameters_file_id', extraction_doc.doc_unique_id(), ...
 							'epochid', epoch_string) ...
 							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
-					times_doc.document_properties
 
 					% Add docs to database
 					ndi_app_spikeextractor_obj.experiment.database.add(spikes_doc);
 					ndi_app_spikeextractor_obj.experiment.database.add(times_doc);
 
+					% temporary or maybe permanent: cutting interpolation from this part, will use it in calculating features
 					% Required vectors for interpolation
-					spikelength = spike_sample_end - spike_sample_start + 1;
-					x = [spike_sample_start:spike_sample_end];
-					xq = [spike_sample_start:(1/interpolation):spike_sample_end]; % ex: 1/3 sets up interpolation at 3x
-					[I,V]=findclosest(xq,0);
-					xq(I) = 0; % make sure center is exactly 0
+					%spikelength = spike_sample_end - spike_sample_start + 1;
+					%x = [spike_sample_start:spike_sample_end];
+					%xq = [spike_sample_start:(1/interpolation):spike_sample_end]; % ex: 1/3 sets up interpolation at 3x
+					%[I,V]=findclosest(xq,0);
+					%xq(I) = 0; % make sure center is exactly 0
 
 					% add header to spikes_doc
 					fileparameters.numchannels = size(data_example,2);
-					fileparameters.S0 = -1*numel(find(xq<0));
-					fileparameters.S1 = numel(find(xq>0));
+					fileparameters.S0 = spike_sample_start;    %  -1*numel(find(xq<0)); the commented code is wrong, even if using interpolation
+					fileparameters.S1 = spike_sample_end;      % numel(find(xq>0)); the commented code is wrong, even if using interpolation
 					fileparameters.name = spikes_doc.doc_unique_id();
 					fileparameters.ref =  0;
 					fileparameters.comment = epoch_string; %epoch 
-					fileparameters.samplingrate = double(sample_rate),
+					fileparameters.samplingrate = double(sample_rate);
 
 					spikewaves_binarydoc = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc);
 					newvhlspikewaveformfile(spikewaves_binarydoc, fileparameters); 
@@ -169,7 +166,7 @@ classdef ndi_app_spikeextractor < ndi_app
 						end_sample = ceil(start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
 						% Read from probe in epoch n from start_time to end_time
 						data = ndi_timeseries_obj.read_epochsamples(epoch{n},start_sample, end_sample); 
-						size(data), end_sample-start_sample+1
+						%size(data), end_sample-start_sample+1  % display sizes of data read
 
 						% Checks if endReached by a threshold sample difference (data - (end_time - start_time))
 						if (size(data,1) - ((end_sample - start_sample) + 1)) < 0 % if we got less than we asked for, we are done
@@ -228,19 +225,18 @@ classdef ndi_app_spikeextractor < ndi_app
 						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 						waveforms = permute(waveforms, [2 3 1]);
 
-						% Interpolation of waveforms
+						% Interpolation of waveforms, cutting for now
 
-						if interpolation>1,
+						if 0, % interpolation>1,
 							% For number of spikes
 							for i=1:size(waveforms, 3);
 								waveforms_out(:,:,i) = interp1(x, waveforms(:,:,i), xq, 'spline');
 							end
-						else,
+						elseif 0,
 							waveforms_out = waveforms;
 						end;
-						size(waveforms_out),
 						% Store epoch waveforms in file
-						addvhlspikewaveformfile(spikewaves_binarydoc, waveforms_out);
+						addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
 					  
 						% Store epoch spike times in file
 						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},locs),'float32');
@@ -268,7 +264,6 @@ classdef ndi_app_spikeextractor < ndi_app
 			% Fieldname              | Description
 			% -------------------------------------------------------------------------
 			% center_range (10)         | Range in samples to find spike center
-			% interpolation (3)         | Integer multiplier to interpolate spikes
 			% overlap (0.5)             | Overlap allowed
 			% read_time (30)            | Number of seconds to read in at a single time
 			% refractory_samples (10)   | Number of samples to use as a refractory period
@@ -321,11 +316,11 @@ classdef ndi_app_spikeextractor < ndi_app
 				% now we have a extraction_params as a structure
 
 				% check parameters here
-				fields_needed = {'center_range_time','interpolation','overlap','read_time','refractory_time',...
+				fields_needed = {'center_range_time','overlap','read_time','refractory_time',...
 					'spike_start_time','spike_end_time',...
 					'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
 					'threshold_method','threshold_parameter','threshold_sign'};
-				sizes_needed = {[1 1], [1 1], [1 1], [1 1], [1 1],...
+				sizes_needed = {[1 1], [1 1], [1 1], [1 1],...
 					[1 1],[1 1],...
 					[1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
 					[1 -1], [1 1], [1 1]};
@@ -344,377 +339,6 @@ classdef ndi_app_spikeextractor < ndi_app
 				ndi_app_spikeextractor_obj.experiment.database_add(extraction_doc);
 
 		end; % add_extraction_doc
-
-
-		function spike_extract_probes(ndi_app_spikeextractor_obj, name, type, epoch, extraction_name, extraction_params)
-			% SPIKE_EXTRACT_PROBES - method that extracts specific probes in experiment to ndi_doc
-			%
-			% SPIKE_EXTRACT_PROBES(NAME, TYPE, EXTRACTION_NAME, EXTRACTION_PARAMS)
-			% NAME is the probe name if any
-			% TYPE is the type of probe if any
-			% combination of NAME and TYPE must return at least one probe from experiment
-			% EPOCH is an index number to select epoch to extract
-			% EXTRACTION_NAME name given to find ndi_doc in database
-			% EXTRACTION_PARAMS a struct or filepath (tab separated file) with extraction parameters
-			% - center_range = range in samples to find spike center
-			% - interpolation = integer mutliplier to smooth spike extraction
-			% - overlap = overlap allowed
-			% - read_size = read size when reading spike files to not run out of RAM
-			% - refractory_samples = number of samples used to rule out refractory period spikes
-			% - spike_sample_start = negative integer backward from lowest point in spike to save spike from
-			% - spike_sample_end = positive integer forward from lowest point in spike to save spike from
-			% - start_time = initial sample to read spike files from
-
-				% Extracts probe with name
-				probes = ndi_app_spikeextractor_obj.experiment.getprobes('name', name, 'type', type); % can add reference
-
-				% TODO Handle an ndi_document
-
-				% If extraction_params was inputed as a struct then no need to parse it
-				if isstruct(extraction_params)
-					extraction_parameters = extraction_params;
-				elseif isa(extraction_params, 'char') % TODO fix loading struct to loading an ndi_doc
-					extraction_parameters = loadStructArray(extraction_params);
-					% Consider saving in some var_branch_within probe_branch
-				else
-					error('unable to handle extraction_params.');
-				end
-
-				for prb=1:length(probes)
-					% Set probe to variable
-					probe = probes{prb};
-					% Calculate number of epochs based on probe
-					nEpochs = probe.numepochs();
-					% Device sample rate
-					sample_rate = samplerate(probe,1);
-					% For every epoch in probe we read...
-					for jj=1:1,
-						n = epoch % handle epoch selection % temporary move
-						start_time = 1; % matlab doesn't zero count annoying
-						endReached = 0; % Variable to know if end of file reached
-						spikewavesfid = -1; % spikewaves file identifier set to (-1) null
-
-						center_range       = extraction_parameters.center_range;
-						interpolation      = extraction_parameters.interpolation;
-						read_size          = extraction_parameters.read_size;
-						overlap            = extraction_parameters.overlap;
-						refractory_samples = extraction_parameters.refractory_samples;
-						spike_sample_start = extraction_parameters.spike_sample_start;
-						spike_sample_end   = extraction_parameters.spike_sample_end;
-
-						epochtic = tic; % Timer variable for measure duration of epoch extraction
-						disp(['Epoch ' int2str(n) ' spike extraction started...']);
-						while (~endReached)
-							% read chunks
-							end_time = start_time + read_size * sample_rate; % end time for chunk to read
-							% Read from probe in epoch n from start_time to end_time
-							data = probe.read_epochsamples(n,start_time, end_time); 
-
-							% Checks if endReached by a threshold sample difference (data - (end_time - start_time))
-							if abs(length(data) - ((end_time - start_time) + 1)) > 2 % | T(end)>100, % CHECK do not remember what this comment is about
-								endReached = 1;
-							end
-
-							% Applies Chebyshev Type I filter to channels
-							[b,a] = cheby1(4, 0.8, 300/(0.5 * sample_rate), 'high');
-							data = filtfilt(b, a, data);
-
-							% Spike locations stored here
-							locations = [];
-
-							% For number of channels
-							for channel=1:size(data,2) %channel
-								% Calculate stdev for channel
-								stddev = std(data(:,channel));
-								% Dot discriminator to find thresholds CHECK complex matlab c code running here, potential source of bugs in demo
-								locations{channel} = dotdisc(double(data(:,channel)), [-4*stddev -1 0]); % 4*stddev
-								%Accomodates spikes according to refractory period
-								locations{channel} = refractory(locations{channel}, refractory_samples);
-								locations{channel} = locations{channel}(find(locations{channel} > -spike_sample_start & locations{channel} <= length(data(:,channel))-spike_sample_end));
-							end % for
-
-							% All channels spike locations will be stored here
-							locs = [];
-							% Storing all channels spike locations
-							for channel=1:size(data,2)
-								locs = [locs; locations{channel}(:)];
-							end
-
-							% Sorts locs
-							locs = sort(locs);
-
-							% Apply refractory period to all channels locs
-							locs = refractory(locs, refractory_samples);
-
-							sample_offsets = repmat([spike_sample_start:spike_sample_end]',1,size(data,2));
-
-							channel_offsets = repmat([0:size(data,2)-1], spike_sample_end - spike_sample_start + 1,1);
-
-							single_spike_selection = sample_offsets + channel_offsets*size(data,1);
-
-							spike_selections = repmat(single_spike_selection(:)', length(locs), 1) + repmat(locs(:), 1, prod(size(sample_offsets)));
-
-							waveforms = single(data(spike_selections))'; % (spike-spike-spike-spike) X Nspikes
-
-							waveforms = reshape(waveforms, spike_sample_end - spike_sample_start + 1, size(data,2), length(locs)); % Nsamples X Nchannels X Nspikes
-							waveforms = permute(waveforms,[3 1 2]); % Nspikes X Nsamples X Nchannels
-
-							%Center spikes
-							waveforms = centerspikes_neg(waveforms,center_range);
-
-							% Uncomment to plot specific spike
-							% figure(1);
-							% spike = squeeze(waveforms(1,:,:));
-							% plot(spike);
-							% plot_multichan(spike,spike_samples(1):spike_samples(2),400);
-							% keyboard
-
-							% If start_time == 1 then we have a new epoch
-							% WARNING POTENTIAL SOURCE OF BUGS AS NOT ALWAYS WILL WE BE READING AT BEGINNING OF FILE
-							% SO REMEMBER TO ADD OPTION FOR FULL REWRITE OF FILES
-
-							if start_time==1
-								% Clear extraction within probe with extraction_name
-								ndi_app_spikeextractor_obj.clear_extraction(probe, extraction_name)
-
-								% Create extraction parameters ndi_doc
-								extraction_parameters_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/extraction_parameters', ...
-									'extraction_parameters', extraction_parameters) ...
-									+ probe.newdocument() + ndi_app_spikeextractor_obj.newdocument();
-							
-								% Create spikes ndi_doc
-								spikes_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spikewaves', ...
-									'spikewaves.extraction_name', extraction_name, ...
-									'spikewaves.extraction_parameters_file_id', extraction_parameters_doc.doc_unique_id(),...
-									'epochid', epoch) ...
-									+ probe.newdocument() + ndi_app_spikeextractor_obj.newdocument();
-
-								% Create times ndi_doc
-								times_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spiketimes', ...
-									'spike_extraction.extraction_name', extraction_name, ...
-									'spike_extraction.extraction_parameters_file_id', extraction_parameters_doc.doc_unique_id(), ...
-									'spike_extraction.epoch', epoch) ...
-									+ probe.newdocument() + ndi_app_spikeextractor_obj.newdocument();
-
-								% Add docs to database
-									ndi_app_spikeextractor_obj.experiment.database.add(extraction_parameters_doc);
-									ndi_app_spikeextractor_obj.experiment.database.add(spikes_doc);
-									ndi_app_spikeextractor_obj.experiment.database.add(times_doc);
-
-								% struct with parameters written in spikewaveforms header
-								% TODO can be changed to a corresponding ndi_doc
-								fileparameters.numchannels = size(data,2);
-								fileparameters.S0 = spike_sample_start * interpolation - interpolation + 1;
-								fileparameters.S1 = spike_sample_end * interpolation;
-								fileparameters.name = probe.name;
-								fileparameters.ref =  probe.reference;
-
-								% if channel list is to be saved in files somwhere accessed with the method below
-								% [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(probe, n)
-
-								fileparameters.comment = n; %epoch % used to be devicename and channels read
-								fileparameters.samplingrate = double(samplerate(probe,1));
-								fileparameters
-								% Detailed parameter information
-								% parameters.numchannels (uint8)    : Number of channels
-								% parameters.S0 (int8)              : Number of samples before spike center
-								%                                   :  (usually negative)
-								% parameters.S1 (int8)              : Number of samples after spike center
-								%                                   :  (usually positive)
-								% parameters.name (80xchar)         : Name (up to 80 characters)
-								% parameters.ref (uint8)            : Reference number
-								% parameters.comment (80xchar)      : Up to 80 characters of comment
-								% parameters.samplingrate           : The sampling rate (float32)
-								% (first 512 bytes are free for additional header use)
-
-								% TODO handle the ndi_document way
-								% if ~isempty(ndi_app_spikeextractor_obj.loadspikes)
-
-								% Spikes ndi_doc, get ndi_binary_doc file identifier
-								spikewaves_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc)
-
-								% write header
-								spikewaves_binarydoc_fid.fseek(0,'bof');                                            % now at 0 bytes
-								spikewaves_binarydoc_fid.fwrite(uint8(fileparameters.numchannels),'uint8');         % now at 1 byte
-								spikewaves_binarydoc_fid.fwrite(int8(fileparameters.S0),'int8');                    % now at 2 bytes
-								spikewaves_binarydoc_fid.fwrite(int8(fileparameters.S1),'int8');                    % now at 3 bytes
-
-								if length(fileparameters.name)>80,
-									fileparameters.name = fileparameters.name(1:80);
-								end
-
-								spikewaves_binarydoc_fid.fwrite(fileparameters.name,'char');
-								spikewaves_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.name)),'char');    % now at 83 bytes
-
-								spikewaves_binarydoc_fid.fwrite(uint8(fileparameters.ref),'uint8');                 % now at 84 bytes
-
-								if length(fileparameters.comment)>80,
-									fileparameters.comment = fileparameters.comment(1:80);
-								end
-
-								spikewaves_binarydoc_fid.fwrite(fileparameters.comment,'char');
-								spikewaves_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.comment)),'char');      % now at 164 bytes
-								spikewaves_binarydoc_fid.fwrite(single(fileparameters.samplingrate),'float32');      % now at 168 bytes
-
-								% about to write byte 168; we want to fill up to 512 with 0's
-								% this is 512-168+1 bytes
-								spikewaves_binarydoc_fid.fwrite(zeros(1,512-168),'uint8');
-
-								spikewaves_binarydoc_fid.fseek(512,'bof');
-								disp('spikewaves_binary_doc_fid details:')
-								spikewaves_binarydoc_fid
-								disp('spikes_doc details:')
-								spikes_doc.document_properties.ndi_document;
-
-								% Close the spikewaves ndi_doc
-								ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid) % pass in the object not fid
-
-								% Times ndi_doc
-								spiketimes_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc)
-
-								% write header
-								spiketimes_binarydoc_fid.fseek(0,'bof');                                        % now at 0 bytes
-								spiketimes_binarydoc_fid.fwrite(uint8(fileparameters.numchannels),'uint8');         % now at 1 byte
-								spiketimes_binarydoc_fid.fwrite(int8(fileparameters.S0),'int8');                    % now at 2 bytes
-								spiketimes_binarydoc_fid.fwrite(int8(fileparameters.S1),'int8');                    % now at 3 bytes
-
-								if length(fileparameters.name)>80,
-									fileparameters.name = fileparameters.name(1:80);
-								end
-
-							spiketimes_binarydoc_fid.fwrite(fileparameters.name,'char');
-							spiketimes_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.name)),'char');    % now at 83 bytes
-
-							spiketimes_binarydoc_fid.fwrite(uint8(fileparameters.ref),'uint8');                 % now at 84 bytes
-
-							if length(fileparameters.comment)>80,
-							   fileparameters.comment = fileparameters.comment(1:80);
-							end
-
-							spiketimes_binarydoc_fid.fwrite(fileparameters.comment,'char');
-							spiketimes_binarydoc_fid.fwrite(zeros(1,80-length(fileparameters.comment)),'char'); % now at 164 bytes
-
-							spiketimes_binarydoc_fid.fwrite(single(fileparameters.samplingrate),'float32');      % now at 168 bytes
-
-							% about to write byte 168; we want to fill up to 512 with 0's
-							% this is 512-168+1 bytes
-							spiketimes_binarydoc_fid.fwrite(zeros(1,512-168),'uint8');
-
-							spiketimes_binarydoc_fid.fseek(512,'bof');
-
-							% Close the spiketimes ndi_doc
-							ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid)
-						end
-						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
-						waveforms = permute(waveforms, [2 3 1]);
-
-						% Interpolation of waveforms
-						interpolated_waveforms = [];
-						% Required vectors for interpolation
-						spikelength = spike_sample_end - spike_sample_start + 1;
-						x = [1:spikelength];
-						xq = [1/interpolation: 1/interpolation :spikelength]; % 1/3 sets up interpolation at 3x
-
-						% WARNING CHECK TRANSPOSES FOR BUGS
-
-						% For number of spikes
-						for i=1:size(waveforms, 3);
-							% Clear variable to store [interp_spike-interp_spike-interp_spike-interp_spike]
-							interpolated_spikes = [];
-							% For channelspike in tetrode
-							for channelspike=1:size(waveforms, 2)
-								% Get one channelspike [spike-spike-spike-spike]
-								current_spike = waveforms(:,channelspike,i);
-								current_spike = double(current_spike);
-						
-								% Interpolate channelspike
-								interpolated_spike = interp1(x, current_spike, xq, 'spline');
-								% Add to [interpolated_spike-interpolated_spike-interpolated_spike-interpolated_spike]
-								interpolated_spikes = [interpolated_spikes interpolated_spike];
-							end
-							% Uncomment to plot interpolated spike
-							% figure(11);
-							% plot(interpolated_spikes);
-							% keyboard
-							
-							% Add in new row to waveforms to be written to file
-							interpolated_waveforms = [interpolated_waveforms; interpolated_spikes];
-						end
-
-						interpolated_waveforms = interpolated_waveforms';
-
-						% Reshape array to store in file
-						interpolated_waveforms = reshape(interpolated_waveforms, spikelength * interpolation, size(waveforms,2), size(waveforms,3));
-						  
-						% Uncomment to plot example interpolated_spikes
-						% figure(10);
-						% plot(interpolated_spikes);
-						% keyboard
-
-						% TODO check what this commented code is about
-						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
-						% interpolated_waveforms = permute(interpolated_waveforms, [2 3 1]);
-
-						% Store epoch waveforms in file
-						
-						% TODO open every time or keep open?
-						spikewaves_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spikes_doc);
-						[num_samples,numchannels,num_waveforms] = size(interpolated_waveforms);
-						% we need the spikes waveforms to be represented in the columns of the matrix
-						% this means we need to push all of the channels into 1 dimension
-						interpolated_waveforms = single(reshape(interpolated_waveforms,num_samples*numchannels,num_waveforms));
-						spikewaves_binarydoc_fid.fseek(0,'eof');  % go to the end
-						spikewaves_binarydoc_fid.fwrite(single(interpolated_waveforms),'float32');
-						ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc_fid);
-						  
-						% Store epoch spike times in file
-						spiketimes_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(times_doc);
-						spiketimes_binarydoc_fid.fseek(0,'eof');  % go to the end
-						spiketimes_binarydoc_fid.fwrite(double(locs),'float32');
-						ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc_fid);
-						% finaltimes = [finaltimes locs];
-						% Update start_time
-						start_time = start_time + read_size * sample_rate - overlap * sample_rate;
-					end % while ~endReached
-
-					disp(['Epoch ' int2str(n) ' spike extraction done.']);
-				end % epoch n
-			end % prb
-		end % function
-
-		function b = clear_extraction(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
-		% CLEARSPIKEWAVES - clear all 'spikewaves' records for an NDI_PROBE_OBJ from experiment database
-		%
-		% B = CLEARSPIKEWAVES(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_EPOCHSET_OBJ)
-		%
-		% Clears all spikewaves entries from the experiment database for object NDI_PROBE_OBJ.
-		%
-		% Returns 1 on success, 0 otherwise.
-		%%%
-		% See also: NDI_APP_MARKGARBAGE/MARKVALIDINTERVAL, NDI_APP_MARKGARBAGE/SAVEALIDINTERVAL, ...
-		%      NDI_APP_MARKGARBAGE/LOADVALIDINTERVAL
-
-			% Look for any docs matching extraction name and remove them
-			% Concatenate app query parameters and extraction_name parameter
-			searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-				{'spike_extraction.extraction_name', extraction_name});
-			epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
-			spikes_searchq = cat(2, searchq, ...
-				{'spike_extraction.epoch', epoch_string});
-			% Concatenate timeseries query parameters
-			times_searchq = cat(2, searchq, ndi_timeseries_obj.searchquery());
-
-			% Search and get any docs
-			mydoc = ndi_app_spikeextractor_obj.experiment.database.search(searchq);
-
-			% Remove the docs
-			if ~isempty(mydoc),
-				for i=1:numel(mydoc),
-					ndi_app_spikeextractor_obj.experiment.database.remove(mydoc{i}.doc_unique_id)
-				end
-				b = 1;
-			end
-		end % clear_extraction()
 
 		function b = clear_extraction_parameters(ndi_app_spikeextractor_obj, ndi_timeseries_obj, extraction_name)
 		% CLEAR_EXTRACTION_PARAMETERS - clear all 'spikewaves' records for an NDI_PROBE_OBJ from experiment database
@@ -756,12 +380,12 @@ classdef ndi_app_spikeextractor < ndi_app
 			% Concatenate app query parameters and extraction_name parameter
 			extract_searchq = {'ndi_document.name', extraction_name, 'spike_extraction_parameters.filter_type','(.*)'};
 			extract_doc = ndi_app_spikeextractor_obj.experiment.database_search(extract_searchq);
+			epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
 			if ~isempty(extract_doc),
 				for i=1:numel(extract_doc),
-					epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
 					spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
 						{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
-					mydoc = ndi_app_spikeextractor_obj.experiment.database.search(spikewaves_searchq);
+					mydoc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
 					ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 				end;
 			end;
@@ -803,7 +427,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
 				spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
 					{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
-				spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database.search(spikewaves_searchq),
+				spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database.search(spikewaves_searchq);
 				
 				if numel(spikewaves_doc)==1,
 					spikewaves_doc = spikewaves_doc{1};
@@ -812,7 +436,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					waveforms = readvhlspikewaveformfile(spikewaves_binarydoc);
 					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc);
 				elseif numel(spikewaves_doc)>1,
-					error(['Found ' numel(spikewaves_doc) ' documents matching the criteria. Do not know how to proceed.']);
+					error(['Found ' int2str(numel(spikewaves_doc)) ' documents matching the criteria. Do not know how to proceed.']);
 				else,
 					waveforms = [];
 				end;
