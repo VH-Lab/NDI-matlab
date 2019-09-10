@@ -101,6 +101,12 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 				E.database.closebinarydoc(f);
 		end; % addepoch()
 
+		function sr = samplerate(ndi_thing_timeseries_obj, epoch)
+			et = ndi_thing_timeseries_obj.epochtableentry(epoch);
+			[data, t, timeref] = readtimeseries(ndi_thing_timeseries_obj, epoch, et.t0_t1{1}(1), et.t0_t1{1}(1)+0.5);
+			sr = 1/median(diff(t));
+		end; % samplerate()
+
                 function ndi_document_obj = newdocument(ndi_thing_timeseries_obj, varargin)
                         % TODO - need docs here
                                 ndi_document_obj = newdocument@ndi_thing(ndi_thing_timeseries_obj, varargin{:});

@@ -271,8 +271,11 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
-				epochid = varargin{1};
-				%varargin, numel(varargin)
+				if nargin>1,
+					epochid = varargin{1};
+				else,
+					epochid = [];
+				end;
 				ndi_document_obj = ndi_probe_obj.experiment.newdocument('ndi_document_probe',...
 					'probe.name',ndi_probe_obj.name,'probe.type',ndi_probe_obj.type,...
 					'probe.reference',ndi_probe_obj.reference);

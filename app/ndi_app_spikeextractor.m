@@ -116,7 +116,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					end;
 
 					sample_rate = ndi_timeseries_obj.samplerate(epoch{n});
-					data_example = ndi_timeseries_obj.read_epochsamples(epoch{n},1,1); % read a single sample
+					data_example = ndi_timeseries_obj.readtimeseries(epoch{n},0,1/sample_rate); % read a single sample
 					start_sample = ndi_timeseries_obj.times2samples(epoch{n},t0_t1(n,1));
 					if isnan(start_sample), start_sample = 1; end;
 					read_start_sample = start_sample;
@@ -183,12 +183,13 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					% now read the file in chunks
 					while (~endReached)
-						read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate) % end sample for chunk to read
+						read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
 						if read_end_sample > end_sample,
 							read_end_sample = end_sample;
 						end;
 						% Read from probe in epoch n from start_time to end_time
-						data = ndi_timeseries_obj.read_epochsamples(epoch{n},read_start_sample, read_end_sample); 
+						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]),
+						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
 						%size(data), end_sample-start_sample+1  % display sizes of data read
 
 						% Checks if endReached by a threshold sample difference (data - (end_time - start_time))
@@ -260,7 +261,7 @@ classdef ndi_app_spikeextractor < ndi_app
 						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 						waveforms = permute(waveforms, [2 3 1]);
 
-						size(waveforms),
+						%size(waveforms),
 
 						% Interpolation of waveforms, cutting for now
 
@@ -276,9 +277,9 @@ classdef ndi_app_spikeextractor < ndi_app
 						addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
 					  
 						% Store epoch spike times in file
-						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},locs),'float32');
+						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs),'float32');
 						read_start_sample = round(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
-								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate)
+								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate);
 					end % while ~endReached
 
 					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc);
@@ -476,6 +477,30 @@ classdef ndi_app_spikeextractor < ndi_app
 					error(['Found ' int2str(numel(spikewaves_doc)) ' documents matching the criteria. Do not know how to proceed.']);
 				else,
 					waveforms = [];
+				end;
+	
+		end; % load_spikewaves_epoch
+
+		function times = load_spiketimes_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
+			% LOAD_SPIKEWAVES_EPOCH - load spikewaves from an epoch
+			%
+			% TIMES = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
+			%
+			% Reads the spikewaves for an NDI_TIMESERIES object for a given EPOCH and EXTRACTION_NAME.
+				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
+				spiketimes_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
+					{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
+				spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database.search(spiketimes_searchq);
+				
+				if numel(spiketimes_doc)==1,
+					spiketimes_doc = spiketimes_doc{1};
+					spiketimes_binarydoc = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spiketimes_doc);
+					times = fread(spiketimes_binarydoc,Inf,'float32');
+					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spiketimes_binarydoc);
+				elseif numel(spiketimes_doc)>1,
+					error(['Found ' int2str(numel(spiketimes_doc)) ' documents matching the criteria. Do not know how to proceed.']);
+				else,
+					times = [];
 				end;
 	
 		end; % load_spikewaves_epoch

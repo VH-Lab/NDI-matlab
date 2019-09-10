@@ -62,7 +62,19 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
                         %
 				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
                                 ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
-                end % epochclock
+                end % epochclock()
+
+		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_obj, epoch)
+			% T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
+				t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1(epochfiles);
+		end % t0_t1()
 
 		function channels = getchannels(ndi_daqsystem_mfdaq_obj)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
