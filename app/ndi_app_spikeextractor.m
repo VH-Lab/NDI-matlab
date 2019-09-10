@@ -234,7 +234,7 @@ classdef ndi_app_spikeextractor < ndi_app
 									error(['unknown threshold method']);
 							end
 							%Accomodates spikes according to refractory period
-							locs_here = refractory(locs_here, refractory_samples);
+							%locs_here = refractory(locs_here, refractory_samples); % only apply to all events
 							locs_here = locs_here(find(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end));
 							locs = [locs(:) ; locs_here];
 						end % for
