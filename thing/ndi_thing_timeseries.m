@@ -34,7 +34,7 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					if isa(timeref_or_epoch,'ndi_timereference'),
 						timeref = timeref_or_epoch;
 					else,
-						timeref_or_epoch = ndi_thing_timeseries_obj.epoch_id(timeref_or_epoch);
+						timeref_or_epoch = ndi_thing_timeseries_obj.epochid(timeref_or_epoch);
 						timeref = ndi_timereference(ndi_thing_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
 					end;
 
