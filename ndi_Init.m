@@ -37,3 +37,4 @@ nditestpath = [tempdir filesep 'nditestcode'];
 ndi_probetype2objectinit;
 ndi_databasehierarchyinit;
 
+ndi_debug.veryverbose = 1;

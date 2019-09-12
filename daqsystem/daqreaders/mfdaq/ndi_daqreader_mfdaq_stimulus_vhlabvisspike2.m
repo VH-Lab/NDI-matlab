@@ -128,7 +128,7 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 				end;
 
 				for i=1:numel(channel),
-					ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i}),
+					%ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i}),
 					switch (ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i})),
 						case 'mk',
 							% put them together, alternating stimtimes and stimofftimes in the final product

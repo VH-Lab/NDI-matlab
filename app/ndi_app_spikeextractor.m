@@ -71,6 +71,13 @@ classdef ndi_app_spikeextractor < ndi_app
 			% EXTRACTION_PARAMS a struct or filepath (tab separated file) with extraction parameters
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
 
+				ndi_globals;
+
+
+				if ndi_debug.veryverbose,
+					disp(['Beginning of extract']);
+				end;
+
 				% process input arguments
 
 				if isempty(epoch),
@@ -99,9 +106,14 @@ classdef ndi_app_spikeextractor < ndi_app
 
 				% loop over requested epochs
 				for n=1:numel(epoch),
+					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
+
+					if ndi_debug.veryverbose,
+						disp(['Beginning to set up for epoch ' epoch_string '.']);
+					end;
+
 					% begin an epoch, get ready
 
-					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
 					spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
 						{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
@@ -188,7 +200,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							read_end_sample = end_sample;
 						end;
 						% Read from probe in epoch n from start_time to end_time
-						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]),
+						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
 						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
 						%size(data), end_sample-start_sample+1  % display sizes of data read
 

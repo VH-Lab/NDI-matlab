@@ -35,4 +35,6 @@ global nditestpath
 global ndi_probetype2object
 global ndi_databasehierarchy
 
+global ndi_debug;
+
 
