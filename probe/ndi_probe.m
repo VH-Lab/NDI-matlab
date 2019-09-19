@@ -103,12 +103,21 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 					d_et{d} = epochtable(D{d});
 
 					for n=1:numel(d_et{d}),
+						% for each epoch in this device
 						underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
 						underlying_epochs(1).underlying = D{d};
-						if any(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap)),
+						match_probe_and_device = [];
+						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
+						for h=1:numel(H),
+							daqst = ndi_daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
+							if strcmp(D{d}.name,daqst.devicename),
+								match_probe_and_device = H(h);
+							end;
+						end;
+						if ~isempty(match_probe_and_device),
 							%underlying_epochs.epoch_number = n;
 							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
-							underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap;
+							underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
 							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
 							underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
 							et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');

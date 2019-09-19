@@ -12,9 +12,9 @@ if isempty(d),
 	exp.daqsystem_add(dev1);
 end;
 
-spike_extractor = ndi_app_spikeextractor(exp);
-spike_sorter = ndi_app_spikesorter(exp);
-probe = exp.getprobes('name','Tetrode7','reference',1,'type','n-trode');
+spike_extractor = ndi_app_spikeextractor(E);
+spike_sorter = ndi_app_spikesorter(E);
+probe = E.getprobes('name','Tetrode7','reference',1,'type','n-trode');
 probe = probe{1};
 
 d = E.database_search({'ndi_document.name','test','spike_extraction_parameters.filter_type','(.*)'});

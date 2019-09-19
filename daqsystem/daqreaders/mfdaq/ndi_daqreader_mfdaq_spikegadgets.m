@@ -247,7 +247,11 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 				detailedchannels = ndi_daqreader_mfdaq_spikegadgets_obj.getchannelsepochdetailed(epochfiles);
 
 				byteandbit = [];
+                
+                data = [];
 
+                [s0 s1]
+                
 				%read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
 				%reading from channel 1 in list returned
 				%Reads nTrodes
