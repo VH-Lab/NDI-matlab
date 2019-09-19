@@ -31,7 +31,7 @@ dt = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
 
 dev1 = exp.daqsystem_load('name','sgtest');
 if isempty(dev1),
-	dev1 = ndi_daqsystem_mfdaq('sgtest', dt, ndi_daqreader_mfdaq_sg());
+	dev1 = ndi_daqsystem_mfdaq('sgtest', dt, ndi_daqreader_mfdaq_spikegadgets());
 	exp.daqsystem_add(dev1);
 end
 

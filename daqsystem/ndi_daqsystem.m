@@ -280,7 +280,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 						for ec = 1:numel(epc),
 							% is it mine?
 							myprobemap = ndi_daqsystemstring(epc(ec).devicestring);
-							if strcmp(myprobemap.devicename, ndi_daqsystem_obj.name),
+							if strcmpi(myprobemap.devicename, ndi_daqsystem_obj.name),
 								newentry.name = epc(ec).name;
 								newentry.reference= epc(ec).reference;
 								newentry.type= epc(ec).type;

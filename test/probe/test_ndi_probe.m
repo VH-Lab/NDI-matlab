@@ -17,21 +17,21 @@ if nargin<1,
 end;
 
 disp(['reading experiment from directory ' dirname ' ...']);
-exp = ndi_experiment_dir(dirname);
+E = ndi_experiment_dir(dirname),
 
-%dev1 = load(exp.daqsystem,'name','Intan1');
+%dev1 = load(E.daqsystem,'name','intan1')
 
-probes = getprobes(exp);
+probes = E.getprobes();
 
 % now let's play with the first probe
 
-sr = samplerate(probes{1},1);
+sr = probes{1}.samplerate(1);
 
 disp(['The sample rate of probe 1 epoch 1 is ' num2str(sr) '.']);
 
 disp(['We will now plot the data for epoch 1 for analog_input channel 1.']);
 
-[data,time] = read_epochsamples(probes{1},1,0,10000);
+[data,time] = probes{1}.read_epochsamples(1,0,10000);
 
 figure;
 plot(time,data(:,1));

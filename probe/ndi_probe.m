@@ -110,7 +110,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
 						for h=1:numel(H),
 							daqst = ndi_daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
-							if strcmp(D{d}.name,daqst.devicename),
+							if strcmpi(D{d}.name,daqst.devicename),
 								match_probe_and_device = H(h);
 							end;
 						end;
