@@ -24,10 +24,10 @@ classdef ndi_app_tuning_response < ndi_app
 		end % ndi_app_tuning_response() creator
 
 
-		function [newdocs, existingdocs] = stimulus_responses(ndi_app_tuning_response_obj, ndi_probe_stim, ndi_timeseries_obj, reset)
+		function [newdocs, existingdocs] = stimulus_extraction(ndi_app_tuning_response_obj, ndi_probe_stim, ndi_timeseries_obj, reset)
 			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_PROBE stimulus probe
 			%
-			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, [RESET])
+			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_EXTRACTION(NDI_APP_TUNING_RESPONSE_OBJ, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
 			% Examines a the NDI_EXPERIMENT associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
@@ -41,7 +41,6 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			% Note that this function DOES add the new documents to the database.
 			%
-				dbstack,
 				E = ndi_app_tuning_response_obj.experiment;
 
 				newdocs = {};
@@ -91,8 +90,11 @@ classdef ndi_app_tuning_response < ndi_app
 
 						ndi_ts_epochs{i}
 						doc_stim{i}.document_properties
+						doc_stim{i}.document_properties.stimuli(1).parameters
+						doc_stim{i}.document_properties.presentation_order
+						doc_stim{i}.document_properties.presentation_time
 
-
+						
 
 
 					end
@@ -100,12 +102,32 @@ classdef ndi_app_tuning_response < ndi_app
 		end % 
 
 
-		function tuning_doc = analyze_1d_tuning_curve(ndi_app_tuning_response_obj, ndi_probe_stim, ndi_timeseries_obj, stim_doc, varargin)
+		function response_doc = compute_stimulus_response_scalar(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)
+			% COMPUTE_STIMULUS_RESPONSES - compute responses to a stimulus set
+			%
+			% RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
+			%
+			% Given an NDI_TIMESERIES_OBJ and a STIM_DOC (an NDI_DOCUMENT of class 'ndi_document_stimulus'), this
+			% function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
+			% NDI_DOCUMENT of class 'ndi_stimulus_response_scalar'.
+			%
+			% This function also takes name/value pairs that alter the behavior:
+			% Parameter (default)             | Description
+			% ---------------------------------------------------------------------------------
+			% control_stim_method ('blankid') | How should we determine the control stimulus?
+			%                                 |   stimuli. If empty, then the program will look for 'isblank'
+			%
+				% how to specify the control stimulus??
+				% default way to find stimulus parameters has 'isblank'
+
+
+		end; % compute_stimulus_response()
+
+
+		function other  = analyze_tuning_responses(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)
 			% COMPUTE_STIMULUS_RESPONSE_SUMMARY - compute responses to a stimulus set
 			%
-			% DOC = COMPUTE_STIMULUS_RESPONSE_SUMMARY(NDI_APP_STIMULUS_RESPONSE_APP, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, TIMEREF, T0, T1, ...)
-			%
-			%
+			% DOC = COMPUTE_STIMULUS_RESPONSE_SUMMARY(NDI_APP_STIMULUS_RESPONSE_APP, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, STIM_DOC, TIMEREF, T0, T1, ...)
 			%
 			% Note: Uses the app NDI_APP_MARKGARBAGE to limit analysis to intervals that have been
 			% marked as valid or have not been marked invalid.
@@ -161,8 +183,8 @@ classdef ndi_app_tuning_response < ndi_app
 				vi = gapp.loadvalidinterval(sharpprobe);
 				interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,t0,t1)
 
-				[ds, ts, timeref_]=stimprobe.readtimeseries(timeref,interval(1,1),interval(1,2));
-				[data,t_raw,timeref] = readtimeseries(sharpprobe, timeref, interval(1,1), interval(1,2));
+				[ds, ts, timeref_]=ndi_probe_stim.readtimeseries(timeref,interval(1,1),interval(1,2));
+				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, interval(1,1), interval(1,2));
 
 				stim_onsetoffsetid = [ts.stimon ts.stimoff ds.stimid];
 
