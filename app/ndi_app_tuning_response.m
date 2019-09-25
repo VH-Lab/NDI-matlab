@@ -47,21 +47,17 @@ classdef ndi_app_tuning_response < ndi_app
 				existingdocs = {};
 
 				% find all stimulus records from the stimulus probe
-				sq_probe = ndi_probe_stim.searchquery();
-				sq_e = E.searchquery();
-				sq_stim  = {'document_class.class_name','ndi_document_stimulus' };
-				sq_tune  = {'document_class.class_name','ndi_document_tuningcurve'};
-				doc_stim = E.database_search( cat(2,sq_e,sq_probe,sq_stim) );
-				doc_tune = E.database_search( cat(2,sq_e,sq_probe,sq_tune) );
+				sq_probe = ndi_query(ndi_probe_stim.searchquery());
+				sq_e = ndi_query(E.searchquery());
+				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json',''); % presentation
+				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
+				doc_stim = E.database_search(sq_stim&sq_e&sq_probe);
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe);
 
 				ndi_ts_epochs = {};
 
 				% find all the epochs of overlap between stimulus probe and ndi_timeseries_obj
 
-				truematches = [];
-				for i=1:numel(doc_stim),
-					truematches(i) = strcmp(doc_stim{i}.document_properties.document_class.class_name,'ndi_document_stimulus');
-				end;
 				doc_stim = doc_stim(logical(truematches));
 
 				for i=1:numel(doc_stim),
@@ -117,11 +113,110 @@ classdef ndi_app_tuning_response < ndi_app
 			% control_stim_method ('blankid') | How should we determine the control stimulus?
 			%                                 |   stimuli. If empty, then the program will look for 'isblank'
 			%
+				control_stim_method = 'blankid';
+
+				assign(varargin{:});
+
 				% how to specify the control stimulus??
 				% default way to find stimulus parameters has 'isblank'
 
-
 		end; % compute_stimulus_response()
+
+
+		function [cs_ids, cs_doc] = control_stimulus(ndi_app_tuning_response_obj, stim_doc, varargin)
+			% CONTROL_STIMULUS - determine the control stimulus ID for each stimulus in a stimulus set
+			%
+			% [CS_IDS, CS_DOC] = CONTROL_STIMULUS(NDI_APP_TUNING_RESPONSE_OBJ, STIM_DOC, ...)
+			%
+			% For a given set of stimuli described in NDI_DOCUMENT of type 'ndi_document_stimulus',
+			% this function returns the control stimulus ID for each stimulus in the vector CS_IDS 
+			% and a corresponding NDI_DOCUMENT of type ndi_document_controlstimulus that describes this relationship.
+			%
+			%
+			% This function accepts parameters in the form of NAME/VALUE pairs:
+			% Parameter (default)              | Description
+			% ------------------------------------------------------------------------
+			% control_stim_method              | The method to be used to find the control stimulu for
+			%  ('psuedorandom')                |    each stimulus:
+			%                       -----------|
+			%                       |   pseudorandom: Find the stimulus with a parameter
+			%                       |      'controlid' that is in the same pseudorandom trial. In the
+			%                       |      event that there is no match that divides evenly into 
+			%                       |      complete repetitions of the stimulus set, then the
+			%                       |      closest stimulus with field 'controlid' is chosen.
+			%                       |      
+			%                       |      
+			%                       -----------|
+			% controlid ('blankid')            | For some methods, the parameter that defines whether
+			%                                  |    a stimulus is a 'control' stimulus or not.
+			% controlid_value (1)              | For some methods, the parameter value of 'controlid' that
+			%                                  |    defines whether a stimulus is a control stimulus or not.
+
+				control_stim_method = 'psuedorandom';
+				controlid = 'blankid';
+				controlid_value = 1;
+			
+				assign(varargin{:});
+
+				switch (lower(control_stim_method)),
+					case 'psuedorandom'
+						control_stim_id_method.method = control_stim_method;
+						control_stim_id_method.controlid = controlid;
+						control_stim_id_method.controlid_value = controlid_value;
+		
+						controlstimid = [];
+						for n=1:numel(stim_doc.document_properties.stimuli),
+							if fieldsearch(stim_doc.document_properties.stimuli(n).parameters, ...
+								struct('field',controlid,'operation','exact_number','param1',controlid_value,'param2',[])),
+								controlstimid(end+1) = n;
+							end;
+						end;
+						
+						% what if we have more than one? bail out for now
+
+						if numel(controlstimid)>1,
+							error(['Do not know what to do with more than one control stimulus type.']);
+						end;
+
+						% if number of control stimuli is 0, that's okay, just give values of NaN
+
+						stimids = stim_doc.document_properties.presentation_order;
+
+						[reps,isregular] = stimids2reps(stimids,numel(stim_doc.document_properties.stimuli));
+
+						control_stim_indexes = find(stimids==controlstimid);
+
+						if isempty(control_stim_indexes),
+							cs_ids = nan(size(stimids));
+						else,
+							if isregular,
+								if numel(unique(reps))>numel(control_stim_indexes),
+									control_stim_indexes(end+1) = control_stim_indexes(end); % let previous control stim stand in for incomplete
+								end;
+								cs_ids = control_stim_indexes(reps);
+							else,
+								cs_ids = [];
+								% slow
+								presentation_onsets = [stim_doc.document_properties.presentation_time.onset];
+								for n=1:numel(stimids),
+									i=findclosest(presentation_onsets(control_stim_indexes), presentation_onsets(n));
+									cs_ids(n) = control_stim_indexes(i);
+								end;
+							end;
+						end;
+					otherwise,
+						error(['Unknown control stimulus method ' control_stim_method '.']);
+
+				end; % switch
+
+				% now we have cs_ids for each stimulus, so make the document
+
+				control_stim_ids_struct = struct('stimulus_presentation_doc_unique_id', stim_doc.doc_unique_id(), 'control_stim_ids', cs_ids);
+
+				cs_doc = ndi_document('stimulus/ndi_document_control_stimulus_ids','control_stim_ids',control_stim_ids_struct, ...
+					'control_stim_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
+
+		end; % control_stimulus()
 
 
 		function other  = analyze_tuning_responses(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)

@@ -70,6 +70,9 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		end; % do_remove
 
 		function [ndi_document_objs,doc_versions] = do_search(ndi_matlabdumbjsondb_obj, searchoptions, searchparams)
+			if isa(searchparams,'ndi_query'),
+				searchparams = searchparams.searchstructure;
+			end;
 			if isstruct(searchparams),
 				% convert 'isa' to fieldsearch
 				isa_locs = find(strcmpi('isa',{searchparams.operation}));
@@ -79,7 +82,7 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 							'param1','definition','param2',searchparams(isa_locs(i)).param1);
 					findinmainfield = struct('field','document_class.definition', ...
 							'operation','contains_string','param1',searchparams(isa_locs(i)).param1, 'param2','');
-					replace = struct('field','','operation','or','param1', [findinsubfield findinmainfield],'param2','');
+					replace = struct('field','','operation','or','param1', findinsubfield,'param2',findinmainfield);
 					searchparams = cat(1,searchparams(:),replace);
 				end;
 				searchparams = searchparams(setdiff(1:numel(searchparams),isa_locs)); % remove 'isa' operations b/c they are replaced

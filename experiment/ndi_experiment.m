@@ -178,11 +178,13 @@ classdef ndi_experiment < handle
 			% DATABASE_RM - Remove an NDI_DOCUMENT with a given document ID from an NDI_EXPERIMENT object
 			%
 			% NDI_EXPERIMENT_OBJ = DATABASE_RM(NDI_EXPERIMENT_OBJ, DOC_UNIQUE_ID)
+			%   or
+			% NDI_EXPERIMENT_OBJ = DATABASE_RM(NDI_EXPERIMENT_OBJ, DOC)
 			%
 			% Removes an NDI_DOCUMENT with document id DOC_UNIQUE_ID from the
-			% NDI_EXPERIMENT_OBJ.database. If an NDI_DOCUMENT is passed instead of
-			% DOC_UNIQUE_ID, then its id is retrieved. If it is a cell array of NDI_DOCUMENT
-			% devices, then they are removed in turn.
+			% NDI_EXPERIMENT_OBJ.database. In the second form, if an NDI_DOCUMENT or cell array of
+			% NDI_DOCUMENTS is passed for DOC, then the document unique ids are retrieved and they
+			% are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.
 			%
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
 				if iscell(doc_unique_id),

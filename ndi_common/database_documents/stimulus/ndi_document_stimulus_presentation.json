@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_schema.json",
-		"class_name":						"ndi_document_stimulus",
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_presentation.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_presentation_schema.json",
+		"class_name":						"ndi_document_stimulus_presentation",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,

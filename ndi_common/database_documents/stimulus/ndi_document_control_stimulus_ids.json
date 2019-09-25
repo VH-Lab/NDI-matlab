@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_control_stimulus_ids.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_control_stimulus_ids.json",
+		"class_name":						"ndi_document_control_stim_ids",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,
+		]
+	},
+	"control_stim_ids": {
+		"stimulus_presentation_doc_unique_id":				[],
+		"control_stim_ids":						[]
+	},
+	"control_stim_id_method": {
+	}
+}
+
