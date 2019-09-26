@@ -271,7 +271,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					sq = {'thing_epoch.thing_unique_reference', ...
 						thing_doc.document_properties.ndi_document.document_unique_reference};
 					E = ndi_thing_obj.experiment();
-					epochdocs = E.database.search(sq);
+					epochdocs = E.database_search(sq);
 
 					if ~isempty(epochdocs),
 						for i=1:numel(epochdocs),
@@ -282,8 +282,8 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 							newet.epoch_clock = {ndi_clocktype(epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
 							newet.t0_t1 = {epochdocs{i}.document_properties.thing_epoch.t0_t1};
 							newet.underlying_epochs = []; % leave this for buildepochtable
+							et_added(end+1) = newet;
 						end;
-						et_added(end+1) = newet;
 					end;
 				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)

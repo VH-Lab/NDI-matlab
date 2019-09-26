@@ -5,7 +5,7 @@
 		"class_name":						"ndi_document_control_stim_ids",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
 	"control_stim_ids": {
