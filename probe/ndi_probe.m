@@ -111,7 +111,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 						for h=1:numel(H),
 							daqst = ndi_daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
 							if strcmpi(D{d}.name,daqst.devicename),
-								match_probe_and_device = H(h);
+								match_probe_and_device(end+1) = H(h);
 							end;
 						end;
 						if ~isempty(match_probe_and_device),

@@ -51,7 +51,9 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
 					% developer note: it would be pretty easy to extend this, just loop over the devices
 				[edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
-                if ~iscell(edata), edata = {edata}; end;
+				if ~iscell(edata),
+					edata = {edata};
+				end;
 				channel_labels = getchannels(dev{1});
 				for i=1:numel(channeltype),
 					switch channel_labels(i).name,
@@ -71,7 +73,6 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 							error(['Unknown channel.']);
 					end
 				end
-				%dev{1};
 				data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
 				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
