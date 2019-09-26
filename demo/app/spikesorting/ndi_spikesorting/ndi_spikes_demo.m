@@ -1,15 +1,19 @@
+ndi_Init;
 ndi_globals;
+
 mydirectory = [ndipath filesep 'ndi_common' filesep 'example_app_experiments'];
 dirname = [mydirectory filesep 'exp_sg'];
+
 disp(['opening experiment object...']);
 E = ndi_experiment_dir('exp1', dirname);
 d = E.daqsystem_load('name','SpikeGadgets');
+
 if isempty(d),
 	disp(['Now adding our acquisition device (SpikeGadgets):']);
-	filenav = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
+	filenav = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
 	dr = ndi_daqreader_mfdaq_spikegadgets;
 	dev1 = ndi_daqsystem_mfdaq('SpikeGadgets',filenav, dr);
-	exp.daqsystem_add(dev1);
+	E.daqsystem_add(dev1);
 end;
 
 spike_extractor = ndi_app_spikeextractor(E);

@@ -153,6 +153,9 @@ classdef ndi_app_spikeextractor < ndi_app
 					spikes_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spikewaves', ...
 							'spikewaves.extraction_name', extraction_name, ...
 							'spikewaves.extraction_parameters_file_id', extraction_doc.doc_unique_id(),...
+							'spikewaves.sample_rate', sample_rate,...
+							'spikewaves.s0', extraction_doc.document_properties.spike_extraction_parameters.spike_start_time,...
+							'spikewaves.s1', extraction_doc.document_properties.spike_extraction_parameters.spike_end_time,...
 							'epochid', epoch_string) ...
 							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
 
@@ -190,7 +193,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					% leave these files open while we extract
 
-					epochtic = tic; % Timer variable for measure duration of epoch extraction
+					epochtic = tic; % Timer variable to measure duration of epoch extraction
 					disp(['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
 
 					% now read the file in chunks
@@ -317,8 +320,8 @@ classdef ndi_app_spikeextractor < ndi_app
 			% overlap (0.5)             | Overlap allowed
 			% read_time (30)            | Number of seconds to read in at a single time
 			% refractory_samples (10)   | Number of samples to use as a refractory period
-			% spike_sample_start (-9)   | Samples before the threshold to include
-			% spike_sample_stop (20)    | Samples after the threshold to include
+			% spike_sample_start (-9)   | Samples before the threshold to include % unclear if time or sample
+			% spike_sample_stop (20)    | Samples after the threshold to include % unclear if time or sample
 			% start_time (1)            | First sample to read
 			% do_filter (1)             | Should we perform a filter? (0/1)
 			% filter_type               | What filter? Default is 'cheby1high' but can also be 'none'
@@ -553,7 +556,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					parameters.ref = spikewaves_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
 					parameters.comment = spikewaves_binarydoc_fid.fread(80,'char');          % now at 164 bytes
 					parameters.comment = char(parameters.comment(find(parameters.comment)))';
-					parameters.samplingrate= double(spikewaves_binarydoc_fid.fread(1,'float32'));
+					parameters.samplingrate = double(spikewaves_binarydoc_fid.fread(1,'float32'));
 
 					% step 2 - read the waveforms
 					my_wave_start = 1;
