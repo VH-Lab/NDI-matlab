@@ -48,12 +48,13 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 				E = ndi_app_stimulus_decoder_obj.experiment;
 
-				sq_probe = ndi_probe_stim.searchquery();
-				sq_e = E.searchquery();
-				sq_stim =  {'document_class.class_name','ndi_document_stimulus' };
-				sq_tune = {'document_class.class_name','ndi_document_stimulus_tuningcurve'};
-				existing_doc_stim = E.database_search( cat(2,sq_e,sq_probe,sq_stim) );
-				existing_doc_tune = E.database_search( cat(2,sq_e,sq_probe,sq_tune) );
+				sq_probe = ndi_query(ndi_probe_stim.searchquery());
+				sq_e = ndi_query(E.searchquery());
+				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation',''); % presentation
+				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve','');
+
+				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim),
+				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_stim),
 
 				if reset,
 					% delete existing documents
@@ -92,7 +93,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 						presentation_time(end+1) = timestruct;
 					end;
 
-					nd = E.newdocument('stimulus/ndi_document_stimulus.json',...
+					nd = E.newdocument('stimulus/ndi_document_stimulus_presentation.json',...
 							'presentation_order', data.stimid, 'presentation_time', presentation_time, 'stimuli',mystim) + ...
 						ndi_probe_stim.newdocument(epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					newdocs{end+1} = nd;
@@ -107,7 +108,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					tuning_curve.whatvaries = whatvaries;
 					tuning_curve.control_stimulus_id = isblank;
 
-					nd2 = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve) + ndi_probe_stim.newdocument(epochsremaining{j});
+					nd2 = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
 					newdocs{end+1} = nd2;
 				end;
 
@@ -117,5 +118,4 @@ classdef ndi_app_stimulus_decoder < ndi_app
 	end; % methods
 
 end % ndi_app_stimulus_decoder
-
 
