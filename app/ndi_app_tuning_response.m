@@ -50,8 +50,8 @@ classdef ndi_app_tuning_response < ndi_app
 				sq_e = ndi_query(E.searchquery());
 				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json',''); % presentation
 				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
-				doc_stim = E.database_search(sq_stim&sq_e&sq_probe);
-				doc_tune = E.database_search(sq_tune&sq_e&sq_probe);
+				doc_stim = E.database_search(sq_stim&sq_e&sq_probe)
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe)
 
 				ndi_ts_epochs = {};
 
@@ -62,11 +62,12 @@ classdef ndi_app_tuning_response < ndi_app
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
 						doc_stim{i}.document_properties.epochid
+						if strcmp(doc_stim{i}.document_properties.epochid,'t00013'), keyboard; end;
 						stim_timeref = ndi_timereference(ndi_probe_stim, ...
 							ndi_clocktype(doc_stim{i}.document_properties.presentation_time(1).clocktype), ...
-							doc_stim{i}.document_properties.epochid, doc_stim{i}.document_properties.presentation_time(1).onset)
+							doc_stim{i}.document_properties.epochid, doc_stim{i}.document_properties.presentation_time(1).onset),
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time')) % time is 0 because stim_timeref is relative to 1st stim
+							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time')), % time is 0 because stim_timeref is relative to 1st stim
 						if ~isempty(ts_epoch_t0_out),
 							ndi_ts_epochs{i} = ts_epoch_timeref.epoch;
 						else,

@@ -283,7 +283,7 @@ classdef ndi_syncgraph < ndi_base
 					error(['The input NDI_EPOCHSET_OBJ must be of class NDI_EPOCHSET or a subclass.']);
 				end;
 
-                enodes = epochnodes(ndi_epochset_obj);
+				enodes = epochnodes(ndi_epochset_obj);
 				% do we search for duplicates?
 
 				for i=1:numel(enodes),
@@ -429,6 +429,7 @@ classdef ndi_syncgraph < ndi_base
 					if isempty(any_referent_outs), % add the referent to the table and try again
 						ndi_syncgraph_obj.addunderlyingepochs(referent_out,ginfo);
 						[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
+						return;
 					else,
 						msg = ['Could not find any such destination node.'];
 					end;
