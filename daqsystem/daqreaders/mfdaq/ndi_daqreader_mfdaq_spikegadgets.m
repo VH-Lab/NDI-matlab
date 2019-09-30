@@ -191,6 +191,43 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 				sr = str2num(fileconfig.samplingRate);
 		end
 
+		function t0t1 = t0_t1(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
+			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			%
+				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
+
+				[fileconfig, ~] = read_SpikeGadgets_config(filename);
+
+				headerSizeBytes = str2num(fileconfig.headerSize) * 2; % int16 = 2 bytes
+				channelSizeBytes = str2num(fileconfig.numChannels) * 2; % int16 = 2 bytes
+				blockSizeBytes = headerSizeBytes + 2 + channelSizeBytes;
+
+				s = dir(filename);
+
+				bytes_present = s.bytes;
+
+				bytes_per_block = blockSizeBytes;
+
+				num_data_blocks = (bytes_present - headerSizeBytes) / bytes_per_block;
+
+				total_samples = num_data_blocks;
+				total_time = (total_samples - 1) / str2num(fileconfig.samplingRate); % in seconds
+
+				t0 = 0;
+				t1 = total_time;
+
+				t0t1 = {[t0 t1]};
+		end % t0t1
+
 		function epochprobemap = getepochprobemap(ndi_daqreader_mfdaq_spikegadgets_obj, epochmapfilename, epochfiles)
 		        % GETEPOCHPROBEMAP returns struct with probe information
 		        % name, reference, n-trode, channels
@@ -221,7 +258,7 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 				end
         	end
 
-		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_spikegadgets_obj,channeltype, channels, epochfiles, s0, s1)
+		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_spikegadgets_obj, channeltype, channels, epochfiles, s0, s1)
 			% FUNCTION READ_CHANNELS - read the data based on specified channels
 			%
 			% DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
@@ -249,17 +286,16 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 				byteandbit = [];
                 
                 data = [];
-
-                [s0 s1]
                 
 				%read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
 				%reading from channel 1 in list returned
 				%Reads nTrodes
 				%WARNING channeltype hard coded, ask Steve
+				channeltype
 				if (strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
 					data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 
-				elseif (strcmp(channeltype,'auxiliary')) %Reads analog inputs
+				elseif (strcmp(channeltype,'auxiliary') || strcmp(channeltype,'aux')) %Reads analog inputs
 					%for every channel in device
 					for i=1:length(detailedchannels)
 						%based on every channel to read
@@ -289,6 +325,8 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 
 					data = read_SpikeGadgets_digitalChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
 					data = data';
+				else
+
 				end
 		end % readchannels_epochsamples
 

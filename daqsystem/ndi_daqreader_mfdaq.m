@@ -22,7 +22,7 @@
 %
 
 classdef ndi_daqreader_mfdaq < ndi_daqreader
-	properties (GetAcces=public,SetAccess=protected)
+	properties (GetAccess=public,SetAccess=protected)
 
 	end
 	properties (Access=private) % potential private variables
