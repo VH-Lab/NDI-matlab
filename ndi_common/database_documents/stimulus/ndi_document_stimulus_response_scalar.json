@@ -11,11 +11,15 @@
 	"stimulus_document_identifier":					[],
 	"stimulus_control_document_identifier":				[],
 	"stimulus_response_scalar_parameters_identifier":		[],
-	"responses": {
-		"stimulus_identifier":					[],
+	"stimulus_response_scalar": {
 		"response_type":					[],
-		"response":						[],
-		"control_response":					[]
+		"responses": {
+			"stimulus_identifier":					[],
+			"response_real":					[],
+			"response_imaginary":					[],
+			"control_response_real":				[],
+			"control_response_imaginary":				[]
+		}
 	}
 }
 

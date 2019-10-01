@@ -152,14 +152,27 @@ classdef ndi_app_tuning_response < ndi_app
 				gapp = ndi_app_markgarbage(E);
 
 				if isempty(freq_response),
-					freq_response_commands = [0 1 2];
+					% do we have any stims that we know have a fundamental stimulus frequency?
+					gotone = 0;
+					for j=1:numel(stim_doc.document_properties.stimuli),
+						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
+						if ~isempty(freq_multi_here),
+							gotone = 1; 
+							break;
+						end;
+					end;
+					if gotone,
+						freq_response_commands = [0 1 2];
+					else,
+						freq_response_commands = 0;
+					end;
 				else,
 					freq_response_commands = freq_response;
 				end;
 
 				% build up search for existing parameter documents
-				q_doc = ndi_query('','isa','ndi_document_stimulus_response_scalar_parameters_basic','');
-				q_rdoc = ndi_query('','isa','ndi_document_stimulus_response_scalar','');
+				q_doc = ndi_query('','isa','ndi_document_stimulus_response_scalar_parameters_basic.json','');
+				q_rdoc = ndi_query('','isa','ndi_document_stimulus_response_scalar.json','');
 				q_r_stimdoc = ndi_query('stimulus_document_identifier','exact_string',stim_doc.doc_unique_id(),'');
 				q_r_stimcontroldoc = ndi_query('stimulus_control_document_identifier','exact_string',control_doc.doc_unique_id(),'');
 				q_e = ndi_query(E.searchquery());
@@ -174,7 +187,27 @@ classdef ndi_app_tuning_response < ndi_app
 				end;
 				q_matchtot = q_e & q_doc & q_matchtot;
 
-				
+				% load the data, get the stimulus times				
+
+				stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.presentation_time.onset]) ...
+						colvec([stim_doc.document_properties.presentation_time.offset]) ...
+						colvec([stim_doc.document_properties.presentation_order])];
+
+				stim_timeref = ndi_timereference(ndi_stim_obj, ...
+					ndi_clocktype(stim_doc.document_properties.presentation_time(1).clocktype), ...
+					stim_doc.document_properties.epochid, 0);
+
+				[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
+					colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
+
+				ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.presentation_order),2) stim_stim_onsetoffsetid(:,3)];
+
+				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, 0, 1);
+
+				vi = gapp.loadvalidinterval(ndi_timeseries_obj);
+				interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,0,Inf);
+
+				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, interval(1,1), interval(1,2));
 
 				for f=1:numel(freq_response_commands),
 
@@ -189,7 +222,7 @@ classdef ndi_app_tuning_response < ndi_app
 					% step 1, build the parameter document, if necessary; if we can find an example, use it
 					q_matchhere = ndi_query('stimulus_response_scalar_parameters_basic.freq_response','exact_number',freq_response,'');
 
-					param_doc = E.database_search(q_matchtot&q_matchhere);
+					param_doc = E.database_search(q_matchtot&q_matchhere)
 
 					if isempty(param_doc),
 						% make one
@@ -205,28 +238,10 @@ classdef ndi_app_tuning_response < ndi_app
 
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
 						ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
+
 					rdoc,
+					if isempty(rdoc), keyboard, end;
 					E.database_rm(rdoc);
-
-					stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.presentation_time.onset]) ...
-							colvec([stim_doc.document_properties.presentation_time.offset]) ...
-							colvec([stim_doc.document_properties.presentation_order])];
-
-					stim_timeref = ndi_timereference(ndi_stim_obj, ...
-						ndi_clocktype(stim_doc.document_properties.presentation_time(1).clocktype), ...
-						stim_doc.document_properties.epochid, 0);
-
-					[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-						colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
-
-					ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.presentation_order),2) stim_stim_onsetoffsetid(:,3)];
-
-					[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, 0, 1);
-
-				        vi = gapp.loadvalidinterval(ndi_timeseries_obj);
-				        interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,0,Inf);
-
-					[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, interval(1,1), interval(1,2));
 
 					controlstimids = control_doc.document_properties.control_stim_ids.control_stim_ids;
 					freq_mult = [];
@@ -242,15 +257,16 @@ classdef ndi_app_tuning_response < ndi_app
 
 					response = stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
 						'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,'prestimulus_normalization',prestimulus_normalization,...
-						'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+						'isspike',isspike,'spiketrain_dt',spiketrain_dt)
 
 					response_structure = struct('stimulus_identifier',rowvec(ts_stim_onsetoffsetid(:,3)),...
-							'response_type',response_type, 'response', rowvec([response.response]), ...
-							'control_response', rowvec([response.control_response]))
+							'response_real', rowvec(real([response.response])), 'response_imaginary', rowvec(imag([response.response])), ...
+							'control_response_real', rowvec(real([response.control_response])), ...
+							'control_response_imaginary',rowvec(imag([response.control_response])));
 
-					response_structure.response
+					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure);
 
-					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','responses',response_structure,...
+					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
 							'stimulus_document_identifier', stim_doc.doc_unique_id(), ...
 							'stimulus_control_document_identifier', control_doc.doc_unique_id(), ...
 							'stimulus_response_scalar_parameters_identifier', param_doc{1}.doc_unique_id()) ...
