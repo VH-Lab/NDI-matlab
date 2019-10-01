@@ -61,13 +61,11 @@ classdef ndi_app_tuning_response < ndi_app
 					% ASSUMPTION: each stimulus probe epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
-						doc_stim{i}.document_properties.epochid
-						if strcmp(doc_stim{i}.document_properties.epochid,'t00013'), keyboard; end;
 						stim_timeref = ndi_timereference(ndi_probe_stim, ...
 							ndi_clocktype(doc_stim{i}.document_properties.presentation_time(1).clocktype), ...
-							doc_stim{i}.document_properties.epochid, doc_stim{i}.document_properties.presentation_time(1).onset),
+							doc_stim{i}.document_properties.epochid, doc_stim{i}.document_properties.presentation_time(1).onset);
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time')), % time is 0 because stim_timeref is relative to 1st stim
+							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time')); % time is 0 because stim_timeref is relative to 1st stim
 						if ~isempty(ts_epoch_t0_out),
 							ndi_ts_epochs{i} = ts_epoch_timeref.epoch;
 						else,
@@ -81,51 +79,185 @@ classdef ndi_app_tuning_response < ndi_app
 						ctrl_search = ndi_query('control_stim_ids.stimulus_presentation_doc_unique_id','exact_string',doc_stim{i}.doc_unique_id(),'');
 						control_stim_doc = E.database_search(ctrl_search);
 						for j=1:numel(control_stim_doc),
-							
 							% okay, now how to analyze these stims?
 							% 
 							% want to calculate F0, F1, F2
 							% want to do this for regularly sampled and timestamp type data
-
-							
-
-							ndi_ts_epochs{i}
-							doc_stim{i}.document_properties
-							doc_stim{i}.document_properties.stimuli(1).parameters
-							doc_stim{i}.document_properties.presentation_order
-							doc_stim{i}.document_properties.presentation_time
-							control_stim_doc{j}.document_properties.control_stim_ids
-							control_stim_doc{j}.document_properties.control_stim_ids.control_stim_ids
+							if 0,
+								ndi_ts_epochs{i}
+								doc_stim{i}.document_properties
+								doc_stim{i}.document_properties.stimuli(1).parameters
+								doc_stim{i}.document_properties.presentation_order
+								doc_stim{i}.document_properties.presentation_time
+								control_stim_doc{j}.document_properties.control_stim_ids
+								control_stim_doc{j}.document_properties.control_stim_ids.control_stim_ids
+							end;
+							ndi_timeseries_obj,
+							ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
 						end;
 
 					end
 				end
 		end % 
 
-
-		function response_doc = compute_stimulus_response_scalar(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)
+		function response_doc = compute_stimulus_response_scalar(ndi_app_tuning_response_obj, ndi_stim_obj, ndi_timeseries_obj, stim_doc, control_doc, varargin)
 			% COMPUTE_STIMULUS_RESPONSES - compute responses to a stimulus set
 			%
-			% RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
+			% RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
 			%
-			% Given an NDI_TIMESERIES_OBJ and a STIM_DOC (an NDI_DOCUMENT of class 'ndi_document_stimulus'), this
+			% Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an NDI_DOCUMENT of class 'ndi_document_stimulus_presentation'), and a
+			% CONTROL_DOC (an NDI_DOCUMENT of class 'ndi_document_control_stimulus_ids'), this
 			% function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
-			% NDI_DOCUMENT of class 'ndi_stimulus_response_scalar'.
+			% NDI_DOCUMENT of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
+			% fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses, F1, F2).
+			%
+			% Note that we recommend making a new app subclass if one wants to write additional classes of analysis procedures.
 			%
 			% This function also takes name/value pairs that alter the behavior:
-			% Parameter (default)             | Description
+			% Parameter (default)                  | Description
 			% ---------------------------------------------------------------------------------
-			% control_stim_method ('blankid') | How should we determine the control stimulus?
-			%                                 |   stimuli. If empty, then the program will look for 'isblank'
+			% temporalfreqfunc                     |
+			%   ('ndi_stimulustemporalfrequency')  |
+			% freq_response ([])                   | Frequency response to measure. If empty, then the function is 
+			%                                      |   called 3 times with values 0, 1, and 2 times the fundamental frequency.
+			% prestimulus_time ([])                | Calculate a baseline using a certain amount of TIMESERIES signal during
+                        %                                      |     the pre-stimulus time given here
+			% prestimulus_normalization ([])       | Normalize the stimulus response based on the prestimulus measurement.
+			%                                      | [] or 0) No normalization
+			%                                      |       1) Subtract: Response := Response - PrestimResponse
+			%                                      |       2) Fractional change Response:= ((Response-PrestimResponse)/PrestimResponse)
+			%                                      |       3) Divide: Response:= Response ./ PreStimResponse
+			% isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
+			% spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform
 			%
-				control_stim_method = 'blankid';
+			%
+				temporalfreqfunc = 'ndi_stimulustemporalfrequency';
+				freq_response = [];
+				prestimulus_time = [];
+				prestimulus_normalization = [];
+				isspike = 0;
+				spiketrain_dt = 0.001;
+
+				if ~isempty(intersect(fieldnames(ndi_timeseries_obj),'type')),
+					if strcmpi(ndi_timeseries_obj.type,'spikes'),
+						isspike = 1;
+					end;
+				end;
 
 				assign(varargin{:});
 
-				% how to specify the control stimulus??
-				% default way to find stimulus parameters has 'isblank'
+				response_doc = {};
 
-		end; % compute_stimulus_response()
+				E = ndi_app_tuning_response_obj.experiment;
+				gapp = ndi_app_markgarbage(E);
+
+				if isempty(freq_response),
+					freq_response_commands = [0 1 2];
+				else,
+					freq_response_commands = freq_response;
+				end;
+
+				% build up search for existing parameter documents
+				q_doc = ndi_query('','isa','ndi_document_stimulus_response_scalar_parameters_basic','');
+				q_rdoc = ndi_query('','isa','ndi_document_stimulus_response_scalar','');
+				q_r_stimdoc = ndi_query('stimulus_document_identifier','exact_string',stim_doc.doc_unique_id(),'');
+				q_r_stimcontroldoc = ndi_query('stimulus_control_document_identifier','exact_string',control_doc.doc_unique_id(),'');
+				q_e = ndi_query(E.searchquery());
+				q_match{1} = ndi_query('stimulus_response_scalar_parameters_basic.temporalfreqfunc','exact_string',temporalfreqfunc,'');
+				q_match{2} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_time','exact_number',prestimulus_time,'');
+				q_match{3} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_normalization','exact_number',prestimulus_normalization,'');
+				q_match{4} = ndi_query('stimulus_response_scalar_parameters_basic.isspike','exact_number',isspike,'');
+				q_match{5} = ndi_query('stimulus_response_scalar_parameters_basic.spiketrain_dt','exact_number',spiketrain_dt,'');
+				q_matchtot = q_match{1};
+				for j=2:numel(q_match),
+					q_matchtot = q_matchtot & q_match{j};
+				end;
+				q_matchtot = q_e & q_doc & q_matchtot;
+
+				
+
+				for f=1:numel(freq_response_commands),
+
+					freq_response = freq_response_commands(f);
+
+					if freq_response==0,
+						response_type = 'mean';
+					else,
+						response_type = ['F' int2str(freq_response)];
+					end;
+
+					% step 1, build the parameter document, if necessary; if we can find an example, use it
+					q_matchhere = ndi_query('stimulus_response_scalar_parameters_basic.freq_response','exact_number',freq_response,'');
+
+					param_doc = E.database_search(q_matchtot&q_matchhere);
+
+					if isempty(param_doc),
+						% make one
+						stimulus_response_scalar_parameters_basic = var2struct('temporalfreqfunc','freq_response','prestimulus_time','prestimulus_normalization',...
+							'isspike','spiketrain_dt');
+						param_doc = ndi_document('stimulus/ndi_document_stimulus_response_scalar_parameters_basic.json',...
+							'stimulus_response_scalar_parameters_basic', stimulus_response_scalar_parameters_basic') + E.newdocument();
+						E.database_add(param_doc);
+						param_doc = {param_doc};
+					end;
+
+					% look for response docs
+
+					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
+						ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
+					rdoc,
+					E.database_rm(rdoc);
+
+					stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.presentation_time.onset]) ...
+							colvec([stim_doc.document_properties.presentation_time.offset]) ...
+							colvec([stim_doc.document_properties.presentation_order])];
+
+					stim_timeref = ndi_timereference(ndi_stim_obj, ...
+						ndi_clocktype(stim_doc.document_properties.presentation_time(1).clocktype), ...
+						stim_doc.document_properties.epochid, 0);
+
+					[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
+						colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
+
+					ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.presentation_order),2) stim_stim_onsetoffsetid(:,3)];
+
+					[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, 0, 1);
+
+				        vi = gapp.loadvalidinterval(ndi_timeseries_obj);
+				        interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,0,Inf);
+
+					[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, interval(1,1), interval(1,2));
+
+					controlstimids = control_doc.document_properties.control_stim_ids.control_stim_ids;
+					freq_mult = [];
+					for j=1:numel(stim_doc.document_properties.stimuli),
+						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
+						if ~isempty(freq_multi_here),
+							freq_mult(j) = freq_multi_here;
+						else,
+							freq_mult(j) = 0;
+						end;
+
+					end;
+
+					response = stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
+						'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,'prestimulus_normalization',prestimulus_normalization,...
+						'isspike',isspike,'spiketrain_dt',spiketrain_dt);
+
+					response_structure = struct('stimulus_identifier',rowvec(ts_stim_onsetoffsetid(:,3)),...
+							'response_type',response_type, 'response', rowvec([response.response]), ...
+							'control_response', rowvec([response.control_response]))
+
+					response_structure.response
+
+					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','responses',response_structure,...
+							'stimulus_document_identifier', stim_doc.doc_unique_id(), ...
+							'stimulus_control_document_identifier', control_doc.doc_unique_id(), ...
+							'stimulus_response_scalar_parameters_identifier', param_doc{1}.doc_unique_id()) ...
+						+ E.newdocument();
+					E.database_add(response_doc{end});
+				end;
+		end; % compute_stimulus_response_scalar()
 
 		function cs_doc = label_control_stimuli(ndi_app_tuning_response_obj, stimulus_probe_obj, reset, varargin)
 			% LABEL_CONTROL_STIMULI - label control stimuli for all stimulus presentation documents for a given stimulator
