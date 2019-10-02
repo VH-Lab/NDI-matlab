@@ -6,13 +6,20 @@
 		"class_version":					1,
 		"superclasses": [ 
                         { "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json" },
-                        { "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_probe.json" },
-                        { "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json" }
+                        { "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json" },
+                        { "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
+                        { "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response_scalar_reference.json" }
 		]
 	},
 	"tuning_curve": {
-		"what_varies":						"",
-		"control_stimulus_id":					[]
+		"independent_variable_label":				{},
+		"independent_variable_value":				[],
+		"stimid":						[],
+		"response_mean":					[],
+		"response_stddev":					[],
+		"response_stderr":					[],
+		"individual_responses":					{},
+		"response_units":					'Spikes/s'
 	}
 }
 

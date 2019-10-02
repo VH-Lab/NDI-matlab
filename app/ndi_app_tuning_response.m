@@ -130,7 +130,6 @@ classdef ndi_app_tuning_response < ndi_app
 			% isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
 			% spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform
 			%
-			%
 				temporalfreqfunc = 'ndi_stimulustemporalfrequency';
 				freq_response = [];
 				prestimulus_time = [];
@@ -267,13 +266,53 @@ classdef ndi_app_tuning_response < ndi_app
 
 					stimulus_response_struct = struct('stimulator_unique_reference','',...
 						'stimulus_presentation_document_identifier', stim_doc.doc_unique_id(), ...
-						'stimulus_control_document_identifier', control_doc.doc_unique_id());
+						'stimulus_control_document_identifier', control_doc.doc_unique_id(),...
+						'stimulator_epochid', stim_doc.document_properties.epochid, ...
+						'thing_epochid', ts_epoch_timeref.epoch);
 
 					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
 							'stimulus_response', stimulus_response_struct,'thingreference.thing_unique_id',ndi_timeseries_obj.doc_unique_id())+E.newdocument();
 					E.database_add(response_doc{end});
 				end;
 		end; % compute_stimulus_response_scalar()
+
+		function tuning_doc = tuning_curve(ndi_app_tuning_response_obj, stim_response_doc, varargin)
+			% TUNING_CURVE - compute a tuning curve from stimulus responses
+			%
+			% TUNING_DOC = TUNING_CURVE(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESOPNSE_DOC, ...)
+			%
+			%
+			% This function accepts name/value pairs that modifies its basic operation:
+			%
+			% Parameter (default)         | Description
+			% -----------------------------------------------------------------------
+			% independent_parameter {}    | Independent parameters to search for in stimuli.
+			%                             |   Can be multi-dimensional to create multi-variate 
+			%                             |   tuning curves. Only stimuli that contain these fields
+			%                             |   will be included.
+			%                             |   Examples: {'angle'}  {'angle','sFrequency'}
+			% constraint ([])             | Constraints in the form of a FIELDSEARCH structure.
+			%                             |   Example: struct('field','sFrequency','operation',...
+			%                             |              'exact_number','param1',1,'param2','')
+			%
+			% See also: FIELDSEARCH
+
+				independent_parameter = {};
+				constraint = [];
+
+				assign(varargin{:});
+
+				% load stimulus information 
+				stim_pres_doc = E.database_search(ndi_query('ndi_document.doc_unique_reference', 'exact_string',...
+					stim_response_doc.document_properties.stimulus_presentation_document_identifier,''));
+				if isempty(stim_pres_doc),
+					error(['Could not load stimulus presentation document ' stim_response_doc.document_properties.stimulus_presentation_document_identifier]);
+				end;
+
+				
+				
+
+		end; % tuning_curve()
 
 		function cs_doc = label_control_stimuli(ndi_app_tuning_response_obj, stimulus_probe_obj, reset, varargin)
 			% LABEL_CONTROL_STIMULI - label control stimuli for all stimulus presentation documents for a given stimulator
