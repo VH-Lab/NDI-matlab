@@ -5,14 +5,13 @@
 		"class_name":						"stimulus-ndi_document_stimulus_response_scalar",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json"}
 		]
 	},
-	"stimulus_document_identifier":					[],
-	"stimulus_control_document_identifier":				[],
-	"stimulus_response_scalar_parameters_identifier":		[],
 	"stimulus_response_scalar": {
-		"response_type":					[],
+		"stimulus_response_scalar_parameters_identifier":		[],
+		"response_type":						[],
 		"responses": {
 			"stimulus_identifier":					[],
 			"response_real":					[],

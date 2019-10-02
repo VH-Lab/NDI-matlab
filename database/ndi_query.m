@@ -74,7 +74,7 @@ classdef ndi_query
 						'param1',varargin{3},'param2',varargin{4});
 				elseif nargin==0, % not an error
 				else,
-					error(['Unknown inputs to NDI_QUERY']);
+					error(['Unknown inputs to NDI_QUERY; number of inputs was ' int2str(nargin) ' but expected 0, 1, or 4.']);
 				end;
 		end;  %ndi_query() % 
 

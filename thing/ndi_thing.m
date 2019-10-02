@@ -305,7 +305,22 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				elseif ~isempty(thing_doc),
 					thing_doc = thing_doc{1};
 				end;
-		end; % load_thing_doc
+		end; % load_thing_doc()
+
+		function thing_ref = doc_unique_id(ndi_thing_obj)
+			% DOC_UNIQUE_REF - return the document unique reference for an NDI_THING object
+			%
+			% UNIQUE_REF = DOC_UNIQUE_REF(NDI_THING_OBJ)
+			%
+			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
+			% document for the thing, then empty is returned.
+
+				thing_ref = [];
+				thing_doc = ndi_thing_obj.load_thing_doc();
+				if ~isempty(thing_doc),
+					thing_ref = thing_doc.doc_unique_id();
+				end;
+		end; % doc_unique_ref()
 
 		function thing_docs = load_all_thing_docs(ndi_thing_obj)
 			% LOAD_ALL_THING_DOCS - load all of the NDI_THING objects from an experiment database

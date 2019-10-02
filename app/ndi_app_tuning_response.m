@@ -50,8 +50,8 @@ classdef ndi_app_tuning_response < ndi_app
 				sq_e = ndi_query(E.searchquery());
 				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json',''); % presentation
 				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
-				doc_stim = E.database_search(sq_stim&sq_e&sq_probe)
-				doc_tune = E.database_search(sq_tune&sq_e&sq_probe)
+				doc_stim = E.database_search(sq_stim&sq_e&sq_probe);
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe);
 
 				ndi_ts_epochs = {};
 
@@ -222,7 +222,7 @@ classdef ndi_app_tuning_response < ndi_app
 					% step 1, build the parameter document, if necessary; if we can find an example, use it
 					q_matchhere = ndi_query('stimulus_response_scalar_parameters_basic.freq_response','exact_number',freq_response,'');
 
-					param_doc = E.database_search(q_matchtot&q_matchhere)
+					param_doc = E.database_search(q_matchtot&q_matchhere);
 
 					if isempty(param_doc),
 						% make one
@@ -239,8 +239,6 @@ classdef ndi_app_tuning_response < ndi_app
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
 						ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
 
-					rdoc,
-					if isempty(rdoc), keyboard, end;
 					E.database_rm(rdoc);
 
 					controlstimids = control_doc.document_properties.control_stim_ids.control_stim_ids;
@@ -257,20 +255,22 @@ classdef ndi_app_tuning_response < ndi_app
 
 					response = stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
 						'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,'prestimulus_normalization',prestimulus_normalization,...
-						'isspike',isspike,'spiketrain_dt',spiketrain_dt)
+						'isspike',isspike,'spiketrain_dt',spiketrain_dt);
 
 					response_structure = struct('stimulus_identifier',rowvec(ts_stim_onsetoffsetid(:,3)),...
 							'response_real', rowvec(real([response.response])), 'response_imaginary', rowvec(imag([response.response])), ...
 							'control_response_real', rowvec(real([response.control_response])), ...
 							'control_response_imaginary',rowvec(imag([response.control_response])));
 
-					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure);
+					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure,...
+						'stimulus_response_scalar_parameters_identifier',param_doc{1}.doc_unique_id());
+
+					stimulus_response_struct = struct('stimulator_unique_reference','',...
+						'stimulus_presentation_document_identifier', stim_doc.doc_unique_id(), ...
+						'stimulus_control_document_identifier', control_doc.doc_unique_id());
 
 					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
-							'stimulus_document_identifier', stim_doc.doc_unique_id(), ...
-							'stimulus_control_document_identifier', control_doc.doc_unique_id(), ...
-							'stimulus_response_scalar_parameters_identifier', param_doc{1}.doc_unique_id()) ...
-						+ E.newdocument();
+							'stimulus_response', stimulus_response_struct,'thingreference.thing_unique_id',ndi_timeseries_obj.doc_unique_id())+E.newdocument();
 					E.database_add(response_doc{end});
 				end;
 		end; % compute_stimulus_response_scalar()

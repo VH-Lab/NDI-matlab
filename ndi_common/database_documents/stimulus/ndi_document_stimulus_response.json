@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_response_schema.json",
+		"class_name":						"stimulus-ndi_document_stimulus_response",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json"}
+		]
+	},
+	"stimulus_response": {
+		"stimulator_unique_reference":					[],
+		"stimulus_presentation_document_identifier":			[],
+                "stimulus_control_document_identifier":                         []
+	}
+}
+
