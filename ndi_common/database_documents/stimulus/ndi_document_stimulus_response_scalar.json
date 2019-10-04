@@ -13,7 +13,7 @@
 		"stimulus_response_scalar_parameters_identifier":		[],
 		"response_type":						[],
 		"responses": {
-			"stimulus_identifier":					[],
+			"stimid":		 				[],
 			"response_real":					[],
 			"response_imaginary":					[],
 			"control_response_real":				[],

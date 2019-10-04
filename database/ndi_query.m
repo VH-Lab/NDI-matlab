@@ -90,7 +90,7 @@ classdef ndi_query
 				C.searchstructure = [C.searchstructure(:); B.searchstructure(:)];
 		end; % and()
 
-		function c = or(A,B)
+		function C = or(A,B)
 			% OR - search for _this_ NDI_QUERY object or _that_ NDI_QUERY object
 			%
 			% C = OR(A,B)
