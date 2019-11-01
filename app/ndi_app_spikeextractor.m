@@ -17,7 +17,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			%
 				experiment = [];
 				name = 'ndi_app_spikeextractor';
-				if numel(varargin)>0,
+				if numel(varargin)>0
 					experiment = varargin{1};
 				end
 				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_app(experiment, name);
@@ -32,18 +32,18 @@ classdef ndi_app_spikeextractor < ndi_app
 			% Given an EXTRACTION_DOC of parameters and a sampling rate SAMPLE_RATE, make a filter
 			% structure for passing to FILTERDATA.
 			%
-				switch(extraction_doc.document_properties.spike_extraction_parameters.filter_type),
+				switch(extraction_doc.document_properties.spike_extraction_parameters.filter_type)
 					case 'cheby1high',
 						[b,a] = cheby1(extraction_doc.document_properties.spike_extraction_parameters.filter_order, ...
 								extraction_doc.document_properties.spike_extraction_parameters.filter_ripple, ...
 								extraction_doc.document_properties.spike_extraction_parameters.filter_high/(0.5*sample_rate),'high');
 						filterstruct = struct('b',b,'a',a);
-					case 'none',
+					case 'none'
 						filterstruct = [];
-					otherwise,
+					otherwise
 						error(['Unknown filter type: ' extraction_doc.document_properties.spike_extraction_parameters.filter_type]);
-				end;
-		end; % makefilterstruct()
+				end
+		end % makefilterstruct()
 
 		function data_out = filter(ndi_app_spikeextractor_obj, data_in, filterstruct)
 			% FILTER - filter data based on a filter structure
@@ -52,14 +52,14 @@ classdef ndi_app_spikeextractor < ndi_app
 			%
 			% Filters data based on FILTERSTRUCT (see NDI_APP_SPIKEEXTRACTOR/MAKEFILTERSTRUCT)
 			%
-				if isempty(filterstruct),
+				if isempty(filterstruct)
 					data_out = data_in;
-				else,
+                else
 					data_out = filtfilt(filterstruct.b,filterstruct.a,data_in);
-				end;
-		end; % filter()
+                end
+        end % filter()
 
-		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
+		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, extraction_params, redo, t0_t1)
 			% EXTRACT - method that extracts spikes from epochs of an NDI_TIMESERIES_OBJ (such as NDI_PROBE or NDI_THING)
 			%
 			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
@@ -70,42 +70,60 @@ classdef ndi_app_spikeextractor < ndi_app
 			% EXTRACTION_NAME name given to find ndi_doc in database
 			% EXTRACTION_PARAMS a struct or filepath (tab separated file) with extraction parameters
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
-
+			
 				ndi_globals;
 
 
-				if ndi_debug.veryverbose,
+				if ndi_debug.veryverbose
 					disp(['Beginning of extract']);
 				end;
 
 				% process input arguments
 
-				if isempty(epoch),
+				if isempty(epoch)
 					et = epochtable(ndi_timeseries_obj);
 					epoch = {et.epoch_id};
-				elseif ~iscell(epoch),
+				elseif ~iscell(epoch)
 					epoch = {epoch};
-				end;
+				end
+                
+				if isa(extraction_params, 'char')
+					if strcmp(extraction_params, extraction_name)
+						extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'});
+						if isempty(extraction_doc),
+							error(['No spike_extraction_parameters document named ' extraction_name ' found.']);
+						elseif numel(extraction_doc)>1,
+							error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
+						else
+							extraction_doc = extraction_doc{1};
+						end
+                        disp('matches extraction name')
+					elseif strcmp(extraction_params, 'default')
+						extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'});
 
-				extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'});
-				if isempty(extraction_doc),
-					error(['No spike_extraction_parameters document named ' extraction_name ' found.']);
-				elseif numel(extraction_doc)>1,
-					error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
-				else,
+						if isempty(extraction_doc)
+                            disp('isempty true')
+							extraction_doc = ndi_app_spikeextractor_obj.add_extraction_doc(extraction_name);
+                        else
+                            extraction_doc = extraction_doc{1};
+						end
+					end
+				elseif isa(extraction_params, 'struct')
+					extraction_doc = ndi_app_spikeextractor_obj.add_extraction_doc(extraction_name, extraction_params);
 					extraction_doc = extraction_doc{1};
-				end;
-
-				if nargin<5,
+				end
+				
+				if exist('redo') == 0
 					redo = 0;
-				end;
-
-				if nargin<6,
+				end
+				
+				if exist('t0_t1') == 0
 					t0_t1 = repmat([-Inf Inf],numel(epoch),1);
-				end;
+				end
 
 				% loop over requested epochs
-				for n=1:numel(epoch),
+				for n=1:numel(epoch)
+                    
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
 					if ndi_debug.veryverbose,
@@ -122,10 +140,10 @@ classdef ndi_app_spikeextractor < ndi_app
 						{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
 					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(spiketimes_searchq);
 
-					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo,
+					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo
 						% we already have this epoch
-						continue; % skip to next epoch
-					end;
+						continue % skip to next epoch
+					end
 
 					sample_rate = ndi_timeseries_obj.samplerate(epoch{n});
 					data_example = ndi_timeseries_obj.readtimeseries(epoch{n},0,1/sample_rate); % read a single sample
@@ -201,7 +219,7 @@ classdef ndi_app_spikeextractor < ndi_app
 						read_end_sample = ceil(read_start_sample + extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate); % end sample for chunk to read
 						if read_end_sample > end_sample,
 							read_end_sample = end_sample;
-						end;
+						end
 						% Read from probe in epoch n from start_time to end_time
 						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
 						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
@@ -216,17 +234,17 @@ classdef ndi_app_spikeextractor < ndi_app
 
 						if ~isempty(filterstruct),
 							data = ndi_app_spikeextractor_obj.filter(data,filterstruct);
-						end;
+						end
 
-						if 0,
-						figure(10);
-						plot(data);
-						hold on;
-						AX=axis;
-						plot([AX(1) AX(2)], [1 1]*extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter,'k--');
-						hold off;
-						pause(2);
-						end;
+						if 0
+							figure(10);
+							plot(data);
+							hold on;
+							AX=axis;
+							plot([AX(1) AX(2)], [1 1]*extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter,'k--');
+							hold off;
+							pause(2);
+						end
 
 						% Spike locations stored here
 						locs = [];
@@ -235,18 +253,18 @@ classdef ndi_app_spikeextractor < ndi_app
 						for channel=1:size(data_example,2) %channel
 							locs_here = [];
 							switch extraction_doc.document_properties.spike_extraction_parameters.threshold_method,
-								case 'standard_deviation',
+								case 'standard_deviation'
 									% Calculate stdev for channel
 									stddev = std(data(:,channel));
 									% Dot discriminator to find thresholds CHECK complex matlab c code running here, potential source of bugs in demo
 									locs_here = dotdisc(double(data(:,channel)), ...
 										[extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter*stddev ...
 											extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]); 
-								case 'absolute',
+								case 'absolute'
 									locs_here = dotdisc(double(data(:,channel)), ...
 										[extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter ...
 											extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]); 
-								otherwise,
+								otherwise
 									error(['unknown threshold method']);
 							end
 							%Accomodates spikes according to refractory period
@@ -280,14 +298,14 @@ classdef ndi_app_spikeextractor < ndi_app
 
 						% Interpolation of waveforms, cutting for now
 
-						if 0, % interpolation>1,
+						if 0 % interpolation>1,
 							% For number of spikes
 							for i=1:size(waveforms, 3);
 								waveforms_out(:,:,i) = interp1(x, waveforms(:,:,i), xq, 'spline');
 							end
-						elseif 0,
+						elseif 0
 							waveforms_out = waveforms;
-						end;
+						end
 						% Store epoch waveforms in file
 						addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
 					  
