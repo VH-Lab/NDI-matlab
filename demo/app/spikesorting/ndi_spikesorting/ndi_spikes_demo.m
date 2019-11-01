@@ -35,4 +35,4 @@ title(['First spike']);
 xlabel('Samples');
 ylabel('Amplitude');
 
-%spike_sorter.spike_sort('Tetrode7', 'n-trode', 1, 'test', 'test_sort', 'ndi_common/example_app_experiments/exp_sg/sorting_parameters.txt')
+spike_sorter.spike_sort(probe, 1, 'test', 'test_sort', 'ndi_common/example_app_experiments/exp_sg/sorting_parameters.txt')
