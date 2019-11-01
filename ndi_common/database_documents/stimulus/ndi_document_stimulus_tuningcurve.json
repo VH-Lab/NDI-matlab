@@ -19,6 +19,7 @@
 		"response_stderr":					[],
 		"individual_responses_real":				[[]],
 		"individual_responses_imaginary":			[[]],
+		"stimulus_presentation_number":				[],
 		"control_stimid":					[],
 		"control_response_mean":				[],
 		"control_response_stddev":				[],

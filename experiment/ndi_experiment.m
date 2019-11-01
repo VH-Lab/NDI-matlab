@@ -384,7 +384,7 @@ classdef ndi_experiment < handle
 		end; % getprobes
 
 		function things = getthings(ndi_experiment_obj, varargin);
-		% GETTHINGS - Return all NDI_THING objects that are found in experiment database
+			% GETTHINGS - Return all NDI_THING objects that are found in experiment database
 			%
 			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, ...)
 			%
@@ -409,6 +409,19 @@ classdef ndi_experiment < handle
 					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);
 				end;
 		end; % getthings()
+
+		function b = eq(e1,e2)
+			% EQ - are 2 NDI_EXPERIMENTS equal?
+			% 
+			% B = EQ(E1, E2)
+			%
+			% Returns 1 if and only if the experiments have the same unique reference number.
+				if ~isa(e2,'ndi_experiment'),
+					b = 0;
+				else,
+					b = strcmp(e1.unique_reference_string(), e2.unique_reference_string());
+				end;
+		end; % eq()
 	end; % methods
 end % classdef
 

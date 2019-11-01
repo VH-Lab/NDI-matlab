@@ -335,8 +335,8 @@ classdef ndi_app_tuning_response < ndi_app
 				% Step 4: set up variables
 
 				tuning_curve = emptystruct('independent_variable_label','independent_variable_value','stimid','response_mean','response_stddev','response_stderr',...
-						'individual_responses_real','individual_responses_imaginary', ...
-						'control_stimid','control_mean','control_stddev','control_stderr',...
+						'individual_responses_real','individual_responses_imaginary', 'stimulus_presentation_number', ...
+						'control_stimid','control_response_mean','control_response_stddev','control_response_stderr',...
 						'control_individual_responses_real','control_individual_responses_imaginary',...
 						'response_units');
 
@@ -396,6 +396,7 @@ classdef ndi_app_tuning_response < ndi_app
 							stim_response_doc.document_properties.stimulus_response_scalar.responses.control_response_real(stimulus_indexes);
 						tuning_curve.control_individual_responses_imaginary{I} = ...
 							stim_response_doc.document_properties.stimulus_response_scalar.responses.control_response_imaginary(stimulus_indexes);
+						tuning_curve.stimulus_presentation_number{I} = stimulus_indexes;
 						all_responses = tuning_curve.individual_responses_real{I} + sqrt(-1)*tuning_curve.individual_responses_imaginary{I};
 						tuning_curve.response_mean(I)            = nanmean  (all_responses);
 						if ~all(isreal(tuning_curve.response_mean)),
@@ -560,140 +561,70 @@ classdef ndi_app_tuning_response < ndi_app
 
 		end; % control_stimulus()
 
-		function other  = analyze_tuning_responses(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)
-			% COMPUTE_STIMULUS_RESPONSE_SUMMARY - compute responses to a stimulus set
+		function [tc_doc, srs_doc] = find_tuningcurve_document(ndi_app_tuning_response_obj, ndi_thing_obj, epochid, response_type)
+			% FIND_TUNINGCURVE_DOCUMENT - find a tuning curve document of a particular thing, epochid, etc...
 			%
-			% DOC = COMPUTE_STIMULUS_RESPONSE_SUMMARY(NDI_APP_STIMULUS_RESPONSE_APP, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, STIM_DOC, TIMEREF, T0, T1, ...)
-			%
-			% Note: Uses the app NDI_APP_MARKGARBAGE to limit analysis to intervals that have been
-			% marked as valid or have not been marked invalid.
+			% [TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, THING_OBJ, EPOCHID, RESPONSE_TYPE) 
 			%
 			%
-			% This function also takes name/value pairs that alter the behavior:
-			% Parameter (default)             | Description
-			% ---------------------------------------------------------------------------------
-			% independent_axis_units ('')     | If empty, the program attempts to determine the
-			%                                 |   axis units by determining what varies across the
-			%                                 |   stimulus parameters.
-			% independent_axis_label ('')     | The label to use by a plotting program for the independent
-			%                                 |   variable
-			% independent_axis_parameter ('') | The parameter to read from the stimulus in order
-			%                                 |   to obtain the independent_axis_values.
-			% response_units ('')             | Response units; if empty, attempts to read from probe
-			% response_label ('')             | Label for the responses for a plotting program
-			%                                 |
-			% blank_stimid ([])               | Pass the stimulus id numbers of any 'blank' (control)
-			%                                 |   stimuli. If empty, then the program will look for 'isblank'
-			%                                 |   fields in the parameters.
-			% freq_response_parameter (0)     | The parameter of each stimulus to examine for frequency response.
-			%                                 |   If 0, then the mean response is used.
-			% freq_response_multiplier (0)    | The multipier to use with the freq_response_parameter value. For example,
-			%                                 |   pass '1' to compute the F1 component (the response at the freq_response_parameter
-			%                                 |   frequency).
-			% prestimulus_time ([])           | If a baseline per stimulus is to be computed, it can be passed here (time in seconds)
-			% prestimulus_normalization ([])  | Normalize the stimulus response based on the prestimulus measurement.
-			%                                 | [] or 0) No normalization
-			%                                 |       1) Subtract: Response := Response - PrestimResponse
-			%                                 |       2) Fractional change Response:= ((Response-PrestimResponse)/PrestimResponse)
-			%                                 |       3) Divide: Response:= Response ./ PreStimResponse
-			%
-				independent_axis_units = '';
-				independent_axis_label = '';
-				independent_axis_parameter = '';
-				response_units = '';
-				response_label = '';
+				E = ndi_app_tuning_response_obj.experiment;
 
-				blank_stimid = [];
+				tc_doc = {};
+				srs_doc = {};
 
-				freq_response_parameter = 0;
-				freq_response_multiplier = 0;
+				q_e = ndi_query(E.searchquery());
+				q_tc = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
+				q_thingr = ndi_query('thingreference.thing_unique_id','exact_string',ndi_thing_obj.doc_unique_id(),'');
 
-				prestimulus_time = [];
-				prestimulus_normalization = [];
+				tc_doc_matches = E.database_search(q_e&q_tc&q_thingr);
 
-				assign(varargin{:});
+				match_indexes = [];
+				srs = {};
 
-				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, t0, t0);
-
-				gapp = ndi_app_markgarbage(ndi_app_stimulus_response_obj.experiment);
-				vi = gapp.loadvalidinterval(sharpprobe);
-				interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,t0,t1)
-
-				[ds, ts, timeref_]=ndi_probe_stim.readtimeseries(timeref,interval(1,1),interval(1,2));
-				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, interval(1,1), interval(1,2));
-
-				stim_onsetoffsetid = [ts.stimon ts.stimoff ds.stimid];
-
-				if isempty(blank_stimid),
-					isblank = structfindfield(ds.parameters,'isblank',1);
-					notblank = setdiff(1:numel(ds.parameters),isblank);
-					blank_stimid = isblank;
+				for i=1:numel(tc_doc_matches),
+					srs{i} = E.database_search(q_e&ndi_query('ndi_document.document_unique_reference','exact_string', tc_doc_matches{i}.document_properties.stimulus_response_scalar_reference, ''));
+					if ~isempty(srs),
+						for j=1:numel(srs{i}),
+							if strcmpi(srs{i}{j}.document_properties.stimulus_response_scalar.response_type,response_type) & ...
+								strcmpi(srs{i}{j}.document_properties.stimulus_response.thing_epochid, epochid),
+									match_indexes(end+1,:) = [i j];
+							end;
+						end;
+					end;
 				end;
 
-				% now get frequencies in order
+				if ~isempty(match_indexes),
+					for i=1:size(match_indexes),
+						tc_doc{i} = ndi_app_tuning_response_obj.tuningdoc_fixcellarrays(tc_doc_matches{match_indexes(i,1)});
+						srs_doc{i} = srs{match_indexes(i,1)}{match_indexes(i,2)};
+					end;
+				end;
 
-				if isempty(freq_response_parameter),
-					freq_response_parameter = 0;
-					freq_response = 0;
-				elseif isnumeric(freq_response_parameter),
-					freq_response = freq_response_parameter;
-				elseif ischar(freq_response_parameter),
-					freq_response = [];
-					for i=1:numel(ds.parameters),
-						if isfield(ds.parameters{i},freq_response_parameter),
-							freq_response(i) = getfield(ds.parameters{i},freq_response_parameter) * freq_response_multiplier;
-						else,
-							freq_response(i) = 0;
-						end
-					end
-				end
+		end; % find_tuningcurve_document
 
-				nvp = str2namevaluepair(var2struct('freq_response',blank_stimid','prestimulus_time','prestimulus_normalization'));
+		function tc_doc = tuningdoc_fixcellarrays(ndi_app_tuning_response_obj, tc_doc)
+			% TUNINGDOC_FIXCELLARRAYS - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
+			%
+				document_properties = tc_doc.document_properties;
 
-				response = stimulus_response_summary(data, t_raw, stim_onsetoffsetid, 'freq_response', freq_response, nvp{:});
+				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+					document_properties.tuning_curve.individual_responses_real = ...
+							matrow2cell(document_properties.tuning_curve.individual_responses_real);
+                                        document_properties.tuning_curve.individual_responses_imaginary= ...
+                                                        matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+					document_properties.tuning_curve.control_individual_responses_real = ...
+							matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+					document_properties.tuning_curve.control_individual_responses_imaginary= ...
+							matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+					document_properties.tuning_curve.stimulus_presentation_number = ...
+							matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+                                end;
 
-				% now need to convert response to document
+				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
+		
 
-				% need to read independent_axis values
-
-				independent_axis_values = [];
-
-				if isempty(independent_axis_parameter),
-					independent_axis_values = response.stimid;
-				else,
-					for i=1:numel(response.stimid),
-						if isfield(ds.parameters{response.stimid(i)}),
-							independent_axis_values(i) = getfield(ds.parameters{response.stimid(i)});
-						else,
-							independent_axis_values(i) = NaN;
-						end
-					end
-				end
-
-				independent_axis_units = '';
-				independent_axis_label = '';
-				independent_axis_parameter = '';
-				response_units = '';
-				response_label = '';
-
-				doc = ndi_app_stimulus_response_obj.experiment.newdocument('data/stimulus_response_summary', ...
-						'stimulus_response_summary.independent_axis_units', independent_axis_units, ...
-						'stimulus_response_summary.independent_axis_label', independent.axis_label, ...
-						'stimulus_response_summary.independent_axis_parameter', independent_axis_parameter, ...
-						'stimulus_response_summary.response_units', response_units, ...
-						'stimulus_response_summary.response_label', response_label, ...
-						'stimulus_response_summary.independent_axis_values', '', ...
-						'stimulus_response_summary.mean_responses', responses.mean_responses, ...
-						'stimulus_response_summary.stddev_responses', responses.stddev_responses, ...
-						'stimulus_response_summary.stderr_responses', responses.stderr_responses, ...
-						'stimulus_response_summary.individual_responses', responses.individual_responses, ...
-						'stimulus_response_summary.blank_response.mean_responses', responses.blank_mean, ...
-						'stimulus_response_summary.blank_response.stddev_responses', responses.blank_stddev, ...
-						'stimulus_response_summary.blank_response.stderr_responses', responses.blank_stderr, ...
-						'stimulus_response_summary.blank_response.individual_responses', responses.blank_individual_responses ...
-						) + ndi_app_stimulus_response_obj.newdocument();
-
-		end; % analyze_1d_tuning_curve
+		end;  % fixcellarrays()
 
 	end; % methods
 

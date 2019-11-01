@@ -115,9 +115,7 @@ classdef ndi_app_markgarbage < ndi_app
 			%
 				vi = emptystruct('timeref_structt0','t0','timeref_structt1','t1');
 
-				warning(['not general: if subclass of markgarbage-valid_interval is created, this will fail (issue #88).']);
-				searchq = cat(2,ndi_app_markgarbage_obj.searchquery(), ...
-					{'document_class.class_name','valid_interval'});
+				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','validinterval.json','');
 
 				if isa(ndi_epochset_obj,'ndi_probe'),
 					searchq = cat(2,searchq,ndi_epochset_obj.searchquery());
