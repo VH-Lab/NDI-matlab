@@ -471,7 +471,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			b = 1;
 		end % clear_spiketimes_doc()
 
-		function waveforms = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
+		function [waveforms, wp] = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
 			% LOAD_SPIKEWAVES_EPOCH - load spikewaves from an epoch
 			%
 			% CONCATENATED_SPIKES = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
@@ -492,6 +492,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					error(['Found ' int2str(numel(spikewaves_doc)) ' documents matching the criteria. Do not know how to proceed.']);
 				else,
 					waveforms = [];
+                    wp = [];
 				end;
 	
 		end; % load_spikewaves_epoch
