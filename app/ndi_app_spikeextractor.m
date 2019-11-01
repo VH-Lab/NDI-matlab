@@ -471,10 +471,20 @@ classdef ndi_app_spikeextractor < ndi_app
 			b = 1;
 		end % clear_spiketimes_doc()
 
-		function [waveforms, wp] = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
+		function [waveforms,waveparameters] = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
 			% LOAD_SPIKEWAVES_EPOCH - load spikewaves from an epoch
 			%
-			% CONCATENATED_SPIKES = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
+			% [CONCATENATED_SPIKES, WAVEPARAMETERS] = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
+			%
+			% WAVEPARAMETERS is a structure with the following fields:
+			% Field              | Description
+			% --------------------------------------------------------
+			% numchannels        | Number of channels in each spike
+			% S0                 | Number of samples before spike center
+			%                    |    (usually negative)
+			% S1                 | Number of samples after spike center
+			%                    |    (usually positive)
+			% samplerate         | The sampling rate
 			%
 			% Reads the spikewaves for an NDI_TIMESERIES object for a given EPOCH and EXTRACTION_NAME.
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
@@ -486,16 +496,15 @@ classdef ndi_app_spikeextractor < ndi_app
 					spikewaves_doc = spikewaves_doc{1};
 					spikewaves_binarydoc = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spikewaves_doc);
 					%[waveforms,header] = readvhlspikewaveformfile(spikewaves_binarydoc,-1,-1) 
-					waveforms = readvhlspikewaveformfile(spikewaves_binarydoc);
-                    keyboard,
+					[waveforms,waveparameters] = readvhlspikewaveformfile(spikewaves_binarydoc);
+					waveparameters.samplerate = waveparameters.samplingrate;
 					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc);
 				elseif numel(spikewaves_doc)>1,
 					error(['Found ' int2str(numel(spikewaves_doc)) ' documents matching the criteria. Do not know how to proceed.']);
 				else,
 					waveforms = [];
-                    wp = [];
+					waveparameters = [];
 				end;
-	
 		end; % load_spikewaves_epoch
 
 		function times = load_spiketimes_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
