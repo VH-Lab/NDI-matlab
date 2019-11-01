@@ -487,6 +487,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					spikewaves_binarydoc = ndi_app_spikeextractor_obj.experiment.database.openbinarydoc(spikewaves_doc);
 					%[waveforms,header] = readvhlspikewaveformfile(spikewaves_binarydoc,-1,-1) 
 					waveforms = readvhlspikewaveformfile(spikewaves_binarydoc);
+                    keyboard,
 					ndi_app_spikeextractor_obj.experiment.database.closebinarydoc(spikewaves_binarydoc);
 				elseif numel(spikewaves_doc)>1,
 					error(['Found ' int2str(numel(spikewaves_doc)) ' documents matching the criteria. Do not know how to proceed.']);
