@@ -98,12 +98,10 @@ classdef ndi_app_spikeextractor < ndi_app
 						else
 							extraction_doc = extraction_doc{1};
 						end
-                        disp('matches extraction name')
 					elseif strcmp(extraction_params, 'default')
 						extraction_doc = ndi_app_spikeextractor_obj.experiment.database_search({'ndi_document.name',extraction_name,'spike_extraction_parameters.filter_type','(.*)'});
 
 						if isempty(extraction_doc)
-                            disp('isempty true')
 							extraction_doc = ndi_app_spikeextractor_obj.add_extraction_doc(extraction_name);
                         else
                             extraction_doc = extraction_doc{1};

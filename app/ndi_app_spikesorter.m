@@ -166,7 +166,7 @@ classdef ndi_app_spikesorter < ndi_app
 
 				disp(['-------NEURON_' num2str(nNeuron) '-------'])
 
-				neuron_thing = ndi_thing_timeseries(['neuron_' num2str(nNeuron)], 'neuron', ndi_timeseries_obj, 1);
+				neuron_thing = ndi_thing_timeseries(['neuron_' num2str(nNeuron)], 'neuron', ndi_timeseries_obj, 0);
 				doc = neuron_thing.newdocument();
 				%%% TODO: add properties like epoch and stuff?
 				ndi_app_spikesorter_obj.experiment.database_add(doc);
@@ -182,7 +182,7 @@ classdef ndi_app_spikesorter < ndi_app
 				neuron_timeseries = zeros(1, length(data));
 				disp(['length of neuron_timeseries = ' num2str(length(spikelocs_indexes))])
 				neuron_timeseries(spikelocs_samples) = 1;
-				
+				keyboard
 				[neuron, mydoc] = neuron_thing.addepoch(...
 					et(1).epoch_id, ...
 					et(1).epoch_clock{1}, ...
