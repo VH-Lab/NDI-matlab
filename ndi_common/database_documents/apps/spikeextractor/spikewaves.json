@@ -11,8 +11,10 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on": [
+		{"extraction_parameters_id":			"" }	
+	]
 	"spikewaves": {
 		"extraction_name": "",
-		"extraction_parameters_id": ""
 	}
 }
