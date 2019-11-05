@@ -7,8 +7,8 @@
 		"superclasses": [ ]
 	},
 	"ndi_document": {
-		"experiment_unique_reference":				"",
-		"document_unique_reference":				"",
+		"experiment_id":				"",
+		"document_id":				"",
 		"name":							"",
 		"type":							"",
 		"datestamp":						"2018-12-05T18:36:47.241Z",

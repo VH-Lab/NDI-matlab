@@ -10,11 +10,11 @@
 		]
 	},
 	"stimulus_response": {
-		"stimulator_unique_reference":					[],
+		"stimulator_id":					[],
 		"stimulator_epochid":						[],
 		"thing_epochid":						[],
-		"stimulus_presentation_document_identifier":			[],
-                "stimulus_control_document_identifier":                         []
+		"stimulus_presentation_document_id":			[],
+                "stimulus_control_document_id":                         []
 	}
 }
 

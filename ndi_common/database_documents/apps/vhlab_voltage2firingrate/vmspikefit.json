@@ -12,7 +12,7 @@
 		]
 	},
 	"vmspikefit": {
-		"fit_input_document_id":				0,
+		"fit_input_id":				0,
 		"fit_name": 						0,
 		"fit_equation": 					0,
 		"fit_parameters":					0,

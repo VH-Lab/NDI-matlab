@@ -10,7 +10,7 @@
 		]
 	},
 	"stimulus_response_scalar": {
-		"stimulus_response_scalar_parameters_identifier":		[],
+		"stimulus_response_scalar_parameters_id":		[],
 		"response_type":						[],
 		"responses": {
 			"stimid":		 				[],

@@ -22,7 +22,7 @@
 			}
 		],
 		"fit_data": {
-			"exampledata_document_id":				0,
+			"exampledata_id":				0,
 			"input_data_field":					"mydocumenttype.x",
 			"output_data_field":					"mydocumenttype.y",
 			"output_number_examples":				20

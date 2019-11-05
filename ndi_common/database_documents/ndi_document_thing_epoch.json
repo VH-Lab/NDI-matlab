@@ -11,7 +11,7 @@
 		]
 	},
 	"thing_epoch": {
-		"thing_unique_reference":				"",
+		"thing_id":				"",
 		"epoch_clock":						"",
 		"t0_t1":						""
 	}
