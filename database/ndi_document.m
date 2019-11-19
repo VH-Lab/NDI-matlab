@@ -177,6 +177,8 @@ classdef ndi_document
 						s(1).document_superclass_data{end+1} = j.document_class;
 					end
 					j_ = rmfield(j, 'document_class');
+					% TODO: 1. check if field exists in both documents, (intersection of fields exists)
+					%       2. merge by adding them in an array or struct, labeling which comes from which doc
 					s = structmerge(s, j_);
 				else,
 					return;
