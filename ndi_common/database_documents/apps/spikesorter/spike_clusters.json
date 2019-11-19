@@ -10,8 +10,12 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on":[
+		{	"name": "sorting_parameters_id",
+			"value": 			"" 
+		}
+	],
 	"spike_clusters": {
-		"sort_name": "",
-		"sorting_parameters_id": ""
+		"sort_name": ""
 	}
 }

@@ -9,8 +9,12 @@
 			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json"}
 		]
 	},
+	"depends_on": [
+		{	"name": "stimulus_response_scalar_parameters_id",
+			"value":			""
+		}
+	],
 	"stimulus_response_scalar": {
-		"stimulus_response_scalar_parameters_id":		[],
 		"response_type":						[],
 		"responses": {
 			"stimid":		 				[],

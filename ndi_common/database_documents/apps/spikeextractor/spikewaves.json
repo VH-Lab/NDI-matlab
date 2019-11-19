@@ -12,9 +12,11 @@
 		]
 	},
 	"depends_on": [
-		{"extraction_parameters_id":			"" }	
-	]
+		{	"name":"extraction_parameters_id",
+			"value": 			"" 
+		}
+	],
 	"spikewaves": {
-		"extraction_name": "",
+		"extraction_name": ""
 	}
 }
