@@ -177,7 +177,7 @@ classdef ndi_app_spikesorter < ndi_app
                 neuron_times_idxs = find(clusterids == nNeuron);
                 neuron_spiketimes = times(neuron_times_idxs);
                 
-                disp(['---Number of Spikes ' num2str(nNeuron) '---'])
+                disp(['---Number of Spikes ' num2str(length(neuron_spiketimes)) '---'])
 				
 				[neuron, mydoc] = neuron_thing.addepoch(...
 					et(1).epoch_id, ...
