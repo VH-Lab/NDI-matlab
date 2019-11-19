@@ -9,7 +9,7 @@
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json"}
 		]
 	},
-	"depends on": [
+	"depends_on": [
 		{   "name": "stimulator_id",
 			"value": []
 		}, 

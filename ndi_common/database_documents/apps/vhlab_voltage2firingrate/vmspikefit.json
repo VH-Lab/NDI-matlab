@@ -11,7 +11,7 @@
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
-	"depends on":[
+	"depends_on":[
 		{	"name": "fit_input_id",
 			"value": 0
 		}

@@ -10,7 +10,7 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json" }
 		]
 	},
-	"depends on": [
+	"depends_on": [
 		{	"name": "thing_id",
 			"value": "" 
 		}

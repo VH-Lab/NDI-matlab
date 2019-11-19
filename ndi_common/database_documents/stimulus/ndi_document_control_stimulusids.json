@@ -8,7 +8,7 @@
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
-	"depends on": [
+	"depends_on": [
 		{	"name": "stimulus_presentation_id",				
 			"value": [] 
 		}
