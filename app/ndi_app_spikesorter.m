@@ -135,11 +135,11 @@ classdef ndi_app_spikesorter < ndi_app
 			% waveparameters.comment = '';
 			% waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
 
-			spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			% spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 			times = ndi_app_spikesorter_obj.load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
-			spiketimes_samples = ndi_timeseries_obj.times2samples(1, times);
-			% keyboard
-
+			% spiketimes_samples = ndi_timeseries_obj.times2samples(1, times);
+            
+            
 			% Uncomment to enable spikewaves_gui
 			% cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
 
@@ -160,11 +160,12 @@ classdef ndi_app_spikesorter < ndi_app
 			% Add doc to database
 			ndi_app_spikesorter_obj.experiment.database.add(spike_clusters_doc);
 
-			disp(['----' num2str(numclusters) ' found----'])
+			disp(['----' num2str(numclusters) ' neuron(s) found----'])
 
 			for nNeuron=1:numclusters
 
-				disp(['-------NEURON_' num2str(nNeuron) '-------'])
+				disp(['--------NEURON_' num2str(nNeuron) '--------'])
+                
 
 				neuron_thing = ndi_thing_timeseries(['neuron_' num2str(nNeuron)], 'neuron', ndi_timeseries_obj, 0);
 				doc = neuron_thing.newdocument();
@@ -172,41 +173,34 @@ classdef ndi_app_spikesorter < ndi_app
 				ndi_app_spikesorter_obj.experiment.database_add(doc);
 
 				et = ndi_timeseries_obj.epochtable;
-
-				[data, time] = readtimeseries(ndi_timeseries_obj, 1, -Inf, Inf);
-
-				disp(['length of CLUSTERIDS = ' num2str(length(clusterids))])
-				spikelocs_indexes = find(clusterids == nNeuron);
-				disp(['length of spikelocs_indexes = ' num2str(length(spikelocs_indexes))])
-				spikelocs_samples = spiketimes_samples(spikelocs_indexes);
-				neuron_timeseries = zeros(1, length(data));
-				disp(['length of neuron_timeseries = ' num2str(length(spikelocs_indexes))])
-				neuron_timeseries(spikelocs_samples) = 1;
-				keyboard
+                
+                neuron_times_idxs = find(clusterids == nNeuron);
+                neuron_spiketimes = times(neuron_times_idxs);
+                
+                disp(['---Number of Spikes ' num2str(nNeuron) '---'])
+				
 				[neuron, mydoc] = neuron_thing.addepoch(...
 					et(1).epoch_id, ...
 					et(1).epoch_clock{1}, ...
 					et(1).t0_t1{1}, ...
-					time, ...
-					neuron_timeseries...
+					neuron_spiketimes(:), ...
+					ones(size(neuron_spiketimes(:)))...
                 );
-			end
-
-			% et_t1 = mything1.epochtable();
-			% et_t2 = mything2.epochtable();
-
-			keyboard
+            end
+            
+            neuron
 
 			neuron1 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_1');
-			neuron2 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_2');
+			% neuron2 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_2');
 
-			[d1,t1] = readtimeseries(thing1{1},1,-Inf,Inf);
-			[d2,t2] = readtimeseries(thing2{1},1,-Inf,Inf);
+			[d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
+			% [d2,t2] = readtimeseries(neuron2{1},1,-Inf,Inf);
 
 			figure(10)
-			plot(d1)
-			plot(d2)
-
+			plot(t1,d1,'ko');
+            title([neuron.name]);
+            ylabel(['spikes']);
+            xlabel(['time (s)']);
 		end %function
 
 			%%% TODO: function add_sorting_doc

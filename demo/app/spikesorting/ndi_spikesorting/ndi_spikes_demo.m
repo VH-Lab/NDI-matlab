@@ -3,6 +3,12 @@ ndi_globals;
 
 mydirectory = [ndipath filesep 'ndi_common' filesep 'example_app_experiments'];
 dirname = [mydirectory filesep 'exp_sg'];
+dot_ndi = [dirname filesep '.ndi'];
+
+% Remove .ndi directory if it exists to avoid errors
+if exist(dot_ndi, 'dir') == 7
+	rmdir([dirname filesep '.ndi'], 's');
+end
 
 disp(['opening experiment object...']);
 E = ndi_experiment_dir('exp1', dirname);
