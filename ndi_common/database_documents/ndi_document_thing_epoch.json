@@ -12,7 +12,7 @@
 	},
 	"depends on": [
 		{	"name": "thing_id",
-			"value":				"" 
+			"value": "" 
 		}
 	],
 	"thing_epoch": {

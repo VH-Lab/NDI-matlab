@@ -13,7 +13,7 @@
 	},
 	"depends on":[
 		{	"name": "fit_input_id",
-			"value":				0
+			"value": 0
 		}
 	],
 	"vmspikefit": {

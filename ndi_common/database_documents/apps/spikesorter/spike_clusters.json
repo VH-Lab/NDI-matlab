@@ -12,7 +12,7 @@
 	},
 	"depends_on":[
 		{	"name": "sorting_parameters_id",
-			"value": 			"" 
+			"value": "" 
 		}
 	],
 	"spike_clusters": {

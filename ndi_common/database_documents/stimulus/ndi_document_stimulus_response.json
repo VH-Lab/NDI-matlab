@@ -10,7 +10,7 @@
 		]
 	},
 	"depends on": [
-		{   "name": 	"stimulator_id",
+		{   "name": "stimulator_id",
 			"value": []
 		}, 
 		{	"name": "stimulus_presentation_document_id",
