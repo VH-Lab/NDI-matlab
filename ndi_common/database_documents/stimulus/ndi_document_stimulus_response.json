@@ -5,12 +5,14 @@
 		"class_name":						"stimulus-",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
 	"depends_on": [
-		{   "name": "stimulator_id",
+		{	"name": "thing_id",
+			"value": []
+		},
+		{	"name": "stimulator_id",
 			"value": []
 		}, 
 		{	"name": "stimulus_presentation_document_id",
@@ -23,7 +25,6 @@
 	"stimulus_response": {
 		"stimulator_epochid":						[],
 		"thing_epochid":						[]
-
 	}
 }
 

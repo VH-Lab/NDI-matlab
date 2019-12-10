@@ -4,9 +4,9 @@
 		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_response_scalar_schema.json",
 		"class_name":						"stimulus-ndi_document_stimulus_response_scalar",
 		"class_version":					1,
-		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json"}
+		"superclasses":  [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json"}
 		]
 	},
 	"depends_on": [

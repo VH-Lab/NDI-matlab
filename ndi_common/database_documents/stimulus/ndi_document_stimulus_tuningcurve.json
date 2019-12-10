@@ -5,11 +5,17 @@
 		"class_name":						"stimulus-ndi_document_stimulus_tuningcurve",
 		"class_version":					1,
 		"superclasses": [ 
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json" },
-			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response_scalar_reference.json" }
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
 	},
+	"depends_on": [
+		{	"name":			"thing_id",
+			"value":		""
+		},
+		{	 "name":		"stimulus_response_scalar_id",
+			"value":		""
+		}
+	],
 	"tuning_curve": {
 		"independent_variable_label":				[[]],
 		"independent_variable_value":				[],
