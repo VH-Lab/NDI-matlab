@@ -576,23 +576,25 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 			% Note: the function used is 'crc' (see PM_HASH)
 
 				algo = 'crc';
+				algo = 'MD5';
 
 				if isempty(ndi_filenavigator_obj.fileparameters),
 					fmhash = [];
 				else,
 					if ischar(ndi_filenavigator_obj.fileparameters.filematch),
-						fmhash = pm_hash(algo,ndi_filenavigator_obj.fileparameters.filematch);
+						fmhash = DataHash(uint8(ndi_filenavigator_obj.fileparameters.filematch),'bin',algo,'hex');
+						%fmhash = pm_hash(algo,ndi_filenavigator_obj.fileparameters.filematch); % out of date
 					elseif iscell(ndi_filenavigator_obj.fileparameters.filematch), % is cell
-						catstr = cat(2,ndi_filenavigator_obj.fileparameters.filematch);
-						fmhash = pm_hash(algo,catstr);
+						catstr = cell2str(ndi_filenavigator_obj.fileparameters.filematch);
+						%catstr = cat(2,ndi_filenavigator_obj.fileparameters.filematch);
+						%fmhash = pm_hash(algo,catstr); % out of date
+						fmhash = DataHash(uint8(catstr),'bin',algo,'hex');
 					else,
 						error(['unexpected datatype for fileparameters.filematch.']);
 					end
 				end
 
-				if ~isempty(fmhash),
-					fmstr = num2hex(double(fmhash));
-				end
+				fmstr = fmhash;
 			end
 
 	end % methods
