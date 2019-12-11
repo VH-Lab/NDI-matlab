@@ -9,6 +9,7 @@ build_intan_flat_exp	1	Tests saving experiment parameters, documents
 test_sg_flat	1	Tests reading from SpikeGadgets ndi_daqsystem_mfdaq_sg
 test_ndi_probe	1	Tests basic probe functions
 test_ndi_thing	1	Test basic nsd_thing functions
+test_ndi_document_jsons	1	Test ability to make an NDI_DOCUMENT out of all JSON definitions
 test_ndi_device_image_tiffstack	0	Not in current testing stream
 test_ndi_image_tiffstack_multipleepoch	0	Not in current testing stream
 test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream
