@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/.json",
+		"class_name":						"ndi_document_control_stim_ids",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"depends_on": [
+		{	"name": "stimulus_presentation_id",				
+			"value": [] 
+		}
+	],
+	"control_stimids": {
+		"control_stimids":						[]
+	},
+	"control_stimid_method": {
+	}
+}
+

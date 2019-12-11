@@ -5,11 +5,13 @@
 		"class_name":						"oridir-ndi_document_orientation_direction_tuning",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_tuningcurve_reference.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
+	"depends_on": [
+		{	"name":		"thing_id",
+			"value":	"" }
+	],
 	"orientation_direction_tuning":  {
 		"properties": {
 			"coordinates":						"compass",
@@ -42,8 +44,8 @@
 			"dot_direction_significance":				1
 		},
 		"fit": {
-			"double_gaussian_parameters":				0,
-			"double_gaussian_fit_angles":				0,
+			"double_gaussian_parameters":				[0],
+			"double_gaussian_fit_angles":				[0],
 			"double_gaussian_fit_values":				[0],
 			"orientation_preferred_orthogonal_ratio":		[0],
 			"direction_preferred_null_ratio":			[0],

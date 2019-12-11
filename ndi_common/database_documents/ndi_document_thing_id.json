@@ -8,8 +8,8 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
 	},
-	"thingreference": {
-		"thing_unique_id":					[]
+	"thing_id": {
+		"thing_id":					[]
 	}
 }
 

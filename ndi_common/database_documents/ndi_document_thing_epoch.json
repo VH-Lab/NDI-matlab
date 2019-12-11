@@ -10,8 +10,12 @@
 			{  "definition":				"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json" }
 		]
 	},
+	"depends_on": [
+		{	"name": "thing_id",
+			"value": "" 
+		}
+	],
 	"thing_epoch": {
-		"thing_unique_reference":				"",
 		"epoch_clock":						"",
 		"t0_t1":						""
 	}

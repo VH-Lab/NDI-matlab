@@ -1,20 +1,30 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_response_schema.json",
-		"class_name":						"stimulus-ndi_document_stimulus_response",
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/_schema.json",
+		"class_name":						"stimulus-",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_thingreference.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
+	"depends_on": [
+		{	"name": "thing_id",
+			"value": []
+		},
+		{	"name": "stimulator_id",
+			"value": []
+		}, 
+		{	"name": "stimulus_presentation_document_id",
+			"value": []
+		},
+		{	"name": "stimulus_control_document_id",
+			"value": []
+		}
+	],
 	"stimulus_response": {
-		"stimulator_unique_reference":					[],
 		"stimulator_epochid":						[],
-		"thing_epochid":						[],
-		"stimulus_presentation_document_identifier":			[],
-                "stimulus_control_document_identifier":                         []
+		"thing_epochid":						[]
 	}
 }
 

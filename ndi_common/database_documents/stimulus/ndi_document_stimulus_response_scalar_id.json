@@ -8,6 +8,6 @@
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
-	"stimulus_response_scalar_reference":					[]
+	"stimulus_response_scalar_id":					[]
 }
 

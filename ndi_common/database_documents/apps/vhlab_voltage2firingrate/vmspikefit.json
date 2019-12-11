@@ -11,8 +11,12 @@
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on":[
+		{	"name": "fit_input_id",
+			"value": 0
+		}
+	],
 	"vmspikefit": {
-		"fit_input_document_id":				0,
 		"fit_name": 						0,
 		"fit_equation": 					0,
 		"fit_parameters":					0,
