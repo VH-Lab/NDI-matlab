@@ -118,7 +118,44 @@ classdef ndi_document
 				otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
 				ndi_document_obj_out.document_properties = structmerge(ndi_document_obj_out.document_properties,...
 					otherproperties);
-		end % plus() 
+		end; % plus() 
+
+		function d = dependency_value(ndi_document_obj, dependency_name, varargin)
+			% DEPENDENCY_VALUE - return dependency value given dependency name
+			%
+			% D = DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and returns the 'value' associated with the given 'name'. If there is no such
+			% field (either 'depends_on' or 'name'), then D is empty and an error is generated.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, return empty.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				d = [];
+				notfound = 1;
+
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+
+				if hasdependencies,
+					matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+					if numel(matches)>0,
+						notfound = 0;
+						d = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
+					end;
+				end;
+
+				if notfound & ErrorIfNotFound,
+					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
 
 	end % methods
 
