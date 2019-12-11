@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_response.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_response_schema.json",
-		"class_name":						"stimulus-ndi_document_stimulus_response",
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/ndi_document_orientation_direction_tuning.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/oridir\/ndi_document_orientation_direction_tuning_schema.json",
+		"class_name":						"oridir-ndi_document_orientation_direction_tuning",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
@@ -13,7 +13,11 @@
 			"value":	"" }
 	],
 	"orientation_direction_tuning":  {
-		"coordinates":						"compass",
+		"properties": {
+			"coordinates":						"compass",
+			"response_units":					0,
+			"response_type":					"mean"
+		},
 		"tuning_curve": {
 			"direction":						0,
 			"mean":							0,
@@ -36,7 +40,7 @@
 			"hotelling2test":					1,
 			"orientation_preference":				0,
 			"direction_preference":					0,
-			"direction_significance":				1,
+			"direction_hotelling2test":				1,
 			"dot_direction_significance":				1
 		},
 		"fit": {
@@ -47,7 +51,6 @@
 			"direction_preferred_null_ratio":			[0],
 			"orientation_preferred_orthogonal_ratio_rectified":	[0],
 			"direction_preferred_null_ratio_rectified":		[0],
-			"Significant_Direction_p":				1,
 			"orientation_angle_preference":				0,
 			"direction_angle_preference":				0,
 			"hwhh":							0
