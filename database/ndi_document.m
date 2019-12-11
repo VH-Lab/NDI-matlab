@@ -157,6 +157,43 @@ classdef ndi_document
 				end;
 		end; % 
 
+		function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
+			% SET_DEPENDENCY_VALUE - return dependency value given dependency name
+			%
+			% NDI_DOCUMENT_OBJ = SET_DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and, if there is a dependency with a given 'dependency_name', then the value of the
+			% dependency is set to DEPENDENCY_VALUE. 
+			% field (either 'depends_on' or 'name'), then D is empty and an error is generated.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, generate no error but take no action.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				notfound = 1;
+
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+
+				if hasdependencies,
+					matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+					if numel(matches)>0,
+						notfound = 0;
+						ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
+					end;
+				end;
+
+				if notfound & ErrorIfNotFound,
+					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
+
 	end % methods
 
 	methods (Static)
