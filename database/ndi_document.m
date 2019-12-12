@@ -69,8 +69,21 @@ classdef ndi_document
 			% Returns the unique id of an NDI_DOCUMENT
 			% (Found at NDI_DOCUMENT_OBJ.documentproperties.document_unique_reference)
 			%
+				warning('depricated..use ID() instead')
 				uid = ndi_document_obj.document_properties.ndi_document.document_unique_reference;
 		end % doc_unique_id()
+
+		function uid = id(ndi_document_obj)
+			% ID - return the document unique identifier for an NDI_DOCUMENT
+			%
+			% UID = ID (NDI_DOCUMENT_OBJ)
+			%
+			% Returns the unique id of an NDI_DOCUMENT
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.document_unique_reference)
+			%
+				uid = ndi_document_obj.document_properties.ndi_document.document_unique_reference;
+		end; % id()
+
 
 		function ndi_document_obj = setproperties(ndi_document_obj, varargin)
 			% SETPROPERTIES - Set property values of an NDI_DOCUMENT object

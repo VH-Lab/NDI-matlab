@@ -101,7 +101,7 @@ classdef ndi_database
 			% the database is needed.
 			% 
 				if isa(ndi_document_or_id,'ndi_document'),
-					ndi_document_id = ndi_document_or_id.doc_unique_id();
+					ndi_document_id = ndi_document_or_id.id();
 				else,
 					ndi_document_id = ndi_document_or_id;
 				end;

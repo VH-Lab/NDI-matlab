@@ -28,7 +28,7 @@ E = ndi_experiment_dir('exp1',dirname);
 doc = E.database.search({'ndi_document.type','ndi_thing(.*)'});
 if ~isempty(doc),
 	for i=1:numel(doc),
-		E.database_rm(doc_unique_id(doc{i}));
+		E.database_rm(doc{i}.id());
 	end;
 end;
 
@@ -46,7 +46,7 @@ et = p{1}.epochtable;
 mything2 = ndi_thing_timeseries('myindirectthing','lfp', p{1}, 0);
 doc2 = mything2.newdocument();
 E.database_add(doc2);
-[mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); % removed '1' as a last input argument, not sure why it was there
+[mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
 et_t1 = mything1.epochtable();
 et_t2 = mything2.epochtable();
@@ -71,7 +71,7 @@ box off;
 doc = E.database.search({'ndi_document.type','ndi_thing'});
 if ~isempty(doc),
 	for i=1:numel(doc),
-		E.database_rm(doc_unique_id(doc{i}));
+		E.database_rm(doc{i}.id());
 	end;
 end;
 

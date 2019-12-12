@@ -46,9 +46,7 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					% now we know the epoch to read, finally!
 
 					thing_doc = ndi_thing_timeseries_obj.load_thing_doc();
-					sq = {'thing_epoch.thing_unique_reference', ...
-						thing_doc.document_properties.ndi_document.document_unique_reference, ...
-						'epochid', epoch_timeref.epoch};
+					sq = ndi_query('depends_on','depends_on','thing_id',thing_doc.id()) & ndi_query('epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_thing_timeseries_obj.experiment();
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)~=1,

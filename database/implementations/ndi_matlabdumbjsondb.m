@@ -86,6 +86,16 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 					searchparams = cat(1,searchparams(:),replace);
 				end;
 				searchparams = searchparams(setdiff(1:numel(searchparams),isa_locs)); % remove 'isa' operations b/c they are replaced
+				depends_locs = find(strcmpi('depends_on',{searchparams.operation}));
+				for i=1:numel(depends_locs),
+					param1 = {'name','value'};
+					param2 = {searchparams(depends_locs(i)).param1 searchparams(depends_locs(i)).param2 };
+					replace = struct('field','depends_on','operation','hasanysubfield_exact_string');
+					replace.param1 = param1; 
+					replace.param2 = param2; 
+					searchparams = cat(1,searchparams(:),replace);
+				end;
+				searchparams = searchparams(setdiff(1:numel(searchparams),depends_locs)); % remove 'depends_on' operations b/c they are replaced
 			end;
 			ndi_document_objs = {};
 			[docs,doc_versions] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
