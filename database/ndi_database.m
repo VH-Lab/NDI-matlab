@@ -153,7 +153,7 @@ classdef ndi_database
 				
 				for i=1:numel(ndi_document_id)
 					if isa(ndi_document_id{i}, 'ndi_document'),
-						ndi_document_id_list{end+1} = ndi_document_id{i}.doc_unique_id();
+						ndi_document_id_list{end+1} = ndi_document_id{i}.id();
 					else,
 						ndi_document_id_list{end+1} = ndi_document_id{i};
 					end;

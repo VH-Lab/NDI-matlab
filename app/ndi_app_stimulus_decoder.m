@@ -93,7 +93,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 						presentation_time(end+1) = timestruct;
 					end;
 
-					nd = E.newdocument('stimulus/ndi_document_stimulus_presentation.json',...
+					nd = E.newdocument('stimulus/stimulus_presentation.json',...
 							'presentation_order', data.stimid, 'presentation_time', presentation_time, 'stimuli',mystim) + ...
 						ndi_probe_stim.newdocument(epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					newdocs{end+1} = nd;
@@ -108,7 +108,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					tuning_curve.whatvaries = whatvaries;
 					tuning_curve.control_stimulus_id = isblank;
 
-					nd2 = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
+					nd2 = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
 					newdocs{end+1} = nd2;
 				end;
 

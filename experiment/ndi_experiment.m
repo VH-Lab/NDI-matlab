@@ -44,7 +44,8 @@ classdef ndi_experiment < handle
 			% Returns the unique reference string for the NDI_EXPERIMENT.
 			% REFSTR is a combination of the REFERENCE property of NDI_EXPERIMENT_OBJ
 			% and the UNIQUE_REFERENCE property of NDI_EXPERIMENT_OBJ, joined with a '_'.
-
+				warning('unique_reference_string depricated, use id() instead.');
+				dbstack
 				refstr = [ndi_experiment_obj.reference '_' ndi_experiment_obj.unique_reference];
 		end % unique_reference_string()
 
@@ -128,7 +129,7 @@ classdef ndi_experiment < handle
 			if nargin<2,
 				document_type = 'ndi_document.json';
 			end
-			inputs = cat(2,varargin,{'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()});
+			inputs = cat(2,varargin,{'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()});
 			ndi_document_obj = ndi_document(document_type, inputs);
 		end; %newdocument()
 
@@ -140,11 +141,11 @@ classdef ndi_experiment < handle
 		% Returns a search query that will match all NDI_DOCUMENT objects that were generated
 		% by this experiment.
 		%
-		% SQ = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+		% SQ = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()};
 		% 
 		% Example: mydoc = ndi_experiment_obj.newdocument('ndi_document','ndi_document.name','myname');
 		%
-			sq = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+			sq = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()};
 		end; %searchquery()
 
 		% NDI_DATABASE / NDI_DOCUMENT methods
@@ -401,7 +402,7 @@ classdef ndi_experiment < handle
 			% 
 
 				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
-						'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()}, ...
+						'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()}, ...
 					varargin{:}); 
 				doc = ndi_experiment_obj.database.search(sq);
 				things = {};
@@ -419,9 +420,19 @@ classdef ndi_experiment < handle
 				if ~isa(e2,'ndi_experiment'),
 					b = 0;
 				else,
-					b = strcmp(e1.unique_reference_string(), e2.unique_reference_string());
+					b = strcmp(e1.id(), e2.id());
 				end;
 		end; % eq()
+
+		function identifier = id(ndi_experiment_obj)
+			% ID - return the unique identifier for this experiment
+			%
+			% IDENTIFIER = ID(NDI_EXPERIMENT_OBJ)
+			%
+			% Return the unique identifier for this experiment.
+			%
+				identifier = [ndi_experiment_obj.reference '_' ndi_experiment_obj.unique_reference];
+		end; % id
 	end; % methods
 end % classdef
 

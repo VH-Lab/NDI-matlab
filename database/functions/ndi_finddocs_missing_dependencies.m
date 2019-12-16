@@ -30,17 +30,17 @@ include = [];
 for i=1:numel(d),
 	for j=1:numel(d{i}.document_properties.depends_on),
 		if nargin>0,
-			match = any(strcmpi(d{i}.document_properties.depends_on(j).name,varargin))
+			match = any(strcmpi(d{i}.document_properties.depends_on(j).name,varargin));
 		else,
 			match = 1;
 		end;
 		if match,
-			id_here = d.document_properties.depends_on(j).value;
+			id_here = d{i}.document_properties.depends_on(j).value;
 			if ~isempty(id_here),
 				if any(strcmpi(d{i}.document_properties.depends_on(j).value,documents_observed)),
 					% we've got it already
 				else,   % we need to look more
-					dhere = E.database_search(ndi_query('ndi_document.id','exact_string',id_here));
+					dhere = E.database_search(ndi_query('ndi_document.id','exact_string',id_here,''));
 					if ~isempty(dhere),
 						if ~iscell(dhere), dhere = {dhere}; end;
 						documents_observed{end+1} = dhere{1}.id();

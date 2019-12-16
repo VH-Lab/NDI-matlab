@@ -234,7 +234,7 @@ classdef ndi_app_tuning_response < ndi_app
 					% look for response docs
 
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
-						ndi_query('depends_on','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id());
+						ndi_query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
 						%ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
 
 					E.database_rm(rdoc);
@@ -585,7 +585,8 @@ classdef ndi_app_tuning_response < ndi_app
 				srs = {};
 
 				for i=1:numel(tc_doc_matches),
-					q_stimresponsescalar = ndi_query('ndi_document.id','exact_string','tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'));
+					q_stimresponsescalar = ndi_query('ndi_document.id','exact_string',...
+						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'));
 					srs{i} = E.database_search(q_e&q_stimresponsescalar);
 					if ~isempty(srs),
 						for j=1:numel(srs{i}),

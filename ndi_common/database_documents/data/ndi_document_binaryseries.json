@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/ndi_document_binaryseries.json",
-		"validation":						"$NDISCHEMAPATH\/ndi_document_binaryseries_schema.json",
-		"class_name":						"ndi_document_binaryseries",
+		"definition":						"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ndi_document_binaryseries_schema.json",
+		"class_name":						"ndi_document_data_binaryseries",
 		"class_version":					1,
 		"superclasses": [
 			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
