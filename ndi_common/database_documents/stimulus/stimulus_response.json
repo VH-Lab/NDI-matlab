@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/stimulus\/.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/_schema.json",
-		"class_name":						"stimulus-",
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_schema.json",
+		"class_name":						"ndi_document_stimulus_stimulus_response",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
@@ -15,10 +15,10 @@
 		{	"name": "stimulator_id",
 			"value": []
 		}, 
-		{	"name": "stimulus_presentation_document_id",
+		{	"name": "stimulus_presentation_id",
 			"value": []
 		},
-		{	"name": "stimulus_control_document_id",
+		{	"name": "stimulus_control_id",
 			"value": []
 		}
 	],

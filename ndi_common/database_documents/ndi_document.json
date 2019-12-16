@@ -8,7 +8,7 @@
 	},
 	"ndi_document": {
 		"experiment_id":				"",
-		"document_id":				"",
+		"id":                           "",
 		"name":							"",
 		"type":							"",
 		"datestamp":						"2018-12-05T18:36:47.241Z",

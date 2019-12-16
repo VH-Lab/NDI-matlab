@@ -1,10 +1,17 @@
 function d = ndi_findemptythingreference(E)
-% NDI_FINDEMPTYTHINGREFERENCE - find variables that refer to things that no longer exist
+% NDI_FINDEMPTYTHINGREFERENCE - find documents that refer to things that no longer exist
 %
 % D = NDI_FINDEMPTYTHINGREFERENCE(E)
 %
 % E - an NDI_EXPERIMENT object
 %
+
+warning('depricated, change to NDI_FINDDOCS_MISSING_DEPENDENCIES');
+d = ndi_finddocs_missing_dependencies(E,'thing_id');
+
+return;
+
+ % the old way
 
 things = E.getthings();
 

@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/ndi_document_orientation_direction_tuning.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/oridir\/ndi_document_orientation_direction_tuning_schema.json",
-		"class_name":						"oridir-ndi_document_orientation_direction_tuning",
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning_schema.json",
+		"class_name":						"ndi_document_stimulus_vision_orientation_direction_tuning",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}

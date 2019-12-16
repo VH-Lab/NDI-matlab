@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":							"$NDIDOCUMENTPATH\/stimulus\/ndi_document_stimulus_tuningcurve_1d.json",
-		"validation":							"$NDISCHEMAPATH\/stimulus\/ndi_document_stimulus_tuningcurve_1d.json",
-		"class_name":							"stimulus-tuningcurve_1d",
+		"definition":							"$NDIDOCUMENTPATH\/stimulus\/stimulus_tuningcurve_1d.json",
+		"validation":							"$NDISCHEMAPATH\/stimulus\/stimulus_tuningcurve_1d.json",
+		"class_name":							"ndi_document_stimulus_stimulus_tuningcurve_1d",
 		"class_version":						1,
 		"superclasses": [
 			{ "definition":						"$NDIDOCUMENTPATH\/ndi_document.json" }

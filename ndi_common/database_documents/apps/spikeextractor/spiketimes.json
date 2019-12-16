@@ -2,7 +2,7 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spiketimes.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spiketimes_schema.json",
-		"class_name":						"spikeextractor-spiketimes",
+		"class_name":						"ndi_document_apps_spikeextractor_spikeextractor_spiketimes",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
