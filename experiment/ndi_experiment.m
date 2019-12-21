@@ -129,7 +129,7 @@ classdef ndi_experiment < handle
 			if nargin<2,
 				document_type = 'ndi_document.json';
 			end
-			inputs = cat(2,varargin,{'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()});
+			inputs = cat(2,varargin,{'ndi_document.experiment_id', ndi_experiment_obj.id()});
 			ndi_document_obj = ndi_document(document_type, inputs);
 		end; %newdocument()
 
@@ -141,11 +141,11 @@ classdef ndi_experiment < handle
 		% Returns a search query that will match all NDI_DOCUMENT objects that were generated
 		% by this experiment.
 		%
-		% SQ = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()};
+		% SQ = {'ndi_document.experiment_id', ndi_experiment_obj.id()};
 		% 
 		% Example: mydoc = ndi_experiment_obj.newdocument('ndi_document','ndi_document.name','myname');
 		%
-			sq = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.id()};
+			sq = {'ndi_document.experiment_id', ndi_experiment_obj.id()};
 		end; %searchquery()
 
 		% NDI_DATABASE / NDI_DOCUMENT methods

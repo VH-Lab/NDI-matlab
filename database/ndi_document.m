@@ -25,7 +25,7 @@ classdef ndi_document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = ndi_document.readblankdefinition(document_type);
-					document_properties.ndi_document.document_unique_reference = ndi_unique_id;
+					document_properties.ndi_document.id = ndi_unique_id;
 					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array
@@ -67,10 +67,10 @@ classdef ndi_document
 			% UID = DOC_UNIQUE_ID(NDI_DOCUMENT_OBJ)
 			%
 			% Returns the unique id of an NDI_DOCUMENT
-			% (Found at NDI_DOCUMENT_OBJ.documentproperties.document_unique_reference)
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
 			%
 				warning('depricated..use ID() instead')
-				uid = ndi_document_obj.document_properties.ndi_document.document_unique_reference;
+				uid = ndi_document_obj.document_properties.ndi_document.id;
 		end % doc_unique_id()
 
 		function uid = id(ndi_document_obj)
@@ -79,11 +79,10 @@ classdef ndi_document
 			% UID = ID (NDI_DOCUMENT_OBJ)
 			%
 			% Returns the unique id of an NDI_DOCUMENT
-			% (Found at NDI_DOCUMENT_OBJ.documentproperties.document_unique_reference)
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
 			%
-				uid = ndi_document_obj.document_properties.ndi_document.document_unique_reference;
+				uid = ndi_document_obj.document_properties.ndi_document.id;
 		end; % id()
-
 
 		function ndi_document_obj = setproperties(ndi_document_obj, varargin)
 			% SETPROPERTIES - Set property values of an NDI_DOCUMENT object
@@ -126,9 +125,19 @@ classdef ndi_document
 				ndi_document_obj_out.document_properties.document_class.superclasses = ...
 					(cat(1,ndi_document_obj_out.document_properties.document_class.superclasses,...
 						ndi_document_obj_b.document_properties.document_class.superclasses));
-
-				% Step 2): Merge the other fields
 				otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
+
+				% Step 2): Merge dependencies if we have to
+				if isfield(ndi_document_obj_out.document_properties,'depends_on') & ...
+					isfield(ndi_document_obj_b.document_properties,'depends_on'), 
+					% we need to merge dependencies
+					ndi_document_obj_out.document_properties.depends_on = cat(1,...
+						ndi_document_obj_out.document_properties.depends_on(:),...
+						ndi_document_obj_b.document_properties.depends_on(:));
+						otherproperties = rmfield(otherproperties,'depends_on');
+				end;
+
+				% Step 3): Merge the other fields
 				ndi_document_obj_out.document_properties = structmerge(ndi_document_obj_out.document_properties,...
 					otherproperties);
 		end; % plus() 
@@ -207,6 +216,18 @@ classdef ndi_document
 				end;
 		end; % 
 
+		function b = eq(ndi_document_obj1, ndi_document_obj2)
+			% EQ - are two NDI_DOCUMENT objects equal?
+			%
+			% B = EQ(NDI_DOCUMENT_OBJ1, NDI_DOCUMENT_OBJ2)
+			%
+			% Returns 1 if and only if the objects have identical document_properties.ndi_document.id
+			% fields.
+			%
+				b = strcmp(ndi_document_obj1.document_properties.ndi_document.id,...
+					ndi_document_obj2.document_properties.ndi_document.id);
+		end; % eq()
+
 	end % methods
 
 	methods (Static)
@@ -264,6 +285,10 @@ classdef ndi_document
 						s(1).document_superclass_data{end+1} = j.document_class;
 					end
 					j_ = rmfield(j, 'document_class');
+					if isfield(s,'depends_on') & isfield(j_,'depends_on'),
+						s.depends_on = cat(1,s.depends_on(:),j_.depends_on(:));
+						j_ = rmfield(j,'depends_on');
+					end;
 					s = structmerge(s, j_);
 				else,
 					return;

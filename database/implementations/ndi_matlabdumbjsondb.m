@@ -20,7 +20,7 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		% See also: DUMBJSONDB, DUMBJSONDB/DUMBJSONDB
 			ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj@ndi_database(varargin{:});
 			ndi_matlabdumbjsondb_obj.db = dumbjsondb(varargin{3:end},...
-				'dirname','dumbjsondb','unique_object_id_field','ndi_document.document_unique_reference');
+				'dirname','dumbjsondb','unique_object_id_field','ndi_document.id');
 		end; % ndi_matlabdumbjsondb()
 
 	end 
@@ -90,6 +90,10 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 				for i=1:numel(depends_locs),
 					param1 = {'name','value'};
 					param2 = {searchparams(depends_locs(i)).param1 searchparams(depends_locs(i)).param2 };
+					if strcmp(param2{1},'*'), % ignore the name
+						param1 = param1(2);
+						param2 = param2(2);
+					end;
 					replace = struct('field','depends_on','operation','hasanysubfield_exact_string');
 					replace.param1 = param1; 
 					replace.param2 = param2; 

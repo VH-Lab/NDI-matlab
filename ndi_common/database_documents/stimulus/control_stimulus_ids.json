@@ -9,14 +9,14 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "stimulus_presentation_document_id",				
+		{	"name": "stimulus_presentation_id",				
 			"value": [] 
 		}
 	],
 	"control_stimulus_ids": {
 		"control_stimulus_ids":						[]
 	},
-	"control_stimid_method": {
+	"control_stimulus_id_method": {
 	}
 }
 

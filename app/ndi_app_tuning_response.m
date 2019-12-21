@@ -29,10 +29,10 @@ classdef ndi_app_tuning_response < ndi_app
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
 			% Examines a the NDI_EXPERIMENT associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
-			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
+			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
-			% If NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE documents already exist for a given
+			% If STIMULUS_RESPONSE and STIMULUS_TUNINGCURVE documents already exist for a given
 			% stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.
 			%
 			% If the input argument RESET is given and is 1, then all existing documents for this probe are
@@ -45,16 +45,17 @@ classdef ndi_app_tuning_response < ndi_app
 				% find all stimulus records from the stimulus probe
 				sq_probe = ndi_query(ndi_probe_stim.searchquery());
 				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json',''); % presentation
-				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
-				doc_stim = E.database_search(sq_stim&sq_e&sq_probe);
-				doc_tune = E.database_search(sq_tune&sq_e&sq_probe);
+				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
+				sq_tune = ndi_query('','isa','stimulus_tuningcurve.json','');
+				doc_stim = E.database_search(sq_stim&sq_e&sq_probe),
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe),
 
 				ndi_ts_epochs = {};
 
 				% find all the epochs of overlap between stimulus probe and ndi_timeseries_obj
 
 				for i=1:numel(doc_stim),
+					disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
 					% ASSUMPTION: each stimulus probe epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
@@ -73,7 +74,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
-						ctrl_search = ndi_query('depends_on','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ndi_query('isa','control_stimulusids','','');
+						ctrl_search = ndi_query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ndi_query('','isa','control_stimulus_ids','');
 						%ctrl_search = ndi_query('control_stim_ids.stimulus_presentation_doc_unique_id','exact_string',doc_stim{i}.doc_unique_id(),'');
 						control_stim_doc = E.database_search(ctrl_search);
 						for j=1:numel(control_stim_doc),
@@ -90,7 +91,7 @@ classdef ndi_app_tuning_response < ndi_app
 								control_stim_doc{j}.document_properties.control_stim_ids
 								control_stim_doc{j}.document_properties.control_stim_ids.control_stim_ids
 							end;
-							ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
+							myrdoc = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
 						end;
 
 					end
@@ -167,10 +168,10 @@ classdef ndi_app_tuning_response < ndi_app
 				end;
 
 				% build up search for existing parameter documents
-				q_doc = ndi_query('','isa','ndi_document_stimulus_response_scalar_parameters_basic.json','');
-				q_rdoc = ndi_query('','isa','ndi_document_stimulus_response_scalar.json','');
+				q_doc = ndi_query('','isa','stimulus_response_scalar_parameters_basic.json','');
+				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
 				q_r_stimdoc = ndi_query('depends_on','depends_on','stimulus_presentation_id',stim_doc.id());  
-				q_r_stimcontroldoc = ndi_query('depends_on','depends_on','stimulus_control_id','exact_string',control_doc.id(),''); 
+				q_r_stimcontroldoc = ndi_query('stimulus_control_id','exact_string',control_doc.id(),''); 
 				%q_r_stimcontroldoc = ndi_query('stimulus_control_identifier','exact_string',control_doc.doc_unique_id(),''); 
 				q_e = ndi_query(E.searchquery());
 				q_match{1} = ndi_query('stimulus_response_scalar_parameters_basic.temporalfreqfunc','exact_string',temporalfreqfunc,'');
@@ -225,7 +226,7 @@ classdef ndi_app_tuning_response < ndi_app
 						% make one
 						stimulus_response_scalar_parameters_basic = var2struct('temporalfreqfunc','freq_response','prestimulus_time','prestimulus_normalization',...
 							'isspike','spiketrain_dt');
-						param_doc = ndi_document('stimulus/ndi_document_stimulus_response_scalar_parameters_basic.json',...
+						param_doc = ndi_document('stimulus/stimulus_response_scalar_parameters_basic.json',...
 							'stimulus_response_scalar_parameters_basic', stimulus_response_scalar_parameters_basic') + E.newdocument();
 						E.database_add(param_doc);
 						param_doc = {param_doc};
@@ -239,7 +240,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 					E.database_rm(rdoc);
 
-					controlstimids = control_doc.document_properties.control_stim_ids.control_stim_ids;
+					controlstimids = control_doc.document_properties.control_stimulus_ids.control_stimulus_ids;
 					freq_mult = [];
 					for j=1:numel(stim_doc.document_properties.stimuli),
 						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
@@ -265,7 +266,7 @@ classdef ndi_app_tuning_response < ndi_app
 					stimulus_response_struct = struct( 'stimulator_epochid', stim_doc.document_properties.epochid, ...
 						'thing_epochid', ts_epoch_timeref.epoch);
 
-					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
+					response_doc{end+1} = ndi_document('stimulus/stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
 							'stimulus_response', stimulus_response_struct)+E.newdocument();
 					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_response_scalar_parameters_id', param_doc{1}.id());
 					response_doc{end} = response_doc{end}.set_dependency_value('thing_id', ndi_timeseries_obj.id());
@@ -417,10 +418,9 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 				end;
 
-				tuning_doc = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
+				tuning_doc = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('thing_id',stim_response_doc.dependency_value('thing_id'));
-
 				E.database_add(tuning_doc);
 				
 
@@ -432,7 +432,7 @@ classdef ndi_app_tuning_response < ndi_app
 			% CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_PROBE_OBJ, RESET, ...)
 			%
 			% Thus function will look for all 'ndi_document_stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
-			% compute the corresponding control stimuli, and save them as an 'ndi_document_control_stimulus_ids' 
+			% compute the corresponding control stimuli, and save them as an 'control_stimulus_ids' 
 			% document that is also returned as a cell list in CS_DOC.
 			%
 			% If RESET is 1, then any existing documents of this type are first removed. If RESET is not provided or is
@@ -445,21 +445,23 @@ classdef ndi_app_tuning_response < ndi_app
 					reset = 0;
 				end;
 
-				sq_probe = ndi_query(stimulus_probe_obj);
-				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json','');
+				sq_probe = ndi_query(stimulus_probe_obj.searchquery());
+				sq_stim = ndi_query('','isa','stimulus_presentation.json','');
+				stim_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_probe);
 
 				if reset,
-					sq_csi = ndi_query('','isa','ndi_document_control_stimulus_ids.json','');
-					old_cs_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_csi&sq_probe);
-					ndi_app_tuning_response_obj.experiment.database_rm(old_cs_doc);
+					sq_csi = ndi_query('','isa','control_stimulus_ids.json','');
+					for i=1:numel(stim_doc),
+						sq_csi_stim = ndi_query('','depends_on','stimulus_presentation_id',stim_doc{i}.id());
+						old_cs_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_csi&sq_csi_stim);
+						ndi_app_tuning_response_obj.experiment.database_rm(old_cs_doc);
+					end;
 				end;
-
-				stimdoc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_probe);
 
 				cs_doc = {};
 
-				for i=1:numel(stimdoc),
-					[cs_ids,cs_doc_here] = ndi_app_tuning_response_obj.control_stimulus(stimdoc{i},varargin{:});
+				for i=1:numel(stim_doc),
+					[cs_ids,cs_doc_here] = ndi_app_tuning_response_obj.control_stimulus(stim_doc{i},varargin{:});
 					cs_doc{end+1} = cs_doc_here;
 				end;
 		end;
@@ -556,8 +558,8 @@ classdef ndi_app_tuning_response < ndi_app
 				% now we have cs_ids for each stimulus, so make the document
 
 				control_stim_ids_struct = struct('control_stimulus_ids', cs_ids);
-				cs_doc = ndi_document('stimulus/ndi_document_control_stimulus_ids','control_stim_ids',control_stim_ids_struct, ...
-					'control_stim_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
+				cs_doc = ndi_document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct, ...
+					'control_stimulus_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
 				cs_doc = cs_doc.set_dependency_value('stimulus_presentation_id',stim_doc.id());
 
 				ndi_app_tuning_response_obj.experiment.database_add(cs_doc);
@@ -576,7 +578,7 @@ classdef ndi_app_tuning_response < ndi_app
 				srs_doc = {};
 
 				q_e = ndi_query(E.searchquery());
-				q_tc = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
+				q_tc = ndi_query('','isa','stimulus_tuningcurve.json','');
 				q_thingr = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 
 				tc_doc_matches = E.database_search(q_e&q_tc&q_thingr);

@@ -29,7 +29,7 @@ include = [];
 
 for i=1:numel(d),
 	for j=1:numel(d{i}.document_properties.depends_on),
-		if nargin>0,
+		if nargin>1,
 			match = any(strcmpi(d{i}.document_properties.depends_on(j).name,varargin));
 		else,
 			match = 1;
