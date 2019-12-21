@@ -10,6 +10,7 @@ Cambridge Electronic Deisgn called the micro1401. A wire connects the electrode 
 and a wire from the amplifier connects to an input (let's say input 0) on the micro1401. There is a visual stimulus computer that
 produces videos on a monitor, and also generates 14 digital timing pulses that are acquired on 14 digital inputs (let's say
 digital inputs 1..14):
+
 ..1. Stimulus trigger: trigger generated when a stimulus is shown
 ..2. Prestimulus trigger: trigger generated when system is ready to draw a stimulus (user-specified delay)
 ..3. Frame trigger: trigger generated when system updates the video image on the display
