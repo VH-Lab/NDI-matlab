@@ -11,11 +11,11 @@ and a wire from the amplifier connects to an input (let's say input 0) on the mi
 produces videos on a monitor, and also generates 14 digital timing pulses that are acquired on 14 digital inputs (let's say
 digital inputs 1..14):
 
-..1. Stimulus trigger: trigger generated when a stimulus is shown
-..2. Prestimulus trigger: trigger generated when system is ready to draw a stimulus (user-specified delay)
-..3. Frame trigger: trigger generated when system updates the video image on the display
-..4. Vertical blanking: trigger generated when monitor refreshes
-..5. 8 digital channels encode the stimulus identity from 0 (no stimulus) to 1..255
+  1. Stimulus trigger: trigger generated when a stimulus is shown
+  2. Prestimulus trigger: trigger generated when system is ready to draw a stimulus (user-specified delay)
+  3. Frame trigger: trigger generated when system updates the video image on the display
+  4. Vertical blanking: trigger generated when monitor refreshes
+  5. 8 digital channels encode the stimulus identity from 0 (no stimulus) to 1..255
 
 The recording system is turned on to record a bout of visual stimulation, and then turned off. Each time the recording is turned
 on, a file (.smr format) is written to disk, and the visual stimulus computer also writes a detailed stims.mat file to disk that
