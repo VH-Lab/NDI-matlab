@@ -17,11 +17,11 @@ function exp = ndi_vhlab_makedev(exp, devname)
 %
 % Devices created    | Description
 % ----------------------------------------------------------------
-% vhintan            |  ndi_daqsystem_multichannel_mfdaq_intan that looks for
+% vhintan            |  ndi_daqsystem_multichannel_mfdaq that looks for
 %                    |    files 'vhintan_channelgrouping.txt' and '*.rhd'
-% vhspike2           |  ndi_daqsystem_multichannel_mfdaq_cedspike2 that looks for
+% vhspike2           |  ndi_daqsystem_multichannel_mfdaq that looks for
 %                    |    files 'vhspike2_channelgrouping.txt' and '*.smr'
-% vhvis_spike2       |  ndi_daqsystem_multichannel_mfdaq_stimulus_vhlabvisspike2 that
+% vhvis_spike2       |  ndi_daqsystem_multichannel_mfdaq_stimulus that
 %                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
 %                    |    'stims.mat', and 'spike2data.smr'.
 %
