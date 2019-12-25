@@ -1,6 +1,26 @@
 ## 5 examples of recording situations
 
-###1. Simple: 2 devices, 2 probes, 4 things
+### 1. Simple: 1 device, 1 probe, 3 things
+
+An experimentor records spontaneously generated responses with a single electrode inserted in visual cortex. The analyst wants to examine the responses of single neurons and the local field potential.
+
+_Physical situation_: There is a single physical hardware data acquisition system, in this case a system made by Cambridge Electronic Deisgn called the micro1401. A wire connects the electrode to an amplifier, and a wire from the amplifier connects to an input (let's say input 0) on the micro1401.
+
+The recording system is turned on to record a bout of spontaneous activity, and then turned off. Each time the recording is turned on, a file (.smr format) is written to disk. The software that manages the recording of the micro1401 is written by CED and is called Spike2.
+
+Let's say there are 3 recording epochs. Therefore, we have 3 .smr files (let's say at path epoch1/myfile.smr, epoch2/myotherfile.smr, epoch3/myotherfileagain.smr).
+
+_NDI configuration_: The raw data is managed by a member of the class `ndi_daqsystem`. There is a subclass, `ndi_daqsystem_mfdaq`, that implements a generic multi-function data acquisition system. There is an `ndi_daqreader_mfdaq` class, and a specific subclass `ndi_daqreader_mfdaq_cedspike2` that implements the reading of the .smr files. 
+
+We build an `ndi_daqsystem` object to add to the `ndi_experiment` object of this experiment, that we will call vhspike2 (for reading the electrode data). To do so, we need to create the 2 component objects of an `ndi_daqsystem`: an `ndi_daqreader` and an `ndi_filenavigator`. Let's say our experiment is in variable E.
+
+`fileparams = ;
+d = ndi_daqsystem_mfdaq(ndi_daqreader_mfdaq_cedspike2(), ndi_filenavigator(fileparams));'
+
+
+
+
+### 2. Typical: 2 devices, 2 probes, 4 things
 
 An experimentor records responses to visual stimulation with a single electrode inserted in visual cortex. The analyst wants to
 examine the responses of single neurons to visual stimulation and the local field potential response to visual stimulation.
