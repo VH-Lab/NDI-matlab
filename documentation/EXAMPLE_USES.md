@@ -2,7 +2,7 @@
 
 ### 1. Simple: 1 device, 1 probe, 3 things
 
-An experimentor records spontaneously generated responses with a single electrode inserted in visual cortex. The analyst wants to examine the responses of single neurons and the local field potential.
+An experimentor records spontaneously generated responses with a single intracellular electrode inserted in visual cortex. The analyst wants to examine the spiking responses of the neuron and the voltage responses of the neuron with the spiking artificially removed.
 
 _Physical situation_: There is a single physical hardware data acquisition system, in this case a system made by Cambridge Electronic Deisgn called the micro1401. A wire connects the electrode to an amplifier, and a wire from the amplifier connects to an input (let's say input 0) on the micro1401.
 
@@ -10,14 +10,32 @@ The recording system is turned on to record a bout of spontaneous activity, and 
 
 Let's say there are 3 recording epochs. Therefore, we have 3 .smr files (let's say at path epoch1/myfile.smr, epoch2/myotherfile.smr, epoch3/myotherfileagain.smr).
 
-_NDI configuration_: The raw data is managed by a member of the class `ndi_daqsystem`. There is a subclass, `ndi_daqsystem_mfdaq`, that implements a generic multi-function data acquisition system. There is an `ndi_daqreader_mfdaq` class, and a specific subclass `ndi_daqreader_mfdaq_cedspike2` that implements the reading of the .smr files. 
+_NDI configuration_: The raw data is managed by a member of the class `ndi_daqsystem`. There is a subclass, `ndi_daqsystem_mfdaq`, that implements a generic multi-function data acquisition system, which is a system that has analog inputs, analog outputs (which are records of signals that were output), digital inputs, digital outputs, and a clock. There is an `ndi_daqreader_mfdaq` class, and a specific subclass `ndi_daqreader_mfdaq_cedspike2` that implements the reading of the .smr files.
 
 We build an `ndi_daqsystem` object to add to the `ndi_experiment` object of this experiment, that we will call vhspike2 (for reading the electrode data). To do so, we need to create the 2 component objects of an `ndi_daqsystem`: an `ndi_daqreader` and an `ndi_filenavigator`. Let's say our experiment is in variable E.
 
 `fileparams = ;
-d = ndi_daqsystem_mfdaq(ndi_daqreader_mfdaq_cedspike2(), ndi_filenavigator(fileparams));'
+d = ndi_daqsystem_mfdaq(ndi_daqreader_mfdaq_cedspike2(), ndi_filenavigator(fileparams));`
 
+Now we can ask the device what epochs it has. 
 
+`et = d.epochtable();`
+
+When we do this, the device asks its file_navigator to determine the epochs that it has (calling the file_navigator's epochtable() method), which searches the disk for occurrences of `.smr` files. If we study the epochtable that is returned, we see that it has 3 entries.
+
+`et
+et(1)`
+
+Each of these entries has a field `underlying` that allows us to examine the underlying details of the epoch.
+
+`et(1).underlying`
+
+The `ndi_epochset` class defines data structures and methods that manage these interdependent epochs. Each `ndi_daqsystem` has epochs that depend on the epochs of a file_navigator. `ndi_probe` objects have epochs that depend on the epochs of the underlying device that recorded the probe. An `ndi_thing` object is related to the epochs of the probe that provided evidence for it (although in the future we want to be able to define `ndi_thing` objects that are not necessarily related to a probe).
+
+We also create `ndi_thing` objects that are related to the data that is directly sampled from a probe. In this example, we create a `direct` thing that is equal to the data sampled from the probe (the raw voltage of the sampled data) and 2 `indirect` (or not `direct`) probes whose epochs are created from data that is derived from the probe. In the first case, we create a list of spike times by detecting the spike events in the waveform, and, in the second, we create filtered version of the data with the spike waveforms clipped out.
+
+`
+`
 
 
 ### 2. Typical: 2 devices, 2 probes, 4 things
