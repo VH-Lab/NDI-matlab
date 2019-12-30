@@ -18,21 +18,21 @@ if nargin < 1,
 end;
 
 disp(['creating a new experiment object...']);
-exp = ndi_experiment_dir('exp1',dirname);
+E = ndi_experiment_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (sg):']);
 
 % Step 1: Prepare the data tree; we will just look for .rec
 %         files in any organization within the directory
 
-dt = ndi_filenavigator(exp, '.*\.rec\>');  % look for .rec files
+dt = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
 
 % Step 2: create the daqsystem object and add it to the experiment:
 
-dev1 = exp.daqsystem_load('name','sgtest');
+dev1 = E.daqsystem_load('name','sgtest');
 if isempty(dev1),
 	dev1 = ndi_daqsystem_mfdaq('sgtest', dt, ndi_daqreader_mfdaq_spikegadgets());
-	exp.daqsystem_add(dev1);
+	E.daqsystem_add(dev1);
 end
 
 % Now let's print some statistics
@@ -61,5 +61,5 @@ data = filtfilt(b,a,data);
 %Plots all samples read from all four channels
 plot_multichan(data,1:30000,400); %(data, timeframe, height)
 
-exp.daqsystem_rm(dev1); % remove the device so the demo works again
+E.daqsystem_rm(dev1); % remove the device so the demo works again
 

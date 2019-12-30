@@ -41,7 +41,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 
 				channels = emptystruct('name','type');
 
-				multifunctiondaq_channel_types = ndi_daqSsystem_mfdaq.mfdaq_channeltypes;
+				multifunctiondaq_channel_types = ndi_daqsystem_mfdaq.mfdaq_channeltypes();
 
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
@@ -56,7 +56,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 
 				for k=1:length(header.channelinfo),
 					newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
-					newchannel.name = [ ndi_daqreader_mfdaq_cedspike2_obj.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.name = [ ndi_daqsystem_mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
 					channels(end+1) = newchannel;
 				end
 		end % getchannels()
@@ -102,6 +102,26 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 
 				t0 = (s0-1)/sr;
 				t1 = (s1-1)/sr;
+
+				if isinf(t0) | isinf(t1),
+					t0_orig = t0;
+					t1_orig = t1;
+					t0t1_here = ndi_daqreader_mfdaq_cedspike2_obj.t0_t1(epochfiles);
+					if isinf(t0_orig),
+						if t0_orig<0,
+							t0 = t0t1_here{1}(1);
+						elseif t0_orig>0,
+							t0 = t0t1_here{1}(2);
+						end;
+					end;
+					if isinf(t1_orig),
+						if t1_orig<0,
+							t1 = t0t1_here{1}(1);
+						elseif t1_orig>0
+							t2 = t0t1_here{1}(2);
+						end;
+					end;
+				end;
 
 				for i=1:length(channel), % can only read 1 channel at a time
 					if strcmpi(channeltype,'time'),
