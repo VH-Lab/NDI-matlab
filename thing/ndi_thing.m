@@ -236,7 +236,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end;
 				E = ndi_thing_obj.experiment();
 				if ~isempty(E),
-					thingdoc = E.database.search(ndi_thing_obj.searchquery());
+					thingdoc = E.database_search(ndi_thing_obj.searchquery());
 					if isempty(thingdoc),
 						error(['NDI_THING is not part of the database.']);
 					elseif numel(thingdoc)>1,
@@ -343,7 +343,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				if ~isempty(thing_doc),
 					sq = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 					E = ndi_thing_obj.experiment();
-					epochdocs = E.database.search(sq);
+					epochdocs = E.database_search(sq);
 				else,
 					epochdocs = {};
 				end;

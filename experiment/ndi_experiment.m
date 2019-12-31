@@ -4,12 +4,12 @@ classdef ndi_experiment < handle
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
 		unique_reference  % A unique code that uniquely identifies this experiment
-		database          % An NDI_DATABASE associated with this experiment
 		daqsystem          % An array of NDI_DAQSYSTEM objects associated with this experiment
 		syncgraph         % An NDI_SYNCGRAPH object related to this experiment
 		cache             % An NDI_CACHE object for the experiment's use
 	end
 	properties (GetAccess=protected, SetAccess = protected)
+		database          % An NDI_DATABASE associated with this experiment
 	end
 	methods
 		function ndi_experiment_obj = ndi_experiment(reference)
@@ -234,6 +234,32 @@ classdef ndi_experiment < handle
 				ndi_document_obj = ndi_experiment_obj.database.search(searchparameters);
 		end % database_search();
 
+		function ndi_binarydoc_obj = database_openbinarydoc(ndi_experiment_obj, ndi_document_or_id)
+			% DATABASE_OPENBINARYDOC - open the NDI_BINARYDOC channel of an NDI_DOCUMENT
+			%
+			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_EXPERIMENT_OBJ, NDI_DOCUMENT_OR_ID)
+			%
+			%   Return the open NDI_BINARYDOC object that corresponds to an NDI_DOCUMENT and
+			%   NDI_DOCUMENT_OR_ID can be either the document id of an NDI_DOCUMENT or an NDI_DOCUMENT object itsef.
+			% 
+			%  Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with NDI_EXPERIMENT/CLOSEBINARYDOC.
+			%  The locked nature of the binary doc is a property of the database, not the document, which is why
+			%  the database is needed in the method.
+			% 
+				ndi_binarydoc_obj = ndi_experiment_obj.database.openbinarydoc(ndi_document_or_id);
+		end; % database_openbinarydoc
+
+		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_experiment_obj, ndi_binarydoc_obj)
+			% DATABASE_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC 
+			%
+			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
+			%
+			% Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
+			% database, which is why it is necessary to call this function through the experiment object.
+			%
+				ndi_binarydoc_obj = ndi_experiment_obj.database.closebinarydoc(ndi_binarydoc_obj);
+		end; % closebinarydoc
+
 		function ndi_experiment_obj = syncgraph_addrule(ndi_experiment_obj, rule)
 			% SYNCGRAPH_ADDRULE - add an NDI_SYNCRULE to the syncgraph
 			%
@@ -423,7 +449,7 @@ classdef ndi_experiment < handle
 				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
 						'ndi_document.experiment_id', ndi_experiment_obj.id()}, ...
 					varargin{:}); 
-				doc = ndi_experiment_obj.database.search(sq);
+				doc = ndi_experiment_obj.database_search(sq);
 				things = {};
 				for i=1:numel(doc),
 					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);

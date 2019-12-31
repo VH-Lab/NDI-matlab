@@ -81,7 +81,7 @@ classdef ndi_app_markgarbage < ndi_app
 				newdoc = ndi_app_markgarbage_obj.experiment.newdocument('apps/markgarbage/valid_interval',...
 						'valid_interval',vi) +  ...
 					ndi_epochset_obj.newdocument() + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
-				ndi_app_markgarbage_obj.experiment.database.add(newdoc);
+				ndi_app_markgarbage_obj.experiment.database_add(newdoc);
 		end; % savevalidinterval()
 
 		function b = clearvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
@@ -99,7 +99,7 @@ classdef ndi_app_markgarbage < ndi_app
 				[vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
 
 				if ~isempty(mydoc),
-					ndi_app_markgarbage_obj.experiment.database.remove(mydoc);
+					ndi_app_markgarbage_obj.experiment.database_rm(mydoc);
 				end
 
 		end % clearvalidinteraval()
@@ -121,7 +121,7 @@ classdef ndi_app_markgarbage < ndi_app
 					searchq = cat(2,searchq,ndi_epochset_obj.searchquery());
 				end
 
-				mydoc = ndi_app_markgarbage_obj.experiment.database.search(searchq);
+				mydoc = ndi_app_markgarbage_obj.experiment.database_search(searchq);
 
 				if ~isempty(mydoc),
 					for i=1:numel(mydoc),

@@ -62,7 +62,7 @@ classdef ndi_app_spikesorter < ndi_app
 				+ probe.newdocument() + ndi_app_spikesorter_obj.newdocument();
 
 			% Add doc to database
-			ndi_app_spikesorter_obj.experiment.database.add(sorting_parameters_doc);
+			ndi_app_spikesorter_obj.experiment.database_add(sorting_parameters_doc);
 
 
 			% Read spikewaves here
@@ -135,7 +135,7 @@ classdef ndi_app_spikesorter < ndi_app
 				+ probe.newdocument() + ndi_app_spikesorter_obj.newdocument();
 
 			% Add doc to database
-			ndi_app_spikesorter_obj.experiment.database.add(spike_clusters_doc);
+			ndi_app_spikesorter_obj.experiment.database_add(spike_clusters_doc);
 
 		end %function
 
@@ -164,12 +164,12 @@ classdef ndi_app_spikesorter < ndi_app
 			searchq = cat(2, searchq, ndi_probe_obj.searchquery());
 
 			% Search and get any docs
-			mydoc = ndi_app_spikesorter_obj.experiment.database.search(searchq);
+			mydoc = ndi_app_spikesorter_obj.experiment.database_search(searchq);
 
 			% Remove the docs
 			if ~isempty(mydoc),
 				for i=1:numel(mydoc),
-					ndi_app_spikesorter_obj.experiment.database.remove(mydoc{i}.doc_unique_id)
+					ndi_app_spikesorter_obj.experiment.database_rm(mydoc{i}.id())
 				end
 				warning(['removed ' num2str(i) ' doc(s) with same extraction name'])
 				b = 1;

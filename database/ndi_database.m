@@ -90,7 +90,7 @@ classdef ndi_database
 		function [ndi_binarydoc_obj, version] = openbinarydoc(ndi_database_obj, ndi_document_or_id, version)
 			% OPENBINARYDOC - open and lock an NDI_BINARYDOC that corresponds to a document id
 			%
-			% [NDI_BINARYDOC_OBJ, VERSION] = BINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
+			% [NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
 			%
 			% Return the open NDI_BINARYDOC object and VERSION that corresponds to an NDI_DOCUMENT and
 			% the requested version (the latest version is used if the argument is omitted).
@@ -111,7 +111,7 @@ classdef ndi_database
 					[ndi_document_obj,version] = ndi_database_obj.read(ndi_document_id, version);
 				end;
 				ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, version);
-		end; % binarydoc
+		end; % openbinarydoc
 
 		function [ndi_binarydoc_obj] = closebinarydoc(ndi_database_obj, ndi_binarydoc_obj)
 			% CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC 
@@ -122,7 +122,7 @@ classdef ndi_database
 			% database, which is why it is necessary to call this function through the database.
 			%
 				ndi_binarydoc_obj = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj);
-		end; % binarydoc
+		end; % closebinarydoc
 
 		function ndi_database_obj = remove(ndi_database_obj, ndi_document_id, versions)
 			% REMOVE - remove a document from an NDI_DATABASE
