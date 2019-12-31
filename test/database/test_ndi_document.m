@@ -82,7 +82,7 @@ binarydoc = E.database.closebinarydoc(binarydoc);
 doc = E.database.search({'subject.id','vhlab12345'});
 if ~isempty(doc),
 	for i=1:numel(doc),
-		E.database_rm(doc_unique_id(doc{i}));
+		E.database_rm(doc{i}.id());
 	end;
 end;
 

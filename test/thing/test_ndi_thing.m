@@ -68,7 +68,7 @@ box off;
 
 % remove the thing document
 
-doc = E.database.search({'ndi_document.type','ndi_thing'});
+doc = E.database.search({'ndi_document.type','ndi_thing(.*)'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());
