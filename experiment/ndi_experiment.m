@@ -86,7 +86,7 @@ classdef ndi_experiment < handle
 		end;
 
 		function dev = daqsystem_load(ndi_experiment_obj, varargin)
-			% LOAD - Load daqsystem objects from an NDI_EXPERIMENT
+			% DAQSYSTEM_LOAD - Load daqsystem objects from an NDI_EXPERIMENT
 			%
 			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
@@ -108,6 +108,25 @@ classdef ndi_experiment < handle
 					end;
 				end;
 		end; % daqsystem_load()	
+
+		function ndi_experiment_obj = daqsystem_clear(ndi_experiment_obj)
+			% DAQSYSTEM_CLEAR - remove all DAQSYSTEM objects from an NDI_EXPERIMENT
+			%
+			% NDI_EXPERIMENT_OBJ = DAQSYSTEM_CLEAR(NDI_EXPERIMENT_OBJ)
+			%
+			% Permanently removes all NDI_DAQSYSTEM objects from an NDI_EXPERIMENT.
+			%
+			% Be sure you mean it!
+			%
+				dev = ndi_experiment_obj.daqsystem_load('name','(.*)');
+				if ~isempty(dev) & ~iscell(dev),
+					dev = {dev};
+				end;
+				for i=1:numel(dev),
+					ndi_experiment_obj = ndi_experiment_obj.daqsystem_rm(dev{i});
+				end;
+
+		end; % daqsystem_clear();
 
 		% NDI_DOCUMENTSERVICE methods
 
