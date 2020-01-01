@@ -13,3 +13,4 @@ test_ndi_document_jsons	1	Test ability to make an NDI_DOCUMENT out of all JSON d
 test_ndi_device_image_tiffstack	0	Not in current testing stream
 test_ndi_image_tiffstack_multipleepoch	0	Not in current testing stream
 test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream
+ndi_test_markgarbage	1	Tests app markgarbage

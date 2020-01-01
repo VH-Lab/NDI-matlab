@@ -234,6 +234,19 @@ classdef ndi_experiment < handle
 				ndi_document_obj = ndi_experiment_obj.database.search(searchparameters);
 		end % database_search();
 
+		function database_clear(ndi_experiment_obj, areyousure)
+			% DATABASE_CLEAR - deletes/removes all entries from the database associated with an experiment
+			%
+			% DATABASE_CLEAR(NDI_EXPERIMENT_OBJ, AREYOUSURE)
+			%
+			%   Removes all documents from the NDI_EXPERIMENT_OBJ object.
+			% 
+			% Use with care. If AREYOUSURE is 'yes' then the
+			% function will proceed. Otherwise, it will not.
+			%
+				ndi_experiment_obj.database.clear(areyousure);
+		end; % database_clear()
+        
 		function ndi_binarydoc_obj = database_openbinarydoc(ndi_experiment_obj, ndi_document_or_id)
 			% DATABASE_OPENBINARYDOC - open the NDI_BINARYDOC channel of an NDI_DOCUMENT
 			%

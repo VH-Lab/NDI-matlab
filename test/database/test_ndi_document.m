@@ -25,7 +25,7 @@ E = ndi_experiment_dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 
-doc = E.database.search({'subject.id','vhlab12345'});
+doc = E.database_search({'subject.id','vhlab12345'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc_unique_id(doc{i}));
@@ -45,10 +45,10 @@ doc = E.newdocument('ndi_document_subjectmeasurement',...
 E.database_add(doc);
 
   % store some data in the binary portion of the file
-binarydoc = E.database.openbinarydoc(doc);
+binarydoc = E.database_openbinarydoc(doc);
 disp(['Storing ' mat2str(0:9) '...'])
 binarydoc.fwrite(char([0:9]),'char');
-binarydoc = E.database.closebinarydoc(binarydoc);
+binarydoc = E.database_closebinarydoc(binarydoc);
 
  % now read the object back
 
@@ -72,14 +72,14 @@ end;
 doc = doc{1}, % should be only one match
 
  % read the binary data
-binarydoc = E.database.openbinarydoc(doc);
+binarydoc = E.database_openbinarydoc(doc);
 disp('About to read stored data: ');
 data = double(binarydoc.fread(10,'char'))',
-binarydoc = E.database.closebinarydoc(binarydoc);
+binarydoc = E.database_closebinarydoc(binarydoc);
 
 % remove the document
 
-doc = E.database.search({'subject.id','vhlab12345'});
+doc = E.database_search({'subject.id','vhlab12345'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());
