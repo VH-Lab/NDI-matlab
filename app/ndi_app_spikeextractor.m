@@ -158,6 +158,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							'epochid', epoch_string) ...
 							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
 					spikes_doc = spikes_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
+					spikes_doc = spikes_doc.set_dependency_value('ndi_timeseries_obj_id',ndi_timeseries_obj.id());
 
 					% Create times ndi_doc
 					times_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spiketimes', ...
@@ -165,18 +166,11 @@ classdef ndi_app_spikeextractor < ndi_app
 							'epochid', epoch_string) ...
 							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
 					times_doc = times_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
+					times_doc = times_doc.set_dependency_value('ndi_timeseries_obj_id',ndi_timeseries_obj.id());
 
 					% Add docs to database
 					ndi_app_spikeextractor_obj.experiment.database_add(spikes_doc);
 					ndi_app_spikeextractor_obj.experiment.database_add(times_doc);
-
-					% temporary or maybe permanent: cutting interpolation from this part, will use it in calculating features
-					% Required vectors for interpolation
-					%spikelength = spike_sample_end - spike_sample_start + 1;
-					%x = [spike_sample_start:spike_sample_end];
-					%xq = [spike_sample_start:(1/interpolation):spike_sample_end]; % ex: 1/3 sets up interpolation at 3x
-					%[I,V]=findclosest(xq,0);
-					%xq(I) = 0; % make sure center is exactly 0
 
 					% add header to spikes_doc
 					fileparameters.numchannels = size(data_example,2);
