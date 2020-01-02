@@ -269,7 +269,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				% loads from database
 				potential_epochdocs = ndi_thing_obj.load_all_thing_docs();
 				for i=1:numel(potential_epochdocs),
-					if isfield(potential_epochdocs{i}.document_properties,'epochid'),
+					if isfield(potential_epochdocs{i}.document_properties,'epochid');
 						clear newet;
 						newet.epoch_number = i;
 						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid;
@@ -344,10 +344,11 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					sq = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 					E = ndi_thing_obj.experiment();
 					epochdocs = E.database_search(sq);
+    				thing_docs = cat(1, {thing_doc}, epochdocs(:));                    
 				else,
 					epochdocs = {};
+                    thing_docs = {};
 				end;
-				thing_docs = cat(1, {thing_doc}, epochdocs(:));
 		end; % LOAD_ALL_THING_DOCS
 
 	%%% NDI_DOCUMENTSERVICE methods
