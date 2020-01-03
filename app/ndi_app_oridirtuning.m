@@ -1,4 +1,4 @@
-classdef ndi_app_oridirtuning < ndi_app
+; classdef ndi_app_oridirtuning < ndi_ap2
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -38,9 +38,6 @@ classdef ndi_app_oridirtuning < ndi_app
 				q_rthing = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_rthing)
-
-				disp('here--calculate_tuning_curve in app_oridir');
-				disp('debug here');
 
 				for r=1:numel(rdoc),
 					if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
