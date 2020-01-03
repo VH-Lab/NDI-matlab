@@ -53,17 +53,16 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				sq_stim = ndi_query('','isa','stimulus_presentation',''); % presentation
 				sq_tune = ndi_query('','isa','stimulus_tuningcurve','');
 
-				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim),
-				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_tune),
+				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
+				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_tune);
 
 				if reset,
+					disp(['Looking for dependent documents before deleting for reset...']);
 					% delete existing documents
-					dependent_stim_docs = ndi_findalldependencies(E,[],existing_doc_stim{:})
-					dependent_tune_docs = ndi_findalldependencies(E,[],existing_doc_tune{:})
+					dependent_stim_docs = ndi_findalldependencies(E,[],existing_doc_stim{:});
+					dependent_tune_docs = ndi_findalldependencies(E,[],existing_doc_tune{:});
 					E.database_rm(existing_doc_stim);
 					E.database_rm(existing_doc_tune);
-					E.database_rm(dependent_stim_docs);
-					E.database_rm(dependent_tune_docs);
 					existing_doc_stim = {};
 					existing_doc_tune = {};
 				end;
@@ -115,11 +114,8 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					nd2 = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
 					newdocs{end+1} = nd2;
 				end;
-
 				E.database_add(newdocs);
 		end % 
-
 	end; % methods
-
 end % ndi_app_stimulus_decoder
 

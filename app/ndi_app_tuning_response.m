@@ -55,7 +55,7 @@ classdef ndi_app_tuning_response < ndi_app
 				% find all the epochs of overlap between stimulus probe and ndi_timeseries_obj
 
 				for i=1:numel(doc_stim),
-					disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
+					%disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
 					% ASSUMPTION: each stimulus probe epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
@@ -77,7 +77,7 @@ classdef ndi_app_tuning_response < ndi_app
 						ctrl_search = ndi_query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ndi_query('','isa','control_stimulus_ids','');
 						%ctrl_search = ndi_query('control_stim_ids.stimulus_presentation_doc_unique_id','exact_string',doc_stim{i}.doc_unique_id(),'');
 						control_stim_doc = E.database_search(ctrl_search);
-						for j=1:numel(control_stim_doc),
+						for j=1:numel(control_stim_doc);
 							% okay, now how to analyze these stims?
 							% 
 							% want to calculate F0, F1, F2
@@ -88,8 +88,8 @@ classdef ndi_app_tuning_response < ndi_app
 								doc_stim{i}.document_properties.stimuli(1).parameters
 								doc_stim{i}.document_properties.presentation_order
 								doc_stim{i}.document_properties.presentation_time
-								control_stim_doc{j}.document_properties.control_stim_ids
-								control_stim_doc{j}.document_properties.control_stim_ids.control_stim_ids
+								control_stim_doc{j}.document_properties.control_stimulus_ids
+								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
 							myrdoc = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
 						end;
@@ -170,10 +170,10 @@ classdef ndi_app_tuning_response < ndi_app
 				% build up search for existing parameter documents
 				q_doc = ndi_query('','isa','stimulus_response_scalar_parameters_basic.json','');
 				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
-				q_r_stimdoc = ndi_query('depends_on','depends_on','stimulus_presentation_id',stim_doc.id());  
-				q_r_stimcontroldoc = ndi_query('stimulus_control_id','exact_string',control_doc.id(),''); 
-				%q_r_stimcontroldoc = ndi_query('stimulus_control_identifier','exact_string',control_doc.doc_unique_id(),''); 
+				q_r_stimdoc = ndi_query('depends_on','depends_on','stimulus_presentation_id',stim_doc.id());
+				q_r_stimcontroldoc = ndi_query('','depends_on','stimulus_control_id',control_doc.id());
 				q_e = ndi_query(E.searchquery());
+
 				q_match{1} = ndi_query('stimulus_response_scalar_parameters_basic.temporalfreqfunc','exact_string',temporalfreqfunc,'');
 				q_match{2} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_time','exact_number',prestimulus_time,'');
 				q_match{3} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_normalization','exact_number',prestimulus_normalization,'');
@@ -232,7 +232,7 @@ classdef ndi_app_tuning_response < ndi_app
 						param_doc = {param_doc};
 					end;
 
-					% look for response docs
+					% look for existing response docs
 
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
 						ndi_query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
@@ -273,6 +273,7 @@ classdef ndi_app_tuning_response < ndi_app
 					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_presentation_id', stim_doc.id()); 
 					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_control_id', control_doc.id());
 					response_doc{end} = response_doc{end}.set_dependency_value('stimulator_id', ''); 
+
 					E.database_add(response_doc{end});
 				end;
 		end; % compute_stimulus_response_scalar()

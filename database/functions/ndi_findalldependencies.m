@@ -8,6 +8,8 @@ function [d] = ndi_findalldependencies(E, visited, varargin)
 % id of DOC1 or DOC2, etc. If any DOCS do not need to be searched, provide them in VISITED.
 % Otherwise, provide empty for VISITED.
 %
+% D is always a cell array of NDI_DOCUMENTS (perhaps empty, {}).
+%
 
 d = {};
 
@@ -40,3 +42,6 @@ for i=1:numel(varargin),
 	end;
 end;
 
+if ~iscell(d),
+    error(['This should always return a cell list, even if it is empty. Something is wrong, debug necessary.']);    
+end;

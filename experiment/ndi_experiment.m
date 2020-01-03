@@ -207,17 +207,37 @@ classdef ndi_experiment < handle
 			% are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.
 			%
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
+				if isempty(doc_unique_id),
+					return;
+				end; % nothing to do
+
+				if ~iscell(doc_unique_id),
+					if ischar(doc_unique_id, 'ndi_document'), % it is a single doc id
+						mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',doc_unique_id,''));
+						if isempty(mydoc), % 
+							error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+						end;
+						doc_unique_id = mydoc; % now a cell list
+					elseif isa(doc_unique_id,'ndi_document'),
+						doc_unique_id = {doc_unique_id};
+					else,
+						error(['Unknown input to DATABASE_RM of class ' class(doc_unique_id) '.']);
+					end;
+				end;
+
 				if iscell(doc_unique_id),
+					dependent_docs = ndi_findalldependencies(ndi_experiment_obj,[],doc_unique_id{:});
+					if numel(dependent_docs)>1,
+						warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
+					end;
+					for i=1:numel(dependent_docs),
+						ndi_experiment_obj.database.remove(dependent_docs{i});
+					end;
 					for i=1:numel(doc_unique_id), 
 						ndi_experiment_obj.database.remove(doc_unique_id{i});
 					end;
-					return;
-				end;
-				if isa(doc_unique_id, 'ndi_document'),
-					doc_unique_id = doc_unique_id.doc_unique_id(); % well that's confusing but correct
-				end;
-				if ~isempty(doc_unique_id),
-					ndi_experiment_obj.database.remove(doc_unique_id);
+				else,
+					error(['Did not think we could get here..notify steve.']);
 				end;
 		end; % database_rm
 

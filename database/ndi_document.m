@@ -255,58 +255,48 @@ classdef ndi_document
 
 				t = ndi_document.readjsonfilelocation(jsonfilelocationstring);
 				j = jsondecode(t);
+				s = j; 
 
-				% Step 2): integrate the new information into the document we are building onto 
+				% Step 2): read the information about all the superclasses
 
-				% Step 2a): Do we need to integrate this or do we already have same class and at least as good of a version?
-				need_to_integrate = 1;
-				if isfield(s,'document_superclass_data') & isfield(j,'document_class'),
-					% dev note: assuming document_superclass_data reads correctly by matlab jsondecode as STRUCT 
-					for k=1:numel(s.document_superclass_data)
-						item = celloritem(s.document_superclass_data,k);
-						if strcmp(j.document_class.class_name,item.class_name) & j.document_class.class_version<=item.class_version,
-							need_to_integrate = 0;
-							break;
-						end 
-					end
-				end
-
-				% Step 2b): Now integate if we need to
-
-				if isfield(j,'document_superclass_data'),
-					error(['Newly built object should not have field ''document_superclass_data''.']);
-				end
-
-				if need_to_integrate,
-					if isempty(s),
-						s(1).document_class = j.document_class;
-						s(1).document_superclass_data = {};
-					else,
-						s(1).document_superclass_data{end+1} = j.document_class;
-					end
-					j_ = rmfield(j, 'document_class');
-					if isfield(s,'depends_on') & isfield(j_,'depends_on'),
-						s.depends_on = cat(1,s.depends_on(:),j_.depends_on(:));
-						j_ = rmfield(j,'depends_on');
-					end;
-					s = structmerge(s, j_);
-				else,
-					return;
-				end
+				s_super = {};
 
 				if isfield(j,'document_class'),
 					if isfield(j.document_class,'superclasses'),
 						for i=1:numel(j.document_class.superclasses),
 							item = celloritem(j.document_class.superclasses, i, 1);
-							s = ndi_document.readblankdefinition(item.definition, s);
+							s_super{end+1} = ndi_document.readblankdefinition(item.definition);
 						end
 					end
 				end
 
-				if s_is_empty, % discard document_superclass_data
-					s = rmfield(s,'document_superclass_data');
-				end
-		
+				% Step 2): integrate the superclasses into the document we are building
+
+				for i=1:numel(s_super),
+					% merge s and s_super{i}
+					% part 1: do we need to merge superclass labels?
+					if isfield(s,'document_class')&isfield(s_super{i},'document_class'),
+						s.document_class.superclasses = cat(1,s.document_class.superclasses(:),...
+							s_super{i}.document_class.superclasses(:));
+						[dummy,unique_indexes] = unique({s.document_class.superclasses.definition});
+						s.document_class.superclasses = s.document_class.superclasses(unique_indexes);
+					else,
+						error(['Documents lack ''document_class'' fields.']);
+					end;
+
+					s_super{i} = rmfield(s_super{i},'document_class');
+
+					% part 2: merge dependencies
+					if isfield(s,'depends_on') & isfield(s_super{i},'depends_on'), % if only s or super_s has it, merge does it right
+						s.depends_on = cat(1,s.depends_on(:),s_super{i}.depends_on(:));
+						s_super{i} = rmfield(s_super{i},'depends_on');
+						[dummy,unique_indexes] = unique({s.depends_on.name});
+						s.depends_on= s.depends_on(unique_indexes);
+					else,
+						% regular structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
+					end;
+					s = structmerge(s,s_super{i});
+				end;
 		end % readblankdefinition() 
 
 		function t = readjsonfilelocation(jsonfilelocationstring)
