@@ -589,7 +589,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				for i=1:numel(tc_doc_matches),
 					q_stimresponsescalar = ndi_query('ndi_document.id','exact_string',...
-						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'));
+						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'),'');
 					srs{i} = E.database_search(q_e&q_stimresponsescalar);
 					if ~isempty(srs),
 						for j=1:numel(srs{i}),

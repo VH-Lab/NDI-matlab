@@ -10,7 +10,9 @@
 	},
 	"depends_on": [
 		{	"name":		"thing_id",
-			"value":	"" }
+			"value":	"" },
+        {   "name":     "stimulus_tuningcurve_id",
+            "value":    "" }
 	],
 	"orientation_direction_tuning":  {
 		"properties": {

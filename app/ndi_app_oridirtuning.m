@@ -23,7 +23,6 @@ classdef ndi_app_oridirtuning < ndi_app
 
 		end % ndi_app_oridirtuning() creator
 
-
 		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_thing_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
@@ -172,6 +171,7 @@ classdef ndi_app_oridirtuning < ndi_app
 					'orientation_direction_tuning', var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_oridirtuning_obj.newdocument();
 				oriprops = oriprops.set_dependency_value('thing_id', stim_response_doc{1}.dependency_value('thing_id'));
+				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
 
 				E.database_add(oriprops);
 
