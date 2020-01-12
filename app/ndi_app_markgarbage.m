@@ -85,7 +85,7 @@ classdef ndi_app_markgarbage < ndi_app
 		end; % savevalidinterval()
 
 		function b = clearvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
-			% CLEARVALIDINTERVAL - clear all 'validinterval' records for an NDI_EPOCHSET from experiment database
+			% CLEARVALIDINTERVAL - clear all 'valid_interval' records for an NDI_EPOCHSET from experiment database
 			% 
 			% B = CLEARVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ)
 			%
@@ -115,10 +115,14 @@ classdef ndi_app_markgarbage < ndi_app
 			%
 				vi = emptystruct('timeref_structt0','t0','timeref_structt1','t1');
 
-				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','validinterval.json','');
+				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
 				if isa(ndi_epochset_obj,'ndi_probe'),
-					searchq = cat(2,searchq,ndi_epochset_obj.searchquery());
+					searchq2 = ndi_epochset_obj.searchquery();
+					if ~isa(searchq2,'ndi_query'),
+						searchq2 = ndi_query(searchq2);
+					end;
+					searchq = searchq & searchq2; 
 				end
 
 				mydoc = ndi_app_markgarbage_obj.experiment.database_search(searchq);
