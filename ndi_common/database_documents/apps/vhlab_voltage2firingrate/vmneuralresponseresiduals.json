@@ -27,6 +27,8 @@
             "fourth_column":                "Fit signal",
             "fifth_column":                 "Residual signal"
         },
-        "goodness_of_fit":                  ""
+        "goodness_of_fit":                  "",
+        "total_power":                      "",
+        "residual_power":                   ""
 	}
 }
