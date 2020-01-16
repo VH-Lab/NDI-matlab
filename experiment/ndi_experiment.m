@@ -212,7 +212,7 @@ classdef ndi_experiment < handle
 				end; % nothing to do
 
 				if ~iscell(doc_unique_id),
-					if ischar(doc_unique_id, 'ndi_document'), % it is a single doc id
+					if ischar(doc_unique_id), % it is a single doc id
 						mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',doc_unique_id,''));
 						if isempty(mydoc), % 
 							error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
