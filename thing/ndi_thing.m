@@ -127,7 +127,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				if isa(ndi_thing_obj.probe.experiment,'handle'),,
 					exp = ndi_thing_obj.probe.experiment();
 					cache = exp.cache;
-					key = [ndi_thing_obj.thingstring ' | ' ndi_thing_obj.probe.probestring()];
+					key = [ndi_thing_obj.thingstring ' | ' ndi_thing_obj.probe.probestring() ' | ' ndi_thing_obj.type];
 				end
 		end; % getcache()
 

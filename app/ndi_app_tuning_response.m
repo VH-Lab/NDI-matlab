@@ -43,12 +43,13 @@ classdef ndi_app_tuning_response < ndi_app
 				E = ndi_app_tuning_response_obj.experiment;
 
 				% find all stimulus records from the stimulus probe
+				sq_nditimeseries = ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 				sq_probe = ndi_query(ndi_probe_stim.searchquery());
 				sq_e = ndi_query(E.searchquery());
 				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
 				sq_tune = ndi_query('','isa','stimulus_tuningcurve.json','');
 				doc_stim = E.database_search(sq_stim&sq_e&sq_probe),
-				doc_tune = E.database_search(sq_tune&sq_e&sq_probe),
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe&sq_nditimeseries),
 
 				ndi_ts_epochs = {};
 
@@ -169,7 +170,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% build up search for existing parameter documents
 				q_doc = ndi_query('','isa','stimulus_response_scalar_parameters_basic.json','');
-				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
+				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','') & ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 				q_r_stimdoc = ndi_query('','depends_on','stimulus_presentation_id',stim_doc.id());
 				q_r_stimcontroldoc = ndi_query('','depends_on','stimulus_control_id',control_doc.id());
 				q_e = ndi_query(E.searchquery());

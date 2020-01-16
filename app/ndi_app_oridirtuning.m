@@ -227,7 +227,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				thing = ndi_document2thing(thing_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
-				title([thing.thingstring() '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
+				title([thing.thingstring() '.' thing.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
 
 		end; % plot_oridir_response
 
