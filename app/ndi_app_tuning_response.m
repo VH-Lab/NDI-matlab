@@ -29,10 +29,10 @@ classdef ndi_app_tuning_response < ndi_app
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
 			% Examines a the NDI_EXPERIMENT associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
-			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
+			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
-			% If NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE documents already exist for a given
+			% If STIMULUS_RESPONSE and STIMULUS_TUNINGCURVE documents already exist for a given
 			% stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.
 			%
 			% If the input argument RESET is given and is 1, then all existing documents for this probe are
@@ -43,18 +43,20 @@ classdef ndi_app_tuning_response < ndi_app
 				E = ndi_app_tuning_response_obj.experiment;
 
 				% find all stimulus records from the stimulus probe
+				sq_nditimeseries = ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 				sq_probe = ndi_query(ndi_probe_stim.searchquery());
 				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json',''); % presentation
-				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve.json','');
-				doc_stim = E.database_search(sq_stim&sq_e&sq_probe);
-				doc_tune = E.database_search(sq_tune&sq_e&sq_probe);
+				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
+				sq_tune = ndi_query('','isa','stimulus_tuningcurve.json','');
+				doc_stim = E.database_search(sq_stim&sq_e&sq_probe),
+				doc_tune = E.database_search(sq_tune&sq_e&sq_probe&sq_nditimeseries),
 
 				ndi_ts_epochs = {};
 
 				% find all the epochs of overlap between stimulus probe and ndi_timeseries_obj
 
 				for i=1:numel(doc_stim),
+					%disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
 					% ASSUMPTION: each stimulus probe epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
@@ -73,9 +75,10 @@ classdef ndi_app_tuning_response < ndi_app
 
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
-						ctrl_search = ndi_query('control_stim_ids.stimulus_presentation_doc_unique_id','exact_string',doc_stim{i}.doc_unique_id(),'');
+						ctrl_search = ndi_query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ndi_query('','isa','control_stimulus_ids','');
+						%ctrl_search = ndi_query('control_stim_ids.stimulus_presentation_doc_unique_id','exact_string',doc_stim{i}.doc_unique_id(),'');
 						control_stim_doc = E.database_search(ctrl_search);
-						for j=1:numel(control_stim_doc),
+						for j=1:numel(control_stim_doc);
 							% okay, now how to analyze these stims?
 							% 
 							% want to calculate F0, F1, F2
@@ -86,10 +89,10 @@ classdef ndi_app_tuning_response < ndi_app
 								doc_stim{i}.document_properties.stimuli(1).parameters
 								doc_stim{i}.document_properties.presentation_order
 								doc_stim{i}.document_properties.presentation_time
-								control_stim_doc{j}.document_properties.control_stim_ids
-								control_stim_doc{j}.document_properties.control_stim_ids.control_stim_ids
+								control_stim_doc{j}.document_properties.control_stimulus_ids
+								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
-							ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
+							myrdoc = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_probe_stim, ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
 						end;
 
 					end
@@ -166,11 +169,12 @@ classdef ndi_app_tuning_response < ndi_app
 				end;
 
 				% build up search for existing parameter documents
-				q_doc = ndi_query('','isa','ndi_document_stimulus_response_scalar_parameters_basic.json','');
-				q_rdoc = ndi_query('','isa','ndi_document_stimulus_response_scalar.json','');
-				q_r_stimdoc = ndi_query('stimulus_document_identifier','exact_string',stim_doc.doc_unique_id(),'');
-				q_r_stimcontroldoc = ndi_query('stimulus_control_document_identifier','exact_string',control_doc.doc_unique_id(),'');
+				q_doc = ndi_query('','isa','stimulus_response_scalar_parameters_basic.json','');
+				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','') & ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+				q_r_stimdoc = ndi_query('','depends_on','stimulus_presentation_id',stim_doc.id());
+				q_r_stimcontroldoc = ndi_query('','depends_on','stimulus_control_id',control_doc.id());
 				q_e = ndi_query(E.searchquery());
+
 				q_match{1} = ndi_query('stimulus_response_scalar_parameters_basic.temporalfreqfunc','exact_string',temporalfreqfunc,'');
 				q_match{2} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_time','exact_number',prestimulus_time,'');
 				q_match{3} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_normalization','exact_number',prestimulus_normalization,'');
@@ -223,20 +227,21 @@ classdef ndi_app_tuning_response < ndi_app
 						% make one
 						stimulus_response_scalar_parameters_basic = var2struct('temporalfreqfunc','freq_response','prestimulus_time','prestimulus_normalization',...
 							'isspike','spiketrain_dt');
-						param_doc = ndi_document('stimulus/ndi_document_stimulus_response_scalar_parameters_basic.json',...
+						param_doc = ndi_document('stimulus/stimulus_response_scalar_parameters_basic.json',...
 							'stimulus_response_scalar_parameters_basic', stimulus_response_scalar_parameters_basic') + E.newdocument();
 						E.database_add(param_doc);
 						param_doc = {param_doc};
 					end;
 
-					% look for response docs
+					% look for existing response docs
 
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
-						ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
+						ndi_query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
+						%ndi_query('stimulus_response_scalar_parameters_identifier','exact_string',param_doc{1}.doc_unique_id(),''));
 
 					E.database_rm(rdoc);
 
-					controlstimids = control_doc.document_properties.control_stim_ids.control_stim_ids;
+					controlstimids = control_doc.document_properties.control_stimulus_ids.control_stimulus_ids;
 					freq_mult = [];
 					for j=1:numel(stim_doc.document_properties.stimuli),
 						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
@@ -257,17 +262,19 @@ classdef ndi_app_tuning_response < ndi_app
 							'control_response_real', rowvec(real([response.control_response])), ...
 							'control_response_imaginary',rowvec(imag([response.control_response])));
 
-					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure,...
-						'stimulus_response_scalar_parameters_identifier',param_doc{1}.doc_unique_id());
+					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure);
 
-					stimulus_response_struct = struct('stimulator_unique_reference','',...
-						'stimulus_presentation_document_identifier', stim_doc.doc_unique_id(), ...
-						'stimulus_control_document_identifier', control_doc.doc_unique_id(),...
-						'stimulator_epochid', stim_doc.document_properties.epochid, ...
+					stimulus_response_struct = struct( 'stimulator_epochid', stim_doc.document_properties.epochid, ...
 						'thing_epochid', ts_epoch_timeref.epoch);
 
-					response_doc{end+1} = ndi_document('stimulus/ndi_document_stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
-							'stimulus_response', stimulus_response_struct,'thingreference.thing_unique_id',ndi_timeseries_obj.doc_unique_id())+E.newdocument();
+					response_doc{end+1} = ndi_document('stimulus/stimulus_response_scalar','stimulus_response_scalar',stimulus_response_scalar_struct,...
+							'stimulus_response', stimulus_response_struct)+E.newdocument();
+					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_response_scalar_parameters_id', param_doc{1}.id());
+					response_doc{end} = response_doc{end}.set_dependency_value('thing_id', ndi_timeseries_obj.id());
+					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_presentation_id', stim_doc.id()); 
+					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_control_id', control_doc.id());
+					response_doc{end} = response_doc{end}.set_dependency_value('stimulator_id', ''); 
+
 					E.database_add(response_doc{end});
 				end;
 		end; % compute_stimulus_response_scalar()
@@ -325,18 +332,17 @@ classdef ndi_app_tuning_response < ndi_app
 				% Step 3:
 
 				% load stimulus information 
-				stim_pres_doc = E.database_search(ndi_query('ndi_document.document_unique_reference', 'exact_string',...
-					stim_response_doc.document_properties.stimulus_response.stimulus_presentation_document_identifier,''));
+				stim_pres_doc = E.database_search(ndi_query('ndi_document.id', 'exact_string', stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
-					error(['Could not load stimulus presentation document ' stim_response_doc.document_properties.stimulus_response.stimulus_presentation_document_identifier]);
+					error(['Could not load stimulus presentation document ' stim_response_doc.document_properties.stimulus_response.stimulus_presentation_identifier]);
 				end;
 				stim_pres_doc = stim_pres_doc{1};
 
 				% Step 4: set up variables
 
 				tuning_curve = emptystruct('independent_variable_label','independent_variable_value','stimid','response_mean','response_stddev','response_stderr',...
-						'individual_responses_real','individual_responses_imaginary', ...
-						'control_stimid','control_mean','control_stddev','control_stderr',...
+						'individual_responses_real','individual_responses_imaginary', 'stimulus_presentation_number', ...
+						'control_stimulus_id','control_response_mean','control_response_stddev','control_response_stderr',...
 						'control_individual_responses_real','control_individual_responses_imaginary',...
 						'response_units');
 
@@ -396,6 +402,7 @@ classdef ndi_app_tuning_response < ndi_app
 							stim_response_doc.document_properties.stimulus_response_scalar.responses.control_response_real(stimulus_indexes);
 						tuning_curve.control_individual_responses_imaginary{I} = ...
 							stim_response_doc.document_properties.stimulus_response_scalar.responses.control_response_imaginary(stimulus_indexes);
+						tuning_curve.stimulus_presentation_number{I} = stimulus_indexes;
 						all_responses = tuning_curve.individual_responses_real{I} + sqrt(-1)*tuning_curve.individual_responses_imaginary{I};
 						tuning_curve.response_mean(I)            = nanmean  (all_responses);
 						if ~all(isreal(tuning_curve.response_mean)),
@@ -413,10 +420,9 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 				end;
 
-				tuning_doc = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve,...
-						'stimulus_response_scalar_reference', stim_response_doc.doc_unique_id(),...
-						'thingreference',stim_response_doc.document_properties.thingreference) + E.newdocument();
-
+				tuning_doc = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
+				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
+				tuning_doc = tuning_doc.set_dependency_value('thing_id',stim_response_doc.dependency_value('thing_id'));
 				E.database_add(tuning_doc);
 				
 
@@ -428,7 +434,7 @@ classdef ndi_app_tuning_response < ndi_app
 			% CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_PROBE_OBJ, RESET, ...)
 			%
 			% Thus function will look for all 'ndi_document_stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
-			% compute the corresponding control stimuli, and save them as an 'ndi_document_control_stimulus_ids' 
+			% compute the corresponding control stimuli, and save them as an 'control_stimulus_ids' 
 			% document that is also returned as a cell list in CS_DOC.
 			%
 			% If RESET is 1, then any existing documents of this type are first removed. If RESET is not provided or is
@@ -441,21 +447,23 @@ classdef ndi_app_tuning_response < ndi_app
 					reset = 0;
 				end;
 
-				sq_probe = ndi_query(stimulus_probe_obj);
-				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation.json','');
+				sq_probe = ndi_query(stimulus_probe_obj.searchquery());
+				sq_stim = ndi_query('','isa','stimulus_presentation.json','');
+				stim_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_probe);
 
 				if reset,
-					sq_csi = ndi_query('','isa','ndi_document_control_stimulus_ids.json','');
-					old_cs_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_csi&sq_probe);
-					ndi_app_tuning_response_obj.experiment.database_rm(old_cs_doc);
+					sq_csi = ndi_query('','isa','control_stimulus_ids.json','');
+					for i=1:numel(stim_doc),
+						sq_csi_stim = ndi_query('','depends_on','stimulus_presentation_id',stim_doc{i}.id());
+						old_cs_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_csi&sq_csi_stim);
+						ndi_app_tuning_response_obj.experiment.database_rm(old_cs_doc);
+					end;
 				end;
-
-				stimdoc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_probe);
 
 				cs_doc = {};
 
-				for i=1:numel(stimdoc),
-					[cs_ids,cs_doc_here] = ndi_app_tuning_response_obj.control_stimulus(stimdoc{i},varargin{:});
+				for i=1:numel(stim_doc),
+					[cs_ids,cs_doc_here] = ndi_app_tuning_response_obj.control_stimulus(stim_doc{i},varargin{:});
 					cs_doc{end+1} = cs_doc_here;
 				end;
 		end;
@@ -551,149 +559,81 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% now we have cs_ids for each stimulus, so make the document
 
-				control_stim_ids_struct = struct('stimulus_presentation_doc_unique_id', stim_doc.doc_unique_id(), 'control_stim_ids', cs_ids);
-
-				cs_doc = ndi_document('stimulus/ndi_document_control_stimulus_ids','control_stim_ids',control_stim_ids_struct, ...
-					'control_stim_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
+				control_stim_ids_struct = struct('control_stimulus_ids', cs_ids);
+				cs_doc = ndi_document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct, ...
+					'control_stimulus_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
+				cs_doc = cs_doc.set_dependency_value('stimulus_presentation_id',stim_doc.id());
 
 				ndi_app_tuning_response_obj.experiment.database_add(cs_doc);
 
 		end; % control_stimulus()
 
-		function other  = analyze_tuning_responses(ndi_app_tuning_response_obj, ndi_timeseries_obj, stim_doc, varargin)
-			% COMPUTE_STIMULUS_RESPONSE_SUMMARY - compute responses to a stimulus set
+		function [tc_doc, srs_doc] = find_tuningcurve_document(ndi_app_tuning_response_obj, ndi_thing_obj, epochid, response_type)
+			% FIND_TUNINGCURVE_DOCUMENT - find a tuning curve document of a particular thing, epochid, etc...
 			%
-			% DOC = COMPUTE_STIMULUS_RESPONSE_SUMMARY(NDI_APP_STIMULUS_RESPONSE_APP, NDI_PROBE_STIM, NDI_TIMESERIES_OBJ, STIM_DOC, TIMEREF, T0, T1, ...)
-			%
-			% Note: Uses the app NDI_APP_MARKGARBAGE to limit analysis to intervals that have been
-			% marked as valid or have not been marked invalid.
+			% [TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, THING_OBJ, EPOCHID, RESPONSE_TYPE) 
 			%
 			%
-			% This function also takes name/value pairs that alter the behavior:
-			% Parameter (default)             | Description
-			% ---------------------------------------------------------------------------------
-			% independent_axis_units ('')     | If empty, the program attempts to determine the
-			%                                 |   axis units by determining what varies across the
-			%                                 |   stimulus parameters.
-			% independent_axis_label ('')     | The label to use by a plotting program for the independent
-			%                                 |   variable
-			% independent_axis_parameter ('') | The parameter to read from the stimulus in order
-			%                                 |   to obtain the independent_axis_values.
-			% response_units ('')             | Response units; if empty, attempts to read from probe
-			% response_label ('')             | Label for the responses for a plotting program
-			%                                 |
-			% blank_stimid ([])               | Pass the stimulus id numbers of any 'blank' (control)
-			%                                 |   stimuli. If empty, then the program will look for 'isblank'
-			%                                 |   fields in the parameters.
-			% freq_response_parameter (0)     | The parameter of each stimulus to examine for frequency response.
-			%                                 |   If 0, then the mean response is used.
-			% freq_response_multiplier (0)    | The multipier to use with the freq_response_parameter value. For example,
-			%                                 |   pass '1' to compute the F1 component (the response at the freq_response_parameter
-			%                                 |   frequency).
-			% prestimulus_time ([])           | If a baseline per stimulus is to be computed, it can be passed here (time in seconds)
-			% prestimulus_normalization ([])  | Normalize the stimulus response based on the prestimulus measurement.
-			%                                 | [] or 0) No normalization
-			%                                 |       1) Subtract: Response := Response - PrestimResponse
-			%                                 |       2) Fractional change Response:= ((Response-PrestimResponse)/PrestimResponse)
-			%                                 |       3) Divide: Response:= Response ./ PreStimResponse
-			%
-				independent_axis_units = '';
-				independent_axis_label = '';
-				independent_axis_parameter = '';
-				response_units = '';
-				response_label = '';
+				E = ndi_app_tuning_response_obj.experiment;
 
-				blank_stimid = [];
+				tc_doc = {};
+				srs_doc = {};
 
-				freq_response_parameter = 0;
-				freq_response_multiplier = 0;
+				q_e = ndi_query(E.searchquery());
+				q_tc = ndi_query('','isa','stimulus_tuningcurve.json','');
+				q_thingr = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 
-				prestimulus_time = [];
-				prestimulus_normalization = [];
+				tc_doc_matches = E.database_search(q_e&q_tc&q_thingr);
 
-				assign(varargin{:});
+				match_indexes = [];
+				srs = {};
 
-				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, t0, t0);
-
-				gapp = ndi_app_markgarbage(ndi_app_stimulus_response_obj.experiment);
-				vi = gapp.loadvalidinterval(sharpprobe);
-				interval = gapp.identifyvalidintervals(ndi_timeseries_obj,timeref,t0,t1)
-
-				[ds, ts, timeref_]=ndi_probe_stim.readtimeseries(timeref,interval(1,1),interval(1,2));
-				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, timeref, interval(1,1), interval(1,2));
-
-				stim_onsetoffsetid = [ts.stimon ts.stimoff ds.stimid];
-
-				if isempty(blank_stimid),
-					isblank = structfindfield(ds.parameters,'isblank',1);
-					notblank = setdiff(1:numel(ds.parameters),isblank);
-					blank_stimid = isblank;
+				for i=1:numel(tc_doc_matches),
+					q_stimresponsescalar = ndi_query('ndi_document.id','exact_string',...
+						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'),'');
+					srs{i} = E.database_search(q_e&q_stimresponsescalar);
+					if ~isempty(srs),
+						for j=1:numel(srs{i}),
+							if strcmpi(srs{i}{j}.document_properties.stimulus_response_scalar.response_type,response_type) & ...
+								strcmpi(srs{i}{j}.document_properties.stimulus_response.thing_epochid, epochid),
+									match_indexes(end+1,:) = [i j];
+							end;
+						end;
+					end;
 				end;
 
-				% now get frequencies in order
+				if ~isempty(match_indexes),
+					for i=1:size(match_indexes),
+						tc_doc{i} = ndi_app_tuning_response_obj.tuningdoc_fixcellarrays(tc_doc_matches{match_indexes(i,1)});
+						srs_doc{i} = srs{match_indexes(i,1)}{match_indexes(i,2)};
+					end;
+				end;
 
-				if isempty(freq_response_parameter),
-					freq_response_parameter = 0;
-					freq_response = 0;
-				elseif isnumeric(freq_response_parameter),
-					freq_response = freq_response_parameter;
-				elseif ischar(freq_response_parameter),
-					freq_response = [];
-					for i=1:numel(ds.parameters),
-						if isfield(ds.parameters{i},freq_response_parameter),
-							freq_response(i) = getfield(ds.parameters{i},freq_response_parameter) * freq_response_multiplier;
-						else,
-							freq_response(i) = 0;
-						end
-					end
-				end
+		end; % find_tuningcurve_document
 
-				nvp = str2namevaluepair(var2struct('freq_response',blank_stimid','prestimulus_time','prestimulus_normalization'));
+		function tc_doc = tuningdoc_fixcellarrays(ndi_app_tuning_response_obj, tc_doc)
+			% TUNINGDOC_FIXCELLARRAYS - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
+			%
+				document_properties = tc_doc.document_properties;
 
-				response = stimulus_response_summary(data, t_raw, stim_onsetoffsetid, 'freq_response', freq_response, nvp{:});
+				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+					document_properties.tuning_curve.individual_responses_real = ...
+							matrow2cell(document_properties.tuning_curve.individual_responses_real);
+                                        document_properties.tuning_curve.individual_responses_imaginary= ...
+                                                        matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+					document_properties.tuning_curve.control_individual_responses_real = ...
+							matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+					document_properties.tuning_curve.control_individual_responses_imaginary= ...
+							matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+					document_properties.tuning_curve.stimulus_presentation_number = ...
+							matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+                                end;
 
-				% now need to convert response to document
+				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
+		
 
-				% need to read independent_axis values
-
-				independent_axis_values = [];
-
-				if isempty(independent_axis_parameter),
-					independent_axis_values = response.stimid;
-				else,
-					for i=1:numel(response.stimid),
-						if isfield(ds.parameters{response.stimid(i)}),
-							independent_axis_values(i) = getfield(ds.parameters{response.stimid(i)});
-						else,
-							independent_axis_values(i) = NaN;
-						end
-					end
-				end
-
-				independent_axis_units = '';
-				independent_axis_label = '';
-				independent_axis_parameter = '';
-				response_units = '';
-				response_label = '';
-
-				doc = ndi_app_stimulus_response_obj.experiment.newdocument('data/stimulus_response_summary', ...
-						'stimulus_response_summary.independent_axis_units', independent_axis_units, ...
-						'stimulus_response_summary.independent_axis_label', independent.axis_label, ...
-						'stimulus_response_summary.independent_axis_parameter', independent_axis_parameter, ...
-						'stimulus_response_summary.response_units', response_units, ...
-						'stimulus_response_summary.response_label', response_label, ...
-						'stimulus_response_summary.independent_axis_values', '', ...
-						'stimulus_response_summary.mean_responses', responses.mean_responses, ...
-						'stimulus_response_summary.stddev_responses', responses.stddev_responses, ...
-						'stimulus_response_summary.stderr_responses', responses.stderr_responses, ...
-						'stimulus_response_summary.individual_responses', responses.individual_responses, ...
-						'stimulus_response_summary.blank_response.mean_responses', responses.blank_mean, ...
-						'stimulus_response_summary.blank_response.stddev_responses', responses.blank_stddev, ...
-						'stimulus_response_summary.blank_response.stderr_responses', responses.blank_stderr, ...
-						'stimulus_response_summary.blank_response.individual_responses', responses.blank_individual_responses ...
-						) + ndi_app_stimulus_response_obj.newdocument();
-
-		end; % analyze_1d_tuning_curve
+		end;  % fixcellarrays()
 
 	end; % methods
 

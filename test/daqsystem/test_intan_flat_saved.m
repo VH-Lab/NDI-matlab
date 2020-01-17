@@ -17,11 +17,11 @@ if nargin<1,
 end;
 
 disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
-exp = ndi_experiment_dir(dirname);
+E = ndi_experiment_dir(dirname);
 
 disp(['Now looking for daqsystem Intan1']);
 
-dev1 = exp.daqsystem_load('name','Intan1'),
+dev1 = E.daqsystem_load('name','Intan1'),
 
   % Now let's print some statistics
 

@@ -1,4 +1,4 @@
-function ndi_test_markgarabge
+function ndi_test_markgarbage
 % NDI_TEST_MARKGARBAGE - Test the functionality of the app 'ndi_markgarbage'
 %
 %  NDI_TEST_MARKGARBAGE
@@ -14,34 +14,34 @@ if nargin<1,
 end;
 
 disp(['creating a new experiment object at path ' dirname '...']);
-exp = ndi_experiment_dir('exp1_markgarbage_eg',dirname);
+E = ndi_experiment_dir('exp1_markgarbage_eg',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filenavigator(exp, {'.*\.rhd\>','.*\.epochmetadata\>'},...
+fn = ndi_filenavigator(E, {'.*\.rhd\>','.*\.epochmetadata\>'},...
 		'ndi_epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
 
   % Step 2: create the daqsystem object and add it to the experiment:
 
   % if it is there from before, remove it
-devs = exp.daqsystem_load('name','(.*)');
+devs = E.daqsystem_load('name','(.*)');
 for i=1:numel(devs), 
-	exp.daqsystem_rm(celloritem(devs,i));
+	E.daqsystem_rm(celloritem(devs,i));
 end;
 
-dev1 = ndi_daqsystem_mfdaq_intan('intan1',dt);
-exp.daqsystem_add(dev1);
+dev1 = ndi_daqsystem_mfdaq('intan1',fn,ndi_daqreader_mfdaq_intan());
+E.daqsystem_add(dev1);
 
   % Step 3: create a markgarbage app
 
-gapp = ndi_app_markgarbage(exp);
+gapp = ndi_app_markgarbage(E);
 
  % now mark a region as garbage
 
-rec_probe = getprobes(exp, 'name', 'cortex', 'reference', 1);
+rec_probe = getprobes(E, 'name', 'cortex', 'reference', 1);
 
 gapp.clearvalidinterval(rec_probe{1}); 
 
@@ -61,6 +61,6 @@ box off;
 
 disp(['Now cleaning the example so it can be run again...']);
 
-exp.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
+E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 
 

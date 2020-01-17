@@ -2,7 +2,7 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter\/spike_clusters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter\/spike_clusters_schema.json",
-		"class_name":						"spikesorter-spikes",
+		"class_name":						"ndi_document_apps_spikesorter_spikesorter_spike_clusters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
@@ -10,8 +10,12 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on":[
+		{	"name": "sorting_parameters_id",
+			"value": "" 
+		}
+	],
 	"spike_clusters": {
-		"sort_name": "",
-		"sorting_parameters_file_id": ""
+		"sort_name": ""
 	}
 }

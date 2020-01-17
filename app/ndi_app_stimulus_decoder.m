@@ -50,14 +50,17 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 				sq_probe = ndi_query(ndi_probe_stim.searchquery());
 				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','ndi_document_stimulus_presentation',''); % presentation
-				sq_tune = ndi_query('','isa','ndi_document_stimulus_tuningcurve','');
+				sq_stim = ndi_query('','isa','stimulus_presentation',''); % presentation
+				sq_tune = ndi_query('','isa','stimulus_tuningcurve','');
 
-				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim),
-				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_stim),
+				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
+				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_tune);
 
 				if reset,
+					disp(['Looking for dependent documents before deleting for reset...']);
 					% delete existing documents
+					dependent_stim_docs = ndi_findalldependencies(E,[],existing_doc_stim{:});
+					dependent_tune_docs = ndi_findalldependencies(E,[],existing_doc_tune{:});
 					E.database_rm(existing_doc_stim);
 					E.database_rm(existing_doc_tune);
 					existing_doc_stim = {};
@@ -93,7 +96,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 						presentation_time(end+1) = timestruct;
 					end;
 
-					nd = E.newdocument('stimulus/ndi_document_stimulus_presentation.json',...
+					nd = E.newdocument('stimulus/stimulus_presentation.json',...
 							'presentation_order', data.stimid, 'presentation_time', presentation_time, 'stimuli',mystim) + ...
 						ndi_probe_stim.newdocument(epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					newdocs{end+1} = nd;
@@ -108,14 +111,11 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					tuning_curve.whatvaries = whatvaries;
 					tuning_curve.control_stimulus_id = isblank;
 
-					nd2 = ndi_document('stimulus/ndi_document_stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
+					nd2 = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
 					newdocs{end+1} = nd2;
 				end;
-
 				E.database_add(newdocs);
 		end % 
-
 	end; % methods
-
 end % ndi_app_stimulus_decoder
 

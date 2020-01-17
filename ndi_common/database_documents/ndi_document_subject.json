@@ -9,7 +9,7 @@
 		]
         },
 	"subject": {
-		"identifier":						"",
+		"reference":						"",
 		"species":						"",
 		"strain":						"",
 		"variant":						""

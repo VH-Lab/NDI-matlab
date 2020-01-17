@@ -4,12 +4,12 @@ classdef ndi_experiment < handle
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
 		unique_reference  % A unique code that uniquely identifies this experiment
-		database          % An NDI_DATABASE associated with this experiment
 		daqsystem          % An array of NDI_DAQSYSTEM objects associated with this experiment
 		syncgraph         % An NDI_SYNCGRAPH object related to this experiment
 		cache             % An NDI_CACHE object for the experiment's use
 	end
 	properties (GetAccess=protected, SetAccess = protected)
+		database          % An NDI_DATABASE associated with this experiment
 	end
 	methods
 		function ndi_experiment_obj = ndi_experiment(reference)
@@ -44,7 +44,8 @@ classdef ndi_experiment < handle
 			% Returns the unique reference string for the NDI_EXPERIMENT.
 			% REFSTR is a combination of the REFERENCE property of NDI_EXPERIMENT_OBJ
 			% and the UNIQUE_REFERENCE property of NDI_EXPERIMENT_OBJ, joined with a '_'.
-
+				warning('unique_reference_string depricated, use id() instead.');
+				dbstack
 				refstr = [ndi_experiment_obj.reference '_' ndi_experiment_obj.unique_reference];
 		end % unique_reference_string()
 
@@ -85,7 +86,7 @@ classdef ndi_experiment < handle
 		end;
 
 		function dev = daqsystem_load(ndi_experiment_obj, varargin)
-			% LOAD - Load daqsystem objects from an NDI_EXPERIMENT
+			% DAQSYSTEM_LOAD - Load daqsystem objects from an NDI_EXPERIMENT
 			%
 			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
@@ -108,6 +109,25 @@ classdef ndi_experiment < handle
 				end;
 		end; % daqsystem_load()	
 
+		function ndi_experiment_obj = daqsystem_clear(ndi_experiment_obj)
+			% DAQSYSTEM_CLEAR - remove all DAQSYSTEM objects from an NDI_EXPERIMENT
+			%
+			% NDI_EXPERIMENT_OBJ = DAQSYSTEM_CLEAR(NDI_EXPERIMENT_OBJ)
+			%
+			% Permanently removes all NDI_DAQSYSTEM objects from an NDI_EXPERIMENT.
+			%
+			% Be sure you mean it!
+			%
+				dev = ndi_experiment_obj.daqsystem_load('name','(.*)');
+				if ~isempty(dev) & ~iscell(dev),
+					dev = {dev};
+				end;
+				for i=1:numel(dev),
+					ndi_experiment_obj = ndi_experiment_obj.daqsystem_rm(dev{i});
+				end;
+
+		end; % daqsystem_clear();
+
 		% NDI_DOCUMENTSERVICE methods
 
 		function ndi_document_obj = newdocument(ndi_experiment_obj, document_type, varargin)
@@ -128,7 +148,7 @@ classdef ndi_experiment < handle
 			if nargin<2,
 				document_type = 'ndi_document.json';
 			end
-			inputs = cat(2,varargin,{'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()});
+			inputs = cat(2,varargin,{'ndi_document.experiment_id', ndi_experiment_obj.id()});
 			ndi_document_obj = ndi_document(document_type, inputs);
 		end; %newdocument()
 
@@ -140,11 +160,11 @@ classdef ndi_experiment < handle
 		% Returns a search query that will match all NDI_DOCUMENT objects that were generated
 		% by this experiment.
 		%
-		% SQ = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+		% SQ = {'ndi_document.experiment_id', ndi_experiment_obj.id()};
 		% 
 		% Example: mydoc = ndi_experiment_obj.newdocument('ndi_document','ndi_document.name','myname');
 		%
-			sq = {'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()};
+			sq = {'ndi_document.experiment_id', ndi_experiment_obj.id()};
 		end; %searchquery()
 
 		% NDI_DATABASE / NDI_DOCUMENT methods
@@ -187,17 +207,37 @@ classdef ndi_experiment < handle
 			% are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.
 			%
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
+				if isempty(doc_unique_id),
+					return;
+				end; % nothing to do
+
+				if ~iscell(doc_unique_id),
+					if ischar(doc_unique_id), % it is a single doc id
+						mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',doc_unique_id,''));
+						if isempty(mydoc), % 
+							error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+						end;
+						doc_unique_id = mydoc; % now a cell list
+					elseif isa(doc_unique_id,'ndi_document'),
+						doc_unique_id = {doc_unique_id};
+					else,
+						error(['Unknown input to DATABASE_RM of class ' class(doc_unique_id) '.']);
+					end;
+				end;
+
 				if iscell(doc_unique_id),
+					dependent_docs = ndi_findalldependencies(ndi_experiment_obj,[],doc_unique_id{:});
+					if numel(dependent_docs)>1,
+						warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
+					end;
+					for i=1:numel(dependent_docs),
+						ndi_experiment_obj.database.remove(dependent_docs{i});
+					end;
 					for i=1:numel(doc_unique_id), 
 						ndi_experiment_obj.database.remove(doc_unique_id{i});
 					end;
-					return;
-				end;
-				if isa(doc_unique_id, 'ndi_document'),
-					doc_unique_id = doc_unique_id.doc_unique_id(); % well that's confusing but correct
-				end;
-				if ~isempty(doc_unique_id),
-					ndi_experiment_obj.database.remove(doc_unique_id);
+				else,
+					error(['Did not think we could get here..notify steve.']);
 				end;
 		end; % database_rm
 
@@ -213,6 +253,45 @@ classdef ndi_experiment < handle
 			%
 				ndi_document_obj = ndi_experiment_obj.database.search(searchparameters);
 		end % database_search();
+
+		function database_clear(ndi_experiment_obj, areyousure)
+			% DATABASE_CLEAR - deletes/removes all entries from the database associated with an experiment
+			%
+			% DATABASE_CLEAR(NDI_EXPERIMENT_OBJ, AREYOUSURE)
+			%
+			%   Removes all documents from the NDI_EXPERIMENT_OBJ object.
+			% 
+			% Use with care. If AREYOUSURE is 'yes' then the
+			% function will proceed. Otherwise, it will not.
+			%
+				ndi_experiment_obj.database.clear(areyousure);
+		end; % database_clear()
+        
+		function ndi_binarydoc_obj = database_openbinarydoc(ndi_experiment_obj, ndi_document_or_id)
+			% DATABASE_OPENBINARYDOC - open the NDI_BINARYDOC channel of an NDI_DOCUMENT
+			%
+			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_EXPERIMENT_OBJ, NDI_DOCUMENT_OR_ID)
+			%
+			%   Return the open NDI_BINARYDOC object that corresponds to an NDI_DOCUMENT and
+			%   NDI_DOCUMENT_OR_ID can be either the document id of an NDI_DOCUMENT or an NDI_DOCUMENT object itsef.
+			% 
+			%  Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with NDI_EXPERIMENT/CLOSEBINARYDOC.
+			%  The locked nature of the binary doc is a property of the database, not the document, which is why
+			%  the database is needed in the method.
+			% 
+				ndi_binarydoc_obj = ndi_experiment_obj.database.openbinarydoc(ndi_document_or_id);
+		end; % database_openbinarydoc
+
+		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_experiment_obj, ndi_binarydoc_obj)
+			% DATABASE_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC 
+			%
+			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
+			%
+			% Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
+			% database, which is why it is necessary to call this function through the experiment object.
+			%
+				ndi_binarydoc_obj = ndi_experiment_obj.database.closebinarydoc(ndi_binarydoc_obj);
+		end; % closebinarydoc
 
 		function ndi_experiment_obj = syncgraph_addrule(ndi_experiment_obj, rule)
 			% SYNCGRAPH_ADDRULE - add an NDI_SYNCRULE to the syncgraph
@@ -384,7 +463,7 @@ classdef ndi_experiment < handle
 		end; % getprobes
 
 		function things = getthings(ndi_experiment_obj, varargin);
-		% GETTHINGS - Return all NDI_THING objects that are found in experiment database
+			% GETTHINGS - Return all NDI_THING objects that are found in experiment database
 			%
 			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, ...)
 			%
@@ -401,14 +480,37 @@ classdef ndi_experiment < handle
 			% 
 
 				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
-						'ndi_document.experiment_unique_reference', ndi_experiment_obj.unique_reference_string()}, ...
+						'ndi_document.experiment_id', ndi_experiment_obj.id()}, ...
 					varargin{:}); 
-				doc = ndi_experiment_obj.database.search(sq);
+				doc = ndi_experiment_obj.database_search(sq);
 				things = {};
 				for i=1:numel(doc),
 					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);
 				end;
 		end; % getthings()
+
+		function b = eq(e1,e2)
+			% EQ - are 2 NDI_EXPERIMENTS equal?
+			% 
+			% B = EQ(E1, E2)
+			%
+			% Returns 1 if and only if the experiments have the same unique reference number.
+				if ~isa(e2,'ndi_experiment'),
+					b = 0;
+				else,
+					b = strcmp(e1.id(), e2.id());
+				end;
+		end; % eq()
+
+		function identifier = id(ndi_experiment_obj)
+			% ID - return the unique identifier for this experiment
+			%
+			% IDENTIFIER = ID(NDI_EXPERIMENT_OBJ)
+			%
+			% Return the unique identifier for this experiment.
+			%
+				identifier = [ndi_experiment_obj.reference '_' ndi_experiment_obj.unique_reference];
+		end; % id
 	end; % methods
 end % classdef
 

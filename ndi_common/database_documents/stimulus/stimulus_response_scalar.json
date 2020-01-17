@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response_scalar.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_scalar_schema.json",
+		"class_name":						"ndi_document_stimulus_stimulus_response_scalar",
+		"class_version":					1,
+		"superclasses":  [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/stimulus\/stimulus_response.json"}
+		]
+	},
+	"depends_on": [
+		{	"name": "stimulus_response_scalar_parameters_id",
+			"value": ""
+		}
+	],
+	"stimulus_response_scalar": {
+		"response_type":						[],
+		"responses": {
+			"stimid":		 				[],
+			"response_real":					[],
+			"response_imaginary":					[],
+			"control_response_real":				[],
+			"control_response_imaginary":				[]
+		}
+	}
+}
+

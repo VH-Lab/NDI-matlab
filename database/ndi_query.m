@@ -35,6 +35,7 @@ classdef ndi_query
 			%     |                        in 'param2'?
 			%     |   'or'                 - are any of the searchstruct elements specified in 'param1' true?
 			%     |   'isa'                - is 'param1' either a superclass or the document class itself of the NDI_DOCUMENT?
+			%     |   'depends_on'         - does the document depend on an item with name 'param1' and value 'param2'?
 			%     |----------------------|
 			% param1                     | Search parameter 1. Meaning depends on 'operation' (see above).
 			% param2                     | Search parameter 2. Meaning depends on 'operation' (see above).

@@ -54,7 +54,7 @@ classdef ndi_experiment_dir < ndi_experiment
 					ndi_experiment_dir_obj.daqsystem = ndi_pickdbleaf([ndi_experiment_dir_obj.ndipathname() filesep d(1).name]);
 				end;
 
-				ndi_experiment_dir_obj.database = ndi_opendatabase(ndi_experiment_dir_obj.ndipathname(), ndi_experiment_dir_obj.unique_reference_string());
+				ndi_experiment_dir_obj.database = ndi_opendatabase(ndi_experiment_dir_obj.ndipathname(), ndi_experiment_dir_obj.id());
 
 				d = dir([ndi_experiment_dir_obj.ndipathname() filesep '*syncgraph.ndi']);
 				if isempty(d),
@@ -95,7 +95,7 @@ classdef ndi_experiment_dir < ndi_experiment
 				if ~exist(p,'dir'),
 					mkdir(p);
 				end;
-		end;
+		end; % ndipathname()
 
 		function b = eq(ndi_experiment_dir_obj_a, ndi_experiment_dir_obj_b)
 			% EQ - Are two NDI_EXPERIMENT_DIR objects equivalent?
@@ -106,11 +106,11 @@ classdef ndi_experiment_dir < ndi_experiment
 			% path and reference fields. They do not have to be the same handles
 			% (that is, have the same location in memory).
 			%
-				b = strcmp(ndi_experiment_dir_obj_a.reference,ndi_experiment_dir_obj_b.reference);
-				if b,
+				b = 0;
+				if eq@ndi_experiment(ndi_experiment_dir_obj_a, ndi_experiment_dir_obj_b),
 					b = strcmp(ndi_experiment_dir_obj_a.path,ndi_experiment_dir_obj_b.path);
 				end;
-		end; % eq
+		end; % eq()
 	end; % methods
 
 end % classdef

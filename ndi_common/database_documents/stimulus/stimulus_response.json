@@ -1,0 +1,30 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_schema.json",
+		"class_name":						"ndi_document_stimulus_stimulus_response",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"depends_on": [
+		{	"name": "thing_id",
+			"value": []
+		},
+		{	"name": "stimulator_id",
+			"value": []
+		}, 
+		{	"name": "stimulus_presentation_id",
+			"value": []
+		},
+		{	"name": "stimulus_control_id",
+			"value": []
+		}
+	],
+	"stimulus_response": {
+		"stimulator_epochid":						[],
+		"thing_epochid":						[]
+	}
+}
+

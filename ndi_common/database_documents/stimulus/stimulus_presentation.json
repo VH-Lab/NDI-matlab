@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_presentation.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_presentation_schema.json",
+		"class_name":						"ndi_document_stimulus_stimulus_presentation",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_probe.json"}
+		]
+	},
+	"presentation_order":							[],
+	"presentation_time": {
+			"clocktype":						"",
+			"stimopen":						0,
+			"onset":						0,
+			"offset":						1,
+			"stimclose":						1
+	},
+	"stimuli": {
+		"parameters": {
+		}
+	}
+}
+

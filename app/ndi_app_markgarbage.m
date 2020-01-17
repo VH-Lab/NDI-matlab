@@ -81,11 +81,11 @@ classdef ndi_app_markgarbage < ndi_app
 				newdoc = ndi_app_markgarbage_obj.experiment.newdocument('apps/markgarbage/valid_interval',...
 						'valid_interval',vi) +  ...
 					ndi_epochset_obj.newdocument() + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
-				ndi_app_markgarbage_obj.experiment.database.add(newdoc);
+				ndi_app_markgarbage_obj.experiment.database_add(newdoc);
 		end; % savevalidinterval()
 
 		function b = clearvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
-			% CLEARVALIDINTERVAL - clear all 'validinterval' records for an NDI_EPOCHSET from experiment database
+			% CLEARVALIDINTERVAL - clear all 'valid_interval' records for an NDI_EPOCHSET from experiment database
 			% 
 			% B = CLEARVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ)
 			%
@@ -99,7 +99,7 @@ classdef ndi_app_markgarbage < ndi_app
 				[vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
 
 				if ~isempty(mydoc),
-					ndi_app_markgarbage_obj.experiment.database.remove(mydoc);
+					ndi_app_markgarbage_obj.experiment.database_rm(mydoc);
 				end
 
 		end % clearvalidinteraval()
@@ -115,15 +115,17 @@ classdef ndi_app_markgarbage < ndi_app
 			%
 				vi = emptystruct('timeref_structt0','t0','timeref_structt1','t1');
 
-				warning(['not general: if subclass of markgarbage-valid_interval is created, this will fail (issue #88).']);
-				searchq = cat(2,ndi_app_markgarbage_obj.searchquery(), ...
-					{'document_class.class_name','valid_interval'});
+				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
 				if isa(ndi_epochset_obj,'ndi_probe'),
-					searchq = cat(2,searchq,ndi_epochset_obj.searchquery());
+					searchq2 = ndi_epochset_obj.searchquery();
+					if ~isa(searchq2,'ndi_query'),
+						searchq2 = ndi_query(searchq2);
+					end;
+					searchq = searchq & searchq2; 
 				end
 
-				mydoc = ndi_app_markgarbage_obj.experiment.database.search(searchq);
+				mydoc = ndi_app_markgarbage_obj.experiment.database_search(searchq);
 
 				if ~isempty(mydoc),
 					for i=1:numel(mydoc),

@@ -18,17 +18,17 @@ if nargin<1,
 end;
 
 disp(['creating a new experiment object...']);
-exp = ndi_experiment_dir('exp1',dirname);
+E = ndi_experiment_dir('exp1',dirname);
 
  % remove everything from the experiment to start
-exp.database.clear('yes'); % use it only if you mean it
+E.database_clear('yes'); % use it only if you mean it
 
-dev = exp.daqsystem_load('name','(.*)'), 
+dev = E.daqsystem_load('name','(.*)'), 
 if ~isempty(dev) & ~iscell(dev),
 	dev = {dev};
 end;
 for i=1:numel(dev),
-	exp.daqsystem_rm(dev{i});
+	E.daqsystem_rm(dev{i});
 end;
 
 disp(['Now adding our acquisition daqsystem (intan):']);
@@ -36,16 +36,16 @@ disp(['Now adding our acquisition daqsystem (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filenavigator(exp, '.*\.rhd\>');  % look for .rhd files
+dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the device object and add it to the experiment:
 
 dev1 = ndi_daqsystem_mfdaq('intan1',dt,ndi_daqreader_mfdaq_intan());
-exp.daqsystem_add(dev1);
+E.daqsystem_add(dev1);
  
   % Step 3: let's add a document
 
-doc = exp.newdocument('ndi_document_subjectmeasurement',...
+doc = E.newdocument('ndi_document_subjectmeasurement',...
 	'ndi_document.name','Animal statistics',...
 	'subject.id','vhlab12345', ...
 	'subject.species','Mus musculus',...
@@ -55,7 +55,7 @@ doc = exp.newdocument('ndi_document_subjectmeasurement',...
 	);
 
  % add it here
-exp.database_add(doc);
+E.database_add(doc);
 
   % Now let's print some statistics
 

@@ -25,7 +25,7 @@ classdef ndi_document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = ndi_document.readblankdefinition(document_type);
-					document_properties.ndi_document.document_unique_reference = ndi_unique_id;
+					document_properties.ndi_document.id = ndi_unique_id;
 					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array
@@ -67,10 +67,22 @@ classdef ndi_document
 			% UID = DOC_UNIQUE_ID(NDI_DOCUMENT_OBJ)
 			%
 			% Returns the unique id of an NDI_DOCUMENT
-			% (Found at NDI_DOCUMENT_OBJ.documentproperties.document_unique_reference)
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
 			%
-				uid = ndi_document_obj.document_properties.ndi_document.document_unique_reference;
+				warning('depricated..use ID() instead')
+				uid = ndi_document_obj.document_properties.ndi_document.id;
 		end % doc_unique_id()
+
+		function uid = id(ndi_document_obj)
+			% ID - return the document unique identifier for an NDI_DOCUMENT
+			%
+			% UID = ID (NDI_DOCUMENT_OBJ)
+			%
+			% Returns the unique id of an NDI_DOCUMENT
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
+			%
+				uid = ndi_document_obj.document_properties.ndi_document.id;
+		end; % id()
 
 		function ndi_document_obj = setproperties(ndi_document_obj, varargin)
 			% SETPROPERTIES - Set property values of an NDI_DOCUMENT object
@@ -113,12 +125,108 @@ classdef ndi_document
 				ndi_document_obj_out.document_properties.document_class.superclasses = ...
 					(cat(1,ndi_document_obj_out.document_properties.document_class.superclasses,...
 						ndi_document_obj_b.document_properties.document_class.superclasses));
-
-				% Step 2): Merge the other fields
 				otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
+
+				% Step 2): Merge dependencies if we have to
+				if isfield(ndi_document_obj_out.document_properties,'depends_on') & ...
+					isfield(ndi_document_obj_b.document_properties,'depends_on'), 
+					% we need to merge dependencies
+					ndi_document_obj_out.document_properties.depends_on = cat(1,...
+						ndi_document_obj_out.document_properties.depends_on(:),...
+						ndi_document_obj_b.document_properties.depends_on(:));
+						otherproperties = rmfield(otherproperties,'depends_on');
+				end;
+
+				% Step 3): Merge the other fields
 				ndi_document_obj_out.document_properties = structmerge(ndi_document_obj_out.document_properties,...
 					otherproperties);
-		end % plus() 
+		end; % plus() 
+
+		function d = dependency_value(ndi_document_obj, dependency_name, varargin)
+			% DEPENDENCY_VALUE - return dependency value given dependency name
+			%
+			% D = DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and returns the 'value' associated with the given 'name'. If there is no such
+			% field (either 'depends_on' or 'name'), then D is empty and an error is generated.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, return empty.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				d = [];
+				notfound = 1;
+
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+
+				if hasdependencies,
+					matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+					if numel(matches)>0,
+						notfound = 0;
+						d = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
+					end;
+				end;
+
+				if notfound & ErrorIfNotFound,
+					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
+
+		function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
+			% SET_DEPENDENCY_VALUE - return dependency value given dependency name
+			%
+			% NDI_DOCUMENT_OBJ = SET_DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and, if there is a dependency with a given 'dependency_name', then the value of the
+			% dependency is set to DEPENDENCY_VALUE. 
+			% field (either 'depends_on' or 'name'), then D is empty and an error is generated.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, generate no error but take no action.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				notfound = 1;
+
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+
+				if hasdependencies,
+					matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
+					if numel(matches)>0,
+						notfound = 0;
+						ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
+					end;
+				end;
+
+				if notfound & ErrorIfNotFound,
+					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
+
+		function b = eq(ndi_document_obj1, ndi_document_obj2)
+			% EQ - are two NDI_DOCUMENT objects equal?
+			%
+			% B = EQ(NDI_DOCUMENT_OBJ1, NDI_DOCUMENT_OBJ2)
+			%
+			% Returns 1 if and only if the objects have identical document_properties.ndi_document.id
+			% fields.
+			%
+				b = strcmp(ndi_document_obj1.document_properties.ndi_document.id,...
+					ndi_document_obj2.document_properties.ndi_document.id);
+		end; % eq()
 
 	end % methods
 
@@ -147,56 +255,48 @@ classdef ndi_document
 
 				t = ndi_document.readjsonfilelocation(jsonfilelocationstring);
 				j = jsondecode(t);
+				s = j; 
 
-				% Step 2): integrate the new information into the document we are building onto 
+				% Step 2): read the information about all the superclasses
 
-				% Step 2a): Do we need to integrate this or do we already have same class and at least as good of a version?
-				need_to_integrate = 1;
-				if isfield(s,'document_superclass_data') & isfield(j,'document_class'),
-					% dev note: assuming document_superclass_data reads correctly by matlab jsondecode as STRUCT 
-					for k=1:numel(s.document_superclass_data)
-						item = celloritem(s.document_superclass_data,k);
-						if strcmp(j.document_class.class_name,item.class_name) & j.document_class.class_version<=item.class_version,
-							need_to_integrate = 0;
-							break;
-						end 
-					end
-				end
-
-				% Step 2b): Now integate if we need to
-
-				if isfield(j,'document_superclass_data'),
-					error(['Newly built object should not have field ''document_superclass_data''.']);
-				end
-
-				if need_to_integrate,
-					if isempty(s),
-						s(1).document_class = j.document_class;
-						s(1).document_superclass_data = {};
-					else,
-						s(1).document_superclass_data{end+1} = j.document_class;
-					end
-					j_ = rmfield(j, 'document_class');
-					% TODO: 1. check if field exists in both documents, (intersection of fields exists)
-					%       2. merge by adding them in an array or struct, labeling which comes from which doc
-					s = structmerge(s, j_);
-				else,
-					return;
-				end
+				s_super = {};
 
 				if isfield(j,'document_class'),
 					if isfield(j.document_class,'superclasses'),
 						for i=1:numel(j.document_class.superclasses),
 							item = celloritem(j.document_class.superclasses, i, 1);
-							s = ndi_document.readblankdefinition(item.definition, s);
+							s_super{end+1} = ndi_document.readblankdefinition(item.definition);
 						end
 					end
 				end
 
-				if s_is_empty, % discard document_superclass_data
-					s = rmfield(s,'document_superclass_data');
-				end
-		
+				% Step 2): integrate the superclasses into the document we are building
+
+				for i=1:numel(s_super),
+					% merge s and s_super{i}
+					% part 1: do we need to merge superclass labels?
+					if isfield(s,'document_class')&isfield(s_super{i},'document_class'),
+						s.document_class.superclasses = cat(1,s.document_class.superclasses(:),...
+							s_super{i}.document_class.superclasses(:));
+						[dummy,unique_indexes] = unique({s.document_class.superclasses.definition});
+						s.document_class.superclasses = s.document_class.superclasses(unique_indexes);
+					else,
+						error(['Documents lack ''document_class'' fields.']);
+					end;
+
+					s_super{i} = rmfield(s_super{i},'document_class');
+
+					% part 2: merge dependencies
+					if isfield(s,'depends_on') & isfield(s_super{i},'depends_on'), % if only s or super_s has it, merge does it right
+						s.depends_on = cat(1,s.depends_on(:),s_super{i}.depends_on(:));
+						s_super{i} = rmfield(s_super{i},'depends_on');
+						[dummy,unique_indexes] = unique({s.depends_on.name});
+						s.depends_on= s.depends_on(unique_indexes);
+					else,
+						% regular structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
+					end;
+					s = structmerge(s,s_super{i});
+				end;
 		end % readblankdefinition() 
 
 		function t = readjsonfilelocation(jsonfilelocationstring)

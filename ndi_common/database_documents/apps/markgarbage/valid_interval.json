@@ -1,8 +1,8 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/apps\/markgarbage\/validinterval.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/markgarbage\/validinterval_schema.json",
-		"class_name":						"markgarbage-valid_interval",
+		"definition":						"$NDIDOCUMENTPATH\/apps\/markgarbage\/valid_interval.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/markgarbage\/valid_interval_schema.json",
+		"class_name":						"ndi_document_apps_markgarbage_valid_interval",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },

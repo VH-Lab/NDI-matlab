@@ -304,8 +304,8 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			% with the corresponding 'name' and 'reference' fields of the probe NDI_PROBE_OBJ.
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well.
 			%
-				sq = {'ndi_document.experiment_unique_reference',...
-					ndi_probe_obj.experiment.unique_reference_string(),...
+				sq = {'ndi_document.experiment_id',...
+					ndi_probe_obj.experiment.id(),...
 					'probe.name',ndi_probe_obj.name,...
 					'probe.type',ndi_probe_obj.type,...
 					'probe.reference',ndi_probe_obj.reference};
@@ -314,6 +314,19 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 					sq = cat(2,sq,{'epochid',epochid});
 				end
 		end;
+
+		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
+			% EQ - are 2 NDI_PROBE objects equal?
+			%
+			% Returns 1 if the objects share an object class, experiment, and probe string.
+			%
+				b = 0;
+				if isa(ndi_probe_obj2,'ndi_probe'),
+					b = ( ndi_probe_obj1.experiment==ndi_probe_obj2.experiment & ...
+						strcmp(ndi_probe_obj1.probestring(), ndi_probe_obj2.probestring()) & ...
+						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
+				end;
+		end; % eq()
 	end % methods
 end
 

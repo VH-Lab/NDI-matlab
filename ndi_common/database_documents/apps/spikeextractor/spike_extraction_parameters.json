@@ -2,7 +2,7 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spike_extraction_parameters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spike_extraction_parameters_schema.json",
-		"class_name":						"spikeextractor-spike_extraction_parameters",
+		"class_name":						"ndi_document_apps_spikeextractor_spike_extraction_parameters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },

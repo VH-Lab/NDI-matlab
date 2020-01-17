@@ -46,9 +46,7 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					% now we know the epoch to read, finally!
 
 					thing_doc = ndi_thing_timeseries_obj.load_thing_doc();
-					sq = {'thing_epoch.thing_unique_reference', ...
-						thing_doc.document_properties.ndi_document.document_unique_reference, ...
-						'epochid', epoch_timeref.epoch};
+					sq = ndi_query('depends_on','depends_on','thing_id',thing_doc.id()) & ndi_query('epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_thing_timeseries_obj.experiment();
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)~=1,
@@ -56,9 +54,9 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 					end;
 					epochdoc = epochdoc{1};
 
-					f = openbinarydoc(E.database,epochdoc);
+					f = E.database_openbinarydoc(epochdoc);
 					[data,t] = vhsb_read(f,epoch_t0_out,epoch_t1_out);
-					E.database.closebinarydoc(f);
+					E.database_closebinarydoc(f);
 					
 					if isnumeric(t),
 						t = ndi_thing_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, t, ...
@@ -97,9 +95,9 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 				[ndi_thing_timeseries_obj, epochdoc] = addepoch@ndi_thing(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1);
 					
 				E = ndi_thing_timeseries_obj.experiment();
-				f = openbinarydoc(E.database,epochdoc);
+				f = E.database_openbinarydoc(epochdoc);
 				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
-				E.database.closebinarydoc(f);
+				E.database_closebinarydoc(f);
 		end; % addepoch()
 
 		function sr = samplerate(ndi_thing_timeseries_obj, epoch)

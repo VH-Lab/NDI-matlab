@@ -2,7 +2,7 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spikewaves.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spikewaves_schema.json",
-		"class_name":						"spikeextractor-spikewaves",
+		"class_name":						"ndi_document_apps_spikeextractor_spikeextractor_spikewaves",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
@@ -11,8 +11,15 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on": [
+		{	"name": "extraction_parameters_id",
+			"value": "" 
+		},
+		{	"name": "ndi_timeseries_obj_id",
+			"value": "" 
+		}
+	],
 	"spikewaves": {
-		"extraction_name": "",
-		"extraction_parameters_file_id": ""
+		"extraction_name": ""
 	}
 }

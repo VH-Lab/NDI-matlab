@@ -127,7 +127,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				if isa(ndi_thing_obj.probe.experiment,'handle'),,
 					exp = ndi_thing_obj.probe.experiment();
 					cache = exp.cache;
-					key = [ndi_thing_obj.thingstring ' | ' ndi_thing_obj.probe.probestring()];
+					key = [ndi_thing_obj.thingstring ' | ' ndi_thing_obj.probe.probestring() ' | ' ndi_thing_obj.type];
 				end
 		end; % getcache()
 
@@ -236,7 +236,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end;
 				E = ndi_thing_obj.experiment();
 				if ~isempty(E),
-					thingdoc = E.database.search(ndi_thing_obj.searchquery());
+					thingdoc = E.database_search(ndi_thing_obj.searchquery());
 					if isempty(thingdoc),
 						error(['NDI_THING is not part of the database.']);
 					elseif numel(thingdoc)>1,
@@ -244,9 +244,10 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					else,
 						thingdoc = thingdoc{1};
 					end;
-					epochdoc = E.newdocument('ndi_document_thing_epoch', 'thing_epoch.thing_unique_reference', ...
-						thingdoc.document_properties.ndi_document.document_unique_reference, ...
-						'thing_epoch.epoch_clock', epochclock.ndi_clocktype2char(), 'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
+					epochdoc = E.newdocument('ndi_document_thing_epoch', ...
+						'thing_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
+						'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
+					epochdoc = epochdoc.set_dependency_value('thing_id',thingdoc.id());
 					E.database_add(epochdoc);
 				end
 		end; % addepoch()
@@ -266,24 +267,17 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					return; 
 				end;
 				% loads from database
-				thing_doc = ndi_thing_obj.load_thing_doc();
-				if ~isempty(thing_doc),
-					sq = {'thing_epoch.thing_unique_reference', ...
-						thing_doc.document_properties.ndi_document.document_unique_reference};
-					E = ndi_thing_obj.experiment();
-					epochdocs = E.database_search(sq);
-
-					if ~isempty(epochdocs),
-						for i=1:numel(epochdocs),
-							clear newet;
-							newet.epoch_number = i;
-							newet.epoch_id = epochdocs{i}.document_properties.epochid;
-							newet.epochprobemap = '';
-							newet.epoch_clock = {ndi_clocktype(epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
-							newet.t0_t1 = {epochdocs{i}.document_properties.thing_epoch.t0_t1};
-							newet.underlying_epochs = []; % leave this for buildepochtable
-							et_added(end+1) = newet;
-						end;
+				potential_epochdocs = ndi_thing_obj.load_all_thing_docs();
+				for i=1:numel(potential_epochdocs),
+					if isfield(potential_epochdocs{i}.document_properties,'epochid');
+						clear newet;
+						newet.epoch_number = i;
+						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid;
+						newet.epochprobemap = '';
+						newet.epoch_clock = {ndi_clocktype(potential_epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
+						newet.t0_t1 = {potential_epochdocs{i}.document_properties.thing_epoch.t0_t1};
+						newet.underlying_epochs = []; % leave this for buildepochtable
+						et_added(end+1) = newet;
 					end;
 				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
@@ -314,13 +308,28 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
 			% document for the thing, then empty is returned.
-
+				warning('depricated..use ID() instead');
 				thing_ref = [];
 				thing_doc = ndi_thing_obj.load_thing_doc();
 				if ~isempty(thing_doc),
-					thing_ref = thing_doc.doc_unique_id();
+					thing_ref = thing_doc.id();
 				end;
 		end; % doc_unique_ref()
+
+		function thing_id = id(ndi_thing_obj)
+			% ID - return the document unique identifier for an NDI_THING object
+			%
+			% UNIQUE_REF = ID(NDI_THING_OBJ)
+			%
+			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
+			% document for the thing, then empty is returned.
+
+				thing_id = [];
+				thing_doc = ndi_thing_obj.load_thing_doc();
+				if ~isempty(thing_doc),
+					thing_id = thing_doc.id();
+				end;
+		end; % id()
 
 		function thing_docs = load_all_thing_docs(ndi_thing_obj)
 			% LOAD_ALL_THING_DOCS - load all of the NDI_THING objects from an experiment database
@@ -332,14 +341,14 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 				thing_doc = ndi_thing_obj.load_thing_doc();
 				if ~isempty(thing_doc),
-					sq = {'thing_epoch.thing_unique_reference', ...
-						thing_doc.document_properties.ndi_document.document_unique_reference};
+					sq = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
 					E = ndi_thing_obj.experiment();
-					epochdocs = E.database.search(sq);
+					epochdocs = E.database_search(sq);
+    				thing_docs = cat(1, {thing_doc}, epochdocs(:));                    
 				else,
 					epochdocs = {};
+                    thing_docs = {};
 				end;
-				thing_docs = cat(1, {thing_doc}, epochdocs(:));
 		end; % LOAD_ALL_THING_DOCS
 
 	%%% NDI_DOCUMENTSERVICE methods
