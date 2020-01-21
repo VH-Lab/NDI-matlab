@@ -50,6 +50,11 @@ Still in early development
    - `ndi_syncrule`: A rule for describing the relationship between data collected on different iodevices
    - `ndi_syncrule_filematch`: A rule that describes a timing relationship as "equal" if two epochs contain raw data files in common
 
+## Tutorials
+
+- For developers: A tour of ndi_documents and ndi_database: https://github.com/VH-Lab/NDI-matlab/blob/master/demo/documents_database/document_database_demo.ipynb
+- For developers: A tour of epochs, daqsystems, probes, and things: https://github.com/VH-Lab/NDI-matlab/blob/master/demo/epochs_daqsystems_probes_things/epochdemo1.ipynb
+
 ## Conventions
 
 - Channels, samples, and other quantities are numbered from 1..N
