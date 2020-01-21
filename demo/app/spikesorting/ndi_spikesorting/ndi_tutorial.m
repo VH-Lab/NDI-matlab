@@ -1,11 +1,14 @@
 ndi_globals;
 
-our_exp = ndi_experiment_dir('treeshrew1','/Users/Ora/Desktop/labx_experiments')
-exp_dir = '/Users/Ora/Desktop/labx_experiments';
+if 0,
+	exp_dir = '/Users/Ora/Desktop/labx_experiments';
+end;
+
 dot_ndi = [exp_dir filesep '.ndi'];
+our_exp = ndi_experiment_dir('treeshrew1',exp_dir)
 
 if exist(dot_ndi, 'dir') == 7
-	rmdir([exp_dir filesep '.ndi'], 's');
+	rmdir(dot_ndi, 's');
 end
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
@@ -33,7 +36,9 @@ figure('Name', ['Probe ' num2str(prb)  ', Epoch ' num2str(e)], 'NumberTitle','of
 plot_multichan(d,t,10);
 
 spikeextractor = ndi_app_spikeextractor(our_exp);
-spikeextractor.extract(probe, e, 'extraction_name','default');
+extract_doc = ndi_document('apps/spikeextractor/spike_extraction_parameters');
+spikeextractor.add_extraction_doc('default_parameters', extract_doc);
+spikeextractor.extract(probe, e, 'default_parameters');
 
 w = spike_extractor.load_spikewaves_epoch(probe,1,'test');
 figure;

@@ -469,10 +469,10 @@ classdef ndi_app_spikeextractor < ndi_app
 			b = 1;
 		end % clear_spiketimes_doc()
 
-		function [waveforms,waveparameters] = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
+		function [waveforms, waveparameters, spikewaves_doc] = load_spikewaves_epoch(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name)
 			% LOAD_SPIKEWAVES_EPOCH - load spikewaves from an epoch
 			%
-			% [CONCATENATED_SPIKES, WAVEPARAMETERS] = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
+			% [CONCATENATED_SPIKES, WAVEPARAMETERS, SPIKEWAVES_DOC] = LOAD_SPIKEWAVES_EPOCH(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
 			%
 			% WAVEPARAMETERS is a structure with the following fields:
 			% Field              | Description
@@ -483,6 +483,8 @@ classdef ndi_app_spikeextractor < ndi_app
 			% S1                 | Number of samples after spike center
 			%                    |    (usually positive)
 			% samplerate         | The sampling rate
+			%
+			% SPIKEWAVES_DOC is the NDI_DOCUMENT of the extracted spikes.
 			%
 			% Reads the spikewaves for an NDI_TIMESERIES object for a given EPOCH and EXTRACTION_NAME.
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form

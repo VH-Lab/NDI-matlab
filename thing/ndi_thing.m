@@ -269,7 +269,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				% loads from database
 				potential_epochdocs = ndi_thing_obj.load_all_thing_docs();
 				for i=1:numel(potential_epochdocs),
-					if isfield(potential_epochdocs{i}.document_properties,'epochid');
+					if isfield(potential_epochdocs{i}.document_properties,'thing_epoch');
 						clear newet;
 						newet.epoch_number = i;
 						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid;
