@@ -18,16 +18,16 @@
         }
 	],
 	"vmspikesummary": {
-        "spike_stats": {
-            "mean_spikewave":       [],
-            "median_spikekink_vm":       [],
-            "median_voltageofhalfmaximum":          [],
-            "median_fullwidthhalfmaximum":          [],
-            "median_presk_halfwidthmaximum":     [],
-            "median_postsk_halfwidthmaximum":    [],
-            "median_max_dvdt":      [],
-            "median_kink_index":    [],
-            "slope_criterion":      []
-        }
+        "mean_spikewave":       [],
+        "sample_times":         [],
+        "number_of_spikes":     [],
+        "median_spikekink_vm":       [],
+        "median_voltageofhalfmaximum":          [],
+        "median_fullwidthhalfmaximum":          [],
+        "median_presk_halfwidthmaximum":     [],
+        "median_postsk_halfwidthmaximum":    [],
+        "median_max_dvdt":      [],
+        "median_kink_index":    [],
+        "slope_criterion":      []
 	}
 }
