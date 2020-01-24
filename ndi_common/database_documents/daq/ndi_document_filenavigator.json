@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/ndi_document_filenavigator.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/ndi_document_filenavigator_schema.json",
+		"class_name":						"ndi_document_filenavigator",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+        },
+	"filenavigator": {
+		"fileparameters":					"",
+		"epochprobemap_class":					"",
+		"epochprobemap_fileparameters":				"",
+		"experiment_id":					""
+	}
+}
+

@@ -1,4 +1,4 @@
-classdef ndi_filenavigator < ndi_base & ndi_epochset_param
+classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 	% NDI_FILENAVIGATOR - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
@@ -595,6 +595,31 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param
 				end
 
 				fmstr = fmhash;
+			end
+
+		%% functions that override ndi_documentservice
+			function ndi_document_obj = newdocument(ndi_filenavigator_obj)
+			% NEWDOCUMENT - create an NDI_DOCUMENT that is based on an NDI_FILENAVIGATOR object
+			%
+			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
+			%
+			% Creates an NDI_DOCUMENT of type 'ndi_document_filenavigator.json'
+			%
+				if ~isempty(ndi_filenavigator_obj.fileparameters),
+					filenavigator_structure.fileparameters = cell2str(ndi_filenavigator_obj.fileparameters.filematch); % convert to a string
+				else,
+					filenavigator_structure.fileparameters = '';
+				end;
+				filenavigator_structure.epochprobemap_class = ndi_filenavigator_obj.epochprobemap_class;
+				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
+					filenavigator_structure.epochprobemap_fileparameters = ...
+						cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch); % convert to string
+				else,
+					filenavigator_structure.epochprobemap_fileparameters = '';
+				end;
+				filenavigator_structure.experiment_id = ndi_filenavigator_obj.experiment.id();
+				
+				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json','filenavigator',filenavigator_structure);
 			end
 
 	end % methods
