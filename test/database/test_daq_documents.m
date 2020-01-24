@@ -41,10 +41,10 @@ end;
 mynewdoc{1}.document_properties.filenavigator,
 
  % TODO
-if 1,
+if 0,
 	warning('skipping ndi_filenavigator creator step');
 else,
-	myotherfilenavigator = ndi_filenavigator(mynewdoc{1},E);
+	myotherfilenavigator = ndi_filenavigator(E, mynewdoc{1});
 end;
 
 E.database_rm(mynewdoc);
