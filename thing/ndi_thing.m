@@ -1,11 +1,13 @@
-classdef ndi_thing < ndi_epochset & ndi_documentservice 
+name classdef ndi_thing < ndi_epochset & ndi_documentservice2
 % NDI_THING - define or examine a thing in the experiment
 %
 	properties (GetAccess=public, SetAccess=protected)
-		name
-		type
-		probe    % we need the probe so we can resolve timerefs
-		direct   % is it direct from a probe (1) or do observations need to be added by other software?
+		experiment   % associated ndi_experiment object
+		name         % 
+		type         % 
+		reference    % 
+		underlying_thing % does this thing depend on underlying thing data (epochs)?
+		direct       % is it direct from the thing it underlies, or is it different with its own possibly modified epochs?
 
 	end; % properties
 
@@ -13,9 +15,9 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 		function ndi_thing_obj = ndi_thing(varargin)
 			% NDI_THING_OBJ = NDI_THING - creator for NDI_THING
 			%
-			% NDI_THING_OBJ = NDI_THING(THING_NAME, THING_TYPE, NDI_PROBE_OBJ, DIRECT)
+			% NDI_THING_OBJ = NDI_THING(NDI_EXPERIMENT_OBJ, THING_NAME, THING_REFERENCE, THING_TYPE, UNDERLYING_EPOCHSET, DIRECT)
 			%    or
-			% NDI_THING_OBJ = NDI_THING(THING_DOCUMENT, NDI_EXPERIMENT_OBJ)
+			% NDI_THING_OBJ = NDI_THING(NDI_EXPERIMENT_OBJ, THING_DOCUMENT)
 			%
 			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
@@ -23,36 +25,52 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				if numel(varargin)==4,
 					% first type
 					ndi_thing_class = 'ndi_thing';
-					thing_name = varargin{1};
-					thing_type = varargin{2};
-					ndi_probe_obj = varargin{3};
-					direct = logical(varargin{4});
+					thing_experiment = varargin{1};
+					thing_name = varargin{2};
+					thing_reference = varargin{3};
+					thing_type = varargin{4};
+					thing_underlying_thing = varargin{5};
+					direct = logical(varargin{6});
 				elseif numel(varargin)==2,
-					if ~isa(varargin{1},'ndi_document'),
-						error(['When 2 input arguments are given, 1st input argument must be an NDI_DOCUMENT.']);
+					thing_experiment = varargin{1};
+					if ~isa(thing_experiment,'ndi_experiment'),
+						error(['When 2 input arguments are given, 1st input must be an NDI_EXPERIMENT.']);
 					end;
-					if ~isfield(varargin{1}.document_properties,'thing'),
+					thing_doc = [];
+					if ~isa(varargin{2},'ndi_document'),
+						% might be id
+						thing_search = thing_experiment.database_search('ndi_document.id','exact_string',varargin{2},'');
+						if numel(thing_search)~=1,
+							error(['When 2 input arguments are given, 2nd input argument must be an NDI_DOCUMENT or document ID.']);
+						else,
+							thing_doc = thing_search{1};
+						end;
+					end;
+					if ~isfield(thing_doc, 'thing'),
 						error(['This document does not have parameters ''thing''.']);
 					end;
-					ndi_thing_class = varargin{1}.document_properties.thing.ndi_thing_class;
-					thing_name = varargin{1}.document_properties.thing.name;
-					thing_type = varargin{1}.document_properties.thing.type;
-					ndi_experiment_obj = varargin{2};
-					ndi_probe_obj = ndi_document2probe(varargin{1}, ndi_experiment_obj);
-					if ischar(varargin{1}.document_properties.thing.direct),
-						direct = logical(eval(varargin{1}.document_properties.thing.direct));
+					ndi_thing_class = thing_doc.document_properties.thing.ndi_thing_class;
+					thing_name = thing_doc.document_properties.thing.name;
+					thing_reference = thing_doc.document_properties.thing.reference;
+					thing_type = thing_doc.document_properties.thing.type;
+					if isempty(thing_doc.dependency_value('underlying_thing')),
+						thing_underlying_thing = [];
 					else,
-						direct = logical(varargin{1}.document_properties.thing.direct);
+						thing_underlying_thing = ndi_thing(thing_experiment, dependency_value(thing_doc,'underlying_thing_id'));
+					end;
+					if ischar(thing_doc.document_properties.thing.direct),
+						direct = logical(eval(thing_doc.document_properties.thing.direct));
+					else,
+						direct = logical(thing_doc.document_properties.thing.direct);
 					end;
 				else,
 					error(['Improper number of input arguments']);
 				end;
-				if ~isa(ndi_probe_obj, 'ndi_probe'),
-					error(['NDI_PROBE_OBJ must be of type NDI_PROBE']);
-				end;
+				ndi_thing_obj.experiment = thing_experiment;
 				ndi_thing_obj.name = thing_name;
+				ndi_thing_obj.reference = thing_reference;
 				ndi_thing_obj.type = thing_type;
-				ndi_thing_obj.probe = ndi_probe_obj;
+				ndi_thing_obj.underlying_thing = thing_underlying_thing;
 				ndi_thing_obj.direct = direct;
 		end; % ndi_thing()
 
@@ -67,7 +85,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
 			% For NDI_THING objects, this returns 0 so that underlying NDI_PROBE epochs are added.
-				b = 0;
+				b = isempty(ndi_thing_obj.underlying_thing);
 		end; % issyncgraphroot
 
 		function name = epochsetname(ndi_thing_obj)
@@ -78,7 +96,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% Returns the object name that is used when creating epoch nodes.
 			%
 			% For NDI_THING objects, this is NDI_THING/THINGSTRING. 
-				name = ndi_thing_obj.thingstring;
+				name = ['thing: ' ndi_thing_obj.thingstring];
 		end; % epochsetname
 
 		function ec = epochclock(ndi_thing_obj, epoch_number)
@@ -88,7 +106,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The NDI_THING class always returns the clock type(s) of the probe it is based on
+			% The NDI_THING class always returns the clock type(s) of the thing it is based on
 			%
 				et = epochtableentry(ndi_thing_obj, epoch_number);
 				ec = et.epoch_clock;
@@ -107,6 +125,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
+				% TODO: this must be a bug, it's just self-referential
 				t0t1 = ndi_thing_obj.t0_t1(epoch_number);
 		end; % t0t1()
 
@@ -118,16 +137,16 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% Returns the CACHE and KEY for the NDI_THING object.
 			%
 			% The CACHE is returned from the associated experiment.
-			% The KEY is the probe's PROBESTRING plus the name of the THING.
+			% The KEY is the probe's THINGSTRING plus the TYPE of the THING.
 			%
 			% See also: NDI_FILENAVIGATOR, NDI_BASE
 
 				cache = [];
 				key = [];
-				if isa(ndi_thing_obj.probe.experiment,'handle'),,
-					exp = ndi_thing_obj.probe.experiment();
-					cache = exp.cache;
-					key = [ndi_thing_obj.thingstring ' | ' ndi_thing_obj.probe.probestring() ' | ' ndi_thing_obj.type];
+				if isa(ndi_thing_obj.experiment,'handle'),,
+					E = ndi_thing_obj.experiment;
+					cache = E.cache;
+					key = [ndi_thing_obj.thingstring() ' | ' ndi_thing_obj.type];
 				end
 		end; % getcache()
 
@@ -154,35 +173,38 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 
 				% pull all the devices from the experiment and look for device strings that match this probe
 
-				probe_et = ndi_thing_obj.probe.epochtable();
+				underlying_et = et;
+				if ~isempty(ndi_thing_obj.underlying_thing),
+					underlying_et = ndi_thing_obj.underlying_thing.epochtable();
+				end;
 
 				if ndi_thing_obj.direct,
-					ib = 1:numel(probe_et);
-					ia = 1:numel(probe_et);
+					ib = 1:numel(underlying_et);
+					ia = 1:numel(underlying_et);
 				else,
 					et_added = ndi_thing_obj.loadaddedepochs();
-					[c,ia,ib] = intersect({et_added.epoch_id}, {probe_et.epoch_id});
+					[c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
 				end
-
 
 				for n=1:numel(ia),
 					et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
-					et_(1).epoch_id = probe_et(ib(n)).epoch_id;
-					et_(1).epochprobemap = []; % not applicable for ndi_thing objects
+					et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
 					if ndi_thing_obj.direct,
-						et_(1).epoch_clock = probe_et(ib(n)).epoch_clock;
-						et_(1).t0_t1 = probe_et(ib(n)).t0_t1; 
+						et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
+						et_(1).t0_t1 = underlying_et(ib(n)).t0_t1; 
+						et_(1).epochprobemap = underlying_et(ib(n).epochprobemap); 
 					else,
+						et_(1).epochprobemap = []; % not applicable for non-direct things
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
-					underlying_epochs(1).underlying = ndi_thing_obj.probe;
-					underlying_epochs.epoch_id = probe_et(ib(n)).epoch_id;
-					underlying_epochs.epochprobemap = probe_et(ib(n)).epochprobemap;
-					underlying_epochs.epoch_clock = probe_et(ib(n)).epoch_clock;
-					underlying_epochs.t0_t1 = probe_et(ib(n)).t0_t1;
+					underlying_epochs(1).underlying = ndi_thing_obj.underlying_thing;
+					underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
+					underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
+					underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
+					underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
 				
 					et_(1).underlying_epochs = underlying_epochs;
 					et(end+1) = et_;
@@ -200,20 +222,8 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% For NDI_THING objects, this is the string 'thing: ' followed by its name
 			% 
-				thingstr = ['thing: ' ndi_thing_obj.name];
+				thingstr = [ndi_thing_obj.name ' | ' int2str(ndi_thing_obj.reference)];
 		end; %thingstring() 
-
-		function E = experiment(ndi_thing_obj)
-			% EXPERIMENT - the NDI_EXPERIMENT object associated with an NDI_THING
-			%
-			% E = EXPERIMENT(NDI_THING_OBJ)
-			%
-			% Return the NDI_EXPERIMENT associated with an NDI_THING.
-			%
-			% (Returns the thing's probe's 'experiment' parameter.)
-			%
-				E = ndi_thing_obj.probe.experiment;
-		end; % experiment
 
 		function [ndi_thing_obj, epochdoc] = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1)
 			% ADDEPOCH - add an epoch to the NDI_THING
@@ -370,27 +380,38 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end;
 				ndi_document_obj = ndi_document('ndi_document_thing',...
 					'thing.ndi_thing_class', class(ndi_thing_obj), ...
-					'thing.name',ndi_thing_obj.name,'thing.type',ndi_thing_obj.type,...
+					'thing.name',ndi_thing_obj.name,...
+					'thing.reference', ndi_thing_obj.reference,
+					'thing.type',ndi_thing_obj.type, ...
 					'thing.direct',ndi_thing_obj.direct) + ...
-					ndi_thing_obj.probe.newdocument(input_args{:}) + ...
-					newdocument(ndi_thing_obj.experiment(), 'ndi_document', 'ndi_document.type','ndi_thing');
-		end; % newdocument
+					newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');
+				underlying_id = [];
+				if ~isempty(ndi_thing_obj.underlying_thing),
+					underlying_id = ndi_thing_obj.underlying_thing.id();
+				end;
+				ndi_document_obj = setdependencyvalue(ndi_document_obj,'underlying_thing_id',underlying_id);
+		end; % newdocument()
 
-		function sq = searchquery(ndi_thing_obj)
+		function sq = searchquery(ndi_thing_obj, epochid)
 			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this thing
 			%
-			% SQ = SEARCHQUERY(NDI_THING_OBJ)
+			% SQ = SEARCHQUERY(NDI_THING_OBJ, [EPOCHID])
 			%
 			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
 			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ.
 			%
-				sq = ndi_thing_obj.probe.searchquery();
+				sq = ndi_thing_obj.experiment.searchquery();
 				sq = cat(2,sq, ...
 					{'thing.name',ndi_thing_obj.name,...
 					 'thing.type',ndi_thing_obj.type,...
-					 'thing.ndi_thing_class', class(ndi_thing_obj), ...
+					 'thing.ndi_thing_class', class(ndi_thing_obj), 
+					 'thing.reference', ndi_thing_obj.reference, ...
 					'ndi_document.type','ndi_thing' });
-		end;
+
+				if nargin>1,
+					sq = cat(2,sq,{'epochid',epochid});
+				end;
+		end; % searchquery()
 
 	end; % methods
 

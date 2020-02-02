@@ -18,5 +18,5 @@ end;
 
 obj_string = ndi_document_obj.document_properties.thing.ndi_thing_class;
 
-t = eval([obj_string '(ndi_document_obj, ndi_experiment_obj);']);
+t = eval([obj_string '(ndi_experiment_obj, ndi_document_obj);']);
 
