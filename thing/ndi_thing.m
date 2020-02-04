@@ -22,7 +22,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
 			%
-				if numel(varargin)==4,
+				if numel(varargin)==6,
 					% first type
 					ndi_thing_class = 'ndi_thing';
 					thing_experiment = varargin{1};
@@ -39,30 +39,42 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					thing_doc = [];
 					if ~isa(varargin{2},'ndi_document'),
 						% might be id
-						thing_search = thing_experiment.database_search('ndi_document.id','exact_string',varargin{2},'');
+						thing_search = thing_experiment.database_search(ndi_query('ndi_document.id','exact_string',varargin{2},''));
 						if numel(thing_search)~=1,
 							error(['When 2 input arguments are given, 2nd input argument must be an NDI_DOCUMENT or document ID.']);
 						else,
 							thing_doc = thing_search{1};
 						end;
+					else,
+						thing_doc = varargin{2};
 					end;
-					if ~isfield(thing_doc, 'thing'),
+					if ~isfield(thing_doc.document_properties, 'thing'),
 						error(['This document does not have parameters ''thing''.']);
 					end;
 					ndi_thing_class = thing_doc.document_properties.thing.ndi_thing_class;
 					thing_name = thing_doc.document_properties.thing.name;
 					thing_reference = thing_doc.document_properties.thing.reference;
 					thing_type = thing_doc.document_properties.thing.type;
-					if isempty(thing_doc.dependency_value('underlying_thing')),
+					thing_doc.dependency_value('underlying_thing_id'),
+					if isempty(thing_doc.dependency_value('underlying_thing_id')),
 						thing_underlying_thing = [];
 					else,
-						thing_underlying_thing = ndi_thing(thing_experiment, dependency_value(thing_doc,'underlying_thing_id'));
+						thing_underlying_thing = ndi_document2thing(...
+							 dependency_value(thing_doc,'underlying_thing_id'), thing_experiment);
 					end;
 					if ischar(thing_doc.document_properties.thing.direct),
 						direct = logical(eval(thing_doc.document_properties.thing.direct));
 					else,
 						direct = logical(thing_doc.document_properties.thing.direct);
 					end;
+				elseif numel(varargin)==0,
+					thing_experiment='';
+					thing_name = '';
+					thing_reference = 1;
+					thing_type = '';
+					thing_underlying_thing = [];
+					direct = 0;
+					warning('empty call to ndi_thing(); did not think this would happen...');
 				else,
 					error(['Improper number of input arguments']);
 				end;
@@ -193,7 +205,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					if ndi_thing_obj.direct,
 						et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
 						et_(1).t0_t1 = underlying_et(ib(n)).t0_t1; 
-						et_(1).epochprobemap = underlying_et(ib(n).epochprobemap); 
+						et_(1).epochprobemap = underlying_et(ib(n)).epochprobemap; 
 					else,
 						et_(1).epochprobemap = []; % not applicable for non-direct things
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
@@ -374,6 +386,8 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
+			% When the document is created, it is automatically added to the experiment.
+			%
 				input_args = {};
 				if nargin>1,
 					input_args{end+1} = epochid;
@@ -383,13 +397,22 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					'thing.name',ndi_thing_obj.name,...
 					'thing.reference', ndi_thing_obj.reference, ...
 					'thing.type',ndi_thing_obj.type, ...
-					'thing.direct',ndi_thing_obj.direct) + ...
+					'thing.direct',ndi_thing_obj.direct);
+				if nargin>1,
+					ndi_document_obj = ndi_document_obj + ndi_document('epochid.json', 'epochid', epochid);
+				end;
+				ndi_document_obj = ndi_document_obj + ...
 					newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');
 				underlying_id = [];
 				if ~isempty(ndi_thing_obj.underlying_thing),
 					underlying_id = ndi_thing_obj.underlying_thing.id();
+					if isempty(underlying_id), % underlying thing hasn't been saved yet
+						newdoc = ndi_thing_obj.underlying_thing.newdocument(input_args{:});
+						underlying_id = newdoc.id();
+					end;
 				end;
-				ndi_document_obj = setdependencyvalue(ndi_document_obj,'underlying_thing_id',underlying_id);
+				ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_thing_id',underlying_id);
+				ndi_thing_obj.experiment.database_add(ndi_document_obj);
 		end; % newdocument()
 
 		function sq = searchquery(ndi_thing_obj, epochid)
@@ -404,7 +427,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				sq = cat(2,sq, ...
 					{'thing.name',ndi_thing_obj.name,...
 					 'thing.type',ndi_thing_obj.type,...
-					 'thing.ndi_thing_class', class(ndi_thing_obj), 
+					 'thing.ndi_thing_class', class(ndi_thing_obj),  ...
 					 'thing.reference', ndi_thing_obj.reference, ...
 					'ndi_document.type','ndi_thing' });
 

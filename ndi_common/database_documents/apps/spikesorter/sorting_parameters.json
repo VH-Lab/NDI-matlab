@@ -6,10 +6,14 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on": [
+        {   "name": "thing_id",
+            "value": ""
+        }
+	],
 	"sorting_parameters": {
 		"min_rng": 0,
 		"num_pca_features": 0

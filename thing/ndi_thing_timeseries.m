@@ -29,7 +29,7 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 			%  NDI_TIMEREFERENCE object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 			%
 				if ndi_thing_timeseries_obj.direct,
-					[data,t,timeref] = ndi_thing_timeseries_obj.probe.readtimeseries(timeref_or_epoch, t0, t1);
+					[data,t,timeref] = ndi_thing_timeseries_obj.underlying_thing.readtimeseries(timeref_or_epoch, t0, t1);
 				else,
 					if isa(timeref_or_epoch,'ndi_timereference'),
 						timeref = timeref_or_epoch;
@@ -90,7 +90,7 @@ classdef ndi_thing_timeseries < ndi_thing & ndi_timeseries
 			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%  
 				if ndi_thing_timeseries_obj.direct,
-					error(['Cannot add external observations to an NDI_THING that is directly based on NDI_PROBE.']);
+					error(['Cannot add external observations to an NDI_THING that is directly based on another NDI_THING.']);
 				end;
 				[ndi_thing_timeseries_obj, epochdoc] = addepoch@ndi_thing(ndi_thing_timeseries_obj, epochid, epochclock, t0_t1);
 					

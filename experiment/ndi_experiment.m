@@ -194,7 +194,7 @@ classdef ndi_experiment < handle
 				ndi_experiment_obj.database.add(document);
 		end; % database_add()
 
-		function ndi_experiment_obj = database_rm(ndi_experiment_obj, doc_unique_id)
+		function ndi_experiment_obj = database_rm(ndi_experiment_obj, doc_unique_id, varargin)
 			% DATABASE_RM - Remove an NDI_DOCUMENT with a given document ID from an NDI_EXPERIMENT object
 			%
 			% NDI_EXPERIMENT_OBJ = DATABASE_RM(NDI_EXPERIMENT_OBJ, DOC_UNIQUE_ID)
@@ -206,7 +206,15 @@ classdef ndi_experiment < handle
 			% NDI_DOCUMENTS is passed for DOC, then the document unique ids are retrieved and they
 			% are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.
 			%
+			% This function also takes parameters as name/value pairs that modify its behavior:
+			% Parameter (default)        | Description
+			% --------------------------------------------------------------------------------
+			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
+			%
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
+				ErrIfNotFound = 0;
+				assign(varargin{:});
+
 				if isempty(doc_unique_id),
 					return;
 				end; % nothing to do
@@ -215,7 +223,11 @@ classdef ndi_experiment < handle
 					if ischar(doc_unique_id), % it is a single doc id
 						mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',doc_unique_id,''));
 						if isempty(mydoc), % 
-							error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+							if ErrIfNotFound,
+								error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+							else,
+								return; % nothing to do
+							end;
 						end;
 						doc_unique_id = mydoc; % now a cell list
 					elseif isa(doc_unique_id,'ndi_document'),
@@ -481,7 +493,7 @@ classdef ndi_experiment < handle
 
 				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
 						'ndi_document.experiment_id', ndi_experiment_obj.id()}, ...
-					varargin{:}); 
+						varargin{:}); 
 				doc = ndi_experiment_obj.database_search(sq);
 				things = {};
 				for i=1:numel(doc),

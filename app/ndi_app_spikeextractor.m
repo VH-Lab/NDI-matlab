@@ -8,7 +8,7 @@ classdef ndi_app_spikeextractor < ndi_app
 	methods
 
 		function ndi_app_spikeextractor_obj = ndi_app_spikeextractor(varargin)
-			% NDI_APP_SPIKEEXTRACTOR - an app to extract probes found in experiments
+			% NDI_APP_SPIKEEXTRACTOR - an app to extract things found in experiments
 			%
 			% NDI_APP_SPIKEEXTRACTOR_OBJ = NDI_APP_SPIKEEXTRACTOR(EXPERIMENT)
 			%
@@ -60,10 +60,9 @@ classdef ndi_app_spikeextractor < ndi_app
 		end; % filter()
 
 		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
-			% EXTRACT - method that extracts spikes from epochs of an NDI_TIMESERIES_OBJ (such as NDI_PROBE or NDI_THING)
+			% EXTRACT - method that extracts spikes from epochs of an NDI_THING_TIMESERIES_OBJ 
 			%
 			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
-			% NAME is the probe name if any
 			% TYPE is the type of probe if any
 			% combination of NAME and TYPE must return at least one probe from experiment
 			% EPOCH is an index number or id to select epoch to extract, or can be a cell array of epoch number/ids
@@ -116,12 +115,14 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					% begin an epoch, get ready
 
-					spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-						{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
-					old_spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
-					spiketimes_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-						{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
-					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(spiketimes_searchq);
+					q_app = ndi_query(ndi_app_spikeextractor_obj.searchquery());
+					q_epoch = ndi_query('epochid', 'exact_string', epochstring, '');
+					q_sw = ndi_query('spikewaves.extraction_name','exact_string', extraction_name,'');
+					q_st = ndi_query('spiketimes.extraction_name','exact_string', extraction_name,'');
+					q_thing = ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+						
+					old_spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_sw&q_thing);
+					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_st&q_thing);
 
 					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo,
 						% we already have this epoch
@@ -146,7 +147,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					filterstruct = ndi_app_spikeextractor_obj.makefilterstruct(extraction_doc, sample_rate);
 
-					% Clear extraction within probe with extraction_name
+					% Clear extraction within thing with extraction_name
 					ndi_app_spikeextractor_obj.clear_spikewaves_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
 					ndi_app_spikeextractor_obj.clear_spiketimes_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
 
@@ -197,7 +198,7 @@ classdef ndi_app_spikeextractor < ndi_app
 						if read_end_sample > end_sample,
 							read_end_sample = end_sample;
 						end;
-						% Read from probe in epoch n from start_time to end_time
+						% Read from thing in epoch n from start_time to end_time
 						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
 						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
 						%size(data), end_sample-start_sample+1  % display sizes of data read
@@ -429,13 +430,16 @@ classdef ndi_app_spikeextractor < ndi_app
 
 			% Look for any docs matching extraction name and remove them
 			% Concatenate app query parameters and extraction_name parameter
-			extract_searchq = {'ndi_document.name', extraction_name, 'spike_extraction_parameters.filter_type','(.*)'};
+			extract_searchq = ndi_query('','isa','spike_extraction_parameters.json','') & ...
+				ndi_query('ndi_document.name', 'exact_string', extraction_name,'');
 			extract_doc = ndi_app_spikeextractor_obj.experiment.database_search(extract_searchq);
 			epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
 			if ~isempty(extract_doc),
 				for i=1:numel(extract_doc),
-					spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-						{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
+					spikewaves_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
+						ndi_query('epochid','exact_string', epoch_string,'') & ...
+						ndi_query('spikewaves.extraction_name','exact_string',extraction_name,'') & ...
+						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id(),'');
 					mydoc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
 					ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 				end;
@@ -457,12 +461,15 @@ classdef ndi_app_spikeextractor < ndi_app
 
 			% Look for any docs matching extraction name and remove them
 			% Concatenate app query parameters and extraction_name parameter
-			extract_searchq = {'ndi_document.name', extraction_name, 'spike_extraction_parameters.filter_type','(.*)'};
+			extract_searchq = ndi_query('','isa','spike_extraction_parameters.json','') & ...
+				ndi_query('ndi_document.name', 'exact_string', extraction_name,'');
 			extract_doc = ndi_app_spikeextractor_obj.experiment.database_search(extract_searchq);
 			if ~isempty(extract_doc),
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
-				times_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-					{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
+				times_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
+					ndi_query('epochid','exact_string', epoch_string,'') & ...
+					ndi_query('spiketimes.extraction_name','exact_string',extraction_name,'') & ...
+						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id(),'');
 				mydoc = ndi_app_spikeextractor_obj.experiment.database_search(times_searchq);
 				ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 			end;
@@ -488,10 +495,12 @@ classdef ndi_app_spikeextractor < ndi_app
 			%
 			% Reads the spikewaves for an NDI_TIMESERIES object for a given EPOCH and EXTRACTION_NAME.
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
-				spikewaves_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-					{'epochid', epoch_string, 'spikewaves.extraction_name', extraction_name});
+				spikewaves_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery()) & ...
+					ndi_query('epochid','exact_string',epoch_string,'') & ...
+					ndi_query('spikewaves.extraction_name','exact_string',extraction_name,'') & ...
+					ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 				spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
-				
+			
 				if numel(spikewaves_doc)==1,
 					spikewaves_doc = spikewaves_doc{1};
 					spikewaves_binarydoc = ndi_app_spikeextractor_obj.experiment.database_openbinarydoc(spikewaves_doc);
@@ -514,8 +523,11 @@ classdef ndi_app_spikeextractor < ndi_app
 			%
 			% Reads the spikewaves for an NDI_TIMESERIES object for a given EPOCH and EXTRACTION_NAME.
 				epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
-				spiketimes_searchq = cat(2,ndi_app_spikeextractor_obj.searchquery(), ...
-					{'epochid', epoch_string, 'spiketimes.extraction_name', extraction_name});
+				spiketimes_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery()) & ...
+					ndi_query('epochid','exact_string',epoch_string,'') & ...
+					ndi_query('spiketimes.extraction_name','exact_string',extraction_name,'') & ...
+					ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+				
 				spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(spiketimes_searchq);
 				
 				if numel(spiketimes_doc)==1,
@@ -530,195 +542,6 @@ classdef ndi_app_spikeextractor < ndi_app
 				end;
 	
 		end; % load_spikewaves_epoch
-
-		function spikewaves = load_spikes(ndi_app_spikeextractor_obj, ndi_probe_obj, epoch, extraction_name)
-		% LOADSPIKES - Load all spikewaves records from experiment database
-		%
-		% SW = LOADSPIKES(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_PROBE_OBJ, EPOCH, EXTRACTION_NAME)
-		% SW has shape (samples, channels, nspikes)
-		%
-		% Loads stored spikewaves generated by NDI_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
-		%
-			spikes_searchq = cat(2, ndi_app_spikeextractor_obj.searchquery(), ...
-				{'document_class.class_name','spikes'});
-			spikes_searchq = cat(2, spikes_searchq, ndi_probe_obj.searchquery());
-			spikes_searchq = cat(2, spikes_searchq, ...
-				{'spike_extraction.extraction_name', extraction_name});
-			spikes_searchq = cat(2, spikes_searchq, ...
-				{'spike_extraction.epoch', epoch});
-			docs = ndi_app_spikeextractor_obj.experiment.database_search(spikes_searchq);
-
-			% TODO How to get them in order? maybe add epoch_number to spikes and times ndi_doc
-			if ~isempty(docs)
-				% TODO make sure multiple epochs work
-				for i=1:numel(docs)
-					spikes_doc = ndi_app_spikeextractor_obj.experiment.database_search(ndi_query('ndi_document.id','exact_string',docs{i}.id,''));
-					spikes_doc = celloritem(spikes_doc,1);
-					spikewaves_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database_openbinarydoc(spikes_doc);
-					waveforms = [];
-
-					header_size = 512; % 512 bytes in the header
-
-					% step 1 - read header
-					spikewaves_binarydoc_fid.fseek(0,'bof');
-					parameters.numchannels = spikewaves_binarydoc_fid.fread(1,'uint8');      % now at 1 byte
-					parameters.S0 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 2 bytes
-					parameters.S1 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 3 bytes
-					parameters.name = spikewaves_binarydoc_fid.fread(80,'char');             % now at 83 bytes
-					parameters.name = char(parameters.name(find(parameters.name)))';
-					parameters.ref = spikewaves_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
-					parameters.comment = spikewaves_binarydoc_fid.fread(80,'char');          % now at 164 bytes
-					parameters.comment = char(parameters.comment(find(parameters.comment)))';
-					parameters.samplingrate = double(spikewaves_binarydoc_fid.fread(1,'float32'));
-
-					% step 2 - read the waveforms
-					my_wave_start = 1;
-					my_wave_end = Inf;
-					% each data points takes 4 bytes; the number of samples is equal to the number of channels
-					% multiplied by the number of samples taken from each channel, which is S1-S0+1
-					samples_per_channel = parameters.S1-parameters.S0+1;
-					wave_size = parameters.numchannels * samples_per_channel;
-
-					data_size = 4; % 32 bit floats
-
-					if my_wave_start>0,
-						spikewaves_binarydoc_fid.fseek(header_size+data_size*(my_wave_start-1)*wave_size,'bof'); % move to the right place in the file
-						data_size_to_read = (my_wave_end-my_wave_start+1)*wave_size;
-						waveforms = spikewaves_binarydoc_fid.fread(data_size_to_read,'float32');
-						waves_actually_read = length(waveforms)/(parameters.numchannels*samples_per_channel);
-						if abs(waves_actually_read-round(waves_actually_read))>0.0001,
-							error(['Got an odd number of samples for these spikes. Corrupted file perhaps?']);
-						end;
-						concatenated_spikes = reshape(waveforms,samples_per_channel,parameters.numchannels,waves_actually_read);
-					end;
-					% TODO make sure multiple epochs work
-					%if i > 1
-					%	waveforms = cat(2,)
-					ndi_app_spikeextractor_obj.experiment.database_closebinarydoc(spikewaves_binarydoc_fid);
-				end
-				% warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
-			end
-		end % load_spikes()
-
-		function concatenated_times = load_times(ndi_app_spikeextractor_obj, ndi_probe_obj, extraction_name)
-		% LOADSPIKETIMES - Load all spiketimes records from experiment database
-		%
-		% ST = LOADSPIKETIMES(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_PROBE_OBJ, EXTRACTION_NAME)
-		%
-		% Loads stored spiketimes generated by NDI_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
-		%
-			times_searchq = cat(2, ndi_app_spikeextractor_obj.searchquery(), ...
-				{'document_class.class_name','times'});
-			times_searchq = cat(2, times_searchq, ndi_probe_obj.searchquery());
-			times_searchq = cat(2, times_searchq, ...
-				{'spike_extraction.extraction_name',extraction_name});
-			times_searchq = cat(2, spikes_searchq, ...
-				{'spike_extraction.epoch', epoch});
-			docs = ndi_app_spikeextractor_obj.experiment.database_search(times_searchq);
-
-			% TODO How to get them in order? maybe add epoch_number to times and times ndi_doc
-			if ~isempty(docs)
-				% TODO make sure multiple epochs work
-				for i=1:numel(docs)
-					times_doc = ndi_app_spikeextractor_obj.experiment.database_search(ndi_query('ndi_document.id','exact_string',docs{i}.id(),''));
-					times_doc = celloritem(times_doc,1);
-					spiketimes_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database_openbinarydoc(times_doc);
-
-					% step 1 - read header
-					spiketimes_binarydoc_fid.fseek(0,'bof');
-					parameters.numchannels = spiketimes_binarydoc_fid.fread(1,'uint8');      % now at 1 byte
-					parameters.S0 = spiketimes_binarydoc_fid.fread(1,'int8');                % now at 2 bytes
-					parameters.S1 = spiketimes_binarydoc_fid.fread(1,'int8');                % now at 3 bytes
-					parameters.name = spiketimes_binarydoc_fid.fread(80,'char');             % now at 83 bytes
-					parameters.name = char(parameters.name(find(parameters.name)))';
-					parameters.ref = spiketimes_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
-					parameters.comment = spiketimes_binarydoc_fid.fread(80,'char');          % now at 164 bytes
-					parameters.comment = char(parameters.comment(find(parameters.comment)))';
-					parameters.samplingrate = double(spiketimes_binarydoc_fid.fread(1,'float32'));
-
-					spiketimes_binarydoc_fid.fseek( 512, 'bof');
-
-					spiketimes = spiketimes_binarydoc_fid.fread(Inf,'float32');
-					epoch = [parameters.ref];
-					% 1xspiketimes
-					epocharray = repmat(epoch, [1, size(spiketimes, 1)]);
-
-					concatenated_times = cat(1, epocharray, spiketimes');
-					% TODO make sure multiple epochs work
-					% if i > 1
-					%	waveforms = cat(2,)
-					ndi_app_spikeextractor_obj.experiment.database_closebinarydoc(spiketimes_binarydoc_fid);
-				end
-				% warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
-			end
-		end % loadspiketimes()
-
-		function parameters = load_parameters(ndi_app_spikeextractor_obj, ndi_probe_obj)
-		% LOAD_PARAMETERS - Load parameters matching the probe
-		%
-		% PARAMETERS = LOADSPIKES(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_PROBE_OBJ, EXTRACTION_NAME)
-		%
-		% Loads stored spikewaves generated by NDI_APP_SPIKEEXTRACTOR/SPIKE_EXTRACT_PROBES
-		%
-			parameters_searchq = cat(2, ndi_app_spikeextractor_obj.searchquery(), ...
-				{'document_class.class_name','extraction_parameters'});
-			parameters_searchq = cat(2, parameters_searchq, ndi_probe_obj.searchquery());
-			% TODO add extraction name as a feature
-			% parameters_searchq = cat(2, parameters_searchq, ...
-			%	{'spike_extraction.extraction_name',extraction_name});
-			docs = ndi_app_spikeextractor_obj.experiment.database_search(parameters_searchq);
-
-			% TODO How to get them in order? maybe add epoch_number to spikes and times ndi_doc
-			if ~isempty(docs)
-				% TODO make sure multiple epochs work
-				for i=1:numel(docs)
-					parameters_doc = ndi_app_spikeextractor_obj.experiment.database_search(ndi_query('ndi_document.id','exact_string',docs{i}.id(),''));
-					parameters_doc = celloritem(parameters_doc,1);
-					error('I do not think this next line will succeed.');
-					spikewaves_binarydoc_fid = ndi_app_spikeextractor_obj.experiment.database.read(parameters_doc); % ??
-					waveforms = [];
-
-					header_size = 512; % 512 bytes in the header
-
-						% step 1 - read header
-					spikewaves_binarydoc_fid.fseek(0,'bof');
-					parameters.numchannels = spikewaves_binarydoc_fid.fread(1,'uint8');      % now at 1 byte
-					parameters.S0 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 2 bytes
-					parameters.S1 = spikewaves_binarydoc_fid.fread(1,'int8');                % now at 3 bytes
-					parameters.name = spikewaves_binarydoc_fid.fread(80,'char');             % now at 83 bytes
-					parameters.name = char(parameters.name(find(parameters.name)))';
-					parameters.ref = spikewaves_binarydoc_fid.fread(1,'uint8');              % now at 84 bytes
-					parameters.comment = spikewaves_binarydoc_fid.fread(80,'char');          % now at 164 bytes
-					parameters.comment = char(parameters.comment(find(parameters.comment)))';
-					parameters.samplingrate= double(spikewaves_binarydoc_fid.fread(1,'float32'));
-
-					% step 2 - read the waveforms
-					my_wave_start = 1;
-					my_wave_end = Inf;
-					% each data points takes 4 bytes; the number of samples is equal to the number of channels
-					%       multiplied by the number of samples taken from each channel, which is S1-S0+1
-					samples_per_channel = parameters.S1-parameters.S0+1;
-					wave_size = parameters.numchannels * samples_per_channel;
-
-					data_size = 4; % 32 bit floats
-
-					if my_wave_start>0,
-						spikewaves_binarydoc_fid.fseek(header_size+data_size*(my_wave_start-1)*wave_size,'bof'); % move to the right place in the file
-						data_size_to_read = (my_wave_end-my_wave_start+1)*wave_size;
-						waveforms = spikewaves_binarydoc_fid.fread(data_size_to_read,'float32');
-						waves_actually_read = length(waveforms)/(parameters.numchannels*samples_per_channel);
-						if abs(waves_actually_read-round(waves_actually_read))>0.0001,
-							error(['Got an odd number of samples for these spikes. Corrupted file perhaps?']);
-						end;
-						concatenated_spikes = reshape(waveforms,samples_per_channel,parameters.numchannels,waves_actually_read);
-					end;
-					% TODO make sure multiple epochs work
-					% if i > 1
-					%	waveforms = cat(2,)
-				end
-				% warning(['concatenated ' num2str(i) ' epochs(s) with same extraction name within probe'])
-			end
-		end % load_parameters()
 
 	end % methods
 
