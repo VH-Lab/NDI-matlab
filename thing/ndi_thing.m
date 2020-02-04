@@ -55,7 +55,6 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					thing_name = thing_doc.document_properties.thing.name;
 					thing_reference = thing_doc.document_properties.thing.reference;
 					thing_type = thing_doc.document_properties.thing.type;
-					thing_doc.dependency_value('underlying_thing_id'),
 					if isempty(thing_doc.dependency_value('underlying_thing_id')),
 						thing_underlying_thing = [];
 					else,
