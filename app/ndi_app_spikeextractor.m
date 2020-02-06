@@ -158,17 +158,17 @@ classdef ndi_app_spikeextractor < ndi_app
 							'spikewaves.s0', extraction_doc.document_properties.spike_extraction_parameters.spike_start_time,...
 							'spikewaves.s1', extraction_doc.document_properties.spike_extraction_parameters.spike_end_time,...
 							'epochid', epoch_string) ...
-							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
+							+ ndi_app_spikeextractor_obj.newdocument();
 					spikes_doc = spikes_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
-					spikes_doc = spikes_doc.set_dependency_value('ndi_timeseries_obj_id',ndi_timeseries_obj.id());
+					spikes_doc = spikes_doc.set_dependency_value('thing_id',ndi_timeseries_obj.id());
 
 					% Create times ndi_doc
 					times_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spiketimes', ...
 							'spiketimes.extraction_name', extraction_name, ...
 							'epochid', epoch_string) ...
-							+ ndi_timeseries_obj.newdocument(epoch_string) + ndi_app_spikeextractor_obj.newdocument();
+							+ ndi_app_spikeextractor_obj.newdocument();
 					times_doc = times_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
-					times_doc = times_doc.set_dependency_value('ndi_timeseries_obj_id',ndi_timeseries_obj.id());
+					times_doc = times_doc.set_dependency_value('thing_id',ndi_timeseries_obj.id());
 
 					% Add docs to database
 					ndi_app_spikeextractor_obj.experiment.database_add(spikes_doc);

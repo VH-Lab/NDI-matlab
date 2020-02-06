@@ -83,6 +83,8 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				ndi_thing_obj.type = thing_type;
 				ndi_thing_obj.underlying_thing = thing_underlying_thing;
 				ndi_thing_obj.direct = direct;
+
+				ndi_thing_obj.newdocument();
 		end; % ndi_thing()
 
 	% NDI_EPOCHSET-based methods
@@ -343,11 +345,11 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% UNIQUE_REF = ID(NDI_THING_OBJ)
 			%
 			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
-			% document for the thing, then one is created.
+			% document for the thing, then an error is returned.
 				thing_id = [];
 				thing_doc = ndi_thing_obj.load_thing_doc();
 				if isempty(thing_doc),
-					thing_doc = newdocument(ndi_thing_obj);
+					error('no thing document.');
 				end;
 				thing_id = thing_doc.id();
 		end; % id()
@@ -374,10 +376,10 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 
 	%%% NDI_DOCUMENTSERVICE methods
 
-		function ndi_document_obj = newdocument(ndi_thing_obj, epochid)
+		function ndi_document_obj = newdocument(ndi_thing_obj)
 			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a thing
 			%
-			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_THING_OBJ, [EPOCHID])
+			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_THING_OBJ)
 			%
 			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
 			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ and the 
@@ -387,31 +389,27 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% When the document is created, it is automatically added to the experiment.
 			%
-				input_args = {};
-				if nargin>1,
-					input_args{end+1} = epochid;
-				end;
-				ndi_document_obj = ndi_document('ndi_document_thing',...
-					'thing.ndi_thing_class', class(ndi_thing_obj), ...
-					'thing.name',ndi_thing_obj.name,...
-					'thing.reference', ndi_thing_obj.reference, ...
-					'thing.type',ndi_thing_obj.type, ...
-					'thing.direct',ndi_thing_obj.direct);
-				if nargin>1,
-					ndi_document_obj = ndi_document_obj + ndi_document('ndi_document_epochid.json', 'epochid', epochid);
-				end;
-				ndi_document_obj = ndi_document_obj + ...
-					newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');
-				underlying_id = [];
-				if ~isempty(ndi_thing_obj.underlying_thing),
-					underlying_id = ndi_thing_obj.underlying_thing.id();
-					if isempty(underlying_id), % underlying thing hasn't been saved yet
-						newdoc = ndi_thing_obj.underlying_thing.newdocument(input_args{:});
-						underlying_id = newdoc.id();
+				ndi_document_obj = ndi_thing_obj.load_thing_doc();
+				if isempty(ndi_document_obj),
+					ndi_document_obj = ndi_document('ndi_document_thing',...
+						'thing.ndi_thing_class', class(ndi_thing_obj), ...
+						'thing.name',ndi_thing_obj.name,...
+						'thing.reference', ndi_thing_obj.reference, ...
+						'thing.type',ndi_thing_obj.type, ...
+						'thing.direct',ndi_thing_obj.direct);
+					ndi_document_obj = ndi_document_obj + ...
+						newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');
+					underlying_id = [];
+					if ~isempty(ndi_thing_obj.underlying_thing),
+						underlying_id = ndi_thing_obj.underlying_thing.id();
+						if isempty(underlying_id), % underlying thing hasn't been saved yet
+							newdoc = ndi_thing_obj.underlying_thing.newdocument();
+							underlying_id = newdoc.id();
+						end;
 					end;
+					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_thing_id',underlying_id);
+					ndi_thing_obj.experiment.database_add(ndi_document_obj);
 				end;
-				ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_thing_id',underlying_id);
-				ndi_thing_obj.experiment.database_add(ndi_document_obj);
 		end; % newdocument()
 
 		function sq = searchquery(ndi_thing_obj, epochid)

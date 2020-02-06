@@ -39,11 +39,9 @@ p = E.getprobes(); % should return 1 probe
 d_filter = filtfilt(b,a,d);
 
 mything1 = ndi_thing_timeseries(E,'mydirectthing',p{1}.reference,'field', p{1}, 1);
-doc = mything1.newdocument();
 
 et = p{1}.epochtable;
 mything2 = ndi_thing_timeseries(E,'myindirectthing',p{1}.reference,'lfp', p{1}, 0);
-doc2 = mything2.newdocument();
 [mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
 et_t1 = mything1.epochtable();
