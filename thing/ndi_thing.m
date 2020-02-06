@@ -343,13 +343,13 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% UNIQUE_REF = ID(NDI_THING_OBJ)
 			%
 			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
-			% document for the thing, then empty is returned.
-
+			% document for the thing, then one is created.
 				thing_id = [];
 				thing_doc = ndi_thing_obj.load_thing_doc();
-				if ~isempty(thing_doc),
-					thing_id = thing_doc.id();
+				if isempty(thing_doc),
+					thing_doc = newdocument(ndi_thing_obj);
 				end;
+				thing_id = thing_doc.id();
 		end; % id()
 
 		function thing_docs = load_all_thing_docs(ndi_thing_obj)
@@ -398,7 +398,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					'thing.type',ndi_thing_obj.type, ...
 					'thing.direct',ndi_thing_obj.direct);
 				if nargin>1,
-					ndi_document_obj = ndi_document_obj + ndi_document('epochid.json', 'epochid', epochid);
+					ndi_document_obj = ndi_document_obj + ndi_document('ndi_document_epochid.json', 'epochid', epochid);
 				end;
 				ndi_document_obj = ndi_document_obj + ...
 					newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');

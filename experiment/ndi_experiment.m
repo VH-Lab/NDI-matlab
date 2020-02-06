@@ -359,27 +359,16 @@ classdef ndi_experiment < handle
 			%
 				obj = [];
 
-				z = []; 
-				try
-					z=feval(obj_classname);
-				end;
-
 				trydaqsystem = 0;
 				trydatabase = 0;
 				tryprobelist = 0;
 
-				if isempty(z),
-					trydaqsystem = 1;
-					trydatabase = 0;
+				if isa_text(obj_classname,'ndi_probe'),
 					tryprobelist = 1;
+				elseif isa(obj_classname,'ndi_daqsystem'),
+					trydaqsystem = 1;
 				else,
-					if isa(z,'ndi_probe'),
-						tryprobelist = 1;
-					elseif isa(z,'ndi_daqsystem'),
-						trydaqsystem = 1;
-					else,
-						trydatabase = 0;
-					end;
+					trydatabase = 1;
 				end;
 
 				if trydaqsystem,

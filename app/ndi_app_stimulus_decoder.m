@@ -48,24 +48,19 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 				E = ndi_app_stimulus_decoder_obj.experiment;
 
-				sq_probe = ndi_query(ndi_thing_stim.searchquery());
+				sq_probe = ndi_query('','depends_on','stimulus_thing_id',ndi_thing_stim.id());
 				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','stimulus_presentation',''); % presentation
-				sq_tune = ndi_query('','isa','stimulus_tuningcurve','');
+				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
 
 				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
-				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_tune);
 
 				if reset,
-					disp(['Looking for dependent documents before deleting for reset...']);
 					% delete existing documents
 					E.database_rm(existing_doc_stim);
-					E.database_rm(existing_doc_tune);
 					existing_doc_stim = {};
-					existing_doc_tune = {};
 				end;
 
-				existingdocs = cat(1,existing_doc_stim(:),existing_doc_tune(:));
+				existingdocs = cat(1,existing_doc_stim(:));
 
 				% determine epochs that are finished 
 				epoch_finished = {};
@@ -74,13 +69,13 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
 				end;
 
-				et = ndi_probe_stim.epochtable;
+				et = ndi_thing_stim.epochtable();
 
 				epochsremaining = setdiff({et.epoch_id}, epoch_finished);
 
 				for j=1:numel(epochsremaining),
 					% decode stimuli
-					[data,t,timeref] = ndi_probe_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
+					[data,t,timeref] = ndi_thing_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
 					% stimulus
 					mystim = emptystruct('parameters');
 					for k=1:numel(data.parameters),

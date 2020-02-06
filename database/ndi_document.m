@@ -187,7 +187,6 @@ classdef ndi_document
 			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
 			% and, if there is a dependency with a given 'dependency_name', then the value of the
 			% dependency is set to DEPENDENCY_VALUE. 
-			% field (either 'depends_on' or 'name'), then D is empty and an error is generated.
 			%
 			% This function accepts name/value pairs that alter its default behavior:
 			% Parameter (default)      | Description
@@ -202,13 +201,18 @@ classdef ndi_document
 				notfound = 1;
 
 				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				d_struct = struct('name',dependency_name,'value',value);
 
 				if hasdependencies,
 					matches = find(strcmpi(dependency_name,{ndi_document_obj.document_properties.depends_on.name}));
 					if numel(matches)>0,
 						notfound = 0;
 						ndi_document_obj.document_properties.depends_on(matches(1)).value = value;
+					elseif ~ErrorIfNotFound, % add it
+						ndi_document_obj.document_properties.depends_on(end+1) = d_struct;
 					end;
+				elseif ~ErrorIfNotFound,
+					ndi_document_obj.document_properties.depends_on = d_struct;
 				end;
 
 				if notfound & ErrorIfNotFound,

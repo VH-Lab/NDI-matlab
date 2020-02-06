@@ -116,7 +116,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					% begin an epoch, get ready
 
 					q_app = ndi_query(ndi_app_spikeextractor_obj.searchquery());
-					q_epoch = ndi_query('epochid', 'exact_string', epochstring, '');
+					q_epoch = ndi_query('epochid', 'exact_string', epoch_string, '');
 					q_sw = ndi_query('spikewaves.extraction_name','exact_string', extraction_name,'');
 					q_st = ndi_query('spiketimes.extraction_name','exact_string', extraction_name,'');
 					q_thing = ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
@@ -439,7 +439,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					spikewaves_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
 						ndi_query('epochid','exact_string', epoch_string,'') & ...
 						ndi_query('spikewaves.extraction_name','exact_string',extraction_name,'') & ...
-						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id(),'');
+						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 					mydoc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
 					ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 				end;
@@ -469,7 +469,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				times_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
 					ndi_query('epochid','exact_string', epoch_string,'') & ...
 					ndi_query('spiketimes.extraction_name','exact_string',extraction_name,'') & ...
-						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id(),'');
+						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
 				mydoc = ndi_app_spikeextractor_obj.experiment.database_search(times_searchq);
 				ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 			end;
