@@ -128,6 +128,20 @@ classdef ndi_app_markgarbage < ndi_app
 						vi = cat(1,vi,mydoc{i}.document_properties.valid_interval);
 					end;
 				end;
+
+				if isempty(vi), % underlying things could still have garbage intervals
+					% check here: is there a potential for a bug or error if the clocks differ?
+					if isprop(ndi_epochset_obj,'underlying_thing'),
+						if ~isempty(ndi_epochset_obj.underlying_thing),
+							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_thing);
+							if ~isempty(vi_try),
+								vi = vi_try;
+								mydoc = mydoc_try;
+							end;
+						end;
+					end;
+				end;
+
 		end % loadvalidinterval()
 
 		function [intervals] = identifyvalidintervals(ndi_app_markgarbage_obj, ndi_epochset_obj, timeref, t0, t1)

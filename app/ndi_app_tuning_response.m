@@ -65,7 +65,7 @@ classdef ndi_app_tuning_response < ndi_app
 							doc_stim{i}.document_properties.epochid, ...
 							doc_stim{i}.document_properties.presentation_time(1).onset);
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time')); 
+							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
 							% time is 0 because stim_timeref is relative to 1st stim
 						if ~isempty(ts_epoch_t0_out),
 							ndi_ts_epochs{i} = ts_epoch_timeref.epoch;
@@ -78,7 +78,7 @@ classdef ndi_app_tuning_response < ndi_app
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
 						ctrl_search = ndi_query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
-							ndi_query('','isa','control_stimulus_ids','');
+							ndi_query('','isa','control_stimulus_ids.json','');
 						control_stim_doc = E.database_search(ctrl_search);
 						for j=1:numel(control_stim_doc);
 							% okay, now how to analyze these stims?
@@ -263,7 +263,6 @@ classdef ndi_app_tuning_response < ndi_app
 						else,
 							freq_mult(j) = 0;
 						end;
-
 					end;
 
 					response = stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
@@ -468,7 +467,7 @@ classdef ndi_app_tuning_response < ndi_app
 					reset = 0;
 				end;
 
-				sq_stimulus_thing = ndi_query('','depends_on','stimulus_thing_id','stimulus_thing_id');
+				sq_stimulus_thing = ndi_query('','depends_on','stimulus_thing_id',stimulus_thing_obj.id());
 				sq_stim = ndi_query('','isa','stimulus_presentation.json','');
 				stim_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_stimulus_thing);
 
