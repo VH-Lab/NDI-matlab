@@ -79,8 +79,8 @@ classdef ndi_app_markgarbage < ndi_app
 				% save new variable, clearing old
 				ndi_app_markgarbage_obj.clearvalidinterval(ndi_epochset_obj);
 				newdoc = ndi_app_markgarbage_obj.experiment.newdocument('apps/markgarbage/valid_interval',...
-						'valid_interval',vi) +  ...
-					ndi_epochset_obj.newdocument() + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
+						'valid_interval',vi) + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
+				newdoc = newdoc.set_dependency_value('thing_id',ndi_epochset_obj.id());
 				ndi_app_markgarbage_obj.experiment.database_add(newdoc);
 		end; % savevalidinterval()
 
@@ -97,7 +97,6 @@ classdef ndi_app_markgarbage < ndi_app
 			%      NDI_APP_MARKGARBAGE/LOADVALIDINTERVAL 
 
 				[vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
-
 				if ~isempty(mydoc),
 					ndi_app_markgarbage_obj.experiment.database_rm(mydoc);
 				end
@@ -117,11 +116,8 @@ classdef ndi_app_markgarbage < ndi_app
 
 				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
-				if isa(ndi_epochset_obj,'ndi_probe'),
-					searchq2 = ndi_epochset_obj.searchquery();
-					if ~isa(searchq2,'ndi_query'),
-						searchq2 = ndi_query(searchq2);
-					end;
+				if isa(ndi_epochset_obj,'ndi_thing'),
+					searchq2 = ndi_query('','depends_on','thing_id',ndi_epochset_obj.id());
 					searchq = searchq & searchq2; 
 				end
 
@@ -132,6 +128,20 @@ classdef ndi_app_markgarbage < ndi_app
 						vi = cat(1,vi,mydoc{i}.document_properties.valid_interval);
 					end;
 				end;
+
+				if isempty(vi), % underlying things could still have garbage intervals
+					% check here: is there a potential for a bug or error if the clocks differ?
+					if isprop(ndi_epochset_obj,'underlying_thing'),
+						if ~isempty(ndi_epochset_obj.underlying_thing),
+							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_thing);
+							if ~isempty(vi_try),
+								vi = vi_try;
+								mydoc = mydoc_try;
+							end;
+						end;
+					end;
+				end;
+
 		end % loadvalidinterval()
 
 		function [intervals] = identifyvalidintervals(ndi_app_markgarbage_obj, ndi_epochset_obj, timeref, t0, t1)
@@ -149,6 +159,7 @@ classdef ndi_app_markgarbage < ndi_app
 				explicitly_good_intervals = [];
 				vi = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
 				if isempty(vi),
+					intervals = [];
 					return;
 				end;
 				for i=1:size(vi,1),

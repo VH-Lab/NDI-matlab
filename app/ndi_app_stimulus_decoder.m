@@ -23,10 +23,10 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 		end % ndi_app_stimulus_decoder() creator
 
-		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_probe_stim, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_PROBE stimulus probe
+		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_thing_stim, reset)
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_THING stimulus probe
 			%
-			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_PROBE_STIM, [RESET])
+			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_THING_STIM, [RESET])
 			%
 			% Examines a the NDI_EXPERIMENT associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
@@ -48,26 +48,19 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 				E = ndi_app_stimulus_decoder_obj.experiment;
 
-				sq_probe = ndi_query(ndi_probe_stim.searchquery());
+				sq_probe = ndi_query('','depends_on','stimulus_thing_id',ndi_thing_stim.id());
 				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','stimulus_presentation',''); % presentation
-				sq_tune = ndi_query('','isa','stimulus_tuningcurve','');
+				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
 
 				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
-				existing_doc_tune = E.database_search(sq_probe&sq_e&sq_tune);
 
 				if reset,
-					disp(['Looking for dependent documents before deleting for reset...']);
 					% delete existing documents
-					dependent_stim_docs = ndi_findalldependencies(E,[],existing_doc_stim{:});
-					dependent_tune_docs = ndi_findalldependencies(E,[],existing_doc_tune{:});
 					E.database_rm(existing_doc_stim);
-					E.database_rm(existing_doc_tune);
 					existing_doc_stim = {};
-					existing_doc_tune = {};
 				end;
 
-				existingdocs = cat(1,existing_doc_stim(:),existing_doc_tune(:));
+				existingdocs = cat(1,existing_doc_stim(:));
 
 				% determine epochs that are finished 
 				epoch_finished = {};
@@ -76,13 +69,13 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
 				end;
 
-				et = ndi_probe_stim.epochtable;
+				et = ndi_thing_stim.epochtable();
 
 				epochsremaining = setdiff({et.epoch_id}, epoch_finished);
 
 				for j=1:numel(epochsremaining),
 					% decode stimuli
-					[data,t,timeref] = ndi_probe_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
+					[data,t,timeref] = ndi_thing_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
 					% stimulus
 					mystim = emptystruct('parameters');
 					for k=1:numel(data.parameters),
@@ -91,28 +84,16 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					presentation_time = emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
 					for z=1:numel(t.stimon),
 						timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
-								'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
-								'stimclose', t.stimopenclose(z,2) );
+							'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
+							'stimclose', t.stimopenclose(z,2) );
 						presentation_time(end+1) = timestruct;
 					end;
 
 					nd = E.newdocument('stimulus/stimulus_presentation.json',...
-							'presentation_order', data.stimid, 'presentation_time', presentation_time, 'stimuli',mystim) + ...
-						ndi_probe_stim.newdocument(epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+						'presentation_order', data.stimid, 'presentation_time', presentation_time, ...
+						'stimuli',mystim,'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+					nd = set_dependency_value(nd,'stimulus_thing_id',ndi_thing_stim.id());
 					newdocs{end+1} = nd;
-
-					% tuning curve
-
-					isblank = structfindfield(data.parameters,'isblank',1);
-					notblank = setdiff(1:numel(data.parameters),isblank);
-
-					whatvaries = structwhatvaries(data.parameters(notblank));
-
-					tuning_curve.whatvaries = whatvaries;
-					tuning_curve.control_stimulus_id = isblank;
-
-					nd2 = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve)+ndi_probe_stim.newdocument(epochsremaining{j});
-					newdocs{end+1} = nd2;
 				end;
 				E.database_add(newdocs);
 		end % 

@@ -1,4 +1,4 @@
-classdef ndi_probe < ndi_epochset & ndi_documentservice
+classdef ndi_probe < ndi_thing & ndi_documentservice
 % NDI_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -7,7 +7,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 % Typically, a probe is associated with an NDI_DAQSYSTEM that performs data acquisition or
 % even control of a stimulator. 
 %
-% A probe is uniquely identified by 3 fields:
+% A probe is uniquely identified by 3 fields and an experiment:
 %    experiment- the experiment where the probe is used
 %    name      - the name of the probe
 %    reference - the reference number of the probe
@@ -26,17 +26,15 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 %   
 
 	properties (GetAccess=public, SetAccess=protected)
-		experiment   % The handle of an NDI_EXPERIMENT object with which the NDI_PROBE is associated
-		name         % The name of the probe; this must start with a letter and contain no whitespace
-		reference    % The reference number of the probe; must be a non-negative integer
-		type         % The probe type; must start with a letter and contain no whitespace, and there is a standard list
 	end
 
 	methods
-		function obj = ndi_probe(experiment, name, reference, type)
+		function obj = ndi_probe(varargin)
 			% NDI_PROBE - create a new NDI_PROBE object
 			%
 			%  OBJ = NDI_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
+			%         or
+			%  OBJ = NDI_PROBE(EXPERIMENT, NDI_DOCUMENT_OBJ)
 			%
 			%  Creates an NDI_PROBE associated with an NDI_EXPERIMENT object EXPERIMENT and
 			%  with name NAME (a string that must start with a letter and contain no white space),
@@ -45,30 +43,12 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			%
 			%  NDI_PROBE is an abstract class, and a specific implementation must be called.
 			%
-				if nargin==0,
-					experiment = [];
-					name = [];
-					reference = 1;
-					type = 'empty';
-				end
-
-				if ~isempty(experiment) & ~isa(experiment, 'ndi_experiment'),
-					error(['experiment must be a member of the NDI_EXPERIMENT class.']);
-				end
-				if ~isempty(name) & ~islikevarname(name),
-					error(['name must start with a letter and contain no whitespace']);
-				end
-				if ~islikevarname(type),
-					error(['type must start with a letter and contain no whitespace']);
-				end
-				if ~(isint(reference) & reference >= 0)
-					error(['reference must be a non-negative integer.']);
-				end
-
-				obj.experiment = experiment;
-				obj.name = name;
-				obj.reference = reference;
-				obj.type = type;
+				inputs = varargin;
+				if nargin==4,
+					inputs{5} = [];
+					inputs{6} = 1;
+				end;
+				obj = obj@ndi_thing(inputs{:});
 		end % ndi_probe
 
 		function et = buildepochtable(ndi_probe_obj)
@@ -158,27 +138,6 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 				b = 0;
 		end % issyncgraphroot
 
-                function [cache,key] = getcache(ndi_probe_obj)
-			% GETCACHE - return the NDI_CACHE and key for NDI_PROBE
-			%
-			% [CACHE,KEY] = GETCACHE(NDI_PROBE_OBJ)
-			%
-			% Returns the CACHE and KEY for the NDI_PROBE object.
-			%
-			% The CACHE is returned from the associated experiment.
-			% The KEY is the probe's PROBESTRING.
-			%
-			% See also: NDI_FILENAVIGATOR, NDI_BASE
-
-				cache = [];
-				key = [];
-				if isa(ndi_probe_obj.experiment,'handle'),,
-					exp = ndi_probe_obj.experiment();
-					cache = exp.cache;
-					key = ndi_probe_obj.probestring;
-				end
-		end
-
 		function name = epochsetname(ndi_probe_obj)
 			% EPOCHSETNAME - the name of the NDI_PROBE object, for EPOCHNODES
 			%
@@ -188,7 +147,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			%
 			% For NDI_PROBE objects, this is the string 'probe: ' followed by
 			% PROBESTRING(NDI_PROBE_OBJ).
-				name = ['probe: ' probestring(ndi_probe_obj)];
+				name = ['probe: ' thingstring(ndi_probe_obj)];
 		end % epochsetname
 
 		function probestr = probestring(ndi_probe_obj)
@@ -200,6 +159,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 			%
 			% This is simply PROBESTR = [NDI_PROBE_OBJ.name ' _ ' in2str(NDI_PROBE_OBJ.reference)]
 			%
+				warning('depricated, use thingstring()');
 				probestr = [ndi_probe_obj.name ' _ ' int2str(ndi_probe_obj.reference) ];
 		end
 
@@ -270,51 +230,6 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 					strcmp(lower(ndi_probe_obj.type),lower({epochprobemap.type}));  % we have a match
 		end % epochprobemapmatch()
 
-		function ndi_document_obj = newdocument(ndi_probe_obj, varargin) % epochid, varargin)
-			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a probe
-			%
-			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_PROBE_OBJ, [EPOCHID])
-			%
-			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_probe'
-			% with the corresponding 'name' and 'reference' fields of the probe NDI_PROBE_OBJ.
-			% If EPOCHID is provided, then an EPOCHID field is filled out as well
-			% in accordance to 'ndi_document_epochid'.
-			%
-				if nargin>1,
-					epochid = varargin{1};
-				else,
-					epochid = [];
-				end;
-				ndi_document_obj = ndi_probe_obj.experiment.newdocument('ndi_document_probe',...
-					'probe.name',ndi_probe_obj.name,'probe.type',ndi_probe_obj.type,...
-					'probe.reference',ndi_probe_obj.reference);
-				if nargin>1,
-					newdoc = ndi_probe_obj.experiment.newdocument('ndi_document_epochid',...
-						'epochid', epochid);
-					ndi_document_obj = ndi_document_obj + newdoc;
-				end
-		end; % newdocument
-
-		function sq = searchquery(ndi_probe_obj, epochid)
-			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this probe
-			%
-			% SQ = SEARCHQUERY(NDI_PROBE_OBJ, [EPOCHID])
-			%
-			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_probe'
-			% with the corresponding 'name' and 'reference' fields of the probe NDI_PROBE_OBJ.
-			% If EPOCHID is provided, then an EPOCHID field is filled out as well.
-			%
-				sq = {'ndi_document.experiment_id',...
-					ndi_probe_obj.experiment.id(),...
-					'probe.name',ndi_probe_obj.name,...
-					'probe.type',ndi_probe_obj.type,...
-					'probe.reference',ndi_probe_obj.reference};
-
-				if nargin>1,
-					sq = cat(2,sq,{'epochid',epochid});
-				end
-		end;
-
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
 			% EQ - are 2 NDI_PROBE objects equal?
 			%
@@ -323,7 +238,7 @@ classdef ndi_probe < ndi_epochset & ndi_documentservice
 				b = 0;
 				if isa(ndi_probe_obj2,'ndi_probe'),
 					b = ( ndi_probe_obj1.experiment==ndi_probe_obj2.experiment & ...
-						strcmp(ndi_probe_obj1.probestring(), ndi_probe_obj2.probestring()) & ...
+						strcmp(ndi_probe_obj1.thingstring(), ndi_probe_obj2.thingstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
 				end;
 		end; % eq()

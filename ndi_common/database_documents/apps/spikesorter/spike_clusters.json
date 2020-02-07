@@ -6,14 +6,16 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
 	"depends_on":[
 		{	"name": "sorting_parameters_id",
 			"value": "" 
-		}
+		},
+        {   "name": "thing_id",
+            "value": ""
+        }
 	],
 	"spike_clusters": {
 		"sort_name": ""

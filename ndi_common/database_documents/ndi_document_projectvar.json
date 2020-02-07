@@ -7,7 +7,12 @@
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
-        },
+    },
+	"depends_on": [
+		{	"name": "thing_id",
+			"value": "" 
+		}
+	],
 	"projectvar": {
 		"project":						"",
 		"user":							"",

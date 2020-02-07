@@ -6,7 +6,6 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_probe.json" },
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
@@ -14,7 +13,10 @@
 	"depends_on":[
 		{	"name": "fit_input_id",
 			"value": 0
-		}
+		},
+        {   "name": "thing_id",
+            "value": 0
+        }
 	],
 	"vmspikefit": {
 		"fit_name": 						0,

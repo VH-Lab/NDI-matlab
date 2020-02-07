@@ -194,7 +194,7 @@ classdef ndi_experiment < handle
 				ndi_experiment_obj.database.add(document);
 		end; % database_add()
 
-		function ndi_experiment_obj = database_rm(ndi_experiment_obj, doc_unique_id)
+		function ndi_experiment_obj = database_rm(ndi_experiment_obj, doc_unique_id, varargin)
 			% DATABASE_RM - Remove an NDI_DOCUMENT with a given document ID from an NDI_EXPERIMENT object
 			%
 			% NDI_EXPERIMENT_OBJ = DATABASE_RM(NDI_EXPERIMENT_OBJ, DOC_UNIQUE_ID)
@@ -206,7 +206,15 @@ classdef ndi_experiment < handle
 			% NDI_DOCUMENTS is passed for DOC, then the document unique ids are retrieved and they
 			% are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.
 			%
+			% This function also takes parameters as name/value pairs that modify its behavior:
+			% Parameter (default)        | Description
+			% --------------------------------------------------------------------------------
+			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
+			%
 			% See also: DATABASE_ADD, NDI_EXPERIMENT
+				ErrIfNotFound = 0;
+				assign(varargin{:});
+
 				if isempty(doc_unique_id),
 					return;
 				end; % nothing to do
@@ -215,7 +223,11 @@ classdef ndi_experiment < handle
 					if ischar(doc_unique_id), % it is a single doc id
 						mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',doc_unique_id,''));
 						if isempty(mydoc), % 
-							error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+							if ErrIfNotFound,
+								error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+							else,
+								return; % nothing to do
+							end;
 						end;
 						doc_unique_id = mydoc; % now a cell list
 					elseif isa(doc_unique_id,'ndi_document'),
@@ -347,27 +359,16 @@ classdef ndi_experiment < handle
 			%
 				obj = [];
 
-				z = []; 
-				try
-					z=feval(obj_classname);
-				end;
-
 				trydaqsystem = 0;
 				trydatabase = 0;
 				tryprobelist = 0;
 
-				if isempty(z),
-					trydaqsystem = 1;
-					trydatabase = 0;
+				if isa_text(obj_classname,'ndi_probe'),
 					tryprobelist = 1;
+				elseif isa(obj_classname,'ndi_daqsystem'),
+					trydaqsystem = 1;
 				else,
-					if isa(z,'ndi_probe'),
-						tryprobelist = 1;
-					elseif isa(z,'ndi_daqsystem'),
-						trydaqsystem = 1;
-					else,
-						trydatabase = 0;
-					end;
+					trydatabase = 1;
 				end;
 
 				if trydaqsystem,
@@ -478,11 +479,12 @@ classdef ndi_experiment < handle
 			% has a value of VALUE2, etc. Properties of things are 'thing.name', 'thing.type',
 			% 'thing.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
 			% 
-
-				sq = cat(2,{'ndi_document.type', 'ndi_thing', ...
-						'ndi_document.experiment_id', ndi_experiment_obj.id()}, ...
-					varargin{:}); 
-				doc = ndi_experiment_obj.database_search(sq);
+				q_E = ndi_query(ndi_experiment_obj.searchquery());
+				q_t = ndi_query('ndi_document.type','exact_string','ndi_thing','');
+				for i=1:2:numel(varargin),
+					q_t = q_t & ndi_query(varargin{i},'exact_string',varargin{i+1},'');
+				end;
+				doc = ndi_experiment_obj.database_search(q_E&q_t);
 				things = {};
 				for i=1:numel(doc),
 					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);
