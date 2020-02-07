@@ -25,45 +25,63 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 		%
 		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
 		%
+            loadfromfile = 0;
+             if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document')
+                experiment = name
+                daqsystem_doc = thefilenavigator
+                
+                daqreader_id = dasystem_doc.document_properties.daqsystem.daqreader
+                filenavigator_id = dasystem_doc.document_properties.daqsystem.daqreader
+                docs = experiment.database_search(ndi_query('ndi_document.id','exactstring',daqreader_id,''))
+                daqreader_doc = docs{1}
+                docs = experiment.database_search(ndi_query('ndi_document.id','exactstring',filenavigator_id,''))
+                filenavigator_doc = docs{1}
+                
+                thedaqreader = ndi_daqreader(daqreader_doc)
+                thefilenavigator = ndi_filenavigator(experiment,filenavigator_doc)
+                
+                obj.name = thedaqreader;
+                    obj.filenavigator = thefilenavigator;
+                    obj.daqreader = thedaqreader;
+			
+            else
+                if nargin==0, % undocumented 0 argument creator
+                    name = '';
+                    thefilenavigator = [];
+                    thedaqreader = [];
+                end;
+                if nargin>=2,
+                    if ischar(thefilenavigator), % it is a command
+                        loadfromfile = 1;
+                        filename = name;
+                        name='';
+                        if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
+                            error(['Unknown command.']);
+                        else,
+                            thefilenavigator=[];
+                        end
+                    end;
+                end;
 
-			loadfromfile = 0;
+                if nargin>=3,
+                    if ~isa(thedaqreader,'ndi_daqreader'),
+                        error(['thedaqreader must be of type NDI_DAQREADER.']);
+                    end;
+                end;
 
-			if nargin==0, % undocumented 0 argument creator
-				name = '';
-				thefilenavigator = [];
-				thedaqreader = [];
-			end;
-			if nargin>=2,
-				if ischar(thefilenavigator), % it is a command
-					loadfromfile = 1;
-					filename = name;
-					name='';
-					if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
-						error(['Unknown command.']);
-					else,
-						thefilenavigator=[];
-					end
-				end;
-			end;
+                if (nargin==1) | (nargin>3),
+                    error(['Function requires 2 or 3 input arguments exactly.']);
+                end
 
-			if nargin>=3,
-				if ~isa(thedaqreader,'ndi_daqreader'),
-					error(['thedaqreader must be of type NDI_DAQREADER.']);
-				end;
-			end;
-				
-			if (nargin==1) | (nargin>3),
-				error(['Function requires 2 or 3 input arguments exactly.']);
-			end
-
-			obj = obj@ndi_dbleaf(name);
-			if loadfromfile,
-				obj = obj.readobjectfile(filename);
-			else,
-				obj.name = name;
-				obj.filenavigator = thefilenavigator;
-				obj.daqreader = thedaqreader;
-			end
+                obj = obj@ndi_dbleaf(name);
+                if loadfromfile,
+                    obj = obj.readobjectfile(filename);
+                else,
+                    obj.name = name;
+                    obj.filenavigator = thefilenavigator;
+                    obj.daqreader = thedaqreader;
+                end
+            end
 		end % ndi_daqsystem
 
 		%% GUI functions
