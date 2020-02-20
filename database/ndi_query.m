@@ -114,45 +114,48 @@ classdef ndi_query
 			%
 				searchstructure = emptystruct('field','operation','param1','param2');
 				for i=1:numel(ndi_query_obj)
-					ss_here.field = ndi_query_obj(i).searchstructure.field;
-					% check to see if we have a special case that needs to be reduced
-					if strcmpi('isa',ndi_query_obj(i).searchstructure.operation), % replace with search structures
-						findinsubfield = struct('field','document_class.superclasses',...
-								'operation','hasanysubfield_contains_string',...
-								'param1','definition');
-						findinsubfield.param2 = ndi_query_obj(i).searchstructure.param2;
-						findinmainfield = struct('field','document_class.definition', ...
-								'operation','contains_string');
-						findinmainfield.param1 = ndi_query_obj(i).searchstructure.param1;
-						findinmainfield.param2 = '';
-						ss_here.field = '';
-						ss_here.operation = 'or';
-						ss_here.param1 = findinsubfield;
-						ss_here.param2 = findinmainfield;
-					elseif strcmpi('depends_on',ndi_query_obj(i).searchstructure.operation),
-						param1 = {'name','value'};
-						param2 = { ndi_query_obj(i).searchstructure.param1 ndi_query_obj(i).searchstructure.param2 };
-						if strcmp(param2{1},'*'), % ignore the name
-							param1 = param1(2);
-							param2 = param2(2);
+					for j=1:numel(ndi_query_obj(i).searchstructure),
+						ss_here = emptystruct('field','operation','param1','param2');
+						ss_here(1).field = ndi_query_obj(i).searchstructure(j).field;
+						% check to see if we have a special case that needs to be reduced
+						if strcmpi('isa',ndi_query_obj(i).searchstructure(j).operation), % replace with search structures
+							findinsubfield = struct('field','document_class.superclasses',...
+									'operation','hasanysubfield_contains_string',...
+									'param1','definition');
+							findinsubfield.param2 = ndi_query_obj(i).searchstructure(j).param1;
+							findinmainfield = struct('field','document_class.definition', ...
+									'operation','contains_string');
+							findinmainfield.param1 = ndi_query_obj(i).searchstructure(j).param1;
+							findinmainfield.param2 = '';
+							ss_here(1).field = '';
+							ss_here(1).operation = 'or';
+							ss_here(1).param1 = findinsubfield;
+							ss_here(1).param2 = findinmainfield;
+						elseif strcmpi('depends_on',ndi_query_obj(i).searchstructure(j).operation),
+							param1 = {'name','value'};
+							param2 = { ndi_query_obj(i).searchstructure(j).param1 ndi_query_obj(i).searchstructure(j).param2 };
+							if strcmp(param2{1},'*'), % ignore the name
+								param1 = param1(2);
+								param2 = param2(2);
+							end;
+							ss_here = struct('field','depends_on','operation','hasanysubfield_exact_string');
+							ss_here(1).param1 = param1;
+							ss_here(1).param2 = param2;
+						else, % regular case
+							ss_here(1).operation = ndi_query_obj(i).searchstructure(j).operation;
+							if isa(ndi_query_obj(i).searchstructure(j).param1,'ndi_query'),
+								ss_here(1).param1 = ndi_query_obj(i).searchstructure(j).param1.to_searchstructure();
+							else,
+								ss_here(1).param1 = ndi_query_obj(i).searchstructure(j).param1;
+							end;
+							if isa(ndi_query_obj(i).searchstructure(j).param2,'ndi_query'),
+								ss_here(1).param2 = ndi_query_obj(i).searchstructure(j).param2.to_searchstructure();
+							else,
+								ss_here(1).param2 = ndi_query_obj(i).searchstructure(j).param2;
+							end;
 						end;
-						ss_here = struct('field','depends_on','operation','hasanysubfield_exact_string');
-						ss_here.param1 = param1;
-						ss_here.param2 = param2;
-					else, % regular case
-						ss_here.operation = ndi_query_obj(i).searchstructure.operation;
-						if isa(ndi_query_obj(i).searchstructure.param1,'ndi_query'),
-							ss_here.param1 = ndi_query_obj(i).searchstructure.param1.to_searchstructure();
-						else,
-							ss_here.param1 = ndi_query_obj(i).searchstructure.param1;
-						end;
-						if isa(ndi_query_obj(i).searchstructure.param2,'ndi_query'),
-							ss_here.param2 = ndi_query_obj(i).searchstructure.param2.to_searchstructure();
-						else,
-							ss_here.param2 = ndi_query_obj(i).searchstructure.param2;
-						end;
+						searchstructure(end+1) = ss_here;
 					end;
-					searchstructure(end+1) = ss_here;
 				end;
 		end; % to_searchstructure();
 

@@ -72,6 +72,14 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		function [ndi_document_objs,doc_versions] = do_search(ndi_matlabdumbjsondb_obj, searchoptions, searchparams)
 			if isa(searchparams,'ndi_query'),
 				searchparams = searchparams.to_searchstructure;
+				if 0, % display
+					disp('search params');
+					for i=1:numel(searchparams),
+						searchparams(i),
+						searchparams(i).param1,
+						searchparams(i).param2,
+					end
+				end;
 			end;
 			ndi_document_objs = {};
 			[docs,doc_versions] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
