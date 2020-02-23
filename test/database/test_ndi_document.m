@@ -28,7 +28,7 @@ E = ndi_experiment_dir('exp1',dirname);
 doc = E.database_search({'subject.id','vhlab12345'});
 if ~isempty(doc),
 	for i=1:numel(doc),
-		E.database_rm(doc_unique_id(doc{i}));
+		E.database_rm(id(doc{i}));
 	end;
 end;
 
@@ -59,13 +59,13 @@ end;
 doc = doc{1}, % should be only one match
 
   % test structure search form
-doc = E.database_search(struct('field','subject.id','operation','exact_string','param1','vhlab12345','param2',''));
+doc = E.database_search(ndi_query('subject.id','exact_string','vhlab12345',''))
 if numel(doc)~=1,
 	error(['Found <1 or >1 document with subject.id vhlab12345; this means there is a database problem.']);
 end;
 doc = doc{1}, % should be only one match
 
-doc = E.database_search(struct('field','','operation','isa','param1','ndi_document_subject.json','param2',''));
+doc = E.database_search(ndi_query('','isa','ndi_document_subjectmeasurement.json',''));
 if numel(doc)~=1,
 	error(['Found <1 or >1 document with subject.id vhlab12345; this means there is a database problem.']);
 end;

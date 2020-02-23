@@ -71,35 +71,15 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 
 		function [ndi_document_objs,doc_versions] = do_search(ndi_matlabdumbjsondb_obj, searchoptions, searchparams)
 			if isa(searchparams,'ndi_query'),
-				searchparams = searchparams.searchstructure;
-			end;
-			if isstruct(searchparams),
-				% convert 'isa' to fieldsearch
-				isa_locs = find(strcmpi('isa',{searchparams.operation}));
-				for i=1:numel(isa_locs),
-					findinsubfield = struct('field','document_class.superclasses',...
-							'operation','hasanysubfield_contains_string',...
-							'param1','definition','param2',searchparams(isa_locs(i)).param1);
-					findinmainfield = struct('field','document_class.definition', ...
-							'operation','contains_string','param1',searchparams(isa_locs(i)).param1, 'param2','');
-					replace = struct('field','','operation','or','param1', findinsubfield,'param2',findinmainfield);
-					searchparams = cat(1,searchparams(:),replace);
+				searchparams = searchparams.to_searchstructure;
+				if 0, % display
+					disp('search params');
+					for i=1:numel(searchparams),
+						searchparams(i),
+						searchparams(i).param1,
+						searchparams(i).param2,
+					end
 				end;
-				searchparams = searchparams(setdiff(1:numel(searchparams),isa_locs)); % remove 'isa' operations b/c they are replaced
-				depends_locs = find(strcmpi('depends_on',{searchparams.operation}));
-				for i=1:numel(depends_locs),
-					param1 = {'name','value'};
-					param2 = {searchparams(depends_locs(i)).param1 searchparams(depends_locs(i)).param2 };
-					if strcmp(param2{1},'*'), % ignore the name
-						param1 = param1(2);
-						param2 = param2(2);
-					end;
-					replace = struct('field','depends_on','operation','hasanysubfield_exact_string');
-					replace.param1 = param1; 
-					replace.param2 = param2; 
-					searchparams = cat(1,searchparams(:),replace);
-				end;
-				searchparams = searchparams(setdiff(1:numel(searchparams),depends_locs)); % remove 'depends_on' operations b/c they are replaced
 			end;
 			ndi_document_objs = {};
 			[docs,doc_versions] = ndi_matlabdumbjsondb_obj.db.search(searchoptions, searchparams);
