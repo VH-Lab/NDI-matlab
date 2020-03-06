@@ -453,6 +453,19 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 				end;
 
 		end; % getepochprobemap
+		
+		%% functions that override ndi_documentservice
+		function ndi_document_obj_set = newdocument(ndi_daqsystem_obj)
+		% NEWDOCUMENT - create a new document set for NDI_DAQSYSTEM objects
+		% 
+		% NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_DAQSYSTEM_OBJ)
+		%
+		% Creates a set of documents that describe an NDI_DAQSYSTEM.
+			ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
+			ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument();
+			ndi_document_obj_set{3} = ndi_document('ndi_document_daqsystem.json','daqsystem.filenavigator',ndi_document_obj_set{1}.doc_unique_id(),...
+					'daqsystem.daqreader',ndi_document_obj_set{2}.doc_unique_id);
+		end
 
 	end % methods
 end % ndi_daqsystem classdef
