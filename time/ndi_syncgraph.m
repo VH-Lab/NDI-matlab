@@ -615,7 +615,21 @@ classdef ndi_syncgraph < ndi_base
 					key = ndi_syncgraph_obj.objectfilename;
 				end
 		end
-
+		
+		%% functions that override ndi_documentservice
+        	function ndi_document_obj_set = newdocument(ndi_syncgraph_obj)
+            		experiment_obj_id = ndi_syncgraph_obj.experiment.experiment_unique_reference();
+	    		% TODO have to save rules here
+	    		rules_docs = {};
+	    		rules_docid_list = {};
+	    		for i=1:numel(ndi_syncgraph_obj.rules),
+	        		rules_docs{i} = ndi_syncgraph_obj.rules{i}.newdocument(); % needs to be implemented
+				rules_docid_list{i} = rules_docs{i}.doc_unique_id();
+            		end;
+	    		ndi_document_obj_set{1} = ndi_document('ndi_document_syncgraph.json','syncgraph.experiment',experiment_obj_id,'syncgraph.rules',rules_docid_list);
+	    		ndi_document_obj_set = cat(2,ndi_document_obj_set,rules_docs);
+        	end
+		
 	end % methods
 
 end % classdef ndi_syncgraph
