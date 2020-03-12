@@ -16,7 +16,7 @@ function test_filenavigator_documents(dirname)
 
     %Delete any demo ndi_document stored in the experiment
     doc = E.database_search(ndi_query('','isa','ndi_document_filenavigator.json',''));
-    E.database_rm(cell2str(doc));
+    E.database_rm(doc);
 
     %Test the ndi_document creater
     ft_doc = ft.newdocument();
