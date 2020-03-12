@@ -49,34 +49,34 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 					fileparams, ...
 					filenavdoc.document_properties.filenavigator.epochprobemap_class, ...
 					epochfileparams);
-			end;
-			
-			if nargin>0,
-				if ~isa(experiment_,'ndi_experiment'),
-					error(['experiement must be an NDI_EXPERIMENT object']);
+			else,
+				if nargin>0,
+					if ~isa(experiment_,'ndi_experiment'),
+						error(['experiement must be an NDI_EXPERIMENT object']);
+					else,
+						obj.experiment= experiment_;
+					end;
 				else,
-					obj.experiment= experiment_;
+					obj.experiment=[];
 				end;
-			else,
-				obj.experiment=[];
-			end;
 
-			if nargin > 1 & ~isempty(fileparameters_),
-				obj = obj.setfileparameters(fileparameters_);
-			else,
-				obj.fileparameters = {};
-			end;
+				if nargin > 1 & ~isempty(fileparameters_),
+					obj = obj.setfileparameters(fileparameters_);
+				else,
+					obj.fileparameters = {};
+				end;
 
-			if nargin > 2 & ~isempty(epochprobemap_class_),
-				obj.epochprobemap_class = epochprobemap_class_;
-			else,
-				obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
-			end;
+				if nargin > 2 & ~isempty(epochprobemap_class_),
+					obj.epochprobemap_class = epochprobemap_class_;
+				else,
+					obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
+				end;
 
-			if nargin > 3 & ~isempty(epochprobemap_fileparameters_),
-				obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
-			else,
-				obj.epochprobemap_fileparameters = {};
+				if nargin > 3 & ~isempty(epochprobemap_fileparameters_),
+					obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
+				else,
+					obj.epochprobemap_fileparameters = {};
+				end;
 			end;
 		end;
 
