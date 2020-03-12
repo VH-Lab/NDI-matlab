@@ -618,7 +618,7 @@ classdef ndi_syncgraph < ndi_base
 		
 		%% functions that override ndi_documentservice
         	function ndi_document_obj_set = newdocument(ndi_syncgraph_obj)
-            		experiment_obj_id = ndi_syncgraph_obj.experiment.experiment_unique_reference();
+            		experiment_obj_id = ndi_syncgraph_obj.experiment.id();
 	    		% TODO have to save rules here
 	    		rules_docs = {};
 	    		rules_docid_list = {};
