@@ -134,7 +134,13 @@ classdef ndi_daqreader < ndi_base
                                         end
                                 end
 		end % verifyepochprobemap
+		
+		%% functions that override ndi_documentservice
+       		function ndi_document_obj = newdocument(ndi_document_obj)
+            		ndi_document_obj = ndi_document('ndi_document_daqreader.json');
+        	 end
 
 	end % methods
+		
 end % ndi_daqreader classdef
 
