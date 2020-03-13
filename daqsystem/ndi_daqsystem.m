@@ -25,25 +25,23 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 		%
 		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
 		%
+            obj = obj@ndi_dbleaf('dummy');
             loadfromfile = 0;
-             if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document')
-                experiment = name
-                daqsystem_doc = thefilenavigator
+             if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document');
+                experiment = name;
+                daqsystem_doc = thefilenavigator;
                 
-                daqreader_id = dasystem_doc.document_properties.daqsystem.daqreader
-                filenavigator_id = dasystem_doc.document_properties.daqsystem.daqreader
-                docs = experiment.database_search(ndi_query('ndi_document.id','exactstring',daqreader_id,''))
-                daqreader_doc = docs{1}
-                docs = experiment.database_search(ndi_query('ndi_document.id','exactstring',filenavigator_id,''))
-                filenavigator_doc = docs{1}
+                daqreader_id = daqsystem_doc.document_properties.daqsystem.daqreader;
+                filenavigator_id = daqsystem_doc.document_properties.daqsystem.filenavigator;
+                docs = experiment.database_search(ndi_query('ndi_document.id','exact_string',daqreader_id,''));
+                daqreader_doc = docs{1};
+                docs = experiment.database_search(ndi_query('ndi_document.id','exact_string',filenavigator_id,''));
+                filenavigator_doc = docs{1};
                 
-                thedaqreader = ndi_daqreader(daqreader_doc)
-                thefilenavigator = ndi_filenavigator(experiment,filenavigator_doc)
-                
-                obj.name = thedaqreader;
-                    obj.filenavigator = thefilenavigator;
-                    obj.daqreader = thedaqreader;
-			
+                thedaqreader = ndi_daqreader(daqreader_doc);
+                thefilenavigator = ndi_filenavigator(experiment,filenavigator_doc);
+                obj.filenavigator = thefilenavigator;
+                obj.daqreader = thedaqreader;
             else
                 if nargin==0, % undocumented 0 argument creator
                     name = '';
@@ -72,8 +70,9 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
                 if (nargin==1) | (nargin>3),
                     error(['Function requires 2 or 3 input arguments exactly.']);
                 end
-
-                obj = obj@ndi_dbleaf(name);
+        
+                %obj = obj@ndi_dbleaf(name);
+                obj.name = name;
                 if loadfromfile,
                     obj = obj.readobjectfile(filename);
                 else,
@@ -82,23 +81,9 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
                     obj.daqreader = thedaqreader;
                 end
             end
-		end % ndi_daqsystem
+	end % ndi_daqsystem
 
 		%% GUI functions
-
-		function obj = ndi_daqsystem_gui_createnew(ndi_daqsystem_obj)
-			% NDI_DAQSYSTEM_GUI_CREATENEW - function for creating a new NDI_DAQSYSTEM object based on a template
-			% 
-			% OBJ = NDI_DAQSYSTEM_GUI_CREATENEW(NDI_DAQSYSTEM_OBJ)
-			%
-			% This function will bring up a graphical window to prompt the user to input
-			% parameters needed to define a new NDI_DAQSYSTEM object.
-			%
-			%
-				error(['Not implemented yet.']);
-				% insert code here
-		end;
-
 		function obj = ndi_daqsystem_gui_edit(ndi_daqsystem_obj)
 			% NDI_DAQSYSTEM_GUI_EDIT - function for editing an NDI_DAQSYSTEM object
 			% 
