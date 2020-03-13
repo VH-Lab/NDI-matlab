@@ -17,6 +17,18 @@ classdef ndi_syncgraph < ndi_base
 			% Builds a new NDI_SYNCGRAPH object and sets its EXPERIMENT
 			% property to EXPERIMENT, which should be an NDI_EXPERIMENT object.
 			%
+			
+			%need to be tested after ndi_syncrule creator is done
+			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
+				ndi_syncgraph_obj.experiment = varargin{1};
+                		rules_id_list = varargin{2}.document_properties.syncgraph.rules
+                		for i = 1:numel(rules_id_list)
+                   	 		rules_doc{i} = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
+                		end
+                		for i = 1:numel(rules_doc)
+                   			ndi_syncgraph_obj.rules{i} = ndi_syncrule(varargin{1}, rules_doc{i}); % needs to be implemented
+               			end
+            		else 
 				experiment = [];
 
 				if nargin>0,
@@ -30,7 +42,7 @@ classdef ndi_syncgraph < ndi_base
 						ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
 					end
 				end
-
+			end
 		end % ndi_syncgraph
 
 		function ndi_syncgraph_obj = addrule(ndi_syncgraph_obj, ndi_syncrule_obj)
