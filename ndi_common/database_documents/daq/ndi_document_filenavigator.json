@@ -1,4 +1,4 @@
-{
+ 2
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/daq\/ndi_document_filenavigator.json",
 		"validation":						"$NDISCHEMAPATH\/daq\/ndi_document_filenavigator_schema.json",
@@ -9,10 +9,10 @@
 		]
         },
 	"filenavigator": {
+		"filenavigator_class":					"ndi_filenavigator",
 		"fileparameters":					"",
 		"epochprobemap_class":					"",
-		"epochprobemap_fileparameters":				"",
-		"experiment_id":					""
+		"epochprobemap_fileparameters":				""
 	}
 }
 

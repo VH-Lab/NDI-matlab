@@ -9,6 +9,7 @@
 		]
         },
 	"syncgraph": {
+		"syncgraph_class":					"ndi_syncgraph",
 		"experiment":						"",
 		"rules": 						""
 	}

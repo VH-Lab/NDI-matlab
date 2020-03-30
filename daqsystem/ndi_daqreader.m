@@ -137,8 +137,8 @@ classdef ndi_daqreader < ndi_base
 		
 		%% functions that override ndi_documentservice
        		function ndi_document_obj = newdocument(ndi_document_obj)
-            		ndi_document_obj = ndi_document('ndi_document_daqreader.json');
-        	 end
+			ndi_document_obj = ndi_document('ndi_document_daqreader.json');
+		end; % newdocument()
 
 	end % methods
 		

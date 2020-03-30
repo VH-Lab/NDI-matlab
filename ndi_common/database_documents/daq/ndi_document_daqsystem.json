@@ -9,7 +9,8 @@
 		]
         },
 	"daqsystem": {
-		"filenavigator":					"",
-		"daqreader":						""
+		"daqsystem_class":					"",
+		"filenavigator_id":					"",
+		"daqreader_id":						""
 	}
 }

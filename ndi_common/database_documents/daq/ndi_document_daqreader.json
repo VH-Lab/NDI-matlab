@@ -9,5 +9,6 @@
 		]
         },
 	"daqreader": {
+		"daqreader_class":					"ndi_daqreader"
 	}
 }

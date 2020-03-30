@@ -49,36 +49,36 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 					fileparams, ...
 					filenavdoc.document_properties.filenavigator.epochprobemap_class, ...
 					epochfileparams);
-			else,
-				if nargin>0,
-					if ~isa(experiment_,'ndi_experiment'),
-						error(['experiement must be an NDI_EXPERIMENT object']);
+				else,
+					if nargin>0,
+						if ~isa(experiment_,'ndi_experiment'),
+							error(['experiement must be an NDI_EXPERIMENT object']);
+						else,
+							obj.experiment= experiment_;
+						end;
 					else,
-						obj.experiment= experiment_;
+						obj.experiment=[];
 					end;
-				else,
-					obj.experiment=[];
-				end;
 
-				if nargin > 1 & ~isempty(fileparameters_),
-					obj = obj.setfileparameters(fileparameters_);
-				else,
-					obj.fileparameters = {};
-				end;
+					if nargin > 1 & ~isempty(fileparameters_),
+						obj = obj.setfileparameters(fileparameters_);
+					else,
+						obj.fileparameters = {};
+					end;
 
-				if nargin > 2 & ~isempty(epochprobemap_class_),
-					obj.epochprobemap_class = epochprobemap_class_;
-				else,
-					obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
-				end;
+					if nargin > 2 & ~isempty(epochprobemap_class_),
+						obj.epochprobemap_class = epochprobemap_class_;
+					else,
+						obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
+					end;
 
-				if nargin > 3 & ~isempty(epochprobemap_fileparameters_),
-					obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
-				else,
-					obj.epochprobemap_fileparameters = {};
+					if nargin > 3 & ~isempty(epochprobemap_fileparameters_),
+						obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
+					else,
+						obj.epochprobemap_fileparameters = {};
+					end;
 				end;
 			end;
-		end;
 
 		%% functions that used to override HANDLE
 
@@ -252,8 +252,8 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 					et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
 					et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
 					et(end+1) = et_here;
-				end
-		end % epochtable
+				end;
+		end; % epochtable()
 
 		function id = epochid(ndi_filenavigator_obj, epoch_number, epochfiles)
 			% EPOCHID - Get the epoch identifier for a particular epoch
@@ -625,6 +625,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 			%
 			% Creates an NDI_DOCUMENT of type 'ndi_document_filenavigator.json'
 			%
+				filenavigator_structure.filenavigator_class = class(ndi_filenavigator_obj);
 				if ~isempty(ndi_filenavigator_obj.fileparameters),
 					filenavigator_structure.fileparameters = cell2str(ndi_filenavigator_obj.fileparameters.filematch); % convert to a string
 				else,

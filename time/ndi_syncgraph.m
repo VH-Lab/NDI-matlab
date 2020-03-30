@@ -22,27 +22,27 @@ classdef ndi_syncgraph < ndi_base
 			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
 				ndi_syncgraph_obj.experiment = varargin{1};
                 		rules_id_list = varargin{2}.document_properties.syncgraph.rules
-                		for i = 1:numel(rules_id_list)
-                   	 		rules_doc{i} = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
-                		end
-                		for i = 1:numel(rules_doc)
-                   			ndi_syncgraph_obj.rules{i} = ndi_syncrule(varargin{1}, rules_doc{i}); % needs to be implemented
-               			end
-            		else 
+				for i = 1:numel(rules_id_list)
+					rules_doc{i} = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
+				end
+				for i = 1:numel(rules_doc)
+					ndi_syncgraph_obj.rules{i} = ndi_syncrule(varargin{1}, rules_doc{i}); % needs to be implemented
+				end
+            		else,
 				experiment = [];
 
 				if nargin>0,
 					experiment = varargin{1};
-				end
+				end;
 	
 				ndi_syncgraph_obj.experiment = experiment;
 
 				if nargin>=2,
 					if strcmp(lower(varargin{2}),lower('OpenFile')),
 						ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
-					end
-				end
-			end
+					end;
+				end;
+			end;
 		end % ndi_syncgraph
 
 		function ndi_syncgraph_obj = addrule(ndi_syncgraph_obj, ndi_syncrule_obj)
@@ -626,7 +626,7 @@ classdef ndi_syncgraph < ndi_base
 					cache = exp.cache;
 					key = ndi_syncgraph_obj.objectfilename;
 				end
-		end
+		end; % getcache()
 		
 		%% functions that override ndi_documentservice
         	function ndi_document_obj_set = newdocument(ndi_syncgraph_obj)
@@ -640,7 +640,7 @@ classdef ndi_syncgraph < ndi_base
             		end;
 	    		ndi_document_obj_set{1} = ndi_document('ndi_document_syncgraph.json','syncgraph.experiment',experiment_obj_id,'syncgraph.rules',rules_docid_list);
 	    		ndi_document_obj_set = cat(2,ndi_document_obj_set,rules_docs);
-        	end
+        	end; % newdocument()
 		
 	end % methods
 
