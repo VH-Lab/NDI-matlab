@@ -47,6 +47,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 				else,
 					epochprobemap_fileparameters_ = [];
 				end;
+				obj.identifier = filenavdoc.document_properties.ndi_document.id;
 			else,
 				if nargin<4,
 					epochprobemap_fileparameters_ = [];

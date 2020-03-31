@@ -20,10 +20,12 @@ classdef ndi_daqreader < ndi_base
 		%
 		%  NDI_DAQREADER is an abstract class, and a specific implementation must be used.
 		%
+			obj = obj@ndi_base();
+
 			loadfromfile = 0;
 
 			if nargin==2 & isa(varargin{1},'ndi_experiment') & isa(varargin{2},'ndi_document'),
-				% just make it as normal
+				obj.identifier = varargin{2}.document_properties.ndi_document.id;
 			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command
 					loadfromfile = 1;
@@ -34,7 +36,6 @@ classdef ndi_daqreader < ndi_base
 				end;
 			end;
 
-			obj = obj@ndi_base();
 			if loadfromfile,
 				obj = obj.readobjectfile(filename);
 			end
@@ -148,6 +149,7 @@ classdef ndi_daqreader < ndi_base
 			% Examines whether or not the NDI_DAQREADER objects are equal.
 			%
 				b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
+				b = b & strcmp(ndi_daqreader_obj1.id(), ndi_daqreader_obj2.id());
 		end; % eq()
 		
 		%% functions that override ndi_documentservice

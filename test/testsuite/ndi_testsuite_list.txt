@@ -14,3 +14,4 @@ test_ndi_device_image_tiffstack	0	Not in current testing stream
 test_ndi_image_tiffstack_multipleepoch	0	Not in current testing stream
 test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream
 ndi_test_markgarbage	1	Tests app markgarbage
+test_ndi_daq_documents	1	Tests creating NDI_DOCUMENT objects out of core ndi daq objects, and re-building them
