@@ -11,15 +11,20 @@ classdef ndi_daqreader < ndi_base
 		% NDI_DAQREADER - create a new NDI_DAQREADER object
 		%
 		%  OBJ = NDI_DAQREADER()
+		%  
+		%  Creates an NDI_DAQREADER. 
 		%
-		%  Creates an NDI_DAQREADER.
+		%  OBJ = NDI_DAQREADER(NDI_EXPERIMENT_OBJ, NDI_DOCUMENT_OBJ)
+		%    
+		%  Creates an NDI_DAQREADER from an NDI_DOCUMENT_OBJ.
 		%
 		%  NDI_DAQREADER is an abstract class, and a specific implementation must be used.
 		%
-
 			loadfromfile = 0;
 
-			if nargin>=2,
+			if nargin==2 & isa(varargin{1},'ndi_experiment') & isa(varargin{2},'ndi_document'),
+				% just make it as normal
+			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command
 					loadfromfile = 1;
 					filename = varargin{1};
@@ -134,10 +139,20 @@ classdef ndi_daqreader < ndi_base
                                         end
                                 end
 		end % verifyepochprobemap
+
+		function b = eq(ndi_daqreader_obj1, ndi_daqreader_obj2)
+			% EQ - tests whether 2 NDI_DAQREADER objects are equal
+			%
+			% B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
+			%
+			% Examines whether or not the NDI_DAQREADER objects are equal.
+			%
+				b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
+		end; % eq()
 		
 		%% functions that override ndi_documentservice
        		function ndi_document_obj = newdocument(ndi_document_obj)
-			ndi_document_obj = ndi_document('ndi_document_daqreader.json');
+			ndi_document_obj = ndi_document('ndi_document_daqreader.json','daqreader.ndi_daqreader_class',class(ndi_document_obj));
 		end; % newdocument()
 
 	end % methods

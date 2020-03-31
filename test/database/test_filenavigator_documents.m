@@ -21,8 +21,8 @@ function test_filenavigator_documents(dirname)
 	%Create and NDI_experiment object
 	E = ndi_experiment_dir('exp1',dirname);
 
-	ft{1} = ndi_filenavigator(E, '.*\.rhd\>');
-	ft{2} = ndi_filenavigator_epochdir(E, '.*\.rhd\>');
+	fn{1} = ndi_filenavigator(E, '.*\.rhd\>');
+	fn{2} = ndi_filenavigator_epochdir(E, '.*\.rhd\>');
 
 	%Delete any demo ndi_document stored in the experiment
 	doc = E.database_search(ndi_query('','isa','ndi_document_filenavigator.json',''));
@@ -31,14 +31,14 @@ function test_filenavigator_documents(dirname)
 	% Step a)
 
 	%Test the ndi_document creater
-	ft_doc{1} = ft{1}.newdocument();
-	ft_doc{2} = ft{2}.newdocument();
+	fn_doc{1} = fn{1}.newdocument();
+	fn_doc{2} = fn{2}.newdocument();
 	disp('Sucessfully created ndi_documents')
 
 	% Step b)
 	%Store the document as database
-	E.database_add(ft_doc{1});
-	E.database_add(ft_doc{2});
+	E.database_add(fn_doc{1});
+	E.database_add(fn_doc{2});
 	disp('Sucessfully added documents to the database')
 
 	% Step c)
@@ -50,18 +50,17 @@ function test_filenavigator_documents(dirname)
 	% Step d) 
 	for i=1:numel(read_doc),
 		read_doc{i}.document_properties.filenavigator,
-		ft_withdoc{i} = ndi_document2ndi_object(read_doc{i},E);
+		fn_withdoc{i} = ndi_document2ndi_object(read_doc{i},E);
 	end;
 
 	%Initialize the filenavigator using the ndi_document
 
-	for i=1:numel(ft_doc),
-		if eq(ft_withdoc{i},ft{i}),
+	for i=1:numel(fn_doc),
+		if eq(fn_withdoc{i},fn{i}),
 			disp(['Object i=' int2str(i) ' created from database is successful']);
 		else,
 			error(['For i=' int2str(i) ', ndi_filenavigator objects do not match.']);
 		end;
 	end;
-
 end
 
