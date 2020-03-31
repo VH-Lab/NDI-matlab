@@ -9,7 +9,7 @@
 		]
         },
 	"daqsystem": {
-		"daqsystem_class":					"",
+		"ndi_daqsystem_class":					"",
 		"filenavigator_id":					"",
 		"daqreader_id":						""
 	}
