@@ -1,7 +1,7 @@
-function test_filenavigator_documents(dirname)
-% TEST_FILENAVIGATOR_DOCUMENTS - test creating database entries, searching, and building from documents
+function test_ndi_filenavigator_documents(dirname)
+% TEST_NDI_FILENAVIGATOR_DOCUMENTS - test creating database entries, searching, and building from documents
 %
-% TEST_FILENAVIGATOR_DOCUMENTS(DIRNAME)
+% TEST_NDI_FILENAVIGATOR_DOCUMENTS(DIRNAME)
 %
 % Given a directory that corresponds to an experiment, this function tries to create
 % an ndi_filenavigator object and an ndi_filenavigator_epochdir object and do the following:
@@ -10,7 +10,6 @@ function test_filenavigator_documents(dirname)
 %   c) Search for the database document
 %   d) Create a new object based on the database entry, and test that it matches the original
 %  
-
 	ndi_globals;
 
 	%No directory has passed in as a parameter
@@ -35,6 +34,9 @@ function test_filenavigator_documents(dirname)
 	fn_doc{2} = fn{2}.newdocument();
 	disp('Sucessfully created ndi_documents')
 
+	fn{1}.id()
+	fn_doc{1}.document_properties.ndi_document
+
 	% Step b)
 	%Store the document as database
 	E.database_add(fn_doc{1});
@@ -43,14 +45,14 @@ function test_filenavigator_documents(dirname)
 
 	% Step c)
 
-	read_doc = E.database_search(ndi_query('','isa','ndi_document_filenavigator.json',''));
-
-	disp(['Found ' int2str(numel(read_doc)) ' ndi_document_filenavigator document types.']);
-
 	% Step d) 
-	for i=1:numel(read_doc),
-		read_doc{i}.document_properties.filenavigator,
-		fn_withdoc{i} = ndi_document2ndi_object(read_doc{i},E);
+	for i=1:numel(fn_doc),
+		read_doc = E.database_search(fn{i}.searchquery());
+		if numel(read_doc)~=1, 
+			error(['Could not find document, i=' int2str(i)]);
+		end; 
+		read_doc{1}.document_properties.filenavigator,
+		fn_withdoc{i} = ndi_document2ndi_object(read_doc{1},E);
 	end;
 
 	%Initialize the filenavigator using the ndi_document

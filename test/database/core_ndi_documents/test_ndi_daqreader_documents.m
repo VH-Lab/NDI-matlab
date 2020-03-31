@@ -1,7 +1,7 @@
-function test_daqreader_documents
-% TEST_DAQREADER_DOCUMENTS - test creating database entries, searching, and building from documents
+function test_ndi_daqreader_documents
+% TEST_NDI_DAQREADER_DOCUMENTS - test creating database entries, searching, and building from documents
 %
-% TEST_DAQREADER_DOCUMENTS(DIRNAME)
+% TEST_NDI_DAQREADER_DOCUMENTS(DIRNAME)
 %
 % Given a directory that corresponds to an experiment, this function tries to create
 % the following objects :
@@ -40,7 +40,9 @@ function test_daqreader_documents
 
 	dr = {};
 	 
-	 % Steps a and b)
+	 % Steps a and b and c)
+
+	daqreader_docs = {};
 
 	for i=1:numel(object_list),
 		disp(['Making ' object_list{i} '...']);
@@ -48,24 +50,20 @@ function test_daqreader_documents
 		disp(['Making document for ' object_list{i} '...']);
 		dr_doc{i} = dr{i}.newdocument();
 		E.database_add(dr_doc{i});
+		daqreader_docs{i} = E.database_search(dr{i}.searchquery());
+		if numel(daqreader_docs{i})~=1,
+			error(['Did not find exactly 1 match.']);
+		end;
 	end;
-
-	daqreader_docs = E.database_search(ndi_query('','isa','ndi_document_daqreader.json',''));
-
-	 % Step c)
 
 	dr_fromdoc = {};
 
 	for i=1:numel(daqreader_docs),
-		% because of order of adding, these should come back in order, too
-		% but it is an assumption that need not be true for all databases
-
-		dr_fromdoc{i} = ndi_document2ndi_object(daqreader_docs{i},E);
+		dr_fromdoc{i} = ndi_document2ndi_object(daqreader_docs{i}{1},E);
 		if eq(dr_fromdoc{i},dr{i}),
 			disp(['Daqreader number ' int2str(i) ' matches.']);
 		else,
 			error(['Daqreader number ' int2str(i) ' does not match.']);
 		end;
 	end;
-
 end

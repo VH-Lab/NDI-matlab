@@ -632,7 +632,7 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 			end
 
 		%% functions that override ndi_documentservice
-			function ndi_document_obj = newdocument(ndi_filenavigator_obj)
+		function ndi_document_obj = newdocument(ndi_filenavigator_obj)
 			% NEWDOCUMENT - create an NDI_DOCUMENT that is based on an NDI_FILENAVIGATOR object
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
@@ -647,16 +647,30 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 				end;
 				filenavigator_structure.epochprobemap_class = ndi_filenavigator_obj.epochprobemap_class;
 				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
+					% convert to string
 					filenavigator_structure.epochprobemap_fileparameters = ...
-						cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch); % convert to string
+						cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch); 
 				else,
 					filenavigator_structure.epochprobemap_fileparameters = '';
 				end;
 				filenavigator_structure.experiment_id = ndi_filenavigator_obj.experiment.id();
 				
-				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json','filenavigator',filenavigator_structure);
-			end
+				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json',...
+					'filenavigator',filenavigator_structure,...
+					'ndi_document.id', ndi_filenavigator_obj.id(),...
+					'ndi_document.experiment_id', ndi_filenavigator_obj.experiment.id());
+		end; % newdocument()
 
+		function sq = searchquery(ndi_filenavigator_obj)
+			% SEARCHQUERY - create a search query that will search for this object
+			%
+			% SQ = SEARCHQUERY(NDI_FILENAVIGATOR_OBJ)
+			%
+			% Returns a database search query for this NDI_FILENAVIGATOR object.
+			%
+				sq = {'ndi_document.id', ndi_filenavigator_obj.id(), ...
+					'ndi_document.experiment_id', ndi_filenavigator_obj.experiment.id() };
+		end; % 
 	end % methods
 
 end % classdef

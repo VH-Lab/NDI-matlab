@@ -151,9 +151,28 @@ classdef ndi_daqreader < ndi_base
 		end; % eq()
 		
 		%% functions that override ndi_documentservice
-       		function ndi_document_obj = newdocument(ndi_document_obj)
-			ndi_document_obj = ndi_document('ndi_document_daqreader.json','daqreader.ndi_daqreader_class',class(ndi_document_obj));
+
+		function ndi_document_obj = newdocument(ndi_daqreader_obj)
+			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_DAQREADER object
+			%
+			% DOC = NEWDOCUMENT(NDI_DOCUMENT_OBJ)
+			%
+			% Creates an NDI_DOCUMENT object DOC that represents the
+			%    NDI_DAQREADER object. 
+				ndi_document_obj = ndi_document('ndi_document_daqreader.json',...
+					'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
+					'ndi_document.id', ndi_daqreader_obj.id());
 		end; % newdocument()
+
+		function sq = searchquery(ndi_daqreader_obj)
+			% SEARCHQUERY - create a search for this NDI_DAQREADER object
+			%
+			% SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
+			%
+			% Creates a search query for the NDI_DAQREADER object. 
+			% 
+				sq = {'ndi_document.id', ndi_daqreader_obj.id() };
+		end; % searchquery()
 
 	end % methods
 		
