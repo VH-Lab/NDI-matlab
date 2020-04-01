@@ -1,15 +1,12 @@
-ndi_globals;
+% not general - only works on specified directory on Daniel's computer
 
-if 0,
-	exp_dir = '/Users/Ora/Desktop/labx_experiments';
-end;
-
-dot_ndi = [exp_dir filesep '.ndi'];
-our_exp = ndi_experiment_dir('treeshrew1',exp_dir)
-
-if exist(dot_ndi, 'dir') == 7
-	rmdir(dot_ndi, 's');
+% Remove .ndi directory if it exists to avoid errors
+dirpath = '/Users/danielgmu/Downloads/Experiments/2019-08-22'
+if exist([dirpath filesep '.ndi'], 'dir') == 7
+	rmdir([dirpath filesep '.ndi'], 's');
 end
+
+our_exp = ndi_experiment_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
@@ -24,29 +21,38 @@ our_exp.daqsystem_add(measure_sys);
 our_exp.daqsystem_add(stim_sys);
 
 probelist = our_exp.getprobes()
-howmany_probes = length(probelist)
-prb = 1; 
-probe = probelist{prb};
 
+howmany_probes = length(probelist)
+prb = 3; 
 howmany_epochs = length(epochtable(measure_sys))
-e = 4; 
+e = 1;
 
 figure('Name', ['Probe ' num2str(prb)  ', Epoch ' num2str(e)], 'NumberTitle','off');
+probe = probelist{prb};
 [d,t] = probe.read_epochsamples(e,1,Inf);
 plot_multichan(d,t,10);
 
-spikeextractor = ndi_app_spikeextractor(our_exp);
-extract_doc = ndi_document('apps/spikeextractor/spike_extraction_parameters');
-spikeextractor.add_extraction_doc('default_parameters', extract_doc);
-spikeextractor.extract(probe, e, 'default_parameters');
+spikeextractor = ndi_app_spikeextractor(our_exp); 
+spikeextractor.add_extraction_doc('default', []);
+spikeextractor.extract(probe, e,'default');
 
-w = spike_extractor.load_spikewaves_epoch(probe,1,'test');
+w = spikeextractor.load_spikewaves_epoch(probe,1,'default');
 figure;
-plot(w(:,:,1)); 
+plot(w(:,:,1));
 title(['First spike']);
 xlabel('Samples');
 ylabel('Amplitude');
 
 spikesorter = ndi_app_spikesorter(our_exp);
+param_folder = '/Users/danielgmu/Documents/MATLAB/tools/NDI-matlab/ndi_common/example_experiments/spikesortdemo/';
 sort_param = [param_folder 'tvh_sorting_parameters.txt'];
-spikesorter.spike_sort(probe, e,'extraction_name','test_sort', sort_param)
+spikesorter.spike_sort(probe, e, 'default', 'test_sort', sort_param);
+
+neuron1 = our_exp.getthings('thing.name','neuron_1');
+[d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
+
+figure(10)
+plot(t1,d1,'ko');
+title([neuron1{1}.name]);
+ylabel(['spikes']);
+xlabel(['time (s)']);

@@ -85,9 +85,9 @@ classdef ndi_app_spikesorter < ndi_app
 
 			% Interpolation
 			interpolation = sorting_parameters.interpolation;
-            waveforms_out = zeros(interpolation*size(waveforms,1), size(waveforms,2), size(waveforms,3));
-            x = 1:length(waveforms(:,1,1));
-            xq = 1/interpolation:1/interpolation:length(waveforms(:,1,1));
+			waveforms_out = zeros(interpolation*size(waveforms,1), size(waveforms,2), size(waveforms,3));
+			x = 1:length(waveforms(:,1,1));
+			xq = 1/interpolation:1/interpolation:length(waveforms(:,1,1));
 			
 			for i=1:size(waveforms, 3)
 				waveforms_out(:,:,i) = interp1(x, waveforms(:,:,i), xq, 'spline');
@@ -150,11 +150,11 @@ classdef ndi_app_spikesorter < ndi_app
 
 			% Create spike_clusters ndi_doc
 			spike_clusters_doc = ndi_app_spikesorter_obj.experiment.newdocument('apps/spikesorter/spike_clusters', ...
-			'spike_sort.sort_name', sort_name, ...
-			'spike_sort.sorting_parameters_file_id', sorting_parameters_doc.doc_unique_id, ...
-			'spike_sort.clusterids', clusterids, ...
-			'spike_sort.spiketimes', times, ...
-			'spike_sort.numclusters', numclusters) ...
+				'spike_sort.sort_name', sort_name, ...
+				'spike_sort.sorting_parameters_file_id', sorting_parameters_doc.id, ...
+				'spike_sort.clusterids', clusterids, ...
+				'spike_sort.spiketimes', times, ...
+				'spike_sort.numclusters', numclusters) ...
 				+ ndi_timeseries_obj.newdocument() + ndi_app_spikesorter_obj.newdocument();
 
 			% Add doc to database
@@ -173,11 +173,11 @@ classdef ndi_app_spikesorter < ndi_app
 				ndi_app_spikesorter_obj.experiment.database_add(doc);
 
 				et = ndi_timeseries_obj.epochtable;
+				
+				neuron_times_idxs = find(clusterids == nNeuron);
+				neuron_spiketimes = times(neuron_times_idxs);
                 
-                neuron_times_idxs = find(clusterids == nNeuron);
-                neuron_spiketimes = times(neuron_times_idxs);
-                
-                disp(['---Number of Spikes ' num2str(length(neuron_spiketimes)) '---'])
+        disp(['---Number of Spikes ' num2str(length(neuron_spiketimes)) '---'])
 				
 				[neuron, mydoc] = neuron_thing.addepoch(...
 					et(1).epoch_id, ...
@@ -185,10 +185,11 @@ classdef ndi_app_spikesorter < ndi_app
 					et(1).t0_t1{1}, ...
 					neuron_spiketimes(:), ...
 					ones(size(neuron_spiketimes(:)))...
-                );
-            end
-            
-            neuron
+				);
+			
+			end
+			
+			neuron
 
 			neuron1 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_1');
 			% neuron2 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_2');
@@ -198,9 +199,9 @@ classdef ndi_app_spikesorter < ndi_app
 
 			figure(10)
 			plot(t1,d1,'ko');
-            title([neuron.name]);
-            ylabel(['spikes']);
-            xlabel(['time (s)']);
+			title([neuron.name]);
+			ylabel(['spikes']);
+			xlabel(['time (s)']);
 		end %function
 
 			%%% TODO: function add_sorting_doc
