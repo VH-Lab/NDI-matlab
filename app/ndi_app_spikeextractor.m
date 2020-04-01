@@ -67,7 +67,6 @@ classdef ndi_app_spikeextractor < ndi_app
 			% combination of NAME and TYPE must return at least one probe from experiment
 			% EPOCH is an index number or id to select epoch to extract, or can be a cell array of epoch number/ids
 			% EXTRACTION_NAME name given to find ndi_doc in database
-			% EXTRACTION_PARAMS a struct or filepath (tab separated file) with extraction parameters
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
 
 				ndi_globals;

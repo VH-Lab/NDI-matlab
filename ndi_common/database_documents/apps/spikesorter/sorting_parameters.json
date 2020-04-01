@@ -15,7 +15,7 @@
         }
 	],
 	"sorting_parameters": {
-		"min_rng": 0,
-		"num_pca_features": 0
+		"num_pca_features": 10,
+		"interpolation": 3
 	}
 }

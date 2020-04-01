@@ -24,35 +24,12 @@ classdef ndi_app_spikesorter < ndi_app
 		%%%%%%
 		%% TODO: Figure out how to pass parameters to save in database
 		%%%%%%
-		function spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name, sorting_params, redo)
+		function spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name, redo)
 		% SPIKE_SORT - method that sorts spikes from specific probes in experiment to ndi_doc
 		%
 		% SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
 		%%%%%%%%%%%%%%
 		% SORT_NAME name given to save sort to ndi_doc
-		% SORTING_PARAMS a struct or filepath (tab separated file) with extraction parameters
-		% - min_rng = range used to compute features
-		% - num_pca_features = integer for number of pca features to use in k-means clustering
-
-			%If sorting_params was inputed as a struct then no need to parse it
-			if isstruct(sorting_params)
-				sorting_parameters = sorting_params;
-			elseif isa(sorting_params, 'char')
-				sorting_parameters = loadStructArray(sorting_params);
-			else
-				error('unable to handle sorting_params.');
-			end
-
-			% if isempty(epoch)
-			% 	et = epochtable(ndi_timeseries_obj);
-			% 	epoch = {et.epoch_id};
-			% elseif ~iscell(epoch)
-			% 	epoch = {epoch};
-			% end
-
-			if ~isfield(sorting_parameters, 'interpolation')
-				sorting_parameters.interpolation = 3
-			end
 			
 			if exist('redo') == 0
 				redo = 0
@@ -72,12 +49,16 @@ classdef ndi_app_spikesorter < ndi_app
 			% Clear sort within probe with sort_name
 			ndi_app_spikesorter_obj.clear_sort(ndi_timeseries_obj, epoch, sort_name);
 
-			% Create sorting parameters ndi_doc
-			sorting_parameters_doc = ndi_app_spikesorter_obj.experiment.newdocument('apps/spikesorter/sorting_parameters', 'sorting_parameters', sorting_parameters) ...
-				+ ndi_timeseries_obj.newdocument() + ndi_app_spikesorter_obj.newdocument();
-
-			% Add doc to database
-			ndi_app_spikesorter_obj.experiment.database_add(sorting_parameters_doc);
+			sort_searchq = ndi_query('ndi_document.name','exact_string',sort_name,'') & ...
+					ndi_query('','isa','sorting_parameters','');
+					sorting_parameters_doc = ndi_app_spikesorter_obj.experiment.database_search(sort_searchq);
+			if isempty(sorting_parameters_doc),
+				error(['No sorting_parameters document named ' sort_name ' found.']);
+			elseif numel(sorting_parameters_doc)>1,
+				error(['More than one sorting_parameters document with same name. Should not happen but needs to be fixed.']);
+			else,
+				sorting_parameters_doc = sorting_parameters_doc{1};
+			end;
 
 			% Read spikewaves here
 			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.experiment);
@@ -206,7 +187,74 @@ classdef ndi_app_spikesorter < ndi_app
 
 			%%% TODO: function add_sorting_doc
 
-			%%% TODO: load neurons
+		function sorting_doc = add_sorting_doc(ndi_app_spikesorter_obj, sort_name, sort_params)
+			% ADD_SORTING_DOC - add sorting parameters document
+			%
+			% SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_OBJ, SORT_NAME, SORT_PARAMS)
+			%
+			% Given SORT_PARAMS as either a structure or a filename, this function returns
+			% SORTING_DOC parameters as an NDI_DOCUMENT and checks its fields. If SORT_PARAMS is empty,
+			% then the default parameters are returned. If SORT_NAME is already the name of an existing
+			% NDI_DOCUMENT then an error is returned.
+			%
+			% SORT_PARAMS should contain the following fields:
+			% Fieldname              | Description
+			% -------------------------------------------------------------------------
+			% num_pca_features (10)     | Number of PCA features to use in klustakwik k-means clustering
+			% interpolation (3)       | Interpolation factor
+			% 
+				if nargin<3,
+					sort_params = [];
+				end;
+
+					% search for any existing documents with that name; any doc that has that name and sorting_parameters as a field
+				sort_searchq = ndi_query('ndi_document.name','exact_string',sort_name,'') & ...
+					ndi_query('','isa','sorting_parameters','');
+				mydoc = ndi_app_spikesorter_obj.experiment.database_search(sort_searchq);
+				if ~isempty(mydoc),
+					error([int2str(numel(mydoc)) ' sorting_parameters documents with name ''' sort_name ''' already exist(s).']);
+				end;
+
+				% okay, we can build a new document
+
+				if isempty(sort_params),
+					sort_params = ndi_document('apps/spikesorter/sorting_parameters') + ...
+						ndi_app_spikesorter_obj.newdocument();
+					% this function needs a structure
+					sort_params = sort_params.document_properties.sorting_parameters; 
+				elseif isa(sort_params,'ndi_document'),
+					% this function needs a structure
+					sort_params = sort_params.document_properties.sorting_parameters; 
+				elseif isa(sort_params, 'char') % loading struct from file 
+					sort_params = loadStructArray(sort_params);
+				elseif isstruct(sort_params),
+					% If sort_params was inputed as a struct then no need to parse it
+				else
+					error('unable to handle sort_params.');
+				end
+
+				% now we have a sort_params as a structure
+
+				% check parameters here
+				fields_needed = {'num_pca_features','interpolation'};
+				sizes_needed = {[1 1], [1 1]};
+
+				[good,errormsg] = hasAllFields(sort_params,fields_needed, sizes_needed);
+
+				if ~good,
+					error(['Error in sort_params: ' errormsg]);
+				end;
+
+				% now we need to convert to an ndi_document
+
+				sort_params = ndi_document('apps/spikesorter/sorting_parameters','sorting_parameters',sort_params) + ...
+					ndi_app_spikesorter_obj.newdocument() + ndi_document('ndi_document','ndi_document.name',sort_name);
+
+				ndi_app_spikesorter_obj.experiment.database_add(sorting_doc);
+
+				sorting_doc.document_properties,
+
+		end; % add_sorting_doc
 
 
 
