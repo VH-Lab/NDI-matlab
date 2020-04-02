@@ -65,7 +65,7 @@ classdef ndi_app_spikesorter < ndi_app
 			waveforms = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 
 			% Interpolation
-			interpolation = sorting_parameters.interpolation;
+			interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
 			waveforms_out = zeros(interpolation*size(waveforms,1), size(waveforms,2), size(waveforms,3));
 			x = 1:length(waveforms(:,1,1));
 			xq = 1/interpolation:1/interpolation:length(waveforms(:,1,1));
@@ -99,7 +99,7 @@ classdef ndi_app_spikesorter < ndi_app
 			projected_waveforms = concatenated_waves * [eigenvectors];
 
 			% Features used in klustakwik_cluster
-			pca_coefficients = projected_waveforms(:, 1:sorting_parameters.num_pca_features);
+			pca_coefficients = projected_waveforms(:, 1:sorting_parameters_doc.document_properties.sorting_parameters.num_pca_features);
 
 			disp('KlustarinKwikly...');
 			[clusterids,numclusters] = klustakwik_cluster(pca_coefficients, 3, 25, 5, 0);
@@ -247,7 +247,7 @@ classdef ndi_app_spikesorter < ndi_app
 
 				% now we need to convert to an ndi_document
 
-				sort_params = ndi_document('apps/spikesorter/sorting_parameters','sorting_parameters',sort_params) + ...
+				sorting_doc = ndi_document('apps/spikesorter/sorting_parameters','sorting_parameters',sort_params) + ...
 					ndi_app_spikesorter_obj.newdocument() + ndi_document('ndi_document','ndi_document.name',sort_name);
 
 				ndi_app_spikesorter_obj.experiment.database_add(sorting_doc);

@@ -36,7 +36,7 @@ spikeextractor = ndi_app_spikeextractor(our_exp);
 spikeextractor.add_extraction_doc('test_extract', []);
 spikeextractor.extract(probe, e,'test_extract');
 
-w = spikeextractor.load_spikewaves_epoch(probe, 1, 'default');
+w = spikeextractor.load_spikewaves_epoch(probe, 1, 'test_extract');
 figure;
 plot(w(:,:,1));
 title(['First spike']);
@@ -45,7 +45,7 @@ ylabel('Amplitude');
 
 spikesorter = ndi_app_spikesorter(our_exp);
 spikesorter.add_sorting_doc('test_sort', []);
-spikesorter.spike_sort(probe, e, 'default', 'test_sort', 0);
+spikesorter.spike_sort(probe, e, 'test_extract', 'test_sort', 0);
 
 neuron1 = our_exp.getthings('thing.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
