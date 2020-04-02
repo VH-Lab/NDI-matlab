@@ -180,7 +180,7 @@ classdef ndi_document
 		end; % 
 
 		function ndi_document_obj = set_dependency_value(ndi_document_obj, dependency_name, value, varargin)
-			% SET_DEPENDENCY_VALUE - return dependency value given dependency name
+			% SET_DEPENDENCY_VALUE - set the value of a dependency field
 			%
 			% NDI_DOCUMENT_OBJ = SET_DEPENDENCY_VALUE(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
 			%
@@ -217,6 +217,125 @@ classdef ndi_document
 
 				if notfound & ErrorIfNotFound,
 					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
+
+		function ndi_document_obj = dependency_value_n(ndi_document_obj, dependency_name, varargin)
+			% DEPENDENCY_VALUE_N - return dependency values from list given dependency name
+			%
+			% D = DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and returns the 'values' associated with the given 'name_i', where i varies from 1 to the
+			% maximum number of entries titled 'name_i'. If there is no such field (either
+			% 'depends_on' or 'name_i'), then D is empty and an error is generated.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, return empty.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				d = {};
+				notfound = 1;
+
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+
+				if hasdependencies,
+					finished = 0;
+					i = 1;
+					while ~finished,
+						matches = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
+						if numel(matches)>0,
+							notfound = 0;
+							d{i} = getfield(ndi_document_obj.document_properties.depends_on(matches(1)),'value');
+						end;
+						finished = numel(matches)==0;
+						i = i + 1;
+					end;
+				end;
+
+				if notfound & ErrorIfNotFound,
+					error(['Dependency name ' dependency_name ' not found.']);
+				end;
+		end; % 
+
+		function ndi_document_obj = add_dependency_value_n(ndi_document_obj, dependency_name, value, varargin)
+			% ADD_DEPENDENCY_VALUE_N - add a dependency to a named list
+			%
+			% NDI_DOCUMENT_OBJ = ADD_DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and adds a dependency name 'dependency_name_(n+1)', where n is the number of entries with
+			% the form 'depenency_name_i' that exist presently. If there is no dependency field with that, then
+			% an entry is added.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, generate no error but take no action.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+
+				d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				if ~hasdependencies & ErrorIfNotFound,
+					error(['This document does not have any dependencies.']);
+				else,
+					d_struct = struct('name',[dependency_name '_' int2str(numel(d)+1)],'value',value);
+					ndi_document_obj = set_dependency_value(ndi_document_obj, d_struct.name, d_struct.value, 'ErrorIfNotFound', 0);
+				end;
+		end; % 
+
+		function ndi_document_obj = remove_dependency_value_n(ndi_document_obj, dependency_name, value, n, varargin)
+			% REMOVE_DEPENDENCY_VALUE_N - remove a dependency from a named list
+			%
+			% NDI_DOCUMENT_OBJ = REMOVE_DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, VALUE, N, ...)
+			%
+			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
+			% and removes the dependency name 'dependency_name_(n)'.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
+			%                          |   not found. Otherwise, generate no error but take no action.
+			%
+			%
+				ErrorIfNotFound = 1;
+				assign(varargin{:});
+
+				d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				if ~hasdependencies & ErrorIfNotFound,
+					error(['This document does not have any dependencies.']);
+				end;
+
+				if n>numel(d) & ErrorIfNotFound,
+					error(['Number to be removed ' int2str(n) ' is greater than total number of entries ' int2str(numel(d)) '.']);
+				end;
+
+				match = find(strcmpi([dependency_name '_' int2str(n)],{ndi_document_obj.document_properties.depends_on.name}));
+				if numel(match)~=1,
+					error(['Could not locate entry ' dependency_name '_' int2str(n)]);
+				end;
+
+				ndi_document_obj.document_properties.depends_on = ndi_document_obj.document_properties.depends_on([1:match-1 match+1:end]);
+
+				for i=n+1:numel(d),
+					match = find(strcmpi([dependency_name '_' int2str(i)],{ndi_document_obj.document_properties.depends_on.name}));
+					if numel(match)~=1,
+						error(['Could not locate entry ' dependency_name '_' int2str(i)]);
+					end;
+					ndi_document_obj.document_properties.depends_on(match).name = [dependency_name '_' int2str(i-1)];
 				end;
 		end; % 
 

@@ -9,7 +9,7 @@
 		]
     },
 	"depends_on": [
-		{	"name": "syncrule_1_id",
+		{	"name": "placeholder",
 			"value": "" 
 		}
 	],
