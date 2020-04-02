@@ -33,10 +33,10 @@ probe = probelist{prb};
 plot_multichan(d,t,10);
 
 spikeextractor = ndi_app_spikeextractor(our_exp); 
-spikeextractor.add_extraction_doc('default', []);
-spikeextractor.extract(probe, e,'default');
+spikeextractor.add_extraction_doc('test_extract', []);
+spikeextractor.extract(probe, e,'test_extract');
 
-w = spikeextractor.load_spikewaves_epoch(probe,1,'default');
+w = spikeextractor.load_spikewaves_epoch(probe, 1, 'default');
 figure;
 plot(w(:,:,1));
 title(['First spike']);
@@ -44,9 +44,8 @@ xlabel('Samples');
 ylabel('Amplitude');
 
 spikesorter = ndi_app_spikesorter(our_exp);
-param_folder = '/Users/danielgmu/Documents/MATLAB/tools/NDI-matlab/ndi_common/example_experiments/spikesortdemo/';
-sort_param = [param_folder 'tvh_sorting_parameters.txt'];
-spikesorter.spike_sort(probe, e, 'default', 'test_sort', sort_param);
+spikesorter.add_sorting_doc('test_sort', []);
+spikesorter.spike_sort(probe, e, 'default', 'test_sort', 0);
 
 neuron1 = our_exp.getthings('thing.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
