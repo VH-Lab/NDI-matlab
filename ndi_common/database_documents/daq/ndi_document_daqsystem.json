@@ -7,10 +7,16 @@
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
-        },
+    },
+	"depends_on": [
+		{	"name": "filenavigator_id",
+			"value": "" 
+		},
+		{	"name": "daqreader_id",
+			"value": "" 
+		}
+	],
 	"daqsystem": {
-		"ndi_daqsystem_class":					"",
-		"filenavigator_id":					"",
-		"daqreader_id":						""
+		"ndi_daqsystem_class":					""
 	}
 }

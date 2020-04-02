@@ -15,4 +15,4 @@ function test_ndi_daq_documents(varargin)
 
 test_ndi_filenavigator_documents(varargin{:});
 test_ndi_daqreader_documents(varargin{:});
-
+test_ndi_daqsystem_documents();

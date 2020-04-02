@@ -30,18 +30,23 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 			if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document');
 				experiment = name;
 				daqsystem_doc = thefilenavigator;
-				
-				daqreader_id = daqsystem_doc.document_properties.daqsystem.daqreader;
-				filenavigator_id = daqsystem_doc.document_properties.daqsystem.filenavigator;
+				daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
+				filenavigator_id = daqsystem_doc.dependency_value('filenavigator_id');
 				docs = experiment.database_search(ndi_query('ndi_document.id','exact_string',daqreader_id,''));
+				if numel(docs)~=1,
+					error(['Could not find daqreader document with id ' daqreader_id '.']);
+				end;
 				daqreader_doc = docs{1};
 				docs = experiment.database_search(ndi_query('ndi_document.id','exact_string',filenavigator_id,''));
+				if numel(docs)~=1,
+					error(['Could not find daqreader document with id ' daqreader_id '.']);
+				end;
 				filenavigator_doc = docs{1};
 				
-				thedaqreader = ndi_daqreader(daqreader_doc);
-				thefilenavigator = ndi_filenavigator(experiment,filenavigator_doc);
-				obj.filenavigator = thefilenavigator;
-				obj.daqreader = thedaqreader;
+				obj.daqreader = ndi_document2ndi_object(daqreader_doc, experiment);
+				obj.filenavigator = ndi_document2ndi_object(filenavigator_doc,experiment);
+				obj.name = daqsystem_doc.document_properties.ndi_document.name;
+				obj.identifier = daqsystem_doc.document_properties.ndi_document.id();
 			else
 				if nargin==0, % undocumented 0 argument creator
 					name = '';
@@ -438,17 +443,41 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 		end; % getepochprobemap
 		
 		%% functions that override ndi_documentservice
+
 		function ndi_document_obj_set = newdocument(ndi_daqsystem_obj)
-		% NEWDOCUMENT - create a new document set for NDI_DAQSYSTEM objects
-		% 
-		% NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_DAQSYSTEM_OBJ)
-		%
-		% Creates a set of documents that describe an NDI_DAQSYSTEM.
-			ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
-			ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument();
-			ndi_document_obj_set{3} = ndi_document('ndi_document_daqsystem.json','daqsystem.filenavigator',ndi_document_obj_set{1}.doc_unique_id(),...
-					'daqsystem.daqreader',ndi_document_obj_set{2}.doc_unique_id);
-		end
+			% NEWDOCUMENT - create a new document set for NDI_DAQSYSTEM objects
+			% 
+			% NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_DAQSYSTEM_OBJ)
+			%
+			% Creates a set of documents that describe an NDI_DAQSYSTEM.
+			
+				ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
+				ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument();
+				ndi_document_obj_set{3} = ndi_document('ndi_document_daqsystem.json',...
+					'daqsystem.ndi_daqsystem_class', class(ndi_daqsystem_obj),...
+					'ndi_document.id', ndi_daqsystem_obj.id(),...
+					'ndi_document.name', ndi_daqsystem_obj.name);
+				ndi_document_obj_set{3} = ndi_document_obj_set{3}.set_dependency_value( ...
+					'filenavigator_id', ndi_daqsystem_obj.filenavigator.id());
+				ndi_document_obj_set{3} = ndi_document_obj_set{3}.set_dependency_value( ...
+					'daqreader_id', ndi_daqsystem_obj.daqreader.id());
+		end;  % newdocument()
+
+		function sq = searchquery(ndi_daqsystem_obj)
+			% SEARCHQUERY - search for an NDI_DAQSYSTEM
+			%
+			% SQ = SEARCHQUERY(NDI_DAQSYSTEM_OBJ)
+			%
+			% Returns SQ, an NDI_QUERY object that searches the database for the NDI_DAQSYSTEM object
+			%
+				sq = ndi_query({'ndi_document.id',ndi_daqsystem_obj.id(), ...
+						'ndi_document.name', ndi_daqsystem_obj.name, ...
+						'ndi_document.experiment_id', ndi_daqsystem_obj.experiment.id()});
+
+				sq = sq & ndi_query('','depends_on','filenavigator_id',ndi_daqsystem_obj.filenavigator.id()) & ...
+					ndi_query('','depends_on','daqreader_id',ndi_daqsystem_obj.daqreader.id());
+
+		end; % searchquery()
 
 	end % methods
 end % ndi_daqsystem classdef
