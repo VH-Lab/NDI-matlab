@@ -7,11 +7,14 @@
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
-        },
+    },
+	"depends_on": [
+		{	"name": "syncrule_1_id",
+			"value": "" 
+		}
+	],
 	"syncgraph": {
 		"ndi_syncgraph_class":					"ndi_syncgraph",
-		"experiment":						"",
-		"rules": 						""
 	}
 }
 

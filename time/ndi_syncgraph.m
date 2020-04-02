@@ -1,4 +1,4 @@
-classdef ndi_syncgraph < ndi_base
+classdef ndi_syncgraph < ndi_base 
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NDI_EXPERIMENT object
@@ -79,7 +79,9 @@ classdef ndi_syncgraph < ndi_base
 				end
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
+					% TODO: add it to the database document
 				end
+
 		end % addrule()
 
 		function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
@@ -93,7 +95,9 @@ classdef ndi_syncgraph < ndi_base
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
+					% TODO: do surgery on the database document
 				end
+
 		end % removerule()
 
 		function [ginfo,hashvalue] = graphinfo(ndi_syncgraph_obj);

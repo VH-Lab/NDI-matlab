@@ -23,10 +23,9 @@ classdef ndi_syncrule_filematch < ndi_syncrule
 			%
 				if nargin==0,
 					parameters = struct('number_fullpath_matches', 2);
-				else,
-					parameters = varargin{1};
+					varargin = {parameters};
 				end
-				ndi_syncrule_filematch_obj = ndi_syncrule_filematch_obj@ndi_syncrule(parameters);
+				ndi_syncrule_filematch_obj = ndi_syncrule_filematch_obj@ndi_syncrule(varargin{:});
 		end
 
 		function [b,msg] = isvalidparameters(ndi_syncrule_filemath_obj, parameters)

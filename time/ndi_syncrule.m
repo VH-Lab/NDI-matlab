@@ -1,4 +1,4 @@
-classdef ndi_syncrule
+classdef ndi_syncrule < ndi_id & ndi_documentservice
 
         properties (SetAccess=protected,GetAccess=public),
 		parameters;        % parameters, a structure
@@ -17,9 +17,13 @@ classdef ndi_syncrule
 			% This is an abstract class, so PARAMETERS must be empty.
 			%
 				parameters = [];
-				if nargin >0,
+				if nargin==2 & isa(varargin{1},'ndi_experiment') & isa(varargin{2},'ndi_document'),
+					parameters = varargin{2}.document_properties.syncrule.parameters;
+					ndi_syncrule_obj.identifier = varargin{2}.document_properties.ndi_document.id;
+				elseif nargin >0,
 					parameters = varargin{1};
 				end;
+
 				ndi_syncrule_obj = setparameters(ndi_syncrule_obj,parameters);
 		end
 
@@ -33,7 +37,8 @@ classdef ndi_syncrule
 			%
 			% See also: NDI_SYNCRULE/ISVALIDPARAMETERS
 			%
-				if ndi_syncrule_obj.isvalidparameters(parameters),
+				[b,msg] = ndi_syncrule_obj.isvalidparameters(parameters);
+				if b,
 					ndi_syncrule_obj.parameters = parameters;
 				else,
 					error(['Could not set parameters: ' msg ]); 
@@ -163,6 +168,31 @@ classdef ndi_syncrule
 				cost = [];
 				mapping = [];
 		end % apply
+
+		%% functions that override ndi_documentservice
+
+		function ndi_document_obj = newdocument(ndi_syncrule_obj)
+			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_SYNCRULE object
+			%
+			% DOC = NEWDOCUMENT(NDI_SYNCRULE_OBJ)
+			%
+			% Creates an NDI_DOCUMENT object DOC that represents the
+			%    NDI_SYNCRULE object.
+				ndi_document_obj = ndi_document('ndi_document_syncrule.json',...
+					'syncrule.ndi_syncrule_class',class(ndi_syncrule_obj),...
+					'ndi_document.id', ndi_syncrule_obj.id(),...
+					'syncrule.parameters', ndi_syncrule_obj.parameters);
+		end; % newdocument()
+
+		function sq = searchquery(ndi_syncrule_obj)
+			% SEARCHQUERY - create a search for this NDI_SYNCRULE object
+			%
+			% SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
+			%
+			% Creates a search query for the NDI_DAQREADER object.
+			%
+				sq = {'ndi_document.id', ndi_syncrule_obj.id() };
+		end; % searchquery()
 
 	end % methods
 end % classdef ndi_syncrule

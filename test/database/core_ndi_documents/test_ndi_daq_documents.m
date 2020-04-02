@@ -7,6 +7,8 @@ function test_ndi_daq_documents(varargin)
 %  following objects and subclasses:
 %     1) ndi_filenavigator (by calling test_ndi_filenavigator_document)
 %     2) ndi_daqreader (by calling test_ndi_daqreader_document)
+%     3) ndi_daqsystem (by calling test_ndi_daqsystem_document)
+%     4) ndi_syncrule (by calling test_ndi_syncrule_document)
 %     
 %  If DIRNAME is not provided, the default directory
 %  [NDIEXAMPLEEXPERPATH/exp1_eg] is used.
@@ -16,3 +18,5 @@ function test_ndi_daq_documents(varargin)
 test_ndi_filenavigator_documents(varargin{:});
 test_ndi_daqreader_documents(varargin{:});
 test_ndi_daqsystem_documents();
+test_ndi_syncrule_documents(varargin{:});
+

@@ -157,7 +157,7 @@ classdef ndi_daqreader < ndi_base
 		function ndi_document_obj = newdocument(ndi_daqreader_obj)
 			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_DAQREADER object
 			%
-			% DOC = NEWDOCUMENT(NDI_DOCUMENT_OBJ)
+			% DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
 			%
 			% Creates an NDI_DOCUMENT object DOC that represents the
 			%    NDI_DAQREADER object. 
