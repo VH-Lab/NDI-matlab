@@ -9,10 +9,10 @@
 		]
         },
 	"filenavigator": {
+		"ndi_filenavigator_class":				"ndi_filenavigator",
 		"fileparameters":					"",
 		"epochprobemap_class":					"",
-		"epochprobemap_fileparameters":				"",
-		"experiment_id":					""
+		"epochprobemap_fileparameters":				""
 	}
 }
 

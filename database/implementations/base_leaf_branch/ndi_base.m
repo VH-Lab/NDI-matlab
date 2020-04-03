@@ -1,4 +1,4 @@
-classdef ndi_base 
+classdef ndi_base < ndi_id
 	% NDI_BASE - A node that fits into an NDI_BASE_BRANCH
 	%
 	%
@@ -30,7 +30,9 @@ classdef ndi_base
 			%  
 			% See also: NDI_DBLEAF, NDI_BASE
 
-			obj.objectfilename = ['object_' ndi_unique_id() ];
+			obj = obj@ndi_id();
+
+			obj.objectfilename = ['object_' obj.id() ]; % refer to ndi_id identifier
 			obj.lockfid = [];
 
 			if nargin<2,
@@ -116,6 +118,9 @@ classdef ndi_base
 				obj = ndi_base_obj;
 				properties_set = {};
 				for i=1:numel(properties),
+					if strcmp(properties{i},'objectfilename'),
+						obj.identifier = values{i}(1+numel('object_'):end);
+					end;
 					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
 						if properties{i}(1)~='$',
 							eval(['obj.' properties{i} '= values{i};']);

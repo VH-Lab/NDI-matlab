@@ -1,17 +1,35 @@
 classdef ndi_id
 
 	properties (SetAccess=protected,GetAccess=public)
-		id
+		identifier; % a unique identifier id for this object
 	end % properties
 
 	methods
-		function obj = ndi_id(id)
+		function obj = ndi_id(id_value)
+			% NDI_ID - create a new NDI_ID object
+			%
+			% NDI_ID_OBJ = NDI_ID()
+			%
+			% Creates a new NDI_ID object and generates a unique id
+			% that is stored in the property 'identifier'.
+			%
 			if nargin > 0
-				% CHECK check it is a proper id
-				obj.id = id;
+				% TODO: CHECK check it is a proper id
+				obj.identifier = id_value;
 			else
-				obj.id = ndi_unique_id;
+				obj.identifier = ndi_unique_id();
 			end
 		end
+
+		function identifier = id(ndi_id_obj)
+			% ID - return the identifier of an NDI_ID object
+			% 
+			% IDENTIFIER = ID(NDI_ID_OBJ)
+			%
+			% Returns the unique identifier of an NDI_ID object.
+			%
+				identifier = ndi_id_obj.identifier;
+		end; % id()
 	end
 end
+

@@ -1,4 +1,4 @@
-classdef ndi_syncgraph < ndi_base
+classdef ndi_syncgraph < ndi_base 
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NDI_EXPERIMENT object
@@ -17,21 +17,55 @@ classdef ndi_syncgraph < ndi_base
 			% Builds a new NDI_SYNCGRAPH object and sets its EXPERIMENT
 			% property to EXPERIMENT, which should be an NDI_EXPERIMENT object.
 			%
+			% This function can be called in another form:
+			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(EXPERIMENT, NDI_DOCUMENT_OBJ)
+			% where NDI_DOCUMENT_OBJ is an NDI_DOCUMENT of class ndi_document_syncgraph.
+			%
+			
+			%need to be tested after ndi_syncrule creator is done
+			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
+				ndi_syncgraph_obj.experiment = varargin{1};
+				rules_id_list = varargin{2}.dependency_value_n('syncrule_id');
+				for i = 1:numel(rules_id_list)
+					rules_doc = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
+					if numel(rules_doc)~=1,
+						error(['Could not find syncrule with id ' rules_id_list{i} '; found ' int2str(numel(rules_doc)) ' occurrences']);
+					end;
+					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(rules_doc{1},varargin{1}));
+				end
+            		else,
 				experiment = [];
 
 				if nargin>0,
 					experiment = varargin{1};
-				end
+				end;
 	
 				ndi_syncgraph_obj.experiment = experiment;
 
 				if nargin>=2,
 					if strcmp(lower(varargin{2}),lower('OpenFile')),
 						ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
-					end
-				end
-
+					end;
+				end;
+			end;
 		end % ndi_syncgraph
+
+		function b = eq(ndi_syncgraph_obj1, ndi_syncgraph_obj2)
+			% EQ - are 2 NDI_SYNCGRAPH objects equal?
+			%
+			% B = EQ(NDI_SYNCGRAPH_OBJ1, NDI_SYNCHGRAPH_OBJ2)
+			%
+			% B is 1 if the NDI_SYNCGRAPH objects have equal experiments and if 
+			% all syncrules are equal.
+			%
+				b = eq(ndi_syncgraph_obj1.experiment, ndi_syncgraph_obj2.experiment);
+				b = b & (numel(ndi_syncgraph_obj1.rules)==numel(ndi_syncgraph_obj2.rules));
+				if b,
+					for i=1:numel(ndi_syncgraph_obj1.rules),
+						b = b & (ndi_syncgraph_obj1.rules{i} == ndi_syncgraph_obj2.rules{i});
+					end;
+				end;
+		end; % eq();
 
 		function ndi_syncgraph_obj = addrule(ndi_syncgraph_obj, ndi_syncrule_obj)
 			% ADDRULE - add an NDI_SYNCRULE to an NDI_SYNCGRAPH object
@@ -67,7 +101,9 @@ classdef ndi_syncgraph < ndi_base
 				end
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
+					% TODO: add it to the database document
 				end
+
 		end % addrule()
 
 		function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
@@ -81,7 +117,9 @@ classdef ndi_syncgraph < ndi_base
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
+					% TODO: do surgery on the database document
 				end
+
 		end % removerule()
 
 		function [ginfo,hashvalue] = graphinfo(ndi_syncgraph_obj);
@@ -614,7 +652,37 @@ classdef ndi_syncgraph < ndi_base
 					cache = exp.cache;
 					key = ndi_syncgraph_obj.objectfilename;
 				end
-		end
+		end; % getcache()
+		
+                %% functions that override ndi_documentservice
+
+		function ndi_document_obj_set = newdocument(ndi_syncgraph_obj)
+			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_SYNCGRAPH object
+			%
+			% NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_SYNCGRAPH_OBJ)
+			%
+			% Creates an NDI_DOCUMENT object DOC that represents the
+			%    NDI_SYNCRULE object.
+				ndi_document_obj_set{1} = ndi_document('ndi_document_syncgraph.json',...
+					'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
+					'ndi_document.id', ndi_syncgraph_obj.id(),...
+					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id());
+				for i=1:numel(ndi_syncgraph_obj.rules),
+					ndi_document_obj_set{end+1} = ndi_syncgraph_obj.rules{i}.newdocument();
+					ndi_document_obj_set{1} = ndi_document_obj_set{1}.add_dependency_value_n('syncrule_id',ndi_syncgraph_obj.rules{i}.id());
+				end;
+		end; % newdocument()
+
+		function sq = searchquery(ndi_syncgraph_obj)
+			% SEARCHQUERY - create a search for this NDI_SYNCGRAPH object
+			%
+			% SQ = SEARCHQUERY(NDI_SYNCGRAPH_OBJ)
+			%
+			% Creates a search query for the NDI_SYNCGRAPH object.
+			%
+				sq = {'ndi_document.id', ndi_syncgraph_obj.id() , ...
+					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id() };
+		end; % searchquery()
 
 	end % methods
 

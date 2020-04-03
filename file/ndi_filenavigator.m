@@ -35,23 +35,37 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 
 			if nargin==2 & isa(experiment_,'ndi_experiment') & isa(fileparameters_,'ndi_document'),
 				filenavdoc = fileparameters_;
+				% extract parameters from the document
 				if ~isempty(filenavdoc.document_properties.filenavigator.fileparameters),
-					fileparams =      eval([filenavdoc.document_properties.filenavigator.fileparameters]);
+					fileparameters_ =      eval([filenavdoc.document_properties.filenavigator.fileparameters]);
 				else,
-					fileparams = [];
+					fileparameters_ = [];
 				end;
+				epochprobemap_class_ = filenavdoc.document_properties.filenavigator.epochprobemap_class;
 				if ~isempty(filenavdoc.document_properties.filenavigator.epochprobemap_fileparameters)
-					epochfileparams = eval([filenavdoc.document_properties.filenavigator.epochprobemap_fileparameters]);
+					epochprobemap_fileparameters_ = eval([filenavdoc.document_properties.filenavigator.epochprobemap_fileparameters]);
 				else,
-					epochfileparams = [];
+					epochprobemap_fileparameters_ = [];
 				end;
-				obj = ndi_filenavigator(experiment_, ...
-					fileparams, ...
-					filenavdoc.document_properties.filenavigator.epochprobemap_class, ...
-					epochfileparams);
+				obj.identifier = filenavdoc.document_properties.ndi_document.id;
+			else,
+				if nargin<4,
+					epochprobemap_fileparameters_ = [];
+				end;
+				if nargin<3,
+					epochprobemap_class_ = 'ndi_epochprobemap_daqsystem';
+				end;
+				if nargin<2,
+					fileparameters_ = [];
+				end;
+				if nargin<1,
+					experiment_ = [];
+				end;
 			end;
-			
-			if nargin>0,
+
+			% now we have our parameters defined, build the object
+
+			if ~isempty(experiment_),
 				if ~isa(experiment_,'ndi_experiment'),
 					error(['experiement must be an NDI_EXPERIMENT object']);
 				else,
@@ -61,24 +75,25 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 				obj.experiment=[];
 			end;
 
-			if nargin > 1 & ~isempty(fileparameters_),
+			if ~isempty(fileparameters_),
 				obj = obj.setfileparameters(fileparameters_);
 			else,
 				obj.fileparameters = {};
 			end;
-
-			if nargin > 2 & ~isempty(epochprobemap_class_),
+		
+			if ~isempty(epochprobemap_class_),
 				obj.epochprobemap_class = epochprobemap_class_;
 			else,
 				obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
 			end;
 
-			if nargin > 3 & ~isempty(epochprobemap_fileparameters_),
+			if ~isempty(epochprobemap_fileparameters_),
 				obj = obj.setepochprobemapfileparameters(epochprobemap_fileparameters_);
 			else,
 				obj.epochprobemap_fileparameters = {};
 			end;
-		end;
+
+		end; % filenavigator()
 
 		%% functions that used to override HANDLE
 
@@ -252,8 +267,8 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 					et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
 					et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
 					et(end+1) = et_here;
-				end
-		end % epochtable
+				end;
+		end; % epochtable()
 
 		function id = epochid(ndi_filenavigator_obj, epoch_number, epochfiles)
 			% EPOCHID - Get the epoch identifier for a particular epoch
@@ -618,13 +633,14 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 			end
 
 		%% functions that override ndi_documentservice
-			function ndi_document_obj = newdocument(ndi_filenavigator_obj)
+		function ndi_document_obj = newdocument(ndi_filenavigator_obj)
 			% NEWDOCUMENT - create an NDI_DOCUMENT that is based on an NDI_FILENAVIGATOR object
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
 			%
 			% Creates an NDI_DOCUMENT of type 'ndi_document_filenavigator.json'
 			%
+				filenavigator_structure.ndi_filenavigator_class = class(ndi_filenavigator_obj);
 				if ~isempty(ndi_filenavigator_obj.fileparameters),
 					filenavigator_structure.fileparameters = cell2str(ndi_filenavigator_obj.fileparameters.filematch); % convert to a string
 				else,
@@ -632,16 +648,30 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 				end;
 				filenavigator_structure.epochprobemap_class = ndi_filenavigator_obj.epochprobemap_class;
 				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
+					% convert to string
 					filenavigator_structure.epochprobemap_fileparameters = ...
-						cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch); % convert to string
+						cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch); 
 				else,
 					filenavigator_structure.epochprobemap_fileparameters = '';
 				end;
 				filenavigator_structure.experiment_id = ndi_filenavigator_obj.experiment.id();
 				
-				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json','filenavigator',filenavigator_structure);
-			end
+				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json',...
+					'filenavigator',filenavigator_structure,...
+					'ndi_document.id', ndi_filenavigator_obj.id(),...
+					'ndi_document.experiment_id', ndi_filenavigator_obj.experiment.id());
+		end; % newdocument()
 
+		function sq = searchquery(ndi_filenavigator_obj)
+			% SEARCHQUERY - create a search query that will search for this object
+			%
+			% SQ = SEARCHQUERY(NDI_FILENAVIGATOR_OBJ)
+			%
+			% Returns a database search query for this NDI_FILENAVIGATOR object.
+			%
+				sq = {'ndi_document.id', ndi_filenavigator_obj.id(), ...
+					'ndi_document.experiment_id', ndi_filenavigator_obj.experiment.id() };
+		end; % 
 	end % methods
 
 end % classdef
