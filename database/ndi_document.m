@@ -220,7 +220,7 @@ classdef ndi_document
 				end;
 		end; % 
 
-		function ndi_document_obj = dependency_value_n(ndi_document_obj, dependency_name, varargin)
+		function d = dependency_value_n(ndi_document_obj, dependency_name, varargin)
 			% DEPENDENCY_VALUE_N - return dependency values from list given dependency name
 			%
 			% D = DEPENDENCY_VALUE_N(NDI_DOCUMENT_OBJ, DEPENDENCY_NAME, ...)

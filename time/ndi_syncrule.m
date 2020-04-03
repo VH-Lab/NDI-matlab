@@ -189,7 +189,7 @@ classdef ndi_syncrule < ndi_id & ndi_documentservice
 			%
 			% SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
 			%
-			% Creates a search query for the NDI_DAQREADER object.
+			% Creates a search query for the NDI_SYNCGRAPH object.
 			%
 				sq = {'ndi_document.id', ndi_syncrule_obj.id() };
 		end; % searchquery()

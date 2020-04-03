@@ -14,7 +14,7 @@
 		}
 	],
 	"syncgraph": {
-		"ndi_syncgraph_class":					"ndi_syncgraph",
+		"ndi_syncgraph_class":					"ndi_syncgraph"
 	}
 }
 
