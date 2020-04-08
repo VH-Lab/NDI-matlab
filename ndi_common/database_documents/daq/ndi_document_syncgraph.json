@@ -1,0 +1,20 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/ndi_document_syncgraph.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/ndi_document_syncgraph_schema.json",
+		"class_name":						"ndi_document_syncgraph",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+    },
+	"depends_on": [
+		{	"name": "placeholder",
+			"value": "" 
+		}
+	],
+	"syncgraph": {
+		"ndi_syncgraph_class":					"ndi_syncgraph"
+	}
+}
+

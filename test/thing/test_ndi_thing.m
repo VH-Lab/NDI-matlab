@@ -44,11 +44,17 @@ et = p{1}.epochtable;
 mything2 = ndi_thing_timeseries(E,'myindirectthing',p{1}.reference,'lfp', p{1}, 0);
 [mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
+ % demo adding a thing that does not depend on an antecedent thing at all
+mything3 = ndi_thing_timeseries(E,'mymadeupthing','madeup','madeup', [], 0);
+[mything3,mydoc3] = mything3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
+
 et_t1 = mything1.epochtable();
 et_t2 = mything2.epochtable();
+et_t3 = mything3.epochtable();
 
 thing1 = E.getthings('thing.name','mydirectthing');
 thing2 = E.getthings('thing.name','myindirectthing');
+thing3 = E.getthings('thing.name','mymadeupthing');
 
 [d1,t1] = readtimeseries(thing1{1},1,-Inf,Inf);
 [d2,t2] = readtimeseries(thing2{1},1,-Inf,Inf); % filtered data
@@ -62,7 +68,9 @@ ylabel('Voltage (V)');
 title(['Raw data is blue, filtered is green']);
 box off;
 
-% remove the thing document
+[d3,t3] = readtimeseries(thing3{1},1,-Inf,Inf),
+
+% remove the thing documents
 
 doc = E.database_search({'ndi_document.type','ndi_thing(.*)'});
 if ~isempty(doc),
