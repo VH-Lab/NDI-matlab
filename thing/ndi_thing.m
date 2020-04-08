@@ -196,13 +196,25 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					ia = 1:numel(underlying_et);
 				else,
 					et_added = ndi_thing_obj.loadaddedepochs();
-					[c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
+					if isempty(ndi_thing_obj.underlying_thing),
+						c = {et_added.epoch_id};
+						ia = 1:numel(et_added);
+						ib = [];
+					else,
+						% if there are underlying epochs, we need to make sure we have the right mapping
+						% of epochids between the underlying and the current level
+						[c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
+					end;
 				end
 
 				for n=1:numel(ia),
 					et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
-					et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
+					if ~isempty(ndi_thing_obj.underlying_thing),
+						et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
+					else,
+						et_(1).epoch_id = et_added(ia(n)).epoch_id;
+					end;
 					if ndi_thing_obj.direct,
 						et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
 						et_(1).t0_t1 = underlying_et(ib(n)).t0_t1; 
@@ -213,12 +225,13 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
-					underlying_epochs(1).underlying = ndi_thing_obj.underlying_thing;
-					underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
-					underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
-					underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
-					underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
-				
+					if ~isempty(ndi_thing_obj.underlying_thing),
+						underlying_epochs(1).underlying = ndi_thing_obj.underlying_thing;
+						underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
+						underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
+						underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
+						underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
+					end;
 					et_(1).underlying_epochs = underlying_epochs;
 					et(end+1) = et_;
 				end
@@ -285,6 +298,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			%
 			% 
 				et_added = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				epochdocs = {};
 				if ndi_thing_obj.direct,
 					% nothing can be added
 					return; 
@@ -301,6 +315,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 						newet.t0_t1 = {potential_epochdocs{i}.document_properties.thing_epoch.t0_t1};
 						newet.underlying_epochs = []; % leave this for buildepochtable
 						et_added(end+1) = newet;
+						epochdocs{end+1} = potential_epochdocs{i};
 					end;
 				end;
 		end; % LOADEDEPOCHS(NDI_THING_OBJ)
