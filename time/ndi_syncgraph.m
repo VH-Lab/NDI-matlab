@@ -166,7 +166,7 @@ classdef ndi_syncgraph < ndi_base
 				ginfo.diG = [];
 
 				d = ndi_syncgraph_obj.experiment.daqsystem_load('name','(.*)');
-				if ~iscell(d), d = {d}; end; % make sure we are a cell
+				if ~iscell(d) & ~isempty(d), d = {d}; end; % make sure we are a cell
 
 				for i=1:numel(d),
 					ginfo = ndi_syncgraph_obj.addepoch(d{i}, ginfo);
