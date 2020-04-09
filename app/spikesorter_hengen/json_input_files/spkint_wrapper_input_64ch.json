@@ -1,0 +1,23 @@
+{
+	"thresh" : 4,
+	"num_channels" : 64,
+	"hstype" : ["hs64"],
+	"nprobes" : 1,
+	"probetosort" : 1,
+	"probe_channels" : 64,
+	"fs" : 25000,
+	"bad_chans" : -1,
+	"rawdatfilt" : "None",
+	"lnosplit" : 1,
+	"lsorting" : 1,
+	"lmetrics" : 1,
+	"spk_sorter" : "m",
+	"lfp" : 0,
+	"ncpus" : 4,
+	"sorter_config" : "json_input_files/mountainsort.json",
+	"ltk" : 0,
+	"TMPDIR_LOC" : "tmp",
+	"probefile" : "probe_files/4by4tetrodes.prb",
+	"file_path" : "Headstages_64_Channels_int16_2018-10-22_14-15-25.bin",
+	"clustering_output" : "clustering_output"
+}

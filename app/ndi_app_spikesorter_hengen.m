@@ -22,6 +22,35 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		end % ndi_app_spikesorter() creator
 
+		function disp_pwd(ndi_app_spikesorter_hengen_obj)
+
+			pwd
+
+		end
+
+		function rate_neuron_quality(ndi_app_spikesorter_hengen_obj)
+
+			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
+
+			ndi_globals;
+
+			pwd
+
+			prev_folder = cd([ndipath filesep 'app' filesep 'spikesorter_hengen'])
+
+			pwd
+
+			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
+			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
+			warning(['using usr/local/bin/python3' newline 'modify source to use a different python installation'])
+			system(['/usr/local/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.experiment.path])
+
+			cd(prev_folder)
+
+			pwd
+
+		end % rate_neuron_quality
+
 		% function create_conda_env(ndi_app_spikesorter_obj)
 		% % CREATE_CONDA_ENV - Starts conda environment based on 
 		% % 
