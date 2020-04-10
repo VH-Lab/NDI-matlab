@@ -372,7 +372,7 @@ classdef ndi_experiment < handle
 				end;
 
 				if trydaqsystem,
-					obj_here = ndi_experiment_obj.daqsystem.load('name',obj_name);
+					obj_here = ndi_experiment_obj.daqsystem_load('name',obj_name);
 					if ~isempty(obj_here),
 						if strcmp(class(obj_here),obj_classname),
 							% it is our match
