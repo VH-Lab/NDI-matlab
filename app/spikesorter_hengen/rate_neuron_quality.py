@@ -2,7 +2,7 @@ import sys
 import argparse
 import glob
 import numpy as np
-# import musclebeachtools as mbt
+import musclebeachtools as mbt
 import scipy
 
 parser = argparse.ArgumentParser(description='Rate neuron quality using musclebeachtools')
@@ -26,13 +26,17 @@ amplitudes0_files = glob.glob(f'{args.experiment_path}/clustering_output/*amplit
 if len(amplitudes0_files) == 0:
     sys.exit(f'No sorting output found in {args.experiment_path}/clustering_output')
 
-
 n = np.load(neurons_group0_files[0], allow_pickle=True)
-# n_amp = mbt.load_spike_amplitudes(n, amplitudes0_files[0])
+n_amp = mbt.load_spike_amplitudes(n, amplitudes0_files[0])
 
-print(len(n)) # number of neurons
+print('Number of neurons to rate quality for: ', len(n)) # number of neurons
 
-n[0].checkqual() # opens plots with radio buttons to modify quality rating
+for neuron in n[:2]: # hard coded
+
+    neuron.checkqual() # opens plots with radio buttons to modify quality rating
+
+    while neuron.quality == 0: # waits for response for quality
+        pass
 
 # to save results
 scipy.io.savemat('tmp.mat', {'n': n}) # has to be passed as a dict like that

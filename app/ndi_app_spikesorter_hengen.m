@@ -41,9 +41,15 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			pwd
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
-			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
-			warning(['using usr/local/bin/python3' newline 'modify source to use a different python installation'])
+			warning(['using /usr/local(bin/python3' newline 'modify source to use a different python installation'])
 			system(['/usr/local/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.experiment.path])
+
+			load('tmp.mat', 'n')
+
+			% mything3 = ndi_thing_timeseries(E,'mymadeupthing','madeup','madeup', [], 0);
+			% [mything3,mydoc3] = mything3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
+
+			keyboard
 
 			cd(prev_folder)
 
