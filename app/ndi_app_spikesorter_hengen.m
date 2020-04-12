@@ -29,8 +29,16 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 		end
 
 		function rate_neuron_quality(ndi_app_spikesorter_hengen_obj)
+			%%% temp %%%
+			doc = ndi_app_spikesorter_hengen_obj.experiment.database_search({'ndi_document.type','ndi_thing(.*)'});
+			if ~isempty(doc),
+				for i=1:numel(doc),
+					ndi_app_spikesorter_hengen_obj.experiment.database_rm(doc{i}.id());
+				end;
+			end;
+			%%% temp %%%
 
-			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
+			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline 'numpy' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
 
 			ndi_globals;
 
@@ -41,10 +49,30 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			pwd
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
-			warning(['using /usr/local(bin/python3' newline 'modify source to use a different python installation'])
+			warning(['using /usr/local/bin/python3' newline 'modify source to use a different python installation'])
 			system(['/usr/local/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.experiment.path])
 
 			load('tmp.mat', 'n')
+
+			for i=1:numel(n)
+				neuron = n{i}
+
+				neuron_thing = ndi_thing_timeseries(ndi_app_spikesorter_hengen_obj.experiment, ...
+					['neuron_' num2str(neuron.clust_idx+1)], ...
+					[num2str(neuron.clust_idx)], ...
+					'neuron', ...
+					[], 0);
+
+				% TODO: finish neuron_hengen doc to add quality ratings, mean waveforms, etc
+
+				[neuron_thing, neuron_thing_doc] = neuron_thing.addepoch('epoch1', ndi_clocktype('dev_local_time'), [neuron.on_times, neuron.off_times], [neuron.spike_time / neuron.fs]', ones(numel(neuron.spike_time), 1))
+
+				[d,t] = readtimeseries(neuron_thing, 1, -Inf, Inf)
+				figure
+				plot(t, d, 'o')
+
+				keyboard
+			end
 
 			% mything3 = ndi_thing_timeseries(E,'mymadeupthing','madeup','madeup', [], 0);
 			% [mything3,mydoc3] = mything3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
