@@ -10,8 +10,9 @@ import spikeinterface.widgets as sw
 import spikesorters.utils.mdaio as md
 import mountainlab_pytools as mtlp
 import autoscoring as score
-# import musclebeachtools_hlab.musclebeachtools as mb
+# import musclebeachtools as mbt
 import numpy as np
+# import scipy
 import siout_to_mbt as siout
 import matplotlib.backends.backend_pdf as mpdf
 import seaborn as sns
@@ -2855,6 +2856,8 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("--file", "-f", type=str, required=True,
                         help="/home/kbn/spkint_wrapper_input.json")
+    parser.add_argument('--experiment-path', type=str, help='path where to look for clustering_output')
+    parser.add_argument('--ndi-hengen-path', type=str, help='path where default settings for hengen app are located in ndi')
     args = parser.parse_args()
 
     # Check json file and load data
@@ -2896,11 +2899,16 @@ if __name__ == '__main__':
         lfp = int(d['lfp'])
         ncpus = int(d['ncpus'])
         sorter_config = str(d['sorter_config'])
+        sorter_config = os.path.join(args.ndi_hengen_path, sorter_config)
         ltk = bool(d['ltk'])
         TMPDIR_LOC = str(d['TMPDIR_LOC'])
+        TMPDIR_LOC = os.path.join(args.experiment_path, TMPDIR_LOC)
         probefile = str(d['probefile'])
+        probefile = os.path.join(args.ndi_hengen_path, probefile)
         file_path = str(d['file_path'])
+        file_path = os.path.join(args.experiment_path, file_path)
         clustering_output = str(d['clustering_output'])
+        clustering_output = os.path.join(args.experiment_path, clustering_output)
     except Exception as e:
         print("Error : ", e)
         raise ValueError('Error please check data in file {}'
@@ -3525,3 +3533,12 @@ if __name__ == '__main__':
             print(e)
             print('Error: deleting directory {}'
                   .format(grouped_raw_dat_temp_folder_del), flush=True)
+
+    # # TODO:, add if to check for files not found
+    # # neurons_group0_files = glob.glob(os.path.join(clustering_output, '*neurons_group0.npy'))
+    # # amplitudes0_files = glob.glob(os.path.join(clustering_output, '*amplitudes0.npy'))
+
+    # n = np.load(glob.glob(os.path.join(clustering_output, '*neurons_group0.npy'))[0])
+    # n_amp = mbt.load_spike_amplitudes(n, glob.glob(os.path.join(clustering_output, '*amplitudes0.npy'))[0])
+    
+    # scipy.io.savemat(os.path.join(clustering_output, 'tmp.mat'), {'n': n})

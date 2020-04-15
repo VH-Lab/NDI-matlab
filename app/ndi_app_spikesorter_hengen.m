@@ -22,13 +22,57 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		end % ndi_app_spikesorter() creator
 
-		function disp_pwd(ndi_app_spikesorter_hengen_obj)
+		function extract_and_sort(ndi_app_spikesorter_hengen_obj, redo)
+		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi_experiment directory
+		%
+			
+			if isempty(redo)
+				redo = 0
+			end
+			
+			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
+			warning('Change line 66 in this app to point to appropriate python3.8 installation')
+			prev_folder = cd(ndi_app_spikesorter_hengen_obj.experiment.path);
 
-			pwd
+			% deal with directory clustering_output
+			if isfolder('clustering_output')
+				if redo == 1
+					rmdir('clustering_output', 's')
+					mkdir('clustering_output')
+				elseif redo == 0
+					error(['Folder clustering_output exists. Remove directory or make redo value 1 to overwrite'])
+				else
+					error(['redo should be either 0 or 1'])
+				end
+			else
+				mkdir('clustering_output')
+			end
+			
+			% delete existing tmp dir and create it
+			if isfolder('tmp')
+				rmdir('tmp', 's')
+			end
 
-		end
+			mkdir('tmp')
+
+			cd(prev_folder);
+
+			ndi_globals;
+
+			ndi_hengen_path = [ndipath filesep 'app' filesep 'spikesorter_hengen'];
+
+			prev_folder = cd(ndi_hengen_path);
+
+			system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path])
+			%python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
+
+			cd(prev_folder)
+		end % extract_and_sort
 
 		function rate_neuron_quality(ndi_app_spikesorter_hengen_obj)
+		% RATE_NEURON_QUALITY - given an existing sorting output from hengen sorter, rate neuron quality and add ndi_things to experiment
+
+			% TODO: remove temp code
 			%%% temp %%%
 			doc = ndi_app_spikesorter_hengen_obj.experiment.database_search({'ndi_document.type','ndi_thing(.*)'});
 			if ~isempty(doc),
@@ -38,58 +82,58 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			end;
 			%%% temp %%%
 
-			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline 'numpy' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
+			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline 'numpy' newline ' scipy' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
 
 			ndi_globals;
 
-			pwd
-
-			prev_folder = cd([ndipath filesep 'app' filesep 'spikesorter_hengen'])
-
-			pwd
+			prev_folder = cd([ndipath filesep 'app' filesep 'spikesorter_hengen']);
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
 			warning(['using /usr/local/bin/python3' newline 'modify source to use a different python installation'])
 			system(['/usr/local/bin/python3 rate_neuron_quality.py --experiment-path '  ndi_app_spikesorter_hengen_obj.experiment.path])
 
-			load('tmp.mat', 'n')
+			load('tmp.mat', 'n');
 
-			for i=1:numel(n)
+			for i=1:2 % TODO: hardcoded
 				neuron = n{i}
 
-				neuron_thing = ndi_thing_timeseries(ndi_app_spikesorter_hengen_obj.experiment, ...
-					['neuron_' num2str(neuron.clust_idx+1)], ...
-					[num2str(neuron.clust_idx)], ...
-					'neuron', ...
-					[], 0);
+				neuron_thing_doc = ndi_app_spikesorter_hengen_obj.experiment.newdocument('apps/spikesorter_hengen/neuron_hengen', ...
+					...% thing properties
+					'thing.name', ['neuron_' num2str(neuron.clust_idx+1)],...
+					'thing.reference', num2str(neuron.clust_idx),...
+					'thing.type', 'neuron',...
+					'thing.direct', 0,...
+					...% neuron_hengen_object properties (from musclebeachtools)
+					'neuron_properties.waveform', neuron.waveform,...
+					'neuron_properties.waveforms', neuron.waveforms,...
+					'neuron_properties.clust_idx', neuron.clust_idx,...
+					'neuron_properties.quality', neuron.quality,...
+					'neuron_properties.cell_type', neuron.cell_type,...
+					'neuron_properties.mean_amplitude', neuron.mean_amplitude,...
+					'neuron_properties.waveform_tetrodes', neuron.waveform_tetrodes,...
+					'neuron_properties.spike_amplitude', neuron.spike_amplitude...
+				) + ndi_app_spikesorter_hengen_obj.newdocument()
 
-				% TODO: finish neuron_hengen doc to add quality ratings, mean waveforms, etc
+				neuron_thing_doc.set_dependency_value('underlying_thing_id', ''); % TODO: is this the right way of doing this?
 
-				[neuron_thing, neuron_thing_doc] = neuron_thing.addepoch('epoch1', ndi_clocktype('dev_local_time'), [neuron.on_times, neuron.off_times], [neuron.spike_time / neuron.fs]', ones(numel(neuron.spike_time), 1))
+				ndi_app_spikesorter_hengen_obj.experiment.database_add(neuron_thing_doc);
 
-				[d,t] = readtimeseries(neuron_thing, 1, -Inf, Inf)
-				figure
-				plot(t, d, 'o')
+				neuron_thing = ndi_thing_timeseries(ndi_app_spikesorter_hengen_obj.experiment, neuron_thing_doc.id);
 
-				keyboard
+				[neuron_thing, neuron_thing_doc] = neuron_thing.addepoch('epoch1', ndi_clocktype('dev_local_time'), [neuron.on_times, neuron.off_times], [neuron.spike_time / neuron.fs]', ones(numel(neuron.spike_time), 1));
+				
+				% Test plotting
+				% [d,t] = readtimeseries(neuron_thing, 1, -Inf, Inf);
+				% figure;
+				% plot(t, d, 'o');
 			end
 
-			% mything3 = ndi_thing_timeseries(E,'mymadeupthing','madeup','madeup', [], 0);
-			% [mything3,mydoc3] = mything3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
-
-			keyboard
+			delete tmp.mat
 
 			cd(prev_folder)
 
-			pwd
-
 		end % rate_neuron_quality
 
-		% function create_conda_env(ndi_app_spikesorter_obj)
-		% % CREATE_CONDA_ENV - Starts conda environment based on 
-		% % 
-
-		% end
 		
 		% function spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name, redo)
 		% % SPIKE_SORT - method that sorts spikes from specific probes in experiment to ndi_doc

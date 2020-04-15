@@ -9,13 +9,27 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
+	"depends_on": [
+		{	
+			"name": "underlying_thing_id",
+			"value": "" 
+		}
+	],
+	"thing": {
+		"ndi_thing_class": "ndi_thing",
+		"name": "",
+		"reference":"",
+		"type": "",
+		"direct": 0
+	},
 	"neuron_properties": {
-		"mean_waveform": [],
+		"waveform": [],
+		"waveforms": [],
 		"clust_idx": 0,
 		"quality": 0,
 		"cell_type": "",
 		"mean_amplitude": 0,
 		"waveform_tetrodes": [],
-		"spike_amplitudes": []
+		"spike_amplitude": []
 	}
 }
