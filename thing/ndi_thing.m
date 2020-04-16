@@ -22,7 +22,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
 			%
-				if numel(varargin)==6,
+				if numel(varargin)>=6,
 					% first type
 					ndi_thing_class = 'ndi_thing';
 					thing_experiment = varargin{1};
