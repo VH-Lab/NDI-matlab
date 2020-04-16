@@ -65,7 +65,24 @@ classdef ndi_app < ndi_documentservice
 			% Creates a blank NDI_DOCUMENT object of type 'ndi_document_app'. The 'app.name' field
 			% is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 			%
-				c = { 'app.name',ndi_app_obj.varappname() };
+		
+				[~,osversion] = detectOS;
+				osversion_strings = {};
+				for i=1:numel(osversion),
+					osversion_strings{i} = int2str(osversion(i));
+				end;
+				osversion = strjoin(osversion_strings,'.');
+				matlab_ver = ver('MATLAB');
+				matlab_version = matlab_ver.Version;
+				
+				c = { ...
+					'app.name',ndi_app_obj.varappname(),  ...
+					'app.version', '', ...
+					'app.os', computer, ...
+					'app.os_version', osversion,...
+					'app.interpreter','MATLAB',...
+					'app.interpreter_version',matlab_version ...
+				};
 				ndi_document_obj = ndi_app_obj.experiment.newdocument('ndi_document_app', c{:});
 		end;
 	end; % methods

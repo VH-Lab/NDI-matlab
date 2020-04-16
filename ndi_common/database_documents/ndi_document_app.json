@@ -9,7 +9,12 @@
 		]
         },
 	"app": {
-		"name":							""
+		"name":							"",
+		"version":						"",
+		"os":							"",
+		"os_version":						"",
+		"interpreter":						"",
+		"interpreter_version":					""
 	}
 }
 
