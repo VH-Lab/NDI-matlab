@@ -8,9 +8,15 @@ classdef ndi_neuron_hengen < ndi_thing_timeseries
 		function ndi_neuron_hengen_obj = ndi_neuron_hengen(varargin)
 
 			ndi_neuron_hengen_obj = ndi_neuron_hengen_obj@ndi_thing_timeseries(varargin{:});
-
-			ndi_neuron_hengen_obj.quality = varargin{7};
-			ndi_neuron_hengen_obj.source = varargin{8};
+    
+      if numel(varargin) == 2
+        ndi_neuron_hengen_obj.quality = varargin{2}.document_properties.thing.quality;
+        ndi_neuron_hengen_obj.source = varargin{2}.document_properties.thing.source;
+      else
+        ndi_neuron_hengen_obj.quality = varargin{7};
+        ndi_neuron_hengen_obj.source = varargin{8};
+			end
+			
 		end
 
 		function ndi_document_obj = newdocument(ndi_neuron_hengen_obj)
@@ -28,7 +34,7 @@ classdef ndi_neuron_hengen < ndi_thing_timeseries
 			%
 				ndi_document_obj = ndi_neuron_hengen_obj.load_thing_doc();
 				if isempty(ndi_document_obj),
-					ndi_document_obj = ndi_document('ndi_document_thing',...
+					ndi_document_obj = ndi_document('ndi_document_thing_neuron_hengen',...
 						'thing.ndi_thing_class', class(ndi_neuron_hengen_obj), ...
 						'thing.name',ndi_neuron_hengen_obj.name,...
 						'thing.reference', ndi_neuron_hengen_obj.reference, ...

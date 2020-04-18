@@ -14,7 +14,8 @@ function t = ndi_document2thing(ndi_document_obj, ndi_experiment_obj)
 if ~isa(ndi_document_obj, 'ndi_document'),
 	% try to look it up
 	mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',ndi_document_obj,''));
-	if numel(mydoc)==1,
+	keyboard
+    if numel(mydoc)==1,
 		ndi_document_obj = mydoc{1};
 	else,
 		error(['NDI_DOCUMENT_OBJ must be of type NDI_DOCUMENT or an ID of a NDI_DOCUMENT.']);

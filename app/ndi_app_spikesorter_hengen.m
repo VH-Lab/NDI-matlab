@@ -130,9 +130,16 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				[neuron_thing, neuron_thing_doc] = neuron_thing.addepoch('epoch1', ndi_clocktype('dev_local_time'), [neuron.on_times, neuron.off_times], [neuron.spike_time / neuron.fs]', ones(numel(neuron.spike_time), 1));
 				
 				% Test plotting
-				% [d,t] = readtimeseries(neuron_thing, 1, -Inf, Inf);
+				[d,t] = readtimeseries(neuron_thing, 1, -Inf, Inf);
 				% figure;
 				% plot(t, d, 'o');
+
+				figure(i); hold on;
+				for i=1:numel(d)
+					plot([t(i), t(i)], [0.25 0.75], 'b')
+				end
+				ylim([0 1])
+
 			end
 
 			delete tmp.mat
