@@ -65,7 +65,16 @@ classdef ndi_experiment < handle
 				if ~isa(dev,'ndi_daqsystem'),
 					error(['dev is not a ndi_daqsystem']);
 				end;
-				ndi_experiment_obj.daqsystem.add(dev);
+				% search if the daqsystem_obj already exists in the database(based on daqsystem name and experiment_id)
+               			 % if so, pass; otherwise, create a new document from this daqsystem_obj and add it to the database
+                
+				sq = dev.searchquery();
+				search_result = ndi_experiment_obj.database_search(sq);
+				if numel(search_result) ~= 0
+				    doc_set = dev.newdocument();
+
+				    ndi_experiment_obj.database_add(doc_set);
+				end
 		end;
 
 		function ndi_experiment_obj = daqsystem_rm(ndi_experiment_obj, dev)
