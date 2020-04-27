@@ -70,10 +70,12 @@ classdef ndi_experiment < handle
                 
 				sq = dev.searchquery();
 				search_result = ndi_experiment_obj.database_search(sq);
-				if numel(search_result) ~= 0
+				if numel(search_result) == 0
+				    % no match was found, can add to the database
 				    doc_set = dev.newdocument();
-
 				    ndi_experiment_obj.database_add(doc_set);
+				else,
+				    error(['dev already exists in the database.']);    
 				end
 		end;
 
