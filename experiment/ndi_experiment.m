@@ -65,7 +65,18 @@ classdef ndi_experiment < handle
 				if ~isa(dev,'ndi_daqsystem'),
 					error(['dev is not a ndi_daqsystem']);
 				end;
-				ndi_experiment_obj.daqsystem.add(dev);
+				% search if the daqsystem_obj already exists in the database(based on daqsystem name and experiment_id)
+               			 % if so, pass; otherwise, create a new document from this daqsystem_obj and add it to the database
+                
+				sq = dev.searchquery();
+				search_result = ndi_experiment_obj.database_search(sq);
+				if numel(search_result) == 0
+				    % no match was found, can add to the database
+				    doc_set = dev.newdocument();
+				    ndi_experiment_obj.database_add(doc_set);
+				else,
+				    error(['dev already exists in the database.']);    
+				end
 		end;
 
 		function ndi_experiment_obj = daqsystem_rm(ndi_experiment_obj, dev)
@@ -76,14 +87,17 @@ classdef ndi_experiment < handle
 			% Removes the device DEV from the device list.
 			%
 			% See also: DAQSYSTEM_ADD, NDI_EXPERIMENT
-			
-				leaf = ndi_experiment_obj.daqsystem.load('name',dev.name);
-				if ~isempty(leaf),
-					ndi_experiment_obj.daqsystem.remove(leaf.objectfilename);
-				else,
-					error(['No daqsystem named ' dev.name ' found.']);
-				end;
-		end;
+            
+			if ~isa(dev,'ndi_daqsystem')
+						error(['dev is not a ndi_daqsystem']);
+			end
+					docs = ndi_experiment_obj.daqsystem_load('name',dev.name);
+			if ~isempty(docs) 
+						ndi_experiment_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
+			else
+						error(['No daqsystem named ' dev.name ' found.']);
+			end
+		end
 
 		function dev = daqsystem_load(ndi_experiment_obj, varargin)
 			% DAQSYSTEM_LOAD - Load daqsystem objects from an NDI_EXPERIMENT
@@ -99,15 +113,16 @@ classdef ndi_experiment < handle
 			% If more than one object is requested, then DEV will be a cell list of matching objects.
 			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 			%
-				dev = ndi_experiment_obj.daqsystem.load(varargin{:});
-				if numel(dev)==1,
+                
+				dev = ndi_experiment_obj.database_search(ndi_query(varargin{:}));
+				if numel(dev)==1
 					dev=dev.setexperiment(ndi_experiment_obj);
-				else,
-					for i=1:numel(dev),
-						dev{i}=dev{i}.setexperiment(ndi_experiment_obj);
-					end;
-				end;
-		end; % daqsystem_load()	
+				else
+				    for i=1:numel(dev)
+					dev{i}=dev{i}.setexperiment(ndi_experiment_obj);
+				    end
+				end
+		end % daqsystem_load()	
 
 		function ndi_experiment_obj = daqsystem_clear(ndi_experiment_obj)
 			% DAQSYSTEM_CLEAR - remove all DAQSYSTEM objects from an NDI_EXPERIMENT
