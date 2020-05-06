@@ -43,6 +43,27 @@ classdef ndi_app < ndi_documentservice
 				end;
 		end; % varappname ()
 
+		function [v,url] = version_url(ndi_app_obj)
+			% VERSION_URL - return the app version and url 
+			%
+			% [V, URL] = VERSION_URL(NDI_APP_OBJ)
+			%
+			% Return the version and url for the current app. In the base class,
+			% it is assumed that GIT is used and is available from the command line
+			% and the version and url are read from the git directory.
+			%
+			% Developers should override this method in their own class if they use a 
+			% different version control system.
+			%
+				classfilename = which(class(ndi_app_obj));
+				if iscell(classfilename),
+					classfilename = classfilename{1}; % take the first one if there are multiple
+				end;
+				[parentdir,filename] = fileparts(classfilename);
+				[v,url] = git_repo_version(parentdir);
+
+		end; % version_url()
+
 		function c = searchquery(ndi_app_obj)
 			% SEARCHQUERY - return a search query for an NDI_DOCUMENT related to this app
 			%
@@ -65,7 +86,6 @@ classdef ndi_app < ndi_documentservice
 			% Creates a blank NDI_DOCUMENT object of type 'ndi_document_app'. The 'app.name' field
 			% is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 			%
-		
 				[~,osversion] = detectOS;
 				osversion_strings = {};
 				for i=1:numel(osversion),
@@ -74,10 +94,13 @@ classdef ndi_app < ndi_documentservice
 				osversion = strjoin(osversion_strings,'.');
 				matlab_ver = ver('MATLAB');
 				matlab_version = matlab_ver.Version;
-				
+
+				[version,url] = ndi_app_obj.version_url();			
+
 				c = { ...
 					'app.name',ndi_app_obj.varappname(),  ...
-					'app.version', '', ...
+					'app.version', version, ...
+					'app.url', url, ...
 					'app.os', computer, ...
 					'app.os_version', osversion,...
 					'app.interpreter','MATLAB',...
@@ -87,3 +110,4 @@ classdef ndi_app < ndi_documentservice
 		end;
 	end; % methods
 end
+

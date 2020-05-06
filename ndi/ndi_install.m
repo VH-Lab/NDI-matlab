@@ -86,6 +86,7 @@ end;
 
 startup
 
+
  % embedded version
 
 function b = git_embedded_assert
@@ -174,7 +175,7 @@ if ~exist(dirname,'dir'),
 end;
 
 if pull_success, % if we are still going, try to pull
-	[status,results]=system(['git -C ' dirname ' pull']);
+	[status,results]=system(['git -C "' dirname '" pull']);
 
 	pull_success=(status==0);
 end;
@@ -191,7 +192,7 @@ function b = git_embedded_isgitdirectory(dirname)
 %
 
 if git_embedded_assert,
-	[status,results] = system(['git -C ' dirname ' status']);
+	[status,results] = system(['git -C "' dirname '" status']);
 	b = ((status==0) | (status==1)) & ~isempty(results);
 else,
 	error(['GIT not available on system.']);
@@ -219,7 +220,7 @@ if ~b,
 	error(['Not a GIT directory: ' dirname '.']);
 end;
 
-[status,results] = system(['git -C ' dirname ' status ']); 
+[status,results] = system(['git -C "' dirname '" status ']); 
 
 uptodate = 0;
 untracked_present = 0;
@@ -259,7 +260,7 @@ if exist([localreponame],'dir'),
 	error([localreponame ' already exists.']);
 end;
 
-[status,results]=system(['git -C ' localparentdir ' clone ' repository]);
+[status,results]=system(['git -C "' localparentdir '" clone ' repository]);
 
 b = (status==0);
 
