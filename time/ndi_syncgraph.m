@@ -25,14 +25,10 @@ classdef ndi_syncgraph < ndi_base
 			%need to be tested after ndi_syncrule creator is done
 			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
 				ndi_syncgraph_obj.experiment = varargin{1};
-				rules_id_list = varargin{2}.dependency_value_n('syncrule_id');
-				for i = 1:numel(rules_id_list)
-					rules_doc = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
-					if numel(rules_doc)~=1,
-						error(['Could not find syncrule with id ' rules_id_list{i} '; found ' int2str(numel(rules_doc)) ' occurrences']);
-					end;
-					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(rules_doc{1},varargin{1}));
-				end
+				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id())
+				for i=1:numel(syncrule_doc),
+					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
+				end;
             		else,
 				experiment = [];
 
@@ -101,7 +97,7 @@ classdef ndi_syncgraph < ndi_base
 				end
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: add it to the database document
+					% TODO: remove this
 				end
 
 		end % addrule()
@@ -117,7 +113,7 @@ classdef ndi_syncgraph < ndi_base
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
 				if ~isempty(ndi_syncgraph_obj.experiment),
 					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: do surgery on the database document
+					% TODO: remove this
 				end
 
 		end % removerule()
@@ -684,6 +680,45 @@ classdef ndi_syncgraph < ndi_base
 					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id() };
 		end; % searchquery()
 
+
 	end % methods
+
+	methods (Static)
+		function [syncgraph_doc, syncrule_docs] = load_all_syncgraph_docs(ndi_experiment_obj, syncgraph_doc_id)
+			% LOAD_ALL_SYNCGRAPH_DOCS - load a syncgraph document and all of its syncrules
+			%
+			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_EXPERIMENT_OBJ,...
+			%					SYNCGRAPH_DOC_ID)
+			%
+			% Given an NDI_EXPERIMENT object and the document identifier of an NDI_SYNCGRAPH object,
+			% this function loads the NDI_DOCUMENT associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
+			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
+			%
+				syncrule_docs = {};
+				syncgraph_doc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id', 'exact_string', ...
+					syncgraph_doc_id,''));
+				switch numel(syncgraph_doc),
+					case 0,
+						syncgraph_doc = [];
+						return;
+					case 1,
+						syncgraph_doc = syncgraph_doc{1};
+					otherwise,
+						error(['More than 1 document with ndi_document.id value of ' ...
+							syncgraph_doc_id '. Do not know what to do.']);
+				end;
+
+				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
+				for i=1:numel(rules_id_list),
+					rules_doc = ndi_experiment_obj.database_search(ndi_query(...
+						'ndi_document.id','exact_string',rules_id_list{i},''));
+					if numel(rules_doc)~=1,
+						error(['Could not find syncrule with id ' rules_id_list{i} ...
+							'; found ' int2str(numel(rules_doc)) ' occurrences']);
+					end;
+					syncrule_docs{i} = rules_doc{1};
+				end
+		end; % load_all_syncgraph_docs()
+	end % static methods
 
 end % classdef ndi_syncgraph
