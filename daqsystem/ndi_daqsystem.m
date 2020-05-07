@@ -1,4 +1,4 @@
-classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
+classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 % NDI_DAQSYSTEM - Create a new NDI_DEVICE class handle object
 %
 %  D = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR)
@@ -7,6 +7,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 %  This is an abstract class that is overridden by specific devices.
 
 	properties (GetAccess=public, SetAccess=protected)
+		name            % The name of the daq system
 		filenavigator   % The NDI_FILENAVIGATOR associated with this device
 		daqreader       % The NDI_DAQREADER associated with this device
 	end
@@ -25,7 +26,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 		%
 		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
 		%
-			obj = obj@ndi_dbleaf('dummy');
+			obj = obj@ndi_base('dummy');
 			loadfromfile = 0;
 			if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document');
 				experiment = name;
@@ -115,112 +116,7 @@ classdef ndi_daqsystem < ndi_dbleaf & ndi_epochset_param
 					strcmp(class(ndi_daqsystem_obj_a),class(ndi_daqsystem_obj_b));
 		end % eq()
 
-		%% functions that override NDI_BASE/NDI_DBLEAF:
-
-		function obj = readobjectfile(ndi_daqsystem_obj, fname)
-			% READOBJECTFILE
-			%
-			% NDI_DAQSYSTEM_OBJ = READOBJECTFILE(NDI_DEVICE_OBJ, FNAME)
-			%
-			% Reads the NDI_DAQSYSTEM_OBJ from the file FNAME (full path).
-
-				obj=readobjectfile@ndi_dbleaf(ndi_daqsystem_obj, fname);
-				[dirname] = fileparts(fname); % same parent directory
-				subdirname = [dirname filesep obj.objectfilename '.filenavigator.device.ndi'];
-				f = dir([subdirname filesep 'object_*']);
-				if isempty(f),
-					error(['Could not find filenavigator file!']);
-				end
-				obj.filenavigator=ndi_filenavigator_readfromfile([subdirname filesep f(1).name]);
-				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
-				f = dir([subdirname filesep 'object_*']);
-				if isempty(f),
-					error(['Could not find daqreader file!']);
-				end
-				obj.daqreader =ndi_daqreader_readfromfile([subdirname filesep f(1).name]);
-		end % readobjectfile
-
-		function obj = writeobjectfile(ndi_daqsystem_obj, dirname, islocked)
-			% WRITEOBJECTFILE - write an ndi_daqsystem to a directory
-			%
-			% NDI_DAQSYSTEM_OBJ = WRITEOBJECTFILE(NDI_DEVICE_OBJ, dirname, [islocked])
-			%
-			% Writes the NDI_DAQSYSTEM_OBJ to the directory DIRNAME (full path).
-			% 
-			% If ISLOCKED is present, it is passed along to the NDI_DBLEAF/WRITEOBJECT method.
-			% Otherwise, it is assumed that the variable is not already locked (islocked=0).
-
-				if nargin<3,
-					islocked = 0;
-				end
-
-				obj=writeobjectfile@ndi_dbleaf(ndi_daqsystem_obj, dirname, islocked);
-				subdirname = [dirname filesep obj.objectfilename '.filenavigator.device.ndi'];
-				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
-				obj.filenavigator.writeobjectfile(subdirname);
-				subdirname = [dirname filesep obj.objectfilename '.daqreader.device.ndi'];
-				if ~exist(subdirname,'dir'), mkdir(subdirname); end;
-				obj.daqreader.writeobjectfile(subdirname);
-		end % writeobjectfile
-
-		function [data, fieldnames] = stringdatatosave(ndi_daqsystem_obj)
-			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
-			%
-			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NDI_DAQSYSTEM_OBJ)
-			%
-			% Return a cell array of strings to save to the objectfilename.
-			%
-			% FIELDNAMES is a set of names of the fields/properties of the object
-			% that are being stored.
-			%
-			% Note: NDI_DAQSYSTEM objects do not save their NDI_EXPERIMENT property EXPERIMENT. Call
-			% SETPROPERTIES after reading an NDI_DAQSYSTEM from disk to install the NDI_EXPERIMENT.
-			%
-				[data,fieldnames] = stringdatatosave@ndi_dbleaf(ndi_daqsystem_obj);
-		end % stringdatatosave
-
-		function [obj,properties_set] = setproperties(ndi_daqsystem_obj, properties, values)
-			% SETPROPERTIES - set the properties of an NDI_DAQSYSTEM object
-			%
-			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NDI_DAQSYSTEM_OBJ, PROPERTIES, VALUES)
-			%
-			% Given a cell array of string PROPERTIES and a cell array of the corresponding
-			% VALUES, sets the fields in NDI_DAQSYSTEM_OBJ and returns the result in OBJ.
-			%
-			% The properties that are actually set are returned in PROPERTIESSET.
-			%
-				fn = fieldnames(ndi_daqsystem_obj);
-				obj = ndi_daqsystem_obj;
-				properties_set = {};
-				for i=1:numel(properties),
-					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-						if properties{i}(1)~='$',
-							eval(['obj.' properties{i} '= values{i};']);
-							properties_set{end+1} = properties{i};
-						end
-					end
-				end
-		end % setproperties()
-
-		function b = deleteobjectfile(ndi_daqsystem_obj, thedirname)
-			% DELETEOBJECTFILE - Delete / remove the object file (or files) for NDI_DAQSYSTEM
-			%
-			% B = DELETEOBJECTFILE(NDI_DAQSYSTEM_OBJ, THEDIRNAME)
-			%
-			% Delete all files associated with NDI_DAQSYSTEM_OBJ in directory THEDIRNAME (full path).
-			%
-			% If no directory is given, NDI_DAQSYSTEM_OBJ.PATH is used.
-			%
-			% B is 1 if the process succeeds, 0 otherwise.
-			%
-				b = 1;
-				subdirname = [thedirname filesep ndi_daqsystem_obj.objectfilename '.filenavigator.device.ndi'];
-				rmdir(subdirname,'s');
-				b = b&deleteobjectfile@ndi_dbleaf(ndi_daqsystem_obj, thedirname);
-
-		end % deletefileobject
-
-		%%
+		%% functions that override NDI_EPOCHSET_PARAM
 
 		function ec = epochclock(ndi_daqsystem_obj, epoch_number)
 			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch

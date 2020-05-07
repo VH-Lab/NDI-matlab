@@ -1,7 +1,7 @@
 code	runit	comment
 test_ndi_cache	1	Tests cache
-test_ndi_dbleaf_branch(0)	1	Tests dbleaf_branch on disk
-test_ndi_dbleaf_branch(1)	1	Tests dbleaf_branch in memory only
+test_ndi_dbleaf_branch(0)	0	Tests dbleaf_branch on disk
+test_ndi_dbleaf_branch(1)	0	Tests dbleaf_branch in memory only
 test_ndi_document	1	Tests ndi_document and the database
 test_ndi_filenavigator	1	Tests basic functions of ndi_filenavigator
 test_intan_flat	1	Tests Intan daqsystem
