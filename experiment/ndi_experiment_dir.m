@@ -35,37 +35,37 @@ classdef ndi_experiment_dir < ndi_experiment
 				ndi_experiment_dir_obj.path = path;
 				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt']);
 				if ~isempty(d),
-					ndi_experiment_dir_obj.reference = strtrim(textfile2char([ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt']));
+					ndi_experiment_dir_obj.reference = strtrim(textfile2char(...
+						[ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt']));
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' ndi_experiment_dir_obj.ndipathname() '.']);
 				end
 				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
-					ndi_experiment_dir_obj.unique_reference = strtrim(textfile2char([ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt']));
+					ndi_experiment_dir_obj.unique_reference = strtrim(textfile2char(...
+						[ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
-					%warning(['Could not load the UNIQUE REFERENCE field from the path ' ndi_experiment_dir_obj.ndipathname() '. Making one']);
 					ndi_experiment_dir_obj.unique_reference = ndi_unique_id();
 				end
 
-				d = dir([ndi_experiment_dir_obj.ndipathname() filesep 'daqsystem_object_*']);
-				if isempty(d),
-					ndi_experiment_dir_obj.daqsystem = ndi_dbleaf_branch(ndi_experiment_dir_obj.ndipathname(),'daqsystem',{'ndi_daqsystem'},1);
-				else,
-					ndi_experiment_dir_obj.daqsystem = ndi_pickdbleaf([ndi_experiment_dir_obj.ndipathname() filesep d(1).name]);
-				end;
-
 				ndi_experiment_dir_obj.database = ndi_opendatabase(ndi_experiment_dir_obj.ndipathname(), ndi_experiment_dir_obj.id());
 
-				d = dir([ndi_experiment_dir_obj.ndipathname() filesep '*syncgraph.ndi']);
-				if isempty(d),
+				syncgraph_doc = ndi_experiment_dir_obj.database_search( ndi_query('','isa','ndi_syncgraph','') & ...
+					ndi_query('ndi_document.experiment_id', 'exact_string', ndi_experiment_dir_obj.id(), ''));
+
+				if isempty(syncgraph_doc),
 					ndi_experiment_dir_obj.syncgraph = ndi_syncgraph(ndi_experiment_dir_obj);
 				else,
-					ndi_experiment_dir_obj.syncgraph = ndi_experiment_dir_obj.syncgraph.readobjectfile(...
-						[ndi_experiment_dir_obj.ndipathname filesep d(1).name]);
+					if numel(syncgraph_doc)~=1,
+						error(['Too many syncgraph documents found. Confused. There should be only 1.']);
+					end;
+					ndi_experiment_dir_obj.syncgraph = ndi_document2ndi_object(syncgraph_doc{1});
 				end;
 
-				str2text([ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt'], ndi_experiment_dir_obj.reference);
-				str2text([ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt'], ndi_experiment_dir_obj.unique_reference);
+				str2text([ndi_experiment_dir_obj.ndipathname() filesep 'reference.txt'], ...
+					ndi_experiment_dir_obj.reference);
+				str2text([ndi_experiment_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
+					ndi_experiment_dir_obj.unique_reference);
 		end;
 		
 		function p = getpath(ndi_experiment_dir_obj)
@@ -114,5 +114,4 @@ classdef ndi_experiment_dir < ndi_experiment
 	end; % methods
 
 end % classdef
-
 

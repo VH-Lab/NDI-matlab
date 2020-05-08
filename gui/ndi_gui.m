@@ -1,3 +1,4 @@
+   2
 function ndi_gui(varargin)
 % NDI_GUI - A gui to display the contents of an NDI_EXPERIMENT
 %
@@ -163,22 +164,6 @@ switch command
         end
       
       
-%      case 'DAQList'
-%             disp(['here at DBList']);
-%             ref_list = get(findobj(fig,'tag','DAQList'),'userdata'); 
-%             value = get(findobj(fig,'tag','DBList'),'value');
-%             if ~isempty(value)
-%                 mydaq = findobj('objectfilename',ref_list{value});
-%                 j_pretty = prettyjson(jsonencodenan(mydaq{1}.document_properties));
-%                 j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
-%                 % %  j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
-% 
-%                 set(findobj(fig,'tag','doc_properties'),'string',j_pretty);
-%             end
-%             ndi_gui('fig',fig,'command','EnableDisable');      
-        
-    
-    
     case 'UpdateDAQList'
         ud.ndi_experiment_obj,
         daq_list = ud.ndi_experiment_obj.daqsystem_load;
@@ -186,7 +171,7 @@ switch command
         unique_names = {};
         for i=1:numel(daq_list)
             names{i} = daq_list{i}.name;
-            unique_names{i} = daq_list{i}.objectfilename;
+            unique_names{i} = daq_list{i}.id();
         end
 
 		set(findobj(fig,'tag','DAQList'),'string',names,'value',[],'userdata',unique_names);

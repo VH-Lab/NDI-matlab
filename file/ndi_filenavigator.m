@@ -1,4 +1,4 @@
-classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
+classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 	% NDI_FILENAVIGATOR - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
@@ -117,96 +117,6 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 
 		%% functions that override NDI_BASE
 
-		function [data, fieldnames] = stringdatatosave(ndi_filenavigator_obj)
-			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
-			%
-			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NDI_FILENAVIGATOR_OBJ)
-			%
-			% Return a cell array of strings to save to the objectfilename.
-			%
-			% FIELDNAMES is a set of names of the fields/properties of the object
-			% that are being stored.
-			%
-			% For NDI_FILENAVIGATOR, this returns file parameters, epochprobemap, and epochprobemap_fileparameters.
-			%
-			% Note: NDI_FILENAVIGATOR objects do not save their NDI_EXPERIMENT property EXPERIMENT. Call
-			% SETPROPERTIES after reading an NDI_FILENAVIGATOR from disk to install the NDI_EXPERIMENT.
-			%
-			% Developer note: If you create a subclass of NDI_FILENAVIGATOR with properties, it is recommended
-			% that you implement your own version of this method. If you have only properties that can be stored
-			% efficiently as strings, then you will not need to include a WRITEOBJECTFILE method.
-			%
-				[data,fieldnames] = stringdatatosave@ndi_base(ndi_filenavigator_obj);
-				if isstruct(ndi_filenavigator_obj.fileparameters),
-					fp = cell2str(ndi_filenavigator_obj.fileparameters.filematch);
-				else,
-					fp = [];
-				end
-
-				if isstruct(ndi_filenavigator_obj.epochprobemap_fileparameters),
-					efp = cell2str(ndi_filenavigator_obj.epochprobemap_fileparameters.filematch);
-				else,
-					efp = [];
-				end
-
-				data{end+1} = fp;
-				fieldnames{end+1} = '$fileparameters';
-				data{end+1} = ndi_filenavigator_obj.epochprobemap_class;
-				fieldnames{end+1} = 'epochprobemap_class';
-				data{end+1} = efp;
-				fieldnames{end+1} = '$epochprobemap_fileparameters';
-		end % stringdatatosave
-
-		function [obj,properties_set] = setproperties(ndi_filenavigator_obj, properties, values)
-			% SETPROPERTIES - set the properties of an NDI_FILENAVIGATOR object
-			%
-			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NDI_FILENAVIGATOR_OBJ, PROPERTIES, VALUES)
-			%
-			% Given a cell array of string PROPERTIES and a cell array of the corresponding
-			% VALUES, sets the fields in NDI_FILENAVIGATOR_OBJ and returns the result in OBJ.
-			%
-			% If any entries in PROPERTIES are not properties of NDI_FILENAVIGATOR_OBJ, then
-			% that property is skipped.
-			%
-			% The properties that are actually set are returned in PROPERTIESSET.
-			%
-			% Developer note: when creating a subclass of NDI_FILENAVIGATOR that has its own properties that
-			% need to be read/written from disk, copy this method SETPROPERTIES into the new class so that
-			% you will be able to set all properties (this instance can only set properties of NDI_FILENAVIGATOR).
-			%
-				fn = fieldnames(ndi_filenavigator_obj);
-				obj = ndi_filenavigator_obj;
-				properties_set = {};
-				for i=1:numel(properties),
-					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-						if properties{i}(1)~='$',
-							eval(['obj.' properties{i} '= values{i};']);
-							properties_set{end+1} = properties{i};
-						else,
-							switch properties{i}(2:end),
-								case 'fileparameters',
-									if ~isempty(values{i}),
-										fp = eval(values{i});
-										obj = obj.setfileparameters(fp);
-									else,
-										obj.fileparameters = [];
-									end;
-								case 'epochprobemap_fileparameters',
-									if ~isempty(values{i}),
-										fp = eval(values{i});
-										obj = obj.setepochprobemapfileparameters(fp);
-									else,
-										obj.epochprobemap_fileparameters = [];
-									end
-								otherwise,
-									error(['Do not know how to set property ' properties{i}(2:end) '.']);
-							end
-							properties_set{end+1} = properties{i}(2:end);
-						end
-					end
-				end
-		end % setproperties()
-
 		%% functions that override the methods of NDI_EPOCHSET_PARAM
 
 		function [cache,key] = getcache(ndi_filenavigator_obj)
@@ -217,15 +127,15 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 			% Returns the CACHE and KEY for the NDI_FILENAVIGATOR object.
 			%
 			% The CACHE is returned from the associated experiment.
-			% The KEY is the object's objectfilename.	
+			% The KEY is the string 'filenavigator_' followed by the object's id.
 			%
-			% See also: NDI_FILENAVIGATOR, NDI_BASE
+			% See also: NDI_FILENAVIGATOR
 			
 				cache = [];
 				key = [];
 				if isa(ndi_filenavigator_obj.experiment,'handle'),
 					cache = ndi_filenavigator_obj.experiment.cache;
-					key = ndi_filenavigator_obj.objectfilename;
+					key = ['filenavigator_' ndi_filenavigator_obj.id()];
 				end
 		end
 
@@ -631,6 +541,16 @@ classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
 
 				fmstr = fmhash;
 			end
+
+		function ndi_filenavigator_obj=setexperiment(ndi_filenavigator_obj, experiment)
+			% SETEXPERIMENT - set the EXPERIMENT for an NDI_FILENAVIGATOR object
+			%
+			% NDI_FILENAVIGATOR_OBJ = SETEXPERIMENT(NDI_FILENAVIGATOR_OBJ, EXPERIMENT)
+			%
+			% Set the EXPERIMENT property of an NDI_FILENAVIGATOR object
+			%
+				ndi_filenavigator_obj.experiment = experiment;
+		end; % setexperiment()
 
 		%% functions that override ndi_documentservice
 		function ndi_document_obj = newdocument(ndi_filenavigator_obj)

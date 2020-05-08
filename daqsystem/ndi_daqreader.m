@@ -1,4 +1,4 @@
-classdef ndi_daqreader < ndi_base
+classdef ndi_daqreader < ndi_id
 % NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
 %
 %
@@ -20,7 +20,7 @@ classdef ndi_daqreader < ndi_base
 		%
 		%  NDI_DAQREADER is an abstract class, and a specific implementation must be used.
 		%
-			obj = obj@ndi_base();
+			obj = obj@ndi_id();
 
 			loadfromfile = 0;
 
@@ -37,47 +37,9 @@ classdef ndi_daqreader < ndi_base
 			end;
 
 			if loadfromfile,
-				obj = obj.readobjectfile(filename);
+				error(['Load from file no longer supported.']);
 			end
 		end % ndi_daqreader
-
-		% DBLEAF functions...
-
-		function [data, fieldnames] = stringdatatosave(ndi_daqreader_obj)
-			% STRINGDATATOSAVE - Returns a set of strings to write to file to save object information
-			%
-			% [DATA,FIELDNAMES] = STRINGDATATOSAVE(NDI_DAQREADER_OBJ)
-			%
-			% Return a cell array of strings to save to the objectfilename.
-			%
-			% FIELDNAMES is a set of names of the fields/properties of the object
-			% that are being stored.
-			%
-				[data,fieldnames] = stringdatatosave@ndi_base(ndi_daqreader_obj);
-		end % stringdatatosave
-
-		function [obj,properties_set] = setproperties(ndi_daqreader_obj, properties, values)
-			% SETPROPERTIES - set the properties of an NDI_DAQREADER object
-			%
-			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NDI_DAQREADER_OBJ, PROPERTIES, VALUES)
-			%
-			% Given a cell array of string PROPERTIES and a cell array of the corresponding
-			% VALUES, sets the fields in NDI_DAQREADER_OBJ and returns the result in OBJ.
-			%
-			% The properties that are actually set are returned in PROPERTIESSET.
-			%
-				fn = fieldnames(ndi_daqreader_obj);
-				obj = ndi_daqreader_obj;
-				properties_set = {};
-				for i=1:numel(properties),
-					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-						if properties{i}(1)~='$',
-							eval(['obj.' properties{i} '= values{i};']);
-							properties_set{end+1} = properties{i};
-						end
-					end
-				end
-		end % setproperties()
 
 		% EPOCHSET functions, although this object is NOT an EPOCHSET object
 

@@ -18,19 +18,23 @@ if nargin<1,
 end;
 
 disp(['creating a new experiment object...']);
-exp = ndi_experiment_dir('exp1',dirname);
+E = ndi_experiment_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filenavigator(exp, '.*\.rhd\>');  % look for .rhd files
+dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the daqsystem object and add it to the experiment:
 
 dev1 = ndi_daqsystem_mfdaq('intan1',dt, ndi_daqreader_mfdaq_intan());
-exp.daqsystem_add(dev1);
+E.daqsystem_add(dev1);
+
+ % now load it back
+
+dev1 = E.daqsystem_load('name','intan1')
 
   % Now let's print some statistics
 
@@ -55,5 +59,5 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-exp.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
+E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 

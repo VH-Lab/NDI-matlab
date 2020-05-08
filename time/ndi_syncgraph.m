@@ -1,4 +1,4 @@
-classdef ndi_syncgraph < ndi_base 
+classdef ndi_syncgraph < ndi_id
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NDI_EXPERIMENT object
@@ -25,14 +25,10 @@ classdef ndi_syncgraph < ndi_base
 			%need to be tested after ndi_syncrule creator is done
 			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
 				ndi_syncgraph_obj.experiment = varargin{1};
-				rules_id_list = varargin{2}.dependency_value_n('syncrule_id');
-				for i = 1:numel(rules_id_list)
-					rules_doc = varargin{1}.database_search(ndi_query('ndi_document.id','exact_string',rules_id_list{i},''));
-					if numel(rules_doc)~=1,
-						error(['Could not find syncrule with id ' rules_id_list{i} '; found ' int2str(numel(rules_doc)) ' occurrences']);
-					end;
-					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(rules_doc{1},varargin{1}));
-				end
+				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
+				for i=1:numel(syncrule_doc),
+					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
+				end;
             		else,
 				experiment = [];
 
@@ -44,6 +40,7 @@ classdef ndi_syncgraph < ndi_base
 
 				if nargin>=2,
 					if strcmp(lower(varargin{2}),lower('OpenFile')),
+						error(['Load from file no longer supported.']);
 						ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
 					end;
 				end;
@@ -99,10 +96,6 @@ classdef ndi_syncgraph < ndi_base
 						error('Input not of type NDI_SYNCRULE.');
 					end
 				end
-				if ~isempty(ndi_syncgraph_obj.experiment),
-					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: add it to the database document
-				end
 
 		end % addrule()
 
@@ -115,10 +108,6 @@ classdef ndi_syncgraph < ndi_base
 			%
 				n = numel(ndi_syncgraph_obj.rules);
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
-				if ~isempty(ndi_syncgraph_obj.experiment),
-					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: do surgery on the database document
-				end
 
 		end % removerule()
 
@@ -502,134 +491,7 @@ classdef ndi_syncgraph < ndi_base
 				end
 		end % time_convert()
 
-		function saveStruct = getsavestruct(ndi_syncgraph_obj)
-			% GETSAVESTRUCT - Create a structure representation of the object that is free of handles and objects
-			%
-			% SAVESTRUCT = GETSAVESTRUCT(NDI_SYNCGRAPH_OBJ)
-			%
-			% Creates a structure representation of the NDI_SYNCGRAPH_OBJ that is free of object handles
-			%
-			% SAVESTRUCT has the following properties:
-			%
-			% Fieldname                 | Description
-			% -------------------------------------------------------------------------------------
-			% objectfilename            | The object file name string as is
-			% experiment                | the reference of the NDI_EXPERIMENT object associated with NDI_SYNCGRAPH_OBJ
-			% rules                     | a structure describing each NDI_SYNCRULE with fields:
-			%                           |   'class' - the object class, and 'parameters' - the parameters
-
-				saveStruct.objectfilename = ndi_syncgraph_obj.objectfilename;
-
-				if isa(ndi_syncgraph_obj.experiment,'ndi_experiment'),
-					% though this will be replaced, it might help in debugging
-					saveStruct.experiment = ndi_syncgraph_obj.experiment.reference; 
-				end
-
-				saveStruct.rules = emptystruct('class','parameters');
-				for i=1:numel(ndi_syncgraph_obj.rules),
-					saveStruct.rules(end+1) = struct('class',class(ndi_syncgraph_obj.rules{i}), ...
-						'parameters', ndi_syncgraph_obj.rules{i}.parameters);
-				end
-
-		end % getsavestruct()
-
 		% methods that override NDI_BASE:
-
-		function fname = outputobjectfilename(ndi_syncgraph_obj)
-			% OUTPUTOBJECTFILENAME - return the file name of an NDI_SYNCGRAPH object
-			%
-			% FNAME = OUTPUTOBJECTFILENAME(NDI_SYNCGRAPH_OBJ)
-			%
-			% Returns the filename (without parent directory) to be used to save the NDI_SYNCGRAPH
-			% object. In the NDI_SYNCGRAPH class, it is [NDI_BASE_OBJ.objectfilename '.syncgraph.ndi']
-			%
-			%
-				fname = [ndi_syncgraph_obj.objectfilename '.syncgraph.ndi'];
-		end % outputobjectfilename()
-
-		function writedata2objectfile(ndi_syncgraph_obj, fid)
-			% WRITEDATA2OBJECTFILE - write NDI_SYNCGRAPH object file data to the object file FID
-			%
-			% WRITEDATA2OBJECTFILE(NDI_SYNCGRAPH_OBJ, FID)
-			%
-			% This function writes the data for the NDI_SYNCGRAPH_OBJ to the object file
-			% identifier FID.
-			%
-			% This function assumes the FID is open for writing and it does not close the
-			% the FID. This function is normally called by WRITEOBJECTFILE and is typically
-			% an internal function.
-			%
-				saveStruct = ndi_syncgraph_obj.getsavestruct;
-
-				saveStructString = struct2mlstr(saveStruct);
-				count = fwrite(fid,saveStructString,'char');
-				if count~=numel(saveStructString),
-					error(['Error writing to the file ' filename '.']);
-				end
-		end % writedata2objectfile()
-
-		function ndi_syncgraph_obj = readobjectfile(ndi_syncgraph_obj, filename)
-			% READOBJECTFILE - read
-			%
-			% NDI_SYNCGRAPH_OBJ = READOBJECTFILE(NDI_SYNCGRAPH_OBJ, FILENAME)
-			%
-			% Reads the NDI_SYNCGRAPH_OBJ from the file FNAME (full path).
-				fid = fopen(filename, 'rb');
-				if fid<0,
-					error(['Could not open the file ' filename ' for reading.']);
-				end;
-				saveStructString = char(fread(fid,Inf,'char'));
-				saveStructString = saveStructString(:)'; % make sure we are a 'row'
-				fclose(fid);
-				saveStruct = mlstr2var(saveStructString);
-				fn = setdiff(fieldnames(saveStruct),'experiment');
-				values = {};
-				for i=1:numel(fn),
-					values{i} = getfield(saveStruct,fn{i});
-				end;
-				ndi_syncgraph_obj = ndi_syncgraph_obj.setproperties(fn,values);
-		end; % readobjectfile
-
-		function [obj,properties_set] = setproperties(ndi_syncgraph_obj, properties, values)
-			% SETPROPERTIES - set the properties of an NDI_DBLEAF object
-			%
-			% [OBJ,PROPERTIESSET] = SETPROPERTIES(NDI_SYNCGRAPH_OBJ, PROPERTIES, VALUES)
-			%
-			% Given a cell array of string PROPERTIES and a cell array of the corresponding
-			% VALUES, sets the fields in NDI_SYNCGRAPH_OBJ and returns the result in OBJ.
-			%
-			% If any entries in PROPERTIES are not properties of NDI_SYNCGRAPH_OBJ, then
-			% that property is skipped.
-			%
-			% The properties that are actually set are returned in PROPERTIESSET.
-			%
-				fn = fieldnames(ndi_syncgraph_obj);
-				obj = ndi_syncgraph_obj;
-				properties_set = {};
-				for i=1:numel(properties),
-					if any(strcmp(properties{i},fn)) | any (strcmp(properties{i}(2:end),fn)),
-						if strcmp(properties{i},'rules'),
-							if isstruct(values{i}),
-								obj.rules = {};
-								for v=1:numel(values{i}),
-									eval(['obj.rules{v}=' values{i}(v).class '(values{i}(v).parameters);']);
-								end
-								properties_set{end+1} = 'rules';
-							else,
-								error(['Do not know how to add rules that aren''t a structure.']);
-							end
-						else,
-							if properties{i}(1)~='$',
-								eval(['obj.' properties{i} '= values{i};']);
-								properties_set{end+1} = properties{i};
-							else,
-								eval(['obj.' properties{i}(2:end) '=' values{i} ';']);
-								properties_set{end+1} = properties{i}(2:end);
-							end
-						end
-					end
-				end
-		end % setproperties()
 
 		% cache
 
@@ -641,7 +503,7 @@ classdef ndi_syncgraph < ndi_base
 			% Returns the CACHE and KEY for the NDI_SYNCGRAPH object.
 			%
 			% The CACHE is returned from the associated experiment.
-			% The KEY is the object's objectfilename.
+			% The KEY is the string 'syncgraph_' followed by the object's id.
 			%
 			% See also: NDI_SYNCGRAPH, NDI_BASE
 
@@ -650,7 +512,7 @@ classdef ndi_syncgraph < ndi_base
 				if isa(ndi_syncgraph_obj.experiment,'handle'),
 					exp = ndi_syncgraph_obj.experiment();
 					cache = exp.cache;
-					key = ndi_syncgraph_obj.objectfilename;
+					key = ['syncgraph_' ndi_syncgraph_obj.id()];
 				end
 		end; % getcache()
 		
@@ -684,6 +546,45 @@ classdef ndi_syncgraph < ndi_base
 					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id() };
 		end; % searchquery()
 
+
 	end % methods
+
+	methods (Static)
+		function [syncgraph_doc, syncrule_docs] = load_all_syncgraph_docs(ndi_experiment_obj, syncgraph_doc_id)
+			% LOAD_ALL_SYNCGRAPH_DOCS - load a syncgraph document and all of its syncrules
+			%
+			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_EXPERIMENT_OBJ,...
+			%					SYNCGRAPH_DOC_ID)
+			%
+			% Given an NDI_EXPERIMENT object and the document identifier of an NDI_SYNCGRAPH object,
+			% this function loads the NDI_DOCUMENT associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
+			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
+			%
+				syncrule_docs = {};
+				syncgraph_doc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id', 'exact_string', ...
+					syncgraph_doc_id,''));
+				switch numel(syncgraph_doc),
+					case 0,
+						syncgraph_doc = [];
+						return;
+					case 1,
+						syncgraph_doc = syncgraph_doc{1};
+					otherwise,
+						error(['More than 1 document with ndi_document.id value of ' ...
+							syncgraph_doc_id '. Do not know what to do.']);
+				end;
+
+				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
+				for i=1:numel(rules_id_list),
+					rules_doc = ndi_experiment_obj.database_search(ndi_query(...
+						'ndi_document.id','exact_string',rules_id_list{i},''));
+					if numel(rules_doc)~=1,
+						error(['Could not find syncrule with id ' rules_id_list{i} ...
+							'; found ' int2str(numel(rules_doc)) ' occurrences']);
+					end;
+					syncrule_docs{i} = rules_doc{1};
+				end
+		end; % load_all_syncgraph_docs()
+	end % static methods
 
 end % classdef ndi_syncgraph

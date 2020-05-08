@@ -4,7 +4,6 @@ classdef ndi_experiment < handle
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the experiment
 		unique_reference  % A unique code that uniquely identifies this experiment
-		daqsystem          % An array of NDI_DAQSYSTEM objects associated with this experiment
 		syncgraph         % An NDI_SYNCGRAPH object related to this experiment
 		cache             % An NDI_CACHE object for the experiment's use
 	end
@@ -28,7 +27,6 @@ classdef ndi_experiment < handle
 
 				ndi_experiment_obj.reference = reference;
 				ndi_experiment_obj.unique_reference = ndi_unique_id;
-				ndi_experiment_obj.daqsystem = ndi_dbleaf_branch('','device',{'ndi_daqsystem'},1);
 				ndi_experiment_obj.database = [];
 				ndi_experiment_obj.syncgraph = ndi_syncgraph(ndi_experiment_obj);
 				ndi_experiment_obj.cache = ndi_cache();
@@ -65,47 +63,88 @@ classdef ndi_experiment < handle
 				if ~isa(dev,'ndi_daqsystem'),
 					error(['dev is not a ndi_daqsystem']);
 				end;
-				ndi_experiment_obj.daqsystem.add(dev);
+				% search if the daqsystem_obj already exists in the database(based on daqsystem name and experiment_id)
+               			 % if so, pass; otherwise, create a new document from this daqsystem_obj and add it to the database
+
+				% make sure this daqsystem matches our experiment
+				dev = dev.setexperiment(ndi_experiment_obj);
+                
+				sq = dev.searchquery();
+				search_result = ndi_experiment_obj.database_search(sq);
+				if numel(search_result) == 0
+					% no match was found, can add to the database
+					doc_set = dev.newdocument();
+					ndi_experiment_obj.database_add(doc_set);
+				else,
+					error(['dev already exists in the database.']);    
+				end
 		end;
 
 		function ndi_experiment_obj = daqsystem_rm(ndi_experiment_obj, dev)
 			% DAQSYSTEM_RM - Remove a sampling device from an NDI_EXPERIMENT object
 			%
-			%   NDI_EXPERIMENT_OBJ = DAQSYSTEM_RM(NDI_EXPERIMENT_OBJ, DEV)
+			% NDI_EXPERIMENT_OBJ = DAQSYSTEM_RM(NDI_EXPERIMENT_OBJ, DEV)
 			%
 			% Removes the device DEV from the device list.
 			%
 			% See also: DAQSYSTEM_ADD, NDI_EXPERIMENT
-			
-				leaf = ndi_experiment_obj.daqsystem.load('name',dev.name);
-				if ~isempty(leaf),
-					ndi_experiment_obj.daqsystem.remove(leaf.objectfilename);
-				else,
-					error(['No daqsystem named ' dev.name ' found.']);
+            
+				if ~isa(dev,'ndi_daqsystem')
+					error(['dev is not a ndi_daqsystem']);
 				end;
-		end;
+				daqsys = ndi_experiment_obj.daqsystem_load('name',dev.name);
+				if ~isempty(daqsys) 
+					docs = ndi_experiment_obj.database_search(daqsys.searchquery());
+					if numel(docs)~=1,
+						error(['More than one document found for ' dev.name ', not sure what to do.']);
+					end;
+					for i=1:numel(docs{1}.document_properties.depends_on),
+						dochere = ndi_experiment_obj.database_search(...
+							ndi_query('ndi_document.id', 'exact_string', docs{1}.document_properties.depends_on(i).value, ''));
+						ndi_experiment_obj.database_rm(dochere);
+					end;
+					ndi_experiment_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
+				else
+					error(['No daqsystem named ' dev{j}.name ' found.']);
+				end;
+		end; % daqsystem_rm()
 
 		function dev = daqsystem_load(ndi_experiment_obj, varargin)
 			% DAQSYSTEM_LOAD - Load daqsystem objects from an NDI_EXPERIMENT
 			%
 			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
-			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ, INDEXES)
+			% DEV = DAQSYSTEM_LOAD(NDI_EXPERIMENT_OBJ)
 			%
-			% Returns the device object(s) in the NDI_EXPERIMENT at index(es) INDEXES or
-			% searches for an object whose metadata parameters PARAMS1, PARAMS2, and so on, match
-			% VALUE1, VALUE2, and so on (see NDI_DBLEAF_BRANCH/SEARCH).
+			% Returns the ndi_daqsystem objects in the NDI_EXPERIMENT with metadata parameters PARAMS1 that matches
+			% VALUE1, PARAMS2 that matches VALUE2, etc.
+			%
+			% One can also search for 'name' as a parameter; this will be automatically changed to search
+			% for database documents with fields 'ndi_document.name' equal to the corresponding value.
 			%
 			% If more than one object is requested, then DEV will be a cell list of matching objects.
 			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 			%
-				dev = ndi_experiment_obj.daqsystem.load(varargin{:});
-				if numel(dev)==1,
-					dev=dev.setexperiment(ndi_experiment_obj);
-				else,
-					for i=1:numel(dev),
-						dev{i}=dev{i}.setexperiment(ndi_experiment_obj);
+				dev = {};
+				q1 = ndi_query('','isa','ndi_document_daqsystem','');
+				q2 = ndi_query('ndi_document.experiment_id','exact_string',ndi_experiment_obj.id(),'');
+				q = q1 & q2;
+				if numel(varargin)>0,
+					for i=1:2:numel(varargin),
+						if strcmpi(varargin{i},'name'),
+							varargin{i} = 'ndi_document.name'; % case matters here
+						end;
 					end;
+					q = q & ndi_query(varargin);
+				end;
+				dev_doc = ndi_experiment_obj.database_search(q);
+				% dev is cell list of ndi_document objects
+				for i=1:numel(dev_doc),
+					dev{i} = ndi_document2ndi_object(dev_doc{i},ndi_experiment_obj);
+				end;
+				
+				if numel(dev)==1,
+					dev = dev{1};
 				end;
 		end; % daqsystem_load()	
 
@@ -314,6 +353,7 @@ classdef ndi_experiment < handle
 			% object NDI_EXPERIMENT_OBJ. 
 			%
 				ndi_experiment_obj.syncgraph = ndi_experiment_obj.syncgraph.addrule(rule);
+				update_syncgraph_in_db(ndi_experiment_obj);
 		end; % syncgraph_addrule
 
 		function ndi_experiment_obj = syncgraph_rmrule(ndi_experiment_obj, index)
@@ -325,7 +365,7 @@ classdef ndi_experiment < handle
 			% object NDI_EXPERIMENT_OBJ. 
 			%
 				ndi_experiment_obj.syncgraph = ndi_experiment_obj.syncgraph.removerule(index);
-
+				update_syncgraph_in_db(ndi_experiment_obj);
 		end; % syncgraph_rmrule
 
 		%%%%%% PATH methods
@@ -514,5 +554,40 @@ classdef ndi_experiment < handle
 				identifier = [ndi_experiment_obj.reference '_' ndi_experiment_obj.unique_reference];
 		end; % id
 	end; % methods
+
+	methods (Access=protected)
+		function b = update_syncgraph_in_db(ndi_experiment_obj)
+			% UPDATE_SYNCGRAPH_IN_DB - remove and re-install NDI_SYNCGRAPH methods in an NDI_DATABASE
+			%
+			% B = UPDATE_SYNCGRAPH_IN_DB(NDI_EXPERIMENT_OBJ)
+			%
+			% Removes the NDI_SYNCGRAPH (and any SYNCRULE documents) from the database in
+			% NDI_EXPERIMENT_OBJ and adds it back. Useful for updating the SYNCGRAPH when
+			% SYNCRULEs are added or removed.
+
+				b = 1;
+
+				[syncgraph_doc,syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(ndi_experiment_obj, ...
+					ndi_experiment_obj.syncgraph.id());
+
+				newdocs = ndi_experiment_obj.syncgraph.newdocument(); % generate new documents
+
+				% now, delete old docs and add new ones
+
+				gooddelete = 0;
+				try,
+					ndi_experiment_obj.database_rm(syncgraph_doc);
+					ndi_experiment_obj.database_rm(syncrule_doc);
+					gooddelete = 1;
+				end;
+				% now add new docs
+				ndi_experiment_obj.database_add(newdocs);
+
+				if ~gooddelete,
+					error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
+				end;
+		end; % update_syncgraph_in_db()
+	end; % methods (Protected)
+	
 end % classdef
 
