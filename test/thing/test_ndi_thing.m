@@ -33,6 +33,12 @@ if ~isempty(doc),
 end;
 
 p = E.getprobes(); % should return 1 probe
+if numel(p)==0, % build_intan_flat_exp hasn't been run yet
+	disp(['Need to run build_intan_flat_exp first, doing that now...']);
+	build_intan_flat_exp(dirname);
+	p = E.getprobes(); % should return 1 probe
+end;
+
 [d,t] = readtimeseries(p{1}, 1, -Inf, Inf);
  % low-pass filter
 [b,a]=cheby1(4,0.8,[300]/(0.5*1/median(diff(t))),'low');
