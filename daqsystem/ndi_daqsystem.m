@@ -1,4 +1,4 @@
-classdef ndi_daqsystem < ndi_base & ndi_epochset_param
+classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 % NDI_DAQSYSTEM - Create a new NDI_DEVICE class handle object
 %
 %  D = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR)
@@ -26,7 +26,7 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 		%
 		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
 		%
-			obj = obj@ndi_base('dummy');
+			obj = obj@ndi_id();
 			loadfromfile = 0;
 			if nargin==2 & isa(name,'ndi_experiment') & isa(thefilenavigator,'ndi_document');
 				experiment = name;

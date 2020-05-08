@@ -1,4 +1,4 @@
-classdef ndi_filenavigator < ndi_base & ndi_epochset_param & ndi_documentservice
+classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 	% NDI_FILENAVIGATOR - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)

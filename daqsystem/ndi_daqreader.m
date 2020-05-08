@@ -1,4 +1,4 @@
-classdef ndi_daqreader < ndi_base
+classdef ndi_daqreader < ndi_id
 % NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
 %
 %
@@ -20,7 +20,7 @@ classdef ndi_daqreader < ndi_base
 		%
 		%  NDI_DAQREADER is an abstract class, and a specific implementation must be used.
 		%
-			obj = obj@ndi_base();
+			obj = obj@ndi_id();
 
 			loadfromfile = 0;
 

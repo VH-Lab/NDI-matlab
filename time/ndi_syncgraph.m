@@ -1,4 +1,4 @@
-classdef ndi_syncgraph < ndi_base 
+classdef ndi_syncgraph < ndi_id
 
 	properties (SetAccess=protected,GetAccess=public)
 		experiment      % NDI_EXPERIMENT object
@@ -25,7 +25,7 @@ classdef ndi_syncgraph < ndi_base
 			%need to be tested after ndi_syncrule creator is done
 			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
 				ndi_syncgraph_obj.experiment = varargin{1};
-				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id())
+				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
 				for i=1:numel(syncrule_doc),
 					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
 				end;
@@ -96,10 +96,6 @@ classdef ndi_syncgraph < ndi_base
 						error('Input not of type NDI_SYNCRULE.');
 					end
 				end
-				if ~isempty(ndi_syncgraph_obj.experiment),
-					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: remove this
-				end
 
 		end % addrule()
 
@@ -112,10 +108,6 @@ classdef ndi_syncgraph < ndi_base
 			%
 				n = numel(ndi_syncgraph_obj.rules);
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
-				if ~isempty(ndi_syncgraph_obj.experiment),
-					ndi_syncgraph_obj.writeobjectfile(ndi_syncgraph_obj.experiment.ndipathname);
-					% TODO: remove this
-				end
 
 		end % removerule()
 
