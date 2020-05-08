@@ -57,6 +57,7 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 				if nargin>=2,
 					if ischar(thefilenavigator), % it is a command
 						loadfromfile = 1;
+						error(['Loadfromfile no longer supported.']);
 						filename = name;
 						name='';
 						if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
@@ -78,7 +79,7 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
         
 				obj.name = name;
 				if loadfromfile,
-					obj = obj.readobjectfile(filename);
+					error(['Loadfromfile no longer supported.']);
 				else,
 					obj.name = name;
 					obj.filenavigator = thefilenavigator;
@@ -212,8 +213,8 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 			%
 			% Set the EXPERIMENT property of an NDI_DAQSYSTEM object's NDI_DAQSYSTEM object
 			%	
-				ndi_daqsystem_obj.filenavigator = setproperties(ndi_daqsystem_obj.filenavigator,{'experiment'},{experiment});
-		end % setpath()
+				ndi_daqsystem_obj.filenavigator = setexperiment(ndi_daqsystem_obj.filenavigator,experiment);
+		end % setexperiment()
 
 		%% functions that override NDI_EPOCHSET, NDI_EPOCHSET_PARAM
 
@@ -240,7 +241,7 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 			% Returns the CACHE and KEY for the NDI_DAQSYSTEM object.
 			%
 			% The CACHE is returned from the associated experiment.
-			% The KEY is the object's objectfilename.
+			% The KEY is the string 'daqsystem_' followed by the object's id.
 			%
 			% See also: NDI_DAQSYSTEM, NDI_BASE
 
@@ -249,7 +250,7 @@ classdef ndi_daqsystem < ndi_base & ndi_epochset_param
 				if isa(ndi_daqsystem_obj.experiment,'handle'),
 					exp = ndi_daqsystem_obj.experiment();
 					cache = exp.cache;
-					key = ndi_daqsystem_obj.objectfilename;
+					key = ['daqsystem_' ndi_daqsystem_obj.id() ] ;
 				end
 		end
 
