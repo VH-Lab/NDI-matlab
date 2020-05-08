@@ -1,7 +1,7 @@
-function test_ndi_thing(dirname)
-% TEST_NDI_THING - Test the functionality of the NDI_THING object and the NDI_EXPERIMENT database
+function test_ndi_element(dirname)
+% TEST_NDI_ELEMENT - Test the functionality of the NDI_ELEMENT object and the NDI_EXPERIMENT database
 %
-%  TEST_NDI_THING([DIRNAME])
+%  TEST_NDI_ELEMENT([DIRNAME])
 %
 %  Given a directory, this function tries to create some 
 %  NDI_VARIABLE objects in the experiment DATABASE. The test function
@@ -25,7 +25,7 @@ E = ndi_experiment_dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 
-doc = E.database_search({'ndi_document.type','ndi_thing(.*)'});
+doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());
@@ -44,26 +44,26 @@ end;
 [b,a]=cheby1(4,0.8,[300]/(0.5*1/median(diff(t))),'low');
 d_filter = filtfilt(b,a,d);
 
-mything1 = ndi_thing_timeseries(E,'mydirectthing',p{1}.reference,'field', p{1}, 1);
+myelement1 = ndi_element_timeseries(E,'mydirectelement',p{1}.reference,'field', p{1}, 1);
 
 et = p{1}.epochtable;
-mything2 = ndi_thing_timeseries(E,'myindirectthing',p{1}.reference,'lfp', p{1}, 0);
-[mything2,mydoc]=mything2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
+myelement2 = ndi_element_timeseries(E,'myindirectelement',p{1}.reference,'lfp', p{1}, 0);
+[myelement2,mydoc]=myelement2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
- % demo adding a thing that does not depend on an antecedent thing at all
-mything3 = ndi_thing_timeseries(E,'mymadeupthing','madeup','madeup', [], 0);
-[mything3,mydoc3] = mything3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
+ % demo adding a element that does not depend on an antecedent element at all
+myelement3 = ndi_element_timeseries(E,'mymadeupelement','madeup','madeup', [], 0);
+[myelement3,mydoc3] = myelement3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
 
-et_t1 = mything1.epochtable();
-et_t2 = mything2.epochtable();
-et_t3 = mything3.epochtable();
+et_t1 = myelement1.epochtable();
+et_t2 = myelement2.epochtable();
+et_t3 = myelement3.epochtable();
 
-thing1 = E.getthings('thing.name','mydirectthing');
-thing2 = E.getthings('thing.name','myindirectthing');
-thing3 = E.getthings('thing.name','mymadeupthing');
+element1 = E.getelements('element.name','mydirectelement');
+element2 = E.getelements('element.name','myindirectelement');
+element3 = E.getelements('element.name','mymadeupelement');
 
-[d1,t1] = readtimeseries(thing1{1},1,-Inf,Inf);
-[d2,t2] = readtimeseries(thing2{1},1,-Inf,Inf); % filtered data
+[d1,t1] = readtimeseries(element1{1},1,-Inf,Inf);
+[d2,t2] = readtimeseries(element2{1},1,-Inf,Inf); % filtered data
 
 figure
 plot(t1,d1);
@@ -74,11 +74,11 @@ ylabel('Voltage (V)');
 title(['Raw data is blue, filtered is green']);
 box off;
 
-[d3,t3] = readtimeseries(thing3{1},1,-Inf,Inf),
+[d3,t3] = readtimeseries(element3{1},1,-Inf,Inf),
 
-% remove the thing documents
+% remove the element documents
 
-doc = E.database_search({'ndi_document.type','ndi_thing(.*)'});
+doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());

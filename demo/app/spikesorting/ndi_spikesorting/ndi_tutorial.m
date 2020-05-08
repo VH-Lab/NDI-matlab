@@ -47,7 +47,7 @@ spikesorter = ndi_app_spikesorter(our_exp);
 spikesorter.add_sorting_doc('test_sort', []);
 spikesorter.spike_sort(probe, e, 'test_extract', 'test_sort', 0);
 
-neuron1 = our_exp.getthings('thing.name','neuron_1');
+neuron1 = our_exp.getelements('element.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
 
 figure(10)

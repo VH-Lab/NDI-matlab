@@ -1,5 +1,5 @@
 function epochdemo1
-% EPOCHDEMO1 - Demonstrate the relationship between epochs, daqsystems, probes, and things
+% EPOCHDEMO1 - Demonstrate the relationship between epochs, daqsystems, probes, and elements
 %
 %  EPOCHDEMO1
 %

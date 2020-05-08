@@ -10,7 +10,7 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": 0 
 		},
         {   "name": "spike_extraction_id",

@@ -20,7 +20,7 @@ end;
 disp(['creating a new experiment object...']);
 E = ndi_experiment_dir('exp1',dirname);
 
- % remove everything from the experiment to start
+ % remove everyelement from the experiment to start
 E.database_clear('yes'); % use it only if you mean it
 
 dev = E.daqsystem_load('name','(.*)'), 

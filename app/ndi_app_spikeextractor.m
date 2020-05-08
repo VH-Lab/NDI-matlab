@@ -8,7 +8,7 @@ classdef ndi_app_spikeextractor < ndi_app
 	methods
 
 		function ndi_app_spikeextractor_obj = ndi_app_spikeextractor(varargin)
-			% NDI_APP_SPIKEEXTRACTOR - an app to extract things found in experiments
+			% NDI_APP_SPIKEEXTRACTOR - an app to extract elements found in experiments
 			%
 			% NDI_APP_SPIKEEXTRACTOR_OBJ = NDI_APP_SPIKEEXTRACTOR(EXPERIMENT)
 			%
@@ -60,7 +60,7 @@ classdef ndi_app_spikeextractor < ndi_app
 		end; % filter()
 
 		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
-			% EXTRACT - method that extracts spikes from epochs of an NDI_THING_TIMESERIES_OBJ 
+			% EXTRACT - method that extracts spikes from epochs of an NDI_ELEMENT_TIMESERIES_OBJ 
 			%
 			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
 			% TYPE is the type of probe if any
@@ -118,10 +118,10 @@ classdef ndi_app_spikeextractor < ndi_app
 					q_epoch = ndi_query('epochid', 'exact_string', epoch_string, '');
 					q_sw = ndi_query('spikewaves.extraction_name','exact_string', extraction_name,'');
 					q_st = ndi_query('spiketimes.extraction_name','exact_string', extraction_name,'');
-					q_thing = ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+					q_element = ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
 						
-					old_spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_sw&q_thing);
-					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_st&q_thing);
+					old_spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_sw&q_element);
+					old_spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(q_app&q_epoch&q_st&q_element);
 
 					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo,
 						% we already have this epoch
@@ -146,7 +146,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					filterstruct = ndi_app_spikeextractor_obj.makefilterstruct(extraction_doc, sample_rate);
 
-					% Clear extraction within thing with extraction_name
+					% Clear extraction within element with extraction_name
 					ndi_app_spikeextractor_obj.clear_spikewaves_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
 					ndi_app_spikeextractor_obj.clear_spiketimes_doc(ndi_timeseries_obj, epoch{n}, extraction_name);
 
@@ -159,7 +159,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							'epochid', epoch_string) ...
 							+ ndi_app_spikeextractor_obj.newdocument();
 					spikes_doc = spikes_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
-					spikes_doc = spikes_doc.set_dependency_value('thing_id',ndi_timeseries_obj.id());
+					spikes_doc = spikes_doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
 
 					% Create times ndi_doc
 					times_doc = ndi_app_spikeextractor_obj.experiment.newdocument('apps/spikeextractor/spiketimes', ...
@@ -167,7 +167,7 @@ classdef ndi_app_spikeextractor < ndi_app
 							'epochid', epoch_string) ...
 							+ ndi_app_spikeextractor_obj.newdocument();
 					times_doc = times_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
-					times_doc = times_doc.set_dependency_value('thing_id',ndi_timeseries_obj.id());
+					times_doc = times_doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
 
 					% Add docs to database
 					ndi_app_spikeextractor_obj.experiment.database_add(spikes_doc);
@@ -197,7 +197,7 @@ classdef ndi_app_spikeextractor < ndi_app
 						if read_end_sample > end_sample,
 							read_end_sample = end_sample;
 						end;
-						% Read from thing in epoch n from start_time to end_time
+						% Read from element in epoch n from start_time to end_time
 						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
 						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
 						%size(data), end_sample-start_sample+1  % display sizes of data read
@@ -438,7 +438,7 @@ classdef ndi_app_spikeextractor < ndi_app
 					spikewaves_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
 						ndi_query('epochid','exact_string', epoch_string,'') & ...
 						ndi_query('spikewaves.extraction_name','exact_string',extraction_name,'') & ...
-						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+						ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
 					mydoc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
 					ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 				end;
@@ -468,7 +468,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				times_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery())  & ...
 					ndi_query('epochid','exact_string', epoch_string,'') & ...
 					ndi_query('spiketimes.extraction_name','exact_string',extraction_name,'') & ...
-						ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+						ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
 				mydoc = ndi_app_spikeextractor_obj.experiment.database_search(times_searchq);
 				ndi_app_spikeextractor_obj.experiment.database_rm(mydoc);
 			end;
@@ -497,7 +497,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				spikewaves_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery()) & ...
 					ndi_query('epochid','exact_string',epoch_string,'') & ...
 					ndi_query('spikewaves.extraction_name','exact_string',extraction_name,'') & ...
-					ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+					ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
 				spikewaves_doc = ndi_app_spikeextractor_obj.experiment.database_search(spikewaves_searchq);
 			
 				if numel(spikewaves_doc)==1,
@@ -525,7 +525,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				spiketimes_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery()) & ...
 					ndi_query('epochid','exact_string',epoch_string,'') & ...
 					ndi_query('spiketimes.extraction_name','exact_string',extraction_name,'') & ...
-					ndi_query('','depends_on','thing_id',ndi_timeseries_obj.id());
+					ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
 				
 				spiketimes_doc = ndi_app_spikeextractor_obj.experiment.database_search(spiketimes_searchq);
 				

@@ -14,7 +14,7 @@
 		{	"name": "extraction_parameters_id",
 			"value": "" 
 		},
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": "" 
 		}
 	],

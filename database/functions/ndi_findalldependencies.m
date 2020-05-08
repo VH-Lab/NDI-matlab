@@ -43,5 +43,5 @@ for i=1:numel(varargin),
 end;
 
 if ~iscell(d),
-    error(['This should always return a cell list, even if it is empty. Something is wrong, debug necessary.']);    
+    error(['This should always return a cell list, even if it is empty. Someelement is wrong, debug necessary.']);    
 end;

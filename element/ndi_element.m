@@ -1,131 +1,131 @@
-classdef ndi_thing < ndi_epochset & ndi_documentservice
-% NDI_THING - define or examine a thing in the experiment
+classdef ndi_element < ndi_epochset & ndi_documentservice
+% NDI_ELEMENT - define or examine a element in the experiment
 %
 	properties (GetAccess=public, SetAccess=protected)
 		experiment   % associated ndi_experiment object
 		name         % 
 		type         % 
 		reference    % 
-		underlying_thing % does this thing depend on underlying thing data (epochs)?
-		direct       % is it direct from the thing it underlies, or is it different with its own possibly modified epochs?
+		underlying_element % does this element depend on underlying element data (epochs)?
+		direct       % is it direct from the element it underlies, or is it different with its own possibly modified epochs?
 
 	end; % properties
 
 	methods
-		function ndi_thing_obj = ndi_thing(varargin)
-			% NDI_THING_OBJ = NDI_THING - creator for NDI_THING
+		function ndi_element_obj = ndi_element(varargin)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT - creator for NDI_ELEMENT
 			%
-			% NDI_THING_OBJ = NDI_THING(NDI_EXPERIMENT_OBJ, THING_NAME, THING_REFERENCE, THING_TYPE, UNDERLYING_EPOCHSET, DIRECT)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_EXPERIMENT_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT)
 			%    or
-			% NDI_THING_OBJ = NDI_THING(NDI_EXPERIMENT_OBJ, THING_DOCUMENT)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_EXPERIMENT_OBJ, ELEMENT_DOCUMENT)
 			%
-			% Creates an NDI_THING object, either from a name and and associated NDI_PROBE object,
-			% or builds the NDI_THING in memory from an NDI_DOCUMENT of type 'ndi_document_thing'.
+			% Creates an NDI_ELEMENT object, either from a name and and associated NDI_PROBE object,
+			% or builds the NDI_ELEMENT in memory from an NDI_DOCUMENT of type 'ndi_document_element'.
 			%
 				if numel(varargin)==6,
 					% first type
-					ndi_thing_class = 'ndi_thing';
-					thing_experiment = varargin{1};
-					thing_name = varargin{2};
-					thing_reference = varargin{3};
-					thing_type = varargin{4};
-					thing_underlying_thing = varargin{5};
+					ndi_element_class = 'ndi_element';
+					element_experiment = varargin{1};
+					element_name = varargin{2};
+					element_reference = varargin{3};
+					element_type = varargin{4};
+					element_underlying_element = varargin{5};
 					direct = logical(varargin{6});
 				elseif numel(varargin)==2,
-					thing_experiment = varargin{1};
-					if ~isa(thing_experiment,'ndi_experiment'),
+					element_experiment = varargin{1};
+					if ~isa(element_experiment,'ndi_experiment'),
 						error(['When 2 input arguments are given, 1st input must be an NDI_EXPERIMENT.']);
 					end;
-					thing_doc = [];
+					element_doc = [];
 					if ~isa(varargin{2},'ndi_document'),
 						% might be id
-						thing_search = thing_experiment.database_search(ndi_query('ndi_document.id','exact_string',varargin{2},''));
-						if numel(thing_search)~=1,
+						element_search = element_experiment.database_search(ndi_query('ndi_document.id','exact_string',varargin{2},''));
+						if numel(element_search)~=1,
 							error(['When 2 input arguments are given, 2nd input argument must be an NDI_DOCUMENT or document ID.']);
 						else,
-							thing_doc = thing_search{1};
+							element_doc = element_search{1};
 						end;
 					else,
-						thing_doc = varargin{2};
+						element_doc = varargin{2};
 					end;
-					if ~isfield(thing_doc.document_properties, 'thing'),
-						error(['This document does not have parameters ''thing''.']);
+					if ~isfield(element_doc.document_properties, 'element'),
+						error(['This document does not have parameters ''element''.']);
 					end;
-					ndi_thing_class = thing_doc.document_properties.thing.ndi_thing_class;
-					thing_name = thing_doc.document_properties.thing.name;
-					thing_reference = thing_doc.document_properties.thing.reference;
-					thing_type = thing_doc.document_properties.thing.type;
-					if isempty(thing_doc.dependency_value('underlying_thing_id')),
-						thing_underlying_thing = [];
+					ndi_element_class = element_doc.document_properties.element.ndi_element_class;
+					element_name = element_doc.document_properties.element.name;
+					element_reference = element_doc.document_properties.element.reference;
+					element_type = element_doc.document_properties.element.type;
+					if isempty(element_doc.dependency_value('underlying_element_id')),
+						element_underlying_element = [];
 					else,
-						thing_underlying_thing = ndi_document2thing(...
-							 dependency_value(thing_doc,'underlying_thing_id'), thing_experiment);
+						element_underlying_element = ndi_document2element(...
+							 dependency_value(element_doc,'underlying_element_id'), element_experiment);
 					end;
-					if ischar(thing_doc.document_properties.thing.direct),
-						direct = logical(eval(thing_doc.document_properties.thing.direct));
+					if ischar(element_doc.document_properties.element.direct),
+						direct = logical(eval(element_doc.document_properties.element.direct));
 					else,
-						direct = logical(thing_doc.document_properties.thing.direct);
+						direct = logical(element_doc.document_properties.element.direct);
 					end;
 				elseif numel(varargin)==0,
-					thing_experiment='';
-					thing_name = '';
-					thing_reference = 1;
-					thing_type = '';
-					thing_underlying_thing = [];
+					element_experiment='';
+					element_name = '';
+					element_reference = 1;
+					element_type = '';
+					element_underlying_element = [];
 					direct = 0;
-					warning('empty call to ndi_thing(); did not think this would happen...');
+					warning('empty call to ndi_element(); did not think this would happen...');
 				else,
 					error(['Improper number of input arguments']);
 				end;
-				ndi_thing_obj.experiment = thing_experiment;
-				ndi_thing_obj.name = thing_name;
-				ndi_thing_obj.reference = thing_reference;
-				ndi_thing_obj.type = thing_type;
-				ndi_thing_obj.underlying_thing = thing_underlying_thing;
-				ndi_thing_obj.direct = direct;
+				ndi_element_obj.experiment = element_experiment;
+				ndi_element_obj.name = element_name;
+				ndi_element_obj.reference = element_reference;
+				ndi_element_obj.type = element_type;
+				ndi_element_obj.underlying_element = element_underlying_element;
+				ndi_element_obj.direct = direct;
 
-				ndi_thing_obj.newdocument();
-		end; % ndi_thing()
+				ndi_element_obj.newdocument();
+		end; % ndi_element()
 
 	% NDI_EPOCHSET-based methods
 
-		function b = issyncgraphroot(ndi_thing_obj)
+		function b = issyncgraphroot(ndi_element_obj)
 			% ISSYNCGRAPHROOT - should this object be a root in an NDI_SYNCGRAPH epoch graph?
 			%
-			% B = ISSYNCGRAPHROOT(NDI_THING_OBJ)
+			% B = ISSYNCGRAPHROOT(NDI_ELEMENT_OBJ)
 			%
 			% This function tells an NDI_SYNCGRAPH object whether it should continue
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For NDI_THING objects, this returns 0 so that underlying NDI_PROBE epochs are added.
-				b = isempty(ndi_thing_obj.underlying_thing);
+			% For NDI_ELEMENT objects, this returns 0 so that underlying NDI_PROBE epochs are added.
+				b = isempty(ndi_element_obj.underlying_element);
 		end; % issyncgraphroot
 
-		function name = epochsetname(ndi_thing_obj)
-			% EPOCHSETNAME - the name of the NDI_THING object, for EPOCHNODES
+		function name = epochsetname(ndi_element_obj)
+			% EPOCHSETNAME - the name of the NDI_ELEMENT object, for EPOCHNODES
 			%
-			% NAME = EPOCHSETNAME(NDI_THING_OBJ)
+			% NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
 			%
 			% Returns the object name that is used when creating epoch nodes.
 			%
-			% For NDI_THING objects, this is NDI_THING/THINGSTRING. 
-				name = ['thing: ' ndi_thing_obj.thingstring];
+			% For NDI_ELEMENT objects, this is NDI_ELEMENT/ELEMENTSTRING. 
+				name = ['element: ' ndi_element_obj.elementstring];
 		end; % epochsetname
 
-		function ec = epochclock(ndi_thing_obj, epoch_number)
+		function ec = epochclock(ndi_element_obj, epoch_number)
 			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
 			%
-			% EC = EPOCHCLOCK(NDI_THING_OBJ, EPOCH_NUMBER)
+			% EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The NDI_THING class always returns the clock type(s) of the thing it is based on
+			% The NDI_ELEMENT class always returns the clock type(s) of the element it is based on
 			%
-				et = epochtableentry(ndi_thing_obj, epoch_number);
+				et = epochtableentry(ndi_element_obj, epoch_number);
 				ec = et.epoch_clock;
 		end; % epochclock()
 
-		function t0t1 = t0_t1(ndi_thing_obj, epoch_number)
+		function t0t1 = t0_t1(ndi_element_obj, epoch_number)
 			% 
 			% T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
@@ -139,34 +139,34 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
 				% TODO: this must be a bug, it's just self-referential
-				t0t1 = ndi_thing_obj.t0_t1(epoch_number);
+				t0t1 = ndi_element_obj.t0_t1(epoch_number);
 		end; % t0t1()
 
-		function [cache,key] = getcache(ndi_thing_obj)
-			% GETCACHE - return the NDI_CACHE and key for NDI_THING
+		function [cache,key] = getcache(ndi_element_obj)
+			% GETCACHE - return the NDI_CACHE and key for NDI_ELEMENT
 			%
-			% [CACHE,KEY] = GETCACHE(NDI_THING_OBJ)
+			% [CACHE,KEY] = GETCACHE(NDI_ELEMENT_OBJ)
 			%
-			% Returns the CACHE and KEY for the NDI_THING object.
+			% Returns the CACHE and KEY for the NDI_ELEMENT object.
 			%
 			% The CACHE is returned from the associated experiment.
-			% The KEY is the probe's THINGSTRING plus the TYPE of the THING.
+			% The KEY is the probe's ELEMENTSTRING plus the TYPE of the ELEMENT.
 			%
 			% See also: NDI_FILENAVIGATOR, NDI_BASE
 
 				cache = [];
 				key = [];
-				if isa(ndi_thing_obj.experiment,'handle'),,
-					E = ndi_thing_obj.experiment;
+				if isa(ndi_element_obj.experiment,'handle'),,
+					E = ndi_element_obj.experiment;
 					cache = E.cache;
-					key = [ndi_thing_obj.thingstring() ' | ' ndi_thing_obj.type];
+					key = [ndi_element_obj.elementstring() ' | ' ndi_element_obj.type];
 				end
 		end; % getcache()
 
-		function et = buildepochtable(ndi_thing_obj)
-			% BUILDEPOCHTABLE - build the epoch table for an NDI_THING
+		function et = buildepochtable(ndi_element_obj)
+			% BUILDEPOCHTABLE - build the epoch table for an NDI_ELEMENT
 			%
-			% ET = BUILDEPOCHTABLE(NDI_THING_OBJ)
+			% ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
 			%
 			% ET is a structure array with the following fields:
 			% Fieldname:                | Description
@@ -187,16 +187,16 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				% pull all the devices from the experiment and look for device strings that match this probe
 
 				underlying_et = et;
-				if ~isempty(ndi_thing_obj.underlying_thing),
-					underlying_et = ndi_thing_obj.underlying_thing.epochtable();
+				if ~isempty(ndi_element_obj.underlying_element),
+					underlying_et = ndi_element_obj.underlying_element.epochtable();
 				end;
 
-				if ndi_thing_obj.direct,
+				if ndi_element_obj.direct,
 					ib = 1:numel(underlying_et);
 					ia = 1:numel(underlying_et);
 				else,
-					et_added = ndi_thing_obj.loadaddedepochs();
-					if isempty(ndi_thing_obj.underlying_thing),
+					et_added = ndi_element_obj.loadaddedepochs();
+					if isempty(ndi_element_obj.underlying_element),
 						c = {et_added.epoch_id};
 						ia = 1:numel(et_added);
 						ib = [];
@@ -210,23 +210,23 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				for n=1:numel(ia),
 					et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
-					if ~isempty(ndi_thing_obj.underlying_thing),
+					if ~isempty(ndi_element_obj.underlying_element),
 						et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
 					else,
 						et_(1).epoch_id = et_added(ia(n)).epoch_id;
 					end;
-					if ndi_thing_obj.direct,
+					if ndi_element_obj.direct,
 						et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
 						et_(1).t0_t1 = underlying_et(ib(n)).t0_t1; 
 						et_(1).epochprobemap = underlying_et(ib(n)).epochprobemap; 
 					else,
-						et_(1).epochprobemap = []; % not applicable for non-direct things
+						et_(1).epochprobemap = []; % not applicable for non-direct elements
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
 					underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
-					if ~isempty(ndi_thing_obj.underlying_thing),
-						underlying_epochs(1).underlying = ndi_thing_obj.underlying_thing;
+					if ~isempty(ndi_element_obj.underlying_element),
+						underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
 						underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
 						underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
 						underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
@@ -237,211 +237,211 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 				end
 		end; % buildepochtable
 
-		%% unique NDI_THING methods
+		%% unique NDI_ELEMENT methods
 
-		function thingstr = thingstring(ndi_thing_obj)
-			% THINGSTRING - Produce a human-readable thing string
+		function elementstr = elementstring(ndi_element_obj)
+			% ELEMENTSTRING - Produce a human-readable element string
 			%
-			% THINGSTR = THINGSTRING(NDI_THING_OBJ)
+			% ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
 			%
 			% Returns the name as a human-readable string.
 			%
-			% For NDI_THING objects, this is the string 'thing: ' followed by its name
+			% For NDI_ELEMENT objects, this is the string 'element: ' followed by its name
 			% 
-				thingstr = [ndi_thing_obj.name ' | ' int2str(ndi_thing_obj.reference)];
-		end; %thingstring() 
+				elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
+		end; %elementstring() 
 
-		function [ndi_thing_obj, epochdoc] = addepoch(ndi_thing_obj, epochid, epochclock, t0_t1)
-			% ADDEPOCH - add an epoch to the NDI_THING
+		function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1)
+			% ADDEPOCH - add an epoch to the NDI_ELEMENT
 			%
-			% [NDI_THING_OBJ, EPOCHDOC] = ADDEPOCH(NDI_THING_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
+			% [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
 			%
-			% Registers the data for an epoch with the NDI_THING_OBJ.
+			% Registers the data for an epoch with the NDI_ELEMENT_OBJ.
 			%
 			% Inputs:
-			%   NDI_THING_OBJ: The NDI_THING object to modify
+			%   NDI_ELEMENT_OBJ: The NDI_ELEMENT object to modify
 			%   EPOCHID:       The name of the epoch to add; should match the name of an epoch from the probe
 			%   EPOCHCLOCK:    The epoch clock; must be a single clock type that matches one of the clock types
 			%                     of the probe
-			%   T0_T1:         The starting time and ending time of the existence of information about the THING on
+			%   T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
 			%                     the probe, in units of the epock clock
 			%   
 				epochdoc = [];
-				if ndi_thing_obj.direct,
-					error(['Cannot add external observations to an NDI_THING that is directly based on NDI_PROBE.']);
+				if ndi_element_obj.direct,
+					error(['Cannot add external observations to an NDI_ELEMENT that is directly based on NDI_PROBE.']);
 				end;
-				E = ndi_thing_obj.experiment();
+				E = ndi_element_obj.experiment();
 				if ~isempty(E),
-					thingdoc = E.database_search(ndi_thing_obj.searchquery());
-					if isempty(thingdoc),
-						error(['NDI_THING is not part of the database.']);
-					elseif numel(thingdoc)>1,
-						error(['More than one document corresponds to this NDI_THING; shouldn''t happen.']);
+					elementdoc = E.database_search(ndi_element_obj.searchquery());
+					if isempty(elementdoc),
+						error(['NDI_ELEMENT is not part of the database.']);
+					elseif numel(elementdoc)>1,
+						error(['More than one document corresponds to this NDI_ELEMENT; shouldn''t happen.']);
 					else,
-						thingdoc = thingdoc{1};
+						elementdoc = elementdoc{1};
 					end;
-					epochdoc = E.newdocument('ndi_document_thing_epoch', ...
-						'thing_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
-						'thing_epoch.t0_t1', t0_t1, 'epochid',epochid);
-					epochdoc = epochdoc.set_dependency_value('thing_id',thingdoc.id());
+					epochdoc = E.newdocument('ndi_document_element_epoch', ...
+						'element_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
+						'element_epoch.t0_t1', t0_t1, 'epochid',epochid);
+					epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
 					E.database_add(epochdoc);
 				end
 		end; % addepoch()
 
-		function [et_added, epochdocs] = loadaddedepochs(ndi_thing_obj)
-			% LOADADDEDEPOCHS - load the added epochs from an NDI_THING
+		function [et_added, epochdocs] = loadaddedepochs(ndi_element_obj)
+			% LOADADDEDEPOCHS - load the added epochs from an NDI_ELEMENT
 			%
-			% [ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_THING_OBJ)
+			% [ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_ELEMENT_OBJ)
 			%
 			% Load the EPOCHTABLE that consists of added/registered epochs that provide information
-			% about the NDI_THING.
+			% about the NDI_ELEMENT.
 			%
 			% 
 				et_added = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 				epochdocs = {};
-				if ndi_thing_obj.direct,
+				if ndi_element_obj.direct,
 					% nothing can be added
 					return; 
 				end;
 				% loads from database
-				potential_epochdocs = ndi_thing_obj.load_all_thing_docs();
+				potential_epochdocs = ndi_element_obj.load_all_element_docs();
 				for i=1:numel(potential_epochdocs),
-					if isfield(potential_epochdocs{i}.document_properties,'thing_epoch');
+					if isfield(potential_epochdocs{i}.document_properties,'element_epoch');
 						clear newet;
 						newet.epoch_number = i;
 						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid;
 						newet.epochprobemap = '';
-						newet.epoch_clock = {ndi_clocktype(potential_epochdocs{i}.document_properties.thing_epoch.epoch_clock)};
-						newet.t0_t1 = {potential_epochdocs{i}.document_properties.thing_epoch.t0_t1};
+						newet.epoch_clock = {ndi_clocktype(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock)};
+						newet.t0_t1 = {potential_epochdocs{i}.document_properties.element_epoch.t0_t1};
 						newet.underlying_epochs = []; % leave this for buildepochtable
 						et_added(end+1) = newet;
 						epochdocs{end+1} = potential_epochdocs{i};
 					end;
 				end;
-		end; % LOADEDEPOCHS(NDI_THING_OBJ)
+		end; % LOADEDEPOCHS(NDI_ELEMENT_OBJ)
 
-		function thing_doc = load_thing_doc(ndi_thing_obj)
-			% LOAD_THING_DOC - load a thing doc from the experiment database
+		function element_doc = load_element_doc(ndi_element_obj)
+			% LOAD_ELEMENT_DOC - load a element doc from the experiment database
 			%
-			% THING_DOC = LOAD_THING_DOC(NDI_THING_OBJ)
+			% ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
 			%
-			% Load an NDI_DOCUMENT that is based on the NDI_THING object.
+			% Load an NDI_DOCUMENT that is based on the NDI_ELEMENT object.
 			%
 			% Returns empty if there is no such document.
 			%
-				sq = ndi_thing_obj.searchquery();
-				E = ndi_thing_obj.experiment;
-				thing_doc = E.database_search(sq);
-				if numel(thing_doc)>1,
-					error(['More than one document matches the THING definition. This should not happen.']);
-				elseif ~isempty(thing_doc),
-					thing_doc = thing_doc{1};
+				sq = ndi_element_obj.searchquery();
+				E = ndi_element_obj.experiment;
+				element_doc = E.database_search(sq);
+				if numel(element_doc)>1,
+					error(['More than one document matches the ELEMENT definition. This should not happen.']);
+				elseif ~isempty(element_doc),
+					element_doc = element_doc{1};
 				end;
-		end; % load_thing_doc()
+		end; % load_element_doc()
 
-		function thing_ref = doc_unique_id(ndi_thing_obj)
-			% DOC_UNIQUE_REF - return the document unique reference for an NDI_THING object
+		function element_ref = doc_unique_id(ndi_element_obj)
+			% DOC_UNIQUE_REF - return the document unique reference for an NDI_ELEMENT object
 			%
-			% UNIQUE_REF = DOC_UNIQUE_REF(NDI_THING_OBJ)
+			% UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
 			%
-			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
-			% document for the thing, then empty is returned.
+			% Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
+			% document for the element, then empty is returned.
 				warning('depricated..use ID() instead');
-				thing_ref = [];
-				thing_doc = ndi_thing_obj.load_thing_doc();
-				if ~isempty(thing_doc),
-					thing_ref = thing_doc.id();
+				element_ref = [];
+				element_doc = ndi_element_obj.load_element_doc();
+				if ~isempty(element_doc),
+					element_ref = element_doc.id();
 				end;
 		end; % doc_unique_ref()
 
-		function thing_id = id(ndi_thing_obj)
-			% ID - return the document unique identifier for an NDI_THING object
+		function element_id = id(ndi_element_obj)
+			% ID - return the document unique identifier for an NDI_ELEMENT object
 			%
-			% UNIQUE_REF = ID(NDI_THING_OBJ)
+			% UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
 			%
-			% Returns the document unique reference for NDI_THING_OBJ. If there is no associated
-			% document for the thing, then an error is returned.
-				thing_id = [];
-				thing_doc = ndi_thing_obj.load_thing_doc();
-				if isempty(thing_doc),
-					error('no thing document.');
+			% Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
+			% document for the element, then an error is returned.
+				element_id = [];
+				element_doc = ndi_element_obj.load_element_doc();
+				if isempty(element_doc),
+					error('no element document.');
 				end;
-				thing_id = thing_doc.id();
+				element_id = element_doc.id();
 		end; % id()
 
-		function thing_docs = load_all_thing_docs(ndi_thing_obj)
-			% LOAD_ALL_THING_DOCS - load all of the NDI_THING objects from an experiment database
+		function element_docs = load_all_element_docs(ndi_element_obj)
+			% LOAD_ALL_ELEMENT_DOCS - load all of the NDI_ELEMENT objects from an experiment database
 			%
-			% THING_DOCS = LOAD_ALL_THING_DOCS(NDI_THING_OBJ)
+			% ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
 			%
-			% Loads the NDI_DOCUMENT that is based on the NDI_THING object and any associated
+			% Loads the NDI_DOCUMENT that is based on the NDI_ELEMENT object and any associated
 			% epoch documents.
 			%
-				thing_doc = ndi_thing_obj.load_thing_doc();
-				if ~isempty(thing_doc),
-					sq = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
-					E = ndi_thing_obj.experiment();
+				element_doc = ndi_element_obj.load_element_doc();
+				if ~isempty(element_doc),
+					sq = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
+					E = ndi_element_obj.experiment();
 					epochdocs = E.database_search(sq);
-    				thing_docs = cat(1, {thing_doc}, epochdocs(:));                    
+    				element_docs = cat(1, {element_doc}, epochdocs(:));                    
 				else,
 					epochdocs = {};
-                    thing_docs = {};
+                    element_docs = {};
 				end;
-		end; % LOAD_ALL_THING_DOCS
+		end; % LOAD_ALL_ELEMENT_DOCS
 
 	%%% NDI_DOCUMENTSERVICE methods
 
-		function ndi_document_obj = newdocument(ndi_thing_obj)
-			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a thing
+		function ndi_document_obj = newdocument(ndi_element_obj)
+			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a element
 			%
-			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_THING_OBJ)
+			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
 			%
-			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
-			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ and the 
+			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
+			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ and the 
 			% 'name', 'type', and 'reference' fields of its underlying NDI_PROBE_OBJ. 
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
 			% When the document is created, it is automatically added to the experiment.
 			%
-				ndi_document_obj = ndi_thing_obj.load_thing_doc();
+				ndi_document_obj = ndi_element_obj.load_element_doc();
 				if isempty(ndi_document_obj),
-					ndi_document_obj = ndi_document('ndi_document_thing',...
-						'thing.ndi_thing_class', class(ndi_thing_obj), ...
-						'thing.name',ndi_thing_obj.name,...
-						'thing.reference', ndi_thing_obj.reference, ...
-						'thing.type',ndi_thing_obj.type, ...
-						'thing.direct',ndi_thing_obj.direct);
+					ndi_document_obj = ndi_document('ndi_document_element',...
+						'element.ndi_element_class', class(ndi_element_obj), ...
+						'element.name',ndi_element_obj.name,...
+						'element.reference', ndi_element_obj.reference, ...
+						'element.type',ndi_element_obj.type, ...
+						'element.direct',ndi_element_obj.direct);
 					ndi_document_obj = ndi_document_obj + ...
-						newdocument(ndi_thing_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_thing');
+						newdocument(ndi_element_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_element');
 					underlying_id = [];
-					if ~isempty(ndi_thing_obj.underlying_thing),
-						underlying_id = ndi_thing_obj.underlying_thing.id();
-						if isempty(underlying_id), % underlying thing hasn't been saved yet
-							newdoc = ndi_thing_obj.underlying_thing.newdocument();
+					if ~isempty(ndi_element_obj.underlying_element),
+						underlying_id = ndi_element_obj.underlying_element.id();
+						if isempty(underlying_id), % underlying element hasn't been saved yet
+							newdoc = ndi_element_obj.underlying_element.newdocument();
 							underlying_id = newdoc.id();
 						end;
 					end;
-					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_thing_id',underlying_id);
-					ndi_thing_obj.experiment.database_add(ndi_document_obj);
+					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
+					ndi_element_obj.experiment.database_add(ndi_document_obj);
 				end;
 		end; % newdocument()
 
-		function sq = searchquery(ndi_thing_obj, epochid)
-			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this thing
+		function sq = searchquery(ndi_element_obj, epochid)
+			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this element
 			%
-			% SQ = SEARCHQUERY(NDI_THING_OBJ, [EPOCHID])
+			% SQ = SEARCHQUERY(NDI_ELEMENT_OBJ, [EPOCHID])
 			%
-			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_thing'
-			% with the corresponding 'name' and 'type' fields of the thing NDI_THING_OBJ.
+			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
+			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 			%
-				sq = ndi_thing_obj.experiment.searchquery();
+				sq = ndi_element_obj.experiment.searchquery();
 				sq = cat(2,sq, ...
-					{'thing.name',ndi_thing_obj.name,...
-					 'thing.type',ndi_thing_obj.type,...
-					 'thing.ndi_thing_class', class(ndi_thing_obj),  ...
-					 'thing.reference', ndi_thing_obj.reference, ...
-					'ndi_document.type','ndi_thing' });
+					{'element.name',ndi_element_obj.name,...
+					 'element.type',ndi_element_obj.type,...
+					 'element.ndi_element_class', class(ndi_element_obj),  ...
+					 'element.reference', ndi_element_obj.reference, ...
+					'ndi_document.type','ndi_element' });
 
 				if nargin>1,
 					sq = cat(2,sq,{'epochid',epochid});

@@ -16,7 +16,7 @@ Conclusion: NO
 	These objects can be on disk or in memory. What if we have a huge one
 in memory? We don't want every instance to need to copy it.
 
-	BUT, if we had the thing in memory, we could end up with multiple
+	BUT, if we had the element in memory, we could end up with multiple
 copies that might be bad. How could this happen, potentially? 
 	Suppose we get a subbranch.
 		If it is in memory, then we get a live handle. Changes propagate back to the parent. But, the user probably doesn't want to work 

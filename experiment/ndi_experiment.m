@@ -503,33 +503,33 @@ classdef ndi_experiment < handle
 				end;
 		end; % getprobes
 
-		function things = getthings(ndi_experiment_obj, varargin);
-			% GETTHINGS - Return all NDI_THING objects that are found in experiment database
+		function elements = getelements(ndi_experiment_obj, varargin);
+			% GETELEMENTS - Return all NDI_ELEMENT objects that are found in experiment database
 			%
-			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, ...)
+			% ELEMENTS = GETELEMENTS(NDI_EXPERIMENT_OBJ, ...)
 			%
-			% Examines all the database of NDI_EXPERIMENT_OBJ and returns all NDI_THING
+			% Examines all the database of NDI_EXPERIMENT_OBJ and returns all NDI_ELEMENT
 			% entries.
 			%
-			% THINGS is a cell array of NDI_PROBE objects.
+			% ELEMENTS is a cell array of NDI_PROBE objects.
 			%
-			% THINGS = GETTHINGS(NDI_EXPERIMENT_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
+			% ELEMENTS = GETELEMENTS(NDI_EXPERIMENT_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
 			%
 			% returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
-			% has a value of VALUE2, etc. Properties of things are 'thing.name', 'thing.type',
-			% 'thing.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
+			% has a value of VALUE2, etc. Properties of elements are 'element.name', 'element.type',
+			% 'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
 			% 
 				q_E = ndi_query(ndi_experiment_obj.searchquery());
-				q_t = ndi_query('ndi_document.type','exact_string','ndi_thing','');
+				q_t = ndi_query('ndi_document.type','exact_string','ndi_element','');
 				for i=1:2:numel(varargin),
 					q_t = q_t & ndi_query(varargin{i},'exact_string',varargin{i+1},'');
 				end;
 				doc = ndi_experiment_obj.database_search(q_E&q_t);
-				things = {};
+				elements = {};
 				for i=1:numel(doc),
-					things{i} = ndi_document2thing(doc{i}, ndi_experiment_obj);
+					elements{i} = ndi_document2element(doc{i}, ndi_experiment_obj);
 				end;
-		end; % getthings()
+		end; % getelements()
 
 		function b = eq(e1,e2)
 			% EQ - are 2 NDI_EXPERIMENTS equal?
