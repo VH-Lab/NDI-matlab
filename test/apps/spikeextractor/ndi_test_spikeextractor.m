@@ -34,7 +34,7 @@ sparams = [dirname filesep 'sorting_parameters.txt'];
 spike_extractor = ndi_app_spikeextractor(E);
 spike_sorter = ndi_app_spikesorter(E);
 
- % I'd add something here that clears out any old extraction variables; see ndi_app_markgarbage/clearvalidinterval
+ % I'd add someelement here that clears out any old extraction variables; see ndi_app_markgarbage/clearvalidinterval
 
 spike_extractor.spike_extract_probes('Tetrode7', 'n-trode', 'test', eparams);
 

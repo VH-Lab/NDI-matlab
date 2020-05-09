@@ -80,7 +80,7 @@ classdef ndi_app_markgarbage < ndi_app
 				ndi_app_markgarbage_obj.clearvalidinterval(ndi_epochset_obj);
 				newdoc = ndi_app_markgarbage_obj.experiment.newdocument('apps/markgarbage/valid_interval',...
 						'valid_interval',vi) + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
-				newdoc = newdoc.set_dependency_value('thing_id',ndi_epochset_obj.id());
+				newdoc = newdoc.set_dependency_value('element_id',ndi_epochset_obj.id());
 				ndi_app_markgarbage_obj.experiment.database_add(newdoc);
 		end; % savevalidinterval()
 
@@ -116,8 +116,8 @@ classdef ndi_app_markgarbage < ndi_app
 
 				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
-				if isa(ndi_epochset_obj,'ndi_thing'),
-					searchq2 = ndi_query('','depends_on','thing_id',ndi_epochset_obj.id());
+				if isa(ndi_epochset_obj,'ndi_element'),
+					searchq2 = ndi_query('','depends_on','element_id',ndi_epochset_obj.id());
 					searchq = searchq & searchq2; 
 				end
 
@@ -129,11 +129,11 @@ classdef ndi_app_markgarbage < ndi_app
 					end;
 				end;
 
-				if isempty(vi), % underlying things could still have garbage intervals
+				if isempty(vi), % underlying elements could still have garbage intervals
 					% check here: is there a potential for a bug or error if the clocks differ?
-					if isprop(ndi_epochset_obj,'underlying_thing'),
-						if ~isempty(ndi_epochset_obj.underlying_thing),
-							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_thing);
+					if isprop(ndi_epochset_obj,'underlying_element'),
+						if ~isempty(ndi_epochset_obj.underlying_element),
+							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_element);
 							if ~isempty(vi_try),
 								vi = vi_try;
 								mydoc = mydoc_try;

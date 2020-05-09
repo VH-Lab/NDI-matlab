@@ -14,7 +14,7 @@ matches = contains(pathsnow_cell, 'NDI-matlab');
 pathstoremove = char(strjoin(pathsnow_cell(matches),pathsep));
 rmpath(pathstoremove);
 
-  % add everything except '.git' directories
+  % add everyelement except '.git' directories
 pathstoadd = genpath(myndipath);
 pathstoadd_cell = split(pathstoadd,pathsep);
 matches=(~contains(pathstoadd_cell,'.git'))&(~contains(pathstoadd_cell,'.ndi'));

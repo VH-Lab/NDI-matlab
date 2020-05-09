@@ -1,4 +1,4 @@
-classdef ndi_probe < ndi_thing & ndi_documentservice
+classdef ndi_probe < ndi_element & ndi_documentservice
 % NDI_PROBE - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -48,7 +48,7 @@ classdef ndi_probe < ndi_thing & ndi_documentservice
 					inputs{5} = [];
 					inputs{6} = 1;
 				end;
-				obj = obj@ndi_thing(inputs{:});
+				obj = obj@ndi_element(inputs{:});
 		end % ndi_probe
 
 		function et = buildepochtable(ndi_probe_obj)
@@ -147,7 +147,7 @@ classdef ndi_probe < ndi_thing & ndi_documentservice
 			%
 			% For NDI_PROBE objects, this is the string 'probe: ' followed by
 			% PROBESTRING(NDI_PROBE_OBJ).
-				name = ['probe: ' thingstring(ndi_probe_obj)];
+				name = ['probe: ' elementstring(ndi_probe_obj)];
 		end % epochsetname
 
 		function probestr = probestring(ndi_probe_obj)
@@ -159,7 +159,7 @@ classdef ndi_probe < ndi_thing & ndi_documentservice
 			%
 			% This is simply PROBESTR = [NDI_PROBE_OBJ.name ' _ ' in2str(NDI_PROBE_OBJ.reference)]
 			%
-				warning('depricated, use thingstring()');
+				warning('depricated, use elementstring()');
 				probestr = [ndi_probe_obj.name ' _ ' int2str(ndi_probe_obj.reference) ];
 		end
 
@@ -238,7 +238,7 @@ classdef ndi_probe < ndi_thing & ndi_documentservice
 				b = 0;
 				if isa(ndi_probe_obj2,'ndi_probe'),
 					b = ( ndi_probe_obj1.experiment==ndi_probe_obj2.experiment & ...
-						strcmp(ndi_probe_obj1.thingstring(), ndi_probe_obj2.thingstring()) & ...
+						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
 				end;
 		end; % eq()

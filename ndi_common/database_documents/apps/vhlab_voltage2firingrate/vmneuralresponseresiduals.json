@@ -9,12 +9,12 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": 0 
 		}
 	],
 	"vmneuralresponseresiduals": {
-        "thing_epochid":                    "",
+        "element_epochid":                    "",
 		"parameters": {
 			"number_traces":                1,
 			"samples_per_trace":			[0],

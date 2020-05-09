@@ -23,10 +23,10 @@ classdef ndi_app_oridirtuning < ndi_app
 
 		end % ndi_app_oridirtuning() creator
 
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_thing_obj, varargin)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
-			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, NDI_THING)
+			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, NDI_ELEMENT)
 			%
 			% 
 				tuning_doc = {};
@@ -34,9 +34,9 @@ classdef ndi_app_oridirtuning < ndi_app
 				E = ndi_app_oridirtuning_obj.experiment;
 				rapp = ndi_app_tuning_response(E);
 
-				q_rthing = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
+				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
-				rdoc = E.database_search(q_rdoc&q_rthing)
+				rdoc = E.database_search(q_rdoc&q_relement)
 
 				for r=1:numel(rdoc),
 					if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
@@ -50,16 +50,16 @@ classdef ndi_app_oridirtuning < ndi_app
 
 		end; % calculate_tuning_curve()
 
-		function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_thing_obj);
+		function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj);
 			% 
 			%
 				oriprops = {};
 				E = ndi_app_oridirtuning_obj.experiment;
 				rapp = ndi_app_tuning_response(E);
 
-				q_rthing = ndi_query('depends_on','depends_on','thing_id',ndi_thing_obj.id());
+				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
-				rdoc = E.database_search(q_rdoc&q_rthing);
+				rdoc = E.database_search(q_rdoc&q_relement);
 
 
 				for r=1:numel(rdoc),
@@ -67,7 +67,7 @@ classdef ndi_app_oridirtuning < ndi_app
 						% find the tuning curve doc
 						q_tdoc = ndi_query('','isa','stimulus_tuningcurve.json','');
 						q_tdocrdoc = ndi_query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
-						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_rthing);
+						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),
 							oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
 						end;
@@ -170,7 +170,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				oriprops = ndi_document('vision/oridir/orientation_direction_tuning', ...
 					'orientation_direction_tuning', var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_oridirtuning_obj.newdocument();
-				oriprops = oriprops.set_dependency_value('thing_id', stim_response_doc{1}.dependency_value('thing_id'));
+				oriprops = oriprops.set_dependency_value('element_id', stim_response_doc{1}.dependency_value('element_id'));
 				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
 
 				E.database_add(oriprops);
@@ -220,14 +220,14 @@ classdef ndi_app_oridirtuning < ndi_app
 					oriprops_doc.document_properties.orientation_direction_tuning.fit.double_gaussian_fit_values,'k-');
 				box off;
 
-				thing_doc = E.database_search(ndi_query('ndi_document.id','exact_string',dependency_value(oriprops_doc,'thing_id'),'')); 
-				if isempty(thing_doc),
-					error(['Empty thing document, don''t know what to do.']);
+				element_doc = E.database_search(ndi_query('ndi_document.id','exact_string',dependency_value(oriprops_doc,'element_id'),'')); 
+				if isempty(element_doc),
+					error(['Empty element document, don''t know what to do.']);
 				end;
-				thing = ndi_document2thing(thing_doc{1}, E);
+				element = ndi_document2element(element_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
-				title([thing.thingstring() '.' thing.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
+				title([element.elementstring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
 
 		end; % plot_oridir_response
 

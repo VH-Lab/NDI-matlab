@@ -9,7 +9,7 @@
 		]
     },
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": "" 
 		}
 	],

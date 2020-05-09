@@ -322,7 +322,7 @@ classdef ndi_syncgraph < ndi_id
 
 						[u_nodes,u_cost,u_mapping] = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
-						% now we have a set of things to add to the graph
+						% now we have a set of elements to add to the graph
 
 						u_node_index_in_main = NaN(numel(u_nodes),1);
 						for j=1:numel(u_nodes),

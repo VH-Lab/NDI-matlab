@@ -42,7 +42,7 @@ param_folder = '/Users/Ora/Documents/MATLAB/tools/NDI-matlab/ndi_common/example_
 sort_param = [param_folder 'tvh_sorting_parameters.txt'];
 spikesorter.spike_sort(probe, e, 'default', 'test_sort', sort_param);
 
-neuron1 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_1');
+neuron1 = ndi_app_spikesorter_obj.experiment.getelements('element.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
 
 figure(10)

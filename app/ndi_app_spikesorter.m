@@ -148,8 +148,8 @@ classdef ndi_app_spikesorter < ndi_app
 				disp(['--------NEURON_' num2str(nNeuron) '--------'])
                 
 
-				neuron_thing = ndi_thing_timeseries(ndi_app_spikesorter_obj.experiment, ['neuron_' num2str(nNeuron)], ndi_timeseries_obj.reference, 'neuron', ndi_timeseries_obj, 0);
-				doc = neuron_thing.newdocument();
+				neuron_element = ndi_element_timeseries(ndi_app_spikesorter_obj.experiment, ['neuron_' num2str(nNeuron)], ndi_timeseries_obj.reference, 'neuron', ndi_timeseries_obj, 0);
+				doc = neuron_element.newdocument();
 				%%% TODO: add properties like epoch and stuff?
 				ndi_app_spikesorter_obj.experiment.database_add(doc);
 
@@ -160,7 +160,7 @@ classdef ndi_app_spikesorter < ndi_app
                 
         disp(['---Number of Spikes ' num2str(length(neuron_spiketimes)) '---'])
 				
-				[neuron, mydoc] = neuron_thing.addepoch(...
+				[neuron, mydoc] = neuron_element.addepoch(...
 					et(1).epoch_id, ...
 					et(1).epoch_clock{1}, ...
 					et(1).t0_t1{1}, ...
@@ -172,8 +172,8 @@ classdef ndi_app_spikesorter < ndi_app
 			
 			neuron
 
-			neuron1 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_1');
-			% neuron2 = ndi_app_spikesorter_obj.experiment.getthings('thing.name','neuron_2');
+			neuron1 = ndi_app_spikesorter_obj.experiment.getelements('element.name','neuron_1');
+			% neuron2 = ndi_app_spikesorter_obj.experiment.getelements('element.name','neuron_2');
 
 			[d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
 			% [d2,t2] = readtimeseries(neuron2{1},1,-Inf,Inf);
