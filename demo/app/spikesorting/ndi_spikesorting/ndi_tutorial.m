@@ -6,7 +6,7 @@ if exist([dirpath filesep '.ndi'], 'dir') == 7
 	rmdir([dirpath filesep '.ndi'], 's');
 end
 
-our_exp = ndi_experiment_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
+our_exp = ndi_session_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 

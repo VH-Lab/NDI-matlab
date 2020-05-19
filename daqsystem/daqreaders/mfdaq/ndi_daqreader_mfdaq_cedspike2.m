@@ -30,7 +30,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			%
 			%  CHANNELS = GETCHANNELS(THEDEV, EPOCHFILES)
 			%
-			%  Returns the channel list of acquired channels in this experiment
+			%  Returns the channel list of acquired channels in this session
 			%
 			% CHANNELS is a structure list of all channels with fields:
 			% -------------------------------------------------------

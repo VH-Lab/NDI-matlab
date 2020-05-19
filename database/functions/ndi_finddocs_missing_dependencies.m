@@ -3,7 +3,7 @@ function d = ndi_finddocs_missing_dependencies(E, varargin)
 %
 % D = NDI_FINDDOCS_MISSING_DEPENDENCIES(E)
 %
-% Searches the database of experiment E and returns all documents that have a 
+% Searches the database of session E and returns all documents that have a 
 % dependency ('depends_on') field for which the 'value' field does not 
 % correspond to an existing document.
 %

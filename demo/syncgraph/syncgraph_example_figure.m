@@ -5,7 +5,7 @@ function syncgraph_example_figure
 %
 % Plots a figure that shows relationships between local and global clocks.
 % Used in the paper "A platform-independent data interface and database for
-% neuroscience physiology and imaging experiments".
+% neuroscience physiology and imaging sessions".
 %
 %
 

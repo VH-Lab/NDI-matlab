@@ -4,7 +4,7 @@ function ndi_probe_obj = ndi_probestruct2probe(probestruct, exp)
 % NDI_PROBE_OBJ = NDI_PROBESTRUCT2PROBE(PROBESTRUCT, EXP)
 %
 % Given an array of structures PROBESTRUCT with field 
-% 'name', 'reference', and 'type', and an NDI_EXPERIMENT EXP,
+% 'name', 'reference', and 'type', and an NDI_SESSION EXP,
 % this function generates the appropriate subclass of NDI_PROBE for
 % dealing with the PROBE and returns the objects in a cell array NDI_PROBE_OBJ.
 %

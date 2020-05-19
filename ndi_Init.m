@@ -29,7 +29,7 @@ ndipath = myndipath;
 ndicommonpath = [ndipath filesep 'ndi_common'];
 ndidocumentpath = [ndicommonpath filesep 'database_documents'];
 ndidocumentschemapath = [ndicommonpath filesep 'database_documents'];
-ndiexampleexperpath = [ndicommonpath filesep 'example_experiments'];
+ndiexampleexperpath = [ndicommonpath filesep 'example_sessions'];
 nditestpath = [tempdir filesep 'nditestcode'];
 
  % initialization

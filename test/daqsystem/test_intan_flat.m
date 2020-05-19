@@ -8,7 +8,7 @@ function test_intan_flat(dirname)
 %  as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NDIPATH]/example_experiments/exp1_eg is used.
+%  [NDIPATH]/example_sessions/exp1_eg is used.
 %
 %
 
@@ -17,8 +17,8 @@ if nargin<1,
 	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 end;
 
-disp(['creating a new experiment object...']);
-E = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
@@ -27,7 +27,7 @@ disp(['Now adding our acquisition device (intan):']);
 
 dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
-  % Step 2: create the daqsystem object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the session:
 
 dev1 = ndi_daqsystem_mfdaq('intan1',dt, ndi_daqreader_mfdaq_intan());
 E.daqsystem_add(dev1);

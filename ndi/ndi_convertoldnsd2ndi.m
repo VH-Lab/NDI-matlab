@@ -1,9 +1,9 @@
 function ndi_convertoldnsd2ndi(pathname)
-% NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' experiment to 'ndi'
+% NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
 %
 % NDI_CONVERTOLDNSD2NDI(PATHNAME)
 %
-% Converts the NDS_EXPERIMENT_DIR experiment at PATHNAME to the new 'ndi' name
+% Converts the NDS_SESSION_DIR session at PATHNAME to the new 'ndi' name
 % convention. Needs to be run on MacOS for the unix tools used (might work on Linux).
 % 
 % The following irreversible changes are made:

@@ -1,5 +1,5 @@
 classdef ndi_element_timeseries < ndi_element & ndi_timeseries
-% NDI_ELEMENT - define or examine a element in the experiment
+% NDI_ELEMENT - define or examine a element in the session
 %
 	properties (SetAccess=protected, GetAccess=public)
 
@@ -38,9 +38,9 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 						timeref = ndi_timereference(ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
 					end;
 
-					[epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.experiment.syncgraph.time_convert(timeref, t0, ...
+					[epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
 							ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'));
-					[epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.experiment.syncgraph.time_convert(timeref, t1, ...
+					[epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
 							ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'));
 
 					% now we know the epoch to read, finally!
@@ -49,7 +49,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					sq = ndi_query('depends_on','depends_on','element_id',element_doc.id()) & ...
 						ndi_query('','isa','ndi_document_element_epoch.json','') & ...
 						ndi_query('epochid','exact_string',epoch_timeref.epoch,'');
-					E = ndi_element_timeseries_obj.experiment();
+					E = ndi_element_timeseries_obj.session();
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)~=1,
 						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch ', or found too many.']);
@@ -61,7 +61,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					E.database_closebinarydoc(f);
 					
 					if isnumeric(t),
-						t = ndi_element_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, t, ...
+						t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...
 							timeref.referent, timeref.clocktype);
 					end;
 				end;
@@ -96,7 +96,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 				end;
 				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi_element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
 					
-				E = ndi_element_timeseries_obj.experiment();
+				E = ndi_element_timeseries_obj.session();
 				f = E.database_openbinarydoc(epochdoc);
 				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
 				E.database_closebinarydoc(f);

@@ -1,10 +1,10 @@
-function p = ndi_document2probe(ndi_document_obj, ndi_experiment_obj)
+function p = ndi_document2probe(ndi_document_obj, ndi_session_obj)
 % NDI_DOCUMENT2PROBE - create an NDI_PROBE object from an NDI_DOCUMENT
 %
-% P = NDI_DOCUMENT2PROBE(NDI_DOCUMENT_OBJ, NDI_EXPERIMENT_OBJ)
+% P = NDI_DOCUMENT2PROBE(NDI_DOCUMENT_OBJ, NDI_SESSION_OBJ)
 %
 % Create an NDI_PROBE object P from an NDI_DOCUMENT object that has
-% a 'probe' parameter and is related to an experiment NDI_EXPERIMENT object
+% a 'probe' parameter and is related to an session NDI_SESSION object
 % that is provided.
 % 
 
@@ -20,7 +20,7 @@ reference = ndi_document_obj.document_properties.probe.reference;
 type = ndi_document_obj.document_properties.probe.type;
 name = ndi_document_obj.document_properties.probe.name;
 
-p = getprobes(ndi_experiment_obj, 'name', name, 'type', type, 'reference', reference);
+p = getprobes(ndi_session_obj, 'name', name, 'type', type, 'reference', reference);
 
 if isempty(p),
 	p = [];

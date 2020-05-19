@@ -3,7 +3,7 @@ function test_ndi_filenavigator_documents(dirname)
 %
 % TEST_NDI_FILENAVIGATOR_DOCUMENTS(DIRNAME)
 %
-% Given a directory that corresponds to an experiment, this function tries to create
+% Given a directory that corresponds to an session, this function tries to create
 % an ndi_filenavigator object and an ndi_filenavigator_epochdir object and do the following:
 %   a) Create a new database document
 %   b) Add the database document to the database
@@ -17,13 +17,13 @@ function test_ndi_filenavigator_documents(dirname)
 		dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 	end
 
-	%Create and NDI_experiment object
-	E = ndi_experiment_dir('exp1',dirname);
+	%Create and NDI_session object
+	E = ndi_session_dir('exp1',dirname);
 
 	fn{1} = ndi_filenavigator(E, '.*\.rhd\>');
 	fn{2} = ndi_filenavigator_epochdir(E, '.*\.rhd\>');
 
-	%Delete any demo ndi_document stored in the experiment
+	%Delete any demo ndi_document stored in the session
 	doc = E.database_search(ndi_query('','isa','ndi_document_filenavigator.json',''));
 	E.database_rm(doc);
 

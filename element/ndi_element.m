@@ -1,8 +1,8 @@
 classdef ndi_element < ndi_epochset & ndi_documentservice
-% NDI_ELEMENT - define or examine a element in the experiment
+% NDI_ELEMENT - define or examine a element in the session
 %
 	properties (GetAccess=public, SetAccess=protected)
-		experiment   % associated ndi_experiment object
+		session   % associated ndi_session object
 		name         % 
 		type         % 
 		reference    % 
@@ -15,9 +15,9 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 		function ndi_element_obj = ndi_element(varargin)
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT - creator for NDI_ELEMENT
 			%
-			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_EXPERIMENT_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT)
 			%    or
-			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_EXPERIMENT_OBJ, ELEMENT_DOCUMENT)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
 			% Creates an NDI_ELEMENT object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_ELEMENT in memory from an NDI_DOCUMENT of type 'ndi_document_element'.
@@ -25,21 +25,21 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				if numel(varargin)==6,
 					% first type
 					ndi_element_class = 'ndi_element';
-					element_experiment = varargin{1};
+					element_session = varargin{1};
 					element_name = varargin{2};
 					element_reference = varargin{3};
 					element_type = varargin{4};
 					element_underlying_element = varargin{5};
 					direct = logical(varargin{6});
 				elseif numel(varargin)==2,
-					element_experiment = varargin{1};
-					if ~isa(element_experiment,'ndi_experiment'),
-						error(['When 2 input arguments are given, 1st input must be an NDI_EXPERIMENT.']);
+					element_session = varargin{1};
+					if ~isa(element_session,'ndi_session'),
+						error(['When 2 input arguments are given, 1st input must be an NDI_SESSION.']);
 					end;
 					element_doc = [];
 					if ~isa(varargin{2},'ndi_document'),
 						% might be id
-						element_search = element_experiment.database_search(ndi_query('ndi_document.id','exact_string',varargin{2},''));
+						element_search = element_session.database_search(ndi_query('ndi_document.id','exact_string',varargin{2},''));
 						if numel(element_search)~=1,
 							error(['When 2 input arguments are given, 2nd input argument must be an NDI_DOCUMENT or document ID.']);
 						else,
@@ -59,7 +59,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						element_underlying_element = [];
 					else,
 						element_underlying_element = ndi_document2element(...
-							 dependency_value(element_doc,'underlying_element_id'), element_experiment);
+							 dependency_value(element_doc,'underlying_element_id'), element_session);
 					end;
 					if ischar(element_doc.document_properties.element.direct),
 						direct = logical(eval(element_doc.document_properties.element.direct));
@@ -67,7 +67,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						direct = logical(element_doc.document_properties.element.direct);
 					end;
 				elseif numel(varargin)==0,
-					element_experiment='';
+					element_session='';
 					element_name = '';
 					element_reference = 1;
 					element_type = '';
@@ -77,7 +77,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				else,
 					error(['Improper number of input arguments']);
 				end;
-				ndi_element_obj.experiment = element_experiment;
+				ndi_element_obj.session = element_session;
 				ndi_element_obj.name = element_name;
 				ndi_element_obj.reference = element_reference;
 				ndi_element_obj.type = element_type;
@@ -149,15 +149,15 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			%
 			% Returns the CACHE and KEY for the NDI_ELEMENT object.
 			%
-			% The CACHE is returned from the associated experiment.
+			% The CACHE is returned from the associated session.
 			% The KEY is the probe's ELEMENTSTRING plus the TYPE of the ELEMENT.
 			%
 			% See also: NDI_FILENAVIGATOR, NDI_BASE
 
 				cache = [];
 				key = [];
-				if isa(ndi_element_obj.experiment,'handle'),,
-					E = ndi_element_obj.experiment;
+				if isa(ndi_element_obj.session,'handle'),,
+					E = ndi_element_obj.session;
 					cache = E.cache;
 					key = [ndi_element_obj.elementstring() ' | ' ndi_element_obj.type];
 				end
@@ -184,7 +184,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock','t0_t1');
 				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
-				% pull all the devices from the experiment and look for device strings that match this probe
+				% pull all the devices from the session and look for device strings that match this probe
 
 				underlying_et = et;
 				if ~isempty(ndi_element_obj.underlying_element),
@@ -270,7 +270,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				if ndi_element_obj.direct,
 					error(['Cannot add external observations to an NDI_ELEMENT that is directly based on NDI_PROBE.']);
 				end;
-				E = ndi_element_obj.experiment();
+				E = ndi_element_obj.session();
 				if ~isempty(E),
 					elementdoc = E.database_search(ndi_element_obj.searchquery());
 					if isempty(elementdoc),
@@ -321,7 +321,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 		end; % LOADEDEPOCHS(NDI_ELEMENT_OBJ)
 
 		function element_doc = load_element_doc(ndi_element_obj)
-			% LOAD_ELEMENT_DOC - load a element doc from the experiment database
+			% LOAD_ELEMENT_DOC - load a element doc from the session database
 			%
 			% ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
 			%
@@ -330,7 +330,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			% Returns empty if there is no such document.
 			%
 				sq = ndi_element_obj.searchquery();
-				E = ndi_element_obj.experiment;
+				E = ndi_element_obj.session;
 				element_doc = E.database_search(sq);
 				if numel(element_doc)>1,
 					error(['More than one document matches the ELEMENT definition. This should not happen.']);
@@ -370,7 +370,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 		end; % id()
 
 		function element_docs = load_all_element_docs(ndi_element_obj)
-			% LOAD_ALL_ELEMENT_DOCS - load all of the NDI_ELEMENT objects from an experiment database
+			% LOAD_ALL_ELEMENT_DOCS - load all of the NDI_ELEMENT objects from an session database
 			%
 			% ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
 			%
@@ -380,7 +380,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				element_doc = ndi_element_obj.load_element_doc();
 				if ~isempty(element_doc),
 					sq = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-					E = ndi_element_obj.experiment();
+					E = ndi_element_obj.session();
 					epochdocs = E.database_search(sq);
     				element_docs = cat(1, {element_doc}, epochdocs(:));                    
 				else,
@@ -402,7 +402,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
 			% in accordance to 'ndi_document_epochid'.
 			%
-			% When the document is created, it is automatically added to the experiment.
+			% When the document is created, it is automatically added to the session.
 			%
 				ndi_document_obj = ndi_element_obj.load_element_doc();
 				if isempty(ndi_document_obj),
@@ -413,7 +413,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						'element.type',ndi_element_obj.type, ...
 						'element.direct',ndi_element_obj.direct);
 					ndi_document_obj = ndi_document_obj + ...
-						newdocument(ndi_element_obj.experiment, 'ndi_document', 'ndi_document.type','ndi_element');
+						newdocument(ndi_element_obj.session, 'ndi_document', 'ndi_document.type','ndi_element');
 					underlying_id = [];
 					if ~isempty(ndi_element_obj.underlying_element),
 						underlying_id = ndi_element_obj.underlying_element.id();
@@ -423,7 +423,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						end;
 					end;
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
-					ndi_element_obj.experiment.database_add(ndi_document_obj);
+					ndi_element_obj.session.database_add(ndi_document_obj);
 				end;
 		end; % newdocument()
 
@@ -435,7 +435,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
 			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 			%
-				sq = ndi_element_obj.experiment.searchquery();
+				sq = ndi_element_obj.session.searchquery();
 				sq = cat(2,sq, ...
 					{'element.name',ndi_element_obj.name,...
 					 'element.type',ndi_element_obj.type,...

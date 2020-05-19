@@ -3,7 +3,7 @@ function d = ndi_findemptyelementreference(E)
 %
 % D = NDI_FINDEMPTYELEMENTREFERENCE(E)
 %
-% E - an NDI_EXPERIMENT object
+% E - an NDI_SESSION object
 %
 
 warning('depricated, change to NDI_FINDDOCS_MISSING_DEPENDENCIES');

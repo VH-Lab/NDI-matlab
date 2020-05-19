@@ -19,7 +19,7 @@ function ndi_plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
 %
 % See also: DIGRAPH/PLOT, NDI_DOCS2GRAPH
 %
-% Example: % Given experiment E, plot a graph of all documents.
+% Example: % Given session E, plot a graph of all documents.
 %   docs = E.database_search({'document_class.class_name','(.*)'});
 %   [G,nodes,mdigraph] = ndi_docs2graph(docs);
 %   ndi_plotinteractivedocgraph(docs,G,mdigraph,nodes,'layered');

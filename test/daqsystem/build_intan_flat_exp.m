@@ -1,15 +1,15 @@
 function build_intan_flat_exp(dirname)
-% BUILD_INTAN_FLAT_EXP - Create an Intan driver and save it to an experiment
+% BUILD_INTAN_FLAT_EXP - Create an Intan driver and save it to an session
 %
 %  BUILD_INTAN_FLAT_EXP([DIRNAME])
 %
 %  Given a directory with RHD data inside, this function loads the
 %  channel information and then plots some data from channel 1,
 %  as an example of the Intan driver. It also leaves the driver saved
-%  in the experiment record.
+%  in the session record.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NDIPATH]/example_experiments/exp1_eg_saved is used.
+%  [NDIPATH]/example_sessions/exp1_eg_saved is used.
 %
 
 if nargin<1,
@@ -17,10 +17,10 @@ if nargin<1,
 	dirname = [ndiexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
-disp(['creating a new experiment object...']);
-E = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1',dirname);
 
- % remove everyelement from the experiment to start
+ % remove everyelement from the session to start
 E.database_clear('yes'); % use it only if you mean it
 
 dev = E.daqsystem_load('name','(.*)'), 
@@ -38,7 +38,7 @@ disp(['Now adding our acquisition daqsystem (intan):']);
 
 dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
-  % Step 2: create the device object and add it to the experiment:
+  % Step 2: create the device object and add it to the session:
 
 dev1 = ndi_daqsystem_mfdaq('intan1',dt,ndi_daqreader_mfdaq_intan());
 E.daqsystem_add(dev1);

@@ -9,17 +9,17 @@ classdef ndi_app_oridirtuning < ndi_app
 		function ndi_app_oridirtuning_obj = ndi_app_oridirtuning(varargin)
 			% NDI_APP_ORIDIRTUNING - an app to calculate and analyze orientation/direction tuning curves
 			%
-			% NDI_APP_ORIDIRTUNING_OBJ = NDI_APP_ORIDIRTUNING(EXPERIMENT)
+			% NDI_APP_ORIDIRTUNING_OBJ = NDI_APP_ORIDIRTUNING(SESSION)
 			%
 			% Creates a new NDI_APP_ORIDIRTUNING object that can operate on
-			% NDI_EXPERIMENTS. The app is named 'ndi_app_oridirtuning'.
+			% NDI_SESSIONS. The app is named 'ndi_app_oridirtuning'.
 			%
-				experiment = [];
+				session = [];
 				name = 'ndi_app_oridirtuning';
 				if numel(varargin)>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
-				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi_app(experiment, name);
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi_app(session, name);
 
 		end % ndi_app_oridirtuning() creator
 
@@ -31,7 +31,7 @@ classdef ndi_app_oridirtuning < ndi_app
 			% 
 				tuning_doc = {};
 
-				E = ndi_app_oridirtuning_obj.experiment;
+				E = ndi_app_oridirtuning_obj.session;
 				rapp = ndi_app_tuning_response(E);
 
 				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
@@ -54,7 +54,7 @@ classdef ndi_app_oridirtuning < ndi_app
 			% 
 			%
 				oriprops = {};
-				E = ndi_app_oridirtuning_obj.experiment;
+				E = ndi_app_oridirtuning_obj.session;
 				rapp = ndi_app_tuning_response(E);
 
 				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
@@ -81,7 +81,7 @@ classdef ndi_app_oridirtuning < ndi_app
 			%
 			%
 			%
-				E = ndi_app_oridirtuning_obj.experiment;
+				E = ndi_app_oridirtuning_obj.session;
 				tapp = ndi_app_tuning_response(E);
 				ind = {};
 				ind_real = {};
@@ -182,7 +182,7 @@ classdef ndi_app_oridirtuning < ndi_app
 
 		function b = is_oridir_stimulus_response(ndi_app_oridirtuning_obj, response_doc)
 			%
-				E = ndi_app_oridirtuning_obj.experiment;
+				E = ndi_app_oridirtuning_obj.session;
 					% does this stimulus vary in orientation or direction tuning?
 				stim_pres_doc = E.database_search(ndi_query('ndi_document.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
@@ -204,7 +204,7 @@ classdef ndi_app_oridirtuning < ndi_app
 
 		function plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
 
-				E = ndi_app_oridirtuning_obj.experiment;
+				E = ndi_app_oridirtuning_obj.session;
 
 				h = myerrorbar(oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.direction, ...
 					oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.mean, ...

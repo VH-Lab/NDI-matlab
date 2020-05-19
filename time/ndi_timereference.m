@@ -26,17 +26,17 @@ classdef ndi_timereference
 			%
 			% An alternative creator is available:
 			%
-			% OBJ = NDI_TIME_REFERENCE(NDI_EXPERIMENT_OBJ, NDI_TIMEREF_STRUCT)
+			% OBJ = NDI_TIME_REFERENCE(NDI_SESSION_OBJ, NDI_TIMEREF_STRUCT)
 			%
-			% where NDI_EXPERIMENT_OBJ is an NDI_EXPERIMENT and NDI_TIMEREF_STRUCT is a structure
-			% returned by NDI_TIMEREFERENCE/NDI_TIMEREFERENCE_STRUCT. The NDI_EXPERIMENT_OBJ fields will
+			% where NDI_SESSION_OBJ is an NDI_SESSION and NDI_TIMEREF_STRUCT is a structure
+			% returned by NDI_TIMEREFERENCE/NDI_TIMEREFERENCE_STRUCT. The NDI_SESSION_OBJ fields will
 			% be searched to find the live REFERENT to create OBJ.
 			%
 
 				if nargin==2,
-					experiment = referent; % 1st argument
+					session = referent; % 1st argument
 					timeref_struct = clocktype; % 2nd argument
-					referent = experiment.findexpobj(timeref_struct.referent_epochsetname,timeref_struct.referent_classname);
+					referent = session.findexpobj(timeref_struct.referent_epochsetname,timeref_struct.referent_classname);
 					clocktype = ndi_clocktype(timeref_struct.clocktypestring);
 					epoch = timeref_struct.epoch;
 					time = timeref_struct.time;

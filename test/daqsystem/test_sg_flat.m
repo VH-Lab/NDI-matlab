@@ -7,7 +7,7 @@ function test_sg_flat(dirname)
 % first tetrode and plots the first second of data in all four channels.
 %
 % If DIRNAME is not provided, the default directory
-% [NDIPATH]/example_experiments/exp1_eg is used.
+% [NDIPATH]/example_sessions/exp1_eg is used.
 %
 % Developer note: function can be expanded to take in a specific tetrode to plot
 % from specific epoch n, along with sample0 and sample1. 
@@ -17,8 +17,8 @@ if nargin < 1,
 	dirname = [ndiexampleexperpath filesep 'exp_sg'];
 end;
 
-disp(['creating a new experiment object...']);
-E = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (sg):']);
 
@@ -27,7 +27,7 @@ disp(['Now adding our acquisition device (sg):']);
 
 dt = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
 
-% Step 2: create the daqsystem object and add it to the experiment:
+% Step 2: create the daqsystem object and add it to the session:
 
 dev1 = E.daqsystem_load('name','sgtest');
 if isempty(dev1),

@@ -1,18 +1,18 @@
-function o = ndi_document2ndi_object(ndi_document_obj, ndi_experiment_obj)
+function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 % NDI_DOCUMENT2NDI_OBJECT - create an NDI object from an NDI_DOCUMENT
 %
-% O = NDI_DOCUMENT2NDI_OBJECT(NDI_DOCUMENT_OBJ, NDI_EXPERIMENT_OBJ)
+% O = NDI_DOCUMENT2NDI_OBJECT(NDI_DOCUMENT_OBJ, NDI_SESSION_OBJ)
 %
 % Create an NDI object O from an NDI_DOCUMENT object and a related
-% NDI_EXPERIMENT object.
+% NDI_SESSION object.
 %
 % NDI_DOCUMENT can also be an NDI_DOCUMENT ID number that will be looked up
-% in the experiment.
+% in the session.
 % 
 
 if ~isa(ndi_document_obj, 'ndi_document'),
 	% try to look it up
-	mydoc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id','exact_string',ndi_document_obj,''));
+	mydoc = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',ndi_document_obj,''));
 	if numel(mydoc)==1,
 		ndi_document_obj = mydoc{1};
 	else,
@@ -36,5 +36,5 @@ else,
 	obj_string = getfield(obj_struct,['ndi_' obj_parent_string '_class']);
 end;
 
-o = eval([obj_string '(ndi_experiment_obj, ndi_document_obj);']);
+o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);
 

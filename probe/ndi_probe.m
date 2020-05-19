@@ -7,8 +7,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 % Typically, a probe is associated with an NDI_DAQSYSTEM that performs data acquisition or
 % even control of a stimulator. 
 %
-% A probe is uniquely identified by 3 fields and an experiment:
-%    experiment- the experiment where the probe is used
+% A probe is uniquely identified by 3 fields and an session:
+%    session- the session where the probe is used
 %    name      - the name of the probe
 %    reference - the reference number of the probe
 %    type      - the type of probe (see type NDI_PROBETYPE2OBJECTINIT)
@@ -32,11 +32,11 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		function obj = ndi_probe(varargin)
 			% NDI_PROBE - create a new NDI_PROBE object
 			%
-			%  OBJ = NDI_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
+			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
 			%         or
-			%  OBJ = NDI_PROBE(EXPERIMENT, NDI_DOCUMENT_OBJ)
+			%  OBJ = NDI_PROBE(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_EXPERIMENT object EXPERIMENT and
+			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
@@ -72,9 +72,9 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock','t0_t1');
 				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
-				% pull all the devices from the experiment and look for device strings that match this probe
+				% pull all the devices from the session and look for device strings that match this probe
 
-				D = ndi_probe_obj.experiment.daqsystem_load('name','(.*)');
+				D = ndi_probe_obj.session.daqsystem_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 
 				d_et = {};
@@ -233,11 +233,11 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
 			% EQ - are 2 NDI_PROBE objects equal?
 			%
-			% Returns 1 if the objects share an object class, experiment, and probe string.
+			% Returns 1 if the objects share an object class, session, and probe string.
 			%
 				b = 0;
 				if isa(ndi_probe_obj2,'ndi_probe'),
-					b = ( ndi_probe_obj1.experiment==ndi_probe_obj2.experiment & ...
+					b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
 						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
 				end;

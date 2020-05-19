@@ -7,7 +7,7 @@ classdef ndi_database
 
 	properties (SetAccess=protected,GetAccess=public)
 		path % The file system or remote path to the database
-		experiment_unique_reference % The reference string for the database
+		session_unique_reference % The reference string for the database
 	end % properties
 
 	methods
@@ -21,17 +21,17 @@ classdef ndi_database
 			%
 			
 			path = '';
-			experiment_unique_reference = '';
+			session_unique_reference = '';
 
 			if nargin>0,
 				path = varargin{1};
 			end
 			if nargin>1,
-				experiment_unique_reference = varargin{2};
+				session_unique_reference = varargin{2};
 			end
 
 			ndi_database_obj.path = path;
-			ndi_database_obj.experiment_unique_reference = experiment_unique_reference;
+			ndi_database_obj.session_unique_reference = session_unique_reference;
 		end % ndi_database
 
 		function ndi_document_obj = newdocument(ndi_database_obj, document_type)
@@ -46,7 +46,7 @@ classdef ndi_database
 					document_type = 'ndi_document';
 				end;
 				ndi_document_obj = ndi_document(document_type, ...
-						'experiment_unique_refrence', ndi_database_obj.experiment_unique_reference);
+						'session_unique_refrence', ndi_database_obj.session_unique_reference);
 		end % newdocument
 
 		function ndi_database_obj = add(ndi_database_obj, ndi_document_obj, varargin)

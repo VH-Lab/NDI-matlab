@@ -1,7 +1,7 @@
 classdef ndi_syncgraph < ndi_id
 
 	properties (SetAccess=protected,GetAccess=public)
-		experiment      % NDI_EXPERIMENT object
+		session      % NDI_SESSION object
 		rules		% cell array of NDI_SYNCRULE objects to apply
 	end
 	properties (SetAccess=protected,GetAccess=private)
@@ -12,31 +12,31 @@ classdef ndi_syncgraph < ndi_id
 		function ndi_syncgraph_obj = ndi_syncgraph(varargin)
 			% NDI_SYNCGRAPH - create a new NDI_SYNCGRAPH object
 			%
-			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(EXPERIMENT)
+			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(SESSION)
 			% 
-			% Builds a new NDI_SYNCGRAPH object and sets its EXPERIMENT
-			% property to EXPERIMENT, which should be an NDI_EXPERIMENT object.
+			% Builds a new NDI_SYNCGRAPH object and sets its SESSION
+			% property to SESSION, which should be an NDI_SESSION object.
 			%
 			% This function can be called in another form:
-			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(EXPERIMENT, NDI_DOCUMENT_OBJ)
+			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(SESSION, NDI_DOCUMENT_OBJ)
 			% where NDI_DOCUMENT_OBJ is an NDI_DOCUMENT of class ndi_document_syncgraph.
 			%
 			
 			%need to be tested after ndi_syncrule creator is done
-			if nargin == 2 && isa(varargin{1},'ndi_experiment') && isa(varargin{2}, 'ndi_document')
-				ndi_syncgraph_obj.experiment = varargin{1};
+			if nargin == 2 && isa(varargin{1},'ndi_session') && isa(varargin{2}, 'ndi_document')
+				ndi_syncgraph_obj.session = varargin{1};
 				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
 				for i=1:numel(syncrule_doc),
 					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
 				end;
             		else,
-				experiment = [];
+				session = [];
 
 				if nargin>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end;
 	
-				ndi_syncgraph_obj.experiment = experiment;
+				ndi_syncgraph_obj.session = session;
 
 				if nargin>=2,
 					if strcmp(lower(varargin{2}),lower('OpenFile')),
@@ -52,10 +52,10 @@ classdef ndi_syncgraph < ndi_id
 			%
 			% B = EQ(NDI_SYNCGRAPH_OBJ1, NDI_SYNCHGRAPH_OBJ2)
 			%
-			% B is 1 if the NDI_SYNCGRAPH objects have equal experiments and if 
+			% B is 1 if the NDI_SYNCGRAPH objects have equal sessions and if 
 			% all syncrules are equal.
 			%
-				b = eq(ndi_syncgraph_obj1.experiment, ndi_syncgraph_obj2.experiment);
+				b = eq(ndi_syncgraph_obj1.session, ndi_syncgraph_obj2.session);
 				b = b & (numel(ndi_syncgraph_obj1.rules)==numel(ndi_syncgraph_obj2.rules));
 				if b,
 					for i=1:numel(ndi_syncgraph_obj1.rules),
@@ -137,7 +137,7 @@ classdef ndi_syncgraph < ndi_id
 			% [GINFO] = BUILDGRAPHINFO(NDI_SYNCGRAPH_OBJ)
 			%
 			% Builds from scratch the syncgraph structure GINFO from all of the devices
-			% in the NDI_SYNCGRAPH_OBJ's associated 'experiment' property.
+			% in the NDI_SYNCGRAPH_OBJ's associated 'session' property.
 			%
 			% The graph information GINFO is a structure with the following fields:
 			% Fieldname              | Description
@@ -154,7 +154,7 @@ classdef ndi_syncgraph < ndi_id
 				ginfo.mapping = {};
 				ginfo.diG = [];
 
-				d = ndi_syncgraph_obj.experiment.daqsystem_load('name','(.*)');
+				d = ndi_syncgraph_obj.session.daqsystem_load('name','(.*)');
 				if ~iscell(d) & ~isempty(d), d = {d}; end; % make sure we are a cell
 
 				for i=1:numel(d),
@@ -502,15 +502,15 @@ classdef ndi_syncgraph < ndi_id
 			%
 			% Returns the CACHE and KEY for the NDI_SYNCGRAPH object.
 			%
-			% The CACHE is returned from the associated experiment.
+			% The CACHE is returned from the associated session.
 			% The KEY is the string 'syncgraph_' followed by the object's id.
 			%
 			% See also: NDI_SYNCGRAPH, NDI_BASE
 
 				cache = [];
 				key = [];
-				if isa(ndi_syncgraph_obj.experiment,'handle'),
-					exp = ndi_syncgraph_obj.experiment();
+				if isa(ndi_syncgraph_obj.session,'handle'),
+					exp = ndi_syncgraph_obj.session();
 					cache = exp.cache;
 					key = ['syncgraph_' ndi_syncgraph_obj.id()];
 				end
@@ -528,7 +528,7 @@ classdef ndi_syncgraph < ndi_id
 				ndi_document_obj_set{1} = ndi_document('ndi_document_syncgraph.json',...
 					'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
 					'ndi_document.id', ndi_syncgraph_obj.id(),...
-					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id());
+					'ndi_document.session_id', ndi_syncgraph_obj.session.id());
 				for i=1:numel(ndi_syncgraph_obj.rules),
 					ndi_document_obj_set{end+1} = ndi_syncgraph_obj.rules{i}.newdocument();
 					ndi_document_obj_set{1} = ndi_document_obj_set{1}.add_dependency_value_n('syncrule_id',ndi_syncgraph_obj.rules{i}.id());
@@ -543,25 +543,25 @@ classdef ndi_syncgraph < ndi_id
 			% Creates a search query for the NDI_SYNCGRAPH object.
 			%
 				sq = {'ndi_document.id', ndi_syncgraph_obj.id() , ...
-					'ndi_document.experiment_id', ndi_syncgraph_obj.experiment.id() };
+					'ndi_document.session_id', ndi_syncgraph_obj.session.id() };
 		end; % searchquery()
 
 
 	end % methods
 
 	methods (Static)
-		function [syncgraph_doc, syncrule_docs] = load_all_syncgraph_docs(ndi_experiment_obj, syncgraph_doc_id)
+		function [syncgraph_doc, syncrule_docs] = load_all_syncgraph_docs(ndi_session_obj, syncgraph_doc_id)
 			% LOAD_ALL_SYNCGRAPH_DOCS - load a syncgraph document and all of its syncrules
 			%
-			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_EXPERIMENT_OBJ,...
+			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_SESSION_OBJ,...
 			%					SYNCGRAPH_DOC_ID)
 			%
-			% Given an NDI_EXPERIMENT object and the document identifier of an NDI_SYNCGRAPH object,
+			% Given an NDI_SESSION object and the document identifier of an NDI_SYNCGRAPH object,
 			% this function loads the NDI_DOCUMENT associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
 			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
 			%
 				syncrule_docs = {};
-				syncgraph_doc = ndi_experiment_obj.database_search(ndi_query('ndi_document.id', 'exact_string', ...
+				syncgraph_doc = ndi_session_obj.database_search(ndi_query('ndi_document.id', 'exact_string', ...
 					syncgraph_doc_id,''));
 				switch numel(syncgraph_doc),
 					case 0,
@@ -576,7 +576,7 @@ classdef ndi_syncgraph < ndi_id
 
 				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
 				for i=1:numel(rules_id_list),
-					rules_doc = ndi_experiment_obj.database_search(ndi_query(...
+					rules_doc = ndi_session_obj.database_search(ndi_query(...
 						'ndi_document.id','exact_string',rules_id_list{i},''));
 					if numel(rules_doc)~=1,
 						error(['Could not find syncrule with id ' rules_id_list{i} ...

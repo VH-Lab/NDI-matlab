@@ -8,9 +8,9 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 		function obj = ndi_probe_timeseries_stimulator(varargin)
 			% NDI_PROBE_TIMESERIES_STIMULATOR - create a new NDI_PROBE_TIMESERIES_STIMULATOR object
 			%
-			% OBJ = NDI_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
+			% OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
 			%
-			% Creates an NDI_PROBE_TIMESERIES_STIMULATOR associated with an NDI_EXPERIMENT object EXPERIMENT and
+			% Creates an NDI_PROBE_TIMESERIES_STIMULATOR associated with an NDI_SESSION object SESSION and
 			% with name NAME (a string that must start with a letter and contain no white space),
 			% reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			% probe (a string that must start with a letter and contain no white space).
