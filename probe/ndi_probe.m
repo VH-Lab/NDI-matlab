@@ -47,6 +47,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 				if nargin==4,
 					inputs{5} = [];
 					inputs{6} = 1;
+					% FIX here
+					inputs{7} = 'placeholder';
 				end;
 				obj = obj@ndi_element(inputs{:});
 		end % ndi_probe

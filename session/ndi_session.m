@@ -527,7 +527,7 @@ classdef ndi_session < handle
 				doc = ndi_session_obj.database_search(q_E&q_t);
 				elements = {};
 				for i=1:numel(doc),
-					elements{i} = ndi_document2element(doc{i}, ndi_session_obj);
+					elements{i} = ndi_document2ndi_object(doc{i}, ndi_session_obj);
 				end;
 		end; % getelements()
 

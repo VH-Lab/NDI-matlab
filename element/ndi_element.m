@@ -8,21 +8,22 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 		reference    % 
 		underlying_element % does this element depend on underlying element data (epochs)?
 		direct       % is it direct from the element it underlies, or is it different with its own possibly modified epochs?
-
+		subject_id   % ID of the subject that is related to the ndi_element
 	end; % properties
 
 	methods
 		function ndi_element_obj = ndi_element(varargin)
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT - creator for NDI_ELEMENT
 			%
-			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT)
+			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
+			%        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, SUBJECT_ID)
 			%    or
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
 			% Creates an NDI_ELEMENT object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_ELEMENT in memory from an NDI_DOCUMENT of type 'ndi_document_element'.
 			%
-				if numel(varargin)==6,
+				if numel(varargin)==7,
 					% first type
 					ndi_element_class = 'ndi_element';
 					element_session = varargin{1};
@@ -31,6 +32,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 					element_type = varargin{4};
 					element_underlying_element = varargin{5};
 					direct = logical(varargin{6});
+					subject_id = varargin{7};
 				elseif numel(varargin)==2,
 					element_session = varargin{1};
 					if ~isa(element_session,'ndi_session'),
@@ -51,6 +53,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 					if ~isfield(element_doc.document_properties, 'element'),
 						error(['This document does not have parameters ''element''.']);
 					end;
+					% now we have the document and can start reading
 					ndi_element_class = element_doc.document_properties.element.ndi_element_class;
 					element_name = element_doc.document_properties.element.name;
 					element_reference = element_doc.document_properties.element.reference;
@@ -58,7 +61,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 					if isempty(element_doc.dependency_value('underlying_element_id')),
 						element_underlying_element = [];
 					else,
-						element_underlying_element = ndi_document2element(...
+						element_underlying_element = ndi_document2ndi_object(...
 							 dependency_value(element_doc,'underlying_element_id'), element_session);
 					end;
 					if ischar(element_doc.document_properties.element.direct),
@@ -66,6 +69,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 					else,
 						direct = logical(element_doc.document_properties.element.direct);
 					end;
+					subject_id = element_doc.dependency_value('subject_id');
 				elseif numel(varargin)==0,
 					element_session='';
 					element_name = '';
@@ -83,7 +87,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				ndi_element_obj.type = element_type;
 				ndi_element_obj.underlying_element = element_underlying_element;
 				ndi_element_obj.direct = direct;
-
+				ndi_element_obj.subject_id = subject_id;
 				ndi_element_obj.newdocument();
 		end; % ndi_element()
 
@@ -426,6 +430,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						end;
 					end;
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
+					ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
 					ndi_element_obj.session.database_add(ndi_document_obj);
 				end;
 		end; % newdocument()

@@ -1,4 +1,4 @@
-classdef ndi_app_oridirtuning < ndi_app
+underlying_idclassdef ndi_app_oridirtuning < ndi_ap2
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -224,7 +224,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				if isempty(element_doc),
 					error(['Empty element document, don''t know what to do.']);
 				end;
-				element = ndi_document2element(element_doc{1}, E);
+				element = ndi_document2ndi_object(element_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
 				title([element.elementstring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
