@@ -43,7 +43,7 @@ classdef ndi_epochset
 			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epoch_session'           | The session ID that contains this epoch
+			% 'epoch_session_id'           | The session ID that contains this epoch
 			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -84,7 +84,7 @@ classdef ndi_epochset
 			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epoch_session'           | The session ID that contains this epoch
+			% 'epoch_session_id'           | The session ID that contains this epoch
 			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -95,8 +95,8 @@ classdef ndi_epochset
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NDI_EPOCHSET/RESETEPOCHTABLE.
 			%
-				ue = emptystruct('underlying','epoch_id','epoch_session','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap','epoch_clock',...
+				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock',...
 					't0_t1', 'underlying_epochs');
 		end % buildepochtable
 
@@ -280,7 +280,7 @@ classdef ndi_epochset
 			% ------------------------------------------------------------------------
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch within the session.
-			% 'epoch_session'           | The ID of the session that contains the epoch
+			% 'epoch_session_id'           | The ID of the session that contains the epoch
 			% 'epochprobemap'           | Any contents information for each epoch, usually of type NDI_EPOCHPROBEMAP or empty.
 			% 'epoch_clock'             | A SINGLE NDI_CLOCKTYPE entry that describes the clock type of this node.
 			% 't0_t1'                   | The times [t0 t1] of the beginning and end of the epoch in units of 'epoch_clock'
@@ -300,10 +300,10 @@ classdef ndi_epochset
 			% UNDERLYINGNODES are nodes that are directly linked to this NDI_EPOCHSET's node via 'underlying' epochs.
 			%
 				et = epochtable(ndi_epochset_obj);
-				nodes = emptystruct('epoch_id', 'epoch_session', 'epochprobemap', ...
+				nodes = emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
 					'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
 				if nargout>1, % only build this if we are asked to do so
-					underlyingnodes = emptystruct('epoch_id', 'epoch_session', 'epochprobemap', ...
+					underlyingnodes = emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
 						'epoch_clock', 't0_t1', 'underlying_epochs');
 				end
 
@@ -365,7 +365,7 @@ classdef ndi_epochset
 								% we have found a new unode, build it and add it
 								unode_here = emptystruct(fieldnames(unodes));
 								unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
-								unode_here(1).epoch_session = epochnode.underlying_epochs(i).epoch_session;
+								unode_here(1).epoch_session_id = epochnode.underlying_epochs(i).epoch_session_id;
 								unode_here(1).epochprobemap = epochnode.underlying_epochs(i).epochprobemap;
 								unode_here(1).epoch_clock = epochnode.underlying_epochs(i).epoch_clock{j};
 								unode_here(1).t0_t1 = epochnode.underlying_epochs(i).t0_t1{j};

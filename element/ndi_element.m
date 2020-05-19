@@ -174,7 +174,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			% 'epoch_number'            | The number of the epoch (may change)
 			% 'epoch_id'                | The epoch ID code (will never change once established)
 			%                           |   This uniquely specifies the epoch (with the session id).
-			% 'epoch_session'           | Session of the epoch
+			% 'epoch_session_id'           | Session of the epoch
 			% 'epochprobemap'           | The epochprobemap object from each epoch
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -182,8 +182,8 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epoch_session','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the session and look for device strings that match this probe
 
@@ -209,9 +209,9 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				end
 
 				for n=1:numel(ia),
-					et_ = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap','underlying_epochs');
+					et_ = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
-					et_(1).epoch_session = ndi_element_obj.session.id();
+					et_(1).epoch_session_id = ndi_element_obj.session.id();
 					if ~isempty(ndi_element_obj.underlying_element),
 						et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
 					else,
@@ -226,11 +226,11 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
-					underlying_epochs = emptystruct('underlying','epoch_id','epoch_session', 'epochprobemap','epoch_clock');
+					underlying_epochs = emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
 					if ~isempty(ndi_element_obj.underlying_element),
 						underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
 						underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
-						underlying_epochs.epoch_session = underlying_et(ib(n)).epoch_session;
+						underlying_epochs.epoch_session_id = underlying_et(ib(n)).epoch_session_id;
 						underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
 						underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
 						underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;

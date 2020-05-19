@@ -62,7 +62,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			% 'epoch_number'            | The number of the epoch (may change)
 			% 'epoch_id'                | The epoch ID code (will never change once established)
 			%                           |   This uniquely specifies the epoch.
-			% 'epoch_session'           | The ID of the session
+			% 'epoch_session_id'           | The ID of the session
 			% 'epochprobemap'           | The epochprobemap object from each epoch
                         % 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
                         % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -70,8 +70,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epoch_session','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the session and look for device strings that match this probe
 
@@ -85,7 +85,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 
 					for n=1:numel(d_et{d}),
 						% for each epoch in this device
-						underlying_epochs = emptystruct('underlying','epoch_id','epoch_session', 'epochprobemap','epoch_clock');
+						underlying_epochs = emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
 						underlying_epochs(1).underlying = D{d};
 						match_probe_and_device = [];
 						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
@@ -98,14 +98,14 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 						if ~isempty(match_probe_and_device),
 							%underlying_epochs.epoch_number = n;
 							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
-							underlying_epochs.epoch_session = d_et{d}(n).epoch_session;
+							underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
 							underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
 							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
 							underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
-							et_ = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap','underlying_epochs');
+							et_ = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
-							et_(1).epoch_session = d_et{d}(n).epoch_session; % this is an unambiguous reference
+							et_(1).epoch_session_id = d_et{d}(n).epoch_session_id; % this is an unambiguous reference
 							et_(1).epochprobemap = []; % not applicable for ndi_probe objects
 							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
 							et_(1).t0_t1 = d_et{d}(n).t0_t1; % inherit the time
