@@ -149,7 +149,8 @@ classdef ndi_syncgraph < ndi_id
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
-				ginfo.nodes = emptystruct('epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
+				ginfo.nodes = emptystruct('epoch_id','epoch_session','epochprobemap',...
+					'epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
 				ginfo.diG = [];
@@ -424,8 +425,9 @@ classdef ndi_syncgraph < ndi_id
 				% STEP 1: identify the source node
 
 				sourcenodeindex = ndi_findepochnode(...
-					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent), ...
-						'epoch_id',in_epochid, 'epoch_clock', timeref_in.clocktype),...
+					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
+						'epoch_id',in_epochid, 'epoch_session', ndi_syncgraph_obj.session.id(), ...
+						'epoch_clock', timeref_in.clocktype),...
 					ginfo.nodes);
 
 				% should be a single item now
@@ -435,7 +437,8 @@ classdef ndi_syncgraph < ndi_id
 				elseif numel(sourcenodeindex)==0,
 					% we do not have the node; add it and try again.
 					ndi_syncgraph_obj.addunderlyingepochs(timeref_in.referent,ginfo);
-					[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
+					[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, ...
+						referent_out, clocktype_out);
 					return;
 				end
 
@@ -445,8 +448,8 @@ classdef ndi_syncgraph < ndi_id
 				%     match the requested clock type
 
 				destinationnodeindexes = ndi_findepochnode(...
-					struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), 'epoch_clock', clocktype_out), ...
-					ginfo.nodes);
+					struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), ...
+					'epoch_clock', clocktype_out), ginfo.nodes);
 
 				if isempty(destinationnodeindexes),
 					% no candidate output nodes, see if any are there any from that referent

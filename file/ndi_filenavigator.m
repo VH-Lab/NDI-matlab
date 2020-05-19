@@ -149,7 +149,8 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
                         % ------------------------------------------------------------------------
                         % 'epoch_number'            | The number of the epoch (may change)
                         % 'epoch_id'                | The epoch ID code (will never change once established)
-                        %                           |   This uniquely specifies the epoch.
+                        %                           |   This uniquely specifies the epoch within the session.
+			% 'epoch_session'           | The ID of the session that contains this epoch.
 			% 'epochprobemap'           | The epochprobemap object from each epoch
 			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -161,14 +162,17 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 
 				all_epochs = ndi_filenavigator_obj.selectfilegroups();
 
-				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
-				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epoch_session','epochprobemap','epoch_clock');
+				et = emptystruct('epoch_number','epoch_id','epoch_session','epochprobemap',...
+					'epoch_clock','t0_t1','underlying_epochs');
 
 				for i=1:numel(all_epochs),
-					et_here = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
+					et_here = emptystruct('epoch_number','epoch_id','epoch_session',...
+						'epochprobemap','underlying_epochs');
 					et_here(1).underlying_epochs = ue;
 					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
 					et_here(1).underlying_epochs(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
+					et_here(1).underlying_epochs(1).epoch_session = ndi_filenavigator_obj.session.id();
 					et_here(1).underlying_epochs(1).epoch_clock = {ndi_clocktype('no_time')}; % filenavigator does not keep time
 					et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filenavigator does not keep time
 					et_here(1).epoch_number = i;
@@ -176,6 +180,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 					et_here(1).epoch_clock = epochclock(ndi_filenavigator_obj,i);
 					et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
 					et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
+					et_here(1).epoch_session = ndi_filenavigator_obj.session.id();
 					et(end+1) = et_here;
 				end;
 		end; % epochtable()
@@ -430,8 +435,6 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%
 			%  See also: EPOCHID
 			%
-				% developer note: possibility of caching this with some timeout -- 2018-08-31 we did it!!!
-
 				[et] = ndi_filenavigator_obj.epochtable();
 
 				multiple_outputs = 0;

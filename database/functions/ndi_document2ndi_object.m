@@ -10,6 +10,9 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 % in the session.
 % 
 
+
+ % TODO: what if ndi_session_obj does not match the current session?
+
 if ~isa(ndi_document_obj, 'ndi_document'),
 	% try to look it up
 	mydoc = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',ndi_document_obj,''));
