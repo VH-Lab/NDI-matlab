@@ -31,6 +31,7 @@ classdef ndi_thing < ndi_epochset & ndi_documentservice
 					thing_type = varargin{4};
 					thing_underlying_thing = varargin{5};
 					direct = logical(varargin{6});
+					
 				elseif numel(varargin)==2,
 					thing_experiment = varargin{1};
 					if ~isa(thing_experiment,'ndi_experiment'),

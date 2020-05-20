@@ -22,16 +22,44 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		end % ndi_app_spikesorter() creator
 
-		function extract_and_sort(ndi_app_spikesorter_hengen_obj, redo)
+		function extract_and_sort(ndi_app_spikesorter_hengen_obj, varargin)
 		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi_experiment directory
 		%
+		% EXTRACT_AND_SORT(REDO) - to handle selected .bin file in json input
+		% EXTRACT_AND_SORT(NDI_ELEMENT, REDO) - to handle selected ndi_element
+		%	
 			
-			if isempty(redo)
-				redo = 0
+			if numel(varargin) == 2
+				if isa(varargin{1}, 'ndi_timeseries')
+					element = varargin{1};
+				else
+					error('invalid element input')
+				end
+				
+				if isinteger(int8(varargin{2}))
+					redo = varargin{2};
+				else
+					error('invalid redo input')
+				end				
+			end
+
+			if numel(varargin) == 1
+				if isinteger(int8(varargin{1}))
+					redo = varargin{1};
+				end
+				if isa(varargin{1}, 'ndi_timeseries')
+					element = varargin{1};
+					redo = 0;
+				end
+			end
+
+			if isempty(varargin)
+				redo = 0;
 			end
 			
 			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
 			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])
+			
 			prev_folder = cd(ndi_app_spikesorter_hengen_obj.experiment.path);
 
 			% deal with directory clustering_output
@@ -63,9 +91,18 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			prev_folder = cd(ndi_hengen_path);
 
-			system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path])
-			%python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
-
+			if exist('element') == 1
+				[d] = readtimeseries(element, 1, -Inf, Inf);
+				sr = element.samplerate(1);
+				
+				save('ndiouttmp.mat', 'd', 'sr')
+				
+				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path ' --ndi-input'])
+			else
+				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path])
+				%python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
+			end
+			
 			cd(prev_folder)
 		end % extract_and_sort
 
@@ -135,8 +172,8 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				% plot(t, d, 'o');
 
 				figure(i); hold on;
-				for i=1:numel(d)
-					plot([t(i), t(i)], [0.25 0.75], 'b')
+				for j=1:numel(d)
+					plot([t(j), t(j)], [0.4 0.6], 'b')
 				end
 				ylim([0 1])
 

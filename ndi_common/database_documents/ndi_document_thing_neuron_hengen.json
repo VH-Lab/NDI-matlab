@@ -14,11 +14,11 @@
 		}
 	],
 	"thing": {
-		"ndi_thing_class":					"ndi_thing",
-		"name":							"",
-        "reference":                    "",
-		"type":							"",
-		"direct":						0,
+		"ndi_thing_class": "ndi_neuron_hengen",
+		"name":	"",
+		"reference": "",
+		"type":	"",
+		"direct": 0,
 		"quality": 0,
 		"source": ""
 	}

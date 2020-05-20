@@ -12,7 +12,7 @@ import mountainlab_pytools as mtlp
 import autoscoring as score
 # import musclebeachtools as mbt
 import numpy as np
-# import scipy
+import scipy
 import siout_to_mbt as siout
 import matplotlib.backends.backend_pdf as mpdf
 import seaborn as sns
@@ -1851,8 +1851,18 @@ def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
     else:
         pass
     # ####################### Load the recording ##############################
-    # first load recording with geom (default)
-    recording = se.MdaRecordingExtractor(current_chan_dir)
+    if args.ndi_input:
+        ndi_input = scipy.io.loadmat(os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat'))
+
+        ndi_timeseries = ndi_input['d']
+        ndi_samplerate = ndi_input['sr']
+    
+        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate)
+
+
+    else:
+        # first load recording with geom (default)
+        recording = se.MdaRecordingExtractor(current_chan_dir)
 
     # Standard deviation of first channel in the list
     # if length is less than 10 minutes
@@ -2858,6 +2868,7 @@ if __name__ == '__main__':
                         help="/home/kbn/spkint_wrapper_input.json")
     parser.add_argument('--experiment-path', type=str, help='path where to look for clustering_output')
     parser.add_argument('--ndi-hengen-path', type=str, help='path where default settings for hengen app are located in ndi')
+    parser.add_argument('--ndi-input', action='store_true', help='boolean to flag if ndi is passing in data')
     args = parser.parse_args()
 
     # Check json file and load data
