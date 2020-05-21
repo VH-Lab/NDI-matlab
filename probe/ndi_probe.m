@@ -32,7 +32,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		function obj = ndi_probe(varargin)
 			% NDI_PROBE - create a new NDI_PROBE object
 			%
-			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
+			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
 			%         or
 			%  OBJ = NDI_PROBE(SESSION, NDI_DOCUMENT_OBJ)
 			%
@@ -44,11 +44,10 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			%  NDI_PROBE is an abstract class, and a specific implementation must be called.
 			%
 				inputs = varargin;
-				if nargin==4,
+				if nargin==5,
+					inputs{7} = varargin{5};
 					inputs{5} = [];
 					inputs{6} = 1;
-					% FIX here
-					inputs{7} = 'placeholder';
 				end;
 				obj = obj@ndi_element(inputs{:});
 		end % ndi_probe

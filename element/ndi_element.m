@@ -1,4 +1,4 @@
-classdef ndi_element < ndi_epochset & ndi_documentservice
+classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 % NDI_ELEMENT - define or examine a element in the session
 %
 	properties (GetAccess=public, SetAccess=protected)
@@ -33,6 +33,10 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 					element_underlying_element = varargin{5};
 					direct = logical(varargin{6});
 					subject_id = varargin{7};
+					[b,subject_id] = ndi_subject.does_subjectstring_match_session_document(element_session,subject_id,1);
+					if ~b,
+						error(['Subject does not correspond to a valid document_id entry in the database.']);
+					end;
 				elseif numel(varargin)==2,
 					element_session = varargin{1};
 					if ~isa(element_session,'ndi_session'),
@@ -81,6 +85,7 @@ classdef ndi_element < ndi_epochset & ndi_documentservice
 				else,
 					error(['Improper number of input arguments']);
 				end;
+
 				ndi_element_obj.session = element_session;
 				ndi_element_obj.name = element_name;
 				ndi_element_obj.reference = element_reference;

@@ -42,6 +42,9 @@ dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
 dev1 = ndi_daqsystem_mfdaq('intan1',dt,ndi_daqreader_mfdaq_intan());
 E.daqsystem_add(dev1);
+
+subject = ndi_subject('anteater27@nosuchlab.org','');
+E.database_add(subject.newdocument());
  
   % Step 3: let's add a document
 

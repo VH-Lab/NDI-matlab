@@ -14,79 +14,79 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 
 	methods
 		function obj = ndi_daqsystem(name,thefilenavigator,thedaqreader)
-		% NDI_DAQSYSTEM - create a new NDI_DEVICE object
-		%
-		%  OBJ = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR, THEDAQREADER)
-		%
-		%  Creates an NDI_DAQSYSTEM with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
-		%  and NDI_DAQREADER THEDAQREADER.
-		%
-		%  An NDI_FILENAVIGATOR is an interface object to the raw data files
-		%  on disk that are read by the NDI_DAQREADER.
-		%
-		%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
-		%
-			obj = obj@ndi_id();
-			loadfromfile = 0;
-			if nargin==2 & isa(name,'ndi_session') & isa(thefilenavigator,'ndi_document');
-				session = name;
-				daqsystem_doc = thefilenavigator;
-				daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
-				filenavigator_id = daqsystem_doc.dependency_value('filenavigator_id');
-				docs = session.database_search(ndi_query('ndi_document.id','exact_string',daqreader_id,''));
-				if numel(docs)~=1,
-					error(['Could not find daqreader document with id ' daqreader_id '.']);
-				end;
-				daqreader_doc = docs{1};
-				docs = session.database_search(ndi_query('ndi_document.id','exact_string',filenavigator_id,''));
-				if numel(docs)~=1,
-					error(['Could not find daqreader document with id ' daqreader_id '.']);
-				end;
-				filenavigator_doc = docs{1};
-				
-				obj.daqreader = ndi_document2ndi_object(daqreader_doc, session);
-				obj.filenavigator = ndi_document2ndi_object(filenavigator_doc,session);
-				obj.name = daqsystem_doc.document_properties.ndi_document.name;
-				obj.identifier = daqsystem_doc.document_properties.ndi_document.id();
-			else
-				if nargin==0, % undocumented 0 argument creator
-					name = '';
-					thefilenavigator = [];
-					thedaqreader = [];
-				end;
-				if nargin>=2,
-					if ischar(thefilenavigator), % it is a command
-						loadfromfile = 1;
-						error(['Loadfromfile no longer supported.']);
-						filename = name;
-						name='';
-						if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
-							error(['Unknown command.']);
-						else,
-							thefilenavigator=[];
+			% NDI_DAQSYSTEM - create a new NDI_DEVICE object
+			%
+			%  OBJ = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR, THEDAQREADER)
+			%
+			%  Creates an NDI_DAQSYSTEM with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
+			%  and NDI_DAQREADER THEDAQREADER.
+			%
+			%  An NDI_FILENAVIGATOR is an interface object to the raw data files
+			%  on disk that are read by the NDI_DAQREADER.
+			%
+			%  NDI_DAQSYSTEM is an abstract class, and a specific implementation must be called.
+			%
+				obj = obj@ndi_id();
+				loadfromfile = 0;
+				if nargin==2 & isa(name,'ndi_session') & isa(thefilenavigator,'ndi_document');
+					session = name;
+					daqsystem_doc = thefilenavigator;
+					daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
+					filenavigator_id = daqsystem_doc.dependency_value('filenavigator_id');
+					docs = session.database_search(ndi_query('ndi_document.id','exact_string',daqreader_id,''));
+					if numel(docs)~=1,
+						error(['Could not find daqreader document with id ' daqreader_id '.']);
+					end;
+					daqreader_doc = docs{1};
+					docs = session.database_search(ndi_query('ndi_document.id','exact_string',filenavigator_id,''));
+					if numel(docs)~=1,
+						error(['Could not find daqreader document with id ' daqreader_id '.']);
+					end;
+					filenavigator_doc = docs{1};
+					
+					obj.daqreader = ndi_document2ndi_object(daqreader_doc, session);
+					obj.filenavigator = ndi_document2ndi_object(filenavigator_doc,session);
+					obj.name = daqsystem_doc.document_properties.ndi_document.name;
+					obj.identifier = daqsystem_doc.document_properties.ndi_document.id();
+				else
+					if nargin==0, % undocumented 0 argument creator
+						name = '';
+						thefilenavigator = [];
+						thedaqreader = [];
+					end;
+					if nargin>=2,
+						if ischar(thefilenavigator), % it is a command
+							loadfromfile = 1;
+							error(['Loadfromfile no longer supported.']);
+							filename = name;
+							name='';
+							if ~strcmp(lower(thefilenavigator), lower('OpenFile')),
+								error(['Unknown command.']);
+							else,
+								thefilenavigator=[];
+							end;
 						end;
 					end;
-				end;
-				if nargin>=3,
-					if ~isa(thedaqreader,'ndi_daqreader'),
-						error(['thedaqreader must be of type NDI_DAQREADER.']);
+					if nargin>=3,
+						if ~isa(thedaqreader,'ndi_daqreader'),
+							error(['thedaqreader must be of type NDI_DAQREADER.']);
+						end;
+					end;
+
+					if (nargin==1) | (nargin>3),
+						error(['Function requires 2 or 3 input arguments exactly.']);
+					end
+		
+					obj.name = name;
+					if loadfromfile,
+						error(['Loadfromfile no longer supported.']);
+					else,
+						obj.name = name;
+						obj.filenavigator = thefilenavigator;
+						obj.daqreader = thedaqreader;
 					end;
 				end;
-
-				if (nargin==1) | (nargin>3),
-					error(['Function requires 2 or 3 input arguments exactly.']);
-				end
-        
-				obj.name = name;
-				if loadfromfile,
-					error(['Loadfromfile no longer supported.']);
-				else,
-					obj.name = name;
-					obj.filenavigator = thefilenavigator;
-					obj.daqreader = thedaqreader;
-				end;
-			end;
-	end; % ndi_daqsystem()
+		end; % ndi_daqsystem()
 
 		%% GUI functions
 		function obj = ndi_daqsystem_gui_edit(ndi_daqsystem_obj)
@@ -175,7 +175,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 
 				et = epochtable(ndi_daqsystem_obj);
 
-				probes_struct = emptystruct('name','reference','type');
+				probes_struct = emptystruct('name','reference','type','subject_id');
 				
 				for n=1:numel(et),
 					epc = et(n).epochprobemap;
@@ -187,6 +187,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 								newentry.name = epc(ec).name;
 								newentry.reference= epc(ec).reference;
 								newentry.type= epc(ec).type;
+								newentry.subject_id = epc(ec).subjectstring;
 								probes_struct(end+1) = newentry;
 							end
 						end

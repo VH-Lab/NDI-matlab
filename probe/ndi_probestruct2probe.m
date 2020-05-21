@@ -34,5 +34,5 @@ for i=1:numel(probestruct),
 	if isempty(ind),
 		warning(['Could not find exact match for ' probestruct(i).type ', using general NDI_PROBE.']);
 	end
-	eval(['ndi_probe_obj{i} = ' ndi_probetype2object(ind).classname '(exp, probestruct(i).name, probestruct(i).reference, probestruct(i).type);']);
+	eval(['ndi_probe_obj{i} = ' ndi_probetype2object(ind).classname '(exp, probestruct(i).name, probestruct(i).reference, probestruct(i).type, probestruct(i).subject_id);']);
 end

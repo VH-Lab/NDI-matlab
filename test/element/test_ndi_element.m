@@ -44,16 +44,15 @@ end;
 [b,a]=cheby1(4,0.8,[300]/(0.5*1/median(diff(t))),'low');
 d_filter = filtfilt(b,a,d);
 
- % FIX here
-myelement1 = ndi_element_timeseries(E,'mydirectelement',p{1}.reference,'field', p{1}, 1, 'placeholder');
+myelement1 = ndi_element_timeseries(E,'mydirectelement',p{1}.reference,'field', p{1}, 1, 'anteater27@nosuchlab.org');
 
 et = p{1}.epochtable;
  % FIX here
-myelement2 = ndi_element_timeseries(E,'myindirectelement',p{1}.reference,'lfp', p{1}, 0, 'placeholder');
+myelement2 = ndi_element_timeseries(E,'myindirectelement',p{1}.reference,'lfp', p{1}, 0, 'anteater27@nosuchlab.org');
 [myelement2,mydoc]=myelement2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
  % demo adding a element that does not depend on an antecedent element at all
-myelement3 = ndi_element_timeseries(E,'mymadeupelement','madeup','madeup', [], 0,'placeholder');
+myelement3 = ndi_element_timeseries(E,'mymadeupelement','madeup','madeup', [], 0,'anteater27@nosuchlab.org');
 [myelement3,mydoc3] = myelement3.addepoch('epoch1',ndi_clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
 
 et_t1 = myelement1.epochtable();

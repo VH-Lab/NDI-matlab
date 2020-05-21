@@ -4,12 +4,13 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
 		type          % The type of recording that is present in the data
 		devicestring  % An NDI_DAQSYSTEMSTRING that indicates the device and channels that comprise the data
+		subjectstring % A string describing the local_id or unique document ID of the subject of the probe
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_)
+		function obj = ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_)
 			% NDI_EPOCHPROBEMAP_DAQSYSTEM - Create a new ndi_epochprobemap_daqsystem object
 			%
-			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
 			%
 			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
@@ -20,13 +21,15 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 			% TYPE is the type of recording.
 			% DEVICESTRING is a string that indicates the channels that were used to acquire
 			% this record.
+			% SUBJECTSTRING describes the subject of the probe, either using the unique local identifier
+			%   or the document unique identifier (ID) of the NDI_DOCUMENT that describes the subject.
 			%
 			% The function has an alternative form:
 			%
 			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(FILENAME)
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
+			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
 			% one line per NDI_EPOCHPROBEMAP_DAQSYSTEM entry.
 			%
 
@@ -35,6 +38,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 				reference_=0;
 				type_='a';
 				devicestring_='a';
+				subjectstring_ = 'nothing@nosuchlab.org';
 			end
 
 			if nargin==1,
@@ -44,18 +48,20 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 					ndi_struct= loadStructArray(name_);
 				end;
 				if isempty(ndi_struct),
-					ndi_struct = emptystruct('name','reference','type','devicestring');
+					ndi_struct = emptystruct('name','reference','type','devicestring','subjectstring');
 				end
 				fn = fieldnames(ndi_struct);
-				if ~eqlen(fn,{'name','reference','type','devicestring'}');
-					error(['fields must be (case-sensitive match): name, reference, type, devicestring.']);
+				if ~eqlen(fn,{'name','reference','type','devicestring','subjectstring'}');
+					error(['fields must be (case-sensitive match): name, reference, type, devicestring, subjectstring; fields were ' ...
+						cell2str(fn) '.']);
 				end;
 				obj = [];
 				for i=1:length(ndi_struct),
 					nextentry = ndi_epochprobemap_daqsystem(ndi_struct(i).name,...
 							ndi_struct(i).reference,...
 							ndi_struct(i).type, ...
-							ndi_struct(i).devicestring);
+							ndi_struct(i).devicestring,...
+							ndi_struct(i).subjectstring);
 					obj = cat(1,obj,nextentry);
 				end;
 				if isempty(obj),
@@ -91,6 +97,8 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 				error(['Error in devicestring field: ' errormsg ]);
 			end;
 			obj.devicestring = devicestring_;
+
+			obj.subjectstring = subjectstring_;
 		end;
 
 		function savetofile(ndi_epochprobemap_daqsystem_obj, filename)
@@ -101,7 +109,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		%  Writes the NDI_EPOCHPROBEMAP_DAQSYSTEM object to disk in filename FILENAME (full path).
 		%
 		%
-			fn = {'name','reference','type','devicestring'};
+			fn = {'name','reference','type','devicestring','subjectstring'};
 			mystruct = emptystruct(fn{:});
 			for i=1:length(obj),
 				mynewstruct = struct;

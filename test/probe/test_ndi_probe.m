@@ -22,6 +22,11 @@ E = ndi_session_dir(dirname),
 %dev1 = load(E.daqsystem,'name','intan1')
 
 probes = E.getprobes();
+if numel(probes)==0, % build_intan_flat_exp hasn't been run yet
+	disp(['Need to run build_intan_flat_exp first, doing that now...']);
+	build_intan_flat_exp(dirname);
+        probes = E.getprobes(); % should return 1 probe
+end;
 
 % now let's play with the first probe
 
