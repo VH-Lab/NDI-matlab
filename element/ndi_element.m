@@ -16,14 +16,17 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT - creator for NDI_ELEMENT
 			%
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
-			%        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, SUBJECT_ID)
+			%        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, [SUBJECT_ID])
 			%    or
 			% NDI_ELEMENT_OBJ = NDI_ELEMENT(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
 			% Creates an NDI_ELEMENT object, either from a name and and associated NDI_PROBE object,
 			% or builds the NDI_ELEMENT in memory from an NDI_DOCUMENT of type 'ndi_document_element'.
 			%
-				if numel(varargin)==7,
+			% If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
+			% element.
+			%
+				if numel(varargin)>=6,
 					% first type
 					ndi_element_class = 'ndi_element';
 					element_session = varargin{1};
@@ -32,10 +35,22 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 					element_type = varargin{4};
 					element_underlying_element = varargin{5};
 					direct = logical(varargin{6});
-					subject_id = varargin{7};
-					[b,subject_id] = ndi_subject.does_subjectstring_match_session_document(element_session,subject_id,1);
-					if ~b,
-						error(['Subject does not correspond to a valid document_id entry in the database.']);
+					if ~isempty(element_underlying_element),
+						if ~isa(element_underlying_element,'ndi_element'),
+							error(['Underlying element must be an ndi_element.']);
+						end;
+					end;
+					if ~isempty(element_underlying_element),
+						subject_id = element_underlying_element.subject_id;
+						if numel(varargin)==7,
+							warning(['Ignoring input subject_id because underlying elment is given.']);
+						end;
+					elseif numel(varargin)==7,
+						subject_id = varargin{7};
+						[b,subject_id] = ndi_subject.does_subjectstring_match_session_document(element_session,subject_id,1);
+						if ~b,
+							error(['Subject does not correspond to a valid document_id entry in the database.']);
+						end;
 					end;
 				elseif numel(varargin)==2,
 					element_session = varargin{1};

@@ -103,6 +103,10 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 					msg = 'local_identifier must have an @ character.';
 					b = 0;
 				end;
+				if any(local_identifier==' '),
+					msg = 'local_identifier must not have any spaces.';
+					b = 0;
+				end;
 		end; % isvalidlocalidentifierstring()
 
 		function [b,subject_id] = does_subjectstring_match_session_document(ndi_session_obj,subjectstring,makeit)

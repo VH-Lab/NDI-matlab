@@ -49,7 +49,7 @@ classdef ndi_timereference
 				if ~( isa(referent,'ndi_epochset') ), 
 	 				error(['referent must be a subclass of NDI_EPOCHSET.']);
 				else,
-					if isprop(referent,'session'),
+					if isprop(referent,'session') | ismethod(referent,'session'),
 						if ~isa(referent.session,'ndi_session'),
 							error(['The referent must have an ndi_session with a valid id.']);
 						else,

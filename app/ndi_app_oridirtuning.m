@@ -1,4 +1,4 @@
-underlying_idclassdef ndi_app_oridirtuning < ndi_ap2
+classdef ndi_app_oridirtuning < ndi_app
 
 	properties (SetAccess=protected,GetAccess=public)
 

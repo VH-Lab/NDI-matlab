@@ -2,10 +2,10 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 	properties
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_)
+		function obj = ndi_epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_, subjectstring_)
 			% NDI_EPOCHPROBEMAP_DAQSYSTEM_VHLAB - Create a new ndi_epochprobemap_daqsystem object derived from the vhlab device implementation
 			%
-			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING)
+			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
 			%
 			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
@@ -42,19 +42,36 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				reference_ = 0;
 				type_ = 'a';
 				devicestring_ = 'a';
+				subjectstring_ = '';
 			end
 
-			obj = obj@ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_);
+			obj = obj@ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
 
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
+
+				[parentpath, localdirname] = fileparts(filepath);
+				subjectfile = [parentpath filesep 'subject.txt'];
+				if exist(subjectfile,'file'),
+					subjecttext = textfile2char(subjectfile);
+					subject_id = trimws(line_n(subjecttext,1));
+				else,
+					error(['No subject.txt file found:' subjectfile '.']);
+				end;
+
+				[b,msg] = ndi_subject.isvalidlocalidentifierstring(subject_id);
+				if ~b,
+					error(['subject_id string ' subject_id ' is not a valid subject id: ' msg]);
+				end;
+
 				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
 					mylist = {'mk1','mk2','mk3','e1','e2','e3'};
 					for i=1:numel(mylist),
 						nextentry = ndi_epochprobemap_daqsystem_vhlab('vhvis_spike2',...
 							1,...
 							['stimulator'  ] , ...  % type
-							['vhvis_spike2' ':' mylist{i}]);  % device string
+							['vhvis_spike2' ':' mylist{i}], ...  % device string
+							subject_id);
 						obj(i) = nextentry;
 					end
 					return;
@@ -107,8 +124,8 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 					nextentry = ndi_epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
 							ndi_struct(i).ref,...
 							ec_type, ...  % type
-							[vhdevice_string ':ai' intseq2str(ndi_struct(i).channel_list)]);  % device string
-							%['extracellular_electrode-' int2str(numel(ndi_struct(i).channel_list)) ] , ...  % type
+							[vhdevice_string ':ai' intseq2str(ndi_struct(i).channel_list)], ...  % device string
+							subject_id);
 					obj(i) = nextentry;
 				end;
 			end
