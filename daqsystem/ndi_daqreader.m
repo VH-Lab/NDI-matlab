@@ -14,7 +14,7 @@ classdef ndi_daqreader < ndi_id
 		%  
 		%  Creates an NDI_DAQREADER. 
 		%
-		%  OBJ = NDI_DAQREADER(NDI_EXPERIMENT_OBJ, NDI_DOCUMENT_OBJ)
+		%  OBJ = NDI_DAQREADER(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
 		%    
 		%  Creates an NDI_DAQREADER from an NDI_DOCUMENT_OBJ.
 		%
@@ -24,7 +24,7 @@ classdef ndi_daqreader < ndi_id
 
 			loadfromfile = 0;
 
-			if nargin==2 & isa(varargin{1},'ndi_experiment') & isa(varargin{2},'ndi_document'),
+			if nargin==2 & isa(varargin{1},'ndi_session') & isa(varargin{2},'ndi_document'),
 				obj.identifier = varargin{2}.document_properties.ndi_document.id;
 			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command

@@ -12,7 +12,7 @@ classdef (Abstract) ndi_daqsystem_image < ndi_device
     end
     
     methods (Abstract)
-        im = frame(obj,n,i) % returns the image i from the epoch n of an experiment.
+        im = frame(obj,n,i) % returns the image i from the epoch n of an session.
         num = numFrame(obj,n) % retunes the number of frames that an epoch n has.
     end
 

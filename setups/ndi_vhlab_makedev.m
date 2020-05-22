@@ -6,7 +6,7 @@ function exp = ndi_vhlab_makedev(exp, devname)
 % Creates devices that look for files in the VHLAB standard recording
 % scheme, where data from different epochs are organized into
 % subdirectories (using NDI_FILENAVIGATOR_EPOCHDIR). DEVNAME should be the 
-% name a device in the table below. These devices are added to the NDI_EXPERIMENT
+% name a device in the table below. These devices are added to the NDI_SESSION
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
 % If the function is called with no input arguments, then it returns a list

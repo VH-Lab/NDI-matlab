@@ -3,12 +3,12 @@ function test_intan_flat_saved(dirname)
 %
 %  TEST_INTAN_FLAT_SAVED([DIRNAME])
 %
-%  Given an experiment directory with an associated Intan driver, 
+%  Given an session directory with an associated Intan driver, 
 %  this function loads the channel information and then plots some
 %  data from channel 1, as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NDIPATH]/example_experiments/exp1_eg_saved is used.
+%  [NDIPATH]/example_sessions/exp1_eg_saved is used.
 %
 
 if nargin<1,
@@ -16,8 +16,8 @@ if nargin<1,
 	dirname = [ndiexampleexperpath filesep 'exp1_eg_saved'];
 end;
 
-disp(['reading a new experiment object from directory ' dirname ' ... ' ]);
-E = ndi_experiment_dir(dirname);
+disp(['reading a new session object from directory ' dirname ' ... ' ]);
+E = ndi_session_dir(dirname);
 
 disp(['Now looking for daqsystem Intan1']);
 

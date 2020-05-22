@@ -1,10 +1,10 @@
 function test_ndi_document(dirname)
-% TEST_NDI_DOCUMENT - Test the functionality of the NDI_DOCUMENT object and the NDI_EXPERIMENT database
+% TEST_NDI_DOCUMENT - Test the functionality of the NDI_DOCUMENT object and the NDI_SESSION database
 %
 %  TEST_NDI_DOCUMENT([DIRNAME])
 %
 %  Given a directory, this function tries to create some 
-%  NDI_VARIABLE objects in the experiment DATABASE. The test function
+%  NDI_VARIABLE objects in the session DATABASE. The test function
 %  removes them on completion.
 %
 %  If DIRNAME is not provided, the default directory
@@ -20,8 +20,8 @@ if nargin<1,
 	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 end;
 
-disp(['Creating a new experiment object in directory ' dirname '.']);
-E = ndi_experiment_dir('exp1',dirname);
+disp(['Creating a new session object in directory ' dirname '.']);
+E = ndi_session_dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 

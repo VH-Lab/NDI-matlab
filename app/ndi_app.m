@@ -1,7 +1,7 @@
 classdef ndi_app < ndi_documentservice
 
 	properties (SetAccess=protected,GetAccess=public)
-		experiment % the NDI_EXPERIMENT object that the app will operate on
+		session % the NDI_SESSION object that the app will operate on
 		name % the name of the app
 	end % properties
 
@@ -9,21 +9,21 @@ classdef ndi_app < ndi_documentservice
 		function ndi_app_obj = ndi_app(varargin)
 			% NDI_APP - create a new NDI_APP object
 			%
-			% NDI_APP_OBJ = NDI_APP(EXPERIMENT)
+			% NDI_APP_OBJ = NDI_APP(SESSION)
 			%
-			% Creates a new NDI_APP object that operates on the NDI_EXPERIMENT
-			% object called EXPERIMENT.
+			% Creates a new NDI_APP object that operates on the NDI_SESSION
+			% object called SESSION.
 			%
-				experiment = [];
+				session = [];
 				name = 'generic';
 				if nargin>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
 				if nargin>1,
 					name = varargin{2};
 				end
 
-				ndi_app_obj.experiment = experiment;
+				ndi_app_obj.session = session;
 				ndi_app_obj.name = name;
 		end % ndi_app()
 
@@ -73,8 +73,8 @@ classdef ndi_app < ndi_documentservice
 			% NDI_DATABASE document for this app with field 'app' that has subfield 'name' equal
 			% to the app's VARAPPNAME.
 			%
-				c = {'ndi_document.experiment_id', ...
-					ndi_app_obj.experiment.id(), ...
+				c = {'ndi_document.session_id', ...
+					ndi_app_obj.session.id(), ...
 					'app.name',ndi_app_obj.varappname() };
 		end;
 
@@ -106,7 +106,7 @@ classdef ndi_app < ndi_documentservice
 					'app.interpreter','MATLAB',...
 					'app.interpreter_version',matlab_version ...
 				};
-				ndi_document_obj = ndi_app_obj.experiment.newdocument('ndi_document_app', c{:});
+				ndi_document_obj = ndi_app_obj.session.newdocument('ndi_document_app', c{:});
 		end;
 	end; % methods
 end

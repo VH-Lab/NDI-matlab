@@ -9,8 +9,8 @@ function epochdemo1
 ndi_globals;
 dirname = [ndiexampleexperpath filesep 'intracell_example'];
 
-disp(['creating a new experiment object...']);
-E = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (CED Spike2):']);
 
@@ -29,7 +29,7 @@ fn = ndi_filenavigator(E, {'.*\.smr\>','.*\.epochmetadata\>'},...
 	'ndi_epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
 
 
-  % Step 1.2: create the daqsystem object and add it to the experiment:
+  % Step 1.2: create the daqsystem object and add it to the session:
 
 dev1 = ndi_daqsystem_mfdaq('myspike2',fn, ndi_daqreader_mfdaq_cedspike2());
 E.daqsystem_add(dev1);

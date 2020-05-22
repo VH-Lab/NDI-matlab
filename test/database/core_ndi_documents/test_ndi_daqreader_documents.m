@@ -3,7 +3,7 @@ function test_ndi_daqreader_documents
 %
 % TEST_NDI_DAQREADER_DOCUMENTS(DIRNAME)
 %
-% Given a directory that corresponds to an experiment, this function tries to create
+% Given a directory that corresponds to an session, this function tries to create
 % the following objects :
 %   1) ndi_daqreader
 %   2) ndi_daqreader_mfdaq
@@ -23,7 +23,7 @@ function test_ndi_daqreader_documents
 	ndi_globals;
 	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 
-	E = ndi_experiment_dir('exp1',dirname);
+	E = ndi_session_dir('exp1',dirname);
 	 % remove any existing daqreaders
 	doc = E.database_search(ndi_query('','isa','ndi_document_daqreader.json',''));
 	E.database_rm(doc);

@@ -11,6 +11,9 @@
 	"depends_on": [
 		{	"name": "underlying_element_id",
 			"value": ""
+		},
+		{	"name": "subject_id",
+			"value": ""
 		}
 	],
 	"element": {

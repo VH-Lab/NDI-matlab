@@ -1,6 +1,6 @@
 // not general - only works on specified directory on Ora's computer
 
-our_exp = ndi_experiment_dir('ts1','/Users/Ora/Docs2/Experiments/2019-08-22');
+our_exp = ndi_session_dir('ts1','/Users/Ora/Docs2/Experiments/2019-08-22');
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
@@ -38,11 +38,11 @@ xlabel('Samples');
 ylabel('Amplitude');
 
 spikesorter = ndi_app_spikesorter(our_exp);
-param_folder = '/Users/Ora/Documents/MATLAB/tools/NDI-matlab/ndi_common/example_experiments/spikesortdemo/';
+param_folder = '/Users/Ora/Documents/MATLAB/tools/NDI-matlab/ndi_common/example_sessions/spikesortdemo/';
 sort_param = [param_folder 'tvh_sorting_parameters.txt'];
 spikesorter.spike_sort(probe, e, 'default', 'test_sort', sort_param);
 
-neuron1 = ndi_app_spikesorter_obj.experiment.getelements('element.name','neuron_1');
+neuron1 = ndi_app_spikesorter_obj.session.getelements('element.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
 
 figure(10)

@@ -14,7 +14,7 @@ Still in early development
 
 ## Description of key terms:
 
-- **experiment**: A collection of measurements and analysis that are associated with one experimental session. A "study" usually consists of several experiments.
+- **session**: A collection of measurements and analysis that are associated with one experimental session. A "study" usually consists of several sessions.
 
 - **probe**: An instrument that makes a measurement or provides stimulation. Examples include an electrode, a camera, a 2-photon microscope, a visual stimulus monitor, a nose-poke, a feeder.
 
@@ -25,9 +25,9 @@ Still in early development
 
 ## Description of software objects that impliment the framework:
 
-- `ndi_experiment`: The class that implements the basic structure of an experiment, including an iodevice list, synggraph, cache, reference, and a unique reference string.
+- `ndi_session`: The class that implements the basic structure of an experiment, including an iodevice list, synggraph, cache, reference, and a unique reference string.
 
-- `ndi_experiment_dir`: An experiment that uses the file system for storage of its parameters and database. This is presently used for all experiments.
+- `ndi_session_dir`: A session that uses the file system for storage of its parameters and database. This is presently used for all experiments.
 
 - `ndi_iodevice`: A software object that reads data from files created by hardware data acquisition devices
 
@@ -67,7 +67,7 @@ Still in early development
 
 - All error messages should be informative and give specific information about the problem, not just say 'an error occurred.'
 
-- Most of the time, class names should include the full parentage of the object, starting with the basic classes for NDI: ndi_experiment, ndi_iodevice, ndi_probe. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called `ndi_iodevice_mfdaq_mycompany` to indicate that the object is descended from the `ndi_iodevice` and `ndi_iodevice_mfdaq` objects. Let's make exceptions if putting the full parentage gets cumbersome without adding clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes `ndi_experiment`, `ndi_database`, and `ndi_iodevice`).
+- Most of the time, class names should include the full parentage of the object, starting with the basic classes for NDI: ndi_session, ndi_iodevice, ndi_probe. For example, a class implementing device drivers for a multifunction data aquisition board from mycompany should be called `ndi_iodevice_mfdaq_mycompany` to indicate that the object is descended from the `ndi_iodevice` and `ndi_iodevice_mfdaq` objects. Let's make exceptions if putting the full parentage gets cumbersome without adding clarity. Most users and programmers don't need to think about those classes (but will need to think about the basic classes `ndi_session`, `ndi_database`, and `ndi_iodevice`).
 
 ## Test code
 

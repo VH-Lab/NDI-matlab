@@ -38,7 +38,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %
         %  CHANNELS = GETCHANNELS(SAPI_DEV)
         %
-        %  Returns the channel list of acquired channels in this experiment
+        %  Returns the channel list of acquired channels in this session
         %
         % CHANNELS is a structure list of all channels with fields:
         % -------------------------------------------------------
@@ -48,11 +48,11 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %
 
         % look for RHD files
-        % mypath = getpath(getexperiment(sAPI_dev));
+        % mypath = getpath(getsession(sAPI_dev));
         %
         % filelist = findfiletype(mypath,'.rhd');
 
-        filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
+        filelist = findfiletype(getpath(getsession(sAPI_dev)),'tif');
 
 
         channels = struct('name',[],'type',[]);
@@ -107,7 +107,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %  REPORT is the data collection for specific image channels
 
 
-        file_names = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');  %%use the files as object fields later
+        file_names = findfiletype(getpath(getsession(sAPI_dev)),'tif');  %%use the files as object fields later
 
         %file_names,
           % here we want to convert t0, and t1, which are in units of sAPI_clock
@@ -150,7 +150,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %
         % SR is the list of sample rate from specified channels
 
-        file_names = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
+        file_names = findfiletype(getpath(getsession(sAPI_dev)),'tif');
 
         head = imfinfo(file_names{1});
 
@@ -182,7 +182,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %
         %   INTERVALS = GETINTERVALS(SAPI_DEV)
         %
-        %   Returns the orders for all the intervals related to the experiment
+        %   Returns the orders for all the intervals related to the session
         %
         %   EPOCH = {f1,order1
         %            f2,order2
@@ -191,7 +191,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         intervals = struct('file',[],'local_epoch_order',[]);
         intervals = ([]);
 
-        filelist = findfiletype(getpath(getexperiment(sAPI_dev)),'tif');
+        filelist = findfiletype(getpath(getsession(sAPI_dev)),'tif');
             for i=1:length(filelist),
                 intervals(end+1).file = filelist{i};
                 intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list

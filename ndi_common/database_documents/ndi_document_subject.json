@@ -9,10 +9,8 @@
 		]
         },
 	"subject": {
-		"reference":						"",
-		"species":						"",
-		"strain":						"",
-		"variant":						""
+		"local_identifier":					"",
+		"description":						""
 	}
 }
 

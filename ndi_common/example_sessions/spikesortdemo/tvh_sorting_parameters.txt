@@ -1,0 +1,2 @@
+name	reference	min_rng	num_pca_features
+vhintan	1	10	10

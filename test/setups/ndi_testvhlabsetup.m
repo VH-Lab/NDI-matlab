@@ -1,13 +1,13 @@
 function exp = ndi_testvhlabsetup(dirname)
-% NDI_TESTVHLABSETUP - display a variety of information about an NDI experiment
+% NDI_TESTVHLABSETUP - display a variety of information about an NDI session
 %
 % EXP = NDI_TESTVHLABSETUP(DIRNAME)
 %
-% Displays all devices, all epochs, all probes for an NDI_EXPERIMENT_DIRNAME in directory
-% DIRNAME. The experiment variable is returned in EXP.
+% Displays all devices, all epochs, all probes for an NDI_SESSION_DIRNAME in directory
+% DIRNAME. The session variable is returned in EXP.
 
 
-exp = ndi_experiment_dir(dirname);
+exp = ndi_session_dir(dirname);
 
 
  % now print all devices

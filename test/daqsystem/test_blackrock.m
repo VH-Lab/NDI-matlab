@@ -8,7 +8,7 @@ function test_blackrock_flat(dirname)
 %  as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NDIPATH]/example_experiments/exp_blackrock is used.
+%  [NDIPATH]/example_sessions/exp_blackrock is used.
 %
 %
 
@@ -19,8 +19,8 @@ if nargin<1,
 	dirname = [ndiexampleexperpath filesep 'exp_blackrock'];
 end;
 
-disp(['creating a new experiment object...']);
-exp = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+exp = ndi_session_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (blackrock):']);
 
@@ -29,7 +29,7 @@ disp(['Now adding our acquisition device (blackrock):']);
 
 dt = ndi_filenavigator(exp, '.*\.ns2\>');  % look for .ns2 files - not exactly right yet, need to modify to find epochs correctly
 
-  % Step 2: create the daqsystem object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the session:
 
 dev1 = ndi_daqsystem_mfdaq_blackrock('blackrock1',dt);
 exp.daqsystem_add(dev1);

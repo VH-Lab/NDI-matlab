@@ -2,18 +2,18 @@ function ndi_test_spikeextractor
 % NDI_TEST_SPIKEEXTRACTOR - Test the functionality of the apps 'ndi_spikeextractor' and 'ndi_spikesort' with example data
 %
 % Tests the NDI_APP_SPIKEEXTRACTOR on example data in 
-% [NDICOMMONPATH]/example_app_experiments/exp_sg
+% [NDICOMMONPATH]/example_app_sessions/exp_sg
 %
 
  % find our directory
 
 ndi_globals;
-mydirectory = [ndicommonpath filesep 'example_app_experiments'];
+mydirectory = [ndicommonpath filesep 'example_app_sessions'];
 dirname = [mydirectory filesep 'exp_sg'];
 
 
-disp(['creating a new experiment object...']);
-E = ndi_experiment_dir('exp1', dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1', dirname);
 
 % remove any old acq devices
 

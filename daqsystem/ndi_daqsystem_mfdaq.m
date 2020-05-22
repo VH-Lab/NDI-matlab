@@ -81,7 +81,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			%  CHANNELS = GETCHANNELS(NDI_DAQSYSTEM_MFDAQ_OBJ)
 			%
-			%  Returns the channel list of acquired channels in this experiment
+			%  Returns the channel list of acquired channels in this session
 			%
 			%  The channels are of different types. In the below, 
 			%  'n' is replaced with the channel number.
@@ -144,10 +144,10 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%
 			%  DATA is the data collection for specific channels
 
-			error('this function presently does not work, needs to know how to get to experiment');
+			error('this function presently does not work, needs to know how to get to session');
 
 			if isa(timeref_or_epoch,'ndi_timereference'),
-				exp = ndi_daqsystem_mfdaq_obj.experiment;
+				exp = ndi_daqsystem_mfdaq_obj.session;
 				[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
 					ndi_daqsystem_mfdaq_obj,ndi_clocktype('devlocal'));
 				[t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...

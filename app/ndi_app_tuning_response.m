@@ -9,17 +9,17 @@ classdef ndi_app_tuning_response < ndi_app
 		function ndi_app_tuning_response_obj = ndi_app_tuning_response(varargin)
 			% NDI_APP_TUNING_RESPONSE - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_TUNING_RESPONSE_OBJ = NDI_APP_TUNING_RESPONSE(EXPERIMENT)
+			% NDI_APP_TUNING_RESPONSE_OBJ = NDI_APP_TUNING_RESPONSE(SESSION)
 			%
 			% Creates a new NDI_APP_TUNING_RESPONSE object that can operate on
-			% NDI_EXPERIMENTS. The app is named 'ndi_app_stimulus_response'.
+			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
-				experiment = [];
+				session = [];
 				name = 'ndi_app_tuning_response';
 				if numel(varargin)>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
-				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi_app(experiment, name);
+				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi_app(session, name);
 
 		end % ndi_app_tuning_response() creator
 
@@ -28,7 +28,7 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
-			% Examines a the NDI_EXPERIMENT associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
+			% Examines a the NDI_SESSION associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
@@ -40,7 +40,7 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			% Note that this function DOES add the new documents to the database.
 			%
-				E = ndi_app_tuning_response_obj.experiment;
+				E = ndi_app_tuning_response_obj.session;
 
 				% find all stimulus records from the stimulus element
 				sq_nditimeseries = ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
@@ -150,7 +150,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				response_doc = {};
 
-				E = ndi_app_tuning_response_obj.experiment;
+				E = ndi_app_tuning_response_obj.session;
 				gapp = ndi_app_markgarbage(E);
 
 				if isempty(freq_response),
@@ -324,7 +324,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				assign(varargin{:});
 
-				E = ndi_app_tuning_response_obj.experiment;
+				E = ndi_app_tuning_response_obj.session;
 
 				% Step 1: error checking
 				if numel(independent_parameter)<1,
@@ -469,14 +469,14 @@ classdef ndi_app_tuning_response < ndi_app
 
 				sq_stimulus_element = ndi_query('','depends_on','stimulus_element_id',stimulus_element_obj.id());
 				sq_stim = ndi_query('','isa','stimulus_presentation.json','');
-				stim_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_stim&sq_stimulus_element);
+				stim_doc = ndi_app_tuning_response_obj.session.database_search(sq_stim&sq_stimulus_element);
 
 				if reset,
 					sq_csi = ndi_query('','isa','control_stimulus_ids.json','');
 					for i=1:numel(stim_doc),
 						sq_csi_stim = ndi_query('','depends_on','stimulus_presentation_id',stim_doc{i}.id());
-						old_cs_doc = ndi_app_tuning_response_obj.experiment.database_search(sq_csi&sq_csi_stim);
-						ndi_app_tuning_response_obj.experiment.database_rm(old_cs_doc);
+						old_cs_doc = ndi_app_tuning_response_obj.session.database_search(sq_csi&sq_csi_stim);
+						ndi_app_tuning_response_obj.session.database_rm(old_cs_doc);
 					end;
 				end;
 
@@ -584,7 +584,7 @@ classdef ndi_app_tuning_response < ndi_app
 					'control_stimulus_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
 				cs_doc = cs_doc.set_dependency_value('stimulus_presentation_id',stim_doc.id());
 
-				ndi_app_tuning_response_obj.experiment.database_add(cs_doc);
+				ndi_app_tuning_response_obj.session.database_add(cs_doc);
 
 		end; % control_stimulus()
 
@@ -594,7 +594,7 @@ classdef ndi_app_tuning_response < ndi_app
 			% [TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, ELEMENT_OBJ, EPOCHID, RESPONSE_TYPE) 
 			%
 			%
-				E = ndi_app_tuning_response_obj.experiment;
+				E = ndi_app_tuning_response_obj.session;
 
 				tc_doc = {};
 				srs_doc = {};

@@ -1,7 +1,7 @@
-function db = ndi_opendatabase(database_path, experiment_unique_reference)
-% NDI_OPENDATABASE - open the database associated with an experiment
+function db = ndi_opendatabase(database_path, session_unique_reference)
+% NDI_OPENDATABASE - open the database associated with an session
 %
-% DB = NDI_OPENDATABASE(DATABASE_PATH, EXPERIMENT_UNIQUE_REFERENCE)
+% DB = NDI_OPENDATABASE(DATABASE_PATH, SESSION_UNIQUE_REFERENCE)
 %
 % Searches the file path DATABASE_PATH for any known databases
 % in NDI_DATABASEHIERACHY. If it finds a datbase of subtype NDI_DATABASE,
@@ -26,7 +26,7 @@ for i=1:numel(ndi_databasehierarchy),
 		fname = [database_path filesep d(1).name];
 		evalstr = strrep(ndi_databasehierarchy(i).code,'FILENAME',fname);
 		evalstr = strrep(evalstr,'FILEPATH',[database_path filesep]);
-		evalstr = strrep(evalstr,'EXPERIMENT_REFERENCE',experiment_unique_reference);
+		evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
 		eval(evalstr);
 		break;
 	end;
@@ -36,7 +36,7 @@ if isempty(db),
 	for i=1:numel(ndi_databasehierarchy),
 		if ~isempty(ndi_databasehierarchy(i).newcode),
 			evalstr = strrep(ndi_databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
-			evalstr = strrep(evalstr,'EXPERIMENT_REFERENCE',experiment_unique_reference);
+			evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
 			eval(evalstr);
 		end;
 		break;

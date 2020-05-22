@@ -4,17 +4,17 @@ function ndi_test_markgarbage
 %  NDI_TEST_MARKGARBAGE
 %
 %  Tests the NDI_APP_MARKGARBAGE on example data in
-%  [NDICOMMONPATH]/example_app_experiments/markgarbage_ex
+%  [NDICOMMONPATH]/example_app_sessions/markgarbage_ex
 %
 %
 
 if nargin<1,
 	ndi_globals;
-	dirname = [ndicommonpath filesep 'example_app_experiments' filesep 'markgarbage_ex'];
+	dirname = [ndicommonpath filesep 'example_app_sessions' filesep 'markgarbage_ex'];
 end;
 
-disp(['creating a new experiment object at path ' dirname '...']);
-E = ndi_experiment_dir('exp1_markgarbage_eg',dirname);
+disp(['creating a new session object at path ' dirname '...']);
+E = ndi_session_dir('exp1_markgarbage_eg',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
@@ -24,7 +24,7 @@ disp(['Now adding our acquisition device (intan):']);
 fn = ndi_filenavigator(E, {'.*\.rhd\>','.*\.epochmetadata\>'},...
 		'ndi_epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
 
-  % Step 2: create the daqsystem object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the session:
 
   % if it is there from before, remove it
 devs = E.daqsystem_load('name','(.*)');

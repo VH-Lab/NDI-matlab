@@ -1,5 +1,5 @@
 function test_ndi_daq_documents(varargin)
-% TEST_NDI_DAQ_DOCUMENTS - Test the functionality of the storage of DAQ objects using NDI_DOCUMENT and the NDI_EXPERIMENT database
+% TEST_NDI_DAQ_DOCUMENTS - Test the functionality of the storage of DAQ objects using NDI_DOCUMENT and the NDI_SESSION database
 %
 %  TEST_NDI_DAQ_DOCUMENTS([DIRNAME])
 %

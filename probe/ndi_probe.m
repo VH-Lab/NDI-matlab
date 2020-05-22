@@ -7,8 +7,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 % Typically, a probe is associated with an NDI_DAQSYSTEM that performs data acquisition or
 % even control of a stimulator. 
 %
-% A probe is uniquely identified by 3 fields and an experiment:
-%    experiment- the experiment where the probe is used
+% A probe is uniquely identified by 3 fields and an session:
+%    session- the session where the probe is used
 %    name      - the name of the probe
 %    reference - the reference number of the probe
 %    type      - the type of probe (see type NDI_PROBETYPE2OBJECTINIT)
@@ -32,11 +32,11 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		function obj = ndi_probe(varargin)
 			% NDI_PROBE - create a new NDI_PROBE object
 			%
-			%  OBJ = NDI_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
+			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
 			%         or
-			%  OBJ = NDI_PROBE(EXPERIMENT, NDI_DOCUMENT_OBJ)
+			%  OBJ = NDI_PROBE(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_EXPERIMENT object EXPERIMENT and
+			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
@@ -44,7 +44,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			%  NDI_PROBE is an abstract class, and a specific implementation must be called.
 			%
 				inputs = varargin;
-				if nargin==4,
+				if nargin==5,
+					inputs{7} = varargin{5};
 					inputs{5} = [];
 					inputs{6} = 1;
 				end;
@@ -62,6 +63,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			% 'epoch_number'            | The number of the epoch (may change)
 			% 'epoch_id'                | The epoch ID code (will never change once established)
 			%                           |   This uniquely specifies the epoch.
+			% 'epoch_session_id'           | The ID of the session
 			% 'epochprobemap'           | The epochprobemap object from each epoch
                         % 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
                         % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
@@ -69,12 +71,12 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
-				% pull all the devices from the experiment and look for device strings that match this probe
+				% pull all the devices from the session and look for device strings that match this probe
 
-				D = ndi_probe_obj.experiment.daqsystem_load('name','(.*)');
+				D = ndi_probe_obj.session.daqsystem_load('name','(.*)');
 				if ~iscell(D), D = {D}; end; % make sure it has cell form
 
 				d_et = {};
@@ -84,7 +86,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 
 					for n=1:numel(d_et{d}),
 						% for each epoch in this device
-						underlying_epochs = emptystruct('underlying','epoch_id','epochprobemap','epoch_clock');
+						underlying_epochs = emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
 						underlying_epochs(1).underlying = D{d};
 						match_probe_and_device = [];
 						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
@@ -97,12 +99,14 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 						if ~isempty(match_probe_and_device),
 							%underlying_epochs.epoch_number = n;
 							underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
+							underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
 							underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
 							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
 							underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
-							et_ = emptystruct('epoch_number','epoch_id','epochprobemap','underlying_epochs');
+							et_ = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
+							et_(1).epoch_session_id = d_et{d}(n).epoch_session_id; % this is an unambiguous reference
 							et_(1).epochprobemap = []; % not applicable for ndi_probe objects
 							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
 							et_(1).t0_t1 = d_et{d}(n).t0_t1; % inherit the time
@@ -233,11 +237,11 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
 			% EQ - are 2 NDI_PROBE objects equal?
 			%
-			% Returns 1 if the objects share an object class, experiment, and probe string.
+			% Returns 1 if the objects share an object class, session, and probe string.
 			%
 				b = 0;
 				if isa(ndi_probe_obj2,'ndi_probe'),
-					b = ( ndi_probe_obj1.experiment==ndi_probe_obj2.experiment & ...
+					b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
 						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );
 				end;

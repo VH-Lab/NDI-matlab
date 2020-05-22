@@ -3,7 +3,7 @@ function test_ndi_daqsystem_documents
 %
 % TEST_NDI_DAQSYSTEM_DOCUMENTS(DIRNAME)
 %
-% Given a directory that corresponds to an experiment, this function tries to create
+% Given a directory that corresponds to an session, this function tries to create
 % the following objects :
 %   1) ndi_daqsystem_mfdaq
 %   2) ndi_daqsystem_mfdaq_stimulus
@@ -17,7 +17,7 @@ function test_ndi_daqsystem_documents
 	ndi_globals;
 	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
 	    
-	E = ndi_experiment_dir('exp1',dirname);
+	E = ndi_session_dir('exp1',dirname);
 
 	% First, delete any daq systems that are there from the dbleaf system
 	E.daqsystem_clear();

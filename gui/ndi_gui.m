@@ -1,17 +1,17 @@
    2
 function ndi_gui(varargin)
-% NDI_GUI - A gui to display the contents of an NDI_EXPERIMENT
+% NDI_GUI - A gui to display the contents of an NDI_SESSION
 %
-%  NDI_GUI(NDI_EXPERIMENT_OBJ)
+%  NDI_GUI(NDI_SESSION_OBJ)
 %
-%  Brings up a graphical user interface to view the NDI_EXPERIMENT
-%  NDI_EXPERIMENT_OBJ
+%  Brings up a graphical user interface to view the NDI_SESSION
+%  NDI_SESSION_OBJ
 %
-%  See also: NDI_EXPERIMENT
+%  See also: NDI_SESSION
 
 
 if nargin==1
-    ndi_experiment_obj = varargin{1};
+    ndi_session_obj = varargin{1};
 end
 
  % internal variables, for the function only
@@ -28,7 +28,7 @@ windowrowheight = 35;
 ds = [];               % dirstruct
 windowlabel = 'NDI GUI';
 
-varlist = {'ndi_experiment_obj','windowheight','windowwidth','windowrowheight','windowlabel'};
+varlist = {'ndi_session_obj','windowheight','windowwidth','windowrowheight','windowlabel'};
 
 assign(varargin{:});
 
@@ -110,14 +110,14 @@ switch command
 		row = ud.windowrowheight;
         
         % Figure/Window layout & Static Texts at top of the NDI_GUI Window
-        set(fig,'position',[50 50 right top],'tag','ndi_gui','name',['NDI: ' ud.ndi_experiment_obj.reference],'Visible','off');
+        set(fig,'position',[50 50 right top],'tag','ndi_gui','name',['NDI: ' ud.ndi_session_obj.reference],'Visible','off');
         movegui(fig,'center');
 
 
         uicontrol(txt,'position',[0.01 0.95 0.95 0.04],'string',ud.windowlabel,'horizontalalignment','left','fontweight','bold','fontsize', 18); % Label
-		uicontrol(txt,'position',[0.01 0.95-0.05 0.30 0.04],'string',['Path:' getpath(ud.ndi_experiment_obj)],'fontsize',13); % Path
-        uicontrol(txt,'position',[0.36 0.95-0.05 0.15 0.04],'string',['Reference: ' ud.ndi_experiment_obj.reference],'fontsize',13); % Reference
-        uicontrol(txt,'position',[0.61 0.95-0.05 0.35 0.04],'string',['Unique Reference: ' ud.ndi_experiment_obj.unique_reference],'fontsize',13); % Unique Reference
+		uicontrol(txt,'position',[0.01 0.95-0.05 0.30 0.04],'string',['Path:' getpath(ud.ndi_session_obj)],'fontsize',13); % Path
+        uicontrol(txt,'position',[0.36 0.95-0.05 0.15 0.04],'string',['Reference: ' ud.ndi_session_obj.reference],'fontsize',13); % Reference
+        uicontrol(txt,'position',[0.61 0.95-0.05 0.35 0.04],'string',['Unique Reference: ' ud.ndi_session_obj.unique_reference],'fontsize',13); % Unique Reference
         
         
         % "Update" PushButton
@@ -165,8 +165,8 @@ switch command
       
       
     case 'UpdateDAQList'
-        ud.ndi_experiment_obj,
-        daq_list = ud.ndi_experiment_obj.daqsystem_load;
+        ud.ndi_session_obj,
+        daq_list = ud.ndi_session_obj.daqsystem_load;
         names = {};
         unique_names = {};
         for i=1:numel(daq_list)
@@ -180,8 +180,8 @@ switch command
  
 
 %      case 'DeleDAQList'
-%         ud.ndi_experiment_obj,
-%         daq_list = ud.ndi_experiment_obj.daqsystem_load;
+%         ud.ndi_session_obj,
+%         daq_list = ud.ndi_session_obj.daqsystem_load;
 %         name_list = {};
 %         doc_ref = {};
 %         for i=1:numel(daq_list)
@@ -204,7 +204,7 @@ switch command
         ref_list = get(findobj(fig,'tag','DBList'),'userdata'); 
         value = get(findobj(fig,'tag','DBList'),'value');
         if ~isempty(value)
-            mydaq = ud.ndi_experiment_obj.database_search({'ndi_document.document_unique_reference',ref_list{value}});
+            mydaq = ud.ndi_session_obj.database_search({'ndi_document.document_unique_reference',ref_list{value}});
             j_pretty = prettyjson(jsonencodenan(mydaq{1}.document_properties));
             j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
 % %  j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
@@ -214,8 +214,8 @@ switch command
     	ndi_gui('fig',fig,'command','EnableDisable');
             
 	case 'UpdateDBList'
-        ud.ndi_experiment_obj,
-        doc_list = ud.ndi_experiment_obj.database_search({'document_class.class_name','(.*)'});
+        ud.ndi_session_obj,
+        doc_list = ud.ndi_session_obj.database_search({'document_class.class_name','(.*)'});
         name_list = {};
         doc_ref = {};
         for i=1:numel(doc_list)

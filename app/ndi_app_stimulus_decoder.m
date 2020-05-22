@@ -9,17 +9,17 @@ classdef ndi_app_stimulus_decoder < ndi_app
 		function ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder(varargin)
 			% NDI_APP_STIMULUS_DECODER - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_STIMULUS_DECODER_OBJ = NDI_APP_STIMULUS_DECODER(EXPERIMENT)
+			% NDI_APP_STIMULUS_DECODER_OBJ = NDI_APP_STIMULUS_DECODER(SESSION)
 			%
 			% Creates a new NDI_APP_STIMULUS_DECODER object that can operate on
-			% NDI_EXPERIMENTS. The app is named 'ndi_app_stimulus_response'.
+			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
-				experiment = [];
+				session = [];
 				name = 'ndi_app_stimulus_decoder';
 				if numel(varargin)>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
-				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi_app(experiment, name);
+				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi_app(session, name);
 
 		end % ndi_app_stimulus_decoder() creator
 
@@ -28,7 +28,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 			%
 			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
 			%
-			% Examines a the NDI_EXPERIMENT associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
+			% Examines a the NDI_SESSION associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
@@ -46,7 +46,7 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				newdocs = {};
 				existingdocs = {};
 
-				E = ndi_app_stimulus_decoder_obj.experiment;
+				E = ndi_app_stimulus_decoder_obj.session;
 
 				sq_probe = ndi_query('','depends_on','stimulus_element_id',ndi_element_stim.id());
 				sq_e = ndi_query(E.searchquery());
