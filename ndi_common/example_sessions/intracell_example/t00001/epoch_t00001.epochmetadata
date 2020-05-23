@@ -1,2 +1,2 @@
-name	reference	type	devicestring	subject
+name	reference	type	devicestring	subjectstring
 intra	1	sharp-Vm	mySpike2:ai21	anteater37@nosuchlab.org
