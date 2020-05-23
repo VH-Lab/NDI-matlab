@@ -1783,7 +1783,12 @@ def compute_SNR(rec, clust_out_dir,
     return rec_length
 
 
-def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
+def bigmamma(thresh,
+             folder,
+             datdir,
+             lfp,
+             sortpick,
+             probefile,
              sorter_config,
              clust_out_dir,
              bad_chan_list=None,
@@ -1791,7 +1796,9 @@ def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
              sampling_frequency=25000,
              ecube_time_list=None,
              file_datetime_list=None,
-             bn=""):
+             bn="",
+             ndi_input=False,
+             ndi_hengen_path=False):
 
     '''
     WRITE ME!!!!!
@@ -1826,12 +1833,14 @@ def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
             json.dump(params, fp)
     else:
         pass
+    # TODO: add ndi inputted geometry of probe
     # create a .geom file
     geom = 1
     if geom:
-        tetrode = 1
+        tetrode = 1 # unused
         # ckbn todo remove hardcoding
-        g = ss.utils.mdaio.readmda_header('raw.mda')
+        g = ss.utils.mdaio.readmda_header('raw.mda') # hardcoded
+
         print("\ng ", g)
         num_channels = g.dims[0]
         print("num_channels ", num_channels)
@@ -1851,12 +1860,14 @@ def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
     else:
         pass
     # ####################### Load the recording ##############################
-    if args.ndi_input:
-        ndi_input = scipy.io.loadmat(os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat'))
+    if ndi_input:
+        ndi_input = scipy.io.loadmat(os.path.join(ndi_hengen_path, 'ndiouttmp.mat'))
 
         ndi_timeseries = ndi_input['d']
         ndi_samplerate = ndi_input['sr']
-    
+        # ndi_geometry = ndi_input['g']
+
+        # TODO: add geom to extractor
         recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate)
 
 
@@ -1875,6 +1886,7 @@ def bigmamma(thresh, folder, datdir, lfp, sortpick, probefile,
     #           format(_tmp_channel,
     #                  np.std(recording.get_traces(_tmp_channel))))
 
+    # TODO: ask Kiran about lnosplit
     # gonna load the prb file now
     tic = time.time()
     print('lnosplit ', lnosplit)
@@ -2916,8 +2928,11 @@ if __name__ == '__main__':
         TMPDIR_LOC = os.path.join(args.experiment_path, TMPDIR_LOC)
         probefile = str(d['probefile'])
         probefile = os.path.join(args.ndi_hengen_path, probefile)
-        file_path = str(d['file_path'])
-        file_path = os.path.join(args.experiment_path, file_path)
+        if args.ndi_input:
+            file_path = os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat')
+        else:
+            file_path = str(d['file_path'])
+            file_path = os.path.join(args.experiment_path, file_path)
         clustering_output = str(d['clustering_output'])
         clustering_output = os.path.join(args.experiment_path, clustering_output)
     except Exception as e:
@@ -3298,7 +3313,7 @@ if __name__ == '__main__':
 
     # Check file path [0]
     for _tmprfile in file_path:
-        ext_list = ['.bin', '.rhd', '.mda']
+        ext_list = ['.bin', '.rhd', '.mda', '.mat']
         print("_tmp_rfile ", _tmprfile)
         _, tmprfile_ext = op.splitext(_tmprfile)
         if not (os.path.exists(_tmprfile) and os.path.isfile(_tmprfile)):
@@ -3370,23 +3385,33 @@ if __name__ == '__main__':
                                    probetosort=probetosort, lnosplit=lnosplit,
                                    probe_channels=probe_channels,
                                    fs=fs)
+        
+        elif ext == '.mat':
+            # read .mat file
+            # output: file_datetime_list, ecube_time_list
+            print('.mat file inputted from NDI')
+            file_datetime_list = False
+            ecube_time_list = False
+            pass
+
         else:
             pass
 
     if lsorting:
-        # Get basename
-        if (len(file_datetime_list) == 2):
-            bn = str("H_" + str(file_datetime_list[0]) + str("_") +
-                     str(file_datetime_list[1]) + str("_"))
-            print("bn ", bn)
-        print("ecube_time_list ", ecube_time_list)
-        print("file_datetime_list ", file_datetime_list)
-        np.save(op.join(clustering_output,
-                bn + 'ecube_time_list.npy'),
-                ecube_time_list)
-        np.save(op.join(clustering_output,
-                bn + 'file_datetime_list.npy'),
-                file_datetime_list)
+        if file_datetime_list and ecube_time_list:
+            # Get basename
+            if (len(file_datetime_list) == 2):
+                bn = str("H_" + str(file_datetime_list[0]) + str("_") +
+                        str(file_datetime_list[1]) + str("_"))
+                print("bn ", bn)
+            print("ecube_time_list ", ecube_time_list)
+            print("file_datetime_list ", file_datetime_list)
+            np.save(op.join(clustering_output,
+                    bn + 'ecube_time_list.npy'),
+                    ecube_time_list)
+            np.save(op.join(clustering_output,
+                    bn + 'file_datetime_list.npy'),
+                    file_datetime_list)
 
     toc = time.time()
     print('SpikeInterface extracting rawdata files took {} seconds\n'.

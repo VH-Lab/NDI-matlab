@@ -10,7 +10,7 @@
 	"rawdatfilt" : "None",
 	"lnosplit" : 1,
 	"lsorting" : 1,
-	"lmetrics" : 1,
+	"lmetrics" : 0,
 	"spk_sorter" : "m",
 	"lfp" : 0,
 	"ncpus" : 4,
