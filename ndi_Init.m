@@ -30,7 +30,21 @@ ndicommonpath = [ndipath filesep 'ndi_common'];
 ndidocumentpath = [ndicommonpath filesep 'database_documents'];
 ndidocumentschemapath = [ndicommonpath filesep 'database_documents'];
 ndiexampleexperpath = [ndicommonpath filesep 'example_sessions'];
+nditemppath = [tempdir filesep 'nditemp'];
 nditestpath = [tempdir filesep 'nditestcode'];
+ndicachepath = [userpath filesep 'Documents' filesep 'NDI-filecache'];
+
+if ~exist(nditemppath,'dir'),
+	mkdir(nditemppath);
+end;
+
+if ~exist(nditestpath,'dir'),
+	mkdir(nditestpath);
+end;
+
+if ~exist(ndicachepath,'dir'),
+	mkdir(ndicachepath);
+end;
 
  % initialization
 

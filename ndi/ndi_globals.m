@@ -17,6 +17,9 @@
 % ndidocumentschemapath    | The path of the NDI document validation schema
 %                          |   (Initialized by ndi_Init.m)
 % ndiexampleexperpath      | The path to the NDI example sessions
+% ndifilecachepath         | A path where files may be cached (not deleted every time)
+% nditemppath              | The path to a directory that may be used for
+%                          |   temporary files (Initialized by ndi_Init.m)
 % nditestpath              | A path to a safe place to run test code
 % ndi_probetype2object     | A structure with fields 'type' and 'classname'
 %                          |   that describes the default NDI_PROBE classname
@@ -30,6 +33,8 @@ global ndicommonpath
 global ndidocumentpath
 global ndidocumentschemapath
 global ndiexampleexperpath
+global ndifilecachepath
+global nditemppath
 global nditestpath
 
 global ndi_probetype2object
