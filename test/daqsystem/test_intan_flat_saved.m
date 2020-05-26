@@ -13,7 +13,7 @@ function test_intan_flat_saved(dirname)
 
 if nargin<1,
 	ndi_globals;
-	dirname = [ndiexampleexperpath filesep 'exp1_eg_saved'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading a new session object from directory ' dirname ' ... ' ]);

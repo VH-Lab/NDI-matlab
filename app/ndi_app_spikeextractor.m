@@ -71,7 +71,7 @@ classdef ndi_app_spikeextractor < ndi_app
 
 				ndi_globals;
 
-				if ndi_debug.veryverbose,
+				if ndi.debug.veryverbose,
 					disp(['Beginning of extract']);
 				end;
 
@@ -108,7 +108,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				for n=1:numel(epoch),
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
-					if ndi_debug.veryverbose,
+					if ndi.debug.veryverbose,
 						disp(['Beginning to set up for epoch ' epoch_string '.']);
 					end;
 

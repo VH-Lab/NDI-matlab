@@ -14,7 +14,7 @@ function test_intan_flat(dirname)
 
 if nargin<1,
 	ndi_globals;
-	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
 end;
 
 disp(['creating a new session object...']);

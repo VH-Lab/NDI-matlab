@@ -11,8 +11,8 @@ function ndi_probetype2objectinit
 
 ndi_globals
 
-j = textfile2char([ndicommonpath filesep 'probe' filesep 'ndi_probetype2object.json']);
+j = textfile2char([ndi.path.commonpath filesep 'probe' filesep 'ndi_probetype2object.json']);
 
-ndi_probetype2object = jsondecode(j);
+ndi.probetype2object = jsondecode(j);
 
 
