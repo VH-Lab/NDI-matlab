@@ -34,18 +34,23 @@ ndi.path.documentschemapath = [ndi.path.commonpath filesep 'database_documents']
 ndi.path.exampleexperpath = [ndi.path.commonpath filesep 'example_sessions'];
 ndi.path.temppath = [tempdir filesep 'nditemp'];
 ndi.path.testpath = [tempdir filesep 'nditestcode'];
-ndi.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI-filecache'];
+ndi.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' filesep 'NDI-filecache'];
+ndi.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
 
 if ~exist(ndi.path.temppath,'dir'),
 	mkdir(ndi.path.temppath);
 end;
 
 if ~exist(ndi.path.testpath,'dir'),
-	mkdir(ndi.path.nditestpath);
+	mkdir(ndi.path.testpath);
 end;
 
 if ~exist(ndi.path.filecachepath,'dir'),
 	mkdir(ndi.path.filecachepath);
+end;
+
+if ~exist(ndi.path.preferences,'dir'),
+	mkdir(ndi.path.preferences);
 end;
 
  % initialization

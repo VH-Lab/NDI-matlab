@@ -17,6 +17,7 @@
 % ndi.path. ...            | The path of the NDI document validation schema
 %    documentschemapath    |   (Initialized by ndi_Init.m)
 % ndi.path.exampleexperpath| The path to the NDI example sessions
+% ndi.path.preferences     | A path to a directory of preferences files
 % ndi.path.filecachepath   | A path where files may be cached (not deleted every time)
 % ndi.path.temppath        | The path to a directory that may be used for
 %                          |   temporary files (Initialized by ndi_Init.m)
@@ -26,6 +27,8 @@
 %                          |   to use to create a probe for a given type.
 % ndi.databasehierarchy    | A structure that describes the order in which to
 %                          |   attempt to open databases in the session path
+%                          |
+% ndi.debug                | A structure with preferences for debugging
 %
 
 global ndi
