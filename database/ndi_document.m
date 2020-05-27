@@ -25,7 +25,7 @@ classdef ndi_document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = ndi_document.readblankdefinition(document_type);
-					document_properties.ndi_document.id = ndi_unique_id;
+					document_properties.ndi_document.id = ndi_id.ndi_unique_id();
 					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array

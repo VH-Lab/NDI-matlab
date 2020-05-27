@@ -1,9 +1,9 @@
-classdef ndi_session < handle
+classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not allow these subclasses because they are not handles
 	% NDI_SESSION - NDI_SESSION object class
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the session
-		unique_reference  % A unique code that uniquely identifies this session
+		identifier        % A unique identifier
 		syncgraph         % An NDI_SYNCGRAPH object related to this session
 		cache             % An NDI_CACHE object for the session's use
 	end
@@ -26,11 +26,22 @@ classdef ndi_session < handle
 			%   NDI_SESSION/GETPATH, NDI_SESSION/GETREFERENCE
 
 				ndi_session_obj.reference = reference;
-				ndi_session_obj.unique_reference = ndi_unique_id;
 				ndi_session_obj.database = [];
+				ndi_session_obj.identifier = ndi_id.ndi_unique_id();
 				ndi_session_obj.syncgraph = ndi_syncgraph(ndi_session_obj);
 				ndi_session_obj.cache = ndi_cache();
 		end
+
+		function identifier = id(ndi_session_obj)
+			% ID - return the identifier of an NDI_SESSION object
+			%
+			% IDENTIFIER = ID(NDI_SESSION_OBJ)
+			%
+			% Returns the unique identifier of an NDI_SESSION object.
+			%
+				identifier = ndi_session_obj.identifier;
+		end; % id()
+
 
 		%%%%%% REFERENCE METHODS
 	
@@ -44,7 +55,7 @@ classdef ndi_session < handle
 			% and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
 				warning('unique_reference_string depricated, use id() instead.');
 				dbstack
-				refstr = [ndi_session_obj.reference '_' ndi_session_obj.unique_reference];
+				refstr = [ndi_session_obj.reference '_' ndi_session_obj.identifier];
 		end % unique_reference_string()
 
 		%%%%%% DEVICE METHODS
@@ -170,40 +181,40 @@ classdef ndi_session < handle
 		% NDI_DOCUMENTSERVICE methods
 
 		function ndi_document_obj = newdocument(ndi_session_obj, document_type, varargin)
-		% NEWDOCUMENT - create a new NDI_DATABASE document of type NDI_DOCUMENT
-		%
-		% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)
-		%
-		% Creates an empty database document NDI_DOCUMENT_OBJ. DOCUMENT_TYPE is
-		% an optional argument and can be any type that confirms to the .json
-		% files in $NDI_COMMON/database_documents/*, a URL to such a file, or
-		% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
-		% to be 'ndi_document.json'.
-		%
-		% If additional PROPERTY values are specified, they are set to the VALUES indicated.
-		%
-		% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
-		%
-			if nargin<2,
-				document_type = 'ndi_document.json';
-			end
-			inputs = cat(2,varargin,{'ndi_document.session_id', ndi_session_obj.id()});
-			ndi_document_obj = ndi_document(document_type, inputs);
+			% NEWDOCUMENT - create a new NDI_DATABASE document of type NDI_DOCUMENT
+			%
+			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)
+			%
+			% Creates an empty database document NDI_DOCUMENT_OBJ. DOCUMENT_TYPE is
+			% an optional argument and can be any type that confirms to the .json
+			% files in $NDI_COMMON/database_documents/*, a URL to such a file, or
+			% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
+			% to be 'ndi_document.json'.
+			%
+			% If additional PROPERTY values are specified, they are set to the VALUES indicated.
+			%
+			% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
+			%
+				if nargin<2,
+					document_type = 'ndi_document.json';
+				end
+				inputs = cat(2,varargin,{'ndi_document.session_id', ndi_session_obj.id()});
+				ndi_document_obj = ndi_document(document_type, inputs);
 		end; %newdocument()
 
 		function sq = searchquery(ndi_session_obj)
-		% SEARCHQUERY - return a search query for database objects in this session
-		%
-		% SQ = SEARCHQUERY(NDI_SESSION_OBJ)
-		%
-		% Returns a search query that will match all NDI_DOCUMENT objects that were generated
-		% by this session.
-		%
-		% SQ = {'ndi_document.session_id', ndi_session_obj.id()};
-		% 
-		% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
-		%
-			sq = {'ndi_document.session_id', ndi_session_obj.id()};
+			% SEARCHQUERY - return a search query for database objects in this session
+			%
+			% SQ = SEARCHQUERY(NDI_SESSION_OBJ)
+			%
+			% Returns a search query that will match all NDI_DOCUMENT objects that were generated
+			% by this session.
+			%
+			% SQ = {'ndi_document.session_id', ndi_session_obj.id()};
+			% 
+			% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
+			%
+				sq = {'ndi_document.session_id', ndi_session_obj.id()};
 		end; %searchquery()
 
 		% NDI_DATABASE / NDI_DOCUMENT methods
@@ -544,15 +555,6 @@ classdef ndi_session < handle
 				end;
 		end; % eq()
 
-		function identifier = id(ndi_session_obj)
-			% ID - return the unique identifier for this session
-			%
-			% IDENTIFIER = ID(NDI_SESSION_OBJ)
-			%
-			% Return the unique identifier for this session.
-			%
-				identifier = [ndi_session_obj.reference '_' ndi_session_obj.unique_reference];
-		end; % id
 	end; % methods
 
 	methods (Access=protected)
