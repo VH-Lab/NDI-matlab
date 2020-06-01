@@ -60,4 +60,17 @@ ndi_databasehierarchyinit;
 
 ndi.debug.veryverbose = 1;
 
+ % test write access to preferences, testpath, filecache, temppath
+paths = {ndi.path.testpath, ndi.path.temppath, ndi.path.filecachepath, ndi.path.preferences};
+pathnames = {'NDI test path', 'NDI temporary path', 'NDI filecache path', 'NDI preferences path'};
+
+for i=1:numel(paths),
+	fname = [paths{i} filesep 'testfile_' ndi_id.ndi_unique_id() '.txt'];
+	fid = fopen(fname,'wt');
+	if fid<0,
+		error(['We do not have write access to the ' pathnames{i} ' at '  paths{i} '.']);
+	end;
+	fclose(fid);
+	delete(fname);
+end;
 
