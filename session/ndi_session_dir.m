@@ -66,6 +66,9 @@ classdef ndi_session_dir < ndi_session
 					ndi_session_dir_obj.reference);
 				str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
 					ndi_session_dir_obj.id());
+
+				st = ndi_sessiontable();
+				st.addtableentry(ndi_session_dir_obj.id(), ndi_session_dir_obj.path);
 		end;
 		
 		function p = getpath(ndi_session_dir_obj)
