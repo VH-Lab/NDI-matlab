@@ -8,7 +8,7 @@ function ndi_test_spikeextractor
  % find our directory
 
 ndi_globals;
-mydirectory = [ndicommonpath filesep 'example_app_sessions'];
+mydirectory = [ndi.path.commonpath filesep 'example_app_sessions'];
 dirname = [mydirectory filesep 'exp_sg'];
 
 

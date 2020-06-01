@@ -21,7 +21,7 @@ failures = {};
 
 ndi_globals;
 
-json_docs = findfilegroups(ndidocumentpath,{'.*\.json\>'});
+json_docs = findfilegroups(ndi.path.documentpath,{'.*\.json\>'});
 
 for i=1:numel(json_docs),
 	[parentdir,filename,ext] = fileparts(json_docs{i}{1});

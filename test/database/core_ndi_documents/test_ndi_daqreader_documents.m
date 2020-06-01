@@ -21,7 +21,7 @@ function test_ndi_daqreader_documents
 %
 
 	ndi_globals;
-	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
 
 	E = ndi_session_dir('exp1',dirname);
 	 % remove any existing daqreaders

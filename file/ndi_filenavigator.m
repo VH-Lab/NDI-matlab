@@ -204,7 +204,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 					id = text2cellstr(eidfname);
 					id = id{1};
 				else,
-					id = ['epoch_' ndi_unique_id];
+					id = ['epoch_' ndi_id.ndi_unique_id()];
 					str2text(eidfname,id);
 				end
 		end %epochid()

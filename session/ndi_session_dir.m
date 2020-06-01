@@ -42,10 +42,10 @@ classdef ndi_session_dir < ndi_session
 				end
 				d = dir([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
-					ndi_session_dir_obj.unique_reference = strtrim(textfile2char(...
+					ndi_session_dir_obj.identifier = strtrim(textfile2char(...
 						[ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
-					ndi_session_dir_obj.unique_reference = ndi_unique_id();
+					ndi_session_dir_obj.identifier = ndi_id.ndi_unique_id();
 				end
 
 				ndi_session_dir_obj.database = ndi_opendatabase(ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
@@ -65,7 +65,7 @@ classdef ndi_session_dir < ndi_session
 				str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...
 					ndi_session_dir_obj.reference);
 				str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
-					ndi_session_dir_obj.unique_reference);
+					ndi_session_dir_obj.id());
 		end;
 		
 		function p = getpath(ndi_session_dir_obj)
