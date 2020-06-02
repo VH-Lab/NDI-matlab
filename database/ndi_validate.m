@@ -17,16 +17,37 @@ classdef ndi_validate
     end
     
     methods
-        function ndi_validate_obj = ndi_validate(ndi_document)
+        function ndi_validate_obj = ndi_validate(ndi_document_obj)
             schema = ""; %TODO: extract the file path of the schema json from the ndi_document properties
             if isa(ndi_document, 'ndi_document') 
                 add_javapath();
-                ndi_document = jsondecode(ndi_document);
-                schemaJSON = fileread(schema); 
-                if schemaJSON < 0
-                    error("Invalid schema path")
-                end
-                schema = jsonencode(fileread(schema));
+                % ndi_document has a property called 'document_properties' that has all of the 
+                % data of the document. For example, all documents have 
+                % ndi_document_obj.document_properties.ndi_document with fields 'id', 'session_id', etc.
+                
+                doc_class = ndi_document_obj.document_properties.document_class;
+                for i=1:numel(doc_class.superclasses),
+                    % Step 1: read in the definition of the superclass at
+                    %   doc_class.superclasses(i).definition
+                    % Step 2: find the validator json in the superclass, call it validator_superclass
+                    % Step 3: convert the portion of the document that corresponds to this superclass to JSON
+                    superclass_name = doc_class.superclasses(i).class_name;
+                    mystructure = getfield(ndi_document_obj.document_properties, superclass_name);
+                    mysubdoc_json = struct([superclass_name],mystucture);
+                    if isfield(ndi_document_obj.document_properties,'depends_on'),
+                        mydependson = getfield(ndi_document_obj.document_properties,'depends_on');
+                        mysubdoc_json = setfield(mysubdoc_json, mydependson);
+                    end;
+                    myclassjson = jsonencode(mysubdoc_json);
+                    schemaJSON = fileread( % schema is); % some work to do here
+                    thispart_validation = com.ndi.Validator(myclassjson, schemaJSON, true);  
+                    report = thispart_validation.getReport();
+                    throwError(thispart_validation) % ???
+
+                end;
+                
+                % somehow report the overall 
+
                 ndi_validate_obj.validator = com.ndi.Validator(ndi_document,schema, true);
                 ndi_validate_obj.report = ndi_validate_obj.validator.getReport();
                 throwError(ndi_validate_obj)
