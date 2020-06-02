@@ -50,7 +50,7 @@ classdef ndi_session_dir < ndi_session
 
 				ndi_session_dir_obj.database = ndi_opendatabase(ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
 
-				syncgraph_doc = ndi_session_dir_obj.database_search( ndi_query('','isa','ndi_syncgraph','') & ...
+				syncgraph_doc = ndi_session_dir_obj.database_search( ndi_query('','isa','ndi_document_syncgraph','') & ...
 					ndi_query('ndi_document.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
 
 				if isempty(syncgraph_doc),
@@ -59,7 +59,7 @@ classdef ndi_session_dir < ndi_session
 					if numel(syncgraph_doc)~=1,
 						error(['Too many syncgraph documents found. Confused. There should be only 1.']);
 					end;
-					ndi_session_dir_obj.syncgraph = ndi_document2ndi_object(syncgraph_doc{1});
+					ndi_session_dir_obj.syncgraph = ndi_document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
 				end;
 
 				str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...

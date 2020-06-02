@@ -133,7 +133,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 			% Returns the object name that is used when creating epoch nodes.
 			%
 			% For NDI_ELEMENT objects, this is NDI_ELEMENT/ELEMENTSTRING. 
-				name = ['element: ' ndi_element_obj.elementstring];
+				name = ['element: ' ndi_element_obj.elementstring()];
 		end; % epochsetname
 
 		function ec = epochclock(ndi_element_obj, epoch_number)
