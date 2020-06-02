@@ -12,19 +12,26 @@ classdef ndi_validate
     % through the database to ensure this actually exists
     
     properties(SetAccess = protected, GetAccess = public)
-        ndi_document;   % the ndi_document, which will be validated
-        schema;         % its corresponding schema
         validator;      % Java validator object
         report;         % report of the error messages
     end
     
     methods
-        function ndi_validate_obj = ndi_validate(ndi_document, schema)
-            if isa(ndi_document, 'ndi_document') && isa(schema, str)
+        function ndi_validate_obj = ndi_validate(ndi_document)
+            schema = ""; %TODO: extract the file path of the schema json from the ndi_document properties
+            if isa(ndi_document, 'ndi_document') 
                 add_javapath();
-                ndi_validate_obj.ndi_document = jsondecode(ndi_document);
-                ndi_validate_obj.schema = jsonencode(fileread(schema));
-                ndi_validate_obj.validator = javaObject('com.ndi.Validator', ndi_document, schema);
+                ndi_document = jsondecode(ndi_document);
+                schemaJSON = fileread(schema); 
+                if schemaJSON < 0
+                    error("Invalid schema path")
+                end
+                schema = jsonencode(fileread(schema));
+                ndi_validate_obj.validator = com.ndi.Validator(ndi_document,schema, true);
+                ndi_validate_obj.report = ndi_validate_obj.validator.getReport();
+                throwError(ndi_validate_obj)
+            else
+                error("Type mismated: expect an instance of ndi_document")
             end
         end
     end
@@ -33,12 +40,16 @@ classdef ndi_validate
      
         function add_java_path()
             ndi_globals;
-            javaaddpath([ndipath filesep 'database' filesep 'Java' filesep 'jar'], 'end');
+            javaaddpath([ndipath filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end');
+            import com.ndi.Validator;
         end
         
-        function extract_report()
-            %TODO extract java.util.hashtable into MATLAB strcut 
+        function detailed_msg = throwError(ndi_validate_obj)
+            detailed_msg = ndi_validate_obj.report;
+            if detail_msg.size() ~= 0
+                % TODO: replace this with more detailed error message
+                error("Validation fail. Run detail_msg to see detailed error message");
+            end
         end
-        
     end
 end
