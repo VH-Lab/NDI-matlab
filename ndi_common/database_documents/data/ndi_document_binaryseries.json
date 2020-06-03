@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json",
 		"validation":						"$NDISCHEMAPATH\/data\/ndi_document_binaryseries_schema.json",
 		"class_name":						"ndi_document_data_binaryseries",
+		"property_list_name":					"binary_series_parameters",
 		"class_version":					1,
 		"superclasses": [
 			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }

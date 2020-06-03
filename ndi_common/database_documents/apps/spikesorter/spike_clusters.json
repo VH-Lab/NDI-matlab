@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter\/spike_clusters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter\/spike_clusters_schema.json",
 		"class_name":						"ndi_document_apps_spikesorter_spikesorter_spike_clusters",
+		"
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
@@ -13,9 +14,9 @@
 		{	"name": "sorting_parameters_id",
 			"value": "" 
 		},
-        {   "name": "element_id",
-            "value": ""
-        }
+		{   "name": "element_id",
+			"value": ""
+		}
 	],
 	"spike_clusters": {
 		"sort_name": ""

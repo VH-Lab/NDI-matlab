@@ -577,11 +577,14 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 				% now, delete old docs and add new ones
 
 				gooddelete = 0;
-				try,
+				if ~isempty(syncgraph_doc),
 					ndi_session_obj.database_rm(syncgraph_doc);
-					ndi_session_obj.database_rm(syncrule_doc);
-					gooddelete = 1;
 				end;
+				if ~isempty(syncrule_doc),
+					ndi_session_obj.database_rm(syncrule_doc);
+				end;
+				gooddelete = 1;
+
 				% now add new docs
 				ndi_session_obj.database_add(newdocs);
 

@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikefit",
+		"property_list_name":					"vmspikefit",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },

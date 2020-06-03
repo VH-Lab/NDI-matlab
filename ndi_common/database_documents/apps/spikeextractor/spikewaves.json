@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spikewaves.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spikewaves_schema.json",
 		"class_name":						"ndi_document_apps_spikeextractor_spikeextractor_spikewaves",
+		"property_list_name":					"spikewaves",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },

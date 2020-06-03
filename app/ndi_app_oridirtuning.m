@@ -188,7 +188,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				if isempty(stim_pres_doc),
 					error(['empty stimulus response doc, do not know what to do.']);
 				end;
-				stim_props = {stim_pres_doc{1}.document_properties.stimuli.parameters};
+				stim_props = {stim_pres_doc{1}.document_properties.stimulus_presentation.stimuli.parameters};
 				% need to make this more general TODO
 				included = [];
 				for n=1:numel(stim_props),

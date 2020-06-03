@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary",
+		"property_list_name":					"vmspikesummary",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
@@ -13,21 +14,22 @@
 		{	"name": "element_id",
 			"value": 0 
 		},
-        {   "name": "spike_extraction_id",
-            "value": 0
-        }
+		{
+			"name": "spike_extraction_id",
+			"value": 0
+		}
 	],
 	"vmspikesummary": {
-        "mean_spikewave":       [],
-        "sample_times":         [],
-        "number_of_spikes":     [],
-        "median_spikekink_vm":       [],
-        "median_voltageofhalfmaximum":          [],
-        "median_fullwidthhalfmaximum":          [],
-        "median_presk_halfwidthmaximum":     [],
-        "median_postsk_halfwidthmaximum":    [],
-        "median_max_dvdt":      [],
-        "median_kink_index":    [],
-        "slope_criterion":      []
+		"mean_spikewave":       [],
+		"sample_times":         [],
+		"number_of_spikes":     [],
+		"median_spikekink_vm":       [],
+		"median_voltageofhalfmaximum":          [],
+		"median_fullwidthhalfmaximum":          [],
+		"median_presk_halfwidthmaximum":     [],
+		"median_postsk_halfwidthmaximum":    [],
+		"median_max_dvdt":      [],
+		"median_kink_index":    [],
+		"slope_criterion":      []
 	}
 }

@@ -1,3 +1,4 @@
+
 classdef ndi_app_tuning_response < ndi_app
 
 	properties (SetAccess=protected,GetAccess=public)
@@ -59,11 +60,11 @@ classdef ndi_app_tuning_response < ndi_app
 					%disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
 					% ASSUMPTION: each stimulus element epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
-					if numel(doc_stim{i}.document_properties.presentation_time)>0, % make sure there is at least 1 stimulus 
+					if numel(doc_stim{i}.document_properties.stimulus_presentation.presentation_time)>0, % make sure there is at least 1 stimulus 
 						stim_timeref = ndi_timereference(ndi_element_stim, ...
-							ndi_clocktype(doc_stim{i}.document_properties.presentation_time(1).clocktype), ...
+							ndi_clocktype(doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
 							doc_stim{i}.document_properties.epochid, ...
-							doc_stim{i}.document_properties.presentation_time(1).onset);
+							doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).onset);
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
 							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
 							% time is 0 because stim_timeref is relative to 1st stim
@@ -88,9 +89,9 @@ classdef ndi_app_tuning_response < ndi_app
 							if 0,
 								ndi_ts_epochs{i}
 								doc_stim{i}.document_properties
-								doc_stim{i}.document_properties.stimuli(1).parameters
-								doc_stim{i}.document_properties.presentation_order
-								doc_stim{i}.document_properties.presentation_time
+								doc_stim{i}.document_properties.stimulus_presentation.stimuli(1).parameters
+								doc_stim{i}.document_properties.stimulus_presentation.presentation_order
+								doc_stim{i}.document_properties.stimulus_presentation.presentation_time
 								control_stim_doc{j}.document_properties.control_stimulus_ids
 								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
@@ -156,8 +157,8 @@ classdef ndi_app_tuning_response < ndi_app
 				if isempty(freq_response),
 					% do we have any stims that we know have a fundamental stimulus frequency?
 					gotone = 0;
-					for j=1:numel(stim_doc.document_properties.stimuli),
-						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
+					for j=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
+						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimulus_presentation.stimuli(j).parameters);']);
 						if ~isempty(freq_multi_here),
 							gotone = 1; 
 							break;
@@ -198,18 +199,18 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% load the data, get the stimulus times				
 
-				stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.presentation_time.onset]) ...
-						colvec([stim_doc.document_properties.presentation_time.offset]) ...
-						colvec([stim_doc.document_properties.presentation_order])];
+				stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.onset]) ...
+						colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.offset]) ...
+						colvec([stim_doc.document_properties.stimulus_presentation.presentation_order])];
 
 				stim_timeref = ndi_timereference(ndi_stim_obj, ...
-					ndi_clocktype(stim_doc.document_properties.presentation_time(1).clocktype), ...
+					ndi_clocktype(stim_doc.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
 					stim_doc.document_properties.epochid, 0);
 
 				[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
 					colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
 
-				ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.presentation_order),2) ...
+				ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.stimulus_presentation.presentation_order),2) ...
 					stim_stim_onsetoffsetid(:,3)];
 
 				[data,t_raw,timeref] = readtimeseries(ndi_timeseries_obj, ts_epoch_timeref.epoch, 0, 1);
@@ -256,8 +257,8 @@ classdef ndi_app_tuning_response < ndi_app
 
 					controlstimids = control_doc.document_properties.control_stimulus_ids.control_stimulus_ids;
 					freq_mult = [];
-					for j=1:numel(stim_doc.document_properties.stimuli),
-						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimuli(j).parameters);']);
+					for j=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
+						eval(['freq_multi_here = ' temporalfreqfunc '(stim_doc.document_properties.stimulus_presentation.stimuli(j).parameters);']);
 						if ~isempty(freq_multi_here),
 							freq_mult(j) = freq_multi_here;
 						else,
@@ -374,8 +375,8 @@ classdef ndi_app_tuning_response < ndi_app
 
 				independent_variable_value = [];
 
-				for n=1:numel(stim_pres_doc.document_properties.stimuli),
-					p = stim_pres_doc.document_properties.stimuli(n).parameters;
+				for n=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
+					p = stim_pres_doc.document_properties.stimulus_presentation.stimuli(n).parameters;
 					isincluded(n) = fieldsearch(p,constraint);
 					if isincluded(n),
 						value_here = [];
@@ -404,8 +405,8 @@ classdef ndi_app_tuning_response < ndi_app
 				tuning_curve.control_individual_responses_imaginary = cell(1,num_points);
 				tuning_curve.stimid = nan(1,num_points);
 
-				for n=1:numel(stim_pres_doc.document_properties.stimuli),
-					p = stim_pres_doc.document_properties.stimuli(n).parameters;
+				for n=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
+					p = stim_pres_doc.document_properties.stimulus_presentation.stimuli(n).parameters;
 					if isincluded(n),
 						I = findrowvec(tuning_curve.independent_variable_value, independent_variable_value(n,:));
 						if isempty(I),
@@ -530,8 +531,8 @@ classdef ndi_app_tuning_response < ndi_app
 						control_stim_id_method.controlid_value = controlid_value;
 		
 						controlstimid = [];
-						for n=1:numel(stim_doc.document_properties.stimuli),
-							if fieldsearch(stim_doc.document_properties.stimuli(n).parameters, ...
+						for n=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
+							if fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
 								struct('field',controlid,'operation','exact_number','param1',controlid_value,'param2',[])),
 								controlstimid(end+1) = n;
 							end;
@@ -545,9 +546,9 @@ classdef ndi_app_tuning_response < ndi_app
 
 						% if number of control stimuli is 0, that's okay, just give values of NaN
 
-						stimids = stim_doc.document_properties.presentation_order;
+						stimids = stim_doc.document_properties.stimulus_presentation.presentation_order;
 
-						[reps,isregular] = stimids2reps(stimids,numel(stim_doc.document_properties.stimuli));
+						[reps,isregular] = stimids2reps(stimids,numel(stim_doc.document_properties.stimulus_presentation.stimuli));
 
 						control_stim_indexes = [];
 						if ~isempty(controlstimid),
@@ -565,7 +566,7 @@ classdef ndi_app_tuning_response < ndi_app
 							else,
 								cs_ids = [];
 								% slow
-								presentation_onsets = [stim_doc.document_properties.presentation_time.onset];
+								presentation_onsets = [stim_doc.document_properties.stimulus_presentation.presentation_time.onset];
 								for n=1:numel(stimids),
 									i=findclosest(presentation_onsets(control_stim_indexes), presentation_onsets(n));
 									cs_ids(n) = control_stim_indexes(i);
@@ -579,9 +580,9 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% now we have cs_ids for each stimulus, so make the document
 
-				control_stim_ids_struct = struct('control_stimulus_ids', cs_ids);
-				cs_doc = ndi_document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct, ...
-					'control_stimulus_id_method',control_stim_id_method) + ndi_app_tuning_response_obj.newdocument();
+				control_stim_ids_struct = struct('control_stimulus_ids', cs_ids,'control_stimulus_id_method',control_stim_id_method);
+				cs_doc = ndi_document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct) ...
+					+ ndi_app_tuning_response_obj.newdocument();
 				cs_doc = cs_doc.set_dependency_value('stimulus_presentation_id',stim_doc.id());
 
 				ndi_app_tuning_response_obj.session.database_add(cs_doc);

@@ -26,6 +26,7 @@ classdef ndi_syncgraph < ndi_id
 			if nargin == 2 && isa(varargin{1},'ndi_session') && isa(varargin{2}, 'ndi_document')
 				ndi_syncgraph_obj.session = varargin{1};
 				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
+				ndi_syncgraph_obj.identifier = varargin{2}.id();
 				for i=1:numel(syncrule_doc),
 					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
 				end;

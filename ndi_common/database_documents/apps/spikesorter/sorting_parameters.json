@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter\/sorting_parameters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter\/sorting_parameters_schema.json",
 		"class_name":						"ndi_document_apps_spikesorter_sorting_parameters",
+		"property_list_name":					"sorting_parameters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
@@ -10,9 +11,9 @@
 		]
 	},
 	"depends_on": [
-        {   "name": "element_id",
-            "value": ""
-        }
+	        {   "name": "element_id",
+	            "value": ""
+	        }
 	],
 	"sorting_parameters": {
 		"num_pca_features": 10,

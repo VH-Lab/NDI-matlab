@@ -3,18 +3,20 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikefilteringparameters",
+		"property_list_name":					"vmspikefilteringparameters",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-            { "definition":                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+					{ "definition":			"$NDIDOCUMENTPATH\/ndi_document.json" },
+					{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
+					{ "definition":			"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
-    "depends_on": [
-        {   "name": "element_id",
-            "value": ""
-        }
-    ],
+	"depends_on": [
+		{
+			"name": "element_id",
+			"value": ""
+		}
+	],
 	"vmspikefilteringparameters": {
 		"sampling_rate": 					0,
 		"new_sampling_rate": 					0,
@@ -22,8 +24,8 @@
 		"spiketimes":						"",
 		"filter_algorithm":					"0",
 		"filter_algorithm_parameters": [ {
-				"filter_algorithm_parameter_name": 	"",
-				"filter_algorithm_parameter_value": 	""
+			"filter_algorithm_parameter_name": 	"",
+			"filter_algorithm_parameter_value": 	""
 			}
 		],
 		"rm60Hz":						1,

@@ -3,6 +3,7 @@
 		"definition":							"$NDIDOCUMENTPATH\/data\/fitcurve.json",
 		"validation":							"$NDISCHEMAPATH\/data\/fitcurve.json",
 		"class_name":							"ndi_document_data_fitcurve",
+                "property_list_name":						"fitcurve",
 		"class_version":						1,
 		"superclasses": [
 			{ "definition":						"$NDIDOCUMENTPATH\/ndi_document.json" }
