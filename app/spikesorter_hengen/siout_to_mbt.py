@@ -150,7 +150,7 @@ def siout(sorted_data, noflylist, rec_time,
                              mwfs, max_channel,
                              fs=fs,
                              start_time=start_time, end_time=end_time,
-                             mwft=mwf_list))
+                             mwft=mwf_list)) # pass in amps here to avoid loading them individually
                 #  except:
                 #  pdb.set_trace()
             elif len(filt) > 0:

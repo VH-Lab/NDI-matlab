@@ -1788,10 +1788,10 @@ def bigmamma(thresh,
              datdir,
              lfp,
              sortpick,
-             probefile,
+             probefile, # geom here
              sorter_config,
              clust_out_dir,
-             bad_chan_list=None,
+             bad_chan_list=None, # doesn't work
              rawdatfilt=None, lnosplit=0, lsorting=1, num_cpu=1,
              sampling_frequency=25000,
              ecube_time_list=None,
@@ -1837,26 +1837,32 @@ def bigmamma(thresh,
     # create a .geom file
     geom = 1
     if geom:
-        tetrode = 1 # unused
-        # ckbn todo remove hardcoding
-        g = ss.utils.mdaio.readmda_header('raw.mda') # hardcoded
+        # if ndi input pass in dummy geometry
+        if args.ndi_input:
+            # geom = ndi_input['g']
+            geom = 
+        # else run code below
+        else:
+            tetrode = 1 # unused
+            # ckbn todo remove hardcoding
+            g = ss.utils.mdaio.readmda_header('raw.mda') # hardcoded
 
-        print("\ng ", g)
-        num_channels = g.dims[0]
-        print("num_channels ", num_channels)
-        ntets = num_channels / 4
-        print("ntets ", ntets)
-        geom = np.zeros((num_channels, 2))
-        geom[:, 0] = range(num_channels)
+            print("\ng ", g)
+            num_channels = g.dims[0]
+            print("num_channels ", num_channels)
+            ntets = num_channels / 4
+            print("ntets ", ntets)
+            geom = np.zeros((num_channels, 2))
+            geom[:, 0] = range(num_channels)
 
-        for i in np.arange(0, num_channels, 4):
-            geom[i, :] = [100 * i + 0, 100 * i + 25]
-            geom[i + 1, :] = [100 * i + 25, 100 * i + 25]
-            geom[i + 2, :] = [100 * i - 25, 100 * i - 25]
-            geom[i + 3, :] = [100 * i + 25, 100 * i + 0]
+            for i in np.arange(0, num_channels, 4): # modify channels and channel groups accordingly
+                geom[i, :] = [100 * i + 0, 100 * i + 25]
+                geom[i + 1, :] = [100 * i + 25, 100 * i + 25]
+                geom[i + 2, :] = [100 * i - 25, 100 * i - 25]
+                geom[i + 3, :] = [100 * i + 25, 100 * i + 0]
 
-        print("Intial geom before probefile {}\n".format(geom))
-        np.savetxt("geom.csv", geom, delimiter=",", fmt='%i')
+            print("Intial geom before probefile {}\n".format(geom))
+            np.savetxt("geom.csv", geom, delimiter=",", fmt='%i')
     else:
         pass
     # ####################### Load the recording ##############################
@@ -1865,11 +1871,9 @@ def bigmamma(thresh,
 
         ndi_timeseries = ndi_input['d']
         ndi_samplerate = ndi_input['sr']
-        # ndi_geometry = ndi_input['g']
 
         # TODO: add geom to extractor
-        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate)
-
+        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate, geom=geom)
 
     else:
         # first load recording with geom (default)
@@ -3392,7 +3396,34 @@ if __name__ == '__main__':
             print('.mat file inputted from NDI')
             file_datetime_list = False
             ecube_time_list = False
-            pass
+
+            group_tmp_dir = TMPDIR_LOC
+            
+            group_raw_tmp_dir = op.join(group_tmp_dir,
+                                'grouped_raw_dat_temp_folder')
+            print('group_raw_tmp_dir ', group_raw_tmp_dir)
+            # check group_tmp_dir exits then create grouped_raw_dat_temp_folder
+            if os.path.exists(group_tmp_dir) and os.path.isdir(group_tmp_dir):
+                if os.path.exists(group_raw_tmp_dir) and \
+                        os.path.isdir(group_raw_tmp_dir):
+                    if os.listdir(group_raw_tmp_dir):
+                        raise FileExistsError("Directory {} is not empty".
+                                            format(group_raw_tmp_dir))
+                    else:
+                        print("Directory {} is empty.".format(group_raw_tmp_dir))
+                else:
+                    print("Creating directory {}".format(group_raw_tmp_dir))
+                    try:
+                        os.mkdir(group_raw_tmp_dir)
+                    except Exception as e:
+                        print(e)
+                        print("Could not create directory {}",
+                            format(group_raw_tmp_dir))
+                        raise NotADirectoryError("Directory {} not found".
+                                                format(group_raw_tmp_dir))
+            else:
+                raise NotADirectoryError("Directory {} does not exists".
+                                        format(group_raw_tmp_dir))
 
         else:
             pass
@@ -3458,6 +3489,10 @@ if __name__ == '__main__':
             "Directory {} not found".
             format(op.join(TMPDIR_LOC, "grouped_raw_dat_temp_folder")))
 
+    
+
+
+
     folders = sorted(glob.glob("*channel_group_*"))
     print("folders ", folders)
     print("pwd now3 ", os.getcwd())
@@ -3475,7 +3510,7 @@ if __name__ == '__main__':
     print('SpikeInterface change to group directory took {} seconds'.
           format(toc - tic), flush=True)
 
-    for folder in folders:
+    if args.ndi_input:
         tic = time.time()
         print('\nSpikeInterface sorting wrapper')
         # c_o
@@ -3483,22 +3518,24 @@ if __name__ == '__main__':
         # bigmamma(thresh, folder, datdir,
         sorted_data, ch_group, noflylist, rec_length, amps = \
             bigmamma(thresh, folder,
-                     op.join(TMPDIR_LOC, "grouped_raw_dat_temp_folder"),
-                     lfp, spk_sorter, probefile,
-                     sorter_config,
-                     clustering_output,
-                     bad_chan_list=bad_chans,
-                     rawdatfilt=rawdatfilt,
-                     lnosplit=lnosplit,
-                     lsorting=lsorting,
-                     num_cpu=ncpus,
-                     sampling_frequency=fs,
-                     ecube_time_list=ecube_time_list,
-                     file_datetime_list=file_datetime_list,
-                     bn=bn)
+                    op.join(TMPDIR_LOC, "grouped_raw_dat_temp_folder"),
+                    lfp, spk_sorter, probefile,
+                    sorter_config,
+                    clustering_output,
+                    bad_chan_list=bad_chans,
+                    rawdatfilt=rawdatfilt,
+                    lnosplit=lnosplit,
+                    lsorting=lsorting,
+                    num_cpu=ncpus,
+                    sampling_frequency=fs,
+                    ecube_time_list=ecube_time_list,
+                    file_datetime_list=file_datetime_list,
+                    bn=bn,
+                    ndi_input=args.ndi_input
+                    ndi_hengen_path=args.ndi_hengen_path)
         toc = time.time()
         print('SpikeInterface sorting wrapper took {} seconds'.
-              format(toc - tic), flush=True)
+            format(toc - tic), flush=True)
 
         # Save results using mbt
         tic = time.time()
@@ -3521,8 +3558,8 @@ if __name__ == '__main__':
             print("good units ", good_units)
             if (lmetrics > 0):
                 nb = siout.siout(sorted_data, good_units, rec_length,
-                                 file_datetime_list, ecube_time_list,
-                                 amps)
+                                file_datetime_list, ecube_time_list,
+                                amps)
                 np.save(op.join(clustering_output,
                                 bn + f'neurons_group{ch_group}_bad.npy'), nb)
             np.save(op.join(clustering_output,
@@ -3532,15 +3569,82 @@ if __name__ == '__main__':
                     good_units)
         toc = time.time()
         print('SpikeInterface saving output for mbt took {} seconds'.
-              format(toc - tic), flush=True)
+            format(toc - tic), flush=True)
 
         # Summary
         print("\n \t\tSummary")
         print("\tFound total {} units".
-              format((len(good_units) + len(noflylist))))
+            format((len(good_units) + len(noflylist))))
         print("\tFound {} good units".format(len(good_units)))
         if (lmetrics > 0):
             print("\tFound {} bad units".format(len(noflylist)), flush=True)
+    else:
+        for folder in folders:
+            tic = time.time()
+            print('\nSpikeInterface sorting wrapper')
+            # c_o
+            # g_o
+            # bigmamma(thresh, folder, datdir,
+            sorted_data, ch_group, noflylist, rec_length, amps = \
+                bigmamma(thresh, folder,
+                        op.join(TMPDIR_LOC, "grouped_raw_dat_temp_folder"),
+                        lfp, spk_sorter, probefile,
+                        sorter_config,
+                        clustering_output,
+                        bad_chan_list=bad_chans,
+                        rawdatfilt=rawdatfilt,
+                        lnosplit=lnosplit,
+                        lsorting=lsorting,
+                        num_cpu=ncpus,
+                        sampling_frequency=fs,
+                        ecube_time_list=ecube_time_list,
+                        file_datetime_list=file_datetime_list,
+                        bn=bn)
+            toc = time.time()
+            print('SpikeInterface sorting wrapper took {} seconds'.
+                format(toc - tic), flush=True)
+
+            # Save results using mbt
+            tic = time.time()
+            print('\nSpikeInterface saving output for mbt')
+            if sorted_data.get_unit_ids() == []:
+                print("no units were found on this group")
+            else:
+                print('\nUnits:', sorted_data.get_unit_ids())
+                all_units = list(sorted_data.get_unit_ids())
+                print('Number of units:', len(sorted_data.get_unit_ids()))
+                print('ch_group ', ch_group)
+                print('noflylist ', noflylist)
+                n = siout.siout(sorted_data, noflylist, rec_length,
+                                file_datetime_list, ecube_time_list,
+                                amps)
+                # np.save(f"clustering_output/neurons_group{ch_group}.npy", n)
+                np.save(op.join(clustering_output,
+                                bn + f'neurons_group{ch_group}.npy'), n)
+                good_units = list(set(all_units).difference(noflylist))
+                print("good units ", good_units)
+                if (lmetrics > 0):
+                    nb = siout.siout(sorted_data, good_units, rec_length,
+                                    file_datetime_list, ecube_time_list,
+                                    amps)
+                    np.save(op.join(clustering_output,
+                                    bn + f'neurons_group{ch_group}_bad.npy'), nb)
+                np.save(op.join(clustering_output,
+                                bn + f'noflylist_group{ch_group}.npy'), noflylist)
+                np.save(op.join(clustering_output,
+                                bn + f'good_units_group{ch_group}.npy'),
+                        good_units)
+            toc = time.time()
+            print('SpikeInterface saving output for mbt took {} seconds'.
+                format(toc - tic), flush=True)
+
+            # Summary
+            print("\n \t\tSummary")
+            print("\tFound total {} units".
+                format((len(good_units) + len(noflylist))))
+            print("\tFound {} good units".format(len(good_units)))
+            if (lmetrics > 0):
+                print("\tFound {} bad units".format(len(noflylist)), flush=True)
 
     setoc = time.time()
     print('\nTotal time took {} seconds'.

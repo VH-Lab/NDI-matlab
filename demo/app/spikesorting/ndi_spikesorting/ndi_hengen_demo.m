@@ -49,5 +49,13 @@ probes = E.getprobes()
 
 spikesorter_hengen = ndi_app_spikesorter_hengen(E)
 
-spikesorter_hengen.extract_and_sort(probes{1})
+% spikesorter_hengen.add_extraction_doc(extraction_name, [])
+
+% spikesorter_hengen.add_sorting_doc(sorting_name, [])
+
+% spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+
+spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+
+spikesorter_hengen.rate_neuron_quality
 

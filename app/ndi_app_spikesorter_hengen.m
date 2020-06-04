@@ -185,6 +185,75 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		end % rate_neuron_quality
 
+		% function extraction_doc = add_extraction_doc(ndi_app_spikesorter_hengen_obj, extraction_name, extraction_parameters)
+		% % ADD_EXTRACTION_DOC - add extraction parameters document
+		% %
+		% % EXTRACTION_DOC = ADD_EXTRACTION_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMETERS)
+		% %
+		
+
+		% end % add_extraction_doc
+
+		% function sorting_doc = add_sorting_doc(ndi_app_spikesorter_hengen_obj, sorter, sorting_name, sorting_parameters)
+			
+		% end % add_sorting_doc
+
+		function geometry_doc = add_geometry_doc(ndi_app_spikesorter_hengen_obj, probe, geometry)
+		% ADD_GEOMETRY_DOC - add probe geometry document
+		%
+		% GEOMETRY_DOC = ADD_GEOMETRY_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMETERS)
+		%
+		% Add a geometry in a cell array corresponding to channel_groups, ex.
+		% This app follows spikeinterface standard, unknown what the unit of geometry values are
+		% 
+		% {
+		% 	"0": {
+		% 		"channels": [0, 1, 2, 3],
+		% 		"geometry": [[0, 0], [0, 1000], [0, 2000], [0, 3000]],
+		% 		"label": ["t_00", "t_01", "t_02", "t_03"]
+		% 	}
+		% }
+			
+			% if no geometry provided assume line flat geometry
+			if nargin < 3
+				geometry = [];
+			end
+
+			geom_searchq = ndi_query('', 'depends_on', 'thing_id', probe.id()) & ndi_query('', 'isa', 'probe_geometry', ''); 
+
+			docs_found = ndi_app_spikesorter_hengen_obj.experiment.database_search(geom_searchq);
+
+			if ~isempty(docs_found)
+				error([int2str(numel(docs_found)) ' probe_geometry documents for probe ''' probe.name ''' already exist(s).']);
+			end
+
+			if isempty(geometry)
+				channels = [];
+				g = [];
+				label = [];
+
+				nchannels = size(readtimeseries(probe, 1, 1, Inf), 2);
+
+				for channel=1:nchannels
+					channels(channel) = channel;
+					g(channel,1) = 0;
+					g(channel,2) = (channel-1)*1000;
+					label{channel} = ['chan_' num2str(channel)];
+				end
+
+				geometry = struct("x0", struct('channels', channels, 'geometry', g, 'label', string(label)))
+
+				geometry_doc = ndi_document('apps/spikesorter_hengen/probe_geometry', 'geometry', geometry) ...
+					+ ndi_app_spikesorter_hengen_obj.newdocument();
+
+				geometry_doc.set_dependency_value('underlying_thing_id', probe.id())
+				
+				ndi_app_spikesorter_hengen_obj.experiment.database_add(geometry_doc);
+
+				geometry_doc
+			end
+		end % add_geometry_doc
+
 	end % methods
 
 end % ndi_app_spikesorter
