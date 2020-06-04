@@ -13,6 +13,8 @@ function b = ndi_install(directory, dependencies)
 %
 % B = NDI_INSTALL(PATHNAME)
 %
+% PATHNAME should not include any shell script shortcuts (like '~').
+%
 % Finally, one can also install either the minimal set of tools needed for NDI (DEPENDENCIES=1),
 % or one can install the standard VHTOOLS suite (DEPENDENCIES=2):
 %
@@ -27,13 +29,35 @@ if ~b,
 end;
 
 
+need_to_set_directory = 0;
+
 if nargin<1,
-	directory = [userpath filesep 'tools'];
+	need_to_set_directory = 1;
+	directory = ' '; % not empty
 end;
 
 if isempty(directory),
+	need_to_set_directory = 1;
+end;
+
+if need_to_set_directory,
+	if isempty(userpath),
+		disp(['Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.']);
+		reply = input('Can we reset your USERPATH to the default? Y/N [Y]:','s');
+		if isempty(reply)
+			reply = 'Y';
+		end
+		if strcmpi(strtrim(reply),'Y'),
+			userpath('reset');
+		else,
+			error(['User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath']);
+		end;
+	end;
 	directory = [userpath filesep 'tools'];
 end;
+
+disp(['About to install at directory ' directory '...']);
+
 
 if nargin<2,
 	dependencies = 1;
