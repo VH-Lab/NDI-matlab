@@ -194,14 +194,58 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		% end % add_extraction_doc
 
-		% function sorting_doc = add_sorting_doc(ndi_app_spikesorter_hengen_obj, sorter, sorting_name, sorting_parameters)
-			
-		% end % add_sorting_doc
+		function sorting_doc = add_sorting_doc(ndi_app_spikesorter_hengen_obj, sorting_name, sorter, sorting_parameters)
+		% ADD_SORTING_DOC - add sorting parameters document
+		%
+		% SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, SORTER, SORTING_NAME, SORTING_PARAMETERS)
+
+
+			if nargin < 3
+				sorting_parameters = []
+			end
+
+			if strcmp(sorter, 'm') || strcmp(sorter, 'mountainsort')
+				error(['Unrecognized sorter, currently only ''' m ''' for mountainsort is supported.'])
+			end
+
+			params_searchq = ndi_query('ndi_document.name', 'exact_string', sorting_name, '') & ...
+				ndi_query('', 'isa', 'mountainsort')
+
+			docs_found = ndi_app_spikesorter_hengen_obj.experiment.database_search(params_searchq);
+
+			if ~isempty(docs_found)
+				error([int2str(numel(docs_found)) ' sorting documents with sorting_name ''' sorting_name ''' already exist(s).']);
+			end
+
+			if isempty(sorting_parameters),
+				sorting_parameters = ndi_document('apps/spikesorter_hengen/mountainsort') + ...
+					ndi_app_spikesorter_hengen_obj.newdocument();
+				% this function needs a structure
+				sorting_parameters = sorting_parameters.document_properties.sorting_parameters; 
+			elseif isa(sorting_parameters,'ndi_document'),
+				% this function needs a structure
+				sorting_parameters = sorting_parameters.document_properties.sorting_parameters; 
+			elseif isa(sorting_parameters, 'char') % loading struct from file 
+				sorting_parameters = loadStructArray(sorting_parameters);
+			elseif isstruct(sorting_parameters),
+				% If extraction_params was inputed as a struct then no need to parse it
+			else
+				error('unable to handle extraction_params.');
+			end
+
+			% TODO: Ask Steve how he checks for fields being valid
+			sorting_doc = ndi_document('apps/spikesorter_hengen/mountainsort', 'sorting_parameters', sorting_parameters) + ...
+					ndi_app_spikesorter_hengen_obj.newdocument() + + ndi_document('ndi_document', 'ndi_document.name', sorting_name);
+
+			ndi_app_spikesorter_hengen_obj.experiment.database_add(sorting_doc)
+
+			sorting_doc.document_properties,
+		end % add_sorting_doc
 
 		function geometry_doc = add_geometry_doc(ndi_app_spikesorter_hengen_obj, probe, geometry)
 		% ADD_GEOMETRY_DOC - add probe geometry document
 		%
-		% GEOMETRY_DOC = ADD_GEOMETRY_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMETERS)
+		% GEOMETRY_DOC = ADD_GEOMETRY_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, PROBE, GEOMETRY)
 		%
 		% Add a geometry in a cell array corresponding to channel_groups, ex.
 		% This app follows spikeinterface standard, unknown what the unit of geometry values are
