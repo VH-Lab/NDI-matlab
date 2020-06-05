@@ -185,14 +185,71 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 		end % rate_neuron_quality
 
-		% function extraction_doc = add_extraction_doc(ndi_app_spikesorter_hengen_obj, extraction_name, extraction_parameters)
-		% % ADD_EXTRACTION_DOC - add extraction parameters document
-		% %
-		% % EXTRACTION_DOC = ADD_EXTRACTION_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMETERS)
-		% %
+		function extraction_doc = add_extraction_doc(ndi_app_spikesorter_hengen_obj, extraction_name, extraction_parameters)
+		% ADD_EXTRACTION_DOC - add extraction parameters document
+		%
+		% EXTRACTION_DOC = ADD_EXTRACTION_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMETERS)
+		%
+
+			if nargin < 3,
+				extraction_parameters = [];
+			end;
+
+				% search for any existing documents with that name; any doc that has that name and spike_extraction_parameters as a field
+			extract_searchq = ndi_query('ndi_document.name','exact_string',extraction_name,'') & ...
+				ndi_query('','isa','extraction_parameters','');
+			mydoc = ndi_app_spikesorter_hengen_obj.experiment.database_search(extract_searchq);
+			if ~isempty(mydoc),
+				error([int2str(numel(mydoc)) ' extraction_parameters documents with name ''' extraction_name ''' already exist(s).']);
+			end;
+
+			% okay, we can build a new document
+
+			if isempty(extraction_params),
+				extraction_parameters = ndi_document('apps/spikesorter_hengen/extraction_parameters') + ...
+				ndi_app_spikesorter_hengen_obj.newdocument();
+				% this function needs a structure
+				extraction_parameters = extraction_parameters.document_properties.extraction_parameters; 
+			elseif isa(extraction_parameters,'ndi_document'),
+				% this function needs a structure
+				extraction_params = extraction_parameters.document_properties.extraction_parameters; 
+			elseif isa(extraction_parameters, 'char') % loading struct from file 
+				extraction_parameters = loadStructArray(extraction_parameters);
+			elseif isstruct(extraction_parameters),
+				% If extraction_params was inputed as a struct then no need to parse it
+			else
+				error('unable to handle extraction_parameters.');
+			end
+
+			% now we have a extraction_parameters as a structure
+
+			% % check parameters here
+			% fields_needed = {'center_range_time','overlap','read_time','refractory_time',...
+			% 	'spike_start_time','spike_end_time',...
+			% 	'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
+			% 	'threshold_method','threshold_parameter','threshold_sign'};
+			% sizes_needed = {[1 1], [1 1], [1 1], [1 1],...
+			% 	[1 1],[1 1],...
+			% 	[1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
+			% 	[1 -1], [1 1], [1 1]};
+
+			% [good,errormsg] = hasAllFields(extraction_params,fields_needed, sizes_needed);
+
+			% if ~good,
+			% 	error(['Error in extraction_parameters: ' errormsg]);
+			% end;
+
+			% now we need to convert to an ndi_document
+
+			extraction_doc = ndi_document('apps/spikesorter_hengen/extraction_parameters', 'extraction_parameters', extraction_parameters) + ...
+			ndi_app_spikesorter_hengen_obj.newdocument() + ndi_document('ndi_document', 'ndi_document.name', extraction_name);
+
+			ndi_app_spikesorter_hengen_obj.experiment.database_add(extraction_doc);
+
+			extraction_doc.document_properties,
 		
 
-		% end % add_extraction_doc
+		end % add_extraction_doc
 
 		function sorting_doc = add_sorting_doc(ndi_app_spikesorter_hengen_obj, sorting_name, sorter, sorting_parameters)
 		% ADD_SORTING_DOC - add sorting parameters document
@@ -200,16 +257,16 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 		% SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, SORTER, SORTING_NAME, SORTING_PARAMETERS)
 
 
-			if nargin < 3
+			if nargin < 4
 				sorting_parameters = []
 			end
 
-			if strcmp(sorter, 'm') || strcmp(sorter, 'mountainsort')
+			if ~strcmp(sorter, 'm') %|| ~strcmp(sorter, 'mountainsort')
 				error(['Unrecognized sorter, currently only ''' m ''' for mountainsort is supported.'])
 			end
 
 			params_searchq = ndi_query('ndi_document.name', 'exact_string', sorting_name, '') & ...
-				ndi_query('', 'isa', 'mountainsort')
+				ndi_query('', 'isa', 'mountainsort', '');
 
 			docs_found = ndi_app_spikesorter_hengen_obj.experiment.database_search(params_searchq);
 
@@ -217,9 +274,8 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				error([int2str(numel(docs_found)) ' sorting documents with sorting_name ''' sorting_name ''' already exist(s).']);
 			end
 
-			if isempty(sorting_parameters),
-				sorting_parameters = ndi_document('apps/spikesorter_hengen/mountainsort') + ...
-					ndi_app_spikesorter_hengen_obj.newdocument();
+			if isempty(sorting_parameters)
+				sorting_parameters = ndi_document('apps/spikesorter_hengen/mountainsort') + ndi_app_spikesorter_hengen_obj.newdocument();
 				% this function needs a structure
 				sorting_parameters = sorting_parameters.document_properties.sorting_parameters; 
 			elseif isa(sorting_parameters,'ndi_document'),
@@ -235,9 +291,9 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			% TODO: Ask Steve how he checks for fields being valid
 			sorting_doc = ndi_document('apps/spikesorter_hengen/mountainsort', 'sorting_parameters', sorting_parameters) + ...
-					ndi_app_spikesorter_hengen_obj.newdocument() + + ndi_document('ndi_document', 'ndi_document.name', sorting_name);
+					ndi_app_spikesorter_hengen_obj.newdocument() + ndi_document('ndi_document', 'ndi_document.name', sorting_name);
 
-			ndi_app_spikesorter_hengen_obj.experiment.database_add(sorting_doc)
+			ndi_app_spikesorter_hengen_obj.experiment.database_add(sorting_doc);
 
 			sorting_doc.document_properties,
 		end % add_sorting_doc
@@ -294,7 +350,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				
 				ndi_app_spikesorter_hengen_obj.experiment.database_add(geometry_doc);
 
-				geometry_doc
+				geometry_doc.document_properties
 			end
 		end % add_geometry_doc
 

@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter_hengen\/extraction_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter_hengen\/extraction_parameters_schema.json",
+		"class_name":						"ndi_document_apps_spikesorter_hengen_extraction_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"extraction_parameters": {
+		"temp": "temp"
+	}
+}
