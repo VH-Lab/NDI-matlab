@@ -1889,6 +1889,7 @@ def bigmamma(thresh,
 
         prb_file_name = os.path.join(ndi_hengen_path, 'geometry.prb')
 
+        # Write .prb file for use, spikeinterface won't accept all info as variables, you need a prb file
         f = open(prb_file_name,'w')
         f.write('channel_groups = ')
         print(geom, file=f)
