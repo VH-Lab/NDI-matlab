@@ -397,7 +397,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				nchannels = size(readtimeseries(probe, 1, 1, Inf), 2);
 
 				for channel=1:nchannels
-					channels(channel) = channel;
+					channels(1,channel) = channel;
 					g(channel,1) = 0;
 					g(channel,2) = (channel - 1) * 1000;
 					label{channel} = ['chan_' num2str(channel)];

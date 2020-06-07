@@ -1875,7 +1875,7 @@ def bigmamma(thresh,
         ndi_timeseries = ndi_input['d']
         ndi_samplerate = ndi_input['sr']
 
-        channels = geom[0,0]['channels'].tolist()
+        channels = geom[0,0]['channels'][0].tolist()
         geometry = geom[0,0]['geometry'].tolist()
         label = geom[0,0]['label'].tolist()
 
@@ -1887,13 +1887,21 @@ def bigmamma(thresh,
             '0': {'channels': channels, 'geometry': geometry, 'label': label}
         }
 
-        print('geom: \n', geom)
+        prb_file_name = os.path.join(ndi_hengen_path, 'geometry.prb')
 
-
+        f = open(prb_file_name,'w')
+        f.write('channel_groups = ')
+        print(geom, file=f)
+        f.close()
 
         # TODO: add geom to extractor
-        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate, geom=geom)
-        recording_prb = recording
+        recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate)
+        recording_prb = recording.load_probe_file(probe_file=prb_file_name, verbose=True)
+
+        if os.path.exists(prb_file_name):
+            os.remove(prb_file_name)
+        else:
+            print(f'Error deleting {prb_file_name}.')
     else:
         # first load recording with geom (default)
         recording = se.MdaRecordingExtractor(current_chan_dir)
