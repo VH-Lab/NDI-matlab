@@ -1839,8 +1839,8 @@ def bigmamma(thresh,
     if geom:
         # if ndi input pass in dummy geometry
         if args.ndi_input:
-            # geom = ndi_input['g']
-            geom = 
+            geom = ndi_input['g']
+            
         # else run code below
         else:
             tetrode = 1 # unused
@@ -1966,7 +1966,7 @@ def bigmamma(thresh,
                                                    freq_min=dsc_freq_min,
                                                    freq_max=dsc_freq_max,
                                                    freq_wid=1000,
-                                                   type='fft', order=3,
+                                                   type='fft', order=3, # TODO: add type of bandpass butter or fft
                                                    chunk_size=dsc_chunk_size,
                                                    cache_to_file=True,
                                                    cache_chunks=False)
@@ -2932,13 +2932,36 @@ if __name__ == '__main__':
         TMPDIR_LOC = os.path.join(args.experiment_path, TMPDIR_LOC)
         probefile = str(d['probefile'])
         probefile = os.path.join(args.ndi_hengen_path, probefile)
+
         if args.ndi_input:
+            ndi_input = scipy.io.loadmat(os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat'))
+            print('extraction_p: \n', ndi_input['extraction_p'])
+            print('sorting_p: \n', ndi_input['sorting_p'])
             file_path = os.path.join(args.ndi_hengen_path, 'ndiouttmp.mat')
+            extraction_p = ndi_input['extraction_p']
+            thresh = int(extraction_p['thresh'])
+            num_channels = int(extraction_p['num_channels'])
+            nprobes = int(extraction_p['nprobes'])
+            hstype = extraction_p['hstype'][0][0][0]
+            probetosort = int(extraction_p['probetosort'])
+            probe_channels = int(extraction_p['probe_channels'])
+            fs = float(ndi_input['sr'])
+            bad_chans = int(extraction_p['bad_chans'])
+            rawdatfilt = str(extraction_p['rawdatfilt'][0][0][0])
+            lnosplit = bool(extraction_p['lnosplit'])
+            lsorting = bool(extraction_p['lsorting'])
+            lmetrics = int(extraction_p['lmetrics'])
+            spk_sorter = str(extraction_p['spk_sorter'][0][0][0]) # hardcoded index arrays as of weird translation to .mat
+            lfp = int(extraction_p['lfp'])
+            ncpus = int(extraction_p['ncpus'])
+            ltk = bool(extraction_p['ltk'])
         else:
             file_path = str(d['file_path'])
             file_path = os.path.join(args.experiment_path, file_path)
         clustering_output = str(d['clustering_output'])
         clustering_output = os.path.join(args.experiment_path, clustering_output)
+
+
     except Exception as e:
         print("Error : ", e)
         raise ValueError('Error please check data in file {}'
@@ -3106,26 +3129,49 @@ if __name__ == '__main__':
                          .format(sorter_config))
     if spk_sorter == 'm':
         try:
-            # Get data
-            dsc_sorter_name = str(d_sort_config['sorter_name'])
-            print("dsc_sorter_name ", dsc_sorter_name)
+            if ndi_input:
+                sorting_p = ndi_input['sorting_p']
+                # Get data
+                dsc_sorter_name = str(sorting_p['sorter_name'])
+                print("dsc_sorter_name ", dsc_sorter_name)
 
-            dsc_adjacency_radius = int(d_sort_config['adjacency_radius'])
-            dsc_curation = bool(d_sort_config['curation'])
-            print("dsc_curation ", dsc_curation, flush=True)
-            dsc_noise_overlap_threshold = \
-                float(d_sort_config['noise_overlap_threshold'])
-            dsc_chunk_size = int(d_sort_config['chunk_size'])
-            dsc_filter = bool(d_sort_config['filter'])
-            dsc_freq_min = float(d_sort_config['freq_min'])
-            dsc_freq_max = float(d_sort_config['freq_max'])
-            dsc_detect_sign = int(d_sort_config['detect_sign'])
-            dsc_whiten = bool(d_sort_config['whiten'])
-            dsc_grouping_property = str(d_sort_config['grouping_property'])
-            dsc_clip_size = int(d_sort_config['clip_size'])
-            dsc_detect_interval = int(d_sort_config['detect_interval'])
-            dsc_parallel = bool(d_sort_config['parallel'])
-            dsc_verbose = int(d_sort_config['verbose'])
+                dsc_adjacency_radius = int(sorting_p['adjacency_radius'])
+                dsc_curation = bool(sorting_p['curation'])
+                print("dsc_curation ", dsc_curation, flush=True)
+                dsc_noise_overlap_threshold = \
+                    float(sorting_p['noise_overlap_threshold'])
+                dsc_chunk_size = int(sorting_p['chunk_size'])
+                dsc_filter = bool(sorting_p['filter'])
+                dsc_freq_min = float(sorting_p['freq_min'])
+                dsc_freq_max = float(sorting_p['freq_max'])
+                dsc_detect_sign = int(sorting_p['detect_sign'])
+                dsc_whiten = bool(sorting_p['whiten'])
+                dsc_grouping_property = str(sorting_p['grouping_property'])
+                dsc_clip_size = int(sorting_p['clip_size'])
+                dsc_detect_interval = int(sorting_p['detect_interval'])
+                dsc_parallel = bool(sorting_p['parallel'])
+                dsc_verbose = int(sorting_p['verbose'])
+            else:
+                # Get data
+                dsc_sorter_name = str(d_sort_config['sorter_name'])
+                print("dsc_sorter_name ", dsc_sorter_name)
+
+                dsc_adjacency_radius = int(d_sort_config['adjacency_radius'])
+                dsc_curation = bool(d_sort_config['curation'])
+                print("dsc_curation ", dsc_curation, flush=True)
+                dsc_noise_overlap_threshold = \
+                    float(d_sort_config['noise_overlap_threshold'])
+                dsc_chunk_size = int(d_sort_config['chunk_size'])
+                dsc_filter = bool(d_sort_config['filter'])
+                dsc_freq_min = float(d_sort_config['freq_min'])
+                dsc_freq_max = float(d_sort_config['freq_max'])
+                dsc_detect_sign = int(d_sort_config['detect_sign'])
+                dsc_whiten = bool(d_sort_config['whiten'])
+                dsc_grouping_property = str(d_sort_config['grouping_property'])
+                dsc_clip_size = int(d_sort_config['clip_size'])
+                dsc_detect_interval = int(d_sort_config['detect_interval'])
+                dsc_parallel = bool(d_sort_config['parallel'])
+                dsc_verbose = int(d_sort_config['verbose'])
         except Exception as e:
             print("Error : ", e)
             raise ValueError('Error loading sorter_config file {}'
@@ -3531,7 +3577,7 @@ if __name__ == '__main__':
                     ecube_time_list=ecube_time_list,
                     file_datetime_list=file_datetime_list,
                     bn=bn,
-                    ndi_input=args.ndi_input
+                    ndi_input=args.ndi_input,
                     ndi_hengen_path=args.ndi_hengen_path)
         toc = time.time()
         print('SpikeInterface sorting wrapper took {} seconds'.

@@ -26,18 +26,30 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi_experiment directory
 		%
 		% EXTRACT_AND_SORT(REDO) - to handle selected .bin file in json input
-		% EXTRACT_AND_SORT(NDI_ELEMENT, REDO) - to handle selected ndi_element
+		% EXTRACT_AND_SORT(NDI_ELEMENT, EXTRACTION_NAME, SORTING_NAME, REDO) - to handle selected ndi_element
 		%	
 			
-			if numel(varargin) == 2
+			if numel(varargin) == 4
 				if isa(varargin{1}, 'ndi_timeseries')
 					element = varargin{1};
 				else
 					error('invalid element input')
 				end
+
+				if ischar(varargin{2}) == 1
+					extraction_name = varargin{2}
+				else
+					error('invalid extraction_name input')
+				end
+
+				if ischar(varargin{3}) == 1
+					sorting_name = varargin{3}
+				else
+					error('invalid sorting_name input')
+				end
 				
-				if isinteger(int8(varargin{2}))
-					redo = varargin{2};
+				if isinteger(int8(varargin{4}))
+					redo = varargin{4};
 				else
 					error('invalid redo input')
 				end				
@@ -56,6 +68,32 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			if isempty(varargin)
 				redo = 0;
 			end
+
+			% Find extraction doc in database and return appropriate errors if not found
+			extract_searchq = ndi_query('ndi_document.name', 'exact_string', extraction_name,'') & ...
+				ndi_query('', 'isa', 'extraction_parameters', '');
+			extraction_doc = ndi_app_spikesorter_hengen_obj.experiment.database_search(extract_searchq);
+
+			if isempty(extraction_doc)
+				error(['No extraction_parameters document named ' extraction_name ' found.']);
+			elseif numel(extraction_doc) > 1
+				error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
+			else,
+				extraction_doc = extraction_doc{1}.document_properties.extraction_parameters;
+			end;
+
+			% Find sorting doc in database and return appropriate errors if not found
+			sort_searchq = ndi_query('ndi_document.name', 'exact_string', sorting_name, '') & ...
+				ndi_query('', 'isa', 'mountainsort', '');
+			sorting_doc = ndi_app_spikesorter_hengen_obj.experiment.database_search(sort_searchq);
+
+			if isempty(sorting_doc)
+				error(['No extraction_parameters document named ' extraction_name ' found.']);
+			elseif numel(sorting_doc) > 1
+				error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
+			else,
+				sorting_doc = sorting_doc{1}.document_properties.sorting_parameters;
+			end;
 			
 			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
 			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])
@@ -95,12 +133,30 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				[d] = readtimeseries(element, 1, -Inf, Inf);
 				sr = element.samplerate(1);
 				
-				save('ndiouttmp.mat', 'd', 'sr')
+				geom_searchq = ndi_query('', 'depends_on', 'underlying_thing_id', element.id()) & ndi_query('', 'isa', 'probe_geometry', ''); 
+
+				geom_doc = ndi_app_spikesorter_hengen_obj.experiment.database_search(geom_searchq);
+
+				if isempty(geom_doc)
+					warning(['No geometry document associated with probe ' element.name ' with id ' element.id '.'])
+					error(['Please add a geometry doc for inputted probe. '])
+				elseif numel(geom_doc) > 1
+					error(['More than one geometry document associated with probe. Should not happen but needs to be fixed.']);
+				else
+					geom_doc = geom_doc{1};
+				end
+
+				g = geom_doc.document_properties.geometry
+
+				extraction_p = extraction_doc
+
+				sorting_p = sorting_doc
+				
+				save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
 				
 				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path ' --ndi-input'])
 			else
 				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.experiment.path ' --ndi-hengen-path ' ndi_hengen_path])
-				%python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
 			end
 			
 			cd(prev_folder)
@@ -205,7 +261,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			% okay, we can build a new document
 
-			if isempty(extraction_params),
+			if isempty(extraction_parameters),
 				extraction_parameters = ndi_document('apps/spikesorter_hengen/extraction_parameters') + ...
 				ndi_app_spikesorter_hengen_obj.newdocument();
 				% this function needs a structure
@@ -319,7 +375,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				geometry = [];
 			end
 
-			geom_searchq = ndi_query('', 'depends_on', 'thing_id', probe.id()) & ndi_query('', 'isa', 'probe_geometry', ''); 
+			geom_searchq = ndi_query('', 'depends_on', 'underlying_thing_id', probe.id()) & ndi_query('', 'isa', 'probe_geometry', ''); 
 
 			docs_found = ndi_app_spikesorter_hengen_obj.experiment.database_search(geom_searchq);
 
@@ -346,7 +402,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				geometry_doc = ndi_document('apps/spikesorter_hengen/probe_geometry', 'geometry', geometry) ...
 					+ ndi_app_spikesorter_hengen_obj.newdocument();
 
-				geometry_doc.set_dependency_value('underlying_thing_id', probe.id())
+				geometry_doc = geometry_doc.set_dependency_value('underlying_thing_id', probe.id())
 				
 				ndi_app_spikesorter_hengen_obj.experiment.database_add(geometry_doc);
 
