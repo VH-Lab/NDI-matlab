@@ -1804,16 +1804,19 @@ def bigmamma(thresh,
     WRITE ME!!!!!
 
     '''
-
-    # current_chan_dir = datdir + 'grouped_raw_dat_temp_folder/' + folder
-    current_chan_dir = op.join(datdir, folder)
-    print("datdir ", datdir)
-    print("folder ", folder)
-    print("current_chan_dir ", current_chan_dir)
-    print("pwd 4 ", os.getcwd())
-    os.chdir(current_chan_dir)
-    print("pwd 5 ", os.getcwd())
-    print("clust_out_dir ", clust_out_dir)
+    
+    if ndi_input:
+        ndi_input = scipy.io.loadmat(os.path.join(ndi_hengen_path, 'ndiouttmp.mat'))
+    else:
+        # current_chan_dir = datdir + 'grouped_raw_dat_temp_folder/' + folder
+        current_chan_dir = op.join(datdir, folder)
+        print("datdir ", datdir)
+        print("folder ", folder)
+        print("current_chan_dir ", current_chan_dir)
+        print("pwd 4 ", os.getcwd())
+        os.chdir(current_chan_dir)
+        print("pwd 5 ", os.getcwd())
+        print("clust_out_dir ", clust_out_dir)
 
     params_file = 1
 
@@ -1872,9 +1875,25 @@ def bigmamma(thresh,
         ndi_timeseries = ndi_input['d']
         ndi_samplerate = ndi_input['sr']
 
+        channels = geom[0,0]['channels'].tolist()
+        geometry = geom[0,0]['geometry'].tolist()
+        label = geom[0,0]['label'].tolist()
+
+        # print('channels: \n', channels)
+        # print('geometry: \n', geometry)
+        # print('label: \n', label)
+
+        geom = {
+            '0': {'channels': channels, 'geometry': geometry, 'label': label}
+        }
+
+        print('geom: \n', geom)
+
+
+
         # TODO: add geom to extractor
         recording = se.NumpyRecordingExtractor(timeseries=np.transpose(ndi_timeseries), sampling_frequency=ndi_samplerate, geom=geom)
-
+        recording_prb = recording
     else:
         # first load recording with geom (default)
         recording = se.MdaRecordingExtractor(current_chan_dir)
@@ -1894,7 +1913,7 @@ def bigmamma(thresh,
     # gonna load the prb file now
     tic = time.time()
     print('lnosplit ', lnosplit)
-    if lnosplit:
+    if lnosplit and not ndi_input:
         channel_group = int(folder[folder.rfind("_") + 1:])
         print('datdir ', datdir)
         print('folder ', folder)
@@ -1912,21 +1931,22 @@ def bigmamma(thresh,
                                                   verbose=True)
 
     else:
-        channel_group = int(folder[folder.rfind("_") + 1:])
-        offset = 4 * channel_group
-        channel_ids = [x + offset for x in [0, 1, 2, 3]]
-        geometry_base = [[0, 0], [1, 0], [0, 1], [1, 1]]
-        x_offset = 3 * channel_group
-        geometry = [[x + x_offset, y] for [x, y] in geometry_base]
-        labels = [f't_{channel_group}{x}' for x in [0, 1, 2, 3]]
+        pass
+        # channel_group = int(folder[folder.rfind("_") + 1:])
+        # offset = 4 * channel_group
+        # channel_ids = [x + offset for x in [0, 1, 2, 3]]
+        # geometry_base = [[0, 0], [1, 0], [0, 1], [1, 1]]
+        # x_offset = 3 * channel_group
+        # geometry = [[x + x_offset, y] for [x, y] in geometry_base]
+        # labels = [f't_{channel_group}{x}' for x in [0, 1, 2, 3]]
 
-        probe_file = makeProbeFile(channel_group, channel_ids,
-                                   geometry, labels)
+        # probe_file = makeProbeFile(channel_group, channel_ids,
+        #                            geometry, labels)
 
-        prb_file_name = glob.glob('*.prb')[0]
+        # prb_file_name = glob.glob('*.prb')[0]
 
-        recording_prb = recording.load_probe_file(probe_file=prb_file_name,
-                                                  verbose=True)
+        # recording_prb = recording.load_probe_file(probe_file=prb_file_name,
+        #                                           verbose=True)
     toc = time.time()
     print('\nSpikeInterface load probefile took {} seconds'.
           format(toc - tic), flush=True)
@@ -3563,7 +3583,7 @@ if __name__ == '__main__':
         # g_o
         # bigmamma(thresh, folder, datdir,
         sorted_data, ch_group, noflylist, rec_length, amps = \
-            bigmamma(thresh, folder,
+            bigmamma(thresh, 'folder',
                     op.join(TMPDIR_LOC, "grouped_raw_dat_temp_folder"),
                     lfp, spk_sorter, probefile,
                     sorter_config,

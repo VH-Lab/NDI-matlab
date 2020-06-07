@@ -146,7 +146,13 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 					geom_doc = geom_doc{1};
 				end
 
-				g = geom_doc.document_properties.geometry
+				g = geom_doc.document_properties.geometry.x0
+
+				g.channels
+
+				g.geometry = g.geometry'
+
+				g.label
 
 				extraction_p = extraction_doc
 
@@ -393,11 +399,11 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				for channel=1:nchannels
 					channels(channel) = channel;
 					g(channel,1) = 0;
-					g(channel,2) = (channel-1)*1000;
+					g(channel,2) = (channel - 1) * 1000;
 					label{channel} = ['chan_' num2str(channel)];
 				end
 
-				geometry = struct("x0", struct('channels', channels, 'geometry', g, 'label', string(label)))
+				geometry = struct('x0', struct('channels', channels, 'geometry', g, 'label', string(label)))
 
 				geometry_doc = ndi_document('apps/spikesorter_hengen/probe_geometry', 'geometry', geometry) ...
 					+ ndi_app_spikesorter_hengen_obj.newdocument();
