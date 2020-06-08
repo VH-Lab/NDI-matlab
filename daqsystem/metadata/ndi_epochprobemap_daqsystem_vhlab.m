@@ -112,7 +112,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 						error(['Cannot find exclusive match for name/ref in reference.txt file.']);
 					end;
 					ec_type = ref_struct(index).type;
-					if isempty(intersect({ndi_probetype2object.type},ec_type)),
+					if isempty(intersect({ndi.probetype2object.type},ec_type)),
 						% examine vhlab table
 						if strcmpi(ec_type,'singleEC'),
 							ec_type = 'n-trode';

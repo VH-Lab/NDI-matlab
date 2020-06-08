@@ -17,7 +17,7 @@ ndi_globals;
 test_struct = 0;
 
 if nargin<1,
-	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
 end;
 
 disp(['Creating a new session object in directory ' dirname '.']);

@@ -25,7 +25,7 @@ classdef ndi_document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = ndi_document.readblankdefinition(document_type);
-					document_properties.ndi_document.id = ndi_unique_id;
+					document_properties.ndi_document.id = ndi_id.ndi_unique_id();
 					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array
@@ -438,11 +438,11 @@ classdef ndi_document
 				searchString = '$NDIDOCUMENTPATH';
 				s = strfind(jsonfilelocationstring, searchString);
 				if ~isempty(s), % insert the location
-					filename = [ndidocumentpath filesep ...
+					filename = [ndi.path.documentpath filesep ...
 						filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi_filesep, filesep)];
 				else,
 					% first, guess that it is a complete path from $NDIDOCUMENTPATH
-					filename = [ndidocumentpath filesep filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
+					filename = [ndi.path.documentpath filesep filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
 					if ~exist(filename,'file'),
 						% try adding extension
 						filename = [filename '.json'];

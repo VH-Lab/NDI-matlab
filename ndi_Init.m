@@ -25,25 +25,32 @@ ndi_globals;
 
  % paths
 
-ndipath = myndipath;
-ndicommonpath = [ndipath filesep 'ndi_common'];
-ndidocumentpath = [ndicommonpath filesep 'database_documents'];
-ndidocumentschemapath = [ndicommonpath filesep 'database_documents'];
-ndiexampleexperpath = [ndicommonpath filesep 'example_sessions'];
-nditemppath = [tempdir filesep 'nditemp'];
-nditestpath = [tempdir filesep 'nditestcode'];
-ndifilecachepath = [userpath filesep 'Documents' filesep 'NDI-filecache'];
+ndi.path = [];
 
-if ~exist(nditemppath,'dir'),
-	mkdir(nditemppath);
+ndi.path.path = myndipath;
+ndi.path.commonpath = [ndi.path.path filesep 'ndi_common'];
+ndi.path.documentpath = [ndi.path.commonpath filesep 'database_documents'];
+ndi.path.documentschemapath = [ndi.path.commonpath filesep 'database_documents'];
+ndi.path.exampleexperpath = [ndi.path.commonpath filesep 'example_sessions'];
+ndi.path.temppath = [tempdir filesep 'nditemp'];
+ndi.path.testpath = [tempdir filesep 'nditestcode'];
+ndi.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' filesep 'NDI-filecache'];
+ndi.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
+
+if ~exist(ndi.path.temppath,'dir'),
+	mkdir(ndi.path.temppath);
 end;
 
-if ~exist(nditestpath,'dir'),
-	mkdir(nditestpath);
+if ~exist(ndi.path.testpath,'dir'),
+	mkdir(ndi.path.testpath);
 end;
 
-if ~exist(ndifilecachepath,'dir'),
-	mkdir(ndifilecachepath);
+if ~exist(ndi.path.filecachepath,'dir'),
+	mkdir(ndi.path.filecachepath);
+end;
+
+if ~exist(ndi.path.preferences,'dir'),
+	mkdir(ndi.path.preferences);
 end;
 
  % initialization
@@ -51,4 +58,19 @@ end;
 ndi_probetype2objectinit;
 ndi_databasehierarchyinit;
 
-ndi_debug.veryverbose = 1;
+ndi.debug.veryverbose = 1;
+
+ % test write access to preferences, testpath, filecache, temppath
+paths = {ndi.path.testpath, ndi.path.temppath, ndi.path.filecachepath, ndi.path.preferences};
+pathnames = {'NDI test path', 'NDI temporary path', 'NDI filecache path', 'NDI preferences path'};
+
+for i=1:numel(paths),
+	fname = [paths{i} filesep 'testfile_' ndi_id.ndi_unique_id() '.txt'];
+	fid = fopen(fname,'wt');
+	if fid<0,
+		error(['We do not have write access to the ' pathnames{i} ' at '  paths{i} '.']);
+	end;
+	fclose(fid);
+	delete(fname);
+end;
+

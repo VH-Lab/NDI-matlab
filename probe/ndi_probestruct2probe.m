@@ -17,9 +17,9 @@ function ndi_probe_obj = ndi_probestruct2probe(probestruct, exp)
 ndi_globals;
 
 init_probetypes = 0;
-if ~exist('ndi_probetype2object','var'),
+if ~isfield(ndi,'probetype2object'),
 	init_probetypes = 1;
-elseif isempty(ndi_probetype2object),
+elseif isempty(ndi.probetype2object),
 	init_probetypes = 1;
 end
 
@@ -30,9 +30,9 @@ end
 ndi_probe_obj = {};
 
 for i=1:numel(probestruct),
-	ind = find(strcmpi(probestruct(i).type,{ndi_probetype2object.type}));
+	ind = find(strcmpi(probestruct(i).type,{ndi.probetype2object.type}));
 	if isempty(ind),
-		warning(['Could not find exact match for ' probestruct(i).type ', using general NDI_PROBE.']);
+		error(['Could not find exact match for ' probestruct(i).type ', bailing out.']);
 	end
-	eval(['ndi_probe_obj{i} = ' ndi_probetype2object(ind).classname '(exp, probestruct(i).name, probestruct(i).reference, probestruct(i).type, probestruct(i).subject_id);']);
+	eval(['ndi_probe_obj{i} = ' ndi.probetype2object(ind).classname '(exp, probestruct(i).name, probestruct(i).reference, probestruct(i).type, probestruct(i).subject_id);']);
 end

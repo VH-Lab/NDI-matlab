@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/ndi_document_element_epoch.json",
 		"validation":						"$NDISCHEMAPATH\/ndi_document_element_epoch_schema.json",
 		"class_name":						"ndi_document_element_epoch",
+		"property_list_name":					"element_epoch",
 		"class_version":					1,
 		"superclasses": [
 			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },

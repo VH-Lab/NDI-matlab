@@ -17,7 +17,7 @@ classdef ndi_id
 				% TODO: CHECK check it is a proper id
 				obj.identifier = id_value;
 			else
-				obj.identifier = ndi_unique_id();
+				obj.identifier = ndi_id.ndi_unique_id();
 			end
 		end
 
@@ -30,6 +30,27 @@ classdef ndi_id
 			%
 				identifier = ndi_id_obj.identifier;
 		end; % id()
-	end
+	end; % methods
+
+	methods (Static)
+		function id = ndi_unique_id
+			% NDI_UNIQUE_ID - Generate a unique ID number for NDI projects
+			%
+			% ID = NDI_UNIQUE_ID
+			%
+			% Generates a unique ID character array based on the current time and a random
+			% number. It is a hexidecimal representation of the Matlab function NOW and
+			% RAND.
+			%
+			% ID = [NUM2HEX(NOW) '_' NUM2HEX(RAND)]
+			%
+			% See also: NUM2HEX, NOW, RAND
+			%
+
+				id = [num2hex(now) '_' num2hex(rand)];
+
+		end; % ndi_unique_id()
+
+	end % methods(static)
 end
 
