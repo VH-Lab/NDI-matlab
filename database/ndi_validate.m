@@ -18,7 +18,7 @@ classdef ndi_validate
     
     methods
         function ndi_validate_obj = ndi_validate(ndi_document_obj)
-            schema = ""; %TODO: extract the file path of the schema json from the ndi_document properties
+            schema = ndi_document_obj.document_properties.document_class.validation;
             if isa(ndi_document, 'ndi_document') 
                 add_javapath();
                 % ndi_document has a property called 'document_properties' that has all of the 
