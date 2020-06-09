@@ -69,7 +69,7 @@ classdef ndi_validate
             % validate all non-super class properties
             ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
             ndi_validate_obj.reports.this = ndi_validate_obj.validators.this.getReport();
-            ndi_validate_obj.errormsg_this = strcat(doc_class.property_list_name, ":\n", readHashMap(ndi_validate_obj.reports.this));
+            ndi_validate_obj.errormsg_this = strcat(doc_class.property_list_name, ":\n", readHashMap(ndi_validate_obj.reports.this), "\n");
             if ndi_validate_obj.reports.size() > 0
                 ndi_validate_obj.is_valid = false;
             end
@@ -90,9 +90,11 @@ classdef ndi_validate
                 schema = extract_schema(superclass_name);
                 superclassname_without_extension = extractnamefromdefinition(superclass_name);
                 properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
-                ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, com.ndi.Validator(jsonencode(properties), schema, true)); 
-                ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  ndi_validate_obj.validators.super(i).getReport() ); 
-                ndi_validate_obj.errormsg_super = strcat(ndi_validate_obj.errormsg_super, ":\n", readHashMap(ndi_validate_obj.reports.super(i)), "\n");
+                validator = com.ndi.Validator(jsonencode(properties), schema, true);
+                report = validator.getReport();
+                ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, validator); 
+                ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  report ); 
+                ndi_validate_obj.errormsg_super = strcat(ndi_validate_obj.errormsg_super, ":\n", readHashMap(report), "\n");
                 if ndi_validate_obj.reports.super(i).size() > 0
                     ndi_validate_obj.is_valid = false;
                 end
