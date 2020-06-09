@@ -70,7 +70,7 @@ classdef ndi_validate
             ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
             ndi_validate_obj.reports.this = ndi_validate_obj.validators.this.getReport();
             ndi_validate_obj.errormsg_this = strcat(doc_class.property_list_name, ":\n", readHashMap(ndi_validate_obj.reports.this), "\n");
-            if ndi_validate_obj.reports.size() > 0
+            if ndi_validate_obj.reports.this.size() > 0
                 ndi_validate_obj.is_valid = false;
             end
                 
@@ -95,7 +95,7 @@ classdef ndi_validate
                 ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, validator); 
                 ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  report ); 
                 ndi_validate_obj.errormsg_super = strcat(ndi_validate_obj.errormsg_super, ":\n", readHashMap(report), "\n");
-                if ndi_validate_obj.reports.super(i).size() > 0
+                if validator.size() > 0
                     ndi_validate_obj.is_valid = false;
                 end
             end
