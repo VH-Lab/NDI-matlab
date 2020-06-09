@@ -139,14 +139,6 @@ classdef ndi_validate
             import com.ndi.Validator;
         end
         
-        function detailed_msg = throwError(ndi_validate_obj)
-            detailed_msg = ndi_validate_obj.report;
-            if detail_msg.size() ~= 0
-                % TODO: replace this with more detailed error message
-                error("Validation fail. Run detail_msg to see detailed error message");
-            end
-        end
-        
         function schema_json = extract_schema(ndi_document_obj)
             %   EXTRACT_SCHEMA - Extract the content of the ndi_document's
             %                    corresponding schema
