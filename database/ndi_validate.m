@@ -12,12 +12,20 @@ classdef ndi_validate
     % through the database to ensure this actually exists
     
     properties(SetAccess = protected, GetAccess = public)
-        validators;      % Java validator object
-        reports;         % report of the error messages
+        validators;          % Java validator object
+        reports;             % report of the error messages
+        errormsg_this;       % display any type mismatch of the current object's field
+        errormsg_super;      % display any type mismatch of the super class object's field
+        errormsg_depends_on; % display any depends_on objects that cannot be found in the database
+        is_valid             % is the ndi_document valid or not
     end
     
     methods
         function ndi_validate_obj = ndi_validate(ndi_document_obj,ndi_session_obj)
+            if nargin == 0
+                error("You must pass in an instance of ndi_document_obj and an instance of ndi_session_obj as arguments");
+            end
+            
             % Initialization
             ndi_Init;
             ndi_globals;
@@ -25,6 +33,10 @@ classdef ndi_validate
             has_dependencies = 0;
             ndi_validate_obj.validators = struct();
             ndi_validate_obj.reports = struct();
+            ndi_validate_obj.errormsg_this = '';
+            ndi_validate_obj.errormsg_super = '';
+            ndi_validate_obj.errormsg_depends_on = "We cannot find the following dependencies:\n";
+            ndi_validate_obj.is_valid = true;
             
             % Allow users to pass in only one argument if ndi_document_obj
             % does not have depends-on fields (since we don't really need
@@ -57,36 +69,65 @@ classdef ndi_validate
             % validate all non-super class properties
             ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
             ndi_validate_obj.reports.this = ndi_validate_obj.validators.this.getReport();
+            ndi_validate_obj.errormsg_this = strcat(doc_class.property_list_name, ":\n", readHashMap(ndi_validate_obj.reports.this));
+            if ndi_validate_obj.reports.size() > 0
+                ndi_validate_obj.is_valid = false;
+            end
                 
                 
             % validate all of the document's superclass if it exists 
-            for i=1:numel(doc_class.superclasses)
-                    % Step 1: read in the definition of the superclass at
-                    %   doc_class.superclasses(i).definition
-                    % Step 2: find the validator json in the superclass, call it validator_superclass
-                    % Step 3: convert the portion of the document that corresponds to this superclass to JSON
-                    superclass_name = doc_class.superclasses(i).class_name;
-                    mystructure = getfield(ndi_document_obj.document_properties, superclass_name);
-                    mysubdoc_json = struct([superclass_name],mystucture);
-                    if isfield(ndi_document_obj.document_properties,'depends_on'),
-                        mydependson = getfield(ndi_document_obj.document_properties,'depends_on');
-                        mysubdoc_json = setfield(mysubdoc_json, mydependson);
-                    end
-                    myclassjson = jsonencode(mysubdoc_json);
-                    schemaJSON = fileread( % schema is); % some work to do here
-                    thispart_validation = com.ndi.Validator(myclassjson, schemaJSON, true);  
-                    report = thispart_validation.getReport();
-                    throwError(thispart_validation) % ???
+            numofsuperclasses = numel(doc_class.superclasses);
+            if numofsuperclasses > 0
+                ndi_validate_obj.validators.super = zeros(1, numofsuperclasses);
+                ndi_validate_obj.reports.super = zeros(1, numofsuperclasses);
+            end
+            for i=1:numel(numofsuperclasses)
+                % Step 1: read in the definition of the superclass at
+                %   doc_class.superclasses(i).definition
+                % Step 2: find the validator json in the superclass, call it validator_superclass
+                % Step 3: convert the portion of the document that corresponds to this superclass to JSON
+                superclass_name = doc_class.superclasses(i).definition;
+                schema = extract_schema(superclass_name);
+                superclassname_without_extension = extractnamefromdefinition(superclass_name);
+                properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
+                ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, com.ndi.Validator(jsonencode(properties), schema, true)); 
+                ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  ndi_validate_obj.validators.super(i).superclassname_without_extension.getReport() ); 
+                ndi_validate_obj.errormsg_super = strcat(ndi_validate_obj.errormsg_super, ":\n", readHashMap(ndi_validate_obj.reports.super(i)), "\n");
+                if ndi_validate_obj.reports.super(i).size() > 0
+                    ndi_validate_obj.is_valid = false;
+                end
             end
             
-            % check if there is depends-on field, if it exsists 
+            % check if there is depends-on field, if it exsists we need to
+            % search through the ndi_session database to check 
             if has_dependencies == 1
+                numofdependencies = numel(doc.document_properties.depends_on');
+                ndi_validate_obj.reports.dependencies = zeros(1,numofdependencies);
+                for i = 1:numofdependencies
+                    searchquery = {'ndi_document.session_id', doc.document_properties.depends_on(i).value};
+                    if numel(ndi_session_obj.database_search(searchquery)) < 1
+                        ndi_validate_obj.reports.dependencies(i) = struct(doc.document_properties.depends_on(i).name, 'fail');
+                        ndi_validate_obj.errormsg_depends_on = strcat(ndi_validate_obj.errormsg_depends_on, doc.document_properties.depends_on(i).name, "\n");
+                        ndi_validate_obj.is_valid = false;
+                    else
+                        ndi_validate_obj.reports.dependencies(i) = struct(doc.document_properties.depends_on(i).name, 'success');
+                    end
+                end
             end
                 
             % somehow report the overall 
-            ndi_validate_obj.validator = com.ndi.Validator(ndi_document,schema, true);
-            ndi_validate_obj.report = ndi_validate_obj.validator.getReport();
-            throwError(ndi_validate_obj)
+            if ~is_valid
+                msg = strcat('Validation has failed. Here is a detailed report of the source of failure: \n'...
+                    , "------------------------------------------------------------------------------"...
+                    , ndi_validate_obj.errormsg_this...
+                    , "------------------------------------------------------------------------------"... 
+                    , ndi_validate_obj.errormsg_super...
+                    , "------------------------------------------------------------------------------"...
+                    , ndi_validate_obj.errormsg_depends_on...
+                    , "------------------------------------------------------------------------------"...
+                    , "To get this detailed report as a struct. Please access its instance field reports");
+                error(msg);
+            end
         end
         
     end
@@ -112,9 +153,51 @@ classdef ndi_validate
             %
             %   SCHEMA_JSON = EXTRACT_SCHEMA(NDI_DOCUMENT_OBJ)
             %
-            schema_path = ndi_document_obj.document_properties.document_class.validation;
-            schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.path.documentschemapath);
-            schema_json = fileread(schema_path);
+            schema_json = "";
+            if isa(ndi_document_obj, 'ndi_document')
+                schema_path = ndi_document_obj.document_properties.document_class.validation;
+                schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.path.documentschemapath);
+                try
+                    schema_json = fileread(schema_path);
+                catch
+                    error("the schema path does not exsist");
+                end
+            end
+            if isa(ndi_document_obj, 'char') || isa(ndi_document_obj, 'string')
+                if  numel( strfind(ndi_document_obj, '$NDIDOCUMENTPATH') ) ~= 0
+                    schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi.path.documentschemapath);
+                elseif numel( strfind(ndi_document_obj, '$NDISCHEMAPATH') ) ~= 0
+                    schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.path.documentsschemapath);
+                end
+                try
+                    schema_json = fileread(schema_path);
+                catch
+                    error("the schema path does not exsist");
+                end
+            end
+        end
+        
+        function name = extractnamefromdefinition(str)
+            file_name = split(str, filesep);
+            name = split(file_name(numel(file_name)), ".");
+            name = name(1);
+        end
+        
+        function str = readHashMap(java_hashmap)
+            if (~isa(java_hashmap, 'java.util.HashMap'))
+                error("Must pass in an instance of java.util.HashMap");
+            end
+            str = '[';
+            keys = java_hashmap.keySet().toArray();
+            len = size(java_hashmap.keySet());
+            if len == 0
+                str = '[]';
+                return;
+            end
+            for i = 1:len
+                str = strcat(str, keys(i), " : ", java_hashmap.get(keys(i)), "; ");
+            end
+            str = strcat(extractBetween(str, 1, strlength(str)-2), ']');
         end
         
     end
