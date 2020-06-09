@@ -91,7 +91,7 @@ classdef ndi_validate
                 superclassname_without_extension = extractnamefromdefinition(superclass_name);
                 properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
                 ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, com.ndi.Validator(jsonencode(properties), schema, true)); 
-                ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  ndi_validate_obj.validators.super(i).superclassname_without_extension.getReport() ); 
+                ndi_validate_obj.reports.super(i) = struct(superclassname_without_extension,  ndi_validate_obj.validators.super(i).getReport() ); 
                 ndi_validate_obj.errormsg_super = strcat(ndi_validate_obj.errormsg_super, ":\n", readHashMap(ndi_validate_obj.reports.super(i)), "\n");
                 if ndi_validate_obj.reports.super(i).size() > 0
                     ndi_validate_obj.is_valid = false;
