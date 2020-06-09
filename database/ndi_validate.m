@@ -64,7 +64,9 @@ classdef ndi_validate
             % ndi_document_obj.document_properties.ndi_document with fields 'id', 'session_id', etc.
             schema = extrct_schema(ndi_document_obj);
             doc_class = ndi_document_obj.document_properties.document_class;
+            %property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
             property_list = struct( eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name) ) );
+            property_list = eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name));
             
             % validate all non-super class properties
             ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
@@ -90,6 +92,10 @@ classdef ndi_validate
                 schema = extract_schema(superclass_name);
                 superclassname_without_extension = extractnamefromdefinition(superclass_name);
                 properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
+                %% TODO: pass depends_on here 
+                if has_dependencies, 
+                  properties.depends_on = ndi_document_obj.document_properties.depends_on;
+                end;
                 validator = com.ndi.Validator(jsonencode(properties), schema, true);
                 report = validator.getReport();
                 ndi_validate_obj.validators.super(i) = struct(superclassname_without_extension, validator); 
@@ -105,6 +111,8 @@ classdef ndi_validate
             if has_dependencies == 1
                 numofdependencies = numel(doc.document_properties.depends_on');
                 ndi_validate_obj.reports.dependencies = zeros(1,numofdependencies);
+                % NOTE: this does not verify that 'depends-on' documents have the right class membership
+                % might want to add this in the future
                 for i = 1:numofdependencies
                     searchquery = {'ndi_document.session_id', doc.document_properties.depends_on(i).value};
                     if numel(ndi_session_obj.database_search(searchquery)) < 1
