@@ -87,16 +87,36 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			% UPDATE NEEDED
 		end
 
-		function filename = filenamefromepochfiles(ndi_daqreader_mfdaq_intan_obj, filename)
+		function [filename, parentdir, isdirectory] = filenamefromepochfiles(ndi_daqreader_mfdaq_intan_obj, filename_array)
+			% FILENAMEFROMEPOCHFILES - return the file name that corresponds to the RHD file, or directory in case of directory
+			% 
+			% [FILENAME, PARENTDIR, ISDIRECTORY] = FILENAMEFROMEPOCHFILES(NDI_DAQREADER_MFDAQ_INTAN_OBJ, FILENAME_ARRAY)
+			%
+			% Examines the list of filenames in FILENAME_ARRAY (cell array of full path file strings) and determines which
+			% one is an RHD data file. If the 1-file-per-channel mode is used, then PARENTDIR is the name of the directory
+			% that holds the data files and ISDIRECTORY is 1.
+
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
-			[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
+			[tf, matchstring, substring] = strcmp_substitution(s1,filename_array,'UseSubstituteString',0);
+			parentdir = '';
+			isdirectory = 0;
+
 			index = find(tf);
 			if numel(index)> 1,
 				error(['Need only 1 .rhd file per epoch.']);
 			elseif numel(index)==0,
 				error(['Need 1 .rhd file per epoch.']);
 			else,
-				filename = filename{index}; 
+				filename = filename_array{index}; 
+				[parentdir, fname, ext] = fileparts(filename);
+				if strcmp(fname,'info'),
+					s2 = ['time\.dat\>']; % equivalent of *.ext on the command line
+					tf2 = strcmp_substitution(s2,filename_array,'UseSubstituteString',0);
+					if any(tf),
+						% we will call it a directory
+						isdirectory = 1;
+					end;
+				end;
 			end
 		end % filenamefromepoch
 
@@ -113,7 +133,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+			[filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
 
 			uniquechannel = unique(channeltype);
 			if numel(uniquechannel)~=1,
@@ -131,7 +151,11 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 
 			t0 = (s0-1)/sr;
 			t1 = (s1-1)/sr;
-			[data] = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
+			if ~isdirectory,
+				data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
+			else,
+				data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
+			end;
 
 		end % readchannels_epochsamples
 
@@ -169,13 +193,20 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			%
 			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
 			%
-				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
-
+	                        [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 				header = read_Intan_RHD2000_header(filename);
+				if ~isdirectory,
+					[blockinfo, bytes_per_block, bytes_present, num_data_blocks] = Intan_RHD2000_blockinfo(filename, header);
 
-				[blockinfo, bytes_per_block, bytes_present, num_data_blocks] = Intan_RHD2000_blockinfo(filename, header);
+					total_samples = 60 * num_data_blocks;
+				else,
+					finfo = dir([parentdir filesep 'time.dat']);
+					if isempty(finfo),
+						error(['File time.dat necessary in directory ' parentdir ' but it was not found.']);
+					end;
+					total_samples = finfo.bytes / 4;
+				end;
 
-				total_samples = 60 * num_data_blocks;
 				total_time = total_samples / header.frequency_parameters.amplifier_sample_rate; % in seconds
 
 				t0 = 0;
