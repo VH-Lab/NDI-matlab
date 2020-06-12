@@ -58,10 +58,11 @@ end;
 
 disp(['About to install at directory ' directory '...']);
 
-
 if nargin<2,
 	dependencies = 1;
 end;
+
+dependency_input = dependencies;
 
 if isnumeric(dependencies),
 	switch (dependencies),
@@ -76,9 +77,41 @@ t = urlread(dependencies);
 j = jsondecode(t);
 dependencies = j.dependency;
 
-%if ~exist(directory,'dir'),
-%	mkdir(directory);
-%end;
+ % are we updating at least NDI?
+
+w = which('ndi_Init');
+if isempty(w),
+	updating = 0;
+else,
+	updating = 1;
+end;
+
+if updating,
+	disp(['We are updating an existing installation on the path...']);
+	disp(['  We must temporarily reset the Matlab path.']);
+	disp(['  startup.m will be called during the installation, which should restore your path to your desired path.']);
+	currentpath = path(); % for now, don't do anything with this
+	currpwd = pwd();
+
+	% copy 'ndi_install.m' file to userpath directory
+	thisfile = which('ndi_globals'); % ndi_globals is in same directory as ndi_install; ndi_install can have multiple copies
+	[thisparent,thisfilename,thisextension] = fileparts(thisfile);
+	copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
+
+	cd(userpath);
+	restoredefaultpath();
+	eval(['ndi_install(directory,dependency_input);']);
+
+	% now clean up
+	try,
+		delete([userpath filesep 'ndi_install.m']);
+	end;
+	try,
+		cd(currpwd);
+	end;
+	
+	return;
+end;
 
 for i=1:numel(dependencies),
 	libparts = split(dependencies{i},'/');
