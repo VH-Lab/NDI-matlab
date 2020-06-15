@@ -41,8 +41,14 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 					timeref = ndi_timereference(ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
 				end;
 				
-				[epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
-				[epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+				[epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
+					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+				[epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
+					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+
+				if isempty(epoch_timeref),
+					error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
+				end;
 
 				epoch = epoch_timeref.epoch;
 

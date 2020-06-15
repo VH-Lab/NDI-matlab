@@ -43,6 +43,11 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					[epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
 							ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'));
 
+					if isempty(epoch_timeref),
+						error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
+					end;
+
+
 					% now we know the epoch to read, finally!
 
 					element_doc = ndi_element_timeseries_obj.load_element_doc();

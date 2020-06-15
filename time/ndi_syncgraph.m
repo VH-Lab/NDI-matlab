@@ -427,8 +427,8 @@ classdef ndi_syncgraph < ndi_id
 
 				sourcenodeindex = ndi_findepochnode(...
 					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
-						'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
-						'epoch_clock', timeref_in.clocktype),...
+					'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
+					'epoch_clock', timeref_in.clocktype),...
 					ginfo.nodes);
 
 				% should be a single item now
@@ -436,11 +436,24 @@ classdef ndi_syncgraph < ndi_id
 					msg = ['expected start epochnode to be a single node, but it is not.'];
 					return;
 				elseif numel(sourcenodeindex)==0,
-					% we do not have the node; add it and try again.
+					% we do not have the node; add underlying epochs and try one more time
 					ndi_syncgraph_obj.addunderlyingepochs(timeref_in.referent,ginfo);
-					[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, ...
-						referent_out, clocktype_out);
-					return;
+					ginfo = graphinfo(ndi_syncgraph_obj);
+
+					sourcenodeindex = ndi_findepochnode(...
+						struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
+						'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
+						'epoch_clock', timeref_in.clocktype),...
+						ginfo.nodes);
+
+					if numel(sourcenodeindex)==0,
+						msg = ['Could not find any such source node.'];
+						return;
+					elseif numel(sourcenodeindex)>1,
+						msg = ['expected start epochnode to be a single node, but it is not.'];
+						return;
+					end;
+					% if we made it here, we are in good shape with a sourcenodeindex that is real
 				end
 
 				if isempty(sourcenodeindex), return; end; % if we did not find it, we failed
