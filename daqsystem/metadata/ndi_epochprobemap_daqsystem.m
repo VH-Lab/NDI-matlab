@@ -111,10 +111,10 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		%
 			fn = {'name','reference','type','devicestring','subjectstring'};
 			mystruct = emptystruct(fn{:});
-			for i=1:length(obj),
+			for i=1:length(ndi_epochprobemap_daqsystem_obj),
 				mynewstruct = struct;
 				for j=1:length(fn),
-					mynewstruct = setfield(mynewstruct,fn{j},getfield(obj(i),fn{j}));
+					mynewstruct = setfield(mynewstruct,fn{j},getfield(ndi_epochprobemap_daqsystem_obj(i),fn{j}));
 				end;
 				mystruct(i) = mynewstruct;
 			end;
