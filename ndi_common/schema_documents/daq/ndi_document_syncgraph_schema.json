@@ -1,0 +1,11 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/daq\/ndi_document_syncgraph_schema.json",
+	"title": "ndi_document_syncgraph",
+	"type": "object",
+	"properties": {
+		"ndi_syncgraph_class": {
+			"type": "string"
+		}
+	}
+}

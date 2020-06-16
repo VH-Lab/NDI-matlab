@@ -1,0 +1,11 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/daq\/ndi_document_daqsystem_schema.json",
+	"title": "ndi_document_daqsystem",
+	"type": "object",
+	"properties": {
+		"ndi_daqsystem_class": {
+			"type": "string"
+		}
+	}
+}
