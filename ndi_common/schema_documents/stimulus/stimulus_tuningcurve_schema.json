@@ -13,7 +13,7 @@
 		"independent_variable_value": {
 			"type": "array",
 			"items" : {
-				"type" : "integer"
+				"type" : "string"
 			}
 		},
 		"stimid": {
@@ -114,6 +114,33 @@
 		},		
 		"response_units" : {
 			"type" : "string"
-		}																	
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}	
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_response_scalar_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}							
+			]
+		}																				
 	}
 }

@@ -9,6 +9,22 @@
 		},
 		"t0_t1": {
 			"type": "string"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
 		}
 	}
 }

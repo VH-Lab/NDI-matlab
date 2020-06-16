@@ -12,6 +12,22 @@
 		},
 		"control_stimulus_id_method": {
 			"type": "object"
-		}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_presentation_id"
+						},
+						"value" : {
+							"type" : "array"
+						}
+					}
+				}				
+			]
+		}		
 	}
 }

@@ -29,6 +29,22 @@
 					"type" : "array",
 				}		
 			}
-		}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_response_scalar_parameters_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
 	}
 }

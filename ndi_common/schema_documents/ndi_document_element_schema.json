@@ -21,6 +21,33 @@
 		},
 		"direct": {
 			"type" : "integer"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "underlying_element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "subject_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
 		}
 	}
 }
