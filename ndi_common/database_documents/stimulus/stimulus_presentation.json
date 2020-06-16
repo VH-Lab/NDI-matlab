@@ -12,7 +12,7 @@
 	},
 	"depends_on": [
 		{	"name": "stimulus_element_id",				
-			"value": [] 
+			"value": "" 
 		}
 	],
 	"stimulus_presentation": {
