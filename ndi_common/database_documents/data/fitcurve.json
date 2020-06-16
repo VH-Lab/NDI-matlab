@@ -22,7 +22,7 @@
 		"fit_dependent_variable_names":					"y",
 		"fit_sse":							0,
 		"fit_constraints": [ {
-				"fit_constraint_name":				0,
+				"fit_constraint_name":				"",
 				"fit_constraint_value":				0
 			}
 		],
