@@ -18,6 +18,22 @@
 		},
 		"date": {
 			"type": "date-time"
-		}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
 	}
 }

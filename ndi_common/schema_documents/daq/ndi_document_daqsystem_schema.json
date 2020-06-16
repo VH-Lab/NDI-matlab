@@ -6,6 +6,33 @@
 	"properties": {
 		"ndi_daqsystem_class": {
 			"type": "string"
-		}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "filenavigator_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "daqreader_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}									
+			]
+		}		
 	}
 }

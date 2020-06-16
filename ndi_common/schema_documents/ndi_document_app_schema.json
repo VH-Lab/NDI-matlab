@@ -23,7 +23,7 @@
 			"type" : "string"
 		},
 		"interpreter_version" : {
-			"type" : "numer"
+			"type" : "number"
 		}
 	}
 }
