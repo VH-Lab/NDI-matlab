@@ -1,0 +1,26 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/data\/ndi_document_binaryseries_schema.json",
+	"title": "ndi_document_data_binaryseries",
+	"type": "object",
+	"properties": {
+		"time_size": {
+			"type": "number"
+		},
+		"time_type": {
+			"type": "string"
+		},
+		"data_size" : {
+			"type" : "number"
+		},
+		"data_type" : {
+			"type" : "string"
+		},
+		"data_dim" : {
+			"type" : "number"
+		},
+		"samples_regular_intervals" : {
+			"type" : "number"
+		}
+	}
+}

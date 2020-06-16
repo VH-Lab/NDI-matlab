@@ -1,0 +1,57 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/data\/fitcurve.json",
+	"title": "ndi_document_data_fitcurve",
+	"type": "object",
+	"properties": {
+		"fit_name": {
+			"type": ["number", "string"]
+		},
+		"fit_equation": {
+			"type": "string"
+		},
+		"data_size" : {
+			"type" : "number"
+		},
+		"fit_parameters" : {
+			"type" : "array",
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"fit_parameter_names" : {
+			"type" : "string"
+		},
+		"fit_independent_variable_names" : {
+			"type" : "string"
+		},
+		"fit_dependent_variable_names" : {
+			"type" : "string"
+		},	
+		"fit_sse" : {
+			"type" : "number"
+		},
+		"fit_constraints" : {
+			"type" : "array",
+			"items" : {
+				"type" : "object",
+				"properties" : {
+					"fit_constraint_name" :{
+						"type" : ["number", "string"]
+					},
+					"fit_constraint_value" : {
+						"type" : "number"
+					}
+				}
+			}
+		},
+		"fit_data" : {
+			"type" : "object",
+			"properties" : {
+				"input_data_field" : "string",
+				"output_data_field" : "string",
+				"output_number_examples" : "number"
+			}
+		}
+	}
+}
