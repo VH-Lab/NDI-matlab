@@ -18,6 +18,7 @@ classdef ndi_validate
         errormsg_super;      % display any type mismatch of the super class object's field
         errormsg_depends_on; % display any depends_on objects that cannot be found in the database
         is_valid             % is the ndi_document valid or not
+        errormsg;
     end
     
     methods
@@ -36,6 +37,7 @@ classdef ndi_validate
             ndi_validate_obj.errormsg_this = '';
             ndi_validate_obj.errormsg_super = '';
             ndi_validate_obj.errormsg_depends_on = "We cannot find the following dependencies:\n";
+            ndi_validate_obj.errormsg = '';
             ndi_validate_obj.is_valid = true;
             
             % Allow users to pass in only one argument if ndi_document_obj
@@ -138,7 +140,15 @@ classdef ndi_validate
                     , ndi_validate_obj.errormsg_depends_on...
                     , "------------------------------------------------------------------------------"...
                     , "To get this detailed report as a struct. Please access its instance field reports");
-                error(msg);
+                ndi_validate_obj.errormsg = msg;
+            else
+                ndi_validate_obj.errormsg = 'This ndi_document contains no type errors'
+            end
+        end
+
+        function throw_error(ndi_validate_obj)
+            if ~(ndi_validate_obj.is_valid)
+                error(ndi_validate_obj.errormsg) 
             end
         end
         
