@@ -1,0 +1,26 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_element_schema.json",
+	"title": "ndi_document_element",
+	"type": "object",
+	"properties": {
+		"ndi_element_class": {
+			"type": "string"
+		},
+		"name": {
+			"type": "string"
+		},
+		"lab": {
+			"type": "string"
+		},
+		"reference": {
+			"type": "string"
+		},
+		"type": {
+			"type": "string"
+		},
+		"direct": {
+			"type" : "integer"
+		}
+	}
+}

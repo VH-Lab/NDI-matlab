@@ -1,0 +1,11 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_epochid_schema.json",
+	"title": "ndi_document_epochid",
+	"type": "object",
+	"properties": {
+		"epochid": {
+			"type": "string"
+		}
+	}
+}

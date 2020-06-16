@@ -6,11 +6,11 @@
 	"properties": {
 		"session_id": {
 			"description": "the unique identifier of the ndi_session this document is associated with",
-			"type": "number"
+			"type": "string"
 		},
 		"id": {
 			"description": "the unique identifier of this ndi_document",
-			"type": "number"
+			"type": "string"
 		},
 		"name": {
 			"description": "the name of the ndi_document",
@@ -26,7 +26,7 @@
 		},
 		"database_version": {
 			"description": "the version of the json database",
-			"type": "integer"
+			"type": "number"
 		}
 	}
 }
