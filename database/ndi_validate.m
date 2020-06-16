@@ -6,7 +6,7 @@ classdef ndi_validate
     % for Java, based on org.json API. It implements the DRAFT 7 version
     % of the JSON Schema: https://json-schema.org/
 
-    % Todo: ndi_validates takes an ndi_document and the database as input
+    % ndi_validates takes an ndi_document and the database as input
     % need to check that all the input type match with the expected type
     % correctly. If there is a depends-on fields, we also need to search
     % through the database to ensure this actually exists
