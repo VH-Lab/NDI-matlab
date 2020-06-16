@@ -65,8 +65,10 @@ classdef ndi_validate
             schema = extrct_schema(ndi_document_obj);
             doc_class = ndi_document_obj.document_properties.document_class;
             %property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
-            property_list = struct( eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name) ) );
             property_list = eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name));
+            if has_dependencies == 1 
+                property_list.depends_on = ndi_document_obj.document_properties.depends_on;
+            end;
             
             % validate all non-super class properties
             ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
@@ -93,7 +95,7 @@ classdef ndi_validate
                 superclassname_without_extension = extractnamefromdefinition(superclass_name);
                 properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
                 %% TODO: pass depends_on here 
-                if has_dependencies, 
+                if has_dependencies == 1, 
                   properties.depends_on = ndi_document_obj.document_properties.depends_on;
                 end;
                 validator = com.ndi.Validator(jsonencode(properties), schema, true);
