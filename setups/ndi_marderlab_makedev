@@ -24,7 +24,7 @@ function exp = ndi_marderlab_makedev(exp, devname)
 % See also: NDI_FILENAVIGATOR_EPOCHDIR
 
 if nargin == 0,
-	exp = {'marder_pyloric_ced'};
+	exp = {'marder_ced'};
 	return;
 end;
 
@@ -41,9 +41,9 @@ readerobjectclass = 'ndi_daqreader_mfdaq';
 epochprobemapclass = 'ndi_epochprobemap_daqsystem';
 
 switch devname,
-	case 'marder_pyloric_ced',
-		fileparameters{end+1} = 'Spike 2 files/Pyloric Extracted/.*\.smr\>';
-		fileparameters{end+1} = 'Spike 2 files/Pyloric Extracted/.*\epochprobemap.txt\>'; 
+	case 'marder_ced',
+		fileparameters{end+1} = '#\.smr\>';
+		fileparameters{end+1} = '#\.epochprobemap.txt\>'; 
 		readerobjectclass = [readerobjectclass '_ced'];
 		epochprobemapfileparameters = {'epochprobemap.txt'};
 	otherwise,
