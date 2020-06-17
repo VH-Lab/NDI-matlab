@@ -41,9 +41,9 @@ readerobjectclass = 'ndi_daqreader_mfdaq';
 epochprobemapclass = 'ndi_epochprobemap_daqsystem';
 
 switch devname,
-	case 'narendra_intan',
-		fileparameters{end+1} = '.*\.smr\>';
-		fileparameters{end+1} = '.*\epochprobemap.txt\>'; 
+	case 'marder_pyloric_ced',
+		fileparameters{end+1} = 'Spike 2 files/Pyloric Extracted/.*\.smr\>';
+		fileparameters{end+1} = 'Spike 2 files/Pyloric Extracted/.*\epochprobemap.txt\>'; 
 		readerobjectclass = [readerobjectclass '_ced'];
 		epochprobemapfileparameters = {'epochprobemap.txt'};
 	otherwise,
