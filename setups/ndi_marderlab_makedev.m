@@ -17,9 +17,9 @@ function exp = ndi_marderlab_makedev(exp, devname)
 %
 % Devices created    | Description
 % ----------------------------------------------------------------
-% marder_pyloric_ced |  ndi_daqsystem_multichannel_mfdaq that looks for
-%                    |    files 'Spike 2 files/Pyloric Extracted/*.smr', 
-%                    |    and 'Spike 2 files/Pyloric Extracted/*_epochprobemap.txt'
+% marder_ced         |  ndi_daqsystem_multichannel_mfdaq that looks for
+%                    |    files '[something].smr' and
+%                    |    '[something].epochprobemap.txt'
 %
 % See also: NDI_FILENAVIGATOR_EPOCHDIR
 
@@ -44,14 +44,14 @@ switch devname,
 	case 'marder_ced',
 		fileparameters{end+1} = '#\.smr\>';
 		fileparameters{end+1} = '#\.epochprobemap.txt\>'; 
-		readerobjectclass = [readerobjectclass '_ced'];
-		epochprobemapfileparameters = {'epochprobemap.txt'};
+		readerobjectclass = [readerobjectclass '_cedspike2'];
+		epochprobemapfileparameters = {'(.*)epochprobemap.txt'};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
 end
 
-ft = ndi_filenavigator_epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
+ft = ndi_filenavigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
 

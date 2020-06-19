@@ -1,4 +1,4 @@
-function E = ndi_marderlab_narendra_test(ref, dirname)
+function E = ndi_marderlab_hamood_test(ref, dirname)
 % NDI_MARDERLAB_HAMOOD_TEST - test reading from Murkherjee et al. 2019
 %
 % E = NDI_MARDERLAB_HAMOOD_TEST(REF, DIRNAME)
@@ -12,11 +12,17 @@ function E = ndi_marderlab_narendra_test(ref, dirname)
 
 if nargin==0,
 	disp(['No reference or dirname given, using defaults:']);
-	ref = '811_05',
-	dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Marder/Data/811/811_05',
+	ref = '811_105',
+	dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Marder/Data/811/811_105',
 end;
 
 E = ndi_marderlab_expdir(ref, dirname); 
+
+d = E.daqsystem_load('name','marder_ced');
+
+et = d.epochtable();
+
+disp(['Found ' int2str(numel(et)) ' epochs.']);
 
 p = E.getprobes()
 
