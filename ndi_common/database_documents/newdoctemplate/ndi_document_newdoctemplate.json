@@ -1,0 +1,27 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_newdoctemplate.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_newdoctemplate_schema.json",
+		"class_name":						"ndi_document_newdoctemplate",
+		"property_list_name":					"newdoctemplate",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "ANY_DEPENDENT_DOC_ID",
+			"value": ""
+		},
+		{	"name": "ANY_OTHER_DEPENDENT_DOC_ID",
+			"value": ""
+		}
+	],
+	"newdoctemplate": {
+		"propertyname_1_stringexample":				"property_1_string_value",
+		"propertyname_2_number_example":			1,
+		"propertyname_3_array_example":				[0, 1, 2, 3],
+		"propertyname_4_stringarray_example":			["a", "b", "c"]
+	}
+}
+
