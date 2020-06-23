@@ -118,7 +118,7 @@ classdef ndi_validate
                     error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
                             + "Here are the detail Java exception error: " + e.message)
                 end
-                report = ndi_validate_obj.validators.this.getReport();
+                report = validator.getReport();
                 if report.size() > 0
                     ndi_validate_obj.is_valid = false;
                     ndi_validate_obj.validators.super(i).(superclassname_without_extension) = validator; 
