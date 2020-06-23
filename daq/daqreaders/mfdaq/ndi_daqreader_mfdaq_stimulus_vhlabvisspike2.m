@@ -14,7 +14,7 @@
 % e3              | pretime trigger
 %
 
-classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi_daqreader_stimulus
+classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -116,7 +116,9 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 				stimsetuptimes = [];
 				stimcleartimes = [];
 				if numel(mti)~=numel(stimtimes),
-					error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' int2str(length(mti)) ') in ' pathname{1} '.']);
+					error(['Error: The number of stim triggers present in the stimtimes.txt file (' ...
+						int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' ...
+						 int2str(length(mti)) ') in ' pathname{1} '.']);
 				end
 
 				for i=1:numel(mti),
@@ -159,6 +161,8 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 							elseif channel(i)==3, % background trigger, simulated
 								data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
 							end
+						case 'md',
+							
 						otherwise,
 							error(['Unknown channel.']);
 					end
@@ -201,32 +205,6 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 			   % let's make a guess that should apply well in all cases
 
 			sr = 1e-4 * ones(size(channel));
-		end
-
-		function parameters = get_stimulus_parameters(ndi_daqsystem_stimulus_obj, epochfiles)
-			%
-			% PARAMETERS = NDI_GET_STIMULUS_PARAMETERS(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
-			%
-			% Returns the parameters (array, struct array, or cell array) associated with the
-			% stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
-			%
-			% In this case, it is the parameters of NEWSTIM stimuli from the VHLab visual stimulus system.
-			%
-
-				pathname = {};
-				fname = {};
-				ext = {};
-				for i=1:numel(epochfiles),
-					[pathname{i},fname{i},ext{i}] = fileparts(epochfiles{i});
-				end
-
-				index = find(strcmp('stims',fname));
-				[ss,mti]=getstimscript(pathname{index});
-
-				parameters = {};
-				for i=1:numStims(ss),
-					parameters{i} = getparameters(get(ss,i));
-				end;
 		end
 
 	end; % methods

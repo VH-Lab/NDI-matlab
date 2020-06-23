@@ -20,21 +20,26 @@ end;
 disp(['creating a new session object...']);
 E = ndi_session_dir('exp1',dirname);
 
+E.daqsystem_clear(); % remove any previous daq systems
+
 disp(['Now adding our acquisition device (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-fn = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
+fn = ndi_filenavigator(E, {'#\.rhd\>', '#\.tsv\>'});  % look for .rhd files with .tsv files of same name
 
   % Step 2: create the daqsystem object and add it to the session:
 
-dev1 = ndi_daqsystem_mfdaq('intan1',fn, ndi_daqreader_mfdaq_intan());
+dev1 = ndi_daqsystem_mfdaq('intan1',fn, ndi_daqreader_mfdaq_intan(), {ndi_daqmetadatareader('.*\.tsv\>')});
+dev1.daqmetadatareader{1}
+
 E.daqsystem_add(dev1);
 
  % now load it back
 
-dev1 = E.daqsystem_load('name','intan1')
+disp(['Loading it back'])
+dev1 = E.daqsystem_load('name','intan1');
 
   % Now let's print some statistics
 
@@ -58,6 +63,10 @@ plot(time,data);
 ylabel('Data');
 xlabel('Time (s)');
 box off;
+
+disp(['About to read the metadata:']);
+
+md = dev1.getmetadata(1,1); md{:},
 
 E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 

@@ -49,7 +49,7 @@ disp(['The sample rate of analog channel 1 in epoch 1 is ' num2str(sr_a) '.']);
 
 tetrodes = dev1.getepochprobemap(1);
 
-disp(['We will now plot the data for ' tetrodes(1).devicestring()]);
+disp(['We will now plot the data for ' tetrodes(1).devicestring]);
 
 [~,~,channels] = ndi_daqsystemstring2channel(ndi_daqsystemstring(tetrodes(1).devicestring));
 data = readchannels_epochsamples(dev1, {'analog_in'}, channels, 1, 1, 30000); %(device,channeltype,channels,epoch,s0,s1)

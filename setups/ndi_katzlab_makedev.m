@@ -43,8 +43,14 @@ switch devname,
 	case 'narendra_intan',
 		fileparameters{end+1} = 'time.dat';
 		fileparameters{end+1} = 'info.rhd'; 
-		fileparameters{end+1} = 'epochprobemap.txt'; 
+		fileparameters{end+1} = 'epochprobemap.txt';
+		fileparameters{end+1} = 'intraoral_canulae.tsv'; 
+		fileparameters{end+1} = 'optical_fiber1.tsv'; 
+		fileparameters{end+1} = 'optical_fiber2.tsv'; 
 		readerobjectclass = [readerobjectclass '_intan'];
+		mdr = {ndi_daqmetadatareader('stimulus_metadata_intraoral_canulae.tsv') ...
+			ndi_daqmetadatareader('stimulus_metadata_optical_fiber1.tsv') ...
+			ndi_daqmetadatareader('stimulus_metadata_optical_fiber2.tsv')};
 		epochprobemapfileparameters = {'epochprobemap.txt'};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);

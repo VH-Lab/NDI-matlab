@@ -527,7 +527,7 @@ classdef ndi_syncgraph < ndi_id
 				cache = [];
 				key = [];
 				if isa(ndi_syncgraph_obj.session,'handle'),
-					exp = ndi_syncgraph_obj.session();
+					exp = ndi_syncgraph_obj.session;
 					cache = exp.cache;
 					key = ['syncgraph_' ndi_syncgraph_obj.id()];
 				end

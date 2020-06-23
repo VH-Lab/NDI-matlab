@@ -297,7 +297,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 				if ndi_element_obj.direct,
 					error(['Cannot add external observations to an NDI_ELEMENT that is directly based on NDI_PROBE.']);
 				end;
-				E = ndi_element_obj.session();
+				E = ndi_element_obj.session;
 				if ~isempty(E),
 					elementdoc = E.database_search(ndi_element_obj.searchquery());
 					if isempty(elementdoc),
@@ -407,7 +407,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 				element_doc = ndi_element_obj.load_element_doc();
 				if ~isempty(element_doc),
 					sq = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-					E = ndi_element_obj.session();
+					E = ndi_element_obj.session;
 					epochdocs = E.database_search(sq);
     				element_docs = cat(1, {element_doc}, epochdocs(:));                    
 				else,

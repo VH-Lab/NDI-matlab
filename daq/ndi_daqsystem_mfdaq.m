@@ -281,6 +281,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			%    'auxiliary_in'           | 
 			% 'mark', 'marker', or 'mk'   | 'mk'
 			% 'event' or 'e'              | 'e'
+			% 'metadata' or 'md'          | 'md'
 			%
 			% See also: NDI_DAQSYSTEM_MFDAQ/MFDAQ_TYPE
 			%
@@ -301,6 +302,8 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 						prefix = 'mk';
 					case {'event','e'},
 						prefix = 'e';
+					case {'metadata','md'},
+						prefix = 'md';
 				end;
 		end % mfdaq_prefix()
 

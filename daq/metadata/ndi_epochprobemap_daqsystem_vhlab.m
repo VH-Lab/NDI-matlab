@@ -65,7 +65,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				end;
 
 				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
-					mylist = {'mk1','mk2','mk3','e1','e2','e3'};
+					mylist = {'mk1','mk2','mk3','e1','e2','e3','md1'};
 					for i=1:numel(mylist),
 						nextentry = ndi_epochprobemap_daqsystem_vhlab('vhvis_spike2',...
 							1,...

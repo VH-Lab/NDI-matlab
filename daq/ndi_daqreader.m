@@ -1,4 +1,4 @@
-classdef ndi_daqreader < ndi_id
+classdef ndi_daqreader < ndi_id & ndi_documentservice
 % NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
 %
 %

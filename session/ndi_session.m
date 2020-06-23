@@ -82,12 +82,15 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
                 
 				sq = dev.searchquery();
 				search_result = ndi_session_obj.database_search(sq);
-				if numel(search_result) == 0
+				sq1 = ndi_query('','isa','ndi_document_daqsystem','') & ...
+					ndi_query('ndi_document.name','exact_string',dev.name,'');
+				search_result1 = ndi_session_obj.database_search(sq1);
+				if (numel(search_result) == 0) & (numel(search_result1) == 0)
 					% no match was found, can add to the database
 					doc_set = dev.newdocument();
 					ndi_session_obj.database_add(doc_set);
 				else,
-					error(['dev already exists in the database.']);    
+					error(['dev or dev with same name already exists in the database.']);    
 				end
 		end;
 
@@ -105,16 +108,18 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 				end;
 				daqsys = ndi_session_obj.daqsystem_load('name',dev.name);
 				if ~isempty(daqsys) 
-					docs = ndi_session_obj.database_search(daqsys.searchquery());
-					if numel(docs)~=1,
-						error(['More than one document found for ' dev.name ', not sure what to do.']);
+					if ~iscell(daqsys),
+						daqsys = {daqsys};
 					end;
-					for i=1:numel(docs{1}.document_properties.depends_on),
-						dochere = ndi_session_obj.database_search(...
-							ndi_query('ndi_document.id', 'exact_string', docs{1}.document_properties.depends_on(i).value, ''));
-						ndi_session_obj.database_rm(dochere);
+					docs = ndi_session_obj.database_search(daqsys{1}.searchquery());
+					for k=1:numel(docs), % should be 1 only, but keep deleting even if not
+						for i=1:numel(docs{k}.document_properties.depends_on),
+							dochere = ndi_session_obj.database_search(...
+								ndi_query('ndi_document.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
+							ndi_session_obj.database_rm(dochere);
+						end;
+						ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
 					end;
-					ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
 				else
 					error(['No daqsystem named ' dev{j}.name ' found.']);
 				end;
@@ -173,6 +178,7 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 					dev = {dev};
 				end;
 				for i=1:numel(dev),
+					dev{i},
 					ndi_session_obj = ndi_session_obj.daqsystem_rm(dev{i});
 				end;
 

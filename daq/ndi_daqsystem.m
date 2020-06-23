@@ -1,4 +1,4 @@
-classdef ndi_daqsystem < ndi_id & ndi_epochset_param
+classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 % NDI_DAQSYSTEM - Create a new NDI_DEVICE class handle object
 %
 %  D = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR)
@@ -7,13 +7,14 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 %  This is an abstract class that is overridden by specific devices.
 
 	properties (GetAccess=public, SetAccess=protected)
-		name            % The name of the daq system
-		filenavigator   % The NDI_FILENAVIGATOR associated with this device
-		daqreader       % The NDI_DAQREADER associated with this device
+		name               % The name of the daq system
+		filenavigator      % The NDI_FILENAVIGATOR associated with this device
+		daqreader          % The NDI_DAQREADER associated with this device
+		daqmetadatareader  % The NDI_DAQMETADATAREADER associated with this device (cell array)
 	end
 
 	methods
-		function obj = ndi_daqsystem(name,thefilenavigator,thedaqreader)
+		function obj = ndi_daqsystem(name,thefilenavigator,thedaqreader,thedaqmetadatareader)
 			% NDI_DAQSYSTEM - create a new NDI_DEVICE object
 			%
 			%  OBJ = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR, THEDAQREADER)
@@ -43,11 +44,24 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 						error(['Could not find daqreader document with id ' daqreader_id '.']);
 					end;
 					filenavigator_doc = docs{1};
+
+					D = daqsystem_doc.dependency_value_n('daqmetadatareader_id','ErrorIfNotFound',0);
+					metadatadocs = {};
+					thedaqmetadatareader = {};
+					for i=1:numel(D),
+						metadatadocs{i} = session.database_search(ndi_query('ndi_document.id','exact_string',D{i},''));
+						if numel(metadatadocs{i})~=1,
+							error(['Could ont find daqmetadatareader document with id ' D{i} '.']);
+						end;
+						metadatadocs{i} = metadatadocs{i}{1};
+						thedaqmetadatareader{i} = ndi_document2ndi_object(metadatadocs{i},session);
+					end;
 					
 					obj.daqreader = ndi_document2ndi_object(daqreader_doc, session);
 					obj.filenavigator = ndi_document2ndi_object(filenavigator_doc,session);
 					obj.name = daqsystem_doc.document_properties.ndi_document.name;
-					obj.identifier = daqsystem_doc.document_properties.ndi_document.id();
+					obj.identifier = daqsystem_doc.document_properties.ndi_document.id;
+					obj = obj.set_daqmetadatareader(thedaqmetadatareader);
 				else
 					if nargin==0, % undocumented 0 argument creator
 						name = '';
@@ -73,8 +87,14 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 						end;
 					end;
 
-					if (nargin==1) | (nargin>3),
-						error(['Function requires 2 or 3 input arguments exactly.']);
+					if nargin>=4,
+						
+					else,
+						thedaqmetadatareader = {};
+					end;
+
+					if (nargin==1) | (nargin>4),
+						error(['Function requires 2, 3, or 4 input arguments exactly.']);
 					end
 		
 					obj.name = name;
@@ -84,9 +104,32 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 						obj.name = name;
 						obj.filenavigator = thefilenavigator;
 						obj.daqreader = thedaqreader;
+						obj = obj.set_daqmetadatareader(thedaqmetadatareader);
 					end;
 				end;
 		end; % ndi_daqsystem()
+
+		function ndi_daqsystem_obj = set_daqmetadatareader(ndi_daqsystem_obj, thedaqmetadatareaders)
+			% SET_DAQMETADATAREADER - set the cell array of NDI_DAQMETADATAREADER objects
+			%
+			% NDI_DAQSYSTEM_OBJ = SET_DAQMETADATAREADER(NDI_DAQSYSTEM_OBJ, NEWDAQMETADATAREADERS)
+			%
+			% Sets the 'daqmetadatareader' property of an NDI_DAQSYSTEM object.
+			% NEWDAQMETADATAREADERS should be a cell array of objects that have 
+			% NDI_DAQMETADATAREADER as a superclass.
+			%
+				if ~iscell(thedaqmetadatareaders),
+					error(['THEDAQMETADATAREADERS must be a cell array.']);
+				end;
+
+				for i=1:numel(thedaqmetadatareaders),
+					if ~isa(thedaqmetadatareaders{i},'ndi_daqmetadatareader'),
+						error(['Element ' int2str(i) ' of THEDAQMETADATAREADERS is not of type ndi_daqmetadatareader.']);
+					end;
+				end;
+				% if we are here, there are no errors
+				ndi_daqsystem_obj.daqmetadatareader = thedaqmetadatareaders;
+		end; % set_daqmetadatareader
 
 		%% GUI functions
 		function obj = ndi_daqsystem_gui_edit(ndi_daqsystem_obj)
@@ -339,6 +382,22 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 				end;
 
 		end; % getepochprobemap
+
+		function metadata = getmetadata(ndi_daqsystem_obj, epoch, channel)
+			% GETMETADATA - get metadata for an epoch
+			% 
+			% METADATA = GETMETADATA(NDI_DAQSYSTEM_OBJ, EPOCH, CHANNEL)
+			%
+			% Returns the metadata (cell array of entries) for EPOCH for metadata channel
+			% CHANNEL. CHANNEL indicates the number of the NDI_DAQMETADATAREADER to use 
+			% to obtain the data.
+				N = numel(ndi_daqsystem_obj.daqmetadatareader);
+				if ~ (channel >=1 & channel <= N),
+					error(['Metadata channel out of range of ' int2str(min(N,1)) '..' int2str(N) '.']);
+				end;
+				epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
+				metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
+		end; % getmetadata()
 		
 		%% functions that override ndi_documentservice
 
@@ -360,6 +419,11 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 					'filenavigator_id', ndi_daqsystem_obj.filenavigator.id());
 				ndi_document_obj_set{3} = ndi_document_obj_set{3}.set_dependency_value( ...
 					'daqreader_id', ndi_daqsystem_obj.daqreader.id());
+				for i=1:numel(ndi_daqsystem_obj.daqmetadatareader),
+					ndi_document_obj_set{end+1} = ndi_daqsystem_obj.daqmetadatareader{i}.newdocument();
+					ndi_document_obj_set{3} = ndi_document_obj_set{3}.add_dependency_value_n('daqmetadatareader_id',...
+						ndi_document_obj_set{end}.id());
+				end;
 		end;  % newdocument()
 
 		function sq = searchquery(ndi_daqsystem_obj)
@@ -369,7 +433,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param
 			%
 			% Returns SQ, an NDI_QUERY object that searches the database for the NDI_DAQSYSTEM object
 			%
-				sq = ndi_query({'ndi_document.id',ndi_daqsystem_obj.id(), ...
+				sq = ndi_query({'ndi_document.id',ndi_daqsystem_obj.id(), ...  % really this is the only one necessary
 						'ndi_document.name', ndi_daqsystem_obj.name, ...
 						'ndi_document.session_id', ndi_daqsystem_obj.session.id()});
 
