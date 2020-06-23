@@ -64,7 +64,6 @@ switch devname,
 		fileparameters{end+1} = 'spike2data.smr'; 
 		readerobjectclass = [readerobjectclass '_stimulus_vhlabvisspike2'];
 		epochprobemapfileparameters = {'stimtimes.txt'}; 
-		objectclass = 'ndi_daqsystem_mfdaq_stimulus';
 		mdr = {ndi_daqmetadatareader_NewStimStims('stims.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);

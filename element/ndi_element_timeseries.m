@@ -54,7 +54,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					sq = ndi_query('depends_on','depends_on','element_id',element_doc.id()) & ...
 						ndi_query('','isa','ndi_document_element_epoch.json','') & ...
 						ndi_query('epochid','exact_string',epoch_timeref.epoch,'');
-					E = ndi_element_timeseries_obj.session();
+					E = ndi_element_timeseries_obj.session;
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)~=1,
 						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch ', or found too many.']);
@@ -101,7 +101,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 				end;
 				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi_element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
 					
-				E = ndi_element_timeseries_obj.session();
+				E = ndi_element_timeseries_obj.session;
 				f = E.database_openbinarydoc(epochdoc);
 				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
 				E.database_closebinarydoc(f);

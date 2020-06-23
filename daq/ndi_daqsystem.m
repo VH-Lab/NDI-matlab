@@ -60,7 +60,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 					obj.daqreader = ndi_document2ndi_object(daqreader_doc, session);
 					obj.filenavigator = ndi_document2ndi_object(filenavigator_doc,session);
 					obj.name = daqsystem_doc.document_properties.ndi_document.name;
-					obj.identifier = daqsystem_doc.document_properties.ndi_document.id();
+					obj.identifier = daqsystem_doc.document_properties.ndi_document.id;
 					obj = obj.set_daqmetadatareader(thedaqmetadatareader);
 				else
 					if nargin==0, % undocumented 0 argument creator

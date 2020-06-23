@@ -45,7 +45,7 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 			%
 			% See also: NDI_PROBE_TIMESERIES/READTIMESERIES
 			%
-				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch)
+				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
 				eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
@@ -55,7 +55,6 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 					edata = {edata};
 				end;
 				channel_labels = getchannels(dev{1});
-				warning('this is probably not right; needs to figure out order of channels specified.');
 				mk_ = 0;
 				e_ = 0;
 				md_ = 0;
@@ -85,7 +84,6 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 							error(['Unknown channel.']);
 					end
 				end
-				%data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
 				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
 
