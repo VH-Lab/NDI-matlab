@@ -28,7 +28,9 @@
 	},{
 		"type":"lick-spout","classname":"ndi_probe_timeseries_mfdaq"
 	},{
-		"type":"intraoral-cannula","classname":"ndi_probe_timeseries_mfdaq"
+		"type":"intraoral-cannula","classname":"ndi_probe_timeseries_stimulator"
+	},{
+		"type":"optogenetic-fiber","classname":"ndi_probe_timeseries_stimulator"
 	},{
 		"type":"reward-well","classname":"ndi_probe_timeseries_mfdaq"
 	},{
