@@ -22,7 +22,7 @@
 		},
 		"datastemp": {
 			"description": "the time this ndi_document is created in ISO8601 format",
-			"type": "date-time"
+			"type": "string"
 		},
 		"database_version": {
 			"description": "the version of the json database",
