@@ -186,12 +186,12 @@ classdef ndi_validate
             %  
             %  ADD_JAVA_PATH()
             %
+	    S = warning();
             warning('off','all')
-            ndi_Init;
             ndi_globals;
             eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             eval("import com.ndi.Validator");
-            warning('on', 'all')
+	    warning(S);
         end
         
         function schema_json = extract_schema(ndi_document_obj)
