@@ -1,7 +1,7 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary_schema.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary",
 		"property_list_name":					"vmspikesummary",
 		"class_version":					1,
