@@ -72,16 +72,21 @@ classdef ndi_validate
             %property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
             property_list = eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name));
             if has_dependencies == 1 
+                % pass depends_on here
                 property_list.depends_on = ndi_document_obj.document_properties.depends_on;
             end
             
             % validate all non-super class properties
-            ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
+            try
+                ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
+            catch e
+                error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
+                        + "Here are the detail Java exception error: " + e.message)
+            end
             ndi_validate_obj.reports.this = '';
             if ndi_validate_obj.validators.this.getReport().size() > 0
                 ndi_validate_obj.is_valid = false;
                 ndi_validate_obj.reports.this = ndi_validate_obj.validators.this.getReport();
-                ndi_validate.readHashMap(ndi_validate_obj.reports.this);
                 ndi_validate_obj.errormsg_this = string(doc_class.property_list_name) +  ":" ...
                 +string(newline) + ndi_validate.readHashMap(ndi_validate_obj.reports.this) + string(newline);
             end
@@ -102,12 +107,18 @@ classdef ndi_validate
                 schema = ndi_validate.extract_schema(superclass_name);
                 superclassname_without_extension = ndi_validate.extractnamefromdefinition(superclass_name);
                 properties = struct( eval( strcat('ndi_document_obj.document_properties.', superclassname_without_extension) ) );
-                %% pass depends_on here 
+                % pass depends_on here 
                 if has_dependencies == 1
                   properties.depends_on = ndi_document_obj.document_properties.depends_on;
                 end
-                validator = com.ndi.Validator(jsonencode(properties), schema, true);
-                report = validator.getReport();
+                validator = 0;
+                try
+                    validator = com.ndi.Validator( jsonencode(properties), schema, true );
+                catch e
+                    error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
+                            + "Here are the detail Java exception error: " + e.message)
+                end
+                report = ndi_validate_obj.validators.this.getReport();
                 if report.size() > 0
                     ndi_validate_obj.is_valid = false;
                     ndi_validate_obj.validators.super(i).(superclassname_without_extension) = validator; 
@@ -138,7 +149,7 @@ classdef ndi_validate
                 end
             end
                 
-            % somehow report the overall 
+            % preparing for the overall report 
             if ~ndi_validate_obj.is_valid
                 msg = "Validation has failed. Here is a detailed report of the source of failure:"...
                     + newline...
@@ -157,7 +168,7 @@ classdef ndi_validate
                     + "To get this detailed report as a struct. Please access its instance field reports";
                 ndi_validate_obj.errormsg = msg;
             else
-                ndi_validate_obj.errormsg = 'This ndi_document contains no type errors';
+                ndi_validate_obj.errormsg = 'This ndi_document contains no type error';
             end
         end
 
@@ -172,11 +183,14 @@ classdef ndi_validate
     methods(Static, Access = private)
         
         function add_java_path()
+            %  
+            %  ADD_JAVA_PATH()
+            %
             warning('off','all')
             ndi_Init;
             ndi_globals;
-            javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end');
-            import com.ndi.Validator;
+            eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            eval("import com.ndi.Validator");
             warning('on', 'all')
         end
         
@@ -207,18 +221,29 @@ classdef ndi_validate
                 try
                     schema_json = fileread(schema_path);
                 catch
-                    error("the schema path does not exsist");
+                    error('The schema path does not exsist. Verify that you have created a schema file in the $NDIDOCUMENTSCHEMAPATH folder.');
                 end
             end
         end
         
         function name = extractnamefromdefinition(str)
+            %   STR - File name contains ".json" extension
+            %   Remove the file extension
+            %
+            %   NAME = EXTRACTNAME(STR)
+            %
             file_name = split(str, filesep);
             name = split(file_name(numel(file_name)), ".");
             name = string(name(1));
         end
         
         function str = readHashMap(java_hashmap)
+            %   java_hashmap - an instance of java.util.HashMAP
+            %   turn an instance of java.util.hashmap into string useful
+            %   for displaying the error messages
+            %   
+            %   STR = READHASHMAP(JAVA_HASHMAP)
+            %
             if (~isa(java_hashmap, 'java.util.HashMap'))
                 error("Must pass in an instance of java.util.HashMap");
             end
