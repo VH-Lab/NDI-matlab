@@ -1,4 +1,4 @@
-classdef ndi_daqsystem < ndi_id & ndi_epochset_param
+classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 % NDI_DAQSYSTEM - Create a new NDI_DEVICE class handle object
 %
 %  D = NDI_DAQSYSTEM(NAME, THEFILENAVIGATOR)

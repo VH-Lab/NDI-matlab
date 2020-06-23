@@ -1,0 +1,127 @@
+classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
+% NDI_DAQMETADATAREADER - a class for reading metadata related to data acquisition, such as stimulus parameter information
+%
+% 
+
+	properties (GetAccess=public, SetAccess=protected)
+		tab_separated_file_parameter   % regular expression to search within epochfiles for a
+		                               %   tab-separated-value file that describes stimulus
+		                               %   parameters
+	end;
+	properties (Access=private)
+	end;
+
+	methods
+
+		function obj = ndi_daqmetadatareader(varargin)
+			% NDI_DAQMETADATAREADER - Create a new multifunction DAQ object
+			%
+			%  D = NDI_DAQMETADATAREADER()
+			%  or
+			%  D = NDI_DAQMETADATAREADER(TSVFILE_REGEXPRESSION)
+			%
+			%  Creates a new NDI_DAQMETADATAREADER object. If TSVFILE_REGEXPRESSION
+			%  is given, it indicates a regular expression to use to search EPOCHFILES
+			%  for a tab-separated-value text file that describes stimulus parameters.
+			%
+				tsv_p = '';
+				if nargin==1,
+					tsv_p = varargin{1};
+					varargin = {};
+				end;
+
+				if (nargin==2) & (isa(varargin{1},'ndi_session')) & (isa(varargin{2},'ndi_document')),
+					if isfield(varargin{2}.document_properties,'ndi_daqmetdatareader'),
+						tsv_p = varargin{2}.document_properties.ndi_daqmetadatareader.tab_separated_file_parameter;
+					end;
+				end;
+				obj.tab_separated_file_parameter = tsv_p;
+		end; % ndi_daqmetadatareader
+
+		function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
+			% PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
+			%
+			% Returns the parameters (cell array of structures) associated with the
+			% stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
+			%
+			% If the property 'tab_separated_file_parameter' is not empty, then EPOCHFILES will be searched for
+			% files that match the regular expression in 'tab_separated_file_parameter'. The tab-separated-value
+			% file should have the form:
+			%
+			% STIMID<tab>PARAMETER1<tab>PARAMETER2<tab>PARAMETER3 (etc) <newline>
+			% 1<tab>VALUE1<tab>VALUE2<tab>VALUE3 (etc) <newline>
+			% 2<tab>VALUE1<tab>VALUE2<tab>VALUE3 (etc) <newline>
+			%  (etc)
+			%
+			% For example, a stimulus file for an interoral cannula might be:
+			% stimid<tab>substance1<tab>substance1_concentration<newline>
+			% 1<tab>Sodium chloride<tab>30e-3<newline>
+			% 2<tab>Sodium chloride<tab>300e-3<newline>
+			% 3<tab>Quinine<tab>30e-6<newline>
+			% 4<tab>Quinine<tab>300e-6<newline>
+			%
+			% This function can be overridden in more specialized stimulus classes.
+			%
+				parameters = {};
+				if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter),
+					tf = regexpi(ndi_daqmetadatareader_obj.tab_separated_file_parameter, epochfiles,'forceCellOutput');
+					tf = find(~cellfun(@isempty,tf));
+					if numel(tf)>1,
+						error(['More than one epochfile matches regular expression ' ...
+							ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
+							'; epochfiles were ' epochfiles{:} '.']);
+					elseif numel(tf)==0,
+						error(['No epochfiles match regular expression ' ...
+							ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
+							'; epochfiles were ' epochfiles{:} '.']);
+
+					else,
+						stimparameters = loadStructArray(epochfiles{tf});
+						for i=1:numel(stimparameters),
+							parameters{i} = stimparameters(i);
+						end;
+					end;
+				end;
+		end; % readmetadata()
+
+		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
+			% EQ - are 2 ndi_daqmetadatareader objects equal?
+			%
+			% TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)
+			%
+			% TF is 1 if the two objects are of the same class and have the same properties.
+			% TF is 0 otherwise.
+				tf = 0;
+				if strcmp(class(ndi_daqmetadatareader_obj_a),class(ndi_daqmetadatareader_obj_b)),
+					tf = eqlen(properties(ndi_daqmetadatareader_obj_a),properties(ndi_daqmetadatareader_obj_b));
+				end;
+		end; % eq()
+
+		% documentservices overriden methods
+
+		function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
+			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_DAQMETADATAREADER object
+			%
+			% DOC = NEWDOCUMENT(NDI_DAQMETADATAREADER OBJ)
+			%
+			% Creates an NDI_DOCUMENT object DOC that represents the
+			%    NDI_DAQREADER object.
+				ndi_document_obj = ndi_document('ndi_document_daqmetadatareader.json',...
+					'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
+					'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
+					'ndi_document.id', ndi_daqmetadatareader_obj.id());
+		end; % newdocument()
+
+		function sq = searchquery(ndi_daqmetadatareader_obj)
+			% SEARCHQUERY - create a search for this NDI_DAQREADER object
+			%
+			% SQ = SEARCHQUERY(NDI_DAQMETADATAREADER_OBJ)
+			%
+			% Creates a search query for the NDI_DAQMETADATAREADER object.
+			%
+				sq = {'ndi_document.id', ndi_daqmetadatareader_obj.id() };
+		end; % searchquery()
+
+	end; % methods
+
+end % classdef
