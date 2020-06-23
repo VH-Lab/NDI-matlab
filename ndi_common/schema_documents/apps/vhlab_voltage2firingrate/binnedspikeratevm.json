@@ -52,7 +52,7 @@
 							"type" : "string"
 						}
 					}
-				}	
+				},	
 				{
 					"type": "object", 
 					"properties" : {
