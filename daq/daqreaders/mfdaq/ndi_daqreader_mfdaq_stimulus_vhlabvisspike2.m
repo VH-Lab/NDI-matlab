@@ -116,7 +116,9 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 				stimsetuptimes = [];
 				stimcleartimes = [];
 				if numel(mti)~=numel(stimtimes),
-					error(['Error: The number of stim triggers present in the stimtimes.txt file (' int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' int2str(length(mti)) ') in ' pathname{1} '.']);
+					error(['Error: The number of stim triggers present in the stimtimes.txt file (' ...
+						int2str(numel(stimtimes)) ') differs from what is expected from the content of stims.mat file (' ...
+						 int2str(length(mti)) ') in ' pathname{1} '.']);
 				end
 
 				for i=1:numel(mti),
@@ -159,6 +161,8 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq & ndi
 							elseif channel(i)==3, % background trigger, simulated
 								data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
 							end
+						case 'md',
+							
 						otherwise,
 							error(['Unknown channel.']);
 					end

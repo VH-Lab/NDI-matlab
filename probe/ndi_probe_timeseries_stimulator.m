@@ -45,7 +45,7 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 			%
 			% See also: NDI_PROBE_TIMESERIES/READTIMESERIES
 			%
-				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
+				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch)
 				eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
@@ -55,25 +55,37 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 					edata = {edata};
 				end;
 				channel_labels = getchannels(dev{1});
+				warning('this is probably not right; needs to figure out order of channels specified.');
+				mk_ = 0;
+				e_ = 0;
+				md_ = 0;
 				for i=1:numel(channeltype),
-					switch channel_labels(i).name,
-						case 'mk1', % stimonoff
-							%edata{i},
-							t.stimon = edata{i}(find(edata{i}(:,2)==1),1);
-							t.stimoff = edata{i}(find(edata{i}(:,2)==-1),1);
-						case 'mk2',
-							data.stimid = edata{i}(:,2);
-						case 'mk3',
-							% ASSUMPTION: the number of off events will be the same size as the on events; 
-							%   might not be true if a recording is cut-off mid presentation
-							t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)==1) , 1); 
-							t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
-						case {'e1','e2','e3'}, % not saved
+					switch(channeltype{i}),
+						case 'mk',
+							mk_ = mk_ + 1;
+							switch mk_,
+								case 1, % stimonoff
+									%edata{i},
+									t.stimon = edata{i}(find(edata{i}(:,2)==1),1);
+									t.stimoff = edata{i}(find(edata{i}(:,2)==-1),1);
+								case 2, % stimid
+									data.stimid = edata{i}(:,2);
+								case 3, % stimopenclose
+									t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)==1) , 1); 
+									t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
+								otherwise,
+									error(['Got more mark channels than expected.']);
+							end;
+						case 'e',
+							e_ = e_ + 1;
+							% do nothing
+						case {'md'},
+							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
 						otherwise,
 							error(['Unknown channel.']);
 					end
 				end
-				data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
+				%data.parameters = get_stimulus_parameters(dev{1},devepoch{1});
 
 				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
 

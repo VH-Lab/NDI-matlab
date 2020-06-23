@@ -25,11 +25,11 @@ disp(['Now adding our acquisition device (intan):']);
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
+fn = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
   % Step 2: create the daqsystem object and add it to the session:
 
-dev1 = ndi_daqsystem_mfdaq('intan1',dt, ndi_daqreader_mfdaq_intan());
+dev1 = ndi_daqsystem_mfdaq('intan1',fn, ndi_daqreader_mfdaq_intan());
 E.daqsystem_add(dev1);
 
  % now load it back

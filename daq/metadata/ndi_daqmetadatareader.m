@@ -31,8 +31,8 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 				end;
 
 				if (nargin==2) & (isa(varargin{1},'ndi_session')) & (isa(varargin{2},'ndi_document')),
-					if isfield(varargin{2}.document_properties,'ndi_daqmetdatareader'),
-						tsv_p = varargin{2}.document_properties.ndi_daqmetadatareader.tab_separated_file_parameter;
+					if isfield(varargin{2}.document_properties,'daqmetadatareader'),
+						tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
 					end;
 				end;
 				obj.tab_separated_file_parameter = tsv_p;
@@ -64,7 +64,7 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 			%
 				parameters = {};
 				if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter),
-					tf = regexpi(ndi_daqmetadatareader_obj.tab_separated_file_parameter, epochfiles,'forceCellOutput');
+					tf = regexpi(epochfiles, ndi_daqmetadatareader_obj.tab_separated_file_parameter, 'forceCellOutput');
 					tf = find(~cellfun(@isempty,tf));
 					if numel(tf)>1,
 						error(['More than one epochfile matches regular expression ' ...
@@ -76,13 +76,27 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 							'; epochfiles were ' epochfiles{:} '.']);
 
 					else,
-						stimparameters = loadStructArray(epochfiles{tf});
-						for i=1:numel(stimparameters),
-							parameters{i} = stimparameters(i);
+						if ~exist(epochfiles{tf},'file'),
+							error(['No such file ' file '.']);
 						end;
+						parameters = ndi_daqmetadatareader_obj.readmetadatafromfile(epochfiles{tf});
 					end;
 				end;
 		end; % readmetadata()
+
+		function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
+			% PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
+			%
+			% PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)
+			%
+			% Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER
+			% document, this function loads in the metadata.
+				parameters = {};
+				stimparameters = loadStructArray(file);
+				for i=1:numel(stimparameters),
+					parameters{i} = stimparameters(i);
+				end;
+		end;  % readmetadata
 
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
 			% EQ - are 2 ndi_daqmetadatareader objects equal?
