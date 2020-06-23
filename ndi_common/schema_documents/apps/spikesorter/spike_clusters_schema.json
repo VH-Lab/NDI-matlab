@@ -1,0 +1,38 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/spikesorter\/spike_clusters_schema.json",
+	"title": "ndi_document_apps_spikesorter_spikesorter_spike_clusters",
+	"type": "object",
+	"properties": {
+		"sort_name": {
+			"type": "string",
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "sorting_parameters_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}	
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}											
+			]
+		}		
+	}
+}
