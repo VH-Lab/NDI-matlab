@@ -136,17 +136,18 @@ classdef ndi_validate
                 ndi_validate_obj.reports.dependencies = struct();
                 % NOTE: this does not verify that 'depends-on' documents have the right class membership
                 % might want to add this in the future
+                errormsgdependencies = "We cannot find the following necessary dependency from the database:" + newline;;
                 for i = 1:numofdependencies
                     searchquery = {'ndi_document.id', ndi_document_obj.document_properties.depends_on(i).value};
                     if numel(ndi_session_obj.database_search(searchquery)) < 1
-                        ndi_validate_obj.errormsg_depends_on = "We cannot find the following necessary dependency from the database:" + newline;
                         ndi_validate_obj.reports.dependencies.(ndi_document_obj.document_properties.depends_on(i).name) = 'fail';
-                        ndi_validate_obj.errormsg_depends_on = strcat(ndi_validate_obj.errormsg_depends_on, ndi_document_obj.document_properties.depends_on(i).name, newline);
+                        errormsgdependencies = errormsgdependencies + ndi_document_obj.document_properties.depends_on(i).name + newline;
                         ndi_validate_obj.is_valid = false;
                     else
                         ndi_validate_obj.reports.dependencies(i).(ndi_document_obj.document_properties.depends_on(i).name) = "success";
                     end
                 end
+                ndi_validate_obj.errormsg_depends_on = errormsgdependencies;
             end
                 
             % preparing for the overall report 
