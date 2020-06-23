@@ -147,7 +147,9 @@ classdef ndi_validate
                         ndi_validate_obj.reports.dependencies(i).(ndi_document_obj.document_properties.depends_on(i).name) = "success";
                     end
                 end
-                ndi_validate_obj.errormsg_depends_on = errormsgdependencies;
+                if ~ndi_validate_obj.is_valid
+                    ndi_validate_obj.errormsg_depends_on = errormsgdependencies;
+                end
             end
                 
             % preparing for the overall report 
