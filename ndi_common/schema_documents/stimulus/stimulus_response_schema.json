@@ -26,7 +26,7 @@
 							"const" : "element_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}	
@@ -37,7 +37,7 @@
 							"const" : "stimulator_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}
@@ -48,7 +48,7 @@
 							"const" : "stimulus_presentation_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}
@@ -59,7 +59,7 @@
 							"const" : "stimulus_control_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}															

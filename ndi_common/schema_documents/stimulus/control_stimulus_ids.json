@@ -23,7 +23,7 @@
 							"const" : "stimulus_presentation_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}				

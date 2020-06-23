@@ -38,7 +38,7 @@
 							"const" : "stimulus_element_id"
 						},
 						"value" : {
-							"type" : "array"
+							"type" : "string"
 						}
 					}
 				}				
