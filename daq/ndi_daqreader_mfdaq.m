@@ -115,12 +115,68 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 		end % readchannels_epochsamples()
 
 		function [data] = readevents_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
-			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+			%  READEVENTS_EPOCHSAMPLES - read events, markers, and digital events of specified channels for a specified epoch
 			%
 			%  [DATA] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
-			%  ('event','marker', etc)
+			%  ('event','marker', 'dep', 'dimp', 'dimn', etc). It must be a string (not a cell array of strings).
+			%  
+			%  CHANNEL is a vector with the identity of the channel(s) to be read.
+			%  
+			%  EPOCH is the epoch number or epochID
+			%
+			%  DATA is a two-column vector; the first column has the time of the event. The second
+			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
+			%  is requested, DATA is returned as a cell array, one entry per channel.
+			%
+			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
+			%  
+				if any(strcmp(channeltype,{'dep','den','dimp','dimn'})),
+					data = {};
+					for i=1:numel(channel),
+						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples('din',channel,epochfiles,t0,t1);
+						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples('time',channel,epochfiles,t0,t1);
+						if any(strcmp(channeltype,{'dep','dimp'})), % look for 0 to 1 transitions
+							transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
+							if strcmp(channeltype,'dimp'),
+								transitions_off_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
+							else,
+								transitions_off_samples = [];
+							end;
+						elseif any(strcmp(channeltype,{'den','dimn'})), % look for 1 to 0 transitions
+							transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
+							if strcmp(channeltype,'dimp'),
+								transitions_off_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
+							else,
+								transitions_off_samples = [];
+							end;
+						end;
+						data{i} = [ [colvec(time_here(transitions_on_samples)); colvec(time_here(transitions_off_samples)) ] ...
+								[ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ] ];
+						if ~isempty(transitions_off_samples),
+							[dummy,order] = sort(data{i}(:,1));
+							data{i} = data{i}(order,:); % sort by on/off
+						end;
+					end;
+
+					if numel(channel)==1,
+						data = data{1};
+					end;
+				else,
+					data = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype, ...
+						channel, epochfiles, t0, t1); % abstract class
+				end;
+					
+		end; % readevents_epochsamples
+
+		function [data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
+			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+			%
+			%  [DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+			%
+			%  CHANNELTYPE is the type of channel to read
+			%  ('event','marker', etc). It must be a string (not a cell array of strings).
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
