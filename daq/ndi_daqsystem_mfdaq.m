@@ -282,6 +282,9 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 			% 'mark', 'marker', or 'mk'   | 'mk'
 			% 'event' or 'e'              | 'e'
 			% 'metadata' or 'md'          | 'md'
+			% 'digital_in_event', 'de',   | 'dep'
+			% 'digital_in_event_pos','dep'| 
+			% 'digital_in_event_neg','den'| 'den'
 			%
 			% See also: NDI_DAQSYSTEM_MFDAQ/MFDAQ_TYPE
 			%
@@ -294,6 +297,10 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 						prefix = 'di';
 					case {'digital_out','do'},
 						prefix = 'do';
+					case {'digital_in_event','digital_in_event_pos','de','dep'},
+						prefix = 'dep';
+					case {'digital_in_event_neg','den'},
+						prefix = 'den';
 					case {'time','timestamp','t'},
 						prefix = 't';
 					case {'auxiliary','aux','ax','auxiliary_in'},
