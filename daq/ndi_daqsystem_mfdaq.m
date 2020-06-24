@@ -220,7 +220,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
 				epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
 				timeref = ndi_timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
-				data = ndi_daqsystem_mfdaq_obj.daqreader.readevents_epoch(channeltype, channel, epochfiles, t0, t1);
+				data = ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype, channel, epochfiles, t0, t1);
 		end; % readevents_epochsamples
 
                 function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)

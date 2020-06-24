@@ -72,10 +72,10 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 				channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannelsepoch()
 
-		function data = readevents_epoch(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
-			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
+		function data = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
+			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+			%  DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
