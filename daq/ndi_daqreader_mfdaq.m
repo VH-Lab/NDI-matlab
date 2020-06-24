@@ -135,7 +135,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 				if any(strcmp(channeltype,{'dep','den','dimp','dimn'})),
 					data = {};
 					for i=1:numel(channel),
-						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples({'din'},channel,epochfiles,t0,t1);
+						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples({'di'},channel,epochfiles,t0,t1);
 						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples({'time'},channel,epochfiles,t0,t1);
 						if any(strcmp(channeltype,{'dep','dimp'})), % look for 0 to 1 transitions
 							transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
