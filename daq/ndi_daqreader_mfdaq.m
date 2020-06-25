@@ -120,7 +120,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 			%  [DATA] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
-			%  ('event','marker', 'dep', 'dimp', 'dimn', etc). It must be a string (not a cell array of strings).
+			%  ('event','marker', 'dep', 'dimp', 'dimn', etc). It must be a a cell array of strings.
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
@@ -132,22 +132,26 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 			%
 			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
-				if any(strcmp(channeltype,{'dep','den','dimp','dimn'})),
+				if ~isempty(intersect(channeltype,{'dep','den','dimp','dimn'})),
 					data = {};
 					for i=1:numel(channel),
-						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples({'di'},channel,epochfiles,t0,t1);
-						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples({'time'},channel,epochfiles,t0,t1);
-						if any(strcmp(channeltype,{'dep','dimp'})), % look for 0 to 1 transitions
+						% optimization speed opportunity
+						srd = ndi_daqreader_mfdaq_obj.samplerate(epochfiles,{'di'}, channel(i));
+						s0d = 1+round(srd*t0);
+						s1d = 1+round(srd*t1);
+						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
+						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
+						if any(strcmp(channeltype{i},{'dep','dimp'})), % look for 0 to 1 transitions
 							transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
-							if strcmp(channeltype,'dimp'),
-								transitions_off_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
+							if strcmp(channeltype{i},'dimp'),
+								transitions_off_samples = 1+ find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
 							else,
 								transitions_off_samples = [];
 							end;
-						elseif any(strcmp(channeltype,{'den','dimn'})), % look for 1 to 0 transitions
+						elseif any(strcmp(channeltype{i},{'den','dimn'})), % look for 1 to 0 transitions
 							transitions_on_samples = find( (data_here(1:end-1)==1) & (data_here(2:end) == 0));
-							if strcmp(channeltype,'dimp'),
-								transitions_off_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
+							if strcmp(channeltype{i},'dimp'),
+								transitions_off_samples = 1+ find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
 							else,
 								transitions_off_samples = [];
 							end;
@@ -191,10 +195,10 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 				data = []; % abstract class
 		end; % readevents_epochsamples
 
-                function sr = samplerate(ndi_daqreader_mfdaq_obj, epoch, channeltype, channel)
+                function sr = samplerate(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
-			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
+			% SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
 			%
 			% SR is an array of sample rates from the specified channels
 			%

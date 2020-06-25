@@ -29,17 +29,26 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 			% T0 and T1 are in epoch time.
 			%
 			% T.STIMON is an Nx1 vector with the ON times of each stimulus delivery in the time units of
-			%    the epoch or the clock.
+			%    the epoch or the clock. If marker channels 'mk' are present, then STIMON is taken to be occurrences
+			%    where the first marker channel registers a 1. Alternatively, if 'dim*' channels are present,
+			%    then STIMON is taken to be times whenever ANY of the dim channels registers an event onset.
 			% T.STIMOFF is an Nx1 vector with the OFF times of each stimulus delivery in the time units of
-			%    the epoch or the clock. If STIMOFF data is not provided, these values will be NaN.
+			%    the epoch or the clock. If STIMOFF data is not provided, these values will be NaN. If marker channels 'mk'
+			%    are present, then STIMOFF is taken to be occurrences where the first marker channels registers a -1.
+			%    Alternatively, if 'dim*' channels are present, then STIMOFF is taken to be the times when *any* of the 'dim*'
+			%    channels go off. 
 			% DATA.STIMID is an Nx1 vector with the STIMID values. If STIMID values are not provided, these values
-			%    will be NaN.
+			%    will be NaN. If there are marker channels, the STIMID is taken to be the marker code of the second marker channel
+			%    in the group. If 'dim*' channels are present, then the stimid will be 1..number of dim channels, depending upon
+			%    which 'dim*' channel turned on. For example, if the second one turned on, then the stimid is 2.
 			% DATA.PARAMETERS is an Nx1 cell array of stimulus parameters. If the device provides no parameters,
-			%    then this will be an empty cell array of size Nx1.
+			%    then this will be an empty cell array of size Nx1. This is read from the first metadata channel.
 			% T.STIMOPENCLOSE is an Nx2 vector of stimulus 'setup' and 'shutdown' times, if applicable. For example,
 			%    a visual stimulus might begin or end with the presentation of a 'background' image. These times will
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
-			%    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF].
+			%    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF]. If there is a third marker channel present, then STIMOPENCLOSE
+			%    will be defined by +1 and -1 marks on the third marker channel.
+			%
 			% 
 			% TIMEREF is an NDI_TIMEREFERENCE object that refers to this EPOCH.
 			%
@@ -55,39 +64,66 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 					edata = {edata};
 				end;
 				channel_labels = getchannels(dev{1});
+
+				markermode = any(strcmp('mk',channeltype));
+				dimmode = ~isempty(intersect(channeltype,{'dimp','dimn'}));
 				mk_ = 0;
 				e_ = 0;
 				md_ = 0;
-				for i=1:numel(channeltype),
-					switch(channeltype{i}),
-						case 'mk',
-							mk_ = mk_ + 1;
-							switch mk_,
-								case 1, % stimonoff
-									%edata{i},
-									t.stimon = edata{i}(find(edata{i}(:,2)==1),1);
-									t.stimoff = edata{i}(find(edata{i}(:,2)==-1),1);
-								case 2, % stimid
-									data.stimid = edata{i}(:,2);
-								case 3, % stimopenclose
-									t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)==1) , 1); 
-									t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
-								otherwise,
-									error(['Got more mark channels than expected.']);
-							end;
-						case 'e',
-							e_ = e_ + 1;
-							% do nothing
-						case {'md'},
-							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
-						otherwise,
-							error(['Unknown channel.']);
+				if markermode,
+					for i=1:numel(channeltype),
+						switch(channeltype{i}),
+							case 'mk',
+								mk_ = mk_ + 1;
+								switch mk_,
+									case 1, % stimonoff
+										%edata{i},
+										t.stimon = edata{i}(find(edata{i}(:,2)==1),1);
+										t.stimoff = edata{i}(find(edata{i}(:,2)==-1),1);
+									case 2, % stimid
+										data.stimid = edata{i}(:,2);
+									case 3, % stimopenclose
+										t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)==1) , 1); 
+										t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
+									otherwise,
+										error(['Got more mark channels than expected.']);
+								end;
+							case 'e',
+								e_ = e_ + 1;
+								% do nothing
+							case {'md'},
+								data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
+							otherwise,
+								error(['Unknown channel.']);
+						end
 					end
-				end
+				elseif dimmode,
+					t.stimon = [];
+					t.stimoff = [];
+					data.stimid = [];
+					counter = 0;
+					for i=1:numel(edata),
+						if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
+							counter = counter + 1;
+							t.stimon = [t.stimon(:); colvec(edata{i}(find(edata{i}(:,2)==1),1))];
+							t.stimoff = [t.stimoff(:); colvec(edata{i}(find(edata{i}(:,2)==-1),1))];
+							data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,2)==1)),1)];
+						end;
+						if strcmp(channeltype(i),'md'),
+							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
+						end;
+					end;
+					[dummy,order] = sort(t.stimon);
+					t.stimon = t.stimon(order(:));
+					t.stimoff = t.stimoff(order(:));
+					data.stimid = data.stimid(order(:));
+					t.stimopenclose(:,1) = t.stimon;
+					t.stimopenclose(:,2) = t.stimoff;
+				end;
 
 				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
-
 		end %readtimeseriesepoch()
+
 	end; % methods
 end
 

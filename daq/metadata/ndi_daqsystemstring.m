@@ -17,6 +17,7 @@
 %  NDI_DAQSYSTEM object, CT is the channel type identifier, and #### is a list of channels.
 %  The #### list of channels should be numbered from 1, and can use the symbols '-' to
 %  indicate a sequential run of channels, and ',' to separate channels.
+%  Use a semicolon to separate channel types (e.g., 'ai27-28;di1')
 %  
 %  For example:
 %     '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]

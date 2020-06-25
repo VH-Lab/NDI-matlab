@@ -61,7 +61,7 @@ ft = ndi_filenavigator_epochdir(exp, fileparameters, epochprobemapclass, epochpr
 
 eval(['dr = ' readerobjectclass '();']);
 
-eval(['mydev = ' objectclass '(devname, ft, dr );']);
+eval(['mydev = ' objectclass '(devname, ft, dr, mdr );']);
 
 exp = exp.daqsystem_add(mydev);
 

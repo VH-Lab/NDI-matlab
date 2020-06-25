@@ -42,7 +42,7 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 					[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev{1}, {'time'}, channel, devepoch{1}, s0, s1);
+					[t] = readchannels_epochsamples(dev{1}, {'time'}, channel(1), devepoch{1}, s0, s1);
 				end
 				if nargout>=3,
 					timeref_out = ndi_timereference(ndi_probe_timeseries_mfdaq_obj, ndi_clocktype('dev_local_time'), eid, 0);
