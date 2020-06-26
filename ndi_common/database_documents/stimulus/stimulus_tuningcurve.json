@@ -3,13 +3,14 @@
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_tuningcurve.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_tuningcurve_schema.json",
 		"class_name":						"ndi_document_stimulus_stimulus_tuningcurve",
+		"property_list_name":				"tuning_curve",
 		"class_version":					1,
 		"superclasses": [ 
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json" }
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
 	},
 	"depends_on": [
-		{	"name":			"thing_id",
+		{	"name":			"element_id",
 			"value":		""
 		},
 		{	 "name":		"stimulus_response_scalar_id",

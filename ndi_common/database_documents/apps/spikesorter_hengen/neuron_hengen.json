@@ -3,26 +3,19 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter_hengen\/neuron_hengen.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter_hengen\/neuron_hengen_schema.json",
 		"class_name":						"ndi_document_apps_spikesorter_hengen_neuron_hengen",
+		"property_list_name":					"neuron_hengen",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
 	},
 	"depends_on": [
 		{	
-			"name": "underlying_thing_id",
-			"value": "" 
+			"name": "element_id",
+			"value": "doc_id_of_underlying_element" 
 		}
 	],
-	"thing": {
-		"ndi_thing_class": "ndi_thing",
-		"name": "",
-		"reference":"",
-		"type": "",
-		"direct": 0
-	},
-	"neuron_properties": {
+	"neuron_hengen": {
 		"waveform": [],
 		"waveforms": [],
 		"clust_idx": 0,

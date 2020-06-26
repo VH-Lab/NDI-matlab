@@ -3,7 +3,7 @@ function out = ndi_debug_database_stats(E)
 %
 % OUT = NDI_DEBUG_DATABASE_STATS(E)
 %
-% Return a bunch of documents from an NDI experiment E
+% Return a bunch of documents from an NDI session E
 %
 
 Dmissing = ndi_finddocs_missing_dependencies(E);

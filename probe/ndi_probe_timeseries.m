@@ -8,9 +8,9 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 		function obj = ndi_probe_timeseries(varargin)
 			% NDI_PROBE_TIMESERIES - create a new NDI_PROBE_TIMESERIES object
 			%
-			%  OBJ = NDI_PROBE_TIMESERIES(EXPERIMENT, NAME, REFERENCE, TYPE)
+			%  OBJ = NDI_PROBE_TIMESERIES(SESSION, NAME, REFERENCE, TYPE)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_EXPERIMENT object EXPERIMENT and
+			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
@@ -41,8 +41,14 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 					timeref = ndi_timereference(ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
 				end;
 				
-				[epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.experiment.syncgraph.time_convert(timeref, t0, ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
-				[epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.experiment.syncgraph.time_convert(timeref, t1, ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+				[epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
+					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+				[epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
+					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+
+				if isempty(epoch_timeref),
+					error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
+				end;
 
 				epoch = epoch_timeref.epoch;
 
@@ -52,11 +58,11 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 					[data,t] = ndi_probe_timeseries_obj.readtimeseriesepoch(epoch, epoch_t0_out, epoch_t1_out);
 					% now need to convert t back to timeref units
 					if isnumeric(t),
-						t = ndi_probe_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, t, timeref.referent, timeref.clocktype);
+						t = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, timeref.referent, timeref.clocktype);
 					elseif isstruct(t),
 						fn = fieldnames(t);
 						for i=1:numel(fn),
-							t = setfield(t, fn{i}, ndi_probe_timeseries_obj.experiment.syncgraph.time_convert(epoch_timeref, ...
+							t = setfield(t, fn{i}, ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
 								getfield(t,fn{i}), timeref.referent, timeref.clocktype));
 						end
 					end;

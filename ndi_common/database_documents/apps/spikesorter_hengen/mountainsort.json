@@ -3,13 +3,14 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter_hengen\/mountainsort_parameters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter_hengen\/mountainsort_parameters_schema.json",
 		"class_name":						"ndi_document_apps_spikesorter_hengen_mountainsort_parameters",
+		"property_list_name":					"mountainsort_parameters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
-	"sorting_parameters": {
+	"mountainsort_parameters": {
 		"sorter_name": "mountainsort4",
 		"adjacency_radius": 2,
 		"curation": 0,

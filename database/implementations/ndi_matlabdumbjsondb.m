@@ -9,7 +9,7 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		function ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb(varargin)
 		% NDI_MATLABDUMBJSONDB make a new NDI_MATLABDUMBJSONDB object
 		% 
-		% NDI_MATLABDUMBJSONDB_OBJ = NDI_MATLABDUMBJSONDB(PATH, EXPERIMENT_UNIQUE_REFERENCE, COMMAND, ...)
+		% NDI_MATLABDUMBJSONDB_OBJ = NDI_MATLABDUMBJSONDB(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
 		%
 		% Creates a new NDI_MATLABDUMBJSONDB object.
 		%

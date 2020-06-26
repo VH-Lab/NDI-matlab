@@ -1,0 +1,107 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
+	"title": "ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary",
+	"type": "object",
+	"properties": {
+		"mean_spikewave"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"sample_times"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"number_of_spikes"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"median_spikekink_vm"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"median_voltageofhalfmaximum"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"median_fullwidthhalfmaximum"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},	
+		"median_presk_halfwidthmaximum"	:{
+			"type" : "array",
+			"items" : {
+				"type" : "number"
+			}
+		},	
+		"median_fullwidthhalfmaximum"	: {
+			"type" : "array", 
+			"items" : {
+				"type" : "number"
+			}
+		},	
+		"median_presk_halfwidthmaximum"	:{
+			"type" : "array",
+			"items" : {
+				"type" : "number"
+			}
+		},	
+		"median_max_dvdt"	: {
+			"type" : "array",
+			"items" : {
+				"type" : "number"
+			}
+		},
+		"median_kink_index" : {
+			"type" : "array",
+			"items" : {
+				"type" : "number"
+			}
+		},		
+		"slope_criterion" : {
+			"type" : "array",
+			"items" : {
+				"type" : ["string", "number"]
+			}
+		},												
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				},
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "spike_extraction_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}												
+			]
+		}		
+	}
+}

@@ -6,7 +6,7 @@ if exist([dirpath filesep '.ndi'], 'dir') == 7
 	rmdir([dirpath filesep '.ndi'], 's');
 end
 
-our_exp = ndi_experiment_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
+our_exp = ndi_session_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
@@ -47,7 +47,7 @@ spikesorter = ndi_app_spikesorter(our_exp);
 spikesorter.add_sorting_doc('test_sort', []);
 spikesorter.spike_sort(probe, e, 'test_extract', 'test_sort', 0);
 
-neuron1 = our_exp.getthings('thing.name','neuron_1');
+neuron1 = our_exp.getelements('element.name','neuron_1');
 [d1,t1] = readtimeseries(neuron1{1},1,-Inf,Inf);
 
 figure(10)

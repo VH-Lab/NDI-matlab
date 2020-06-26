@@ -3,16 +3,15 @@
 		"definition":						"$NDIDOCUMENTPATH\/ndi_document_subject.json",
 		"validation":						"$NDISCHEMAPATH\/ndi_document_subject_schema.json",
 		"class_name":						"ndi_document_subject",
+		"property_list_name":					"subject",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
         },
 	"subject": {
-		"reference":						"",
-		"species":						"",
-		"strain":						"",
-		"variant":						""
+		"local_identifier":					"",
+		"description":						""
 	}
 }
 

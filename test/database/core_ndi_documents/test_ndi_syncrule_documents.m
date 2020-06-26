@@ -3,7 +3,7 @@ function test_ndi_syncrule_documents
 %
 % TEST_NDI_SYNCRULE_DOCUMENTS(DIRNAME)
 %
-% Given a directory that corresponds to an experiment, this function tries to create
+% Given a directory that corresponds to an session, this function tries to create
 % the following objects :
 %   1) ndi_syncrule_filematch
 %
@@ -15,9 +15,9 @@ function test_ndi_syncrule_documents
 %
 
 	ndi_globals;
-	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
 
-	E = ndi_experiment_dir('exp1',dirname);
+	E = ndi_session_dir('exp1',dirname);
 	 % remove any existing syncrules
 	doc = E.database_search(ndi_query('','isa','ndi_document_syncrule.json',''));
 	E.database_rm(doc);

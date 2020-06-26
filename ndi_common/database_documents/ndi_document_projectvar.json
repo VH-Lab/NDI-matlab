@@ -3,13 +3,14 @@
 		"definition":						"$NDIDOCUMENTPATH\/ndi_document_projectvar.json",
 		"validation":						"$NDISCHEMAPATH\/ndi_document_projectvar_schema.json",
 		"class_name":						"ndi_document_projectvar",
+		"property_list_name":					"projectvar",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
     },
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": "" 
 		}
 	],

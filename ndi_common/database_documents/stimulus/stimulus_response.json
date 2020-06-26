@@ -9,7 +9,7 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": []
 		},
 		{	"name": "stimulator_id",
@@ -24,7 +24,7 @@
 	],
 	"stimulus_response": {
 		"stimulator_epochid":						[],
-		"thing_epochid":						[]
+		"element_epochid":						[]
 	}
 }
 

@@ -3,11 +3,12 @@
 		"definition":						"$NDIDOCUMENTPATH\/daq\/ndi_document_daqsystem.json",
 		"validation":						"$NDISCHEMAPATH\/daq\/ndi_document_daqsystem_schema.json",
 		"class_name":						"ndi_document_daqsystem",
+		"property_list_name":					"daqsystem",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
-    },
+	},
 	"depends_on": [
 		{	"name": "filenavigator_id",
 			"value": "" 
@@ -20,3 +21,4 @@
 		"ndi_daqsystem_class":					""
 	}
 }
+

@@ -1,0 +1,20 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/daq\/ndi_document_filenavigator_schema.json",
+	"title": "ndi_document_filenavigator",
+	"type": "object",
+	"properties": {
+		"ndi_daqreader_class": {
+			"type": "string"
+		},
+		"fileparameters": {
+			"type": "string"
+		},
+		"epochprobemap_class" : { 
+			"type" : "string"
+		},	
+		"epochprobemap_fileparameters" : { 
+			"type" : "string"
+		}			
+	}
+}

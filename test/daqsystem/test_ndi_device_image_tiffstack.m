@@ -14,7 +14,7 @@ frame_number = 1;
 %default.
 if nargin < 1
     ndi_globals
-    example_directory = [ndiexampleexperpath];
+    example_directory = [ndi.path.exampleexperpath];
     input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
     output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];
     if exist(output_dir_name) ~=7
@@ -28,8 +28,8 @@ else
     mkdir(output_dir_name);
 end
 
-%creating a new experiment object
-example_exp = ndi_experiment_dir('exp1',input_dir_name);
+%creating a new session object
+example_exp = ndi_session_dir('exp1',input_dir_name);
 %creating a new filenavigator that looks for .tif files.
 example_filenavigator = ndi_filenavigator(example_exp,'.*\.tif\>');
 %creating an image_tiffstack daqsystem object

@@ -3,11 +3,12 @@
 		"definition":						"$NDIDOCUMENTPATH\/ndi_document.json",
 		"validation":						"$NDISCHEMAPATH\/ndi_document_schema.json",
 		"class_name":						"ndi_document",
+		"property_list_name":					"ndi_document",
 		"class_version":					1,
 		"superclasses": [ ]
 	},
 	"ndi_document": {
-		"experiment_id":				"",
+		"session_id":				"",
 		"id":                           "",
 		"name":							"",
 		"type":							"",

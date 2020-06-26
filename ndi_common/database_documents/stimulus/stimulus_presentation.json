@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_presentation.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_presentation_schema.json",
 		"class_name":						"ndi_document_stimulus_stimulus_presentation",
+                "property_list_name":                                   "stimulus_presentation",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,
@@ -10,20 +11,22 @@
 		]
 	},
 	"depends_on": [
-		{	"name": "stimulus_thing_id",				
-			"value": [] 
+		{	"name": "stimulus_element_id",				
+			"value": "" 
 		}
 	],
-	"presentation_order":							[],
-	"presentation_time": {
-			"clocktype":						"",
-			"stimopen":						0,
-			"onset":						0,
-			"offset":						1,
-			"stimclose":						1
-	},
-	"stimuli": {
-		"parameters": {
+	"stimulus_presentation": {
+		"presentation_order":							[],
+		"presentation_time": {
+				"clocktype":						"",
+				"stimopen":						0,
+				"onset":						0,
+				"offset":						1,
+				"stimclose":						1
+		},
+		"stimuli": {
+			"parameters": {
+			}
 		}
 	}
 }

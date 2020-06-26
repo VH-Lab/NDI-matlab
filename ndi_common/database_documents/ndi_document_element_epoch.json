@@ -1,0 +1,24 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_element_epoch.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_element_epoch_schema.json",
+		"class_name":						"ndi_document_element_epoch",
+		"property_list_name":					"element_epoch",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "element_id",
+			"value": "" 
+		}
+	],
+	"element_epoch": {
+		"epoch_clock":						"",
+		"t0_t1":						""
+	}
+}
+

@@ -3,7 +3,7 @@ function [d] = ndi_findalldependencies(E, visited, varargin)
 %
 % [D] = NDI_FINDALLDEPENDENCIES(E, VISITED, DOC1, DOC2, ...)
 %
-% Searches the database of experiment E and returns all documents that have a 
+% Searches the database of session E and returns all documents that have a 
 % dependency ('depends_on') field for which the 'value' field corresponds to the
 % id of DOC1 or DOC2, etc. If any DOCS do not need to be searched, provide them in VISITED.
 % Otherwise, provide empty for VISITED.
@@ -43,5 +43,5 @@ for i=1:numel(varargin),
 end;
 
 if ~iscell(d),
-    error(['This should always return a cell list, even if it is empty. Something is wrong, debug necessary.']);    
+    error(['This should always return a cell list, even if it is empty. Someelement is wrong, debug necessary.']);    
 end;

@@ -2,7 +2,7 @@
 %
 %  DT = FILENAVIGATOR_EPOCHDIR(EXP, FILETYPE)   
 %
-%  Creates a new file tree object with the experiment name 
+%  Creates a new file tree object with the session name 
 %  This class in inhereted from filenavigator and with epochdir organization
 %
 
@@ -13,16 +13,16 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 	methods
 
 		function obj = ndi_filenavigator_epochdir(varargin)
-		% NDI_FILENAVIGATOR_EPOCHDIR - Create a new NDI_FILENAVIGATOR_EPOCHDIR object that is associated with an experiment and device
+		% NDI_FILENAVIGATOR_EPOCHDIR - Create a new NDI_FILENAVIGATOR_EPOCHDIR object that is associated with an session and device
 		%
 		%   OBJ = NDI_FILENAVIGATOR_EPOCHDIR(EXP, [FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%
 		% Creates a new NDI_FILENAVIGATOR_EPOCHDIR object that negotiates the data tree of device's data that is
-		% stored in an experiment EXP.
+		% stored in an session EXP.
 		%
 		% (document FILEPARAMETERS)
 		%
-		% Inputs: EXP - an NDI_EXPERIMENT ; FILEPARAMETERS - the files that are recorded in each epoch
+		% Inputs: EXP - an NDI_SESSION ; FILEPARAMETERS - the files that are recorded in each epoch
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
 		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_daqsystem' is used by default
@@ -32,7 +32,7 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 		%
 		% Output: OBJ - an NDI_FILENAVIGATOR_EPOCHDIR object
 		%
-		% See also: NDI_EXPERIMENT, NDI_DAQSYSTEM
+		% See also: NDI_SESSION, NDI_DAQSYSTEM
 		%
 			obj = obj@ndi_filenavigator(varargin{:});
 		end
@@ -103,9 +103,9 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 		% and the epoch identifier is the _name_ of the subdirectory.
 		%
 		% For example, if my device has a file tree that reads files with extension .dat,
-		% the experiment directory is
+		% the session directory is
 		%
-		% myexperiment/
+		% mysession/
 		%       t00001/
 		%          mydata.dat
 		%
@@ -130,7 +130,7 @@ classdef ndi_filenavigator_epochdir < ndi_filenavigator
 			% EPOCHFILES{n} will be a cell list of the files in epoch n.
 			%
 			% For NDI_FILENAVIGATOR_EPOCHDIR, this uses the file matching parameters in all
-			% subdirectories within the experiment (at a folder depth of 1; that is, it doesn't
+			% subdirectories within the session (at a folder depth of 1; that is, it doesn't
 			% search folders in folders).
 			%
 			% See also: NDI_FILENAVIGATOR/SETFILEPARAMETERS

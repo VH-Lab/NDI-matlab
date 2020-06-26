@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response_scalar_parameters.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_scalar_schema_parameters.json",
 		"class_name":						"ndi_document_stimulus_stimulus_response_scalar_parameters",
+		"property_list_name":					"stimulus_response_scalar_parameters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}

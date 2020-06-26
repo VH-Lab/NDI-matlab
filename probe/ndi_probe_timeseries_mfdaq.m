@@ -8,9 +8,9 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 		function obj = ndi_probe_timeseries_mfdaq(varargin)
 			% NDI_PROBE - create a new NDI_PROBE object
 			%
-			%  OBJ = NDI_PROBE(EXPERIMENT, NAME, REFERENCE, TYPE)
+			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_EXPERIMENT object EXPERIMENT and
+			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
@@ -42,7 +42,7 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 					[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev{1}, {'time'}, 1, devepoch{1}, s0, s1);
+					[t] = readchannels_epochsamples(dev{1}, {'time'}, channel(1), devepoch{1}, s0, s1);
 				end
 				if nargout>=3,
 					timeref_out = ndi_timereference(ndi_probe_timeseries_mfdaq_obj, ndi_clocktype('dev_local_time'), eid, 0);

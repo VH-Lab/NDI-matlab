@@ -7,19 +7,19 @@ classdef ndi_app_markgarbage < ndi_app
 	methods
 
 		function ndi_app_markgarbage_obj = ndi_app_markgarbage(varargin)
-			% NDI_APP_MARKGARBAGE - an app to help exclude garbage data from experiments
+			% NDI_APP_MARKGARBAGE - an app to help exclude garbage data from sessions
 			%
-			% NDI_APP_MARKGARBAGE_OBJ = NDI_APP_MARKGARBAGE(EXPERIMENT)
+			% NDI_APP_MARKGARBAGE_OBJ = NDI_APP_MARKGARBAGE(SESSION)
 			%
 			% Creates a new NDI_APP_MARKGARBAGE object that can operate on
-			% NDI_EXPERIMENTS. The app is named 'ndi_app_markgarbage'.
+			% NDI_SESSIONS. The app is named 'ndi_app_markgarbage'.
 			%
-				experiment = [];
+				session = [];
 				name = 'ndi_app_markgarbage';
 				if numel(varargin)>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
-				ndi_app_markgarbage_obj = ndi_app_markgarbage_obj@ndi_app(experiment, name);
+				ndi_app_markgarbage_obj = ndi_app_markgarbage_obj@ndi_app(session, name);
 
 		end % ndi_app_markgarbage() creator
 
@@ -48,7 +48,7 @@ classdef ndi_app_markgarbage < ndi_app
 		end % markvalidinterval()
 
 		function b = savevalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj, validintervalstruct)
-			% SAVEVALIDINTERVAL - save a valid interval structure to the experiment database
+			% SAVEVALIDINTERVAL - save a valid interval structure to the session database
 			%
 			% B = SAVEVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ, VALIDINTERVALSTRUCT)
 			%
@@ -78,18 +78,18 @@ classdef ndi_app_markgarbage < ndi_app
 
 				% save new variable, clearing old
 				ndi_app_markgarbage_obj.clearvalidinterval(ndi_epochset_obj);
-				newdoc = ndi_app_markgarbage_obj.experiment.newdocument('apps/markgarbage/valid_interval',...
+				newdoc = ndi_app_markgarbage_obj.session.newdocument('apps/markgarbage/valid_interval',...
 						'valid_interval',vi) + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
-				newdoc = newdoc.set_dependency_value('thing_id',ndi_epochset_obj.id());
-				ndi_app_markgarbage_obj.experiment.database_add(newdoc);
+				newdoc = newdoc.set_dependency_value('element_id',ndi_epochset_obj.id());
+				ndi_app_markgarbage_obj.session.database_add(newdoc);
 		end; % savevalidinterval()
 
 		function b = clearvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
-			% CLEARVALIDINTERVAL - clear all 'valid_interval' records for an NDI_EPOCHSET from experiment database
+			% CLEARVALIDINTERVAL - clear all 'valid_interval' records for an NDI_EPOCHSET from session database
 			% 
 			% B = CLEARVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ)
 			%
-			% Clears all valid interval entries from the experiment database for object NDI_EPOCHSET_OBJ.
+			% Clears all valid interval entries from the session database for object NDI_EPOCHSET_OBJ.
 			%
 			% Returns 1 on success, 0 otherwise.
 			%
@@ -98,13 +98,13 @@ classdef ndi_app_markgarbage < ndi_app
 
 				[vi,mydoc] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
 				if ~isempty(mydoc),
-					ndi_app_markgarbage_obj.experiment.database_rm(mydoc);
+					ndi_app_markgarbage_obj.session.database_rm(mydoc);
 				end
 
 		end % clearvalidinteraval()
 
 		function [vi,mydoc] = loadvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
-			% LOADVALIDINTERVAL - Load all valid interval records from experiment database
+			% LOADVALIDINTERVAL - Load all valid interval records from session database
 			%
 			% [VI,MYDOC] = LOADVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ)
 			%
@@ -116,12 +116,12 @@ classdef ndi_app_markgarbage < ndi_app
 
 				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
-				if isa(ndi_epochset_obj,'ndi_thing'),
-					searchq2 = ndi_query('','depends_on','thing_id',ndi_epochset_obj.id());
+				if isa(ndi_epochset_obj,'ndi_element'),
+					searchq2 = ndi_query('','depends_on','element_id',ndi_epochset_obj.id());
 					searchq = searchq & searchq2; 
 				end
 
-				mydoc = ndi_app_markgarbage_obj.experiment.database_search(searchq);
+				mydoc = ndi_app_markgarbage_obj.session.database_search(searchq);
 
 				if ~isempty(mydoc),
 					for i=1:numel(mydoc),
@@ -129,11 +129,11 @@ classdef ndi_app_markgarbage < ndi_app
 					end;
 				end;
 
-				if isempty(vi), % underlying things could still have garbage intervals
+				if isempty(vi), % underlying elements could still have garbage intervals
 					% check here: is there a potential for a bug or error if the clocks differ?
-					if isprop(ndi_epochset_obj,'underlying_thing'),
-						if ~isempty(ndi_epochset_obj.underlying_thing),
-							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_thing);
+					if isprop(ndi_epochset_obj,'underlying_element'),
+						if ~isempty(ndi_epochset_obj.underlying_element),
+							[vi_try,mydoc_try] = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj.underlying_element);
 							if ~isempty(vi_try),
 								vi = vi_try;
 								mydoc = mydoc_try;
@@ -165,13 +165,13 @@ classdef ndi_app_markgarbage < ndi_app
 				for i=1:size(vi,1),
 					% for each marked valid region
 					%    Can we project the marked valid region into this timeref?
-						interval_t0_timeref = ndi_timereference(ndi_app_markgarbage_obj.experiment, vi(i).timeref_structt0);
-						interval_t1_timeref = ndi_timereference(ndi_app_markgarbage_obj.experiment, vi(i).timeref_structt1);
+						interval_t0_timeref = ndi_timereference(ndi_app_markgarbage_obj.session, vi(i).timeref_structt0);
+						interval_t1_timeref = ndi_timereference(ndi_app_markgarbage_obj.session, vi(i).timeref_structt1);
 						[epoch_t0_out, epoch_t0_timeref, msg_t0] = ...
-								ndi_app_markgarbage_obj.experiment.syncgraph.time_convert(interval_t0_timeref, ...
+								ndi_app_markgarbage_obj.session.syncgraph.time_convert(interval_t0_timeref, ...
 									vi(i).t0, timeref.referent, timeref.clocktype);
 						[epoch_t1_out, epoch_t1_timeref, msg_t1] = ...
-								ndi_app_markgarbage_obj.experiment.syncgraph.time_convert(interval_t1_timeref, ...
+								ndi_app_markgarbage_obj.session.syncgraph.time_convert(interval_t1_timeref, ...
 									vi(i).t1, timeref.referent, timeref.clocktype);
 						if isempty(epoch_t0_out) | isempty(epoch_t1_out),
 							% so we say the region is valid, we have no restrictions to add

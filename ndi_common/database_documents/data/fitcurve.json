@@ -3,6 +3,7 @@
 		"definition":							"$NDIDOCUMENTPATH\/data\/fitcurve.json",
 		"validation":							"$NDISCHEMAPATH\/data\/fitcurve.json",
 		"class_name":							"ndi_document_data_fitcurve",
+                "property_list_name":						"fitcurve",
 		"class_version":						1,
 		"superclasses": [
 			{ "definition":						"$NDIDOCUMENTPATH\/ndi_document.json" }
@@ -13,7 +14,7 @@
 			"value":	"" }
 	],
 	"fitcurve": {
-		"fit_name": 							0,
+		"fit_name": 							"",
 		"fit_equation": 						"y=a+b*x.^c",
 		"fit_parameters":						[0,1,2],
 		"fit_parameter_names":						"a b c",
@@ -21,7 +22,7 @@
 		"fit_dependent_variable_names":					"y",
 		"fit_sse":							0,
 		"fit_constraints": [ {
-				"fit_constraint_name":				0,
+				"fit_constraint_name":				"",
 				"fit_constraint_value":				0
 			}
 		],

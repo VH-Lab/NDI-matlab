@@ -6,7 +6,7 @@ function exp = ndi_vhlab_makedev(exp, devname)
 % Creates devices that look for files in the VHLAB standard recording
 % scheme, where data from different epochs are organized into
 % subdirectories (using NDI_FILENAVIGATOR_EPOCHDIR). DEVNAME should be the 
-% name a device in the table below. These devices are added to the NDI_EXPERIMENT
+% name a device in the table below. These devices are added to the NDI_SESSION
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
 % If the function is called with no input arguments, then it returns a list
@@ -50,11 +50,13 @@ switch devname,
 		fileparameters{end+1} = 'vhintan_channelgrouping.txt'; 
 		readerobjectclass = [readerobjectclass '_intan'];
 		epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
+		mdr = {};
 	case 'vhspike2',
 		fileparameters{end+1} = '.*\.smr\>';
 		fileparameters{end+1} = 'vhspike2_channelgrouping.txt'; 
 		readerobjectclass = [readerobjectclass '_cedspike2'];
 		epochprobemapfileparameters = {'vhspike2_channelgrouping.txt'};
+		mdr = {};
 	case 'vhvis_spike2'
 		fileparameters{end+1} = 'stimtimes.txt';
 		fileparameters{end+1} = 'verticalblanking.txt';
@@ -62,7 +64,7 @@ switch devname,
 		fileparameters{end+1} = 'spike2data.smr'; 
 		readerobjectclass = [readerobjectclass '_stimulus_vhlabvisspike2'];
 		epochprobemapfileparameters = {'stimtimes.txt'}; 
-		objectclass = 'ndi_daqsystem_mfdaq_stimulus';
+		mdr = {ndi_daqmetadatareader_NewStimStims('stims.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
@@ -72,7 +74,8 @@ ft = ndi_filenavigator_epochdir(exp, fileparameters, epochprobemapclass, epochpr
 
 eval(['dr = ' readerobjectclass '();']);
 
-eval(['mydev = ' objectclass '(devname, ft, dr );']);
+
+eval(['mydev = ' objectclass '(devname, ft, dr, mdr );']);
 
 exp = exp.daqsystem_add(mydev);
 

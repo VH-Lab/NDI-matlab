@@ -9,26 +9,26 @@ classdef ndi_app_stimulus_decoder < ndi_app
 		function ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder(varargin)
 			% NDI_APP_STIMULUS_DECODER - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_STIMULUS_DECODER_OBJ = NDI_APP_STIMULUS_DECODER(EXPERIMENT)
+			% NDI_APP_STIMULUS_DECODER_OBJ = NDI_APP_STIMULUS_DECODER(SESSION)
 			%
 			% Creates a new NDI_APP_STIMULUS_DECODER object that can operate on
-			% NDI_EXPERIMENTS. The app is named 'ndi_app_stimulus_response'.
+			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
-				experiment = [];
+				session = [];
 				name = 'ndi_app_stimulus_decoder';
 				if numel(varargin)>0,
-					experiment = varargin{1};
+					session = varargin{1};
 				end
-				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi_app(experiment, name);
+				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi_app(session, name);
 
 		end % ndi_app_stimulus_decoder() creator
 
-		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_thing_stim, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_THING stimulus probe
+		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_element_stim, reset)
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_ELEMENT stimulus probe
 			%
-			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_THING_STIM, [RESET])
+			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
 			%
-			% Examines a the NDI_EXPERIMENT associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
+			% Examines a the NDI_SESSION associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
@@ -46,9 +46,9 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				newdocs = {};
 				existingdocs = {};
 
-				E = ndi_app_stimulus_decoder_obj.experiment;
+				E = ndi_app_stimulus_decoder_obj.session;
 
-				sq_probe = ndi_query('','depends_on','stimulus_thing_id',ndi_thing_stim.id());
+				sq_probe = ndi_query('','depends_on','stimulus_element_id',ndi_element_stim.id());
 				sq_e = ndi_query(E.searchquery());
 				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
 
@@ -69,13 +69,13 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
 				end;
 
-				et = ndi_thing_stim.epochtable();
+				et = ndi_element_stim.epochtable();
 
 				epochsremaining = setdiff({et.epoch_id}, epoch_finished);
 
 				for j=1:numel(epochsremaining),
 					% decode stimuli
-					[data,t,timeref] = ndi_thing_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
+					[data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
 					% stimulus
 					mystim = emptystruct('parameters');
 					for k=1:numel(data.parameters),
@@ -89,10 +89,13 @@ classdef ndi_app_stimulus_decoder < ndi_app
 						presentation_time(end+1) = timestruct;
 					end;
 
+					stimulus_presentation = struct('presentation_order', data.stimid,...
+						'presentation_time', presentation_time, ...
+						'stimuli', mystim);
 					nd = E.newdocument('stimulus/stimulus_presentation.json',...
-						'presentation_order', data.stimid, 'presentation_time', presentation_time, ...
-						'stimuli',mystim,'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
-					nd = set_dependency_value(nd,'stimulus_thing_id',ndi_thing_stim.id());
+						'stimulus_presentation', stimulus_presentation, ...
+						'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+					nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
 					newdocs{end+1} = nd;
 				end;
 				E.database_add(newdocs);

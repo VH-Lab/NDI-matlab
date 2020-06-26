@@ -13,6 +13,8 @@ function b = ndi_install(directory, dependencies)
 %
 % B = NDI_INSTALL(PATHNAME)
 %
+% PATHNAME should not include any shell script shortcuts (like '~').
+%
 % Finally, one can also install either the minimal set of tools needed for NDI (DEPENDENCIES=1),
 % or one can install the standard VHTOOLS suite (DEPENDENCIES=2):
 %
@@ -27,17 +29,40 @@ if ~b,
 end;
 
 
+need_to_set_directory = 0;
+
 if nargin<1,
-	directory = [userpath filesep 'tools'];
+	need_to_set_directory = 1;
+	directory = ' '; % not empty
 end;
 
 if isempty(directory),
+	need_to_set_directory = 1;
+end;
+
+if need_to_set_directory,
+	if isempty(userpath),
+		disp(['Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.']);
+		reply = input('Can we reset your USERPATH to the default? Y/N [Y]:','s');
+		if isempty(reply)
+			reply = 'Y';
+		end
+		if strcmpi(strtrim(reply),'Y'),
+			userpath('reset');
+		else,
+			error(['User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath']);
+		end;
+	end;
 	directory = [userpath filesep 'tools'];
 end;
+
+disp(['About to install at directory ' directory '...']);
 
 if nargin<2,
 	dependencies = 1;
 end;
+
+dependency_input = dependencies;
 
 if isnumeric(dependencies),
 	switch (dependencies),
@@ -52,9 +77,41 @@ t = urlread(dependencies);
 j = jsondecode(t);
 dependencies = j.dependency;
 
-%if ~exist(directory,'dir'),
-%	mkdir(directory);
-%end;
+ % are we updating at least NDI?
+
+w = which('ndi_Init');
+if isempty(w),
+	updating = 0;
+else,
+	updating = 1;
+end;
+
+if updating,
+	disp(['We are updating an existing installation on the path...']);
+	disp(['  We must temporarily reset the Matlab path.']);
+	disp(['  startup.m will be called during the installation, which should restore your path to your desired path.']);
+	currentpath = path(); % for now, don't do anything with this
+	currpwd = pwd();
+
+	% copy 'ndi_install.m' file to userpath directory
+	thisfile = which('ndi_globals'); % ndi_globals is in same directory as ndi_install; ndi_install can have multiple copies
+	[thisparent,thisfilename,thisextension] = fileparts(thisfile);
+	copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
+
+	cd(userpath);
+	restoredefaultpath();
+	eval(['ndi_install(directory,dependency_input);']);
+
+	% now clean up
+	try,
+		delete([userpath filesep 'ndi_install.m']);
+	end;
+	try,
+		cd(currpwd);
+	end;
+	
+	return;
+end;
 
 for i=1:numel(dependencies),
 	libparts = split(dependencies{i},'/');
@@ -85,6 +142,7 @@ else,
 end;
 
 startup
+
 
  % embedded version
 
@@ -174,7 +232,7 @@ if ~exist(dirname,'dir'),
 end;
 
 if pull_success, % if we are still going, try to pull
-	[status,results]=system(['git -C ' dirname ' pull']);
+	[status,results]=system(['git -C "' dirname '" pull']);
 
 	pull_success=(status==0);
 end;
@@ -191,7 +249,7 @@ function b = git_embedded_isgitdirectory(dirname)
 %
 
 if git_embedded_assert,
-	[status,results] = system(['git -C ' dirname ' status']);
+	[status,results] = system(['git -C "' dirname '" status']);
 	b = ((status==0) | (status==1)) & ~isempty(results);
 else,
 	error(['GIT not available on system.']);
@@ -219,7 +277,7 @@ if ~b,
 	error(['Not a GIT directory: ' dirname '.']);
 end;
 
-[status,results] = system(['git -C ' dirname ' status ']); 
+[status,results] = system(['git -C "' dirname '" status ']); 
 
 uptodate = 0;
 untracked_present = 0;
@@ -259,7 +317,7 @@ if exist([localreponame],'dir'),
 	error([localreponame ' already exists.']);
 end;
 
-[status,results]=system(['git -C ' localparentdir ' clone ' repository]);
+[status,results]=system(['git -C "' localparentdir '" clone ' repository]);
 
 b = (status==0);
 

@@ -1,34 +1,35 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals_schema.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmneuralresponseresiduals",
+		"property_list_name":					"vmneuralresponseresiduals",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
 		]
 	},
 	"depends_on": [
-		{	"name": "thing_id",
+		{	"name": "element_id",
 			"value": 0 
 		}
 	],
 	"vmneuralresponseresiduals": {
-        "thing_epochid":                    "",
+		"element_epochid":                    "",
 		"parameters": {
 			"number_traces":                1,
 			"samples_per_trace":			[0],
-            "units":                        "V"
+			"units":                        "V"
 		},
-        "column_labels": {
-            "first_column":                 "Time (s)",
-            "second_column":                "Raw signal",
-            "third_column":                 "Raw signal with spikes",
-            "fourth_column":                "Fit signal",
-            "fifth_column":                 "Residual signal"
-        },
-        "goodness_of_fit":                  "",
-        "total_power":                      "",
-        "residual_power":                   ""
+		"column_labels": {
+		    "first_column":                 "Time (s)",
+		    "second_column":                "Raw signal",
+		    "third_column":                 "Raw signal with spikes",
+		    "fourth_column":                "Fit signal",
+		    "fifth_column":                 "Residual signal"
+		},
+		"goodness_of_fit":                  "",
+		"total_power":                      "",
+		"residual_power":                   ""
 	}
 }

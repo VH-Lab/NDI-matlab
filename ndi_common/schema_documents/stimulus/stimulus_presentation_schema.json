@@ -1,0 +1,48 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/stimulus\/stimulus_presentation_schema.json",
+	"title": "ndi_document_stimulus_stimulus_presentation",
+	"type": "object",
+	"properties": {
+		"presentation_order": {
+			"type": "array",
+			"items" : {
+				"type" : "string"
+			}
+		},
+		"presentation_time" : {
+			"type" : "object",
+			"properties" : {
+				"clocktype" : "string",
+				"stimopen" : "number",
+				"onset" : "number",
+				"offset" : "number",
+				"stimclose" : "number"
+			}
+		},
+		"stimuli": {
+			"type": "object",
+			"properties" : {
+				"parameters" : {
+					"type" : "object"
+				}
+			}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
+	}
+}

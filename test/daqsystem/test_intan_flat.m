@@ -8,29 +8,33 @@ function test_intan_flat(dirname)
 %  as an example of the Intan driver.
 %
 %  If DIRNAME is not provided, the default directory
-%  [NDIPATH]/example_experiments/exp1_eg is used.
+%  [NDIPATH]/example_sessions/exp1_eg is used.
 %
 %
 
 if nargin<1,
 	ndi_globals;
-	dirname = [ndiexampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
 end;
 
-disp(['creating a new experiment object...']);
-exp = ndi_experiment_dir('exp1',dirname);
+disp(['creating a new session object...']);
+E = ndi_session_dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (intan):']);
 
   % Step 1: Prepare the data tree; we will just look for .rhd
   %         files in any organization within the directory
 
-dt = ndi_filenavigator(exp, '.*\.rhd\>');  % look for .rhd files
+fn = ndi_filenavigator(E, '.*\.rhd\>');  % look for .rhd files
 
-  % Step 2: create the daqsystem object and add it to the experiment:
+  % Step 2: create the daqsystem object and add it to the session:
 
-dev1 = ndi_daqsystem_mfdaq('intan1',dt, ndi_daqreader_mfdaq_intan());
-exp.daqsystem_add(dev1);
+dev1 = ndi_daqsystem_mfdaq('intan1',fn, ndi_daqreader_mfdaq_intan());
+E.daqsystem_add(dev1);
+
+ % now load it back
+
+dev1 = E.daqsystem_load('name','intan1')
 
   % Now let's print some statistics
 
@@ -55,5 +59,5 @@ ylabel('Data');
 xlabel('Time (s)');
 box off;
 
-exp.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
+E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
 
