@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_thing_neuron_hengen.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_thing_neuron_hengen_schema.json",
+		"class_name":						"ndi_document_thing_neuron_hengen",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "underlying_thing_id",
+			"value": ""
+		}
+	],
+	"thing": {
+		"ndi_thing_class": "ndi_neuron_hengen",
+		"name":	"",
+		"reference": "",
+		"type":	"",
+		"direct": 0,
+		"quality": 0,
+		"source": ""
+	}
+}
+
