@@ -1,2 +1,11 @@
 Pulled from https://ftp.ncbi.nlm.nih.gov/pub/taxonomy on 2020-06-23
 	created with ndi_createGenBankControlledVocabulary.m
+
+The file is gzipped and has columns:
+
+Scientific_name      - the GenBank standard scientific name, ends in a <tab>  (these are alphabetized)
+GenBank_commonname   - the common name as defined by GenBank, ends in a <tab>
+Synonyms             - Any synonyms, items separated separated by a ', ' and ends in a <tab>
+Other_commonname     - Any other common names, items separated by a ', ' and ends in a <newline>
+
+
