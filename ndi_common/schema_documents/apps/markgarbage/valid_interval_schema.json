@@ -1,0 +1,50 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/markgarbage\/valid_interval_schema.json",
+	"title": "ndi_document_apps_markgarbage_valid_interval",
+	"type": "object",
+	"properties": {
+		"timeref_structt0": {
+			"type": "object",
+			"properties" : {
+				"referent_epochsetname" : 	"string",
+				"referent_classname"	:	"string",
+				"clocktypestring"		:	"string",
+				"epoch"					:	"string",
+				"time"					:	"string"								
+			}
+		},
+		"t0": {
+			"type": "number"
+		},
+		"timeref_structt1": {
+			"type": "object",
+			"properties" : {
+				"referent_epochsetname" : "string",
+				"referent_classname"	: "string",
+				"clocktypestring"		: "string",
+				"epoch"					: "string",
+				"time"					: "string"
+			}
+		},
+		"t1": {
+			"type": "number"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
+	}
+}

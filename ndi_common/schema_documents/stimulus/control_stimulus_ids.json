@@ -1,0 +1,33 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/stimulus\/control_stimulus_ids.json",
+	"title": "control_stimulus_ids",
+	"type": "object",
+	"properties": {
+		"control_stimulus_ids": {
+			"type": "array",
+			"items" : {
+				"type" : "string"
+			}
+		},
+		"control_stimulus_id_method": {
+			"type": "object"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_presentation_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
+	}
+}

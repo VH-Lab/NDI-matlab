@@ -1,0 +1,29 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_app_schema.json",
+	"title": "ndi_document_app",
+	"type": "object",
+	"properties": {
+		"name": {
+			"type": "string"
+		},
+		"version": {
+			"type": "number"
+		},
+		"url" : {
+			"type" : "string"
+		},
+		"os" : {
+			"type" : "string"
+		},
+		"os_version" : {
+			"type" : "string"
+		},
+		"interpreter" : {
+			"type" : "string"
+		},
+		"interpreter_version" : {
+			"type" : "number"
+		}
+	}
+}

@@ -1,0 +1,53 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/spikeextractor\/spike_extraction_parameters_schema.json",
+	"title": "spike_extraction_parameters",
+	"type": "object",
+	"properties": {
+		"center_range_time": {
+			"type": "number",
+		},
+		"overlap": {
+			"type": "number",
+		},
+		"read_time": {
+			"type": "number",
+		},
+		"refractory_time": {
+			"type": "number",
+		},		
+		"spike_start_time": {
+			"type": "number",
+		},
+		"spike_end_time": {
+			"type": "number",
+		},		
+		"do_filter" : {
+			"type" : "number"
+		},
+		"filter_type": {
+			"type" : "number"
+		},	
+		"filter_low" : {
+			"type" : "number"
+		},
+		"filter_high" : {
+			"type" : "number"
+		},
+		"filter_order": {
+			"type" : "number"
+		},	
+		"filter_ripple" : {
+			"type" : "number"
+		},
+		"threshold_method" : {
+			"type" : "string"
+		},		
+		"threshold_parameter" : {
+			"type" : "number"
+		},
+		"threshold_sign" : {
+			"type" : "number"
+		}
+	}
+}

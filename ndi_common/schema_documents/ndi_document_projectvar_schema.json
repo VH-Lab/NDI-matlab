@@ -1,0 +1,39 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_projectvar_schema.json",
+	"title": "ndi_document_projectvar",
+	"type": "object",
+	"properties": {
+		"project": {
+			"type": "string"
+		},
+		"id": {
+			"type": "string"
+		},
+		"lab": {
+			"type": "string"
+		},
+		"description": {
+			"type": "string"
+		},
+		"date": {
+			"type": "date-time"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
+	}
+}

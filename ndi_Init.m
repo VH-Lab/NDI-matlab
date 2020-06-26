@@ -30,7 +30,7 @@ ndi.path = [];
 ndi.path.path = myndipath;
 ndi.path.commonpath = [ndi.path.path filesep 'ndi_common'];
 ndi.path.documentpath = [ndi.path.commonpath filesep 'database_documents'];
-ndi.path.documentschemapath = [ndi.path.commonpath filesep 'database_documents'];
+ndi.path.documentschemapath = [ndi.path.commonpath filesep 'schema_documents'];
 ndi.path.exampleexperpath = [ndi.path.commonpath filesep 'example_sessions'];
 ndi.path.temppath = [tempdir filesep 'nditemp'];
 ndi.path.testpath = [tempdir filesep 'nditestcode'];
@@ -73,4 +73,3 @@ for i=1:numel(paths),
 	fclose(fid);
 	delete(fname);
 end;
-

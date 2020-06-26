@@ -1,0 +1,70 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/binnedspikeratevm.json",
+	"title": "ndi_document_apps_vhlab_voltage2firingrate_binnedspikeratevm",
+	"type": "object",
+	"properties": {
+		"parameters": {
+			"type": "object",
+			"properties" : {
+				"binsize" : {
+					"type" : "number"
+				},
+				"vm_baseline_correction" : {
+					"type" : "number"
+				},
+				"vm_baseline_correct_time" : {
+					"type" : "number"
+				},
+				"vm_baseline_correct_func" : {
+					"type" : "string"
+				},	
+				"number_of_points" : {
+					"type" : "number"
+				}											
+			}
+		},
+		"voltage_observations" : {
+			"type" : "string"
+		},
+		"firingrate_observations" : {
+			"type" : "string"
+		},	
+		"stimids" : {
+			"type" : "string"
+		},
+		"timepoints" : {
+			"type" : "string"
+		},		
+		"exactbintime" : {
+			"type" : "string"
+		},					
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "sorting_parameters_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				},	
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}											
+			]
+		}		
+	}
+}

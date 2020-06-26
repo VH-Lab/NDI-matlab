@@ -1,0 +1,53 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_element_schema.json",
+	"title": "ndi_document_element",
+	"type": "object",
+	"properties": {
+		"ndi_element_class": {
+			"type": "string"
+		},
+		"name": {
+			"type": "string"
+		},
+		"lab": {
+			"type": "string"
+		},
+		"reference": {
+			"type": "string"
+		},
+		"type": {
+			"type": "string"
+		},
+		"direct": {
+			"type" : "integer"
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "underlying_element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				},
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "subject_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}
+	}
+}

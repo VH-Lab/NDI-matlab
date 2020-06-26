@@ -12,7 +12,7 @@
 	},
 	"depends_on": [
 		{	"name": "element_id",				
-			"value": [] 
+			"value": "" 
 		}
 	],
 	"valid_interval": [

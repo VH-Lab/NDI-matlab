@@ -1,7 +1,7 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit_schema.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikefit",
 		"property_list_name":					"vmspikefit",
 		"class_version":					1,
