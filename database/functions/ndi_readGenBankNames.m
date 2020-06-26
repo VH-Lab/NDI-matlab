@@ -1,20 +1,25 @@
-function names = ndi_readGenBankNames(filename)
+function [genbanknames] = ndi_readGenBankNames(filename)
 % NDI_READGENBANKNAMES - read the GenBank names from the 'names.dmp' file
 %
-% NAMES = NDI_READGENBANKNAMES(FILENAME)
+% GENBANK_NAMES = NDI_READGENBANKNAMES(FILENAME)
 %
 % Given a 'names.dmp' file from a GenBank taxonomy data dump,
 % this function produces a Matlab structure with the following fields:
 % 
 % fieldname            | Description
 % -----------------------------------------------------------------
-% node                 | The node number in the GenBank database
 % genbank_commonname   | The genbank common name of the organism
+%                      |   (cell array of strings, 1 entry per node)
+%                      |   genbank_commonname{i} is the entry for node i.
 % scientific_name      | The genbank scientific name
+%                      |   (cell array of strings, 1 entry per node)
+%                      |   scientific_name{i} is the entry for node i.
 % synonym              | A cell array of strings with scientific name synonyms
+%                      |   (cell array of strings, potentially many entries per node)
+%                      |   synonym{i}{j} is the jth synonym for node i
 % other_commonname     | A cell array of strings with the other common names
-
-names = emptystruct('node','genbank_commonname','scientific_name','synonym','other_commonname');
+%                      |   (cell array of strings, potentially many entries per node)
+%                      |   other_commonname{i}{j} is the jth other common name for node i
 
 if ischar(filename),
 	T = text2cellstr(filename);
@@ -25,6 +30,10 @@ end;
 mystr = split(T{end},sprintf('\t|\t'));
 maxnode = eval(mystr{1});
 
+genbank_commonname = cell(maxnode,1);
+scientific_name = cell(maxnode,1);
+synonym = cell(maxnode,1);
+other_commonname = cell(maxnode,1);
 
 progressbar('Interpreting node names...');
 
@@ -44,33 +53,27 @@ for t=1:numel(T),
 	name_here = mystr{2};
 	category = mystr{end};
 	
-	% set the node entry
-	I = find([names.node]==node_here);
-	if isempty(I),
-		name_struct_here = emptystruct('node','genbank_commonname','scientific_name','synonym','other_commonname');
-		name_struct_here(1).node = node_here;
-		name_struct_here.synonym = {};
-		name_struct_here.other_commonname = {};
-		names(end+1) = name_struct_here;
-		I = numel(names);
-	end;
-	
-
 	switch category,
 		case 'scientific name',
-			if ~isempty(names(I).scientific_name),
+			if ~isempty(scientific_name{node_here}),
 				error(['Multiply scientific names for node ' num2str(node_here) '.']);
 			end;
-			names(I).scientific_name = name_here;
+			scientific_name{node_here} = name_here;
 		case 'synonym',
-			names(I).synonym{end+1} = name_here;
+			if isempty(synonym{node_here}),
+				synonym{node_here} = {};
+			end;
+			synonym{node_here}{end+1} = name_here;
 		case 'genbank common name',
-			if ~isempty(names(I).genbank_commonname),
+			if ~isempty(genbank_commonname{node_here}),
 				error(['Multiply genbank common names for node ' num2str(node_here) '.']);
 			end;
-			names(I).genbank_commonname = name_here;
+			genbank_commonname{node_here} = name_here;
 		case 'common name'
-			names(I).other_commonname{end+1} = name_here;
+			if isempty(other_commonname{node_here}),
+				other_commonname{node_here} = {};
+			end;
+			other_commonname{node_here}{end+1} = name_here;
 
 		otherwise,
 			% do nothing
@@ -79,3 +82,6 @@ end;
 
 
 progressbar(1);
+
+genbanknames = var2struct('genbank_commonname','scientific_name','synonym','other_commonname');
+
