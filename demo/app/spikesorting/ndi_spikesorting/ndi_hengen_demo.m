@@ -1,10 +1,10 @@
-% Create experiment folder and add .bin files to extract and sort
+% Create session folder and add .bin files to extract and sort
 % modify filepath in app/spikesorter_hengen/json_input_files/spkint_wrapper_input_64ch.json
-% to point to desired .bin file (to be found ndi_experiment path)
+% to point to desired .bin file (to be found ndi_session path)
 
-% E = ndi_experiment_dir('exp_hengen', '/Users/danielgmu/Downloads/experiment_empty')
+% E = ndi_session_dir('exp_hengen', '/Users/danielgmu/Downloads/session_empty')
 
-% probes = E.getprobes('thing.name', 'tetrode7')
+% probes = E.getprobes('element.name', 'tetrode7')
 
 % spikesorter_hengen = ndi_app_spikesorter_hengen(E)
 
@@ -12,7 +12,7 @@
 
 % spikesorter_hengen.rate_neuron_quality()
 
-% neurons = E.getthings('thing.name', 'neuron_1');
+% neurons = E.getelements('element.name', 'neuron_1');
 
 % [d,t] = readtimeseries(neurons{1}, 1, -Inf, Inf);
 
@@ -27,7 +27,7 @@ if exist([dirpath filesep '.ndi'], 'dir') == 7
 	rmdir([dirpath filesep '.ndi'], 's');
 end
 
-E = ndi_experiment_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
+E = ndi_session_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
 ced_filenav = ndi_filenavigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
