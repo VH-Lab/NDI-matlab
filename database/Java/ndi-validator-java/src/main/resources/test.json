@@ -1,5 +1,6 @@
 {
   "name": "Joe",
   "ID" : 39,
-  "Grade" : 3
+  "Grade" : 3,
+  "Friend" : {"name" :  "Tom", "favourite-number" :  "8"}
 }

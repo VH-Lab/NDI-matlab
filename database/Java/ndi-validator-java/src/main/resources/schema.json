@@ -12,6 +12,17 @@
     },
     "Grade" : {
       "type" : "string"
+    },
+    "Friend" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "favourite-number" : {
+          "type" : "integer"
+        }
+      }
     }
   }
 }

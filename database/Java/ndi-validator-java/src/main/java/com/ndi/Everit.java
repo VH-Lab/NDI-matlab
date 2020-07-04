@@ -2,6 +2,8 @@ package com.ndi;
 
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.internal.DateFormatValidator;
+import org.everit.json.schema.internal.DateTimeFormatValidator;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 
