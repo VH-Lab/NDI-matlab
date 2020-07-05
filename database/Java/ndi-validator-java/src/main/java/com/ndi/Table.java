@@ -51,8 +51,17 @@ public class Table implements Serializable {
     }
 
     /**
-     * TODO: Need to take into account adding entries to the non-primary keys
-     * @param tuple
+     * Adding a row of entries into the Table.
+     *
+     * @param tuple  the list of row entries, which should be an instance of java.util.ArrayList.
+     *               The size of it also needs to match with the number of columns provided when
+     *               constructing the table. Also the ArrayList must ordered in the same way the
+     *               original columns are ordered, corresponding to which column each row entry belongs
+     *               to. Also the row entry corresponding to the primary index cannot be null or a
+     *               IllegalArgumentException will be thrown. Secondary index is allowed to be null,
+     *               however, this will mean that we won't be able to query certain entries using only
+     *               the secondary row key. Furthermore, secondary indices also need to contain only
+     *               unique entries
      */
     public void addRow(ArrayList<String> tuple){
         if (tuple.size() != index2colKeys.size()){
@@ -70,6 +79,14 @@ public class Table implements Serializable {
             if (entry == null || index == this.primaryIndexColNum){
                 index ++;
                 continue;
+            }
+            String correspondingColumn = index2colKeys.get(index);
+            // updating the mapping between secondary indices and the primary index
+            if (this.additionalRowKeysMapping.containsKey(correspondingColumn)){
+                if (additionalRowKeysMapping.get(correspondingColumn).containsKey(entry)){
+                    throw new IllegalArgumentException("the secondary index has to be unique");
+                }
+                additionalRowKeysMapping.get(correspondingColumn).put(entry, rowKey);
             }
             String col = index2colKeys.get(index++);
             Map<String, String> data = new HashMap<>();
@@ -91,6 +108,18 @@ public class Table implements Serializable {
     }
 
     /**
+     * Check if the provided row key is indeed a secondary row key
+     *
+     * @param rowKey    the secondary row key
+     * @param column    the column where the secondary row key is located
+     * @return          whether this is a valid secondary row key
+     */
+    public boolean isSecondaryRowKey(String rowKey, String column){
+        return this.additionalRowKeysMapping.containsKey(column)
+                && this.additionalRowKeysMapping.get(column).containsKey(rowKey);
+    }
+
+    /**
      *  check if the provided colKey is indeed a colKey
      *
      * @param colKey    the col Key
@@ -101,6 +130,7 @@ public class Table implements Serializable {
     }
 
     /**
+     * Get the table entry with the provided column key and the row key
      *
      * @param colKey    thee column name
      * @param rowKey    the primary row key
@@ -116,6 +146,8 @@ public class Table implements Serializable {
     }
 
     /**
+     * Get the table entry with the provided column key and row key that is not a
+     * primary key, thus we need to specify which column this row key comes from
      *
      * @param colKey            a column key
      * @param secondaryRowKey   a secondary row key
@@ -127,6 +159,7 @@ public class Table implements Serializable {
     }
 
     /**
+     * Get the table entry with column number and row number
      *
      * @param colIndex  the column number (starting from 0)
      * @param rowIndex  the row number (starting from 0)
