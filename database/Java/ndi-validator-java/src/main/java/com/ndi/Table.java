@@ -15,13 +15,13 @@ import java.util.Set;
  * needed data more efficiently
  */
 public class Table implements Serializable {
-    public final Map<String, Map<String, String>> table;
+    private final Map<String, Map<String, String>> table;
     private final Map<Integer, String> index2colKeys;
     private final Map<Integer, String> index2rowKeys;
     private final Set<String> rowKeys;
     private final Set<String> colKeys;
-    public final HashMap<String, Map<String, String>> additionalRowKeysMapping;
-    public int primaryIndexColNum;
+    private final HashMap<String, Map<String, String>> additionalRowKeysMapping;
+    private int primaryIndexColNum;
 
     /**
      * Initialize a table. It takes the following two arguments
