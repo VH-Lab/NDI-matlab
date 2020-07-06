@@ -10,6 +10,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class TableTest {
 
     @Test
+    void badConstructor(){
+        try{
+            Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3", "col4")), "col0");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Your primary index must be one of the columns", ex.getMessage());
+        }
+        try{
+            Table tb = new Table(new ArrayList<>(Arrays.asList()), "");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Your table must have at least one column", ex.getMessage());
+        }
+    }
+
+    @Test
     void basicAddRow() {
         ArrayList<String> cols = new ArrayList<>(Arrays.asList("col1", "col2", "col3", "col4"));
         ArrayList<String> row1 = new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3", "entry4"));
@@ -81,6 +97,12 @@ class TableTest {
         catch(IllegalArgumentException ex){
             assertEquals("tuple size must match with the size of the column", ex.getMessage());
         }
+        try{
+            tb.addRow(new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "6")));
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("tuple size must match with the size of the column", ex.getMessage());
+        }
         assertEquals("entry1", tb.getEntry("col1", "entry2"));
         assertEquals("entry2", tb.getEntry("col2", "entry2"));
         assertEquals("entry3", tb.getEntry("col3", "entry2"));
@@ -90,4 +112,59 @@ class TableTest {
         assertEquals("entry5", tb.getEntry("col3", "entry5"));
         assertEquals("entry4", tb.getEntry("col4", "entry5"));
     }
+
+    @Test
+    void testSecondaryIndex(){
+        Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3")), "col1");
+        tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry5", "entry6")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry7", "entry8", "entry9")));
+        assertEquals("entry1", tb.getEntry("col1", "entry3", "col3"));
+        assertEquals("entry3", tb.getEntry("col3", "entry2", "col2"));
+        assertTrue(tb.isSecondaryRowKey("entry2", "col2"));
+        assertTrue(tb.isSecondaryRowKey("entry9", "col3"));
+        assertFalse(tb.isSecondaryRowKey("entry7", "col1"));
+        assertTrue(tb.isRowKey("entry7"));
+        assertTrue(tb.isColKey("col1") && tb.isColKey("col2") && tb.isColKey("col3"));
+    }
+
+    @Test
+    void IllegalQuery(){
+        Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3")), "col2");
+        tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry5", "entry6")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry7", "entry8", "entry9")));
+        try{
+            tb.getEntry("col4", "entry5");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Key does not exist", ex.getMessage());
+        }
+        try{
+            tb.getEntry("col1", "entry4");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Key does not exist", ex.getMessage());
+        }
+        try{
+            tb.createIndex("col9");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Attempt to create on index that does not exist", ex.getMessage());
+        }
+        tb.createIndex("col1");
+        try{
+            tb.getEntry("col1", "entry2", "col1");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Key does not exist", ex.getMessage());
+        }
+        try{
+            tb.getEntry("col1", "entry3", "col1");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Key does not exist", ex.getMessage());
+        }
+    }
+
 }

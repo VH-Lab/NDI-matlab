@@ -1,12 +1,7 @@
 package com.ndi;
 
 import java.io.Serializable;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +26,9 @@ public class Table implements Serializable {
      * @param primaryIndex  the column that will be the primary index for this table
      */
     public Table(List<String> cols, String primaryIndex){
+        if (cols.size() < 1){
+            throw new IllegalArgumentException("Your table must have at least one column");
+        }
         this.primaryIndexColNum = -1;
         this.additionalRowKeysMapping = new HashMap<>();
         this.table = new HashMap<>();
@@ -182,7 +180,13 @@ public class Table implements Serializable {
      * @param colName   the name of the column that we want to create an index for
      */
     public void createIndex(String colName){
+        if (this.additionalRowKeysMapping.containsKey(colName)){
+            return;
+        }
         Map<String, String> rowKeys = new HashMap<>();
+        if (!this.table.containsKey(colName)){
+            throw new IllegalArgumentException("Attempt to create on index that does not exist");
+        }
         Map<String, String> column = this.table.get(colName);
         for (String key : column.keySet()){
             if (rowKeys.keySet().contains(column.get(key))){
@@ -209,41 +213,13 @@ public class Table implements Serializable {
                 return this.additionalRowKeysMapping.get(column).get(row);
             }
             else{
-                throw new IllegalArgumentException("the rowKey you are trying to query does not exist");
+                throw new IllegalArgumentException("Key does not exist");
             }
         }
         else {
             this.createIndex(column);
             return convert2primaryKey(row, column);
         }
-    }
-
-    /**
-     * Some very basic sample usage of this class
-     *
-     * @param args  console-based argument (not really used)
-     */
-    public static void main(String[] args){
-        ArrayList<String> cols = new ArrayList<>();
-        cols.add("name");
-        cols.add("id");
-        cols.add("year");
-        Table tb = new Table(cols, "id");
-        ArrayList<String> row1 = new ArrayList<>();
-        row1.add("Joe");
-        row1.add("36");
-        row1.add("2021");
-        tb.addRow(row1);
-        tb.createIndex("name");
-        ArrayList<String> row2 = new ArrayList<>();
-        row2.add("Wang");
-        row2.add("31");
-        row2.add("2020");
-        tb.addRow(row2);
-        System.out.println(tb.getEntry(0,0)); //expect Joe
-        System.out.println(tb.getEntry("year", "36")); //expect 2021;
-        System.out.println(tb.getEntry("year", "Wang", "name")); //expect 2020;
-        System.out.println(tb.getEntry(1,1)); //expected 31
     }
 
 }
