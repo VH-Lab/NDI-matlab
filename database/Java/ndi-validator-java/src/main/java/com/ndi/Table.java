@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.stream.Stream;
 
 /**
  * Implementation of a table-like object using Hash Table, thus providing effective
@@ -15,13 +16,13 @@ import java.util.ArrayList;
  * needed data more efficiently
  */
 public class Table implements Serializable {
-    private final Map<String, Map<String, String>> table;
+    public final Map<String, Map<String, String>> table;
     private final Map<Integer, String> index2colKeys;
     private final Map<Integer, String> index2rowKeys;
     private final Set<String> rowKeys;
     private final Set<String> colKeys;
-    private final HashMap<String, Map<String, String>> additionalRowKeysMapping;
-    private int primaryIndexColNum;
+    public final HashMap<String, Map<String, String>> additionalRowKeysMapping;
+    public int primaryIndexColNum;
 
     /**
      * Initialize a table. It takes the following two arguments
@@ -89,9 +90,14 @@ public class Table implements Serializable {
                 additionalRowKeysMapping.get(correspondingColumn).put(entry, rowKey);
             }
             String col = index2colKeys.get(index++);
-            Map<String, String> data = new HashMap<>();
-            data.put(rowKey, entry);
-            this.table.put(col, data);
+            if (!this.table.containsKey(col)){
+                Map<String, String> data = new HashMap<>();
+                data.put(rowKey, entry);
+                this.table.put(col,data);
+            }
+            else{
+                this.table.get(col).put(rowKey,entry);
+            }
         }
         this.rowKeys.add(rowKey);
         this.index2rowKeys.put(index2rowKeys.size(), rowKey);
@@ -182,7 +188,7 @@ public class Table implements Serializable {
             if (rowKeys.keySet().contains(column.get(key))){
                 throw new IllegalArgumentException("Cannot create index on column that is not unique");
             }
-            rowKeys.put(key, column.get(key));
+            rowKeys.put(column.get(key), key);
         }
         this.additionalRowKeysMapping.put(colName, rowKeys);
     }
@@ -228,8 +234,16 @@ public class Table implements Serializable {
         row1.add("36");
         row1.add("2021");
         tb.addRow(row1);
+        tb.createIndex("name");
+        ArrayList<String> row2 = new ArrayList<>();
+        row2.add("Wang");
+        row2.add("31");
+        row2.add("2020");
+        tb.addRow(row2);
         System.out.println(tb.getEntry(0,0)); //expect Joe
         System.out.println(tb.getEntry("year", "36")); //expect 2021;
+        System.out.println(tb.getEntry("year", "Wang", "name")); //expect 2020;
+        System.out.println(tb.getEntry(1,1)); //expected 31
     }
 
 }
