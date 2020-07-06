@@ -5,7 +5,11 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class TableTest {
 
@@ -114,6 +118,32 @@ class TableTest {
     }
 
     @Test
+    void createIndexException(){
+        Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3")), "col1");
+        tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry2", "entry5")));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry5", "entry3", "entry3")));
+        try{
+            tb.createIndex("col2");
+        }
+        catch (IllegalArgumentException ex){
+            assertEquals("Cannot create index on column that is not unique", ex.getMessage());
+        }
+        try{
+            tb.createIndex("col5");
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("Attempt to create on index that does not exist", ex.getMessage());
+        }
+        try{
+            tb.createIndex("col3");
+        }
+        catch (IllegalArgumentException ex){
+            assertEquals("Cannot create index on column that is not unique", ex.getMessage());
+        }
+    }
+
+    @Test
     void testSecondaryIndex(){
         Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3")), "col1");
         tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
@@ -126,6 +156,16 @@ class TableTest {
         assertFalse(tb.isSecondaryRowKey("entry7", "col1"));
         assertTrue(tb.isRowKey("entry7"));
         assertTrue(tb.isColKey("col1") && tb.isColKey("col2") && tb.isColKey("col3"));
+        tb.addRow(new ArrayList<>(Arrays.asList("entry10", "entry11", "entry12")));
+        assertEquals("entry10", tb.getEntry("col1", "entry11", "col2"));
+        assertEquals("entry11", tb.getEntry("col2", "entry10"));
+        assertEquals("entry10", tb.getEntry("col1", "entry12", "col3"));
+        try{
+            tb.addRow(new ArrayList<>(Arrays.asList("entry13", "entry11", "entry15")));
+        }
+        catch(IllegalArgumentException ex){
+            assertEquals("the secondary index has to be unique", ex.getMessage());
+        }
     }
 
     @Test
