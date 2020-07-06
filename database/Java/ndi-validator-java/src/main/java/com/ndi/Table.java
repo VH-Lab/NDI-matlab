@@ -2,6 +2,7 @@ package com.ndi;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -20,7 +21,7 @@ public class Table implements Serializable {
     private final Map<Integer, String> index2rowKeys;
     private final Set<String> rowKeys;
     private final Set<String> colKeys;
-    private final HashMap<String, Map<String, String>> additionalRowKeysMapping;
+    private final Map<String, Map<String, List<String>>> additionalRowKeysMapping;
     private int primaryIndexColNum;
 
     /**
@@ -62,8 +63,8 @@ public class Table implements Serializable {
      *               original columns are ordered, corresponding to the column each row entry belongs
      *               to. Also the primary row key cannot be null or a IllegalArgumentException will be thrown.
      *               Secondary index is allowed to be null, however, this will mean that we won't be able to
-     *               query certain entries using only the secondary row key. Furthermore, secondary indices
-     *               also need to contain only unique entries
+     *               query certain entries using only the secondary row key. Note that secondary index
+     *               can contains duplicate entries
      */
     public void addRow(ArrayList<String> tuple){
         if (tuple.size() != index2colKeys.size()){
@@ -86,9 +87,12 @@ public class Table implements Serializable {
             // updating the mapping between secondary indices and the primary index
             if (this.additionalRowKeysMapping.containsKey(correspondingColumn)){
                 if (additionalRowKeysMapping.get(correspondingColumn).containsKey(entry)){
-                    throw new IllegalArgumentException("the secondary index has to be unique");
+                    additionalRowKeysMapping.get(correspondingColumn).get(entry).add(rowKey);
                 }
-                additionalRowKeysMapping.get(correspondingColumn).put(entry, rowKey);
+                else{
+                    additionalRowKeysMapping.get(correspondingColumn)
+                            .put(entry, new ArrayList<>(Collections.singletonList(rowKey)));
+                }
             }
             String col = index2colKeys.get(index++);
             if (!this.table.containsKey(col)){
@@ -153,6 +157,21 @@ public class Table implements Serializable {
     }
 
     /**
+     * Querying result given a single colKey and a list of rowKeys
+     *
+     * @param colKey    column key
+     * @param rowKeys   a list of row keys
+     * @return          a list of querying result
+     */
+    public List<String> getEntry(String colKey, List<String> rowKeys){
+        List<String> result = new ArrayList<>();
+        for (String rowKey : rowKeys){
+            result.add(getEntry(colKey, rowKey));
+        }
+        return result;
+    }
+
+    /**
      * Get the table entry with the provided column key and row key that is not a
      * primary key, thus we need to specify which column this row key comes from
      *
@@ -161,7 +180,9 @@ public class Table implements Serializable {
      * @param RowKeyCol         the column this secondary row key is in
      * @return                  querying the entry at column == colKey, row == secondaryRowKey
      */
-    public String getEntry(String colKey, String secondaryRowKey, String RowKeyCol){
+    public List<String> getEntry(String colKey, String secondaryRowKey, String RowKeyCol){
+        if (!this.colKeys.contains(colKey) || !this.colKeys.contains(RowKeyCol))
+            throw new IllegalArgumentException("Key does not exist");
         return getEntry(colKey, this.convert2primaryKey(secondaryRowKey, RowKeyCol));
     }
 
@@ -178,7 +199,7 @@ public class Table implements Serializable {
 
     /**
      * Construct index on a particular column for fast searching of an entry based on that column.
-     * The column must contain unique entries, or an IllegalArgumentException would be thrown.
+     * The column must be one of the column keys, or an IllegalArgumentException will be thrown.
      *
      * @param colName   the name of the column that we want to create an index for
      */
@@ -186,16 +207,18 @@ public class Table implements Serializable {
         if (this.additionalRowKeysMapping.containsKey(colName)){
             return;
         }
-        Map<String, String> rowKeys = new HashMap<>();
+        Map<String, List<String>> rowKeys = new HashMap<>();
         if (!this.table.containsKey(colName)){
             throw new IllegalArgumentException("Attempt to create on index that does not exist");
         }
         Map<String, String> column = this.table.get(colName);
         for (String key : column.keySet()){
-            if (rowKeys.keySet().contains(column.get(key))){
-                throw new IllegalArgumentException("Cannot create index on column that is not unique");
+            if (rowKeys.containsKey(column.get(key))){
+                rowKeys.get(column.get(key)).add(key);
             }
-            rowKeys.put(column.get(key), key);
+            else{
+                rowKeys.put(column.get(key), new ArrayList<>(Collections.singletonList(key)));
+            }
         }
         this.additionalRowKeysMapping.put(colName, rowKeys);
     }
@@ -211,7 +234,7 @@ public class Table implements Serializable {
      * @param column    the column this row key appears in
      * @return          the primary row key that match with the non-primary row key
      */
-    private String convert2primaryKey(String row, String column){
+    private List<String> convert2primaryKey(String row, String column){
         if (additionalRowKeysMapping.containsKey(column)){
             if (additionalRowKeysMapping.get(column).containsKey(row)){
                 return this.additionalRowKeysMapping.get(column).get(row);
@@ -225,5 +248,4 @@ public class Table implements Serializable {
             return convert2primaryKey(row, column);
         }
     }
-
 }
