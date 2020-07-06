@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 /**
  * This class is primarily used to create valid binary file that the Validator can load.
+ * More testing is needed.
  */
 public class TableReader {
     private String[] format;
@@ -28,27 +29,8 @@ public class TableReader {
         this.format = format;
     }
 
-    /**
-     * The setter for the format field
-     *
-     * @param format    An array specifying how the text file split each columns of the table.
-     *                  See the constructor javadoc for more detailed explanation
-     */
     public void setFormat(String[] format){
         this.format = format;
-    }
-
-    /**
-     * The getter method for the table field. An IllegalStateException will be thrown
-     * if the table has not be instantiated.
-     */
-    public Table getTable(){
-        if (this.table == null){
-            throw new IllegalStateException("You have not load the data yet");
-        }
-        else{
-            return this.table;
-        }
     }
 
     /**
@@ -87,24 +69,9 @@ public class TableReader {
         String res = input;
         for (String pattern : this.format){
             int location = res.indexOf(pattern);
-            if (location == -1){
-                throw new IllegalArgumentException("Pattern cannot be found");
-            }
-            String tobeAdded = res.substring(0, location);
-            if (tobeAdded.equals("")){
-                output.add(null);
-            }
-            else{
-                output.add(res.substring(0, location));
-            }
+            output.add(res.substring(0, location));
             if (location + format.length <= input.length())
-                res = res.substring(location + pattern.length());
-        }
-        if (res.equals("")){
-            output.add(null);
-        }
-        else{
-            output.add(res);
+                res = res.substring(location + format.length);
         }
         return output;
     }
@@ -112,7 +79,7 @@ public class TableReader {
     /**
      * Save the instance of the instance of table object that has just been
      * created and store it as a binary file into the specified directory.
-     * A IllegalStateException will be thrown if the table has not been instantiated.
+     * A RuntimeException will be thrown if the table has not been instantiated.
      * That is, this.loadData() has be called before we can serialize the table
      * object into the binary file format successfully.
      *
@@ -129,20 +96,7 @@ public class TableReader {
             }
         }
         else{
-            throw new IllegalStateException("Your table is empty");
+            throw new RuntimeException("Your table is empty");
         }
-    }
-
-    public static void main(String[] args) throws IOException, ClassNotFoundException{
-        TableReader tr = new TableReader(new String[]{"\t", "\t", "\t"});
-        tr.loadData("src/main/resources/GenBankControlledVocabulary.tsv", "Scientific_Name", new ArrayList<>());
-        Table tb = tr.getTable();
-        /*
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("src/main/resources/GenBankControlledVocabulary.bin"))){
-            tb = (Table)in.readObject();
-        }
-         */
-        System.out.println("Done");
-        System.out.println(tb.getEntry("Synonyms", "Acantharctus delfini"));
     }
 }
