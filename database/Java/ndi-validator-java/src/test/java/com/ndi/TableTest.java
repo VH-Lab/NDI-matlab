@@ -17,12 +17,14 @@ class TableTest {
     void badConstructor(){
         try{
             Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3", "col4")), "col0");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Your primary index must be one of the columns", ex.getMessage());
         }
         try{
             Table tb = new Table(new ArrayList<>(Arrays.asList()), "");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Your table must have at least one column", ex.getMessage());
@@ -118,28 +120,33 @@ class TableTest {
     }
 
     @Test
-    void createIndexException(){
+    void createDuplicateIndex(){
         Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3")), "col1");
         tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry2", "entry5")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry5", "entry3", "entry3")));
-        try{
-            tb.createIndex("col2");
-        }
-        catch (IllegalArgumentException ex){
-            assertEquals("Cannot create index on column that is not unique", ex.getMessage());
-        }
+        tb.createIndex("col2");
+        assertEquals(new ArrayList<>(Arrays.asList("entry1", "entry4")),
+                tb.getEntry("col1", "entry2", "col2"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry5")),
+                tb.getEntry("col1", "entry3", "col2"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry1", "entry5")),
+                tb.getEntry("col1", "entry3", "col3"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry4")),
+                tb.getEntry("col1", "entry5", "col3"));
         try{
             tb.createIndex("col5");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Attempt to create on index that does not exist", ex.getMessage());
         }
         try{
-            tb.createIndex("col3");
+            tb.getEntry("col1", "entry5", "col5");
+            fail();
         }
-        catch (IllegalArgumentException ex){
-            assertEquals("Cannot create index on column that is not unique", ex.getMessage());
+        catch(IllegalArgumentException ex){
+            assertEquals("Key does not exist", ex.getMessage());
         }
     }
 
@@ -149,23 +156,17 @@ class TableTest {
         tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry5", "entry6")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry7", "entry8", "entry9")));
-        assertEquals("entry1", tb.getEntry("col1", "entry3", "col3"));
-        assertEquals("entry3", tb.getEntry("col3", "entry2", "col2"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry1")), tb.getEntry("col1", "entry3", "col3"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry3")), tb.getEntry("col3", "entry2", "col2"));
         assertTrue(tb.isSecondaryRowKey("entry2", "col2"));
         assertTrue(tb.isSecondaryRowKey("entry9", "col3"));
         assertFalse(tb.isSecondaryRowKey("entry7", "col1"));
         assertTrue(tb.isRowKey("entry7"));
         assertTrue(tb.isColKey("col1") && tb.isColKey("col2") && tb.isColKey("col3"));
         tb.addRow(new ArrayList<>(Arrays.asList("entry10", "entry11", "entry12")));
-        assertEquals("entry10", tb.getEntry("col1", "entry11", "col2"));
+        assertEquals(new ArrayList<>(Arrays.asList("entry10")), tb.getEntry("col1", "entry11", "col2"));
         assertEquals("entry11", tb.getEntry("col2", "entry10"));
-        assertEquals("entry10", tb.getEntry("col1", "entry12", "col3"));
-        try{
-            tb.addRow(new ArrayList<>(Arrays.asList("entry13", "entry11", "entry15")));
-        }
-        catch(IllegalArgumentException ex){
-            assertEquals("the secondary index has to be unique", ex.getMessage());
-        }
+        assertEquals(new ArrayList<>(Arrays.asList("entry10")), tb.getEntry("col1", "entry12", "col3"));
     }
 
     @Test
