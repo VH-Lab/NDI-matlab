@@ -1,8 +1,12 @@
 package com.ndi;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Implementation of a table-like object using Hash Table, thus providing effective
@@ -55,12 +59,11 @@ public class Table implements Serializable {
      * @param tuple  the list of row entries, which should be an instance of java.util.ArrayList.
      *               The size of it also needs to match with the number of columns provided when
      *               constructing the table. Also the ArrayList must ordered in the same way the
-     *               original columns are ordered, corresponding to which column each row entry belongs
-     *               to. Also the row entry corresponding to the primary index cannot be null or a
-     *               IllegalArgumentException will be thrown. Secondary index is allowed to be null,
-     *               however, this will mean that we won't be able to query certain entries using only
-     *               the secondary row key. Furthermore, secondary indices also need to contain only
-     *               unique entries
+     *               original columns are ordered, corresponding to the column each row entry belongs
+     *               to. Also the primary row key cannot be null or a IllegalArgumentException will be thrown.
+     *               Secondary index is allowed to be null, however, this will mean that we won't be able to
+     *               query certain entries using only the secondary row key. Furthermore, secondary indices
+     *               also need to contain only unique entries
      */
     public void addRow(ArrayList<String> tuple){
         if (tuple.size() != index2colKeys.size()){
@@ -104,8 +107,8 @@ public class Table implements Serializable {
     /**
      * check if the provided rowKey is a primary key
      *
-     * @param rowKey    the row Key
-     * @return          if the provided rowKey is indeed a primary key
+     * @param rowKey    the row key
+     * @return          if the provided row key is indeed a primary key
      */
     public boolean isRowKey(String rowKey){
         return this.rowKeys.contains(rowKey);
@@ -174,8 +177,8 @@ public class Table implements Serializable {
     }
 
     /**
-     * Construct index on a particular column for fast search of an entry based on that column.
-     * The column must contains unique entries, or an IllegalArgumentException would be thrown.
+     * Construct index on a particular column for fast searching of an entry based on that column.
+     * The column must contain unique entries, or an IllegalArgumentException would be thrown.
      *
      * @param colName   the name of the column that we want to create an index for
      */
@@ -199,9 +202,10 @@ public class Table implements Serializable {
 
     /**
      * When looking up for a particular entry by its column key and a row key that is not a primary
-     * row key, it is required to convert the non-primary row key first. This method does the appropriate
-     * conversion. If the column is not a primary index, this method will call createIndex() on that column
-     * However, if the row key does not exist in the provided column, an IllegalArgument Exception will be thrown
+     * row key, it is required to convert the non-primary row key into a primary row key. This method does
+     * the appropriate conversion. If the column is not a primary index, this method will call createIndex()
+     * on that column However, if the row key does not exist in the provided column, an IllegalArgument Exception
+     * will be thrown. This is a private method used internally by the other methods
      *
      * @param row       the non-primary row key
      * @param column    the column this row key appears in
