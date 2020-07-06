@@ -5,6 +5,11 @@ import org.everit.json.schema.FormatValidator;
 import java.util.Optional;
 
 public class AnimalSubjectFormatValidator implements FormatValidator {
+    private String formatName;
+
+    public AnimalSubjectFormatValidator(String formatName){
+        this.formatName = formatName;
+    }
 
     @Override
     public Optional<String> validate(String subject) {
@@ -14,6 +19,6 @@ public class AnimalSubjectFormatValidator implements FormatValidator {
 
     @Override
     public String formatName() {
-        return "animal_subject";
+        return this.formatName;
     }
 }
