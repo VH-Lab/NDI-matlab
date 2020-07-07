@@ -200,6 +200,8 @@ public class Table implements Serializable {
     /**
      * Construct index on a particular column for fast searching of an entry based on that column.
      * The column must be one of the column keys, or an IllegalArgumentException will be thrown.
+     * Note that this method can only be called when we have at least one row, or an IllegalArgumentException
+     * will be thrown.
      *
      * @param colName   the name of the column that we want to create an index for
      */
@@ -247,5 +249,15 @@ public class Table implements Serializable {
             this.createIndex(column);
             return convert2primaryKey(row, column);
         }
+    }
+
+    /**
+     * Querying the current size of the table
+     *
+     * @return an array where the first entry is the number of row, and the
+     *         second entry is the number of columns in the table
+     */
+    public int[] size(){
+        return new int[]{this.rowKeys.size(), this.colKeys.size()};
     }
 }
