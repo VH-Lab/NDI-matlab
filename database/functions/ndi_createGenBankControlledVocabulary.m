@@ -8,7 +8,7 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
 % called 'GenBankControlledVocabulary.tsv' with the following structure:
 %
 % Header row:
-%   'GenBank_Common_Name<tab>Scientific_Name<tab>Synonyms<tab><Other_Common_Name'
+%   'Scientific_Name<tab>GenBank_Common_Name<tab>Synonyms<tab><Other_Common_Name'
 %   and then 1 entry per organism.
 %
 % This function also takes name/value pairs that modify the behavior.
@@ -55,7 +55,7 @@ genBankNames = ndi_readGenBankNames(T);
 
 root_node_entry = find(strcmp(root_node,genBankNames.scientific_name));
 
- % takes a couple hours on my medium-speed laptop
+ % takes a less than 10 minutes on my medium-speed laptop
 G = ndi_readGenBankNodes(N);
 
 dG = digraph(G);
@@ -82,6 +82,14 @@ for i=1:numel(H),
 	if mod(i,1000) == 0,
 		progressbar(i/numel(H));
 	end;
+
+	if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'environmental')),
+		continue; % skip it
+	end;
+	if ~isempty(strfind(lower(genBankNames.scientific_name{H(i)}),'sample')),
+		continue; % skip it;
+	end;
+
 	fprintf(fid,[genBankNames.scientific_name{H(i)} '\t']);
 	fprintf(fid,[genBankNames.genbank_commonname{H(i)} '\t']);
 	for j=1:numel(genBankNames.synonym{H(i)}),
