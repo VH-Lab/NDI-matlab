@@ -1,12 +1,18 @@
 package com.ndi;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This class is primarily used to create valid binary file that the Validator can load.
@@ -52,25 +58,54 @@ public class TableReader {
     }
 
     /**
-     * Read the text file from the given file path, then convert it into an instance of Table
+     * Read the gzip file from the given file path, then convert it into an instance of Table
      * object, which can be saved to a specified directory later through calling the saveTo
      * method. This methods assumes that the row of the columns are split by a new line, and
      * the first row should specify the column names. Also make sure that each entry does not
      * contain any character that you use to split each entry in the row, or else the behavior
      * may be undefined
      *
-     * @param filepath  the given filepath
+     * @param filepath          the given filepath
+     * @param primaryIndex      the column, where we want it to be the primary index
+     * @param secondaryIndices  the list of columns, where we want it to be the secondary index
+     */
+    public void loadDataGzip(String filepath, String primaryIndex, List<String> secondaryIndices) throws IOException{
+        try(InputStream fileStream = new FileInputStream(filepath);
+            InputStream gzipStream = new GZIPInputStream(fileStream);
+            Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
+            BufferedReader reader = new BufferedReader(decoder)){
+                String line = reader.readLine();
+                this.table = new Table(parseLine(line), primaryIndex);
+                while (line != null){
+                    table.addRow(parseLine(line));
+                    line = reader.readLine();
+                }
+                for (String secondaryIndex : secondaryIndices){
+                    table.createIndex(secondaryIndex);
+                }
+        }
+    }
+
+    /**
+     * Does everything that the loadDataGzip does, except it works for text file instead
+     *
+     * @param filepath          the given filepath
+     * @param primaryIndex      the column, where we want it to be the primary index
+     * @param secondaryIndices  the list of columns, where we want it to be the secondary index
+     * @throws IOException      throw exception when reading file fails
      */
     public void loadData(String filepath, String primaryIndex, List<String> secondaryIndices) throws IOException{
-        try(BufferedReader reader = new BufferedReader(new FileReader(filepath))){
+        try(InputStream fileStream = new FileInputStream(filepath);
+            Reader decoder = new InputStreamReader(fileStream, StandardCharsets.UTF_8);
+            BufferedReader reader = new BufferedReader(decoder)){
             String line = reader.readLine();
             this.table = new Table(parseLine(line), primaryIndex);
-            for (String secondaryIndex : secondaryIndices){
-                table.createIndex(secondaryIndex);
-            }
             while (line != null){
                 table.addRow(parseLine(line));
                 line = reader.readLine();
+            }
+            for (String secondaryIndex : secondaryIndices){
+                table.createIndex(secondaryIndex);
             }
         }
     }
@@ -135,15 +170,22 @@ public class TableReader {
 
 
     public static void main(String[] args) throws IOException, ClassNotFoundException{
+        long starTime = System.currentTimeMillis();
         TableReader tr = new TableReader(new String[]{"\t", "\t", "\t"});
-        tr.loadData("src/main/resources/GenBankControlledVocabulary.tsv", "Scientific_Name", new ArrayList<>());
+        tr.loadDataGzip("src/main/resources/GenBankControlledVocabulary.tsv.gz", "Scientific_Name", new ArrayList<>(Arrays.asList("Synonyms", "Other_Common_Name")));
         Table tb = tr.getTable();
-        /*
-        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("src/main/resources/GenBankControlledVocabulary.bin"))){
-            tb = (Table)in.readObject();
-        }
-         */
-        System.out.println("Done");
         System.out.println(tb.getEntry("Synonyms", "Acantharctus delfini"));
+        System.out.println("number of row: " + tb.size()[0]);
+        long endTime = System.currentTimeMillis();
+        System.out.println("execution time " + (endTime-starTime)/1000.0 + "s");
+        System.out.println();
+        starTime = System.currentTimeMillis();
+        TableReader tr2 = new TableReader(new String[]{"\t", "\t", "\t"});
+        tr2.loadData("src/main/resources/GenBankControlledVocabulary.tsv", "Scientific_Name", new ArrayList<>(Arrays.asList("Synonyms", "Other_Common_Name")));
+        Table tb2 = tr2.getTable();
+        System.out.println(tb2.getEntry("Synonyms", "Acantharctus delfini"));
+        System.out.println("number of rows :" + tb2.size()[0]);
+        endTime = System.currentTimeMillis();
+        System.out.println("execution time " + (endTime-starTime)/1000.0 + "s");
     }
 }
