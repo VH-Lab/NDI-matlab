@@ -1,0 +1,42 @@
+{
+	"customized_format_tag": [
+		{
+			"format_name": "animal_scientific_name",
+			"table_location": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"file_type"	: "gzip",
+			"table_format": [
+				"\t",
+				"\t",
+				"\t"
+			],
+			"rules": {
+				"correct": [
+					"Scientific_name"
+				],
+				"suggestions": [
+					"Synonyms",
+					"GenBank_commonname"
+				]
+			}
+		},
+		{
+			"format_name": "GenBank_commonname",
+			"table_location": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"file_type" 	: "gzip",
+			"table_format": [
+				"\t",
+				"\t",
+				"\t"
+			],
+			"rules": {
+				"correct": [
+					"GenBank_commonname"
+				],
+				"suggestions": [
+					"Synonyms",
+					"Scientific_name"
+				]
+			}
+		}
+	]
+}
