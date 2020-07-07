@@ -177,18 +177,21 @@ class TableTest {
         tb.addRow(new ArrayList<>(Arrays.asList("entry7", "entry8", "entry9")));
         try{
             tb.getEntry("col4", "entry5");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Key does not exist", ex.getMessage());
         }
         try{
             tb.getEntry("col1", "entry4");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Key does not exist", ex.getMessage());
         }
         try{
             tb.createIndex("col9");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Attempt to create on index that does not exist", ex.getMessage());
@@ -196,12 +199,14 @@ class TableTest {
         tb.createIndex("col1");
         try{
             tb.getEntry("col1", "entry2", "col1");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Key does not exist", ex.getMessage());
         }
         try{
             tb.getEntry("col1", "entry3", "col1");
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Key does not exist", ex.getMessage());
