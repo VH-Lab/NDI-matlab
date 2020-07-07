@@ -74,7 +74,7 @@ public class AdvancedEnumFormatValidator implements FormatValidator {
         List<String> correctOptions = new ArrayList<>();
         for (String correctColumn : rules.get("correct")) {
             try {
-                this.table.getEntry(correctColumn, "subject");
+                this.table.getEntry(correctColumn, subject);
                 return Optional.empty();
             }
             catch (IllegalArgumentException ignored) {}
