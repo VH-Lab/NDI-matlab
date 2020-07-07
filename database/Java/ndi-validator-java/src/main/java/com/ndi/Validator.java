@@ -1,12 +1,14 @@
 package com.ndi;
 
+import org.everit.json.schema.FormatValidator;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 
 public class Validator {
-    private static final Validation implementation = ValidatorFactory.build();
+    private Validation implementation;
     private final HashMap<String, String> report;
 
     /**
@@ -18,6 +20,25 @@ public class Validator {
      * @param isJSONContent specifying if the string passed in is the actual json file content
      */
     public Validator(String document, String schema, boolean isJSONContent){
+        this.implementation = ValidatorFactory.build();
+        if (document == null || schema == null){
+            throw new IllegalArgumentException("Must specify either a path or actual json content");
+        }
+        JSONObject schema_document;
+        JSONObject ndi_document;
+        if (isJSONContent){
+            schema_document = new JSONObject(schema);
+            ndi_document = new JSONObject(document);
+        }
+        else{
+            schema_document = readJSON(schema);
+            ndi_document = readJSON(document);
+        }
+        this.report = implementation.performValidation(ndi_document, schema_document);
+    }
+
+    public Validator(String document, String schema, boolean isJSONContent, List<FormatValidator> validators){
+        this.implementation = ValidatorFactory.build(validators);
         if (document == null || schema == null){
             throw new IllegalArgumentException("Must specify either a path or actual json content");
         }
@@ -74,14 +95,5 @@ public class Validator {
             throw new RuntimeException("Fail to read the json file");
         }
         return new JSONObject(new JSONTokener(is));
-    }
-
-    /**
-     * Example usage of the com.ndi.Validator class
-     * @param args command-line arguments
-     */
-    public static void main(String[] args){
-        Validator test = new Validator("/test.json", "/schema.json", false);
-        System.out.println(test.getReport());
     }
 }

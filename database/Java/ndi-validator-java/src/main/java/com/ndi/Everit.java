@@ -1,10 +1,12 @@
 package com.ndi;
 
+import org.everit.json.schema.FormatValidator;
 import org.everit.json.schema.Schema;
 import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 
+import java.text.Format;
 import java.util.List;
 import java.util.HashMap;
 
@@ -14,15 +16,29 @@ import java.util.HashMap;
  * Draft v7 specification: "https://tools.ietf.org/html/draft-handrews-json-schema-validation-00"
  */
 public class Everit implements Validation {
+    private final List<FormatValidator> validators;
+
+    public Everit(List<FormatValidator> validators){
+        this.validators = validators;
+    }
+
+    public Everit(){
+        this.validators = null;
+    }
 
     @Override
     public HashMap<String, String> performValidation(JSONObject input, JSONObject schema) {
         HashMap<String, String> output = new HashMap<>();
-        SchemaLoader loader = SchemaLoader.builder()
+        SchemaLoader.SchemaLoaderBuilder loader = SchemaLoader.builder()
                 .draftV7Support()
-                .schemaJson(schema)
-                .build();
-        Schema validation = loader.load().build();
+                .schemaJson(schema);
+        System.out.println(this.validators);
+        if (this.validators != null){
+            for (FormatValidator validator : validators){
+                loader.addFormatValidator(validator);
+            }
+        }
+        Schema validation = loader.build().load().build();
         try{
             validation.validate(input);
             return output;
