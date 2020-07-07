@@ -9,46 +9,45 @@ import java.util.List;
 
 public class Validator {
     private Validation implementation;
-    private final HashMap<String, String> report;
+    private HashMap<String, String> report;
 
     /**
      * read the JSON file from the provided path of the JSON object and
      * the schema. Validate the JSON object and then produce the report
      *
-     * @param document  the file path linking to the document
-     * @param schema    the file path linking to the schema
-     * @param isJSONContent specifying if the string passed in is the actual json file content
+     * @param document          the file path linking to the document
+     * @param schema            the file path linking to the schema
+     * @param isJSONContent     specifying if the string passed in is the actual json file content
      */
     public Validator(String document, String schema, boolean isJSONContent){
         this.implementation = ValidatorFactory.build();
-        if (document == null || schema == null){
-            throw new IllegalArgumentException("Must specify either a path or actual json content");
-        }
-        JSONObject schema_document;
-        JSONObject ndi_document;
-        if (isJSONContent){
-            schema_document = new JSONObject(schema);
-            ndi_document = new JSONObject(document);
-        }
-        else{
-            schema_document = readJSON(schema);
-            ndi_document = readJSON(document);
-        }
-        this.report = implementation.performValidation(ndi_document, schema_document);
+        performLogic(document, schema, isJSONContent);
     }
 
+    /**
+     * Same as what the other constructor does, however this takes three arguments instead,
+     * which provides support for customized string format tag
+     *
+     * @param document      the file path linking to the document
+     * @param schema        the file path linking to the schema
+     * @param isJSONContent specifying if the string passed in is the actual json file content
+     * @param validators    a list of Format Validator
+     */
     public Validator(String document, String schema, boolean isJSONContent, List<FormatValidator> validators){
         this.implementation = ValidatorFactory.build(validators);
-        if (document == null || schema == null){
+        performLogic(document, schema, isJSONContent);
+    }
+
+    private void performLogic(String document, String schema, boolean isJSONContent) {
+        if (document == null || schema == null) {
             throw new IllegalArgumentException("Must specify either a path or actual json content");
         }
         JSONObject schema_document;
         JSONObject ndi_document;
-        if (isJSONContent){
+        if (isJSONContent) {
             schema_document = new JSONObject(schema);
             ndi_document = new JSONObject(document);
-        }
-        else{
+        } else {
             schema_document = readJSON(schema);
             ndi_document = readJSON(document);
         }
