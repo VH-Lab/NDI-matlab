@@ -6,7 +6,6 @@ import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 
-import java.text.Format;
 import java.util.List;
 import java.util.HashMap;
 

@@ -2,9 +2,9 @@ package com.ndi;
 
 import org.everit.json.schema.FormatValidator;
 
+import java.io.IOException;
 import java.util.Optional;
 import java.util.List;
-import java.util.Map;
 import java.util.ArrayList;
 
 /**
@@ -16,50 +16,48 @@ import java.util.ArrayList;
  * Validator when it encounters the this user's defined format tag in the schema document
  */
 public class AdvancedEnumFormatValidator implements FormatValidator {
-    private final String formatName;
-    private final Table table;
-    private final Map<String, List<String>> rules;
+    final ParserFormat formats;
+    final String formatName;
+    final Table table;
+    final Rules rules;
+    final String filePath;
+
 
     /**
-     * Constructor for the AdvancedEnumFormatValidator class. It takes the following arguments
+     * Constructor for the AdvancedEnumFormatValidator class. It takes the an instance of
+     * FormatValidatorBuilder. FormatValidatorBuilder must contain all field, except the
+     * table field. If table is not initialized, it will validate by calling the gzipSearch
+     * methods instead of using the methods in the Table class
      *
-     * @param formatName    The name of our customized format tag
-     *
-     * @param table         An instance of com.ndi.Table object including predefined values
-     *                      that we want to restrict our entries to
-     *
-     * @param rules         The validation rules: it should be an instance of HashMap. It should contains
-     *                      at least one keys: 1) "correct", 2) suggestions (which is optional), whose values
-     *                      need to be an instance of java.util.List. The value of the key "correct" consist of
-     *                      a list of accepted columns (that is if the user enter an entry that belongs to a entries
-     *                      in one of the columns, we accept the user's entry), otherwise if the user has entered an
-     *                      entries in the list of "suggestions" value's column, then the error message will provide
-     *                      hint that allows user to enter the value in the corrected column
      */
-    public AdvancedEnumFormatValidator(String formatName, Table table, Map<String, List<String>> rules){
-        if (table == null) {
-            throw new IllegalArgumentException("you must provide an instance of Table");
+    public AdvancedEnumFormatValidator(FormatValidatorBuilder builder){
+        if (builder.formatName == null){
+            throw new IllegalArgumentException("require format name");
         }
-        if (!rules.containsKey("correct")){
-            throw new IllegalArgumentException("Rules must contain a key named correct to specify the column we want" +
-                    "the string to be one of its entries");
-        }
-        for (String correctColumn : rules.get("correct")){
-            if (!table.isColKey(correctColumn)){
-                throw new IllegalArgumentException("Correct columns must come from a real column from the provided table");
+        if (builder.rules == null || builder.filePath == null){
+            if (builder.table == null){
+                throw new IllegalArgumentException("require rules, filePath");
             }
         }
-        if (rules.containsKey("suggestions")){
-            for (String suggestion : rules.get("suggestions")){
-                if (!table.isColKey(suggestion)){
+        if (builder.table != null) {
+            assert builder.rules != null;
+            for (String correctColumn : builder.rules.correct){
+                if (!builder.table.isColKey(correctColumn)){
+                    throw new IllegalArgumentException("Correct columns must come from a real column from the provided table");
+                }
+            }
+            for (String suggestion : builder.rules.suggestions){
+                if (!builder.table.isColKey(suggestion)){
                     throw new IllegalArgumentException("Columns that lead to error messages with suggestions must come" +
                             "from one of the columns in the provided table");
                 }
             }
         }
-        this.formatName = formatName;
-        this.table = table;
-        this.rules = rules;
+        this.formatName = builder.formatName;
+        this.table = builder.table;
+        this.rules = builder.rules;
+        this.formats = builder.parserformat;
+        this.filePath = builder.filePath;
     }
 
     /**
@@ -71,27 +69,41 @@ public class AdvancedEnumFormatValidator implements FormatValidator {
      */
     @Override
     public Optional<String> validate(String subject) {
+        if (this.table == null){
+            FormatValidatorBuilder fb = new FormatValidatorBuilder(this);
+            try {
+                String result = fb.gzipSearch(subject);
+                if (result == null){
+                    return Optional.empty();
+                }
+                return Optional.of(result);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new IllegalArgumentException("check your path");
+            }
+        }
         List<String> correctOptions = new ArrayList<>();
-        for (String correctColumn : rules.get("correct")) {
+        for (String correctColumn : rules.correct) {
             try {
                 this.table.getEntry(correctColumn, subject);
                 return Optional.empty();
             }
             catch (IllegalArgumentException ignored) {}
         }
-        if (this.rules.containsKey("suggestions")) {
-            for (String suggestion : this.rules.get("suggestions")) {
-                try{
-                    this.table.getEntry(suggestion, subject, suggestion);
-                    for (String correctColumn : this.rules.get("correct")){
-                        correctOptions.addAll(this.table.getEntry(correctColumn, subject, suggestion));
-                    }
-                    return Optional.of("Entered: " + subject + ". Expected: the following" + correctOptions);
+
+        for (String suggestion : this.rules.suggestions) {
+            try{
+                this.table.getEntry(suggestion, subject, suggestion);
+                for (String correctColumn : this.rules.correct){
+                    correctOptions.addAll(this.table.getEntry(correctColumn, subject, suggestion));
                 }
-                catch (IllegalArgumentException ignored){}
+                return Optional.of("Entered: " + subject + ". Expected: any one of " + correctOptions);
+            }
+            catch (IllegalArgumentException ignored){
             }
         }
-        return Optional.of("Entered: " + subject + ". Expected: an entry from the columns " + rules.get("correct"));
+
+        return Optional.of("Entered: " + subject + ". Expected: an entry from the columns " + rules.correct);
     }
 
     /**

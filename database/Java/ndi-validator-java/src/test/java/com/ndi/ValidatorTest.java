@@ -4,12 +4,7 @@ import org.everit.json.schema.FormatValidator;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -70,13 +65,13 @@ class ValidatorTest {
 
     @Test
     void testCustomizedTag() throws IOException {
-        TableReader tr = new TableReader(new String[]{"\t","\t","\t"});
-        tr.loadData("src/main/resources/GenBankControlledVocabulary.tsv", "Scientific_Name", new ArrayList<>(Arrays.asList("Synonyms", "Other_Common_Name")));
-        Table tb = tr.getTable();
-        tb.getEntry("Scientific_Name", "Acanthodactylus erythrurus atlanticus");
-        Map<String, List<String>> rules = new HashMap<>();
-        rules.put("correct", Collections.singletonList("Scientific_Name"));
-        FormatValidator fv = new AdvancedEnumFormatValidator("animal_subject", tb, rules);
+        FormatValidator fv = new FormatValidatorBuilder()
+                .setFormatTag("animal_subject")
+                .setParserFormat(new ParserFormat().addFormat(new String[]{"\t", "\t", "\t", "\t"}))
+                .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
+                .setRules(new Rules().addExpectedColumn("Scientific_Name"))
+                //.loadDataGzip()
+                .build();
         String schema = "{\n" +
                 "  \"$schema\": \"http://json-schema.org/schema#\",\n" +
                 "  \"id\" : \"my_example_validator\",\n" +
@@ -97,6 +92,7 @@ class ValidatorTest {
                 "}";
         String json = "{\n  \"name\": \"Joe\",\n  \"ID\" : \"Acanthodactylus erythrurus atlanticus\",\n  \"Grade\" : \"A\",\n  \"Friend\" : {\"name\" :  \"Tom\", \"favourite-number\" :  \"8\"}\n}";
         Validator test = new Validator(json, schema, true, Collections.singletonList(fv));
+        System.out.println(test.getReport());
         assertEquals(0, test.getReport().size());
     }
 }
