@@ -15,7 +15,7 @@ ced_rdr = ndi_daqreader_mfdaq_cedspike2();
 ced_vis_rdr = ndi_daqreader_mfdaq_stimulus_vhlabvisspike2();
 
 measure_sys = ndi_daqsystem_mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
-stim_sys = ndi_daqsystem_mfdaq_stimulus('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
+stim_sys = ndi_daqsystem_mfdaq('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
 
 our_exp.daqsystem_add(measure_sys); 
 our_exp.daqsystem_add(stim_sys);
