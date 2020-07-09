@@ -225,6 +225,29 @@ public class Table implements Serializable {
         this.additionalRowKeysMapping.put(colName, rowKeys);
     }
 
+    public void createIndexMultiValueColumn(String colName, ParserFormat.Format entryFormat) {
+        if (this.additionalRowKeysMapping.containsKey(colName)) {
+            return;
+        }
+        Map<String, List<String>> rowKeys = new HashMap<>();
+        if (!this.table.containsKey(colName)) {
+            throw new IllegalArgumentException("Attempt to create on index that does not exist");
+        }
+        Map<String, String> column = this.table.get(colName);
+        for (String key : column.keySet()) {
+            String[] individualEntry = column.get(key).split(entryFormat.entryPattern);
+            for (String s : individualEntry) {
+                if (rowKeys.containsKey(s)) {
+                    rowKeys.get(s).add(key);
+                } else {
+                    rowKeys.put(s, new ArrayList<>(Collections.singletonList(key)));
+                }
+            }
+        }
+        this.additionalRowKeysMapping.put(colName, rowKeys);
+    }
+
+
     /**
      * When looking up for a particular entry by its column key and a row key that is not a primary
      * row key, it is required to convert the non-primary row key into a primary row key. This method does

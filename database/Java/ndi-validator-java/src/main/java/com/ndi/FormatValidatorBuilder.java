@@ -116,13 +116,19 @@ public class FormatValidatorBuilder {
             Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(decoder)){
             String line = reader.readLine();
+            Map<String, Integer> col2Index = this.parserformat.parseColumns(line);
             this.table = new Table(this.parserformat.parseLine(line), primaryIndex);
             while (line != null){
                 table.addRow(this.parserformat.parseLine(line));
                 line = reader.readLine();
             }
             for (String secondaryIndex : secondaryIndices){
-                this.table.createIndex(secondaryIndex);
+                if (this.parserformat.patterns.get(col2Index.get(secondaryIndex)).entryPattern != null){
+                    table.createIndexMultiValueColumn(secondaryIndex, this.parserformat.patterns.get(col2Index.get(secondaryIndex)));
+                }
+                else{
+                    table.createIndex(secondaryIndex);
+                }
             }
             return this;
         }
@@ -157,13 +163,19 @@ public class FormatValidatorBuilder {
             Reader decoder = new InputStreamReader(fileStream, StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(decoder)){
             String line = reader.readLine();
+            Map<String, Integer> col2Index = this.parserformat.parseColumns(line);
             this.table = new Table(this.parserformat.parseLine(line), primaryIndex);
             while (line != null){
                 table.addRow(this.parserformat.parseLine(line));
                 line = reader.readLine();
             }
             for (String secondaryIndex : secondaryIndices){
-                table.createIndex(secondaryIndex);
+                if (this.parserformat.patterns.get(col2Index.get(secondaryIndex)).entryPattern != null){
+                    table.createIndexMultiValueColumn(secondaryIndex, this.parserformat.patterns.get(col2Index.get(secondaryIndex)));
+                }
+                else{
+                    table.createIndex(secondaryIndex);
+                }
             }
             return this;
         }
@@ -243,19 +255,19 @@ public class FormatValidatorBuilder {
         return "Entered: " + subject + ". Expected: an entry from the columns " + rules.correct;
     }
 
-    public static void main(String[] args){
+    public static void main(String[] args) throws IOException {
         long startTime = System.currentTimeMillis();
         FormatValidator fv = new FormatValidatorBuilder()
                 .setParserFormat(new ParserFormat().addFormat(new String[]{"\t", "\t", "\t"})
                                                     .addEntryPattern(2, ", ")
                                                     .addEntryPattern(3, ", "))
                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
-                .setRules(new Rules().addExpectedColumn("Scientific_Name")
+                .setRules(new Rules().addExpectedColumns(Arrays.asList("Scientific_Name", "Synonyms"))
                         .addSuggestedColumn(Arrays.asList("Synonyms", "Other_Common_Name")))
                 .setFormatTag("animal_subject")
-                //.loadData()
+                .loadDataGzip()
                 .build();
-        System.out.println(fv.validate("Labidoplax digitata"));
+        System.out.println(fv.validate("cat"));
         long endTime = System.currentTimeMillis();
         System.out.println("Execution time: " + (endTime-startTime)/1000.0 + "s");
     }
