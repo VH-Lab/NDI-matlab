@@ -1,72 +1,50 @@
 package com.ndi;
 
 import org.everit.json.schema.FormatValidator;
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
-import org.json.JSONTokener;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
 
-public class Validator {
-    private Validation implementation;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.HashMap;
+
+/**
+ * Json validation implementation based off of com.ndi.Everit's json-schema validator
+ * implementation: 'https://github.com/everit-org/json-schema', which follows the
+ * Draft v7 specification: "https://tools.ietf.org/html/draft-handrews-json-schema-validation-00"
+ */
+public class Validator implements Validatable {
+    private List<FormatValidator> validators;
+    private final JSONObject document;
+    private final JSONObject schema;
     private HashMap<String, String> report;
 
-    /**
-     * read the JSON file from the provided path of the JSON object and
-     * the schema. Validate the JSON object and then produce the report
-     *
-     * @param document          the file path linking to the document
-     * @param schema            the file path linking to the schema
-     * @param isJSONContent     specifying if the string passed in is the actual json file content
-     */
-    public Validator(String document, String schema, boolean isJSONContent){
-        this.implementation = ValidatorFactory.build();
-        performLogic(document, schema, isJSONContent);
+    public Validator(String document, String schema){
+        this.document = new JSONObject(document);
+        this.schema = new JSONObject(schema);
     }
 
-    /**
-     * Same as what the other constructor does, however this takes three arguments instead,
-     * which provides support for customized string format tag
-     *
-     * @param document      the file path linking to the document
-     * @param schema        the file path linking to the schema
-     * @param isJSONContent specifying if the string passed in is the actual json file content
-     * @param validators    a list of Format Validator
-     */
-    public Validator(String document, String schema, boolean isJSONContent, List<FormatValidator> validators){
-        this.implementation = ValidatorFactory.build(validators);
-        performLogic(document, schema, isJSONContent);
+    public Validator(JSONObject document, JSONObject schema){
+        this.document = document;
+        this.schema = schema;
     }
 
-    private void performLogic(String document, String schema, boolean isJSONContent) {
-        if (document == null || schema == null) {
-            throw new IllegalArgumentException("Must specify either a path or actual json content");
-        }
-        JSONObject schema_document;
-        JSONObject ndi_document;
-        if (isJSONContent) {
-            schema_document = new JSONObject(schema);
-            ndi_document = new JSONObject(document);
-        } else {
-            schema_document = readJSON(schema);
-            ndi_document = readJSON(document);
-        }
-        this.report = implementation.performValidation(ndi_document, schema_document);
+    public Validator addValidators (List<FormatValidator> validators){
+        this.validators = validators;
+        return this;
     }
 
-    /**
-     * A second constructor that takes two HashMap as arguments, each of which represents
-     * a JSON file content
-     * @param documentProperties    the actual ndi_document content
-     * @param schemaProperties      its validation (schema) document content
-     */
-    public Validator(HashMap<String, String> documentProperties, HashMap<String,String> schemaProperties){
-        if (documentProperties == null || schemaProperties == null){
-            throw new IllegalArgumentException("Arguments must be java.util.HashMap<String,String>");
+    public Validator addValidator(FormatValidator validator){
+        if (this.validators == null){
+            this.validators = new ArrayList<>(Collections.singletonList(validator));
         }
-        JSONObject schema = new JSONObject(documentProperties);
-        JSONObject ndi_document = new JSONObject(schemaProperties);
-        this.report = implementation.performValidation(ndi_document, schema);
+        else{
+            this.validators.add(validator);
+        }
+        return this;
     }
 
     /**
@@ -77,22 +55,52 @@ public class Validator {
      * a string detailing the error message. If the HashMap is empty,
      * then it means the json document is valid
      */
-    public HashMap<String, String> getReport(){
-        return this.report;
+    @Override
+    public HashMap<String, String> getReport() {
+        if (this.report == null){
+            return this.performValidation();
+        }
+        else{
+            return this.getReport();
+        }
     }
 
     /**
-     * parse a json file from the given file path and return a
-     * JSONObject file
+     * Perform JSON Validation using org.everit JSON validator
      *
-     * @param path the file path of the JSON file
-     * @return the JSONObject file representing the json file
+     * @return a key-value pairs, where the key represents the
+     *         JSON key that has the wrong type, and the value represents
+     *         a string detailing the error message. If the HashMap is empty,
+     *         then it means the json document is valid
      */
-    private static JSONObject readJSON(String path){
-        InputStream is = Validator.class.getResourceAsStream(path);
-        if (is == null){
-            throw new RuntimeException("Fail to read the json file");
+    @Override
+    public HashMap<String, String> performValidation() {
+        HashMap<String, String> output = new HashMap<>();
+        SchemaLoader.SchemaLoaderBuilder loader = SchemaLoader.builder()
+                .draftV7Support()
+                .schemaJson(schema);
+        System.out.println(this.validators);
+        if (this.validators != null){
+            for (FormatValidator validator : validators){
+                loader.addFormatValidator(validator);
+            }
         }
-        return new JSONObject(new JSONTokener(is));
+        Schema validation = loader.build().load().build();
+        try{
+            validation.validate(document);
+            return output;
+        }
+        catch(ValidationException e){
+            List<ValidationException> exceptionList = e.getCausingExceptions();
+            if (exceptionList.isEmpty()){
+                output.put(e.getPointerToViolation(), e.getMessage());
+                return output;
+            }
+            for (ValidationException individual : exceptionList){
+                output.put(individual.getPointerToViolation(), individual.getMessage());
+            }
+        }
+        this.report = output;
+        return output;
     }
 }

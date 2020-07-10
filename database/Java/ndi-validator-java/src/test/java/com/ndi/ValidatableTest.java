@@ -4,11 +4,10 @@ import org.everit.json.schema.FormatValidator;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-class ValidatorTest {
+class ValidatableTest {
 
     @Test
     void getReportMultipleError() {
@@ -31,7 +30,7 @@ class ValidatorTest {
                 "  }\n" +
                 "}";
         String json = "{\n  \"name\": \"Joe\",\n  \"ID\" : 39,\n  \"Grade\" : 3,\n  \"Friend\" : {\"name\" :  \"Tom\", \"favourite-number\" :  \"8\"}\n}";
-        Validator test = new Validator(json, schema, true);
+        Validatable test = new Validator(json, schema);
         assertEquals(2, test.getReport().size());
     }
 
@@ -59,18 +58,18 @@ class ValidatorTest {
                 "  \"ID\" : \"39\",\n" +
                 "  \"Grade\" : \"A\"\n" +
                 "}";
-        Validator test = new Validator(json, schema, true);
+        Validatable test = new Validator(json, schema);
         assertEquals(1, test.getReport().size());
     }
 
     @Test
     void testCustomizedTag() throws IOException {
-        FormatValidator fv = new FormatValidatorBuilder()
+        FormatValidator fv = new EnumFormatValidator.Builder()
                 .setFormatTag("animal_subject")
-                .setParserFormat(new ParserFormat().addFormat(new String[]{"\t", "\t", "\t", "\t"}))
+                .setParserFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"}))
                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
                 .setRules(new Rules().addExpectedColumn("Scientific_Name"))
-                //.loadDataGzip()
+                .loadDataGzip()
                 .build();
         String schema = "{\n" +
                 "  \"$schema\": \"http://json-schema.org/schema#\",\n" +
@@ -91,8 +90,7 @@ class ValidatorTest {
                 "  }\n" +
                 "}";
         String json = "{\n  \"name\": \"Joe\",\n  \"ID\" : \"Acanthodactylus erythrurus atlanticus\",\n  \"Grade\" : \"A\",\n  \"Friend\" : {\"name\" :  \"Tom\", \"favourite-number\" :  \"8\"}\n}";
-        Validator test = new Validator(json, schema, true, Collections.singletonList(fv));
-        System.out.println(test.getReport());
+        Validatable test = new Validator(json, schema).addValidator(fv);
         assertEquals(0, test.getReport().size());
     }
 }

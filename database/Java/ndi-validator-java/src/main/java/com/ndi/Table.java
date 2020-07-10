@@ -225,7 +225,7 @@ public class Table implements Serializable {
         this.additionalRowKeysMapping.put(colName, rowKeys);
     }
 
-    public void createIndexMultiValueColumn(String colName, ParserFormat.Format entryFormat) {
+    public void createIndexMultiValueColumn(String colName, TableFormat.Format entryFormat) {
         if (this.additionalRowKeysMapping.containsKey(colName)) {
             return;
         }

@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 
-public class ParserFormat {
+public class TableFormat {
     List<Format> patterns = new ArrayList<>();
 
-    public ParserFormat addFormat(String[] format){
+    public TableFormat addFormat(String[] format){
         this.patterns = new ArrayList<>();
         for (String each : format){
             this.patterns.add(new Format(each, null));
@@ -19,7 +19,8 @@ public class ParserFormat {
         this.patterns.add(new Format("", null));
         return this;
     }
-    public ParserFormat addEntryPattern(int index, String entryPattern){
+
+    public TableFormat addEntryPattern(int index, String entryPattern){
         this.patterns.get(index).entryPattern = entryPattern;
         return this;
     }
@@ -43,14 +44,6 @@ public class ParserFormat {
         return output;
     }
 
-    ArrayList<String> parseEntryToList(String input, int index){
-        if (this.patterns.get(index).entryPattern == null){
-            return null;
-        }
-        String[] result = input.split(this.patterns.get(index).entryPattern);
-        return new ArrayList<>(Arrays.asList(result));
-    }
-
     /**
      * Split the line of text into an ArrayList of string, using the specified format
      * specified by the user
@@ -62,7 +55,7 @@ public class ParserFormat {
         ArrayList<String> output = new ArrayList<>();
         String res = input;
         int index = 0;
-        for (ParserFormat.Format eachPattern : this.patterns){
+        for (TableFormat.Format eachPattern : this.patterns){
             if (index == this.patterns.size()-1){
                 break;
             }
