@@ -79,7 +79,6 @@ public class Validator implements Validatable {
         SchemaLoader.SchemaLoaderBuilder loader = SchemaLoader.builder()
                 .draftV7Support()
                 .schemaJson(schema);
-        System.out.println(this.validators);
         if (this.validators != null){
             for (FormatValidator validator : validators){
                 loader.addFormatValidator(validator);

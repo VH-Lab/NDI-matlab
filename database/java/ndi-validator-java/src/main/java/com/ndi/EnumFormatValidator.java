@@ -1,6 +1,9 @@
 package com.ndi;
 
 import org.everit.json.schema.FormatValidator;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -193,6 +196,59 @@ public class EnumFormatValidator implements FormatValidator {
     private final Rules rules;
     private final String filePath;
     private final TableFormat tableFormat;
+
+    /**
+     * Construct a new EnumFormatValidator from a JSONObject
+     *
+     * @param input an instance of JSONObject
+     * @return      an instance of EnumFormatValidator
+     * @throws      IllegalArgumentException if the JSON file contains invalid type
+     * @throws      IOException if error occurs while loading the gzip file
+     */
+    public static EnumFormatValidator buildFromJSON(JSONObject input) throws IOException{
+        if (!input.has("formatTag") || !input.has("rules") || !input.has("filePath") || !input.has("tableFormat")){
+            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires keys including rules, formatTag, filePath and tableFormat");
+        }
+        EnumFormatValidator.Builder builder
+                = new Builder().setFormatTag(input.getString("formatTag"))
+                .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
+                .setFilePath(input.getString("filePath"))
+                .setParserFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
+        if (input.has("loadTableIntoMemory")){
+            try{
+                if (input.getBoolean("loadTableIntoMemory")){
+                    builder.loadDataGzip();
+                }
+            }
+            catch(JSONException ex){
+                throw new IllegalArgumentException("Error building the EnumFormatValidator: requires the value of the key \"loadTableIntoMemor\" to be a boolean value");
+            }
+        }
+        return builder.build();
+    }
+
+    /**
+     * Construct a list of EnumFormatValidator
+     *
+     * @param input a org.json.JSONArray Object representing a list of valid JSONObject that
+     *              can be used to construct an instance of EnumFormatValidator
+     * @return      a List of EnumFormat Validators give the JSONArray input
+     *
+     * @throws IOException  any error loading the table
+     * @throws IllegalArgumentException when the json files contains invalid data type
+     */
+    public static List<EnumFormatValidator> buildFromJSON(JSONArray input) throws IOException{
+        List<EnumFormatValidator> output = new ArrayList<>();
+        for (int i = 0; i < input.length(); i++){
+            try {
+                output.add(EnumFormatValidator.buildFromJSON(input.getJSONObject(i)));
+            }
+            catch(JSONException ex){
+                throw new IllegalArgumentException("Error building the EnumFormatValidator, requires an array of object");
+            }
+        }
+        return output;
+    }
 
     /**
      * Constructor for the AdvancedEnumFormatValidator class. It takes the an instance of
