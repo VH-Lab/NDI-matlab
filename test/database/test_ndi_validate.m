@@ -54,8 +54,36 @@ validator = ndi_validate(doc, E);
 assert(validator.is_valid == 1, "fail");
 disp('good');
 
+%test format_validators
+animal_subject_good_doc = ndi_document('ndi_document_animalsubject.json', 'animalsubject.scientific_name', 'Aboma etheostoma', 'animalsubject.genbank_commonname', 'scaly goby');
+validator = ndi_validate(animal_subject_good_doc);
+assert(validator.is_valid == 1, "fail");
+disp('good')
 
+animal_subject_bad_doc_with_hint = ndi_document('ndi_document_animalsubject.json', 'animalsubject.scientific_name', 'scaly goby', 'animalsubject.genbank_commonname', 'Aboma etheostoma');
+errormsg = "";
+try
+    validator = ndi_validate(animal_subject_bad_doc_with_hint);
+    assert(validator.is_valid == 0, "fail");
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + errormsg)
+disp("")
 
+animal_subject_bad_doc = ndi_document('ndi_document_animalsubject.json', 'animalsubject.scientific_name', 'invalid_scientific_name', 'animalsubject.genbank_commonname', 'invalid_genbank_commonname');
+try
+    validator = ndi_validate(animal_subject_bad_doc);
+    assert(validator.is_valid == 0, "fail");
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + errormsg)
+disp("")
 disp('All test cases have passed.')
 
 end

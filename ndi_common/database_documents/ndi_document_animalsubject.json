@@ -1,0 +1,16 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ndi_document_animalsubject.json",
+		"validation":						"$NDISCHEMAPATH\/ndi_document_animalsubject_schema.json",
+		"class_name":						"ndi_document_animalsubject",
+		"property_list_name":				"animalsubject",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+        },
+	"animalsubject": {
+		"scientific_name":					"",
+		"genbank_commonname":				""
+	}
+}
