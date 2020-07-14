@@ -1,9 +1,11 @@
 package com.ndi;
 
+import org.apache.commons.digester.Rule;
 import org.everit.json.schema.FormatValidator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -80,7 +82,7 @@ public class EnumFormatValidator implements FormatValidator {
             return this;
         }
 
-        public Builder setParserFormat(TableFormat tableFormat) {
+        public Builder setTableFormat(TableFormat tableFormat) {
             this.tableFormat = tableFormat;
             return this;
         }
@@ -205,15 +207,54 @@ public class EnumFormatValidator implements FormatValidator {
      * @throws      IllegalArgumentException if the JSON file contains invalid type
      * @throws      IOException if error occurs while loading the gzip file
      */
-    public static EnumFormatValidator buildFromJSON(JSONObject input) throws IOException{
+    public static EnumFormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
+        EnumFormatValidator.Builder builder = new Builder().setFormatTag(input.getString("formatTag"))
+                                                            .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
+                                                            .setFilePath(input.getString("filePath"))
+                                                            .setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
+        if (input.has("loadTableIntoMemory") && input.getBoolean("loadTableIntoMemory")){
+            builder = builder.loadDataGzip();
+        }
+        return builder.build();
+    }
+
+    /**
+     * Construct a new EnumFormatValidator from a JSONObject
+     *
+     * @param input an instance of JSONObject
+     * @return      an instance of EnumFormatValidator
+     * @throws      IllegalArgumentException if the JSON file contains invalid type
+     * @throws      IOException if error occurs while loading the gzip file
+     */
+    /*public static EnumFormatValidator buildFromJSON(JSONObject input) throws IOException{
         if (!input.has("formatTag") || !input.has("rules") || !input.has("filePath") || !input.has("tableFormat")){
             throw new IllegalArgumentException("Error building the EnumFormatValidator: requires keys including rules, formatTag, filePath and tableFormat");
         }
-        EnumFormatValidator.Builder builder
-                = new Builder().setFormatTag(input.getString("formatTag"))
-                .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
-                .setFilePath(input.getString("filePath"))
-                .setParserFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
+        EnumFormatValidator.Builder builder = new Builder();
+        try{
+            builder.setFormatTag(input.getString("formatTag"));
+        }
+        catch(JSONException ex){
+            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"formatTag\" key to be a string");
+        }
+        try{
+            builder.setRules(Rules.buildFromJSON(input.getJSONObject("rules")));
+        }
+        catch(JSONException ex){
+            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"rules\" key to be an object");
+        }
+        try{
+            builder.setFilePath(input.getString("filePath"));
+        }
+        catch(JSONException ex){
+            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"filePath\" key to be a string");
+        }
+        try{
+            builder.setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
+        }
+        catch(JSONException ex){
+            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"tableFormat\" key to be an object");
+        }
         if (input.has("loadTableIntoMemory")){
             try{
                 if (input.getBoolean("loadTableIntoMemory")){
@@ -221,31 +262,37 @@ public class EnumFormatValidator implements FormatValidator {
                 }
             }
             catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the EnumFormatValidator: requires the value of the key \"loadTableIntoMemor\" to be a boolean value");
+                throw new IllegalArgumentException("Error building the EnumFormatValidator: requires the value of the key \"loadTableIntoMemory\" to be a boolean value");
             }
         }
         return builder.build();
-    }
+    }*/
 
     /**
      * Construct a list of EnumFormatValidator
      *
-     * @param input a org.json.JSONArray Object representing a list of valid JSONObject that
+     * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
      *              can be used to construct an instance of EnumFormatValidator
      * @return      a List of EnumFormat Validators give the JSONArray input
      *
      * @throws IOException  any error loading the table
      * @throws IllegalArgumentException when the json files contains invalid data type
      */
-    public static List<EnumFormatValidator> buildFromJSON(JSONArray input) throws IOException{
+    public static List<EnumFormatValidator> buildFromJSON(JSONObject arg) throws IOException{
+        try(InputStream is = EnumFormatValidator.class.getResourceAsStream("/ndi_validate_config_schema.json")){
+            Validator validator = new Validator(arg, new JSONObject(new JSONTokener(is)));
+            if (validator.getReport().size() != 0){
+                throw new IllegalArgumentException("ndi_validate_config.json is not formatted correctly:\n"
+                                                    + validator.getReport().toString());
+            }
+        }
+        catch(NullPointerException ex){
+            throw new InternalError("Cannot load JSON Schema");
+        }
+        JSONArray input = arg.getJSONArray("string_format");
         List<EnumFormatValidator> output = new ArrayList<>();
         for (int i = 0; i < input.length(); i++){
-            try {
-                output.add(EnumFormatValidator.buildFromJSON(input.getJSONObject(i)));
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the EnumFormatValidator, requires an array of object");
-            }
+            output.add(EnumFormatValidator.buildFromSingleJSON(input.getJSONObject(i)));
         }
         return output;
     }
@@ -404,9 +451,67 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     public static void main(String[] args) throws IOException {
+        List<EnumFormatValidator> validator = EnumFormatValidator.buildFromJSON(new JSONObject("{\n" +
+                "\t\"string_format\": [\n" +
+                "\t\t{\n" +
+                "\t\t\t\"formatTag\": \"animal_subject\",\n" +
+                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
+                "\t\t\t\"tableFormat\": {\n" +
+                "\t\t\t\t\"format\": [\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"entryFormat\": [\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\t\", \",\n" +
+                "\t\t\t\t\t\", \"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"rules\": {\n" +
+                "\t\t\t\t\"correct\": [\n" +
+                "\t\t\t\t\t\"Scientific_name\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"suggestions\": [\n" +
+                "\t\t\t\t\t\"Synonyms\",\n" +
+                "\t\t\t\t\t\"GenBank_commonname\"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"loadTableIntoMemory\": false\n" +
+                "\t\t},\n" +
+                "\t\t{\n" +
+                "\t\t\t\"formatTag\": 'hello world',\n" +
+                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
+                "\t\t\t\"tableFormat\": {\n" +
+                "\t\t\t\t\"format\": [\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"entryFormat\": [\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\t\", \",\n" +
+                "\t\t\t\t\t\", \"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"rules\": {\n" +
+                "\t\t\t\t\"correct\": [\n" +
+                "\t\t\t\t\t\"GenBank_commonname\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"suggestions\": [\n" +
+                "\t\t\t\t\t3,\n" +
+                "\t\t\t\t\t\"Scientific_name\"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"loadTableIntoMemory\": false\n" +
+                "\t\t}\n" +
+                "\t]\n" +
+                "}"));
         long startTime = System.currentTimeMillis();
         EnumFormatValidator.Builder builder = new EnumFormatValidator.Builder()
-                .setParserFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
+                .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
                         .addEntryPattern(2, ", ")
                         .addEntryPattern(3, ", "))
                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")

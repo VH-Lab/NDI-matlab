@@ -182,20 +182,26 @@ classdef ndi_validate
         end
         
     end
-    
-    methods(Static, Access = private)
-        
+
+    methods(Static, Access = public)
         function add_java_path()
             %  
             %  ADD_JAVA_PATH()
             %
-	    S = warning();
-            warning('off','all')
-            ndi_globals;
-            eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
-            eval("import com.ndi.Validator");
-	    warning(S);
+            S = warning();
+                warning('off','all')
+                ndi_globals;
+                eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+                eval("import com.ndi.Validator");
+            warning(S);
         end
+
+        function load_format_validator()
+        end
+    end
+
+    
+    methods(Static, Access = private)
         
         function schema_json = extract_schema(ndi_document_obj)
             %   EXTRACT_SCHEMA - Extract the content of the ndi_document's

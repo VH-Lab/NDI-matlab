@@ -6,6 +6,7 @@ import org.everit.json.schema.ValidationException;
 import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +33,7 @@ public class Validator implements Validatable {
         this.schema = schema;
     }
 
-    public Validator addValidators (List<FormatValidator> validators){
+    public Validator addValidators(List<FormatValidator> validators){
         this.validators = validators;
         return this;
     }
@@ -48,7 +49,9 @@ public class Validator implements Validatable {
     }
 
     /**
-     * get a report detailing the error message of the validation
+     * get a report detailing the error message of the validation. If the report
+     * is empty, performValidation() will be called, otherwise it will just return
+     * the report
      *
      * @return a key-value pairs, where the key represents the
      * JSON key that has the wrong type, and the value represents
@@ -61,7 +64,7 @@ public class Validator implements Validatable {
             return this.performValidation();
         }
         else{
-            return this.getReport();
+            return this.report;
         }
     }
 
@@ -73,8 +76,7 @@ public class Validator implements Validatable {
      *         a string detailing the error message. If the HashMap is empty,
      *         then it means the json document is valid
      */
-    @Override
-    public HashMap<String, String> performValidation() {
+    private HashMap<String, String> performValidation() {
         HashMap<String, String> output = new HashMap<>();
         SchemaLoader.SchemaLoaderBuilder loader = SchemaLoader.builder()
                 .draftV7Support()
@@ -101,5 +103,9 @@ public class Validator implements Validatable {
         }
         this.report = output;
         return output;
+    }
+
+    public static JSONObject readJSONFile(String filepath) throws IOException {
+        return Util.readJSONFile(filepath);
     }
 }

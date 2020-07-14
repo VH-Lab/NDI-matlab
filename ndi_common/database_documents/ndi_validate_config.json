@@ -1,0 +1,58 @@
+{
+	"string_format": [
+		{
+			"formatTag": "animal_subject",
+			"filePath": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"tableFormat": {
+				"format": [
+					"\t",
+					"\t",
+					"\t"
+				],
+				"entryFormat": [
+					null,
+					null,
+					", ",
+					", "
+				]
+			},
+			"rules": {
+				"correct": [
+					"Scientific_name"
+				],
+				"suggestions": [
+					"Synonyms",
+					"GenBank_commonname"
+				]
+			},
+			"loadTableIntoMemory": false
+		},
+		{
+			"formatTag": "genbank_commonname",
+			"filePath": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"tableFormat": {
+				"format": [
+					"\t",
+					"\t",
+					"\t"
+				],
+				"entryFormat": [
+					null,
+					null,
+					", ",
+					", "
+				]
+			},
+			"rules": {
+				"correct": [
+					"GenBank_commonname"
+				],
+				"suggestions": [
+					"Synonyms",
+					"Scientific_name"
+				]
+			},
+			"loadTableIntoMemory": false
+		}
+	]
+}

@@ -15,7 +15,29 @@ import java.util.Map;
 public class TableFormat {
     List<Format> patterns = new ArrayList<>();
 
-    public static TableFormat buildFromJSON(JSONObject input){
+    static TableFormat buildFromJSON(JSONObject input){
+        TableFormat output = new TableFormat();
+        JSONArray arr = input.getJSONArray("format");
+        if (arr.length () == 0){
+            throw new IllegalArgumentException("Error building the TableFormat object, the format value must be a list with length greater than 0");
+        }
+        String[] format = new String[arr.length()];
+        for (int i = 0; i < arr.length(); i++){
+            format[i] = arr.getString(i);
+        }
+        output = output.addFormat(format);
+        if(input.has("entryFormat")){
+            arr = input.getJSONArray("entryFormat");
+            for (int i = 0; i < arr.length(); i++){
+                if (!arr.isNull(i)){
+                    output = output.addEntryPattern(i, arr.getString(i));
+                }
+            }
+        }
+        return output;
+    }
+
+/*    public static TableFormat buildFromJSON(JSONObject input){
         TableFormat output = new TableFormat();
         JSONArray arr;
         try{
@@ -57,7 +79,7 @@ public class TableFormat {
             }
         }
         return output;
-    }
+    }*/
 
     public TableFormat addFormat(String[] format){
         this.patterns = new ArrayList<>();

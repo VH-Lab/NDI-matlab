@@ -66,7 +66,7 @@ class ValidatableTest {
     void testCustomizedTag() throws IOException {
         FormatValidator fv = new EnumFormatValidator.Builder()
                 .setFormatTag("animal_subject")
-                .setParserFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"}))
+                .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"}))
                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
                 .setRules(new Rules().addExpectedColumn("Scientific_Name"))
                 .loadDataGzip()

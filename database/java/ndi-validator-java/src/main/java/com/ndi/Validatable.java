@@ -1,5 +1,11 @@
 package com.ndi;
 
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 
 /**
@@ -11,21 +17,9 @@ import java.util.HashMap;
 public interface Validatable {
 
     /**
-     * This method should perform the actual validation of JSON Object
+     * Acquire an report of validation.
      *
      * @return a key-value pairs, where the key represents the
-     *         JSON key that has the wrong type, and the value represents
-     *         a string detailing the error message. If the HashMap is empty,
-     *         then it means the json document is valid
-     */
-    HashMap<String, String> performValidation();
-
-    /**
-     * Acquire an report of validation. This should be called after performValidation()
-     * method has been called. If perform Validation has not been called, this should
-     * call the performValidation method for the user
-     *
-     * @return again a key-value pairs, where the key represents the
      *         JSON key that has the wrong type, and the value represents
      *         a string detailing the error message. If the HashMap is empty,
      *         then it means the json document is valid (exactly what performValidation()
@@ -33,5 +27,14 @@ public interface Validatable {
      */
     HashMap<String, String> getReport();
 
+    class Util {
+        public static JSONObject readJSONFile(String filePath) throws IOException {
+            JSONObject output;
+            try(InputStream is = new FileInputStream(filePath)){
+                output = new JSONObject(new JSONTokener(is));
+            }
+            return output;
+        }
+    }
 }
 

@@ -11,35 +11,62 @@ public class Rules {
     final List<String> correct = new ArrayList<>();
     final List<String> suggestions = new ArrayList<>();
 
-    public static Rules buildFromJSON(JSONObject input){
+    static Rules buildFromJSON(JSONObject input){
+        Rules output = new Rules();
+        JSONArray correctColumns = input.getJSONArray("correct");
+        for (int i = 0; i < correctColumns.length(); i++){
+            output = output.addExpectedColumn(correctColumns.getString(i));
+        }
+        if (input.has("suggestions")){
+            JSONArray suggestedColumns = input.getJSONArray("suggestions");
+            for (int i = 0; i < suggestedColumns.length(); i++){
+                output = output.addSuggestedColumn(suggestedColumns.getString(i));
+            }
+        }
+        return output;
+    }
+
+   /* public static Rules buildFromJSON(JSONObject input){
         Rules output = new Rules();
         if (!input.has("correct")){
-            throw new IllegalArgumentException("Error building the Rule object, JSON files must contains the key \"correct\"");
+            throw new IllegalArgumentException("Error building the Rule object: \nJSON files must contains the key \"correct\"");
         }
-        JSONArray correctColumns = input.getJSONArray("correct");
+        JSONArray correctColumns;
+        try{
+            correctColumns = input.getJSONArray("correct");
+        }
+        catch(JSONException ex){
+            throw new IllegalArgumentException("Error building the Rule object: \n the \"correct\" key must contain an array of string");
+        }
         for (int i = 0; i < correctColumns.length(); i++){
             try{
                 String column = correctColumns.getString(i);
                 output.addExpectedColumn(column);
             }
             catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the Rule object, the correct key must contain an array of string");
+                throw new IllegalArgumentException("Error building the Rule object:\n the 'correct' key must contain an array of string");
             }
         }
         if (input.has("suggestions")){
-            JSONArray suggestedColumns = input.getJSONArray("suggestions");
+            JSONArray suggestedColumns;
+            try{
+                suggestedColumns = input.getJSONArray("suggestions");
+            }
+            catch(JSONException ex){
+                throw new IllegalArgumentException("\"Error building the Rule object:\n the 'suggestions' key must contain an array of string\"");
+            }
             for (int i = 0; i < suggestedColumns.length(); i++){
                 try{
                     String colName = suggestedColumns.getString(i);
-                    output.addExpectedColumn(colName);
+                    output.addSuggestedColumn(colName);
                 }
                 catch(JSONException ex){
-                    throw new IllegalArgumentException("Error building the Rule object, the suggestions key must contain an array of string");
+                    throw new IllegalArgumentException("Error building the Rule object:\n the suggestions key must contain an array of string");
                 }
             }
         }
         return output;
-    }
+    }*/
 
     public Rules addExpectedColumn(String colName){
         correct.add(colName);
