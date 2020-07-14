@@ -1,15 +1,19 @@
 package com.ndi;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 public class Rules {
     final List<String> correct = new ArrayList<>();
     final List<String> suggestions = new ArrayList<>();
+    private final Set<String> correctSet = new HashSet<>();
+    private final Set<String> suggestionsSet = new HashSet<>();
 
     static Rules buildFromJSON(JSONObject input){
         Rules output = new Rules();
@@ -26,50 +30,12 @@ public class Rules {
         return output;
     }
 
-   /* public static Rules buildFromJSON(JSONObject input){
-        Rules output = new Rules();
-        if (!input.has("correct")){
-            throw new IllegalArgumentException("Error building the Rule object: \nJSON files must contains the key \"correct\"");
-        }
-        JSONArray correctColumns;
-        try{
-            correctColumns = input.getJSONArray("correct");
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the Rule object: \n the \"correct\" key must contain an array of string");
-        }
-        for (int i = 0; i < correctColumns.length(); i++){
-            try{
-                String column = correctColumns.getString(i);
-                output.addExpectedColumn(column);
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the Rule object:\n the 'correct' key must contain an array of string");
-            }
-        }
-        if (input.has("suggestions")){
-            JSONArray suggestedColumns;
-            try{
-                suggestedColumns = input.getJSONArray("suggestions");
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("\"Error building the Rule object:\n the 'suggestions' key must contain an array of string\"");
-            }
-            for (int i = 0; i < suggestedColumns.length(); i++){
-                try{
-                    String colName = suggestedColumns.getString(i);
-                    output.addSuggestedColumn(colName);
-                }
-                catch(JSONException ex){
-                    throw new IllegalArgumentException("Error building the Rule object:\n the suggestions key must contain an array of string");
-                }
-            }
-        }
-        return output;
-    }*/
-
     public Rules addExpectedColumn(String colName){
+        if (correctSet.contains(colName) || suggestionsSet.contains(colName)){
+            throw new IllegalArgumentException("cannot have duplicate correct columns or overlapping suggestions columns and correct columns");
+        }
         correct.add(colName);
+        correctSet.add(colName);
         return this;
     }
 
@@ -81,7 +47,11 @@ public class Rules {
     }
 
     public Rules addSuggestedColumn(String colName){
+        if (correctSet.contains(colName) || suggestionsSet.contains(colName)){
+            throw new IllegalArgumentException("cannot have duplicate correct columns or overlapping suggestions columns and correct columns");
+        }
         suggestions.add(colName);
+        suggestionsSet.add(colName);
         return this;
     }
 

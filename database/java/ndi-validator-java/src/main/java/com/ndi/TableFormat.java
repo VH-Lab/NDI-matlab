@@ -1,7 +1,6 @@
 package com.ndi;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -36,50 +35,6 @@ public class TableFormat {
         }
         return output;
     }
-
-/*    public static TableFormat buildFromJSON(JSONObject input){
-        TableFormat output = new TableFormat();
-        JSONArray arr;
-        try{
-            arr = input.getJSONArray("format");
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the TableFormat object, requires \"format\" key and its value being a list");
-        }
-        if (arr.length() == 0){
-            throw new IllegalArgumentException("Error building the TableFormat object, the format value must be a list with length greater than 0");
-        }
-        String[] format = new String[arr.length()];
-        for (int i = 0; i < arr.length(); i++){
-            try{
-                format[i] = arr.getString(i);
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the TableFormat object, requires all entries within the format key's value to be String");
-            }
-        }
-        output.addFormat(format);
-        if (input.has("entryFormat")){
-            try{
-                arr = input.getJSONArray("entryFormat");
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the TableFormat object, requires the entryFormat's key value to be a list");
-            }
-            for (int i = 0; i < arr.length(); i++){
-                if (arr.isNull(i)){
-                    continue;
-                }
-                try{
-                    output.addEntryPattern(i, arr.getString(i));
-                }
-                catch(JSONException ex){
-                    throw new IllegalArgumentException("Error building the TableFormat object, requires all entries within the entryFormat key's value to be String");
-                }
-            }
-        }
-        return output;
-    }*/
 
     public TableFormat addFormat(String[] format){
         this.patterns = new ArrayList<>();

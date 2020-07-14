@@ -1,9 +1,7 @@
 package com.ndi;
 
-import org.apache.commons.digester.Rule;
 import org.everit.json.schema.FormatValidator;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -98,11 +96,22 @@ public class EnumFormatValidator implements FormatValidator {
          * @return the FormatValidatorBuilder with the table initialized
          */
         public Builder loadDataGzip() throws IOException {
-            if (this.filePath == null || this.rules == null) {
+            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1) {
                 throw new IllegalArgumentException("requires file path and rules to be non-null");
             }
             String filepath = this.filePath;
             ArrayList<String> secondaryIndices = new ArrayList<>();
+            String primaryIndex = retrieveIndices(secondaryIndices);
+            try (InputStream fileStream = new FileInputStream(filepath);
+                 InputStream gzipStream = new GZIPInputStream(fileStream);
+                 Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(decoder)) {
+                populateTable(secondaryIndices, primaryIndex, reader);
+                return this;
+            }
+        }
+
+        private String retrieveIndices(ArrayList<String> secondaryIndices) {
             String primaryIndex = null;
             int firstIndex = 0;
             for (String correctColumn : this.rules.correct) {
@@ -114,27 +123,9 @@ public class EnumFormatValidator implements FormatValidator {
                 secondaryIndices.add(correctColumn);
             }
             secondaryIndices.addAll(this.rules.suggestions);
-            try (InputStream fileStream = new FileInputStream(filepath);
-                 InputStream gzipStream = new GZIPInputStream(fileStream);
-                 Reader decoder = new InputStreamReader(gzipStream, StandardCharsets.UTF_8);
-                 BufferedReader reader = new BufferedReader(decoder)) {
-                String line = reader.readLine();
-                Map<String, Integer> col2Index = this.tableFormat.parseColumns(line);
-                this.table = new Table(this.tableFormat.parseLine(line), primaryIndex);
-                while (line != null) {
-                    table.addRow(this.tableFormat.parseLine(line));
-                    line = reader.readLine();
-                }
-                for (String secondaryIndex : secondaryIndices) {
-                    if (this.tableFormat.patterns.get(col2Index.get(secondaryIndex)).entryPattern != null) {
-                        table.createIndexMultiValueColumn(secondaryIndex, this.tableFormat.patterns.get(col2Index.get(secondaryIndex)));
-                    } else {
-                        table.createIndex(secondaryIndex);
-                    }
-                }
-                return this;
-            }
+            return primaryIndex;
         }
+
 
         /**
          * Does everything that the loadDataGzip does, except it works for text file instead.
@@ -145,40 +136,35 @@ public class EnumFormatValidator implements FormatValidator {
          * @deprecated
          */
         public Builder loadData() throws IOException {
-            if (this.filePath == null || this.rules == null) {
+            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1) {
                 throw new IllegalArgumentException("requires file path and rules to be non-null");
             }
             String filepath = this.filePath;
             ArrayList<String> secondaryIndices = new ArrayList<>();
-            String primaryIndex = null;
-            int firstIndex = 0;
-            for (String correctColumn : this.rules.correct) {
-                if (firstIndex == 0) {
-                    primaryIndex = correctColumn;
-                    firstIndex = -1;
-                    continue;
-                }
-                secondaryIndices.add(correctColumn);
-            }
-            secondaryIndices.addAll(this.rules.suggestions);
+            String primaryIndex;
+            primaryIndex = retrieveIndices(secondaryIndices);
             try (InputStream fileStream = new FileInputStream(filepath);
                  Reader decoder = new InputStreamReader(fileStream, StandardCharsets.UTF_8);
                  BufferedReader reader = new BufferedReader(decoder)) {
-                String line = reader.readLine();
-                Map<String, Integer> col2Index = this.tableFormat.parseColumns(line);
-                this.table = new Table(this.tableFormat.parseLine(line), primaryIndex);
-                while (line != null) {
-                    table.addRow(this.tableFormat.parseLine(line));
-                    line = reader.readLine();
-                }
-                for (String secondaryIndex : secondaryIndices) {
-                    if (this.tableFormat.patterns.get(col2Index.get(secondaryIndex)).entryPattern != null) {
-                        table.createIndexMultiValueColumn(secondaryIndex, this.tableFormat.patterns.get(col2Index.get(secondaryIndex)));
-                    } else {
-                        table.createIndex(secondaryIndex);
-                    }
-                }
+                populateTable(secondaryIndices, primaryIndex, reader);
                 return this;
+            }
+        }
+
+        private void populateTable(ArrayList<String> secondaryIndices, String primaryIndex, BufferedReader reader) throws IOException {
+            String line = reader.readLine();
+            Map<String, Integer> col2Index = this.tableFormat.parseColumns(line);
+            this.table = new Table(this.tableFormat.parseLine(line), primaryIndex);
+            while (line != null) {
+                table.addRow(this.tableFormat.parseLine(line));
+                line = reader.readLine();
+            }
+            for (String secondaryIndex : secondaryIndices) {
+                if (this.tableFormat.patterns.get(col2Index.get(secondaryIndex)).entryPattern != null) {
+                    table.createIndexMultiValueColumn(secondaryIndex, this.tableFormat.patterns.get(col2Index.get(secondaryIndex)));
+                } else {
+                    table.createIndex(secondaryIndex);
+                }
             }
         }
 
@@ -219,56 +205,6 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     /**
-     * Construct a new EnumFormatValidator from a JSONObject
-     *
-     * @param input an instance of JSONObject
-     * @return      an instance of EnumFormatValidator
-     * @throws      IllegalArgumentException if the JSON file contains invalid type
-     * @throws      IOException if error occurs while loading the gzip file
-     */
-    /*public static EnumFormatValidator buildFromJSON(JSONObject input) throws IOException{
-        if (!input.has("formatTag") || !input.has("rules") || !input.has("filePath") || !input.has("tableFormat")){
-            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires keys including rules, formatTag, filePath and tableFormat");
-        }
-        EnumFormatValidator.Builder builder = new Builder();
-        try{
-            builder.setFormatTag(input.getString("formatTag"));
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"formatTag\" key to be a string");
-        }
-        try{
-            builder.setRules(Rules.buildFromJSON(input.getJSONObject("rules")));
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"rules\" key to be an object");
-        }
-        try{
-            builder.setFilePath(input.getString("filePath"));
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"filePath\" key to be a string");
-        }
-        try{
-            builder.setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
-        }
-        catch(JSONException ex){
-            throw new IllegalArgumentException("Error building the EnumFormatValidator: requires \"tableFormat\" key to be an object");
-        }
-        if (input.has("loadTableIntoMemory")){
-            try{
-                if (input.getBoolean("loadTableIntoMemory")){
-                    builder.loadDataGzip();
-                }
-            }
-            catch(JSONException ex){
-                throw new IllegalArgumentException("Error building the EnumFormatValidator: requires the value of the key \"loadTableIntoMemory\" to be a boolean value");
-            }
-        }
-        return builder.build();
-    }*/
-
-    /**
      * Construct a list of EnumFormatValidator
      *
      * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
@@ -305,27 +241,8 @@ public class EnumFormatValidator implements FormatValidator {
      *
      */
     private EnumFormatValidator(Builder builder){
-        if (builder.formatName == null){
-            throw new IllegalArgumentException("require format name");
-        }
-        if (builder.rules == null || builder.filePath == null){
-            if (builder.table == null){
-                throw new IllegalArgumentException("require rules, filePath");
-            }
-        }
-        if (builder.table != null) {
-            assert builder.rules != null;
-            for (String correctColumn : builder.rules.correct){
-                if (!builder.table.isColKey(correctColumn)){
-                    throw new IllegalArgumentException("Correct columns must come from a real column from the provided table");
-                }
-            }
-            for (String suggestion : builder.rules.suggestions){
-                if (!builder.table.isColKey(suggestion)){
-                    throw new IllegalArgumentException("Columns that lead to error messages with suggestions must come" +
-                            "from one of the columns in the provided table");
-                }
-            }
+        if (builder.formatName == null || builder.rules == null || builder.rules.correct.size() < 1 || builder.filePath == null || builder.tableFormat == null){
+            throw new IllegalArgumentException("require format name, rules with at least one correct column and filePath");
         }
         this.formatName = builder.formatName;
         this.table = builder.table;
@@ -401,9 +318,6 @@ public class EnumFormatValidator implements FormatValidator {
      * @throws IOException throw IOException if file can not be found or the file becomes corrupted
      */
     private String gzipSearch(String subject) throws IOException {
-        if (this.filePath == null || this.rules == null || this.tableFormat == null) {
-            throw new IllegalArgumentException("Require non-empty filepath and rules, and parserFormat");
-        }
         if (rules.correct.isEmpty()) {
             throw new IllegalArgumentException("rules must contains the key correct");
         }
