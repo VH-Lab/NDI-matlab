@@ -108,4 +108,67 @@ public class Validator implements Validatable {
     public static JSONObject readJSONFile(String filepath) throws IOException {
         return Util.readJSONFile(filepath);
     }
+
+    public static void main(String[] args) throws IOException {
+        Validator vd = new Validator(new JSONObject(""), new JSONObject(""));
+        List<FormatValidator> validator = EnumFormatValidator.buildFromJSON(new JSONObject("{\n" +
+                "\t\"string_format\": [\n" +
+                "\t\t{\n" +
+                "\t\t\t\"formatTag\": \"animal_subject\",\n" +
+                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
+                "\t\t\t\"tableFormat\": {\n" +
+                "\t\t\t\t\"format\": [\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"entryFormat\": [\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\t\", \",\n" +
+                "\t\t\t\t\t\", \"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"rules\": {\n" +
+                "\t\t\t\t\"correct\": [\n" +
+                "\t\t\t\t\t\"Scientific_name\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"suggestions\": [\n" +
+                "\t\t\t\t\t\"Synonyms\",\n" +
+                "\t\t\t\t\t\"GenBank_commonname\"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"loadTableIntoMemory\": false\n" +
+                "\t\t},\n" +
+                "\t\t{\n" +
+                "\t\t\t\"formatTag\": 'hello world',\n" +
+                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
+                "\t\t\t\"tableFormat\": {\n" +
+                "\t\t\t\t\"format\": [\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\",\n" +
+                "\t\t\t\t\t\"\\t\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"entryFormat\": [\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\tnull,\n" +
+                "\t\t\t\t\t\", \",\n" +
+                "\t\t\t\t\t\", \"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"rules\": {\n" +
+                "\t\t\t\t\"correct\": [\n" +
+                "\t\t\t\t\t\"GenBank_commonname\"\n" +
+                "\t\t\t\t],\n" +
+                "\t\t\t\t\"suggestions\": [\n" +
+                "\t\t\t\t\t3,\n" +
+                "\t\t\t\t\t\"Scientific_name\"\n" +
+                "\t\t\t\t]\n" +
+                "\t\t\t},\n" +
+                "\t\t\t\"loadTableIntoMemory\": false\n" +
+                "\t\t}\n" +
+                "\t]\n" +
+                "}"));
+        vd.addValidators(validator);
+    }
 }

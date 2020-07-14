@@ -193,7 +193,7 @@ public class EnumFormatValidator implements FormatValidator {
      * @throws      IllegalArgumentException if the JSON file contains invalid type
      * @throws      IOException if error occurs while loading the gzip file
      */
-    public static EnumFormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
+    public static FormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
         EnumFormatValidator.Builder builder = new Builder().setFormatTag(input.getString("formatTag"))
                                                             .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
                                                             .setFilePath(input.getString("filePath"))
@@ -214,7 +214,7 @@ public class EnumFormatValidator implements FormatValidator {
      * @throws IOException  any error loading the table
      * @throws IllegalArgumentException when the json files contains invalid data type
      */
-    public static List<EnumFormatValidator> buildFromJSON(JSONObject arg) throws IOException{
+    public static List<FormatValidator> buildFromJSON(JSONObject arg) throws IOException{
         try(InputStream is = EnumFormatValidator.class.getResourceAsStream("/ndi_validate_config_schema.json")){
             Validator validator = new Validator(arg, new JSONObject(new JSONTokener(is)));
             if (validator.getReport().size() != 0){
@@ -226,7 +226,7 @@ public class EnumFormatValidator implements FormatValidator {
             throw new InternalError("Cannot load JSON Schema");
         }
         JSONArray input = arg.getJSONArray("string_format");
-        List<EnumFormatValidator> output = new ArrayList<>();
+        List<FormatValidator> output = new ArrayList<>();
         for (int i = 0; i < input.length(); i++){
             output.add(EnumFormatValidator.buildFromSingleJSON(input.getJSONObject(i)));
         }
@@ -365,7 +365,7 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     public static void main(String[] args) throws IOException {
-        List<EnumFormatValidator> validator = EnumFormatValidator.buildFromJSON(new JSONObject("{\n" +
+        List<FormatValidator> validator = EnumFormatValidator.buildFromJSON(new JSONObject("{\n" +
                 "\t\"string_format\": [\n" +
                 "\t\t{\n" +
                 "\t\t\t\"formatTag\": \"animal_subject\",\n" +
