@@ -31,9 +31,7 @@ classdef ndi_validate
             end
             
             % Initialization
-            ndi_Init;
             ndi_globals;
-            ndi_validate.add_java_path();
             has_dependencies = 0;
             ndi_validate_obj.validators = struct();
             ndi_validate_obj.reports = struct();
@@ -78,7 +76,10 @@ classdef ndi_validate
             
             % validate all non-super class properties
             try
-                ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema, true );
+                ndi_validate_obj.validators.this = com.ndi.Validator( jsonencode(property_list), schema );
+                if ndi.validators.format_validators ~= -1
+                    ndi_validate_obj.validators.this = ndi_validate_obj.validators.this.addValidators(ndi.validators.format_validators);
+                end
             catch e
                 error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
                         + "Here are the detail Java exception error: " + e.message)
@@ -113,7 +114,10 @@ classdef ndi_validate
                 end
                 validator = 0;
                 try
-                    validator = com.ndi.Validator( jsonencode(properties), schema, true );
+                    validator = com.ndi.Validator( jsonencode(properties), schema );
+                    if (ndi.validators.format_validators ~= -1)
+                        validator = validator.addValidators(ndi.validators.format_validators);
+                    end
                 catch e
                     error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
                             + "Here are the detail Java exception error: " + e.message)
@@ -196,12 +200,51 @@ classdef ndi_validate
             warning(S);
         end
 
-        function load_format_validator()
+        function format_validator_list = load_format_validator()
+            %
+            %  LOAD the the list of FormatValidator configurated based on
+            %  the JSON file ndi_validate_config.json
+            %
+            ndi_globals;
+            eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            eval("import com.ndi.Validator");
+            eval("import com.ndi.EnumFormatValidator");
+            eval("import org.json.JSONObject");
+            json_path = [ndi.path.documentpath filesep 'ndi_validate_config.json'];
+            schema_path = [ndi.path.documentschemapath filesep 'ndi_validate_config_schema.json'];
+            json_object = JSONObject(fileread(json_path));
+            schema_json_object = JSONObject(fileread(schema_path));
+            report = Validator(json_object, schema_json_object).getReport();
+            if (report.size() > 0)
+                error("ndi_validate_config.json is not formatted correctly: check the following fields" + newline + ndi_validate.readHashMap(report))
+            end
+            json_array = json_object.getJSONArray("string_format");
+            for i = 0:json_array.length()-1
+                format_validator_json = json_array.getJSONObject(i);
+                filepath = ndi_validate.replace_ndipath( string(json_array.getJSONObject(i).getString("filePath")) );
+                format_validator_json = format_validator_json.put("filePath", filepath);
+                json_array = json_array.put(i, format_validator_json);
+            end
+            json_object = json_object.put("string_format", json_array);
+            format_validator_list = EnumFormatValidator.buildFromJSON(json_object);
         end
+        
     end
 
     
     methods(Static, Access = private)
+        
+        function new_path = replace_ndipath(path)
+            ndi_globals;
+            fn = fieldnames(ndi.path);
+            for i = 1:numel(fn)
+                if numel( strfind(path, "$NDI" + (string(fn{i}).upper())) )~= 0
+                    new_path = strrep(path, "$NDI" + (string(fn{i}).upper()), ndi.path.(fn{i}));
+                    return;
+                end
+            end
+            new_path = path;
+        end
         
         function schema_json = extract_schema(ndi_document_obj)
             %   EXTRACT_SCHEMA - Extract the content of the ndi_document's
