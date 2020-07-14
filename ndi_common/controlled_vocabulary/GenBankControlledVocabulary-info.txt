@@ -5,9 +5,9 @@ Environmental samples with "environmental sample" or "Sample" in the Scientific_
 
 The file is gzipped and has columns:
 
-Scientific_name      - the GenBank standard scientific name, ends in a <tab>  (these are alphabetized)
-GenBank_commonname   - the common name as defined by GenBank, ends in a <tab>
+Scientific_Name      - the GenBank standard scientific name, ends in a <tab>  (these are alphabetized)
+GenBank_Common_Name   - the common name as defined by GenBank, ends in a <tab>
 Synonyms             - Any synonyms, items separated separated by a ', ' and ends in a <tab>
-Other_commonname     - Any other common names, items separated by a ', ' and ends in a <newline>
+Other_Common_Name     - Any other common names, items separated by a ', ' and ends in a <newline>
 
 
