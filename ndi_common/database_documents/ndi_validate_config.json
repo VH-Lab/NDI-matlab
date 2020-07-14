@@ -18,14 +18,14 @@
 			},
 			"rules": {
 				"correct": [
-					"Scientific_name"
+					"Scientific_Name"
 				],
 				"suggestions": [
 					"Synonyms",
-					"GenBank_commonname"
+					"GenBank_Common_Name"
 				]
 			},
-			"loadTableIntoMemory": false
+			"loadTableIntoMemory": true
 		},
 		{
 			"formatTag": "genbank_commonname",
@@ -45,11 +45,11 @@
 			},
 			"rules": {
 				"correct": [
-					"GenBank_commonname"
+					"GenBank_Common_Name"
 				],
 				"suggestions": [
 					"Synonyms",
-					"Scientific_name"
+					"Scientific_Name"
 				]
 			},
 			"loadTableIntoMemory": false
