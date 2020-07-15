@@ -125,7 +125,9 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			ndi_globals;
 
-			ndi_hengen_path = [ndipath filesep 'app' filesep 'spikesorter_hengen'];
+			% ndi_hengen_path = [ndipath filesep 'app' filesep 'spikesorter_hengen'];
+			[filepath] = fileparts(which('spikeinterface_currentall.py'))
+			ndi_hengen_path = filepath
 
 			prev_folder = cd(ndi_hengen_path);
 
@@ -159,10 +161,12 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				sorting_p = sorting_doc
 				
 				save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
+
+				script_path = which('spikeinterface_currentall.py')
 				
-				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path ' --ndi-input'])
+				system(['/usr/local/opt/python@3.8/bin/python3 ' script_path ' -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path ' --ndi-input'])
 			else
-				system(['/usr/local/opt/python@3.8/bin/python3 spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path])
+				system(['/usr/local/opt/python@3.8/bin/python3 ' script_path ' -f json_input_files/spkint_wrapper_input_64ch.json --experiment-path ' ndi_app_spikesorter_hengen_obj.session.path ' --ndi-hengen-path ' ndi_hengen_path])
 			end
 			
 			cd(prev_folder)
