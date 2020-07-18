@@ -136,8 +136,12 @@ classdef ndi_app_spikesorter < ndi_app
 				'spike_sort.clusterids', clusterids, ...
 				'spike_sort.spiketimes', times, ...
 				'spike_sort.numclusters', numclusters) ...
-				+ ndi_timeseries_obj.newdocument() + ndi_app_spikesorter_obj.newdocument();
-
+				+ ndi_timeseries_obj.newdocument('ndi_document_epochid','epochid',epoch) + ndi_app_spikesorter_obj.newdocument();
+			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('timeseries_obj_id',ndi_timeseries_obj.id());
+			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('extraction_parameters',the.id());
+			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('spikesort_parameters',the.id());
+			
+			
 			% Add doc to database
 			ndi_app_spikesorter_obj.session.database_add(spike_clusters_doc);
 
