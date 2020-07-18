@@ -20,8 +20,6 @@
 % plot(t, d, 'o');
 
 % NDI way
-ndi_Init
-ndi_globals
 
 % Remove .ndi directory if it exists to avoid errors
 dirpath = '/Users/danielgmu/Downloads/Experiments/2019-08-22'
@@ -48,7 +46,8 @@ stim_sys = ndi_daqsystem_mfdaq('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr
 E.daqsystem_add(measure_sys); 
 E.daqsystem_add(stim_sys);
 
-extraction_name = 'hengen_test'
+extraction_name = 'hengen_extraction_test'
+sorting_name = 'hengen_sorting_test'
 
 probes = E.getprobes()
 
@@ -58,9 +57,9 @@ spikesorter_hengen.add_extraction_doc(extraction_name, [])
 
 spikesorter_hengen.add_sorting_doc(sorting_name, [])
 
-% spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+spikesorter_hengen.add_sorting_doc(probes{1}, [])
 
-spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, 1)
 
 spikesorter_hengen.rate_neuron_quality
 

@@ -92,7 +92,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			elseif numel(sorting_doc) > 1
 				error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
 			else,
-				sorting_doc = sorting_doc{1}.document_properties.sorting_parameters;
+				sorting_doc = sorting_doc{1}.document_properties.mountainsort_sorting_parameters;
 			end;
 			
 			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
@@ -272,10 +272,10 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			% okay, we can build a new document
 
 			if isempty(extraction_parameters),
-				extraction_parameters = ndi_document('apps/spikesorter_hengen/extraction_parameters') + ...
+				extraction_parameters = ndi_document('apps/spikesorter_hengen/hengen_extraction_parameters') + ...
 				ndi_app_spikesorter_hengen_obj.newdocument();
 				% this function needs a structure
-				extraction_parameters = extraction_parameters.document_properties.extraction_parameters; 
+				extraction_parameters = extraction_parameters.document_properties.hengen_extraction_parameters; 
 			elseif isa(extraction_parameters,'ndi_document'),
 				% this function needs a structure
 				extraction_params = extraction_parameters.document_properties.extraction_parameters; 
@@ -307,7 +307,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			% now we need to convert to an ndi_document
 
-			extraction_doc = ndi_document('apps/spikesorter_hengen/extraction_parameters', 'extraction_parameters', extraction_parameters) + ...
+			extraction_doc = ndi_document('apps/spikesorter_hengen/hengen_extraction_parameters', 'extraction_parameters', extraction_parameters) + ...
 			ndi_app_spikesorter_hengen_obj.newdocument() + ndi_document('ndi_document', 'ndi_document.name', extraction_name);
 
 			ndi_app_spikesorter_hengen_obj.session.database_add(extraction_doc);
@@ -322,13 +322,17 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 		%
 		% SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_HENGEN_OBJ, SORTER, SORTING_NAME, SORTING_PARAMETERS)
 
-
+			disp(['nargin -> ' num2str(nargin)])
 			if nargin < 4
 				sorting_parameters = []
 			end
 
+			if isempty(sorter)
+				sorter = 'm'
+			end
+
 			if ~strcmp(sorter, 'm') %|| ~strcmp(sorter, 'mountainsort')
-				error(['Unrecognized sorter, currently only ''' m ''' for mountainsort is supported.'])
+				error(['Unrecognized sorter, currently only ''m'' for mountainsort is supported.'])
 			end
 
 			params_searchq = ndi_query('ndi_document.name', 'exact_string', sorting_name, '') & ...
@@ -343,10 +347,10 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			if isempty(sorting_parameters)
 				sorting_parameters = ndi_document('apps/spikesorter_hengen/mountainsort') + ndi_app_spikesorter_hengen_obj.newdocument();
 				% this function needs a structure
-				sorting_parameters = sorting_parameters.document_properties.sorting_parameters; 
+				sorting_parameters = sorting_parameters.document_properties.mountainsort_parameters; 
 			elseif isa(sorting_parameters,'ndi_document'),
 				% this function needs a structure
-				sorting_parameters = sorting_parameters.document_properties.sorting_parameters; 
+				sorting_parameters = sorting_parameters.document_properties.mountainsort_parameters; 
 			elseif isa(sorting_parameters, 'char') % loading struct from file 
 				sorting_parameters = loadStructArray(sorting_parameters);
 			elseif isstruct(sorting_parameters),
