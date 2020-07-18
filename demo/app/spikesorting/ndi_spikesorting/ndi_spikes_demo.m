@@ -1,7 +1,7 @@
 ndi_Init;
 ndi_globals;
 
-mydirectory = [ndipath filesep 'ndi_common' filesep 'example_app_sessions'];
+mydirectory = [ndi.path.exampleexperpath];
 dirname = [mydirectory filesep 'exp_sg'];
 dot_ndi = [dirname filesep '.ndi'];
 

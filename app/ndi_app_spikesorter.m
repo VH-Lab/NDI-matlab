@@ -62,7 +62,7 @@ classdef ndi_app_spikesorter < ndi_app
 
 			% Read spikewaves here
 			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session);
-			waveforms = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			[waveforms, ~, spikewaves_doc] = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 
 			% Interpolation
 			interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
@@ -132,15 +132,14 @@ classdef ndi_app_spikesorter < ndi_app
 			% Create spike_clusters ndi_doc
 			spike_clusters_doc = ndi_app_spikesorter_obj.session.newdocument('apps/spikesorter/spike_clusters', ...
 				'spike_sort.sort_name', sort_name, ...
-				'spike_sort.sorting_parameters_file_id', sorting_parameters_doc.id, ...
 				'spike_sort.clusterids', clusterids, ...
 				'spike_sort.spiketimes', times, ...
 				'spike_sort.numclusters', numclusters) ...
 				+ ndi_timeseries_obj.newdocument('ndi_document_epochid','epochid',epoch) + ndi_app_spikesorter_obj.newdocument();
-			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('timeseries_obj_id',ndi_timeseries_obj.id());
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('timeseries_obj_id', ndi_timeseries_obj.id());
 			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('extraction_parameters',the.id());
-			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('spikesort_parameters',the.id());
-			
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('sorting_parameters',sorting_parameters_doc.id());
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('spikewaves_doc',spikewaves_doc.id()); % TODO: name 'spikewaves_doc' subject to change
 			
 			% Add doc to database
 			ndi_app_spikesorter_obj.session.database_add(spike_clusters_doc);
