@@ -24,8 +24,8 @@ end;
 
 spike_extractor = ndi_app_spikeextractor(E);
 spike_sorter = ndi_app_spikesorter(E);
-probe = E.getprobes('name','Tetrode7','reference',1,'type','n-trode');
-probe = probe{1};
+probes = E.getprobes();
+probe = probes{1};
 
 % d = E.database_search({'ndi_document.name','test','spike_extraction_parameters.filter_type','(.*)'});
 % if isempty(d),
