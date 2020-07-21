@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * This class is used to store the format of the text file that the tabular data
@@ -101,29 +102,6 @@ public class TableFormat {
     }
 
     /**
-     * An static inner class represent individual column. The pattern indicates
-     * how this column is split from the next column. The entryPattern field indicates
-     * how the entry in the column is split (if it holds multiple values). If the this is
-     * the last column of the table then, pattern by default is equals to ""
-     */
-    public static class Format{
-        String pattern;
-        String entryPattern;
-
-        /**
-         * Constructor for the static inner class
-         *
-         * @param pattern   how string pattern each columns in the table the split by
-         * @param entryPattern  the string pattern each entries in the column are
-         *                      split by. This is set to be null by default
-         */
-        public Format(String pattern, String entryPattern){
-            this.pattern = pattern;
-            this.entryPattern = entryPattern;
-        }
-    }
-
-    /**
      * parse an entry with multiple value split by a given pattern
      *
      * @param input the entries
@@ -134,7 +112,7 @@ public class TableFormat {
         if (this.patterns.get(index).entryPattern == null){
             return null;
         }
-        String[] result = input.split(this.patterns.get(index).entryPattern);
+        String[] result = input.split(Pattern.quote(this.patterns.get(index).entryPattern));
         return new HashSet<>(Arrays.asList(result));
     }
 
@@ -195,5 +173,28 @@ public class TableFormat {
             col2index.put(column, index++);
         }
         return col2index;
+    }
+
+    /**
+     * An static inner class represent individual column. The pattern indicates
+     * how this column is split from the next column. The entryPattern field indicates
+     * how the entry in the column is split (if it holds multiple values). If the this is
+     * the last column of the table then, pattern by default is equals to ""
+     */
+    public static class Format{
+        String pattern;
+        String entryPattern;
+
+        /**
+         * Constructor for the static inner class
+         *
+         * @param pattern   how string pattern each columns in the table the split by
+         * @param entryPattern  the string pattern each entries in the column are
+         *                      split by. This is set to be null by default
+         */
+        public Format(String pattern, String entryPattern){
+            this.pattern = pattern;
+            this.entryPattern = entryPattern;
+        }
     }
 }
