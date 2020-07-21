@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,6 +15,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,13 +42,14 @@ public class EnumFormatValidator implements FormatValidator {
         private String filePath;
         private TableFormat tableFormat;
 
-        public Builder() {}
-
         /**
          * @param formatName The name of our customized format tag
          * @return an instance of FormatValidatorBuilder with the field formatName being initialized
          */
         public Builder setFormatTag(String formatName) {
+            if (formatName == null) {
+                throw new IllegalArgumentException("formatName cannot be null");
+            }
             this.formatName = formatName;
             return this;
         }
@@ -62,6 +65,9 @@ public class EnumFormatValidator implements FormatValidator {
          * @return return an instance of FormatValidatorBuilder with rules being initialized
          */
         public Builder setRules(Rules rules) {
+            if (rules == null) {
+                throw new IllegalArgumentException("Rules cannot be null");
+            }
             if (rules.correct.isEmpty()) {
                 throw new IllegalArgumentException("You must have at least one column, whose entry will be accepted by the validator");
             }
@@ -76,11 +82,27 @@ public class EnumFormatValidator implements FormatValidator {
          * @return an instance of FormatValidatorBuilder with filePath initialized
          */
         public Builder setFilePath(String filePath) {
+            if (filePath == null) {
+                throw new IllegalArgumentException("filePath cannot be null");
+            }
+            if (!new File(filePath).exists()) {
+                throw new IllegalArgumentException("file does not exists");
+            }
             this.filePath = filePath;
             return this;
         }
 
+        /**
+         * set the table format of the builder object
+         *
+         * @param tableFormat an instance of tableFormat object specifying how each column is
+         *                    split and how each entry in each column is separated
+         * @return a new instance of Builder object with tableFormt added
+         */
         public Builder setTableFormat(TableFormat tableFormat) {
+            if (tableFormat == null) {
+                throw new IllegalArgumentException("tableFormat cannot be null");
+            }
             this.tableFormat = tableFormat;
             return this;
         }
@@ -96,8 +118,8 @@ public class EnumFormatValidator implements FormatValidator {
          * @return the FormatValidatorBuilder with the table initialized
          */
         public Builder loadDataGzip() throws IOException {
-            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1) {
-                throw new IllegalArgumentException("requires file path and rules to be non-null");
+            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1 || this.tableFormat == null) {
+                throw new IllegalArgumentException("requires file path, rules and tableFormat to be non-null");
             }
             String filepath = this.filePath;
             ArrayList<String> secondaryIndices = new ArrayList<>();
@@ -111,6 +133,15 @@ public class EnumFormatValidator implements FormatValidator {
             }
         }
 
+        /**
+         * This method determines the primary index given the correct and suggested columns
+         * from the Rules object. It returns the primary index and fill the empty
+         * secondaryIndex ArrayList with the correct secondary index. The primary index
+         * will be the first column name in the correct field of the Rules object.
+         *
+         * @param secondaryIndices the ArrayList of String that will be filled
+         * @return the primary index given the Rules object
+         */
         private String retrieveIndices(ArrayList<String> secondaryIndices) {
             String primaryIndex = null;
             int firstIndex = 0;
@@ -136,7 +167,7 @@ public class EnumFormatValidator implements FormatValidator {
          * @deprecated
          */
         public Builder loadData() throws IOException {
-            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1) {
+            if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1 || this.tableFormat == null) {
                 throw new IllegalArgumentException("requires file path and rules to be non-null");
             }
             String filepath = this.filePath;
@@ -151,6 +182,16 @@ public class EnumFormatValidator implements FormatValidator {
             }
         }
 
+        /**
+         * Fill the table given a list of secondary indices and primary indices. This method
+         * does not checker its argument, therefore it is the caller's responsibility to ensure
+         * the argument is valid. Because of that, this is a private method
+         *
+         * @param secondaryIndices the secondary indices
+         * @param primaryIndex     the primary index
+         * @param reader           a BufferedReader that reads the gzip file line by line
+         * @throws IOException if any error occurs while reading the gzip file
+         */
         private void populateTable(ArrayList<String> secondaryIndices, String primaryIndex, BufferedReader reader) throws IOException {
             String line = reader.readLine();
             Map<String, Integer> col2Index = this.tableFormat.parseColumns(line);
@@ -186,51 +227,67 @@ public class EnumFormatValidator implements FormatValidator {
     private final TableFormat tableFormat;
 
     /**
-     * Construct a new EnumFormatValidator from a JSONObject
+     * Construct a list of EnumFormatValidator
+     *
+     * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
+     *            can be used to construct an instance of EnumFormatValidator
+     * @return a List of EnumFormat Validators give the JSONArray input
+     * @throws IOException              any error loading the table
+     * @throws IllegalArgumentException when the json files contains invalid data type
+     */
+    public static List<FormatValidator> buildFromJSON(JSONObject arg) throws IOException {
+        if (arg == null) {
+            throw new IllegalArgumentException("JSONObject cannot be null");
+        }
+        validateEnumFormatValidatorJSON(arg);
+        JSONArray input = arg.getJSONArray("string_format");
+        List<FormatValidator> output = new ArrayList<>();
+        for (int i = 0; i < input.length(); i++) {
+            output.add(EnumFormatValidator.buildFromSingleJSON(input.getJSONObject(i)));
+        }
+        return output;
+    }
+
+    /**
+     * Construct a new EnumFormatValidator from a JSONObject.
      *
      * @param input an instance of JSONObject
-     * @return      an instance of EnumFormatValidator
-     * @throws      IllegalArgumentException if the JSON file contains invalid type
-     * @throws      IOException if error occurs while loading the gzip file
+     * @return an instance of EnumFormatValidator
+     * @throws IllegalArgumentException if the JSON file contains invalid type
+     * @throws IOException              if error occurs while loading the gzip file
      */
-    public static FormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
+    private static FormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
         EnumFormatValidator.Builder builder = new Builder().setFormatTag(input.getString("formatTag"))
-                                                            .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
-                                                            .setFilePath(input.getString("filePath"))
-                                                            .setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
-        if (input.has("loadTableIntoMemory") && input.getBoolean("loadTableIntoMemory")){
+                .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
+                .setFilePath(input.getString("filePath"))
+                .setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
+        if (input.has("loadTableIntoMemory") && input.getBoolean("loadTableIntoMemory")) {
             builder = builder.loadDataGzip();
         }
         return builder.build();
     }
 
     /**
-     * Construct a list of EnumFormatValidator
+     * Validate the input JSONObject file using the com.ndi.Validator class. Doing so
+     * ensure JSONObject Exception will be not be thrown when the JSON Object is used
+     * to construct an instance of the EnumFormatValidator
      *
-     * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
-     *              can be used to construct an instance of EnumFormatValidator
-     * @return      a List of EnumFormat Validators give the JSONArray input
-     *
-     * @throws IOException  any error loading the table
-     * @throws IllegalArgumentException when the json files contains invalid data type
+     * @param arg the input JSON object
+     * @throws IOException when the JSON Schema file cannot be found
      */
-    public static List<FormatValidator> buildFromJSON(JSONObject arg) throws IOException{
-        try(InputStream is = EnumFormatValidator.class.getResourceAsStream("/ndi_validate_config_schema.json")){
-            Validator validator = new Validator(arg, new JSONObject(new JSONTokener(is)));
-            if (validator.getReport().size() != 0){
-                throw new IllegalArgumentException("ndi_validate_config.json is not formatted correctly:\n"
-                                                    + validator.getReport().toString());
-            }
+    public static void validateEnumFormatValidatorJSON(JSONObject arg) throws IOException {
+        if (arg == null) {
+            throw new IllegalArgumentException("JSONObject cannot be null");
         }
-        catch(NullPointerException ex){
+        try (InputStream is = EnumFormatValidator.class.getResourceAsStream("/ndi_validate_config_schema.json")) {
+            Validator validator = new Validator(arg, new JSONObject(new JSONTokener(is)));
+            if (validator.getReport().size() != 0) {
+                throw new IllegalArgumentException("ndi_validate_config.json is not formatted correctly:\n"
+                        + validator.getReport().toString());
+            }
+        } catch (NullPointerException ex) {
             throw new InternalError("Cannot load JSON Schema");
         }
-        JSONArray input = arg.getJSONArray("string_format");
-        List<FormatValidator> output = new ArrayList<>();
-        for (int i = 0; i < input.length(); i++){
-            output.add(EnumFormatValidator.buildFromSingleJSON(input.getJSONObject(i)));
-        }
-        return output;
     }
 
     /**
@@ -238,10 +295,9 @@ public class EnumFormatValidator implements FormatValidator {
      * FormatValidatorBuilder. FormatValidatorBuilder must contain all field, except the
      * table field. If table is not initialized, it will validate by calling the gzipSearch
      * methods instead of using the methods in the Table class
-     *
      */
-    private EnumFormatValidator(Builder builder){
-        if (builder.formatName == null || builder.rules == null || builder.rules.correct.size() < 1 || builder.filePath == null || builder.tableFormat == null){
+    private EnumFormatValidator(Builder builder) {
+        if (builder.formatName == null || builder.rules == null || builder.rules.correct.size() < 1 || builder.filePath == null || builder.tableFormat == null) {
             throw new IllegalArgumentException("require format name, rules with at least one correct column and filePath");
         }
         this.formatName = builder.formatName;
@@ -254,42 +310,41 @@ public class EnumFormatValidator implements FormatValidator {
     /**
      * Perform the validation step
      *
-     * @param subject   the user input in that json entry
-     * @return          List of error messages. The List would be empty if the user's entry
-     *                  is valid.
+     * @param subject the user input in that json entry
+     * @return List of error messages. The List would be empty if the user's entry
+     * is valid.
      */
     @Override
     public Optional<String> validate(String subject) {
-        if (this.table == null){
+        //using gzip search if table has not be loaded into memory
+        if (this.table == null) {
             try {
                 String result = this.gzipSearch(subject);
-                if (result == null){
+                if (result == null) {
                     return Optional.empty();
                 }
                 return Optional.of(result);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-        else{
+        } else {
             List<String> correctOptions = new ArrayList<>();
             for (String correctColumn : rules.correct) {
                 try {
                     this.table.getEntry(correctColumn, subject);
                     return Optional.empty();
+                } catch (IllegalArgumentException ignored) {
                 }
-                catch (IllegalArgumentException ignored) {}
             }
 
             for (String suggestion : this.rules.suggestions) {
-                try{
+                try {
                     this.table.getEntry(suggestion, subject, suggestion);
-                    for (String correctColumn : this.rules.correct){
+                    for (String correctColumn : this.rules.correct) {
                         correctOptions.addAll(this.table.getEntry(correctColumn, subject, suggestion));
                     }
                     return Optional.of("Entered: " + subject + ". Expected: any one of " + correctOptions);
-                }
-                catch (IllegalArgumentException ignored){
+                } catch (IllegalArgumentException ignored) {
                 }
             }
         }
@@ -299,7 +354,7 @@ public class EnumFormatValidator implements FormatValidator {
     /**
      * The name of the user-defined format tag
      *
-     * @return  the name of this format tag
+     * @return the name of this format tag
      */
     @Override
     public String formatName() {
@@ -365,64 +420,6 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     public static void main(String[] args) throws IOException {
-        List<FormatValidator> validator = EnumFormatValidator.buildFromJSON(new JSONObject("{\n" +
-                "\t\"string_format\": [\n" +
-                "\t\t{\n" +
-                "\t\t\t\"formatTag\": \"animal_subject\",\n" +
-                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
-                "\t\t\t\"tableFormat\": {\n" +
-                "\t\t\t\t\"format\": [\n" +
-                "\t\t\t\t\t\"\\t\",\n" +
-                "\t\t\t\t\t\"\\t\",\n" +
-                "\t\t\t\t\t\"\\t\"\n" +
-                "\t\t\t\t],\n" +
-                "\t\t\t\t\"entryFormat\": [\n" +
-                "\t\t\t\t\tnull,\n" +
-                "\t\t\t\t\tnull,\n" +
-                "\t\t\t\t\t\", \",\n" +
-                "\t\t\t\t\t\", \"\n" +
-                "\t\t\t\t]\n" +
-                "\t\t\t},\n" +
-                "\t\t\t\"rules\": {\n" +
-                "\t\t\t\t\"correct\": [\n" +
-                "\t\t\t\t\t\"Scientific_name\"\n" +
-                "\t\t\t\t],\n" +
-                "\t\t\t\t\"suggestions\": [\n" +
-                "\t\t\t\t\t\"Synonyms\",\n" +
-                "\t\t\t\t\t\"GenBank_commonname\"\n" +
-                "\t\t\t\t]\n" +
-                "\t\t\t},\n" +
-                "\t\t\t\"loadTableIntoMemory\": false\n" +
-                "\t\t},\n" +
-                "\t\t{\n" +
-                "\t\t\t\"formatTag\": 'hello world',\n" +
-                "\t\t\t\"filePath\": \"$NDICOMMONPATH\\/controlled_vocabulary\\/GenBankControlledVocabulary.tsv.gz\",\n" +
-                "\t\t\t\"tableFormat\": {\n" +
-                "\t\t\t\t\"format\": [\n" +
-                "\t\t\t\t\t\"\\t\",\n" +
-                "\t\t\t\t\t\"\\t\",\n" +
-                "\t\t\t\t\t\"\\t\"\n" +
-                "\t\t\t\t],\n" +
-                "\t\t\t\t\"entryFormat\": [\n" +
-                "\t\t\t\t\tnull,\n" +
-                "\t\t\t\t\tnull,\n" +
-                "\t\t\t\t\t\", \",\n" +
-                "\t\t\t\t\t\", \"\n" +
-                "\t\t\t\t]\n" +
-                "\t\t\t},\n" +
-                "\t\t\t\"rules\": {\n" +
-                "\t\t\t\t\"correct\": [\n" +
-                "\t\t\t\t\t\"GenBank_commonname\"\n" +
-                "\t\t\t\t],\n" +
-                "\t\t\t\t\"suggestions\": [\n" +
-                "\t\t\t\t\t3,\n" +
-                "\t\t\t\t\t\"Scientific_name\"\n" +
-                "\t\t\t\t]\n" +
-                "\t\t\t},\n" +
-                "\t\t\t\"loadTableIntoMemory\": false\n" +
-                "\t\t}\n" +
-                "\t]\n" +
-                "}"));
         long startTime = System.currentTimeMillis();
         EnumFormatValidator.Builder builder = new EnumFormatValidator.Builder()
                 .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
@@ -430,12 +427,12 @@ public class EnumFormatValidator implements FormatValidator {
                         .addEntryPattern(3, ", "))
                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
                 .setRules(new Rules().addExpectedColumn(Arrays.asList("Scientific_Name", "Synonyms"))
-                        .addSuggestedColumn(Arrays.asList("Synonyms", "Other_Common_Name")))
-                .setFormatTag("animal_subject");
-                //.loadDataGzip();
+                        .addSuggestedColumn(Collections.singletonList("Other_Common_Name")))
+                .setFormatTag("animal_subject")
+                .loadDataGzip();
         FormatValidator fv = builder.build();
         System.out.println(fv.validate("cat"));
         long endTime = System.currentTimeMillis();
-        System.out.println("Execution time: " + (endTime-startTime)/1000.0 + "s");
+        System.out.println("Execution time: " + (endTime - startTime) / 1000.0 + "s");
     }
 }

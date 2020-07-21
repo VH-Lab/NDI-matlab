@@ -10,15 +10,33 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * This class is used to store the format of the text file that the tabular data
+ * was stored in such that the Validator can interpret the text file correctly.
+ */
 public class TableFormat {
     List<Format> patterns = new ArrayList<>();
 
+    /**
+     * Build a text file from JSON document. This method does not perform
+     * JSON document input validation check. It is assumed that the validation
+     * is performed when EnumFormatValidator was constructed
+     *
+     * @param input an instance of JSONObject representing the fields of the
+     *              Table Format class
+     * @return      an instance of TableFormat
+     * @throws IllegalArgumentException when list of string representing how columns should be split is empty
+     * or when the size of the entryFormat list does not match with the number of column (1 more than the number of
+     * formatColumn)
+     */
     static TableFormat buildFromJSON(JSONObject input){
+        if (input == null){
+            throw new IllegalArgumentException("input cannot be null");
+        }
         TableFormat output = new TableFormat();
         JSONArray arr = input.getJSONArray("format");
         if (arr.length () == 0){
-            throw new IllegalArgumentException("Error building the TableFormat object, the format value must be a list with length greater than 0");
+            throw new IllegalArgumentException("Error building the TableFormat object: the format value must be a list with length greater than 0");
         }
         String[] format = new String[arr.length()];
         for (int i = 0; i < arr.length(); i++){
@@ -27,6 +45,9 @@ public class TableFormat {
         output = output.addFormat(format);
         if(input.has("entryFormat")){
             arr = input.getJSONArray("entryFormat");
+            if (arr.length() != output.patterns.size()){
+                throw new IllegalArgumentException("Error building the TableFormat object: your number of entryFormat must match the size of the columns");
+            }
             for (int i = 0; i < arr.length(); i++){
                 if (!arr.isNull(i)){
                     output = output.addEntryPattern(i, arr.getString(i));
@@ -36,7 +57,20 @@ public class TableFormat {
         return output;
     }
 
+    /**
+     * Adding a list of string which represents how each column in the table is split.
+     * This is meant to be called once. You can't add more format column on the top of the existing columns
+     *
+     * @param format    a list of string represents how each columns is split
+     *                  For example: a$a#a*a is split by $, #,*, so format should
+     *                  be equals to ["$","#","*]
+     * @return  an instance of TableFormat object
+     * @throws IllegalArgumentException if the size of format is less than 1, or addFormat has been called once
+     */
     public TableFormat addFormat(String[] format){
+        if (format == null || this.patterns.size() != 0 || format.length < 1){
+            throw new IllegalArgumentException("format must be greater than 1 and you can't add more format on the top of the existing list of split formats");
+        }
         this.patterns = new ArrayList<>();
         for (String each : format){
             this.patterns.add(new Format(each, null));
@@ -45,21 +79,57 @@ public class TableFormat {
         return this;
     }
 
+    /**
+     * Add a pattern to a particular column of the table representing how the entry
+     * in that column is split
+     *
+     * @param index the (index)th column in the order of String[] format that was used
+     *              when calling addFormat
+     * @param entryPattern  how the entry is split, for instance for a column with entry
+     *                      like "a, b, c, c", entryPattern should be equals to ", "
+     * @return  a new instance of TableFormat with the pattern added
+     */
     public TableFormat addEntryPattern(int index, String entryPattern){
+        if (entryPattern == null){
+            return this;
+        }
+        if (index < 0 || index > this.patterns.size()){
+            throw new IllegalArgumentException("Error: cannot add an entry pattern to an non-existing column");
+        }
         this.patterns.get(index).entryPattern = entryPattern;
         return this;
     }
 
+    /**
+     * An static inner class represent individual column. The pattern indicates
+     * how this column is split from the next column. The entryPattern field indicates
+     * how the entry in the column is split (if it holds multiple values). If the this is
+     * the last column of the table then, pattern by default is equals to ""
+     */
     public static class Format{
         String pattern;
         String entryPattern;
 
+        /**
+         * Constructor for the static inner class
+         *
+         * @param pattern   how string pattern each columns in the table the split by
+         * @param entryPattern  the string pattern each entries in the column are
+         *                      split by. This is set to be null by default
+         */
         public Format(String pattern, String entryPattern){
             this.pattern = pattern;
             this.entryPattern = entryPattern;
         }
     }
 
+    /**
+     * parse an entry with multiple value split by a given pattern
+     *
+     * @param input the entries
+     * @param index the column index in the order how the columns are added
+     * @return  a string set of values in this entry
+     */
     HashSet<String> parseEntry(String input, int index){
         if (this.patterns.get(index).entryPattern == null){
             return null;
@@ -107,6 +177,15 @@ public class TableFormat {
         return output;
     }
 
+    /**
+     * Get a list of column and index mapping pairs from the first line of the text file
+     *
+     * @param input the first line of the text file (which usually consists of column name)
+     *
+     * @return  a map of column name and its index
+     *
+     * Example: input = "col1 col2 col3 col4"  => {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
+     */
     Map<String, Integer> parseColumns(String input){
         List<String> columns;
         columns = this.parseLine(input);
