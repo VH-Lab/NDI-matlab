@@ -362,10 +362,11 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			% TODO: Ask Steve how he checks for fields being valid
 			sorting_doc = ndi_document('apps/spikesorter_hengen/mountainsort', 'mountainsort_parameters', sorting_parameters) + ...
 					ndi_app_spikesorter_hengen_obj.newdocument() + ndi_document('ndi_document', 'ndi_document.name', sorting_name);
+			keyboard
+			sorting_doc.document_properties,
 
 			ndi_app_spikesorter_hengen_obj.session.database_add(sorting_doc);
-
-			sorting_doc.document_properties,
+			
 		end % add_sorting_doc
 
 		function geometry_doc = add_geometry_doc(ndi_app_spikesorter_hengen_obj, probe, geometry)
