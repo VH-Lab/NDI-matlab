@@ -70,7 +70,7 @@ public class TableFormat {
      */
     public TableFormat addFormat(String[] format){
         if (format == null || this.patterns.size() != 0 || format.length < 1){
-            throw new IllegalArgumentException("format must be greater than 1 and you can't add more format on the top of the existing list of split formats");
+            throw new IllegalArgumentException("TableFormat Error: format must be greater than 1 and you can't add more format on the top of the existing list of split formats");
         }
         this.patterns = new ArrayList<>();
         for (String each : format){
@@ -94,8 +94,8 @@ public class TableFormat {
         if (entryPattern == null){
             return this;
         }
-        if (index < 0 || index > this.patterns.size()){
-            throw new IllegalArgumentException("Error: cannot add an entry pattern to an non-existing column");
+        if (index < 0 || index >= this.patterns.size()){
+            throw new IllegalArgumentException("TableFormat Error: cannot add an entry pattern to an non-existing column");
         }
         this.patterns.get(index).entryPattern = entryPattern;
         return this;
@@ -107,9 +107,18 @@ public class TableFormat {
      * @param input the entries
      * @param index the column index in the order how the columns are added
      * @return  a string set of values in this entry
+     *
+     * @throws IllegalStateException if this method was called before addFormat has been called
+     * @throws IllegalArgumentException if index is out of bound (greater or equals to the number of columns)
      */
     HashSet<String> parseEntry(String input, int index){
-        if (this.patterns.get(index).entryPattern == null){
+        if (patterns.size() == 0){
+            throw new IllegalStateException("TableFormat Error: patterns has not yet been initialized");
+        }
+        if (index >= this.patterns.size()){
+            throw new IllegalArgumentException("TableFormat Error: your index is out of bound, index expected to be in between 0 and " + (this.patterns.size()-1));
+        }
+        if (input == null || this.patterns.get(index).entryPattern == null){
             return null;
         }
         String[] result = input.split(Pattern.quote(this.patterns.get(index).entryPattern));
@@ -121,9 +130,16 @@ public class TableFormat {
      * specified by the user
      *
      * @param input the line of string we want to split
-     * @return      an ArrayList of string being split using the given format
+     * @return      an ArrayList of string being split using the given format. Null if the input is null.
+     * @throws      IllegalStateException if this method was called before addFormat has been called
      */
     ArrayList<String> parseLine(String input){
+        if (patterns.size() == 0){
+            throw new IllegalStateException("TableFormat Error: patterns has not yet been initialized");
+        }
+        if (input == null){
+            return null;
+        }
         ArrayList<String> output = new ArrayList<>();
         String res = input;
         int index = 0;
@@ -133,7 +149,7 @@ public class TableFormat {
             }
             int location = res.indexOf(eachPattern.pattern);
             if (location == -1){
-                throw new IllegalArgumentException("Pattern cannot be found");
+                throw new IllegalArgumentException("TableFormat/Input Error: Pattern cannot be found");
             }
             String tobeAdded = res.substring(0, location);
             if (tobeAdded.equals("")){
@@ -158,13 +174,22 @@ public class TableFormat {
     /**
      * Get a list of column and index mapping pairs from the first line of the text file
      *
+     * Example:
+     * input = "col1 col2 col3 col4"
+     *      => {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
+     *
      * @param input the first line of the text file (which usually consists of column name)
      *
-     * @return  a map of column name and its index
-     *
-     * Example: input = "col1 col2 col3 col4"  => {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
+     * @return  a map of column name and its index, or null if input == null or there the entry
+     * @throws      IllegalStateException if this method was called before addFormat has been called
      */
     Map<String, Integer> parseColumns(String input){
+        if (patterns.size() == 0){
+            throw new IllegalStateException("TableFormat Error: patterns has not yet been initialized");
+        }
+        if (input == null){
+            return null;
+        }
         List<String> columns;
         columns = this.parseLine(input);
         Map<String, Integer> col2index = new HashMap<>();
@@ -181,7 +206,7 @@ public class TableFormat {
      * how the entry in the column is split (if it holds multiple values). If the this is
      * the last column of the table then, pattern by default is equals to ""
      */
-    public static class Format{
+    static class Format{
         String pattern;
         String entryPattern;
 
