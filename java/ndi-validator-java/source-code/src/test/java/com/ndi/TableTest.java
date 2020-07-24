@@ -4,26 +4,23 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 class TableTest {
 
     @Test
     void badConstructor(){
         try{
-            Table tb = new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3", "col4")), "col0");
+            new Table(new ArrayList<>(Arrays.asList("col1", "col2", "col3", "col4")), "col0");
             fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("Your primary index must be one of the columns", ex.getMessage());
         }
         try{
-            Table tb = new Table(new ArrayList<>(Arrays.asList()), "");
+            new Table(new ArrayList<>(Collections.emptyList()), "");
             fail();
         }
         catch(IllegalArgumentException ex){
@@ -38,9 +35,13 @@ class TableTest {
         ArrayList<String> row2 = new ArrayList<>(Arrays.asList("entry5", "entry6", "entry7", "entry8"));
         ArrayList<String> row3 = new ArrayList<>(Arrays.asList(null, null, "entry10", "entry8"));
         Table tb = new Table(cols, "col3");
+        assertArrayEquals(new int[]{0, 4}, tb.size());
         tb.addRow(row1);
+        assertArrayEquals(new int[]{1, 4}, tb.size());
         tb.addRow(row2);
+        assertArrayEquals(new int[]{2, 4}, tb.size());
         tb.addRow(row3);
+        assertArrayEquals(new int[]{3, 4}, tb.size());
 
         //testing with key
         assertEquals("entry1", tb.getEntry("col1", "entry3"));
@@ -105,6 +106,7 @@ class TableTest {
         }
         try{
             tb.addRow(new ArrayList<>(Arrays.asList("1", "2", "3", "4", "5", "6")));
+            fail();
         }
         catch(IllegalArgumentException ex){
             assertEquals("tuple size must match with the size of the column", ex.getMessage());
@@ -128,11 +130,11 @@ class TableTest {
         tb.createIndex("col2");
         assertEquals(new ArrayList<>(Arrays.asList("entry1", "entry4")),
                 tb.getEntry("col1", "entry2", "col2"));
-        assertEquals(new ArrayList<>(Arrays.asList("entry5")),
+        assertEquals(new ArrayList<>(Collections.singletonList("entry5")),
                 tb.getEntry("col1", "entry3", "col2"));
         assertEquals(new ArrayList<>(Arrays.asList("entry1", "entry5")),
                 tb.getEntry("col1", "entry3", "col3"));
-        assertEquals(new ArrayList<>(Arrays.asList("entry4")),
+        assertEquals(new ArrayList<>(Collections.singletonList("entry4")),
                 tb.getEntry("col1", "entry5", "col3"));
         try{
             tb.createIndex("col5");
@@ -156,17 +158,17 @@ class TableTest {
         tb.addRow(new ArrayList<>(Arrays.asList("entry1", "entry2", "entry3")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry4", "entry5", "entry6")));
         tb.addRow(new ArrayList<>(Arrays.asList("entry7", "entry8", "entry9")));
-        assertEquals(new ArrayList<>(Arrays.asList("entry1")), tb.getEntry("col1", "entry3", "col3"));
-        assertEquals(new ArrayList<>(Arrays.asList("entry3")), tb.getEntry("col3", "entry2", "col2"));
+        assertEquals(new ArrayList<>(Collections.singletonList("entry1")), tb.getEntry("col1", "entry3", "col3"));
+        assertEquals(new ArrayList<>(Collections.singletonList("entry3")), tb.getEntry("col3", "entry2", "col2"));
         assertTrue(tb.isSecondaryRowKey("entry2", "col2"));
         assertTrue(tb.isSecondaryRowKey("entry9", "col3"));
         assertFalse(tb.isSecondaryRowKey("entry7", "col1"));
         assertTrue(tb.isRowKey("entry7"));
         assertTrue(tb.isColKey("col1") && tb.isColKey("col2") && tb.isColKey("col3"));
         tb.addRow(new ArrayList<>(Arrays.asList("entry10", "entry11", "entry12")));
-        assertEquals(new ArrayList<>(Arrays.asList("entry10")), tb.getEntry("col1", "entry11", "col2"));
+        assertEquals(new ArrayList<>(Collections.singletonList("entry10")), tb.getEntry("col1", "entry11", "col2"));
         assertEquals("entry11", tb.getEntry("col2", "entry10"));
-        assertEquals(new ArrayList<>(Arrays.asList("entry10")), tb.getEntry("col1", "entry12", "col3"));
+        assertEquals(new ArrayList<>(Collections.singletonList("entry10")), tb.getEntry("col1", "entry12", "col3"));
     }
 
     @Test

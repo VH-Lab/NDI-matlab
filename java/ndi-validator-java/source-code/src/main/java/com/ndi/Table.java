@@ -1,6 +1,5 @@
 package com.ndi;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,9 +11,12 @@ import java.util.Set;
 /**
  * Implementation of a table-like object using Hash Table, thus providing effective
  * look-up of entries. Used as an internal data structure for quickly identifying
- * if an entry exist in a given column
+ * if an entry exist in a given column.Note that creating index on a empty table
+ * is Illegal and might lead to unexpected behavior. This class has package access,
+ * which means that you probably shouldn't use this class unless you are trying to
+ * modify or expand com.ndi package.
  */
-public class Table {
+class Table {
     private final Map<String, Map<String, String>> table;
     private final Map<Integer, String> index2colKeys;
     private final Map<Integer, String> index2rowKeys;
@@ -28,8 +30,13 @@ public class Table {
      *
      * @param cols          the list of columns for this table
      * @param primaryIndex  the column that will be the primary index for this table
+     * @throws IllegalArgumentException if the table column is empty or the primaryIndex is not
+     * one of the columns, or either of the two arguments is null
      */
     public Table(List<String> cols, String primaryIndex){
+        if (cols == null || primaryIndex == null){
+            throw new IllegalArgumentException("cols or primaryIndex cannot be null");
+        }
         if (cols.size() < 1){
             throw new IllegalArgumentException("Your table must have at least one column");
         }
@@ -64,8 +71,13 @@ public class Table {
      *               Secondary index is allowed to be null, however, this will mean that we won't be able to
      *               query certain entries using only the secondary row key. Note that secondary index
      *               can contains duplicate entries
+     * @throws IllegalArgumentException when the argument is null or the size of the tuple does not match
+     * with the size of the column
      */
     public void addRow(ArrayList<String> tuple){
+        if (tuple == null){
+            throw new IllegalArgumentException("tuple cannot be null");
+        }
         if (tuple.size() != index2colKeys.size()){
             throw new IllegalArgumentException("tuple size must match with the size of the column");
         }
@@ -178,6 +190,7 @@ public class Table {
      * @param secondaryRowKey   a secondary row key
      * @param RowKeyCol         the column this secondary row key is in
      * @return                  querying the entry at column == colKey, row == secondaryRowKey
+     * @throws IllegalArgumentException if the colKey or the rowKey does not exist
      */
     public List<String> getEntry(String colKey, String secondaryRowKey, String RowKeyCol){
         if (!this.colKeys.contains(colKey) || !this.colKeys.contains(RowKeyCol))
@@ -203,6 +216,7 @@ public class Table {
      * will be thrown.
      *
      * @param colName   the name of the column that we want to create an index for
+     * @throws IllegalArgumentException when attempt to create an index on column that does not exist
      */
     public void createIndex(String colName){
         if (this.additionalRowKeysMapping.containsKey(colName)){
@@ -224,6 +238,16 @@ public class Table {
         this.additionalRowKeysMapping.put(colName, rowKeys);
     }
 
+    /**
+     * Construct index on a particular column that has multiple values listed in one single
+     * entry. Other than that, it does exactly what createIndex does
+     *
+     * @param colName       the name of the column that we want to create an index for
+     * @param entryFormat   an instance of TableFormat.format object, specifying how this
+     *                      multi-value entry is split (See tableFormat documentation for
+     *                      more details)
+     * @throws IllegalArgumentException when attempt to create an index on column that does not exist
+     */
     public void createIndexMultiValueColumn(String colName, TableFormat.Format entryFormat) {
         if (this.additionalRowKeysMapping.containsKey(colName)) {
             return;
@@ -257,6 +281,7 @@ public class Table {
      * @param row       the non-primary row key
      * @param column    the column this row key appears in
      * @return          the primary row key that match with the non-primary row key
+     * @throws IllegalArgumentException when key does not exist
      */
     private List<String> convert2primaryKey(String row, String column){
         if (additionalRowKeysMapping.containsKey(column)){

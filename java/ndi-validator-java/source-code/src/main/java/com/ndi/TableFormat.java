@@ -32,12 +32,12 @@ public class TableFormat {
      */
     static TableFormat buildFromJSON(JSONObject input){
         if (input == null){
-            throw new IllegalArgumentException("input cannot be null");
+            throw new IllegalArgumentException("TableFormat Initialization Error: input cannot be null");
         }
         TableFormat output = new TableFormat();
         JSONArray arr = input.getJSONArray("format");
         if (arr.length () == 0){
-            throw new IllegalArgumentException("Error building the TableFormat object: the format value must be a list with length greater than 0");
+            throw new IllegalArgumentException("TableFormat Initialization Error: the format value must be a list with length greater than 0");
         }
         String[] format = new String[arr.length()];
         for (int i = 0; i < arr.length(); i++){
@@ -47,7 +47,7 @@ public class TableFormat {
         if(input.has("entryFormat")){
             arr = input.getJSONArray("entryFormat");
             if (arr.length() != output.patterns.size()){
-                throw new IllegalArgumentException("Error building the TableFormat object: your number of entryFormat must match the size of the columns");
+                throw new IllegalArgumentException("TableFormat Initialization Error: your number of entryFormat must match the size of the columns");
             }
             for (int i = 0; i < arr.length(); i++){
                 if (!arr.isNull(i)){
@@ -176,7 +176,7 @@ public class TableFormat {
      *
      * Example:
      * input = "col1 col2 col3 col4"
-     *      => {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
+     * returns  {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
      *
      * @param input the first line of the text file (which usually consists of column name)
      *

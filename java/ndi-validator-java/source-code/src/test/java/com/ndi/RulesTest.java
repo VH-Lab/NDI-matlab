@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 class RulesTest {
 
@@ -51,7 +52,7 @@ class RulesTest {
             fail();
         }
         catch(IllegalArgumentException ex){
-            assertEquals("cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
+            assertEquals("Rules Initialization Error: cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
         }
         try{
             Rules test = new Rules().addExpectedColumn("col1")
@@ -59,7 +60,7 @@ class RulesTest {
             fail();
         }
         catch(IllegalArgumentException ex){
-            assertEquals("cannot have duplicate correct columns or overlapping suggestions columns and correct columns", ex.getMessage());
+            assertEquals("Rules Initialization Error: cannot have duplicate correct columns or overlapping suggestions columns and correct columns", ex.getMessage());
         }
         try{
             Rules test = new Rules().addSuggestedColumn("col1")
@@ -67,7 +68,7 @@ class RulesTest {
             fail();
         }
         catch(IllegalArgumentException ex){
-            assertEquals("cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
+            assertEquals("Rules Initialization Error: cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
         }
     }
 
@@ -90,7 +91,7 @@ class RulesTest {
             fail();
         }
         catch(IllegalArgumentException ex){
-            assertEquals("cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
+            assertEquals("Rules Initialization Error: cannot have duplicate suggested columns or overlapping suggestions columns and correct columns", ex.getMessage());
         }
     }
 

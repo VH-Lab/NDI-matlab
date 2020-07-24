@@ -14,8 +14,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -29,6 +27,23 @@ import java.util.zip.GZIPInputStream;
  * time, when the user has entered another set of value, we want to create suggestions for the user
  * to enter the correct values. It extends the FormatValidator class, which is called by the Everit
  * Validator when it encounters the this user's defined format tag in the schema document
+ *
+ * Example usage:
+ *
+ *         EnumFormatValidator.Builder builder = new EnumFormatValidator.Builder()
+ *                 .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
+ *                         .addEntryPattern(2, ", ")
+ *                         .addEntryPattern(3, ", "))
+ *                 .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
+ *                 .setRules(new Rules().addExpectedColumn(Arrays.asList("Scientific_Name", "Synonyms"))
+ *                         .addSuggestedColumn(Collections.singletonList("Other_Common_Name")))
+ *                 .setFormatTag("animal_subject");
+ *         FormatValidator fv = builder.build();
+ *         System.out.println(fv.validate("cat"));
+ *
+ * Print out the following in the console:
+ *
+ *      Optional[Entered: cat. Expected: any one of [Felis catus, Felis domesticus, Felis silvestris catus]]
  */
 public class EnumFormatValidator implements FormatValidator {
 
@@ -63,6 +78,8 @@ public class EnumFormatValidator implements FormatValidator {
          *              entries in the list of "suggestions" value's column, then the error message will provide
          *              hint that allows user to enter the value in the corrected column
          * @return return an instance of FormatValidatorBuilder with rules being initialized
+         * @throws IllegalArgumentException when the input is null or the rules does not contain at least one 'correct' column,
+         * which the Validator will accept if the entry comes from that column
          */
         public Builder setRules(Rules rules) {
             if (rules == null) {
@@ -80,6 +97,7 @@ public class EnumFormatValidator implements FormatValidator {
          *
          * @param filePath: the given filepath
          * @return an instance of FormatValidatorBuilder with filePath initialized
+         * @throws IllegalArgumentException if the file path is null or the file it links to does not exist
          */
         public Builder setFilePath(String filePath) {
             if (filePath == null) {
@@ -98,6 +116,7 @@ public class EnumFormatValidator implements FormatValidator {
          * @param tableFormat an instance of tableFormat object specifying how each column is
          *                    split and how each entry in each column is separated
          * @return a new instance of Builder object with tableFormt added
+         * @throws IllegalArgumentException if the input (tableFormat) is null
          */
         public Builder setTableFormat(TableFormat tableFormat) {
             if (tableFormat == null) {
@@ -188,7 +207,8 @@ public class EnumFormatValidator implements FormatValidator {
                 return this;
             }
             catch (IOException ex){
-                throw new RuntimeException("EnumFormatValidator Initialization Error: fail to read the text file from the provided path");
+                throw new RuntimeException("EnumFormatValidator Initialization Error: fail to read the gzip file from the provided path\n" +
+                        "The Original IO Exception Message: " + ex.getMessage());
             }
         }
 
@@ -221,9 +241,11 @@ public class EnumFormatValidator implements FormatValidator {
 
         /**
          * build an instance of AdvancedEnumFormatValidator based on the field set
-         * in the FormatValidatorBuilder object
+         * in the FormatValidatorBuilder object.
          *
          * @return an instance of AdvancedEnumFormatValidator
+         * @throws IllegalArgumentException if either formatName, rules, filePath, tableFormat has not been initialized
+         *         or the size of the rules object does not specify a column that the Validator should accept
          */
         public EnumFormatValidator build() {
             return new EnumFormatValidator(this);
@@ -242,10 +264,9 @@ public class EnumFormatValidator implements FormatValidator {
      * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
      *            can be used to construct an instance of EnumFormatValidator
      * @return a List of EnumFormat Validators give the JSONArray input
-     * @throws IOException              any error loading the table
      * @throws IllegalArgumentException when the json files contains invalid data type
      */
-    public static List<FormatValidator> buildFromJSON(JSONObject arg) throws IOException {
+    public static List<FormatValidator> buildFromJSON(JSONObject arg) {
         if (arg == null) {
             throw new IllegalArgumentException("EnumFormatValidator Initialization Error: JSONObject cannot be null");
         }
@@ -264,15 +285,19 @@ public class EnumFormatValidator implements FormatValidator {
      * @param input an instance of JSONObject
      * @return an instance of EnumFormatValidator
      * @throws IllegalArgumentException if the JSON file contains invalid type
-     * @throws IOException              if error occurs while loading the gzip file
      */
-    private static FormatValidator buildFromSingleJSON(JSONObject input) throws IOException {
+    private static FormatValidator buildFromSingleJSON(JSONObject input){
         EnumFormatValidator.Builder builder = new Builder().setFormatTag(input.getString("formatTag"))
                 .setRules(Rules.buildFromJSON(input.getJSONObject("rules")))
                 .setFilePath(input.getString("filePath"))
                 .setTableFormat(TableFormat.buildFromJSON(input.getJSONObject("tableFormat")));
         if (input.has("loadTableIntoMemory") && input.getBoolean("loadTableIntoMemory")) {
-            builder = builder.loadDataGzip();
+            if (builder.filePath.startsWith(".gz", builder.filePath.length()-3)){
+                builder = builder.loadDataGzip();
+            }
+            else{
+                builder = builder.loadData();
+            }
         }
         return builder.build();
     }
@@ -282,10 +307,13 @@ public class EnumFormatValidator implements FormatValidator {
      * ensure JSONObject Exception will be not be thrown when the JSON Object is used
      * to construct an instance of the EnumFormatValidator
      *
+     * @throws IllegalArgumentException if the input (JSONObject arg) is null or the JSON
+     * file is not formatted correctly according to ndi_document_subject_schema.json
+     * @throws InternalError if the schema file can no longer be found
+     *
      * @param arg the input JSON object
-     * @throws IOException when the JSON Schema file cannot be found
      */
-    public static void validateEnumFormatValidatorJSON(JSONObject arg) throws IOException {
+    public static void validateEnumFormatValidatorJSON(JSONObject arg){
         if (arg == null) {
             throw new IllegalArgumentException("EnumFormatValidator Initialization Error: JSONObject cannot be null");
         }
@@ -295,8 +323,8 @@ public class EnumFormatValidator implements FormatValidator {
                 throw new IllegalArgumentException("EnumFormatValidator Initialization Error: ndi_validate_config.json is not formatted correctly:\n"
                         + validator.getReport().toString());
             }
-        } catch (NullPointerException ex) {
-            throw new InternalError("Cannot load JSON Schema");
+        } catch (NullPointerException | IOException ex) {
+            throw new InternalError("Jar File Broken Error: Cannot load JSON Schema. Check if the jar file is broken");
         }
     }
 
@@ -305,6 +333,9 @@ public class EnumFormatValidator implements FormatValidator {
      * FormatValidatorBuilder. FormatValidatorBuilder must contain all field, except the
      * table field. If table is not initialized, it will validate by calling the gzipSearch
      * methods instead of using the methods in the Table class
+     *
+     * @param builder   an instance of EnumFormatValidator.Builder object, whose fields
+     *                  will be used to initialize a new instance of EnumFormatValidator
      *
      * @throws IllegalArgumentException if either formatName, rules, filePath, tableFormat has not been initialized
      * or the size of the rules object does not specify a column that the Validator should accept
@@ -333,7 +364,13 @@ public class EnumFormatValidator implements FormatValidator {
         //using gzip search if table has not be loaded into memory
         if (this.table == null) {
             try {
-                String result = this.gzipSearch(subject);
+                String result;
+                if (this.filePath.endsWith(".gz")){
+                    result = this.gzipSearch(subject);
+                }
+                else{
+                    result = this.textFileLinearSearch(subject);
+                }
                 if (result == null) {
                     return Optional.empty();
                 }
@@ -400,6 +437,66 @@ public class EnumFormatValidator implements FormatValidator {
                 List<String> words = this.tableFormat.parseLine(line);
                 ArrayList<String> correctOptions = new ArrayList<>();
                 for (String rule : rules.correct) {
+                    if (col2index.get(rule) == null){
+                        throw new IllegalArgumentException("EnumFormatValidator Error: the column " + rule + " does not exist");
+                    }
+                    String entryInCurrentColumn = words.get(col2index.get(rule));
+                    if (entryInCurrentColumn == null) {
+                        continue;
+                    }
+                    Set<String> choices = this.tableFormat.parseEntry(entryInCurrentColumn, col2index.get(rule));
+                    if (choices != null && choices.contains(subject)) {
+                        return null;
+                    } else if (entryInCurrentColumn.equals(subject)) {
+                        return null;
+                    }
+                    correctOptions.add(entryInCurrentColumn);
+                }
+                for (String suggestion : rules.suggestions) {
+                    if (col2index.get(suggestion) == null){
+                        throw new IllegalArgumentException("EnumFormatValidator Error: the column " + suggestion + " does not exist");
+                    }
+                    String correctColumnEntry = words.get(col2index.get(suggestion));
+                    if (correctColumnEntry == null) {
+                        continue;
+                    }
+                    Set<String> choices = this.tableFormat.parseEntry(correctColumnEntry, col2index.get(suggestion));
+                    if (choices != null && choices.contains(subject)) {
+                        return "Entered: " + subject + ". Expected: any one of " + correctOptions.toString();
+                    } else if (correctColumnEntry.equals(subject)) {
+                        return "Entered: " + subject + ". Expected: any one of " + correctOptions.toString();
+                    }
+                }
+            }
+        }
+        catch(IOException ex){
+            throw new RuntimeException("EnumFormatValidator Gzip Search Error: fail to read the gzip file from the provided path\n" +
+                    "The Original IO Exception Message: " + ex.getMessage());
+        }
+        return "Entered: " + subject + ". Expected: an entry from the columns " + rules.correct;
+    }
+
+    /**
+     * Does exactly what gzipSearch does, except it supports reading text file
+     *
+     * @param subject the user's input, which will be validated
+     * @return error message if nothing is found, null if the input is valid, expected
+     * input if the input comes from another columns of the table
+     * @throws IOException throw IOException if file can not be found or the file becomes corrupted
+     */
+    private String textFileLinearSearch(String subject) throws IOException {
+        if (rules.correct.isEmpty()) {
+            throw new IllegalArgumentException("EnumFormatValidator Error: rules must contains the key correct");
+        }
+        try (InputStream fileStream = new FileInputStream(filePath);
+             Reader decoder = new InputStreamReader(fileStream, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(decoder)) {
+            String line = reader.readLine();
+            Map<String, Integer> col2index = this.tableFormat.parseColumns(line);
+            for (line = reader.readLine(); line != null; line = reader.readLine()){
+                List<String> words = this.tableFormat.parseLine(line);
+                ArrayList<String> correctOptions = new ArrayList<>();
+                for (String rule : rules.correct) {
                     String entryInCurrentColumn = words.get(col2index.get(rule));
                     if (entryInCurrentColumn == null) {
                         continue;
@@ -426,23 +523,10 @@ public class EnumFormatValidator implements FormatValidator {
                 }
             }
         }
+        catch(IOException ex){
+            throw new RuntimeException("EnumFormatValidator Text Linear Search Error: fail to read the gzip file from the provided path\n" +
+                    "The Original IO Exception Message: " + ex.getMessage());
+        }
         return "Entered: " + subject + ". Expected: an entry from the columns " + rules.correct;
-    }
-
-    public static void main(String[] args) throws IOException {
-        long startTime = System.currentTimeMillis();
-        EnumFormatValidator.Builder builder = new EnumFormatValidator.Builder()
-                .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
-                        .addEntryPattern(2, ", ")
-                        .addEntryPattern(3, ", "))
-                .setFilePath("src/main/resources/GenBankControlledVocabulary.tsv.gz")
-                .setRules(new Rules().addExpectedColumn(Arrays.asList("Scientific_Name", "Synonyms"))
-                        .addSuggestedColumn(Collections.singletonList("Other_Common_Name")))
-                .setFormatTag("animal_subject");
-                //.loadDataGzip();
-        FormatValidator fv = builder.build();
-        System.out.println(fv.validate("cat"));
-        long endTime = System.currentTimeMillis();
-        System.out.println("Execution time: " + (endTime - startTime) / 1000.0 + "s");
     }
 }

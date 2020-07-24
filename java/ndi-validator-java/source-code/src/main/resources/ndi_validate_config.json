@@ -2,7 +2,7 @@
 	"string_format": [
 		{
 			"formatTag": "animal_subject",
-			"filePath": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"filePath": "src/main/resources/GenBankControlledVocabulary.tsv.gz",
 			"tableFormat": {
 				"format": [
 					"\t",
@@ -18,18 +18,18 @@
 			},
 			"rules": {
 				"correct": [
-					"Scientific_name"
+					"Scientific_Name"
 				],
 				"suggestions": [
 					"Synonyms",
-					"GenBank_commonname"
+					"GenBank_Common_Name"
 				]
 			},
 			"loadTableIntoMemory": false
 		},
 		{
 			"formatTag": "genbank_commonname",
-			"filePath": "$NDICOMMONPATH\/controlled_vocabulary\/GenBankControlledVocabulary.tsv.gz",
+			"filePath": "src/main/resources/GenBankControlledVocabulary.tsv.gz",
 			"tableFormat": {
 				"format": [
 					"\t",
@@ -45,11 +45,11 @@
 			},
 			"rules": {
 				"correct": [
-					"GenBank_commonname"
+					"GenBank_Common_Name"
 				],
 				"suggestions": [
 					"Synonyms",
-					"Scientific_name"
+					"Scientific_Name"
 				]
 			},
 			"loadTableIntoMemory": false

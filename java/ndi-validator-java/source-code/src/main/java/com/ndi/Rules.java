@@ -53,7 +53,7 @@ public class Rules {
      */
     public Rules addExpectedColumn(String colName){
         if (correctSet.contains(colName) || suggestionsSet.contains(colName)){
-            throw new IllegalArgumentException("cannot have duplicate correct columns or overlapping suggestions columns and correct columns");
+            throw new IllegalArgumentException("Rules Initialization Error: cannot have duplicate correct columns or overlapping suggestions columns and correct columns");
         }
         correct.add(colName);
         correctSet.add(colName);
@@ -86,7 +86,7 @@ public class Rules {
      */
     public Rules addSuggestedColumn(String colName){
         if (correctSet.contains(colName) || suggestionsSet.contains(colName)){
-            throw new IllegalArgumentException("cannot have duplicate suggested columns or overlapping suggestions columns and correct columns");
+            throw new IllegalArgumentException("Rules Initialization Error: cannot have duplicate suggested columns or overlapping suggestions columns and correct columns");
         }
         suggestions.add(colName);
         suggestionsSet.add(colName);

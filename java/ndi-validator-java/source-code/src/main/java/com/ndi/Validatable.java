@@ -27,6 +27,11 @@ public interface Validatable {
      */
     HashMap<String, String> getReport();
 
+    /**
+     * An inner class that contains methods all the subclasses that implement this interface
+     * might use. This is created so that we do not need to make Validatable a subclass,
+     * which has the potential create fragile base class problem.
+     */
     class Util {
         /**
          * A helper method that can used to read a JSON File from an absolute path, and
