@@ -11,11 +11,10 @@ import java.util.Set;
 
 /**
  * Implementation of a table-like object using Hash Table, thus providing effective
- * look-up of entries. The Table class implements the Serializable interface, which allows
- * us to save the Table class into a binary file, thus allowing the Validator to load the
- * needed data more efficiently
+ * look-up of entries. Used as an internal data structure for quickly identifying
+ * if an entry exist in a given column
  */
-public class Table implements Serializable {
+public class Table {
     private final Map<String, Map<String, String>> table;
     private final Map<Integer, String> index2colKeys;
     private final Map<Integer, String> index2rowKeys;

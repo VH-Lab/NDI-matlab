@@ -23,21 +23,56 @@ public class Validator implements Validatable {
     private final JSONObject schema;
     private HashMap<String, String> report;
 
+    /**
+     * Initialize an instance of Validator by passing in string which is
+     * the content of the JSON document and JSON schema document
+     *
+     * @param document  the JSON document which will be validated
+     * @param schema    the schema that the JSON file will be validated against
+     */
     public Validator(String document, String schema){
         this.document = new JSONObject(document);
         this.schema = new JSONObject(schema);
     }
 
+    /**
+     * Initialize an instance of Validator by passing in instance of JSONObject
+     *
+     * @param document  the JSON document which will be validated
+     * @param schema    the schema that the JSON file will be validated against
+     */
     public Validator(JSONObject document, JSONObject schema){
         this.document = document;
         this.schema = schema;
     }
 
+    /**
+     * Add a list of format validators such that the validator recognize costume
+     * format keyword for string
+     *
+     * @param validators an List of org.everit.json.schema.FormatValidator
+     * @return  a new instance of Validator with a new formatValidator added
+     */
     public Validator addValidators(List<FormatValidator> validators){
-        this.validators = validators;
+        if (validators == null){
+            return this;
+        }
+        if (this.validators == null){
+            this.validators = validators;
+        }
+        else{
+            this.validators.addAll(validators);
+        }
         return this;
     }
 
+    /**
+     * Add a format validators such that the validator recognize costume
+     * format keyword for string
+     *
+     * @param validator an instance of org.everit.json.schema.FormatValidator
+     * @return  a new instance of Validator with a new formatValidator added
+     */
     public Validator addValidator(FormatValidator validator){
         if (this.validators == null){
             this.validators = new ArrayList<>(Collections.singletonList(validator));
@@ -105,6 +140,14 @@ public class Validator implements Validatable {
         return output;
     }
 
+    /**
+     * A helper method that can used to read a JSON File from an absolute path, and
+     * then convert it into an instance of JSONObject
+     * @param filepath  the absolute path to the JSON file
+     * @return  an instance of JSONObject
+     * @throws IOException  when file path is invalid or any error occured while
+     * reading the file
+     */
     public static JSONObject readJSONFile(String filepath) throws IOException {
         return Util.readJSONFile(filepath);
     }

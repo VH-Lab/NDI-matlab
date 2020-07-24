@@ -109,10 +109,20 @@ public class Rules {
         return this;
     }
 
+    /**
+     * getter for the correct columns
+     *
+     * @return  the list of columns that the validators will accept
+     */
     public List<String> getCorrectColumns(){
         return this.correct;
     }
 
+    /**
+     * getter for the correct columns
+     *
+     * @return  the list of columns that the validators will suggest
+     */
     public List<String> getSuggestedColumns(){
         return this.suggestions;
     }

@@ -28,6 +28,14 @@ public interface Validatable {
     HashMap<String, String> getReport();
 
     class Util {
+        /**
+         * A helper method that can used to read a JSON File from an absolute path, and
+         * then convert it into an instance of JSONObject
+         * @param filePath  the absolute path to the JSON file
+         * @return  an instance of JSONObject
+         * @throws IOException  when file path is invalid or any error occured while
+         * reading the file
+         */
         public static JSONObject readJSONFile(String filePath) throws IOException {
             JSONObject output;
             try(InputStream is = new FileInputStream(filePath)){
