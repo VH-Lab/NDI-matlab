@@ -82,7 +82,7 @@ classdef ndi_validate
                 end
             catch e
                 error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
-                        + "Here are the detail Java exception error: " + e.message)
+                        + "Here is the detail Java exception error: " + e.message)
             end
             ndi_validate_obj.reports.this = '';
             if ndi_validate_obj.validators.this.getReport().size() > 0
@@ -120,7 +120,7 @@ classdef ndi_validate
                     end
                 catch e
                     error("Fail to verify the ndi_document. This is likely caused by json-schema not formatted correctly"...
-                            + "Here are the detail Java exception error: " + e.message)
+                            + "Here is the detail Java exception error: " + e.message)
                 end
                 report = validator.getReport();
                 if report.size() > 0
@@ -172,7 +172,7 @@ classdef ndi_validate
                     + "------------------------------------------------------------------------------" + newline ...
                     + ndi_validate_obj.errormsg_depends_on + newline...
                     + "------------------------------------------------------------------------------" + newline...
-                    + "To get this detailed report as a struct. Please access its instance field reports";
+                    + "To get this detailed report as a struct. Please access its instance field report";
                 ndi_validate_obj.errormsg = msg;
             else
                 ndi_validate_obj.errormsg = 'This ndi_document contains no type error';
@@ -195,7 +195,7 @@ classdef ndi_validate
             S = warning();
                 warning('off','all')
                 ndi_globals;
-                eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+                eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
                 eval("import com.ndi.Validator");
             warning(S);
         end
@@ -206,7 +206,7 @@ classdef ndi_validate
             %  the JSON file ndi_validate_config.json
             %
             ndi_globals;
-            eval("javaaddpath([ndi.path.path filesep 'database' filesep 'Java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             eval("import com.ndi.Validator");
             eval("import com.ndi.EnumFormatValidator");
             eval("import org.json.JSONObject");
