@@ -1,0 +1,71 @@
+{
+	"type": "object",
+	"properties": {
+		"string_format": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"formatTag": {
+						"type": "string"
+					},
+					"filePath": {
+						"type": "string"
+					},
+					"tableFormat": {
+						"type": "object",
+						"properties": {
+							"format": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"entryFormat": {
+								"type": "array",
+								"items": {
+									"type": [
+										"null",
+										"string"
+									]
+								}
+							}
+						},
+						"required": [
+							"format"
+						]
+					},
+					"rules": {
+						"type": "object",
+						"properties": {
+							"correct": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							},
+							"suggestions": {
+								"type": "array",
+								"items": {
+									"type": "string"
+								}
+							}
+						},
+						"required": [
+							"correct"
+						]
+					},
+					"loadTableIntoMemory": {
+						"type": "boolean"
+					}
+				},
+				"required": [
+					"formatTag",
+					"filePath",
+					"tableFormat",
+					"rules"
+				]
+			}
+		}
+	}
+}

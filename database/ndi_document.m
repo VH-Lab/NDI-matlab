@@ -454,7 +454,7 @@ classdef ndi_document
 							filename = [filename '.json'];
 						end;
 						if ~exist(filename,'file'),
-							filename2 = [ndidocumentpath filesep filename];
+							filename2 = [ndi.path.documentpath filesep filename];
 							if ~exist(filename2,'file'),
 								error(['Cannot find file ' filename '.']);
 							else,
