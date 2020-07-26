@@ -21,15 +21,16 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 /**
- * A very flexible customized format option validator. It allows user to creates
- * format tag that is not present in the Json Schema Official Specification. This validator
+ * A very flexible FormatValidator that enables customizable format keywords. It allows users to create
+ * format tags for string that are not present in the Json Schema Official Specification. This validator
  * can be used when we want to restrict an entry to a set of predefined values, but at the same
- * time, when the user has entered another set of value, we want to create suggestions for the user
- * to enter the correct values. It extends the FormatValidator class, which is called by the Everit
- * Validator when it encounters the this user's defined format tag in the schema document
+ * time, provides hint when the user enters something close to our expected value. It extends the
+ * FormatValidator class, which is called by the Everit Validator when it encounters the user's defined format
+ * tag while traversing through the schema document
  *
- * Example usage:
- *
+ * <p>Example usage:</p>
+ * <pre>
+ * <code>
  *         EnumFormatValidator.Builder builder = new EnumFormatValidator.Builder()
  *                 .setTableFormat(new TableFormat().addFormat(new String[]{"\t", "\t", "\t"})
  *                         .addEntryPattern(2, ", ")
@@ -41,9 +42,11 @@ import java.util.zip.GZIPInputStream;
  *         FormatValidator fv = builder.build();
  *         System.out.println(fv.validate("cat"));
  *
- * Print out the following in the console:
- *
- *      Optional[Entered: cat. Expected: any one of [Felis catus, Felis domesticus, Felis silvestris catus]]
+ *      Print out the following in the console:
+ *          Optional[Entered: cat. Expected: any one of [Felis catus, Felis domesticus, Felis silvestris catus]]
+ * </code>
+ * </pre>
+
  */
 public class EnumFormatValidator implements FormatValidator {
 
@@ -71,15 +74,15 @@ public class EnumFormatValidator implements FormatValidator {
 
         /**
          * @param rules The validation rules: it should be an instance of HashMap. It should contains
-         *              at least one keys: 1) "correct", 2) suggestions (which is optional), whose values
-         *              need to be an instance of java.util.List. The value of the key "correct" consist of
-         *              a list of accepted columns (that is if the user enter an entry that belongs to a entries
+         *              at least one of the two keys: 1) "correct", 2) suggestions (which is optional), whose values
+         *              need to be an instance of java.util.List. The value of the key "correct" consists of
+         *              a list of accepted columns (that is if the user enters an entry that belongs to an entry
          *              in one of the columns, we accept the user's entry), otherwise if the user has entered an
-         *              entries in the list of "suggestions" value's column, then the error message will provide
-         *              hint that allows user to enter the value in the corrected column
+         *              entry in the list of "suggestions" value's column, then the error message will provide
+         *              hints that allows the user to enter the value in the corrected column
          * @return return an instance of FormatValidatorBuilder with rules being initialized
-         * @throws IllegalArgumentException when the input is null or the rules does not contain at least one 'correct' column,
-         * which the Validator will accept if the entry comes from that column
+         * @throws IllegalArgumentException when the input is null or the Rules object does not contain at least
+         * one 'correct' column, which the Validator will accept if the entry comes from that column
          */
         public Builder setRules(Rules rules) {
             if (rules == null) {
@@ -113,9 +116,9 @@ public class EnumFormatValidator implements FormatValidator {
         /**
          * set the table format of the builder object
          *
-         * @param tableFormat an instance of tableFormat object specifying how each column is
+         * @param tableFormat an instance of the tableFormat object specifying how each column is
          *                    split and how each entry in each column is separated
-         * @return a new instance of Builder object with tableFormt added
+         * @return a new instance of Builder object with a valid tableFormat field initialized
          * @throws IllegalArgumentException if the input (tableFormat) is null
          */
         public Builder setTableFormat(TableFormat tableFormat) {
@@ -128,14 +131,16 @@ public class EnumFormatValidator implements FormatValidator {
 
         /**
          * Read the gzip file from the given file path, then convert it into an instance of Table
-         * object, which can be saved to a specified directory later through calling the saveTo
-         * method. This methods assumes that the row of the columns are split by a new line, and
+         * object. This methods assumes that the row of the columns are split by a new line, and
          * the first row should specify the column names. Also make sure that each entry does not
          * contain any character that you use to split each entry in the row, or else the behavior
          * may be undefined
          *
          * @return the FormatValidatorBuilder with the table initialized
-         * @throws RuntimeException when any error occurs while reading the gzip file
+         * @throws RuntimeException when any error occurs while reading the text file
+         * @throws IllegalArgumentException when filePath, rules, tableFormat have not been initialized or the the Rules
+         * object does not contain any 'correct' field, which are used to indicate the column whose entries will be
+         * accepted by the Format Validator
          */
         public Builder loadDataGzip() {
             if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1 || this.tableFormat == null) {
@@ -161,7 +166,9 @@ public class EnumFormatValidator implements FormatValidator {
          * This method determines the primary index given the correct and suggested columns
          * from the Rules object. It returns the primary index and fill the empty
          * secondaryIndex ArrayList with the correct secondary index. The primary index
-         * will be the first column name in the correct field of the Rules object.
+         * will be the first column name in the correct field of the Rules object. This method
+         * does not check its input arguments. It is caller's responsibility to ensure that
+         * the input is valid, making it a private method.
          *
          * @param secondaryIndices the ArrayList of String that will be filled
          * @return the primary index given the Rules object
@@ -184,16 +191,19 @@ public class EnumFormatValidator implements FormatValidator {
 
         /**
          * Does everything that the loadDataGzip does, except it works for text file instead.
-         * Note it is not recommended to use this method since it is slower.
          *
-         * @return the FormatValidatorBuilder with the table initialized
-         * @throws RuntimeException throw exception when reading file fails
+         * @return the FormatValidatorBuilder with the table object field being initialized
+         * @throws RuntimeException when any error occurs while reading the text file
+         * @throws IllegalArgumentException when filePath, rules, tableFormat has not been initialized, or
+         * when the file ends with .gz extension, or the the Rules object does not contain any 'correct columns',
+         * which are used to indicate the column whose entries will be accepted by the Format Validator
+         *
          */
         public Builder loadData(){
             if (this.filePath == null || this.rules == null || this.rules.correct.size() < 1 || this.tableFormat == null) {
                 throw new IllegalArgumentException("EnumFormatValidator Initialization Error: requires file path and rules to be non-null");
             }
-            if (this.filePath.substring(this.filePath.length()-3, this.filePath.length()).equals(".gz")){
+            if (this.filePath.startsWith(".gz", this.filePath.length()-3)){
                 throw new IllegalArgumentException("EnumFormatValidator Initialization Error: loadData() does not support reading .gz file, please use loadDataGzip() instead");
             }
             String filepath = this.filePath;
@@ -214,13 +224,13 @@ public class EnumFormatValidator implements FormatValidator {
 
         /**
          * Fill the table given a list of secondary indices and primary indices. This method
-         * does not checker its argument, therefore it is the caller's responsibility to ensure
-         * the argument is valid. Because of that, this is a private method
+         * does not check its argument, therefore it is the caller's responsibility to ensure
+         * the argument is valid. Because of that, this is a private method.
          *
          * @param secondaryIndices the secondary indices
          * @param primaryIndex     the primary index
          * @param reader           a BufferedReader that reads the gzip file line by line
-         * @throws IOException if any error occurs while reading the gzip file
+         * @throws IOException if any error has occurred while reading the gzip file
          */
         private void populateTable(ArrayList<String> secondaryIndices, String primaryIndex, BufferedReader reader) throws IOException {
             String line = reader.readLine();
@@ -240,7 +250,7 @@ public class EnumFormatValidator implements FormatValidator {
         }
 
         /**
-         * build an instance of AdvancedEnumFormatValidator based on the field set
+         * Build an instance of AdvancedEnumFormatValidator based on the field set
          * in the FormatValidatorBuilder object.
          *
          * @return an instance of AdvancedEnumFormatValidator
@@ -259,9 +269,10 @@ public class EnumFormatValidator implements FormatValidator {
     private final TableFormat tableFormat;
 
     /**
-     * Construct a list of EnumFormatValidator
+     * Construct a list of EnumFormatValidator a JSON Object (see ndi_validate_config.json in the json
+     * document folder for reference)
      *
-     * @param arg a org.json.JSONArray Object representing a list of valid JSONObject that
+     * @param arg an org.json.JSONArray Object representing a list of valid JSONObject that
      *            can be used to construct an instance of EnumFormatValidator
      * @return a List of EnumFormat Validators give the JSONArray input
      * @throws IllegalArgumentException when the json files contains invalid data type
@@ -284,7 +295,7 @@ public class EnumFormatValidator implements FormatValidator {
      *
      * @param input an instance of JSONObject
      * @return an instance of EnumFormatValidator
-     * @throws IllegalArgumentException if the JSON file contains invalid type
+     * @throws IllegalArgumentException if the JSON file contains an invalid type
      */
     private static FormatValidator buildFromSingleJSON(JSONObject input){
         EnumFormatValidator.Builder builder = new Builder().setFormatTag(input.getString("formatTag"))
@@ -329,10 +340,10 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     /**
-     * Constructor for the AdvancedEnumFormatValidator class. It takes the an instance of
+     * A private constructor for the EnumFormatValidator class. It takes the an instance of
      * FormatValidatorBuilder. FormatValidatorBuilder must contain all field, except the
      * table field. If table is not initialized, it will validate by calling the gzipSearch
-     * methods instead of using the methods in the Table class
+     * methods instead of using the methods in the Table class. It is called by the Builder object
      *
      * @param builder   an instance of EnumFormatValidator.Builder object, whose fields
      *                  will be used to initialize a new instance of EnumFormatValidator
@@ -353,7 +364,13 @@ public class EnumFormatValidator implements FormatValidator {
     }
 
     /**
-     * Perform the validation step
+     * Perform the validation of the JSON instance. If the user has entered an entry from a column
+     * listed in the Rules object's 'correct' field, the method returns an empty optional container.
+     * Otherwise, if the user has entered an entry from a column in on of the columns listed in the Rule
+     * object's 'suggestions' field, the method returns a String wrapped in the Optional container that provides
+     * hint in regards to where its corresponding entry in the 'correct' column would be. Otherwise, the
+     * validator tells user which columns are the expected columns and that the user's has not entered an
+     * entry from either the 'correct' column nor the 'suggestions' column
      *
      * @param subject the user input in that json entry
      * @return List of error messages. The List would be empty if the user's entry
@@ -421,7 +438,8 @@ public class EnumFormatValidator implements FormatValidator {
      * @param subject the user's input, which will be validated
      * @return error message if nothing is found, null if the input is valid, expected
      * input if the input comes from another columns of the table
-     * @throws IOException throw IOException if file can not be found or the file becomes corrupted
+     * @throws RuntimeException throw IOException if file can not be found or the file becomes corrupted
+     * @throws IllegalArgumentException if the Rules Object's correct field is an empty list
      */
     private String gzipSearch(String subject) throws IOException {
         if (rules.correct.isEmpty()) {
@@ -482,9 +500,10 @@ public class EnumFormatValidator implements FormatValidator {
      * @param subject the user's input, which will be validated
      * @return error message if nothing is found, null if the input is valid, expected
      * input if the input comes from another columns of the table
-     * @throws IOException throw IOException if file can not be found or the file becomes corrupted
+     * @throws RuntimeException throw IOException if file can not be found or the file becomes corrupted
+     * @throws IllegalArgumentException if the Rules Object's correct field is an empty list
      */
-    private String textFileLinearSearch(String subject) throws IOException {
+    private String textFileLinearSearch(String subject){
         if (rules.correct.isEmpty()) {
             throw new IllegalArgumentException("EnumFormatValidator Error: rules must contains the key correct");
         }
@@ -528,5 +547,51 @@ public class EnumFormatValidator implements FormatValidator {
                     "The Original IO Exception Message: " + ex.getMessage());
         }
         return "Entered: " + subject + ". Expected: an entry from the columns " + rules.correct;
+    }
+
+    /**
+     * Unload the table object from memory. Does nothing if the table entry is already null
+     *
+     * @return  an instance of EnumFormatValidator with table object removed from memory
+     */
+    public FormatValidator unload(){
+        if (this.table == null){
+            return this;
+        }
+        return new Builder()
+                .setFilePath(this.filePath)
+                .setRules(this.rules)
+                .setFormatTag(this.formatName)
+                .setTableFormat(this.tableFormat)
+                .build();
+    }
+
+    /**
+     * load (or reload) the instance of table object into memory
+     *
+     * @return  a new instance of EnumFormatValidator with the table object initialized
+     */
+    public FormatValidator loadTable() {
+        EnumFormatValidator.Builder builder = new Builder()
+                                                .setFilePath(this.filePath)
+                                                .setRules(this.rules)
+                                                .setFormatTag(this.formatName)
+                                                .setTableFormat(this.tableFormat);
+        if (builder.filePath.endsWith(".gz")){
+            builder = builder.loadDataGzip();
+        }
+        else{
+            builder = builder.loadData();
+        }
+        return builder.build();
+    }
+
+    /**
+     * getter for the Table object
+     *
+     * @return  an instance of Table object
+     */
+    Table getTable(){
+        return this.table;
     }
 }

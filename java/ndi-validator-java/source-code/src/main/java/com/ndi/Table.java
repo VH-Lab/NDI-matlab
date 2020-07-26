@@ -9,8 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Implementation of a table-like object using Hash Table, thus providing effective
- * look-up of entries. Used as an internal data structure for quickly identifying
+ * Implementation of a table-like object using Hash Table, thus providing efficient
+ * look-ups of entries. Used as an internal data structure for quickly identifying
  * if an entry exist in a given column.Note that creating index on a empty table
  * is Illegal and might lead to unexpected behavior. This class has package access,
  * which means that you probably shouldn't use this class unless you are trying to

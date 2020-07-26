@@ -145,7 +145,7 @@ class ValidatorTest {
                 "  }\n" +
                 "}");
         Validator vd = new Validator(json, schema);
-        vd.addValidators(EnumFormatValidator.buildFromJSON(Validator.readJSONFile("src/main/resources/ndi_validate_config.json")));
+        vd = vd.addValidators(EnumFormatValidator.buildFromJSON(Validator.readJSONFile("src/main/resources/ndi_validate_config.json")));
         assertEquals(0, vd.getReport().size());
     }
 }

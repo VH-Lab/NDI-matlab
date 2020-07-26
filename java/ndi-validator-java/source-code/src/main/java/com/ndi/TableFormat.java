@@ -12,11 +12,12 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * This class is used to store the format of the text file that the tabular data
- * was stored in such that the Validator can interpret the text file correctly.
+ * TableFormat class is used to represent how each column in a given tabular data is separated,
+ * and for an entry that consists of multiple values, how those value are separated.
+ * An instance of this class is needed for the EnumFormatValidator to correctly interpret the text file.
  */
 public class TableFormat {
-    List<Format> patterns = new ArrayList<>();
+    final List<Format> patterns = new ArrayList<>();
 
     /**
      * Build a text file from JSON document. This method does not perform
@@ -26,7 +27,7 @@ public class TableFormat {
      * @param input an instance of JSONObject representing the fields of the
      *              Table Format class
      * @return      an instance of TableFormat
-     * @throws IllegalArgumentException when list of string representing how columns should be split is empty
+     * @throws IllegalArgumentException when the list of string representing how columns should be split is empty
      * or when the size of the entryFormat list does not match with the number of column (1 more than the number of
      * formatColumn)
      */
@@ -72,7 +73,6 @@ public class TableFormat {
         if (format == null || this.patterns.size() != 0 || format.length < 1){
             throw new IllegalArgumentException("TableFormat Error: format must be greater than 1 and you can't add more format on the top of the existing list of split formats");
         }
-        this.patterns = new ArrayList<>();
         for (String each : format){
             this.patterns.add(new Format(each, null));
         }
@@ -86,7 +86,7 @@ public class TableFormat {
      *
      * @param index the (index)th column in the order of String[] format that was used
      *              when calling addFormat
-     * @param entryPattern  how the entry is split, for instance for a column with entry
+     * @param entryPattern  how the entry is split, for instance, for a column with entry
      *                      like "a, b, c, c", entryPattern should be equals to ", "
      * @return  a new instance of TableFormat with the pattern added
      */
@@ -174,14 +174,14 @@ public class TableFormat {
     /**
      * Get a list of column and index mapping pairs from the first line of the text file
      *
-     * Example:
-     * input = "col1 col2 col3 col4"
-     * returns  {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}
+     * <p>Example: </p>
+     * <p>input = "col1 col2 col3 col4"</p>
+     * <p>returns  {"col1" : 0, "col2" : 1, "col2" : 2, "col2" : 3}</p>
      *
      * @param input the first line of the text file (which usually consists of column name)
      *
      * @return  a map of column name and its index, or null if input == null or there the entry
-     * @throws      IllegalStateException if this method was called before addFormat has been called
+     * @throws  IllegalStateException if this method was called before addFormat has been called
      */
     Map<String, Integer> parseColumns(String input){
         if (patterns.size() == 0){
@@ -201,13 +201,20 @@ public class TableFormat {
     }
 
     /**
-     * An static inner class represent individual column. The pattern indicates
-     * how this column is split from the next column. The entryPattern field indicates
+     * A static inner class that consists of two fields. pattern is a string that represent
+     * how a particular column in the table is separated from the next column. The entryPattern field indicates
      * how the entry in the column is split (if it holds multiple values). If the this is
      * the last column of the table then, pattern by default is equals to ""
      */
     static class Format{
+        /**
+         * a string that describes how this particular column is separated from the next column
+         */
         String pattern;
+        /**
+         * how the entry in the column is split (if it holds multiple values). This is set to be
+         * null by default
+         */
         String entryPattern;
 
         /**

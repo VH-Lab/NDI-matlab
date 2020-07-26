@@ -8,17 +8,15 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
 
 /**
- * Json validation implementation based off of com.ndi.Everit's json-schema validator
- * implementation: 'https://github.com/everit-org/json-schema', which follows the
- * Draft v7 specification: "https://tools.ietf.org/html/draft-handrews-json-schema-validation-00"
+ * A wrapper class around com.ndi.Everit's json-schema validator implementation:
+ * 'https://github.com/everit-org/json-schema', which follows the Draft v7 specification
  */
 public class Validator implements Validatable {
-    private List<FormatValidator> validators;
+    private final List<FormatValidator> validators = new ArrayList<>();
     private final JSONObject document;
     private final JSONObject schema;
     private HashMap<String, String> report;
@@ -47,7 +45,7 @@ public class Validator implements Validatable {
     }
 
     /**
-     * Add a list of format validators such that the validator recognize costume
+     * Add a list of format validators such that the validator recognizes the costume
      * format keyword for string
      *
      * @param validators an List of org.everit.json.schema.FormatValidator
@@ -57,29 +55,22 @@ public class Validator implements Validatable {
         if (validators == null){
             return this;
         }
-        if (this.validators == null){
-            this.validators = validators;
-        }
-        else{
-            this.validators.addAll(validators);
-        }
+        this.validators.addAll(validators);
         return this;
     }
 
     /**
-     * Add a format validators such that the validator recognize costume
+     * Add a format validators such that the validator recognizes costume
      * format keyword for string
      *
      * @param validator an instance of org.everit.json.schema.FormatValidator
      * @return  a new instance of Validator with a new formatValidator added
      */
     public Validator addValidator(FormatValidator validator){
-        if (this.validators == null){
-            this.validators = new ArrayList<>(Collections.singletonList(validator));
+        if (validator == null){
+            return this;
         }
-        else{
-            this.validators.add(validator);
-        }
+        this.validators.add(validator);
         return this;
     }
 
@@ -116,10 +107,8 @@ public class Validator implements Validatable {
         SchemaLoader.SchemaLoaderBuilder loader = SchemaLoader.builder()
                 .draftV7Support()
                 .schemaJson(schema);
-        if (this.validators != null){
-            for (FormatValidator validator : validators){
-                loader.addFormatValidator(validator);
-            }
+        for (FormatValidator validator : validators){
+            loader = loader.addFormatValidator(validator);
         }
         Schema validation = loader.build().load().build();
         try{
@@ -145,7 +134,7 @@ public class Validator implements Validatable {
      * then convert it into an instance of JSONObject
      * @param filepath  the absolute path to the JSON file
      * @return  an instance of JSONObject
-     * @throws IOException  when file path is invalid or any error occured while
+     * @throws IOException  when file path is invalid or any error occurred while
      * reading the file
      */
     public static JSONObject readJSONFile(String filepath) throws IOException {

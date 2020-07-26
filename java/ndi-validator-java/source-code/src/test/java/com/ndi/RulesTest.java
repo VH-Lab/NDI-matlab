@@ -44,7 +44,7 @@ class RulesTest {
             fail();
         }
         catch(IllegalArgumentException ex){
-            assertEquals("cannot have duplicate correct columns or overlapping suggestions columns and correct columns", ex.getMessage());
+            assertEquals("Rules Initialization Error: cannot have duplicate correct columns or overlapping suggestions columns and correct columns", ex.getMessage());
         }
         try{
             Rules test = new Rules().addExpectedColumn("col1")
