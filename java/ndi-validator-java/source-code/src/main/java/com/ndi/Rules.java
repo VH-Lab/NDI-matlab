@@ -10,9 +10,9 @@ import java.util.Set;
 
 /**
  * The Rules class represents the set of validation rules that we want our validators
- * to include. Given a tabular data, the Rules class specify which column we want out
- * validator to recognize, and which column we want our validator to give hints to its
- * corresponding entry in the correct column
+ * to include. Given a tabular data, the Rules class specifies which columns we want our
+ * validator to accept, and which column we want our validator to give hints to its
+ * corresponding entry in the correct columns
  */
 public class Rules {
     final List<String> correct = new ArrayList<>();
@@ -22,7 +22,7 @@ public class Rules {
 
     /**
      * Constructor an instance of Rules class from the JSON document. The constructor
-     * does not check the JSON document. It is assumed that the EnumFormatValidator
+     * does not validate the JSON document beforehand. It is assumed that the EnumFormatValidator
      * constructor will do the document validation before calling this constructor
      *
      * @param input the JSON Object representing the desired fields of the Rules object
@@ -79,7 +79,7 @@ public class Rules {
      * Add a column to the list of column that the validators will give hints to the
      * corresponding entry in the expected column.
      *
-     * @param colName   the column our validators will accept
+     * @param colName   the columns our validators will accept
      * @return  an instance of Rules object with a new suggested column added
      * @throws IllegalArgumentException if the column has already been added to
      * the suggested list of column, or the expected list of column
@@ -94,7 +94,7 @@ public class Rules {
     }
 
     /**
-     * Add a column to the list of column that the validators will give hints to
+     * Add a column to the list of column that the validator will give hints to
      * the corresponding entry in the expected column.
      *
      * @param colName   the list of columns our validators will accept
@@ -119,7 +119,7 @@ public class Rules {
     }
 
     /**
-     * getter for the correct columns
+     * getter for the suggested columns
      *
      * @return  the list of columns that the validators will suggest
      */

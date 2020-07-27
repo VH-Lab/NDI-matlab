@@ -74,13 +74,6 @@ for i=1:numel(paths),
 	delete(fname);
 end;
 
-% initialize ndi_validate
-ndi_validate.add_java_path();
-try
-    ndi.validators.format_validators = ndi_validate.load_format_validator();
-catch e
-    warning("Format validators aren't initialized properly: Here are the error messages" + newline + e.message);
-    ndi.validators.format_validators = -1;
 end
 
 
