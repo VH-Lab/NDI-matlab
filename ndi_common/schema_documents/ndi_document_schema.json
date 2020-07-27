@@ -1,0 +1,32 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/ndi_document_schema.json",
+	"title": "ndi_document",
+	"type": "object",
+	"properties": {
+		"session_id": {
+			"description": "the unique identifier of the ndi_session this document is associated with",
+			"type": "string"
+		},
+		"id": {
+			"description": "the unique identifier of this ndi_document",
+			"type": "string"
+		},
+		"name": {
+			"description": "the name of the ndi_document",
+			"type": "string"
+		},
+		"type": {
+			"description": "the document_type of this ndi_document",
+			"type": "string"
+		},
+		"datastamp": {
+			"description": "the time this ndi_document is created in ISO8601 format",
+			"type": "string"
+		},
+		"database_version": {
+			"description": "the version of the json database",
+			"type": "number"
+		}
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter_hengen\/probe_geometry.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter_hengen\/probe_geometry_schema.json",
+		"class_name":						"ndi_document_apps_spikesorter_hengen_probe_geometry",
+		"property_list_name":					"geometry",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"depends_on": [
+		{	
+			"name": "underlying_element_id",
+			"value": "" 
+		}
+	],
+	"geometry": {
+		"channel_groups": {
+			"0": {
+				"channels": [0, 1, 2, 3],
+				"geometry": [[0, 0], [-1, 1], [1, 1], [0, 2]],
+				"label": ["t_00", "t_01", "t_02", "t_03"]
+			}
+		}
+	}
+}

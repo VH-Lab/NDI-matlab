@@ -1,0 +1,10 @@
+Pulled from https://scicrunch.org
+	created with ndi_createNIFbrainareas.m
+
+The file is gzipped and has columns:
+
+ID - the ID in the NIF-ontology (e.g., 'UBERON:00001016' is 'nervous system')
+Label - The official string label in the NIF-ontology
+Synonyms             - Any synonyms, items separated separated by a ', ' and ends in a <newline>
+
+

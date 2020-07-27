@@ -1,7 +1,7 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefilteringparameters_schema.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikefilteringparameters",
 		"property_list_name":					"vmspikefilteringparameters",
 		"class_version":					1,

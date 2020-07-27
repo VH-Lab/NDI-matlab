@@ -1,0 +1,50 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/stimulus\/stimulus_response_scalar_schema.json",
+	"title": "ndi_document_stimulus_stimulus_response_scalar",
+	"type": "object",
+	"properties": {
+		"response_type" : {
+			"type" : "array",
+			"item" : {
+				"type" : "string"
+			}
+		},
+		"response" : {
+			"type" : "object",
+			"properties" : {
+				"stimid": {
+					"type" : "array",
+				},
+				"response_real": {
+					"type" : "array",
+				},				
+				"response_imaginary": {
+					"type" : "array",
+				},
+				"control_response_real": {
+					"type" : "array",
+				},	
+				"control_response_imaginary" : {
+					"type" : "array",
+				}		
+			}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_response_scalar_parameters_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}				
+			]
+		}		
+	}
+}

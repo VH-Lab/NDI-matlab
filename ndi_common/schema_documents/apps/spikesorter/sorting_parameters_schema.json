@@ -1,0 +1,30 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/spikesorter\/sorting_parameters_schema.json",
+	"title": "ndi_document_apps_spikesorter_sorting_parameters",
+	"type": "object",
+	"properties": {
+		"num_pca_features": {
+			"type": "number",
+		},
+		"interpolation": {
+			"type": "number",
+		},		
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}							
+			]
+		}		
+	}
+}

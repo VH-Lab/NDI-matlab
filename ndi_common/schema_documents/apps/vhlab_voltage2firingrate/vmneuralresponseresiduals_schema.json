@@ -1,0 +1,78 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals.json",
+	"title": "ndi_document_apps_vhlab_voltage2firingrate_vmneuralresponseresiduals",
+	"type": "object",
+	"properties": {
+		"vmneuralresponseresiduals": {
+			"type": "object",
+			"properties" : {
+				"element_epochid" : {
+					"type" : "string"
+				},
+				"parameters" : {
+					"type" : "object",
+					"properties" : {
+						"number_traces" : {
+							"type" : "number"
+						},
+						"samples_per_trace" : {
+							"type" : "array",
+							"items" : {
+								"type" : "number"
+							}
+						},
+						"units" : {
+							"type" : "string"
+						}
+					}
+				},
+				"column_labels" : {
+					"type" : "object",
+					"properties" : {
+						"first_column" : {
+							"type" : "string"
+						},
+						"second_column" : {
+							"type" : "string"
+						},	
+						"third_column" : {
+							"type" : "string"
+						},
+						"fourth_column" : {
+							"type" : "string"
+						},	
+						"fifth_column" : {
+							"type" : "string"
+						}																
+					}
+				},				
+				"goodness_of_fit" : {
+					"type" : ["number", "string"]
+				},
+				"total_power" : {
+					"type" : ["number", "string"]
+				},	
+				"residual_power" : {
+					"type" : ["number", "string"]
+				}											
+			}
+		},				
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}												
+			]
+		}		
+	}
+}

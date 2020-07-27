@@ -6,16 +6,21 @@ if exist([dirpath filesep '.ndi'], 'dir') == 7
 	rmdir([dirpath filesep '.ndi'], 's');
 end
 
-our_exp = ndi_session_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
+our_exp = ndi_session_dir('ts1',dirpath);
 
 ced_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(our_exp, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 
+ % Create daqreader objects for our daq systems
 ced_rdr = ndi_daqreader_mfdaq_cedspike2(); 
 ced_vis_rdr = ndi_daqreader_mfdaq_stimulus_vhlabvisspike2();
 
+ % Create a metadata reader for our stimulus daq system
+ % This reader interprets the metadata from our visual stimuli
+ced_vis_mdr = {ndi_daqmetadatareader_NewStimStims('stims.mat')}; 
+
 measure_sys = ndi_daqsystem_mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
-stim_sys = ndi_daqsystem_mfdaq_stimulus('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
+stim_sys = ndi_daqsystem_mfdaq('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
 
 our_exp.daqsystem_add(measure_sys); 
 our_exp.daqsystem_add(stim_sys);

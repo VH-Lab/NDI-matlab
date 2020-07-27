@@ -1,0 +1,168 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning_schema.json",
+	"title": "orientation_direction_tuning",
+	"type": "object",
+	"properties": {
+		"properties" : {
+			"type" : "object",
+			"properties": {
+				"coordinates": {
+					"type" : "string"
+				},
+				"response_units" : {
+					"type" : "number"
+				},
+				"response_type" : {
+					"type" : "string"
+				}
+			}
+		},
+		"tuning_curve" : {
+			"properties" : "object",
+			"properties" : {
+				"direction": {
+					"type": "number"
+				},
+				"mean": {
+					"type": "number"
+				},
+				"stddev" : {
+					"type" : "number"
+				},
+				"stderr" : {
+					"type" : "number"
+				},
+				"individual" : {
+					"type" : "string"
+				},
+				"raw_individual" : {
+					"type" : "string"
+				},
+				"control_individual" : {
+					"type" : "string"
+				}
+			}
+		},
+		"significance" : {
+			"type" : "object",
+			"properties" : {
+				"visual_response_anova_p": {
+					"type" : "number"
+				},
+				"across_stimuli_anova_p" : {
+					"type" : "number"
+				}
+			}
+		},
+		"vector" : {
+			"type" : "object",
+			"properties" : {
+				"circular_variance": {
+					"type" : "number"
+				},
+				"direction_circular_variance": {
+					"type" : "number"
+				},
+				"hotelling2test": {
+					"type" : "number"
+				},
+				"orientation_preference": {
+					"type" : "number"
+				},				
+				"direction_preference": {
+					"type" : "number"
+				},
+				"direction_hotelling2test": {
+					"type" : "number"
+				},
+				"dot_direction_significance": {
+					"type" : "number"
+				},
+			}
+		},
+		"fit" : {
+			"type" : "object", 
+			"properties" : {
+				"double_gaussian_parameters" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"double_gaussian_fit_angles" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"double_gaussian_fit_values" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"orientation_preferred_orthogonal_ratio" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"direction_preferred_null_ratio" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"orientation_preferred_orthogonal_ratio_rectified" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"direction_preferred_null_ratio_rectified" : {
+					"type" : "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"orientation_angle_preference" : {
+					"type" : "number",
+				},	
+				"direction_angle_preference" : {
+					"type" : "number"
+				},		
+				"hwhh" : {
+					"type" : "number"
+				}														
+			}
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "element_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				},	
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "stimulus_tuningcurve_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}							
+			]
+		}		
+	}
+}

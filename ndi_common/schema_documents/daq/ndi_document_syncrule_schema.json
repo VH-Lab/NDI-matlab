@@ -1,0 +1,14 @@
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/daq\/ndi_document_syncrule_schema.json",
+	"title": "ndi_document_syncrule",
+	"type": "object",
+	"properties": {
+		"ndi_syncrule_class": {
+			"type": "string"
+		},
+		"parameters" : {
+			"type" : "array"
+		}
+	}
+}

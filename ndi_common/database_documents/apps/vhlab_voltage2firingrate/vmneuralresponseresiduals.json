@@ -1,7 +1,7 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmneuralresponseresiduals_schema.json",
 		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmneuralresponseresiduals",
 		"property_list_name":					"vmneuralresponseresiduals",
 		"class_version":					1,

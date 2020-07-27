@@ -6,3 +6,4 @@
 *.swp
 *.asv
 *.m~
+__pycache__

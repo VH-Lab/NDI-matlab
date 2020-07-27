@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "id" : "my_example_validator",
+  "title": "Student information",
+  "type" : "object",
+  "properties" : {
+    "name" : {
+      "type": "string"
+    },
+    "ID" : {
+      "type" : "integer"
+    },
+    "Grade" : {
+      "type" : "string"
+    },
+    "Friend" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+          "type" : "string"
+        },
+        "favourite-number" : {
+          "type" : "integer"
+        }
+      }
+    }
+  }
+}
