@@ -19,12 +19,30 @@ disp('good')
 subject_doc = subject_doc.setproperties('subject.description', 5);
 validator = ndi_validate(subject_doc);
 assert(validator.is_valid == 0, 'fail');
-disp('good')
+
+try
+    assert(validator.is_valid == 0, "fail");
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + newline +  errormsg)
+disp("")
 
 subject_doc = subject_doc.setproperties('ndi_document.database_version', 'not a number');
 validator = ndi_validate(subject_doc);
 assert(validator.is_valid == 0, 'fail');
 disp('good');
+
+try
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + newline +  errormsg)
+disp("")
 
 % validate more complicated classes that may contain depends-on and more
 % super-classes
@@ -43,12 +61,29 @@ docs = dev1.newdocument();
 doc = docs{3};
 validator = ndi_validate(doc, E);
 assert(validator.is_valid == 0, "fail");
-disp('good');
+
+try
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + newline +  errormsg)
+disp("")
 
 E.database_add(dev1.daqreader.newdocument());
 validator = ndi_validate(doc, E);
 assert(validator.is_valid == 0, "fail");
-disp('good');
+
+try
+    validator.throw_error();
+catch e
+    errormsg = e.message;
+end
+disp("good" + newline)
+disp("Here is the error message that is supposed to display" + newline + newline +  errormsg)
+disp("")
+
 E.database_add(docs{1});
 validator = ndi_validate(doc, E);
 assert(validator.is_valid == 1, "fail");
@@ -70,7 +105,7 @@ catch e
     errormsg = e.message;
 end
 disp("good" + newline)
-disp("Here is the error message that is supposed to display" + newline + errormsg)
+disp("Here is the error message that is supposed to display" + newline + newline +  errormsg)
 disp("")
 
 animal_subject_bad_doc = ndi_document('ndi_document_animalsubject.json', 'animalsubject.scientific_name', 'invalid_scientific_name', 'animalsubject.genbank_commonname', 'invalid_genbank_commonname');

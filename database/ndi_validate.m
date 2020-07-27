@@ -98,7 +98,6 @@ classdef ndi_validate
                         + "Here is the detail Java exception error: " + e.message)
             end
             ndi_validate_obj.reports.this = '';
-            ndi_validate_obj.validators.this.getReport()
             if ndi_validate_obj.validators.this.getReport().size() > 0
                 ndi_validate_obj.is_valid = false;
                 ndi_validate_obj.reports.this = ndi_validate_obj.validators.this.getReport();
@@ -148,24 +147,26 @@ classdef ndi_validate
             
             % check if there is depends-on field, if it exsists we need to
             % search through the ndi_session database to check 
+            has_dependencies_error = 0;
             if has_dependencies == 1
                 numofdependencies = numel(ndi_document_obj.document_properties.depends_on);
                 %emptystruct(1,numofdependencies) = struct;
                 ndi_validate_obj.reports.dependencies = struct();
                 % NOTE: this does not verify that 'depends-on' documents have the right class membership
                 % might want to add this in the future
-                errormsgdependencies = "We cannot find the following necessary dependency from the database:" + newline;;
+                errormsgdependencies = "We cannot find the following necessary dependency from the database:" + newline;
                 for i = 1:numofdependencies
                     searchquery = {'ndi_document.id', ndi_document_obj.document_properties.depends_on(i).value};
                     if numel(ndi_session_obj.database_search(searchquery)) < 1
                         ndi_validate_obj.reports.dependencies.(ndi_document_obj.document_properties.depends_on(i).name) = 'fail';
                         errormsgdependencies = errormsgdependencies + ndi_document_obj.document_properties.depends_on(i).name + newline;
                         ndi_validate_obj.is_valid = false;
+                        has_dependencies_error = 1;
                     else
                         ndi_validate_obj.reports.dependencies(i).(ndi_document_obj.document_properties.depends_on(i).name) = "success";
                     end
                 end
-                if ~ndi_validate_obj.is_valid
+                if has_dependencies_error == 1
                     ndi_validate_obj.errormsg_depends_on = errormsgdependencies;
                 end
             end
@@ -209,7 +210,9 @@ classdef ndi_validate
             %  the JSON file ndi_validate_config.json
             %
             ndi_globals;
-            %eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            if ~any(strcmp(javaclasspath,[ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
+                eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            end
             import com.ndi.*;
             import org.json.*;
             import org.everit.*;
@@ -234,7 +237,7 @@ classdef ndi_validate
         end
     end
 
-    methods(Static, Access = private)
+    methods(Static, Access = public)
         
         function new_path = replace_ndipath(path)
             ndi_globals;
@@ -309,9 +312,10 @@ classdef ndi_validate
                 return;
             end
             for i = 1:len
-                str = strcat(str, keys(i), " : ", java_hashmap.get(keys(i)), "; ");
+                str = strcat(str, keys(i), " : ", java_hashmap.get(keys(i)), "]");
+                str = str + newline + "[";
             end
-            str = strcat(extractBetween(str, 1, strlength(str)-2), ']');
+            str = strcat(extractBetween(str, 1, strlength(str)-3), ']');
         end
         
     end
