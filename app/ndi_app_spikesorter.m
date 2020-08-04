@@ -186,7 +186,37 @@ classdef ndi_app_spikesorter < ndi_app
 		end %function
 
 			%%% TODO: function add_sorting_doc
-
+        
+        
+        %access doc
+        function doc = load_spike_clusters_doc(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
+            
+            searchq = cat(2,ndi_app_spikesorter_obj.searchquery(), {'spike_sort.sort_name', sort_name, 'spike_sort.epoch', epoch});
+			
+            doc = ndi_app_spikesorter_obj.session.database_search(searchq);
+        end 
+        
+        %% function to call gui
+        function spikesorter_gui(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name)
+            
+            spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+ 
+			disp('Cluster_spikewaves_gui testing...')
+			[~, ~, ~, ~, channellist_in_probe] = getchanneldevinfo(probe, 1);
+			waveparameters = struct;
+			waveparameters.numchannels = numel(channellist_in_probe);
+			waveparameters.S0 = -9 * interpolation;
+			waveparameters.S1 = 20 * interpolation;
+			waveparameters.name = '';
+			waveparameters.ref = 1;
+			waveparameters.comment = '';
+			waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
+            
+            cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
+            
+        end
+        
+        %%
 		function sorting_doc = add_sorting_doc(ndi_app_spikesorter_obj, sort_name, sort_params)
 			% ADD_SORTING_DOC - add sorting parameters document
 			%
