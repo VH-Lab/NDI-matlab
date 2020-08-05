@@ -24,13 +24,15 @@ et = d.epochtable();
 
 disp(['Found ' int2str(numel(et)) ' epochs.']);
 
-p = E.getprobes()
+p_lvn = E.getprobes('name','lvn')
+p_pdn = E.getprobes('name','pdn')
 
-p{1}
+[d_lvn,t_lvn] = p_lvn{1}.readtimeseries(1,0,100); % read first epoch, 100 seconds
 
-[d,t] = p{1}.readtimeseries(1,0,100); % read first epoch, 100 seconds
+[d_pdn, t_pdn] = p_pdn{1}.readtimeseries(1,0,100); % read first epoch, 100 seconds
 
 figure;
-plot_multichan(d,t,400); % plot with 400 units of space between channels
+plot_multichan([d_lvn(:) d_pdn(:)],t_lvn,1); % plot with 1 unit of space between channels
 xlabel('Time(s)');
 ylabel('Microvolts');
+box off;
