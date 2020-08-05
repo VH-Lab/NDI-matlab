@@ -108,11 +108,11 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 					if ~isstruct(ns_out),
 						error(['No data read from channel ' int2str(i) ' of blackrock record.']);
 					end;
-					data = cat(1,data,ns_out.Data);
+					data = cat(2,data,ns_out.Data');
 				end;
 
 			elseif strcmp(celloritem(channeltype,1),'time'),
-				data = cat(2,data,ns_h.MetaTags.Timestamp+((s0:s1)-1)*1./ns_h.MetaTags.SamplingFreq);
+				data = cat(1,data,ns_h.MetaTags.Timestamp+((s0:s1)'-1)*1./ns_h.MetaTags.SamplingFreq);
 			end;
 
 		end % readchannels_epochsamples
@@ -140,7 +140,6 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 						error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
 					end;
 				end;
-				
 		end % samplerate()
 
 		function [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channels)

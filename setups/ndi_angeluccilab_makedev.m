@@ -37,9 +37,9 @@ if iscell(devname),
 end
 
 fileparameters = {'#.nev'};
-fileparameters{end+1} = 'stimData.mat';
-fileparameters{end+1} = 'epochprobemap.txt'; 
-epochprobemapfileparameters = {'epochprobemap.txt'};
+fileparameters{end+1} = '^stimData.mat$';
+fileparameters{end+1} = '^epochprobemap.txt$'; 
+epochprobemapfileparameters = {'^epochprobemap.txt$'};
 objectclass = 'ndi_daqsystem_mfdaq';
 readerobjectclass = 'ndi_daqreader_mfdaq';
 epochprobemapclass = 'ndi_epochprobemap_daqsystem';
@@ -52,8 +52,7 @@ switch devname,
 	case 'angelucci_visstim',
 		fileparameters{end+1} = '#.nev';
 		fileparameters{end+1} = '#.ns4'; 
-		fileparameters{end+1} = 'epochprobemap.txt'; 
-		readerobjectclass = [readerobjectclass '_blackrock'];
+		readerobjectclass = [readerobjectclass '_stimulus_angelucci_visstim'];
 		mdr = {ndi_daqmetadatareader_AngelucciStims('stimData.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);

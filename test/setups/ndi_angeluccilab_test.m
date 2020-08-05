@@ -26,11 +26,9 @@ stimprobe = E.getprobes('type','stimulator')
 stimprobe = stimprobe{1};
 
 t_start = 25;
-t_stop = 100;
+t_stop = 50;
 
-electrodes = 1:100;
-
-[d,t] = p{1}.readtimeseries(1,t_start,t_stop); % read first epoch, 100 seconds
+[d,t,timeref] = p{1}.readtimeseries(1,t_start,t_stop); % read first epoch, 100 seconds
 [ds, ts, timeref_]=stimprobe.readtimeseries(timeref,t(1),t(end));
 
 figure;
@@ -38,8 +36,16 @@ plot_multichan(d,t,400); % plot with 400 units of space between channels
 xlabel('Time(s)');
 ylabel('Microvolts');
 
+hold on;
+
+A = axis;
+
+for i=1:numel(ts.stimon),
+	plot(ts.stimon(i)*[1 1], [A(3) -200],'k-');
+	text(ts.stimon(i),A(3)-400,int2str(ds.stimid(i)),'horizontalalignment','center');
+end;
+
 A = axis;
 axis([t_start t_stop A(3) A(4)]);
 box off;
 
-keyboard

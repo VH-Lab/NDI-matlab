@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2 - Device object for Angelucci lab visual stimulus system
+% NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM - Device object for Angelucci lab visual stimulus system
 %
 % This device reads the 'stimData.mat' to obtain stimulus parameters and a *.ns4 file (digital events on ai1).
 %
@@ -23,7 +23,7 @@ classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_bl
 			%
 			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi_daqreader_mfdaq(varargin{:});
+				obj = obj@ndi_daqreader_mfdaq_blackrock(varargin{:});
 		end; % ndi_daqreader_mfdaq_stimulus_angelucci_visstim()
 
 		function channels = getchannelsepoch(thedev, epochfiles)
@@ -63,10 +63,16 @@ classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_bl
 				data = {};
 				md_reader = ndi_daqmetadatareader_AngelucciStims();
 
+				tf = endsWith(epochfiles,'stimData.mat','IgnoreCase',true);
+				FILENAME = epochfiles{find(tf)};
+
 				[parameters,stimid,stimtimes] = md_reader.readmetadatafromfile(FILENAME);
 
 				stimtimes = (stimtimes(:)-1) / 30000;
-				stimofftimes = = stimontimes + parameters{1}.stimOnDuration / 30000;
+				here = stimtimes >= t0 & stimtimes <= t1;
+				stimtimes = stimtimes(here);
+				stimid = stimid(here);
+				stimofftimes = stimtimes + parameters{1}.stimOnDuration / 30000;
 
 				for i=1:numel(channel),
 					switch (ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i})),
