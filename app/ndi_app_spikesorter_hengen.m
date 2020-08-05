@@ -29,6 +29,10 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 		% EXTRACT_AND_SORT(NDI_ELEMENT, EXTRACTION_NAME, SORTING_NAME, REDO) - to handle selected ndi_element
 		%	
 			
+			if (numel(varargin) ~= 1) && (numel(varargin) ~= 4)
+				error(['Invalid number of arguments expected 1 or 4.'])
+			end
+			
 			if numel(varargin) == 4
 				if isa(varargin{1}, 'ndi_timeseries')
 					element = varargin{1};
@@ -92,7 +96,8 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			elseif numel(sorting_doc) > 1
 				error(['More than one extraction_parameters document with same name. Should not happen but needs to be fixed.']);
 			else,
-				sorting_doc = sorting_doc{1}.document_properties.mountainsort_sorting_parameters;
+				sorting_doc{1}.document_properties
+				sorting_doc = sorting_doc{1}.document_properties.mountainsort_parameters;
 			end;
 			
 			warning([newline 'This app assumes macOS with python3.8 installed with homebrew' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' ml_ms4alg' newline ' seaborn' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
@@ -160,7 +165,13 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 				sorting_p = sorting_doc
 				
-				save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
+				% save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
+
+				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
+
+				writemda16i(d, 'ndiout.mda')
+
+				% TODO: write json and probe_file to disk
 
 				script_path = which('spikeinterface_currentall.py')
 				
@@ -185,11 +196,11 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			end;
 			%%% temp %%%
 
-			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline 'numpy' newline ' scipy' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
+			warning([newline 'This app assumes a UNIX machine with python3 installed' newline 'as well as the following packages:' newline ' numpy' newline ' scipy' newline ' neuraltoolkit' newline ' musclebeachtools' newline ' spikeinterface' newline '  ^ requires appropriate modification of source in line 611 of postprocessing_tools.py (refer to musclebeachtools FAQ)'])
 
 			ndi_globals;
 
-			prev_folder = cd([ndipath filesep 'app' filesep 'spikesorter_hengen']);
+			prev_folder = cd([ndi.path.path filesep 'app' filesep 'spikesorter_hengen']);
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
 			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])
@@ -362,8 +373,6 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			% TODO: Ask Steve how he checks for fields being valid
 			sorting_doc = ndi_document('apps/spikesorter_hengen/mountainsort', 'mountainsort_parameters', sorting_parameters) + ...
 					ndi_app_spikesorter_hengen_obj.newdocument() + ndi_document('ndi_document', 'ndi_document.name', sorting_name);
-			keyboard
-			sorting_doc.document_properties,
 
 			ndi_app_spikesorter_hengen_obj.session.database_add(sorting_doc);
 			
