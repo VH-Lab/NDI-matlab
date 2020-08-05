@@ -261,7 +261,14 @@ classdef ndi_app_spikesorter < ndi_app
 
 		end; % add_sorting_doc
 
+		function doc = load_spike_clusters_doc(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
+		
+			searchq = cat(2,ndi_app_spikesorter_obj.searchquery(), ...
+				{'spike_sort.sort_name', sort_name, 'spike_sort.epoch', epoch});
+			
+			doc = ndi_app_spikesorter_obj.session.database_search(searchq);
 
+		end
 
 
 		function b = clear_sort(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
