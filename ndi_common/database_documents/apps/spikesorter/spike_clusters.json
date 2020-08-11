@@ -7,14 +7,21 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_epochid.json" }
 		]
 	},
 	"depends_on":[
-		{	"name": "sorting_parameters_id",
+		{	
+			"name": "sorting_parameters_id",
 			"value": "" 
 		},
-		{   "name": "element_id",
+		{   
+			"name": "element_id",
+			"value": ""
+		}, 
+		{
+			"name": "spikewaves_doc_id",
 			"value": ""
 		}
 	],

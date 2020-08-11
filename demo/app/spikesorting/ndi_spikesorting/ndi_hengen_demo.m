@@ -32,30 +32,34 @@ E = ndi_session_dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 ced_filenav = ndi_filenavigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 ced_vis_filenav = ndi_filenavigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi_epochprobemap_daqsystem', 'probemap.txt'); 
 
+% Create daqreader objects for our daq systems
 ced_rdr = ndi_daqreader_mfdaq_cedspike2(); 
 ced_vis_rdr = ndi_daqreader_mfdaq_stimulus_vhlabvisspike2();
 
+% Create a metadata reader for our stimulus daq system
+% This reader interprets the metadata from our visual stimuli
+ced_vis_mdr = {ndi_daqmetadatareader_NewStimStims('stims.mat')}; 
+
 measure_sys = ndi_daqsystem_mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
-stim_sys = ndi_daqsystem_mfdaq_stimulus('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
+stim_sys = ndi_daqsystem_mfdaq('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
 
 E.daqsystem_add(measure_sys); 
 E.daqsystem_add(stim_sys);
 
-probelist = E.getprobes();
-
-probe = probelist{1};
+extraction_name = 'hengen_extraction_test'
+sorting_name = 'hengen_sorting_test'
 
 probes = E.getprobes()
 
 spikesorter_hengen = ndi_app_spikesorter_hengen(E)
 
-% spikesorter_hengen.add_extraction_doc(extraction_name, [])
+spikesorter_hengen.add_extraction_doc(extraction_name, [])
 
-% spikesorter_hengen.add_sorting_doc(sorting_name, [])
+spikesorter_hengen.add_sorting_doc(sorting_name, [])
 
-% spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+spikesorter_hengen.add_geometry_doc(probes{1})
 
-spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, geom, 1)
+spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, sorting_name, 1)
 
 spikesorter_hengen.rate_neuron_quality
 
