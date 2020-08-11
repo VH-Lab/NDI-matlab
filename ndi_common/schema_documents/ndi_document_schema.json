@@ -20,7 +20,7 @@
 			"description": "the document_type of this ndi_document",
 			"type": "string"
 		},
-		"datastemp": {
+		"datastamp": {
 			"description": "the time this ndi_document is created in ISO8601 format",
 			"type": "string"
 		},
