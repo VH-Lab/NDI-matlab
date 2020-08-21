@@ -2,19 +2,23 @@ classdef Lab < handle
     properties
         editable;
         window;
+        panel;
+        info;
+        panelImage;
         subjects = [];
         probes = [];
         DAQs = [];
         drag;
         dragPt;
-        info;
         moved = false;
         back;
         zIn;
         zOut;
         editBox;
         editTxt;
-        connects = {};
+        connects = [];
+        wires = [];
+        row;
         transmitting = true;
     end
     methods
@@ -27,13 +31,9 @@ classdef Lab < handle
             obj.back = rectangle(obj.window, 'position', [0 0 24 16], ...
                                  'facecolor', [1 1 1]);
             
-            %Create info
-            obj.info = axes('position', [7/9 1/12 1/6 2/3], ...
-                            'Xlim', [0 6], 'YLim', [0 16]);
-            axis off;
-            hold on;
-            rectangle(obj.info, 'position', [0 0 6 16], 'facecolor', [1 1 1]);
-            
+            %Create panel
+            obj.panel = uipanel('Position', [7/9 1/12 1/6 2/3], 'BackgroundColor', 'white');
+                        
             %Create edit
             obj.editable = false;
             [X, Y] = meshgrid(0:576);
@@ -48,32 +48,33 @@ classdef Lab < handle
             %Create zoom
             obj.zIn = image(obj.window, [22.1 22.9], [15.1 15.9], ...
                             flip(imread('zoomIn.png'), 1), ...
-                            'ButtonDownFcn', @obj.zoomIn);
+                            'ButtonDownFcn', {@obj.setZoom 2/3});
             obj.zOut = image(obj.window, [23.1 23.9], [15.1 15.9], ...
                              flip(imread('zoomOut.png'), 1), ...
-                             'ButtonDownFcn', @obj.zoomOut);
+                             'ButtonDownFcn', {@obj.setZoom 3/2});
             colormap(flipud(gray(2)));
         end
-                
-        function addSubject(obj, icons)
-            for i=1:numel(icons)
+        
+        function addSubject(obj, subj)
+            for i=1:numel(subj)
                 obj.subjects = [obj.subjects Icon(obj, numel(obj.subjects), ...
-                                icons{i}, 1, 1, 4, 3, [0.2 0.4 1])];
+                                subj{i}, 1, 1, 4, 3, [0.2 0.4 1])];
             end
         end
         
-        function addProbe(obj, icons)
-            for i=1:numel(icons)
+        function addProbe(obj, prob)
+            for i=1:numel(prob)
                 obj.probes = [obj.probes Icon(obj, numel(obj.probes), ...
-                              icons{i}, 6, 6, 2, 3, [0 0.6 0])];
+                              prob{i}, 6, 6, 2, 3, [0 0.6 0])];
             end
         end
         
-        function addDAQ(obj, icons)
-            for i=1:numel(icons)
+        function addDAQ(obj, daq)
+            for i=1:numel(daq)
                 obj.DAQs = [obj.DAQs Icon(obj, numel(obj.DAQs), ...
-                            icons{i}, 9, 12, 4, 2, [1 0.6 0])];
+                            daq{i}, 9, 12, 4, 2, [1 0.6 0])];
             end
+            obj.connects = zeros(numel([obj.subjects obj.probes obj.DAQs]));
         end
         
         function editCallback(obj, ~, ~)
@@ -93,51 +94,51 @@ classdef Lab < handle
             end
         end
         
-        function details(obj, img)
-            image(obj.info, [4 6], [14 16], img);
-            rectangle(obj.info, 'position', [4 14 2 2]);
-            rectangle(obj.info, 'position', [0 14 4 2]);
-            rectangle(obj.info, 'position', [0 5 6 9]);
+        function details(obj, src)
+            if isequal(src.c, [0.2 0.4 1])
+                id = {'Not Found' 'Subject' src.elem{1}.document_properties.subject.local_identifier ...
+                      src.elem{1}.document_properties.subject.description};
+            elseif isequal(src.c, [0 0.6 0])
+                id = {src.elem.name src.elem.type src.elem.identifier ''};
+            else
+                id = {src.elem.name 'DAQ' src.elem.identifier ''};
+            end
+            delete([obj.info obj.panelImage]);
+            obj.info = [uicontrol(obj.panel, 'units', 'normalized', 'Style', 'text', ...
+                                  'Position', [0 15/16 1 1/16], 'String', 'Name:', ...
+                                  'BackgroundColor', [1 1 1], 'FontWeight', 'bold') ...
+                        uicontrol(obj.panel, 'units', 'normalized', 'Style', 'text', ...
+                                  'Position', [0 3/4 1 3/16], 'String', id{1}, ...
+                                  'BackgroundColor', [1 1 1]) ...
+                        uicontrol(obj.panel, 'units', 'normalized', 'Style', 'edit', ...
+                                  'Position', [0 1/4 1 1/2], 'min', 0, 'max', 2, ...
+                                  'String', {'Type:' id{2} '' 'ID:' id{3} '' 'Description:' id{4}}, ...
+                                  'enable', 'inactive', 'HorizontalAlignment', 'left') ...
+                        uicontrol(obj.panel, 'units', 'normalized', 'Style', 'pushbutton', ...
+                                  'Position', [1/6 1/16 2/3 1/8], 'String', 'Upload Image', ...
+                                  'BackgroundColor', [0.9 0.9 0.9], 'Callback', @src.upload)];
+            img = get(src.img, 'CData');
+            obj.panelImage = image([8/9 18/19], [2/3 3/4], img);
         end
         
-        function zoomOut(obj, ~, ~)
-            set(obj.window, 'XLim', [0 obj.window.XLim(2)*2], ...
-                'YLim', [0 obj.window.YLim(2)*2]);
-            obj.back.Position = [0 0 obj.back.Position(3)*2 ...
-                                 obj.back.Position(4)*2];
-            set(obj.zOut, 'XData', get(obj.zOut, 'XData')*2, ...
-                'YData', get(obj.zOut, 'YData')*2);
-            set(obj.zIn, 'XData', get(obj.zIn, 'XData')*2, ...
-                'YData', get(obj.zIn, 'YData')*2);
-            obj.editBox.Position = [0 obj.editBox.Position(2:4)*2];
-            delete(obj.editTxt);
-            obj.editTxt = text(obj.window, obj.window.XLim(2)/24, ...
-                               31*obj.window.YLim(2)/32, ...
-                               'EDIT', 'HorizontalAlignment', 'center', ...
-                               'ButtonDownFcn', @obj.editCallback);
-            if obj.editable
-            	set(obj.editTxt, 'Color', [1 1 1])
+        function setZoom(obj, ~, ~, z)
+            if obj.window.XLim(2)*z <= 54 && obj.window.XLim(2)*z >= 16
+                set(obj.window, 'XLim', obj.window.XLim*z, ...
+                    'YLim', obj.window.YLim*z);
+                obj.back.Position = [0 0 obj.window.XLim(2) obj.window.YLim(2)];
+                set(obj.zOut, 'XData', get(obj.zOut, 'XData')*z, ...
+                    'YData', get(obj.zOut, 'YData')*z);
+                set(obj.zIn, 'XData', get(obj.zIn, 'XData')*z, ...
+                    'YData', get(obj.zIn, 'YData')*z);
+                obj.editBox.Position = [0 obj.editBox.Position(2:4)*z];
+                obj.editTxt.Position = [obj.window.XLim(2)/24 ...
+                                        31*obj.window.YLim(2)/32];
             end
         end
         
-        function zoomIn(obj, ~, ~)
-            set(obj.window, 'XLim', [0 obj.window.XLim(2)/2], ...
-                'YLim', [0 obj.window.YLim(2)/2]);
-            obj.back.Position = [0 0 obj.back.Position(3)/2 ...
-                                 obj.back.Position(4)/2];
-            set(obj.zOut, 'XData', get(obj.zOut, 'XData')/2, ...
-                'YData', get(obj.zOut, 'YData')/2);
-            set(obj.zIn, 'XData', get(obj.zIn, 'XData')/2, ...
-                'YData', get(obj.zIn, 'YData')/2);
-            obj.editBox.Position = [0 obj.editBox.Position(2:4)/2];
-            delete(obj.editTxt);
-            obj.editTxt = text(obj.window, obj.window.XLim(2)/24, ...
-                               31/32*obj.window.YLim(2), ...
-                               'EDIT', 'HorizontalAlignment', 'center', ...
-                               'ButtonDownFcn', @obj.editCallback);
-            if obj.editable
-            	set(obj.editTxt, 'Color', [1 1 1])
-            end
+        function iconCallback(obj, ~, ~, src)
+            obj.drag = src;
+            obj.dragPt = [src.img.XData src.img.YData];
         end
         
         function move(obj, ~, ~)
@@ -146,15 +147,20 @@ classdef Lab < handle
                 x = cp(1);
                 y = cp(3);
                 set(gcf, 'Pointer', 'arrow');
-                for elem = [obj.subjects obj.probes obj.DAQs]
-                    for wire = [elem.transmitted elem.received]
-                        if abs(x-wire.XData(1))<0.05 && ...
-                           y<max(wire.YData) && y>min(wire.YData) || ...
-                           abs(y-wire.YData(1))<0.05 && ...
-                           x<max(wire.XData) && x>min(wire.XData)
-                            set(gcf, 'Pointer', 'custom');
-                        end
+                for i = 1:3:numel(obj.wires)
+                    if abs(x-obj.wires(i).XData(1))<0.1 && ...
+                       y > obj.wires(i).YData(1) && ...
+                       y < obj.wires(i).YData(2) || ...
+                       abs(y-obj.wires(i+1).YData(1))<0.1 && ...
+                       x > obj.wires(i+1).XData(1) && ...
+                       x < obj.wires(i+1).XData(2) || ...
+                       abs(x-obj.wires(i+2).XData(1))<0.1 && ...
+                       y > obj.wires(i+2).YData(1) && ...
+                       y < obj.wires(i+2).YData(2)
+                        set(gcf, 'Pointer', 'custom');
                     end
+                end
+                for elem = [obj.subjects obj.probes obj.DAQs]
                     if x > elem.x && x < elem.x+elem.w && ...
                        y > elem.y && y < elem.y+elem.h
                         set(gcf, 'Pointer', 'fleur');
@@ -173,31 +179,6 @@ classdef Lab < handle
                     set(obj.drag.term, 'position', ...
                         [obj.dragPt(1)+obj.drag.w-0.25+diffX ...
                          obj.dragPt(3)+obj.drag.h-0.25+diffY 0.5 0.5]);
-                    visibility = {get(obj.drag.add, 'visible'), ...
-                                  get(obj.drag.check, 'visible'), ...
-                                  get(obj.drag.cancel, 'visible')};
-                    delete([obj.drag.add obj.drag.check obj.drag.cancel]);
-                    obj.drag.add = text(obj.window, ...
-                                        obj.dragPt(1)+obj.drag.w+0.01+diffX, ...
-                                        obj.dragPt(3)+obj.drag.h+0.01+diffY, ...
-                                        '+', 'HorizontalAlignment', ...
-                                        'center', 'color', obj.drag.c, ...
-                                        'visible', visibility{1}, ...
-                                        'ButtonDownFcn', {@obj.connect obj.drag});
-                    obj.drag.check = text(obj.window, ...
-                                        obj.dragPt(1)+obj.drag.w+0.01+diffX, ...
-                                        obj.dragPt(3)+obj.drag.h+0.01+diffY, ...
-                                        '?', 'HorizontalAlignment', ...
-                                        'center', 'color', obj.drag.c, ...
-                                        'visible', visibility{2}, ...
-                                        'ButtonDownFcn', {@obj.connect obj.drag});
-                    obj.drag.cancel = text(obj.window, ...
-                                        obj.dragPt(1)+obj.drag.w+0.01+diffX, ...
-                                        obj.dragPt(3)+obj.drag.h+0.01+diffY, ...
-                                        'x', 'HorizontalAlignment', ...
-                                        'center', 'color', obj.drag.c, ...
-                                        'visible', visibility{3}, ...
-                                        'ButtonDownFcn', {@obj.connect obj.drag});
                     if diffX ~= 0 || diffY ~= 0
                         obj.moved = true;
                     end
@@ -207,155 +188,126 @@ classdef Lab < handle
         end
         
         function updateConnections(obj)
-            for elem = [obj.subjects obj.probes obj.DAQs]
-                elem.clearWires();
-            end
-            receivers = [];
-            for i = 1:numel(obj.connects)
-                receivers = [receivers obj.connects{i}(2:end)];
-            end
-            rem = receivers;
-            for i = 1:numel(obj.connects)
-                order = [];
-                elem = obj.connects{i};
-                out = elem(1);
-                for rec = elem(2:end)
-                    order = [order rec.x];
-                end
-                [~, ind] = sort(order, 'descend');
-                elem(2:end) = elem(ind+1);
-                for j = 2:numel(elem)
-                    in = elem(j);
-                    count = sum(receivers(:) == in)+1;
-                    remain = sum(rem(:) == in);
-                    start = [out.x+out.w ...
-                             out.y+(j-1)*out.h/numel(elem)];
-                    stop = [in.x+(remain)*in.w/count in.y];
-                    out.transmit(start(1), stop(1), start(2), start(2), [i j]);
-                    in.receive(stop(1), stop(1), start(2), stop(2), [i j]);
-                    rem(find(rem == in, 1)) = [];
-                end
-            end
-        end
-        
-        function cut(obj, src, wire)
-            ind = find(src.transmitted == wire, 1);
-            if ~isempty(ind)
-                if numel(obj.connects{src.transInd(2*ind-1)}) == 2
-                    obj.connects(src.transInd(2*ind-1)) = [];
-                else
-                    elem = obj.connects{src.transInd(2*ind-1)};
-                    elem(src.transInd(2*ind)) = [];
-                    obj.connects(src.transInd(2*ind-1)) = {elem};
-                end
-            else
-                ind = find(src.received == wire, 1);
-                if numel(obj.connects{src.recInd(2*ind-1)}) == 2
-                    obj.connects(src.recInd(2*ind-1)) = [];
-                else
-                    elem = obj.connects{src.recInd(2*ind-1)};
-                    elem(src.recInd(2*ind)) = [];
-                    obj.connects(src.recInd(2*ind-1)) = {elem};
+            delete(obj.wires);
+            obj.wires = [];
+            elems = [obj.subjects obj.probes obj.DAQs];
+            N = numel(elems);
+            for r = 1:N
+                for c = 1:N
+                    out = elems(r);
+                    in = elems(c);
+                    num = obj.connects(r, c);
+                    for k = 1:num
+                        xRange = [out.x+(sum(obj.connects(r,1:c-1))+k)*out.w/(sum(obj.connects(r,:))+1) ...
+                                  in.x+(sum(obj.connects(1:r-1,c))+k)*in.w/(sum(obj.connects(:,c))+1)];
+                        if sum(obj.connects(:,c)) > sum(obj.connects(r,:))
+                            yRange = [out.y+out.h ...
+                                      in.y-(sum(obj.connects(1:r-1,c))+k)*(in.y-out.y-out.h)/(sum(obj.connects(:,c))+1) ...
+                                      in.y];
+                        else
+                            yRange = [out.y+out.h ...
+                                      in.y-(sum(obj.connects(r,1:c-1))+k)*(in.y-out.y-out.h)/(sum(obj.connects(r,:))+1) ...
+                                      in.y];
+                        end
+                        obj.wires = [obj.wires ...
+                                     line(obj.window, [xRange(1) xRange(1)], ...
+                                          [yRange(1) yRange(2)], ...
+                                          'Color', [1 0 0], 'linewidth', 1.5, ...
+                                          'ButtonDownFcn', @obj.cut, ...
+                                          'Tag', strcat(out.tag, '_', in.tag)) ...
+                                     line(obj.window, [xRange(1) xRange(2)], ...
+                                          [yRange(2) yRange(2)], ...
+                                          'Color', [1 0 0], 'linewidth', 1.5, ...
+                                          'ButtonDownFcn', @obj.cut, ...
+                                          'Tag', strcat(out.tag, '_', in.tag)) ...
+                                     line(obj.window, [xRange(2) xRange(2)], ...
+                                          [yRange(2) yRange(3)], ...
+                                          'Color', [1 0 0], 'linewidth', 1.5, ...
+                                          'ButtonDownFcn', @obj.cut, ...
+                                          'Tag', strcat(out.tag, '_', in.tag))];
+                    end
                 end
             end
         end
         
-        function connect(obj, ~, ~, src)
-            obj.symbol(src);
-            fun = cellfun(@(v)v(1), obj.connects);
-            index = find(fun == src, 1);
-            if ~isempty(index)
-                obj.connects([index end]) = obj.connects([end index]);
+        function cut(obj, src, ~)
+            if obj.editable
+                out = str2double(src.Tag(1:strfind(src.Tag,'_')-1));
+                in = str2double(src.Tag(strfind(src.Tag,'_')+1:end));
+                obj.connects(out, in) = obj.connects(out, in) - 1;
+                obj.updateConnections();
+            end
+        end
+        
+        function connect(obj, varargin)
+            if nargin == 2
+                src = varargin{1};
             else
-                if obj.transmitting
-                    obj.connects(end+1) = {src};
-                else
-                    obj.connects(end) = {[obj.connects{end} src]};
-                    obj.updateConnections();
-                end
+                src = varargin{3};
+                obj.symbol(src);
+            end
+            ind = find([obj.subjects obj.probes obj.DAQs] == src, 1);
+            if obj.transmitting
+                obj.row = ind;
+            elseif obj.row ~= ind
+                obj.connects(obj.row, ind) = obj.connects(obj.row, ind) + 1;
+                obj.updateConnections();
             end
             obj.transmitting = ~obj.transmitting;
         end
         
         function symbol(obj, src)
-            if strcmp(get(src.add, 'visible'), 'on')
-                if isequal(src.c, [0.2 0.4 1])
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'off');
+            if isequal(src.c, [0.2 0.4 1])
+                if src.active == 1
+                    for elem = [obj.subjects]
+                        elem.active = 0;
                     end
                     for elem = obj.probes
-                        set(elem.add, 'visible', 'off');
-                        set(elem.check, 'visible', 'on');
+                        elem.active = 2;
                     end
-                    for elem = obj.DAQs
-                        set(elem.check, 'visible', 'on');
-                    end
+                    src.active = 3;
                 else
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'off');
-                    end
-                    for elem = obj.probes
-                        set(elem.add, 'visible', 'off');
-                    end
-                    for elem = obj.DAQs
-                        set(elem.check, 'visible', 'on');
+                    for elem = [obj.subjects obj.probes]
+                        elem.active = 1;
                     end
                 end
-                set(src.add, 'visible', 'off');
-                set(src.cancel, 'visible', 'on');
-            elseif strcmp(get(src.cancel, 'visible'), 'on')
-                if isequal(src.c, [0.2 0.4 1])
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'on');
-                    end
-                    for elem = obj.probes
-                        set(elem.add, 'visible', 'on');
-                        set(elem.check, 'visible', 'off');
+            elseif isequal(src.c, [0 0.6 0])
+                if src.active == 1
+                    for elem = [obj.subjects obj.probes]
+                        elem.active = 0;
                     end
                     for elem = obj.DAQs
-                        set(elem.check, 'visible', 'off');
+                        elem.active = 2;
                     end
+                    src.active = 3;
                 else
-                    for elem = obj.probes
-                        set(elem.add, 'visible', 'on');
+                    for elem = [obj.subjects obj.probes]
+                        elem.active = 1;
                     end
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'on');
-                    end
-                    for elem = obj.DAQs
-                        set(elem.check, 'visible', 'off');
+                    for elem = [obj.DAQs]
+                        elem.active = 0;
                     end
                 end
-                set(src.add, 'visible', 'on');
-                set(src.cancel, 'visible', 'off');
-            elseif strcmp(get(src.check, 'visible'), 'on')
-                if isequal(src.c, [0 0.6 0])
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'on');
-                        set(elem.cancel, 'visible', 'off');
-                    end
-                    for elem = obj.probes
-                        set(elem.add, 'visible', 'on');
-                        set(elem.check, 'visible', 'off');
-                    end
-                    for elem = obj.DAQs
-                        set(elem.check, 'visible', 'off');
-                    end
-                else
-                    for elem = obj.subjects
-                        set(elem.add, 'visible', 'on');
-                        set(elem.cancel, 'visible', 'off');
-                    end
-                    for elem = obj.probes
-                        set(elem.add, 'visible', 'on');
-                        set(elem.check, 'visible', 'off');
-                        set(elem.cancel, 'visible', 'off');
-                    end
-                    for elem = obj.DAQs
-                        set(elem.check, 'visible', 'off');
-                    end
+            else
+                for elem = [obj.subjects obj.probes]
+                    elem.active = 1;
                 end
-                set(src.check, 'visible', 'off');
+                for elem = obj.DAQs
+                    elem.active = 0;
+                end
+            end
+            obj.buttons();
+        end
+        
+        function buttons(obj)
+            color = {[1 1 1] [0 1 0] [1 0 0]};
+            for elem = [obj.subjects obj.probes obj.DAQs]
+                if elem.active == 0
+                    set(elem.term, 'Visible', 'off');
+                else
+                    set(elem.term, 'Visible', 'on');
+                    set(elem.term, 'FaceColor', color{elem.active});
+                end
             end
         end
     end

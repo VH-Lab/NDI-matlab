@@ -1,6 +1,4 @@
-function ndi_gui_v2()
-    % Create figure
-    
+function ndi_gui_v2(ndi_session_obj)
     scissor = rand(32);
     scissor(1:32,1:32) = NaN;
     scissor([74 87 105:106 119:120 136:139 150:153 168:171 182:185 ...
@@ -16,19 +14,19 @@ function ndi_gui_v2()
              841:846 848:849 851:856 873:878 880:881 883:888 906:909 ...
              911:914 916:919]) = 2;
             
-    figure('name', 'NDI GUI', 'position', [100, 100, 640, 480], ...
+    figure('position', [100, 100, 720, 480], 'resize', 'off', ...
            'color', [0.8 0.8 0.8], 'WindowButtonUpFcn', @mouseRelease, ...
-           'PointerShapeCData', scissor, 'PointerShapeHotSpot', [14 6]);
+           'PointerShapeCData', scissor, 'PointerShapeHotSpot', [14 6], ...
+           'defaultFigureColor', [0.8 0.8 0.8]);
        
     %Create top bar
     top = axes('position', [0 5/6 1 1/6]);
     axis off;
     hold on;
-    rectangle(top, 'position', [0 0 1/2 1/2], 'facecolor', [0.8 0.8 0.8], ...
-              'EdgeColor', 'None', 'ButtonDownFcn', @displayLab, ...
-              'Tag', 'LabTab');
-    rectangle(top, 'position', [1/2 0 1/2 1/2], 'facecolor', [0.7 0.7 0.7], ...
-              'ButtonDownFcn', @displayData, 'Tag', 'DataTab');
+    lTab = rectangle(top, 'position', [0 0 1/2 1/2], 'facecolor', [0.8 0.8 0.8], ...
+              'EdgeColor', 'None', 'ButtonDownFcn', @displayLab);
+    dTab = rectangle(top, 'position', [1/2 0 1/2 1/2], 'facecolor', [0.7 0.7 0.7], ...
+              'ButtonDownFcn', @displayData);
     rectangle(top, 'position', [0 1/2 1 1/2], 'facecolor', [0.7 0.7 0.7], ...
               'Tag', 'Title');
     text(top, 1/2, 3/4, 'Neuroscience Data Interface', ...
@@ -37,75 +35,93 @@ function ndi_gui_v2()
          'ButtonDownFcn', @displayLab);
     text(top, 3/4, 1/4, 'Database View', 'HorizontalAlignment', 'center', ...
          'ButtonDownFcn', @displayData);
-    
+        
     %Create info
     data = Data();
     
     %Create lab
     lab = Lab();
     set(gcf, 'WindowButtonMotionFcn', @lab.move);
-
     
-    %Add subject
-    lab.addSubject({'mouse.jfif'});
+    %Import ndi_session_obj
+    e = ndi_session_obj.getelements();
+    docs = ndi_session_obj.database_search({'ndi_document.id','(.*)'});
+    d = ndi_session_obj.daqsystem_load('name','(.*)');
+    p = ndi_session_obj.getprobes();
+    s_id = {};
+    for i = 1:numel(p)
+        s_id{i} = p{i}.subject_id;
+    end
+    for i = 1:numel(e)
+        s_id{end+1} = e{i}.subject_id;
+    end
+    s_id = unique(s_id);
+    s = {};
+    for i = 1:numel(s_id)
+        s{i} = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',s_id{i},''));
+    end
     
-    lab.addProbe({'microscope.png' 'tv.png'});
+    %Add elements
+    lab.addSubject(s);
     
-    lab.addDAQ({'gears.png'});
+    lab.addProbe(p);
+    
+    lab.addDAQ(d);
     
     %Add documents
-    data.addDoc({'file.txt'});
+    data.addDoc(docs);
+    
+    %Connect elements
+    for i = 1:numel(p)
+        ps_id = p{i}.subject_id;
+        ps = p{i}.session.database_search(ndi_query('ndi_document.id','exact_string',ps_id,''));
+        lab.connect(findobj(lab.subjects, 'elem', ps));
+        lab.connect(findobj(lab.probes, 'elem', p{i}));       
+        et = p{i}.epochtable();
+        epochids = {et.epoch_id};
+        daqnames = {};
+        channel_types = {};
+        channels = {};
+        for k = 1:numel(et)
+            [DEV, DEVNAME, ~, CHANNELTYPE, CHANNELLIST] = getchanneldevinfo(p{i}, et(i).epoch_id);
+            daqnames{k} = DEVNAME;
+            channel_types{k} = CHANNELTYPE;
+            channels{k} = CHANNELLIST;
+        end
+        lab.connect(findobj(lab.probes, 'elem', p{i}));
+        lab.connect(findobj(lab.DAQs, 'elem', DEV{1}));
+    end
     
     function displayData(~, ~)
-        labCh = get(lab.window, 'children');
-        labInfoCh = get(lab.info, 'children');
-        dataCh = get(data.window, 'children');
-        dataInfoCh = get(data.info, 'children');
-        for i=1:numel(labCh)
-            set(labCh(i), 'Visible', 'off');
-        end
-        for i = 1:numel(labInfoCh)
-            set(labInfoCh(i), 'Visible', 'off');
-        end
-        for i=1:numel(dataCh)
-            set(dataCh(i), 'Visible', 'on');
-        end
-        for i = 1:numel(dataInfoCh)
-            set(dataInfoCh(i), 'Visible', 'on');
-        end
-        set(findobj(top, 'Tag', 'LabTab'), 'facecolor', [0.7 0.7 0.7], ...
+        set(lab.window, 'Visible', 'off');
+        set(lab.panel, 'Visible', 'off');
+        set(data.table, 'Visible', 'on');
+        set(data.panel, 'Visible', 'on');
+        set(data.search, 'Visible', 'on');
+        set(lTab, 'facecolor', [0.7 0.7 0.7], ...
             'EdgeColor', [0 0 0]);
-        set(findobj(top, 'Tag', 'DataTab'), 'facecolor', [0.8 0.8 0.8], ...
+        set(dTab, 'facecolor', [0.8 0.8 0.8], ...
             'EdgeColor', 'None');
     end
     
     function displayLab(~, ~)
-        labCh = get(lab.window, 'children');
-        labInfoCh = get(lab.info, 'children');
-        dataCh = get(data.window, 'children');
-        dataInfoCh = get(data.info, 'children');
-        for i=1:numel(labCh)
-            set(labCh(i), 'Visible', 'on');
-        end
-        for i=1:numel(labInfoCh)
-            set(labInfoCh(i), 'Visible', 'on');
-        end
-        for i=1:numel(dataCh)
-            set(dataCh(i), 'Visible', 'off');
-        end
-        for i=1:numel(dataInfoCh)
-            set(dataInfoCh(i), 'Visible', 'off');
-        end
+        set(lab.window, 'Visible', 'on');
+        set(lab.panel, 'Visible', 'on');
+        axis(lab.window, 'off');
+        set(data.table, 'Visible', 'off');
+        set(data.panel, 'Visible', 'off');
+        set(data.search, 'Visible', 'off');
         lab.grid();
-        set(findobj(top, 'Tag', 'DataTab'), 'facecolor', [0.7 0.7 0.7], ...
+        lab.buttons();
+        set(dTab, 'facecolor', [0.7 0.7 0.7], ...
             'EdgeColor', [0 0 0]);
-        set(findobj(top, 'Tag', 'LabTab'), 'facecolor', [0.8 0.8 0.8], ...
+        set(lTab, 'facecolor', [0.8 0.8 0.8], ...
             'EdgeColor', 'None');
     end
     
     function mouseRelease(~, ~)
         if ~lab.moved && ~isempty(lab.drag)
-            lab.details(get(lab.drag.img, 'CData'));
+            lab.details(lab.drag);
         end
         set(gcf, 'Pointer', 'arrow');
         lab.moved = false;

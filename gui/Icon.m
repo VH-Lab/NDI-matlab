@@ -1,5 +1,6 @@
 classdef Icon < handle
     properties
+        elem;
         img;
         rect;
         term;
@@ -8,27 +9,24 @@ classdef Icon < handle
         h;
         x;
         y;
-        transmitted = [];
-        received = [];
-        transInd = [];
-        recInd = [];
         c;
-        add;
-        check;
-        cancel;
+        active = 1;
+        tag;
     end
     methods
-        function obj = Icon(src, len, icon, hShift, vShift, w, h, color)
+        function obj = Icon(src, len, elem, hShift, vShift, w, h, color)
+            obj.elem = elem;
             obj.src = src;
             obj.w = w;
             obj.h = h;
             obj.x = 8*len+hShift;
             obj.y = vShift;
             obj.c = color;
+            obj.tag = num2str(numel([src.subjects src.probes src.DAQs])+1);
             obj.img = image(src.window, ...
                             [(8*len+hShift) (8*len+hShift+w)], ...
-                            [vShift (vShift+h)], flip(imread(icon), 1), ...
-                            'ButtonDownFcn', @obj.iconCallback);
+                            [vShift (vShift+h)], flip(imread('default.png'), 1), ...
+                            'ButtonDownFcn', {@src.iconCallback obj});
             obj.rect = rectangle(src.window, 'position', ...
                                  [(8*len+hShift) vShift w h], ...
                                  'edgecolor', color, 'linewidth', 1.5);
@@ -38,58 +36,15 @@ classdef Icon < handle
                                  'Curvature', [1 1], 'FaceColor', [1 1 1], ...
                                  'edgecolor', color, 'linewidth', 1.5, ...
                                  'ButtonDownFcn', {@src.connect obj});
-            obj.add = text(src.window, 8*len+hShift+w+0.01, vShift+h+0.01, ...
-                           '+', 'HorizontalAlignment', 'center', 'color', ...
-                           color, 'ButtonDownFcn', {@src.connect obj});
-            obj.check = text(src.window, 8*len+hShift+w+0.01, vShift+h+0.01, ...
-                           '?', 'HorizontalAlignment', 'center', 'color', ...
-                           color, 'visible', 'off', ...
-                           'ButtonDownFcn', {@src.connect obj});
-            obj.cancel = text(src.window, 8*len+hShift+w+0.01, vShift+h+0.01, ...
-                           'x', 'HorizontalAlignment', 'center', 'color', ...
-                           color, 'visible', 'off', ...
-                           'ButtonDownFcn', {@src.connect obj});
             if isequal(color, [1 0.6 0])
-                set(obj.add, 'visible', 'off');
-                set(obj.term, 'ButtonDownFcn', []);
+                obj.active = 0;
+                set(obj.term, 'Visible', 'off');
             end
         end
         
-        function iconCallback(obj, ~, ~)
-            obj.src.drag = obj;
-            obj.src.dragPt = [obj.img.XData obj.img.YData];
-            
-        end
-        
-        function transmit(obj, startX, endX, startY, endY, ind)
-            obj.transmitted = [obj.transmitted ...
-                               line(obj.src.window, [startX endX], ...
-                                    [startY endY], 'Color', [1 0 0], ...
-                                    'linewidth', 1.5, 'ButtonDownFcn', ...
-                                    @obj.cut)];
-            obj.transInd = [obj.transInd ind];
-        end
-        
-        function receive(obj, startX, endX, startY, endY, ind)
-            obj.received = [obj.received ...
-                            line(obj.src.window, [startX endX], ...
-                                 [startY endY], 'Color', [1 0 0], ...
-                                 'linewidth', 1.5, 'ButtonDownFcn', ...
-                                 @obj.cut)];
-            obj.recInd = [obj.recInd ind];
-        end
-        
-        function cut(obj, src, ~)
-            obj.src.cut(obj, src);
-            obj.src.updateConnections();
-        end
-        
-        function clearWires(obj)
-            delete([obj.transmitted obj.received]);
-            obj.transmitted = [];
-            obj.received = [];
-            obj.transInd = [];
-            obj.recInd = [];
+        function upload(obj, ~, ~)
+            [file, path] = uigetfile({'*.png'; '*.jpg'; '*.jpeg'});
+            obj.img.CData = flip(imread(strcat(path, file)), 1);
         end
     end
 end
