@@ -463,17 +463,17 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
 			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 			%
-				sq = ndi_element_obj.session.searchquery();
-				sq = cat(2,sq, ...
-					{'element.name',ndi_element_obj.name,...
-					 'element.type',ndi_element_obj.type,...
-					 'element.ndi_element_class', class(ndi_element_obj),  ...
-					 'element.reference', ndi_element_obj.reference, ...
-					'ndi_document.type','ndi_element' });
+				sq = ndi_query(ndi_element_obj.session.searchquery());
+				sq = sq & ndi_query('element.name','exact_string',ndi_element_obj.name,'');
+				sq = sq & ndi_query('element.type','exact_string',ndi_element_obj.type,'');
+				sq = sq & ndi_query('element.ndi_element_class','exact_string',class(ndi_element_obj),'');
+				sq = sq & ndi_query('element.reference','exact_number',ndi_element_obj.reference',''); 
+				sq = sq & ndi_query('ndi_document.type','exact_string','ndi_element',''); 
 
 				if nargin>1,
-					sq = cat(2,sq,{'epochid',epochid});
+					sq = sq & ndi_query('epochid','exact_string',epochid,'');
 				end;
+				
 		end; % searchquery()
 
 	end; % methods

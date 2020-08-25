@@ -156,7 +156,6 @@ classdef ndi_app_spikesorter < ndi_app
 				neuron_element = ndi_element_timeseries(ndi_app_spikesorter_obj.session, ['neuron_' num2str(nNeuron)], ndi_timeseries_obj.reference, 'neuron', ndi_timeseries_obj, 0);
 				doc = neuron_element.newdocument();
 				%%% TODO: add properties like epoch and stuff?
-				ndi_app_spikesorter_obj.session.database_add(doc);
 
 				et = ndi_timeseries_obj.epochtable;
 				
