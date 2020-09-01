@@ -62,7 +62,7 @@ classdef ndi_app_spikesorter < ndi_app
 
 			% Read spikewaves here
 			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session);
-			waveforms = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			[waveforms, ~, spikewaves_doc] = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 
 			% Interpolation
 			interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
@@ -132,12 +132,17 @@ classdef ndi_app_spikesorter < ndi_app
 			% Create spike_clusters ndi_doc
 			spike_clusters_doc = ndi_app_spikesorter_obj.session.newdocument('apps/spikesorter/spike_clusters', ...
 				'spike_sort.sort_name', sort_name, ...
-				'spike_sort.sorting_parameters_file_id', sorting_parameters_doc.id, ...
+				'spike_sort.epoch', epoch, ...
 				'spike_sort.clusterids', clusterids, ...
 				'spike_sort.spiketimes', times, ...
-				'spike_sort.numclusters', numclusters) ...
-				+ ndi_timeseries_obj.newdocument() + ndi_app_spikesorter_obj.newdocument();
-
+				'spike_sort.numclusters', numclusters, ...
+				'ndi_document_epochid.epochid', ndi_timeseries_obj.epochid(epoch)) ...
+				+ ndi_app_spikesorter_obj.newdocument();
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('element_id', ndi_timeseries_obj.id());
+			% spike_clusters_doc = spike_clusters_doc.set_dependency_value('extraction_parameters',the.id());
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('sorting_parameters_id',sorting_parameters_doc.id());
+			spike_clusters_doc = spike_clusters_doc.set_dependency_value('spikewaves_doc_id',spikewaves_doc.id()); % TODO: name 'spikewaves_doc' subject to change
+			
 			% Add doc to database
 			ndi_app_spikesorter_obj.session.database_add(spike_clusters_doc);
 
@@ -151,7 +156,6 @@ classdef ndi_app_spikesorter < ndi_app
 				neuron_element = ndi_element_timeseries(ndi_app_spikesorter_obj.session, ['neuron_' num2str(nNeuron)], ndi_timeseries_obj.reference, 'neuron', ndi_timeseries_obj, 0);
 				doc = neuron_element.newdocument();
 				%%% TODO: add properties like epoch and stuff?
-				ndi_app_spikesorter_obj.session.database_add(doc);
 
 				et = ndi_timeseries_obj.epochtable;
 				
@@ -185,8 +189,41 @@ classdef ndi_app_spikesorter < ndi_app
 			xlabel(['time (s)']);
 		end %function
 
-			%%% TODO: function add_sorting_doc
-
+        %% function to call gui
+        function spikesorter_gui(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name)
+            
+            %load spike waves
+            spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+            
+            %load clusterids
+            doc_spike_clusters = ndi_app_spikesorter_obj.load_spike_clusters_doc(ndi_timeseries_obj, epoch, sort_name);
+            spikeclusterids = doc_spike_clusters{1, 1}.document_properties.spike_sort.clusterids; 
+            
+            %load wavetimes/spike times
+            spiketimes = ndi_app_spikesorter_obj.load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
+            
+            
+            %load and create waveparameters
+            
+            %interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
+            
+            
+			[~, ~, ~, ~, channellist_in_probe] = getchanneldevinfo(ndi_timeseries_obj, epoch);
+			waveparameters = struct;
+			waveparameters.numchannels = numel(channellist_in_probe);
+			waveparameters.S0 = -9; %* interpolation;
+			waveparameters.S1 = 20; %* interpolation;
+			waveparameters.name = '';
+			waveparameters.ref = 1;
+			waveparameters.comment = '';
+			waveparameters.samplingrate = ndi_timeseries_obj.samplerate(1); %* interpolation;% ;
+            
+            %call gui fct
+            cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes, 'spikewaves2NpointfeatureSampleList',  [10 15], 'spikewaves2pcaRange', [1 17]);
+            
+        end  %calling gui fct
+        
+        %%
 		function sorting_doc = add_sorting_doc(ndi_app_spikesorter_obj, sort_name, sort_params)
 			% ADD_SORTING_DOC - add sorting parameters document
 			%
@@ -255,8 +292,17 @@ classdef ndi_app_spikesorter < ndi_app
 				sorting_doc.document_properties,
 
 		end; % add_sorting_doc
+        
+        
+        %access cluster doc
+		function doc = load_spike_clusters_doc(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
+		
+			searchq = cat(2,ndi_app_spikesorter_obj.searchquery(), ...
+				{'spike_sort.sort_name', sort_name, 'spike_sort.epoch', epoch});
+			
+			doc = ndi_app_spikesorter_obj.session.database_search(searchq);
 
-
+        end %fct end
 
 
 		function b = clear_sort(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
