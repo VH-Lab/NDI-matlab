@@ -111,7 +111,10 @@ classdef ndi_appdoc
 				% if we haven't returned, we need to make a document and add it
 
 				doc = ndi_appdoc_obj.struct2doc(session,appdoc_type,appdoc_struct,varargin{:});
-				
+
+				session.database_add(doc);
+
+				doc = {doc}; % make it a cell array
 
 		end; % add_appdoc
 
@@ -138,8 +141,9 @@ classdef ndi_appdoc
 			%
 			% In the base class, this uses the property info in the NDI_DOCUMENT to load the data structure.
 			%
-				
-		end; % struct2doc()
+				listname = doc.document_properties.document_class.property_list_name;
+				appdoc_struct = getfield(doc.document_properties,listname);
+		end; % doc2struct()
 
 
 		function appdoc_struct = defaultstruct_appdoc(ndi_appdoc_obj, session, appdoc_type)
@@ -214,7 +218,6 @@ classdef ndi_appdoc
 			%
 				b = 0;
 				errormsg = 'Base class always returns invalid';
-
 		end; % isvalid_appdoc_struct()
 
 		function b = isequal_appdoc_struct(ndi_appdoc_obj, appdoc_type, appdoc_struct1, appdoc_struct2)
