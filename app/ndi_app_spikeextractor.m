@@ -76,7 +76,6 @@ classdef ndi_app_spikeextractor < ndi_app
 				end;
 
 				% process input arguments
-				%% TODO: Ask Steve why the cell
 
 				if isempty(epoch),
 					et = epochtable(ndi_timeseries_obj);
@@ -116,12 +115,13 @@ classdef ndi_app_spikeextractor < ndi_app
 
 					q_app = ndi_query(ndi_app_spikeextractor_obj.searchquery());
 					q_epoch = ndi_query('epochid', 'exact_string', epoch_string, '');
-					q_sw = ndi_query('spikewaves.extraction_name','exact_string', extraction_name,'');
-					q_st = ndi_query('spiketimes.extraction_name','exact_string', extraction_name,'');
+					q_sw = ndi_query('spikewaves.extraction_name','exact_string', extraction_name,''); % no longer used
+					q_st = ndi_query('spiketimes.extraction_name','exact_string', extraction_name,''); % no longer used
 					q_element = ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
+					q_extdoc = ndi_query('','depends_on','extraction_parameters_id',extraction_doc.id());
 						
-					old_spikewaves_doc = ndi_app_spikeextractor_obj.session.database_search(q_app&q_epoch&q_sw&q_element);
-					old_spiketimes_doc = ndi_app_spikeextractor_obj.session.database_search(q_app&q_epoch&q_st&q_element);
+					old_spikewaves_doc = ndi_app_spikeextractor_obj.session.database_search(q_app&q_epoch&q_element&q_extdoc);
+					old_spiketimes_doc = ndi_app_spikeextractor_obj.session.database_search(q_app&q_epoch&q_element&q_extdoc);
 
 					if (~isempty(old_spikewaves_doc) & ~isempty(old_spiketimes_doc)) & ~redo,
 						% we already have this epoch
@@ -298,10 +298,10 @@ classdef ndi_app_spikeextractor < ndi_app
 				end % epoch n
 		end % extract
 
-		function extraction_doc = add_extraction_doc(ndi_app_spikeextractor_obj, extraction_name, extraction_params)
+		function [extraction_doc] = add_extraction_doc(ndi_app_spikeextractor_obj, extraction_name, extraction_params, varargin)
 			% ADD_EXTRACTION_DOC - add extraction parameters document
 			%
-			% EXTRACTION_DOC = ADD_EXTRACTION_DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMS)
+			% [EXTRACTION_DOC] = ADD_EXTRACTION_DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_NAME, EXTRACTION_PARAMS, ...)
 			%
 			% Given EXTRACTION_PARAMS as either a structure or a filename, this function returns
 			% EXTRACTION_DOC parameters as an NDI_DOCUMENT and checks its fields. If EXTRACTION_PARAMS is empty,
@@ -309,7 +309,7 @@ classdef ndi_app_spikeextractor < ndi_app
 			% NDI_DOCUMENT then an error is returned.
 			%
 			% EXTRACTION_PARAMS should contain the following fields:
-			% Fieldname              | Description
+			% Fieldname                 | Description
 			% -------------------------------------------------------------------------
 			% center_range (10)         | Range in samples to find spike center
 			% overlap (0.5)             | Overlap allowed
@@ -331,20 +331,46 @@ classdef ndi_app_spikeextractor < ndi_app
 			%                           |    If "absolute", then this value is taken to be the absolute threshold.
 			% threshold_sign (-1)       | Threshold crossing sign (-1 means high-to-low, 1 means low-to-high)
 			% 
+			%
+			% This function also takes NAME/VALUE pairs that alter its main behavior.
+			% Parameter (default)       | Description
+			% --------------------------------------------------------------------------
+			% DocExists ('Error')       | What to do if a document by that name already exists.
+			%                           |   Possible values are the following:
+			%                           |      'Error'   : generate an error
+			%                           |      'NoAction': leave the existing document
+			%                           |      'Replace' : replace the document (deletes all dependent documents)
+			%
+			% See also: NAMEVALUEPAIR
 				if nargin<3,
 					extraction_params = [];
 				end;
+
+				DocExists = 'Error';
+
+				assign(varargin{:});
 
 					% search for any existing documents with that name; any doc that has that name and spike_extraction_parameters as a field
 				extract_searchq = ndi_query('ndi_document.name','exact_string',extraction_name,'') & ...
 					ndi_query('','isa','spike_extraction_parameters','');
 				mydoc = ndi_app_spikeextractor_obj.session.database_search(extract_searchq);
 				if ~isempty(mydoc),
-					error([int2str(numel(mydoc)) ' spike_extraction_parameters documents with name ''' extraction_name ''' already exist(s).']);
+					switch(DocExists),
+						case 'Error',
+							error([int2str(numel(mydoc)) ...
+								' spike_extraction_parameters documents with name ''' extraction_name ''' already exist(s).']);
+						case 'NoAction',
+							extraction_doc = mydoc{1};
+							return;
+						case 'Replace',
+							b=ndi_app_spikeextractor_obj.clear_extraction_parameters(extraction_name);
+							if ~b,
+								error(['Could not delete existing extraction_name doc ' extraction_name '.']);
+							end;
+					end; % switch(DocExists)
 				end;
 
 				% okay, we can build a new document
-
 
 				if isempty(extraction_params),
 					extraction_params = ndi_document('apps/spikeextractor/spike_extraction_parameters') + ...
@@ -390,6 +416,7 @@ classdef ndi_app_spikeextractor < ndi_app
 				extraction_doc.document_properties,
 
 		end; % add_extraction_doc
+
 
 		function b = clear_extraction_parameters(ndi_app_spikeextractor_obj, extraction_name)
 		% CLEAR_EXTRACTION_PARAMETERS - clear all 'spikewaves' records for an NDI_PROBE_OBJ from session database
@@ -543,5 +570,60 @@ classdef ndi_app_spikeextractor < ndi_app
 		end; % load_spikewaves_epoch
 
 	end % methods
+
+	methods (Static)
+		function [b,errormsg] = isvalid_extraction_parameters(extraction_parameter_struct)
+		% ISVALID_EXTRACTION_PARAMETERS - are extration parameters valid?
+		%
+		% [B,ERRORMSG] = ISVALID_EXTRACTION_PARAMETERS(EXTRACTION_PARAMETER_STRUCT)
+		%
+		% Checks to ensure that the parameters provided in EXTRACTION_PARAMETER_STRUCT are
+		% valid for the NDI_APP_SPIKEEXTRACTOR. B is 1 if it passes. B is 0 otherwise.
+		% ERRORMSG contains a human-readable error message if the validation fails.
+		%
+			% check parameters here
+			fields_needed = {'center_range_time','overlap','read_time','refractory_time',...
+				'spike_start_time','spike_end_time',...
+				'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
+				'threshold_method','threshold_parameter','threshold_sign'};
+			sizes_needed = {[1 1], [1 1], [1 1], [1 1],...
+				[1 1],[1 1],...
+				[1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
+				[1 -1], [1 1], [1 1]};
+
+			[b,errormsg] = hasAllFields(extraction_params,fields_needed, sizes_needed);
+
+		end; % isvalid_extraction_parameters()
+
+		function b = isequal_extraction_parameters(extraction_parameter_struct1, extraction_parameter_struct2)
+		% ISEQUAL_EXTRACTION_PARAMETERS - are extraction parameters equal?
+		%
+		% B = ISEQUAL_EXTRACTION_PARAMETERS(EXTRACTION_PARAMETERS_STRUCT1, EXTRACTION_PARAMETER_STRUCT2)
+		%
+		% B is 1 if the extraction parameter structures EXTRACTION_PARAMETERS_STRUCT1 and
+		% EXTRACTION_PARAMETERS_STRUCT2 are valid and equal. Otherwise B is 0.
+		%
+		%
+			b = ndi_app_spikeextractor.isvalid_extraction_parameters(extraction_parameter_struct1);
+			b = b & ndi_app_spikeextractor.isvalid_extraction_parameters(extraction_parameter_struct2);
+			if ~b, % both must be valid to keep going
+				return;
+			end;
+			fields_needed = {'center_range_time','overlap','read_time','refractory_time',...
+				'spike_start_time','spike_end_time',...
+				'do_filter', 'filter_type','filter_low','filter_high','filter_order','filter_ripple',...
+				'threshold_method','threshold_parameter','threshold_sign'};
+			for i=1:numel(fields_needed),
+				v1 = getfield(extraction_parameters_struct1,fields_needed{i});
+				v2 = getfield(extraction_parameters_struct2,fields_needed{i});
+				if ~eqlen(v1==v2),
+					b = 0;
+					return;
+				end;
+			end;
+			% if we make it here, they are equal
+		end; % isequal_extraction_parameters
+
+	end
 
 end % ndi_app_spikeextractor
