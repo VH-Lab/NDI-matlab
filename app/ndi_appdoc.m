@@ -21,6 +21,8 @@ classdef ndi_appdoc
 			% Example:
 			%   ndi_appdoc_obj = ndi_appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
 			%
+					ndi_appdoc_obj.doc_types = doc_types;
+					ndi_appdoc_obj.doc_document_types = doc_document_types;
 		end; % ndi_appdoc() 
 
 		function doc = add_appdoc(ndi_appdoc_obj, session, appdoc_type, appdoc_struct, docexistsaction, varargin)
@@ -145,7 +147,6 @@ classdef ndi_appdoc
 				appdoc_struct = getfield(doc.document_properties,listname);
 		end; % doc2struct()
 
-
 		function appdoc_struct = defaultstruct_appdoc(ndi_appdoc_obj, session, appdoc_type)
 			% DEFAULTSTRUCT_APPDOC - return a default appdoc structure for a given APPDOC type
 			%
@@ -153,9 +154,16 @@ classdef ndi_appdoc
 			%
 			% Return the default data structure for a given APPDOC_TYPE of an NDI_APPDOC object.
 			%
-			% In the base class, this always returns empty. It must be overridden in subclasses.
+			% In the base class, the blank version of the NDI_DOCUMENT is read in and the
+			% default structure is built from the NDI_DOCUMENT's class property list.
 			%
-				appdoc_struct = [];
+				ind = find(strcmpi(ndi_appdoc_obj.doc_types));
+				if ~isempty(ind),
+					appdoc_doc = ndi_document(ndi_appdoc_obj.doc_document_types{ind});
+					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type, appdoc_doc);
+				else,
+					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+				end;
 		end; % defaultstruct_appdoc()
 
 		function varargout = loaddata_appdoc(ndi_appdoc_obj, session, appdoc_type, varargin)
@@ -200,6 +208,8 @@ classdef ndi_appdoc
 			% searches the SESSION database for the NDI_DOCUMENT object DOC that is
 			% described by APPDOC_TYPE.
 			%
+			% DOC is always a cell array of all matching NDI_DOCUMENTs.
+			%
 			% In this superclass, empty is always returned. Subclasses should override
 			% this function to search for each document type.
 			%
@@ -236,6 +246,36 @@ classdef ndi_appdoc
 					b = eqlen(appdoc_struct1,appdoc_struct2);
 				end;
 		end; % isequal_appdoc_struct
+
+		function appdoc_description(ndi_appdoc_obj)
+			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
+			%
+			% Every subclass should override this function to describe the APPDOC types available
+			% to the subclass. It should follow the following form.
+			%
+			% --------------------
+			%
+			% The APPDOCs available to this class are the following:
+			%
+                        % APPDOC_TYPE               | Description
+                        % ----------------------------------------------------------------------------------------------
+                        % (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
+			%
+			% The documentation for creating the first APPDOC type would be here:
+			%   ("To create 'appdoc_type1', use the following construction:")
+			%
+			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, 'appdoc_type1', APPDOC_TYPE1PARAMS, ...)
+			%
+			%  (if there are any extra inputs needed, describe them here)
+			% APPDOC_TYPE1PARAMS should contain the following fields: 
+			% Fieldname (default)       | Description
+			% -------------------------------------------------------------------------
+			% (first_field_here)        | (first description here)
+			%
+			% (If there were more appdoc types, list them here...)
+				eval(['help ndi_appdoc/appdoc_description']); % change to your class here
+		end; % appdoc_description()
+			
 	end;
 
 
