@@ -639,7 +639,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 		end; % isvalid_appdoc_struct()
 
-                function doc = find_appdoc(ndi_appdoc_obj, session, appdoc_type, varargin)
+                function doc = find_appdoc(ndi_app_spikeextractor_obj, session, appdoc_type, varargin)
                         % FIND_APPDOC - find an NDI_APPDOC document in the session database
                         %
 			% See NDI_APP_SPIKEEXTRACTOR/APPDOC_DESCRIPTION for documentation.

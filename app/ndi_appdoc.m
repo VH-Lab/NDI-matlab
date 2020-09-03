@@ -60,7 +60,7 @@ classdef ndi_appdoc
 				% Step 1, load the appdoc_struct if it is not already a structure
 
 				if isempty(appdoc_struct),
-					appdoc_struct = ndi_appdoc_obj.defaultstruct_appdoc(appdoc_type);
+					appdoc_struct = ndi_appdoc_obj.defaultstruct_appdoc(session,appdoc_type);
 				elseif isa(appdoc_struct,'ndi_document'),
 					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type,appdoc_struct);
 				elseif isa(appdoc_struct,'char'),
@@ -79,14 +79,15 @@ classdef ndi_appdoc
 				% Step 2, see if a document by this description already exists
 
 				doc = ndi_appdoc_obj.find_appdoc(session, appdoc_type, varargin{:});
+
 				if ~isempty(doc),
 					switch (lower(docexistsaction)),
 						case 'error',
 							error([int2str(numel(doc)) ' document(s) of application document type '...
 								appdoc_type ' already exist.']);
-						case 'NoAction',
+						case 'noaction',
 							return; % we are done
-						case {'Replace','ReplaceIfDifferent'},
+						case {'replace','replaceifdifferent'},
 							aredifferent = 1; % by default, we will replace unless told to check
 							if strcmpi(docexistsaction,'ReplaceIfDifferent'),
 								% see if they really are different
@@ -99,14 +100,17 @@ classdef ndi_appdoc
 									aredifferent = ~b;
 								end;
 							end;
+							aredifferent,
 							if aredifferent,
-								b = ndi_app_obj.clear_appdoc(session, appdoc_type, varargin{:});
+								b = ndi_appdoc_obj.clear_appdoc(session, appdoc_type, varargin{:});
 								if ~b,
 									error(['Could not delete existing ' appdoc_type ' document(s).']);
 								end;
 							else,
 								return; % nothing to do, it's already there and the same as we wanted
 							end;
+						otherwise,
+							error(['Unknown DOCEXISTSACTION: ' docexistsaction '.']);
 					end; % switch(docexistsaction)
 				end;
 
@@ -157,7 +161,7 @@ classdef ndi_appdoc
 			% In the base class, the blank version of the NDI_DOCUMENT is read in and the
 			% default structure is built from the NDI_DOCUMENT's class property list.
 			%
-				ind = find(strcmpi(ndi_appdoc_obj.doc_types));
+				ind = find(strcmpi(appdoc_type,ndi_appdoc_obj.doc_types));
 				if ~isempty(ind),
 					appdoc_doc = ndi_document(ndi_appdoc_obj.doc_document_types{ind});
 					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type, appdoc_doc);
@@ -192,12 +196,16 @@ classdef ndi_appdoc
 			% They are passed to the function FIND_APPDOC, so see help FIND_APPDOC for the documentation
 			% for each app.
 			%
+			% B is 1 if the document is found, and 0 otherwise.
+			%
+				b = 0;
 				doc = ndi_appdoc_obj.find_appdoc(session,appdoc_type,varargin{:});
 				if ~isempty(doc),
 					session.database_rm(doc);
+					b = 1;
 				end;
 
-		end; % clear_appdoc
+		end; % clear_appdoc()
 
 		function doc = find_appdoc(ndi_appdoc_obj, session, appdoc_type, varargin)
 			% FIND_APPDOC - find an NDI_APPDOC document in the session database
