@@ -27,10 +27,10 @@ probe = probelist{prb};
 plot_multichan(d,t,10);
 
 spikeextractor = ndi_app_spikeextractor(our_exp); 
-spikeextractor.add_extraction_doc('default', []);
+spikeextractor.add_appdoc(spikeextractor.session, 'extraction_parameters', [], 'default');
 spikeextractor.extract(probe, e,'default');
 
-w = spikeextractor.load_spikewaves_epoch(probe,1,'default');
+w = spikeextractor.loaddata_appdoc('spikewaves',probe,1,'default');
 figure;
 plot(w(:,:,1));
 title(['First spike']);
