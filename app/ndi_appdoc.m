@@ -100,7 +100,6 @@ classdef ndi_appdoc
 									aredifferent = ~b;
 								end;
 							end;
-							aredifferent,
 							if aredifferent,
 								b = ndi_appdoc_obj.clear_appdoc(session, appdoc_type, varargin{:});
 								if ~b,
@@ -133,6 +132,7 @@ classdef ndi_appdoc
 			% according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.
 			%
 			% In the base class, this always returns empty. It must be overridden in subclasses.
+			% The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
 			%
 				doc = [];
 		end; % struct2doc()
@@ -183,6 +183,8 @@ classdef ndi_appdoc
 			% In the base class, this always returns empty. This function should be overridden by each
 			% subclass.
 			%
+			% The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
+			%
 				varargout = {};
 		end; % loaddata_appdoc()
 
@@ -220,6 +222,9 @@ classdef ndi_appdoc
 			%
 			% In this superclass, empty is always returned. Subclasses should override
 			% this function to search for each document type.
+			%
+			% The documentation for subclasses should be in the overriden function
+			% APPDOC_DESCRIPTION.
 			%
 				doc = [];
 		end; % find_appdoc
@@ -265,20 +270,61 @@ classdef ndi_appdoc
 			%
 			% The APPDOCs available to this class are the following:
 			%
-                        % APPDOC_TYPE               | Description
-                        % ----------------------------------------------------------------------------------------------
-                        % (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
+			% APPDOC_TYPE               | Description
+			% ----------------------------------------------------------------------------------------------
+			% 'doctype1'                | The first app document type.
+			% (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
+			% (here, 'doctype1' is a dummy example.)
 			%
-			% The documentation for creating the first APPDOC type would be here:
-			%   ("To create 'appdoc_type1', use the following construction:")
+			% ----------------------------------------------------------------------------------------------
+			% APPDOC 1: DOCTYPE1
+			% ----------------------------------------------------------------------------------------------
 			%
-			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, 'appdoc_type1', APPDOC_TYPE1PARAMS, ...)
+			%   ---------------------
+			%   | DOCTYPE1 -- ABOUT |
+			%   ---------------------
 			%
-			%  (if there are any extra inputs needed, describe them here)
-			% APPDOC_TYPE1PARAMS should contain the following fields: 
-			% Fieldname (default)       | Description
-			% -------------------------------------------------------------------------
-			% (first_field_here)        | (first description here)
+			%   DOCTYPE documents store X. It DEPENDS ON documents Y and Z. 
+			%
+			%   Definition: app/myapp/doctype1
+			%
+			%   --------------------------
+			%   | DOCTYPE1 -- CREATION |
+			%   --------------------------
+			%
+			%   DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, 'doctype1', DOCTYPE1PARAMS, ...)
+			%
+			%   DOCTYPE1PARAMS should contain the following fields:
+			%   Fieldname                 | Description
+			%   -------------------------------------------------------------------------
+			%   field1                    | field1 description
+			%   overlap                   | field2 description
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - FINDING |
+			%   ------------------------
+			%
+			%   [DOCTYPE1_DOC] = FIND_APPDOC(NDI_APPDOC_OBJ, SESSION, 'doctype1', INPUT1, INPUT2, ...) 
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      DOCTYPE1_DOC - the NDI_DOCUMENT of the application document DOCTYPE1
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - LOADING |
+			%   ------------------------
+			%
+			%   [OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC] = LOADDOC_APPDOC(NDI_APPDOC_OBJ, ...
+			%    SESSION, 'doctype1', INPUT1, INPUT2,...);
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      OUTPUT1 - the first type of loaded data contained in DOCTYPE1 documents
+			%      OUTPUT2 - the second type of loaded data contained in DOCTYPE1 documents
 			%
 			% (If there were more appdoc types, list them here...)
 				eval(['help ndi_appdoc/appdoc_description']); % change to your class here
