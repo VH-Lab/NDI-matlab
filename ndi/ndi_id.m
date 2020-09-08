@@ -39,15 +39,17 @@ classdef ndi_id
 			% ID = NDI_UNIQUE_ID
 			%
 			% Generates a unique ID character array based on the current time and a random
-			% number. It is a hexidecimal representation of the Matlab function NOW and
-			% RAND.
+			% number. It is a hexidecimal representation of the serial date number in
+			% UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
+			% The integer portion of the date is the whole number of days and the fractional part of the date number
+			% is the fraction of days.
 			%
-			% ID = [NUM2HEX(NOW) '_' NUM2HEX(RAND)]
+			% ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]
 			%
 			% See also: NUM2HEX, NOW, RAND
 			%
-
-				id = [num2hex(now) '_' num2hex(rand)];
+				serial_date_number = convertTo(datetime('now','TimeZone','UTCLeapSeconds'),'datenum');
+				id = [num2hex(serial_date_number) '_' num2hex(rand)];
 
 		end; % ndi_unique_id()
 
