@@ -49,7 +49,8 @@ classdef ndi_id
 			% See also: NUM2HEX, NOW, RAND
 			%
 				serial_date_number = convertTo(datetime('now','TimeZone','UTCLeapSeconds'),'datenum');
-				id = [num2hex(serial_date_number) '_' num2hex(rand)];
+				random_number = rand + randi([-32727 32727],1);
+				id = [num2hex(serial_date_number) '_' num2hex(random_number)];
 
 		end; % ndi_unique_id()
 
