@@ -1,0 +1,39 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spike_extraction_parameters_modification.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spike_extraction_parameters_modification_schema.json",
+		"class_name":						"ndi_document_apps_spikeextractor_spike_extraction_parameters_modification",
+		"property_list_name":					"spike_extraction_parameters_modification",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"depends_on": [
+		{       "name": "extraction_parameters_id",
+			"value": ""
+		},
+		{       "name": "element_id",
+			"value": ""
+		}
+	],
+	"spike_extraction_parameters_modification": {
+		"center_range_time": 0.0005,
+		"overlap": 0.5,
+		"read_time": 30,
+		"refractory_time": 0.001,
+		"spike_start_time": -0.00045,
+		"spike_end_time": 0.001,
+		"do_filter": 1,
+		"filter_type": "cheby1high",
+		"filter_low": 0,
+		"filter_high": 300,
+		"filter_order": 4,
+		"filter_ripple": 0.8,
+		"threshold_method": "standard_deviation",
+		"threshold_parameter": -4,
+		"threshold_sign": -1
+	}
+}
+
