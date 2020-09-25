@@ -29,6 +29,7 @@
 %                          |   attempt to open databases in the session path
 %                          |
 % ndi.debug                | A structure with preferences for debugging
+% ndi.log                  | An object that manages writing system, error, debugging logs (vlt.app.log)
 %
 
 global ndi

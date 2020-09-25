@@ -1,4 +1,7 @@
 classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
+	% NDI_APP_SPIKEEXTRACTOR 
+	%
+	% 
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -76,9 +79,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 				ndi_globals;
 
-				if ndi.debug.veryverbose,
-					disp(['Beginning of extract']);
-				end;
+				ndi.log.msg('system',1,'Beginning of extraction.');
 
 				% process input arguments
 
@@ -111,9 +112,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 				for n=1:numel(epoch),
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
-					if ndi.debug.veryverbose,
-						disp(['Beginning to set up for epoch ' epoch_string '.']);
-					end;
+					ndi.log.msg('system',1,['Beginning to set up for epoch ' epoch_string '.']);
 
 					% begin an epoch, get ready
 
@@ -192,7 +191,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 					% leave these files open while we extract
 
 					epochtic = tic; % Timer variable to measure duration of epoch extraction
-					disp(['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
+					ndi.log.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
 
 					% now read the file in chunks
 					while (~endReached)
@@ -203,7 +202,6 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						% Read from element in epoch n from start_time to end_time
 						read_times = ndi_timeseries_obj.samples2times(epoch{n}, [read_start_sample read_end_sample]);
 						data = ndi_timeseries_obj.readtimeseries(epoch{n}, read_times(1), read_times(2)); 
-						%size(data), end_sample-start_sample+1  % display sizes of data read
 
 						% Checks if endReached by a threshold sample difference (data - (end_time - start_time))
 						if (size(data,1) - ((read_end_sample - read_start_sample) + 1)) < 0 % if we got less than we asked for, we are done
@@ -276,7 +274,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 					ndi_app_spikeextractor_obj.session.database_closebinarydoc(spikewaves_binarydoc);
 					ndi_app_spikeextractor_obj.session.database_closebinarydoc(spiketimes_binarydoc);
-					disp(['Epoch ' int2str(n) ' spike extraction done.']);
+					ndi.log.msg('system',1,['Epoch ' int2str(n) ' spike extraction done.']);
 				end % epoch n
 		end % extract
 
