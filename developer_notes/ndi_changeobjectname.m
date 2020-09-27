@@ -6,10 +6,10 @@ function ndi_changeobjectname(ndi_distribution_path, oldname, newname, varargin)
 % This function attempts to change the name of an NDI object from OLDNAME to NEWNAME.
 % 
 % It does this by:
-%    a) Using SEARCHREPLACEFILES_SHELL to change the occurrence of OLDNAME to NEWNAME for both
+%    a) Using vlt.file.searchreplacefiles_shell to change the occurrence of OLDNAME to NEWNAME for both
 %       the case-matched occurrences of OLDNAME and upper case-matched occurrences of OLDNAME
 %       (which are changed to upper case of NEWNAME) for files of type *.m, *.txt, and *object*.
-%    b) Using FILENAMESEARCHREPLACE to change any case-matched occurrences of OLDNAME to NEWNAME 
+%    b) Using vlt.file.filenamesearchreplace to change any case-matched occurrences of OLDNAME to NEWNAME 
 %       in the files and directory names.
 %
 %
@@ -30,7 +30,7 @@ noOp = 1;
 
 filestoedit = {'*.m','*.txt','*object*'};
 
-assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 currentpath = pwd; % save our current path for restoration later
 
@@ -39,8 +39,8 @@ cd(ndi_distribution_path);
  % first edit text in the files
 for i=1:numel(filestoedit),
 	if ~noOp,
-		searchreplacefiles_shell(filestoedit{i},oldname,newname);
-		searchreplacefiles_shell(filestoedit{i},upper(oldname),upper(newname));
+		vlt.file.searchreplacefiles_shell(filestoedit{i},oldname,newname);
+		vlt.file.searchreplacefiles_shell(filestoedit{i},upper(oldname),upper(newname));
 	end;
 end;
 
@@ -48,7 +48,7 @@ cd(currentpath); % restore path
 
  % next change file names
 
-filenamesearchreplace(ndi_distribution_path, {oldname}, {newname}, 'deleteOriginals',1,...
+vlt.file.filenamesearchreplace(ndi_distribution_path, {oldname}, {newname}, 'deleteOriginals',1,...
 	'noOp', noOp, 'recursive', 1);
 
 

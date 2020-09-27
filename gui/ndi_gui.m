@@ -29,7 +29,7 @@ windowlabel = 'NDI GUI';
 
 varlist = {'ndi_session_obj','windowheight','windowwidth','windowrowheight','windowlabel'};
 
-assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 command, 
 
@@ -194,7 +194,7 @@ switch command
 		value = get(findobj(fig,'tag','DBList'),'value');
 		if ~isempty(value)
 		    mydaq = ud.ndi_session_obj.database_search({'ndi_document.id',ref_list{value}});
-		    j_pretty = prettyjson(jsonencodenan(mydaq{1}.document_properties));
+		    j_pretty = vlt.data.prettyjson(vlt.data.jsonencodenan(mydaq{1}.document_properties));
 		    j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
 		    %j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
 		    set(findobj(fig,'tag','doc_properties'),'string',j_pretty);

@@ -24,7 +24,7 @@ e = 1;
 figure('Name', ['Probe ' num2str(prb)  ', Epoch ' num2str(e)], 'NumberTitle','off');
 probe = probelist{prb};
 [d,t] = probe.read_epochsamples(e,1,Inf);
-plot_multichan(d,t,10);
+vlt.plot.plot_multichan(d,t,10);
 
 spikeextractor = ndi_app_spikeextractor(our_exp); 
 spikeextractor.add_appdoc(spikeextractor.session, 'extraction_parameters', [], 'default');
