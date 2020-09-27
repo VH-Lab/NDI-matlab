@@ -150,7 +150,7 @@ classdef ndi_syncgraph < ndi_id
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
-				ginfo.nodes = emptystruct('epoch_id','epoch_session_id','epochprobemap',...
+				ginfo.nodes = vlt.data.emptystruct('epoch_id','epoch_session_id','epochprobemap',...
 					'epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
@@ -195,7 +195,7 @@ classdef ndi_syncgraph < ndi_id
 			% See also: CACHE_GRAPHINFO
 				[cache,key] = getcache(ndi_syncgraph_obj);
 				if ~isempty(cache),
-					hashvalue = hashmatlabvariable(ginfo);
+					hashvalue = vlt.data.hashmatlabvariable(ginfo);
 					priority = 1;
 					cache.remove(key,'syncgraph-hash');
 					cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
@@ -338,7 +338,7 @@ classdef ndi_syncgraph < ndi_id
 						nanshere = find(isnan(nodenumbers2_1));
 						nodenumbers2_1(nanshere) = numel(ginfo.nodes)+(1:numel(nanshere));
 
-						[newG, G_indexes, numnewnodes] = mergegraph(ginfo.G, u_cost, nodenumbers2_1);
+						[newG, G_indexes, numnewnodes] = vlt.graph.mergegraph(ginfo.G, u_cost, nodenumbers2_1);
 							% update mapping cell matrix, too
 						mapping_upperright = cell(size(ginfo.G,1), numnewnodes);
 						mapping_upperright(G_indexes.upper_right.merged) = u_mapping(G_indexes.upper_right.G2);

@@ -73,7 +73,7 @@ classdef ndi_syncrule < ndi_id & ndi_documentservice
 			%
 			% Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
 			% Otherwise, 0 is returned.
-				b = eqlen(ndi_syncrule_obj_a.parameters,ndi_syncrule_obj_b.parameters);
+				b = vlt.data.eqlen(ndi_syncrule_obj_a.parameters,ndi_syncrule_obj_b.parameters);
 		end % eq()
 
 		function ec = eligibleclocks(ndi_syncrule_obj)

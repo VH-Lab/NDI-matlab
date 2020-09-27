@@ -46,7 +46,7 @@ classdef ndi_syncrule_filematch < ndi_syncrule
 			%
 			% See also: NDI_SYNCRULE/SETPARAMETERS
 
-				[b,msg] = hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
+				[b,msg] = vlt.data.hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
 				if b,
 					if ~isnumeric(parameters.number_fullpath_matches),
 						b = 0;
