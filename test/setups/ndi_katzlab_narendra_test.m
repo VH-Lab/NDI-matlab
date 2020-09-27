@@ -50,7 +50,7 @@ t_stop = 93;
 [laserdata,lasertimevalues] = leftlaser.readtimeseriesepoch(1,t_start,t_stop);
 
 figure;
-plot_multichan(d,t,400); % plot with 400 units of space between channels
+vlt.plot.plot_multichan(d,t,400); % plot with 400 units of space between channels
 xlabel('Time(s)');
 ylabel('Microvolts');
 

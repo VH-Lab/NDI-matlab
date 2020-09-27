@@ -29,7 +29,7 @@ fn = ndi_filenavigator(E, {'.*\.rhd\>','.*\.epochmetadata\>'},...
   % if it is there from before, remove it
 devs = E.daqsystem_load('name','(.*)');
 for i=1:numel(devs), 
-	E.daqsystem_rm(celloritem(devs,i));
+	E.daqsystem_rm(vlt.data.celloritem(devs,i));
 end;
 
 dev1 = ndi_daqsystem_mfdaq('intan1',fn,ndi_daqreader_mfdaq_intan());

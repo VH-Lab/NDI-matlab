@@ -19,7 +19,7 @@ E = ndi_session_dir('exp1', dirname);
 
 devs = E.daqsystem_load('name','(.*)');
 for i=1:numel(devs),
-	E.daqsystem_rm(celloritem(devs,i));
+	E.daqsystem_rm(vlt.data.celloritem(devs,i));
 end;
 
 

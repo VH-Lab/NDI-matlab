@@ -32,7 +32,7 @@ p_pdn = E.getprobes('name','pdn')
 [d_pdn, t_pdn] = p_pdn{1}.readtimeseries(1,0,100); % read first epoch, 100 seconds
 
 figure;
-plot_multichan([d_lvn(:) d_pdn(:)],t_lvn,1); % plot with 1 unit of space between channels
+vlt.plot.plot_multichan([d_lvn(:) d_pdn(:)],t_lvn,1); % plot with 1 unit of space between channels
 xlabel('Time(s)');
 ylabel('Microvolts');
 box off;

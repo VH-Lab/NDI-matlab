@@ -35,7 +35,7 @@ t_stop = 50;
 if 0,
 
 	figure;
-	plot_multichan(d,t,400); % plot with 400 units of space between channels
+	vlt.plot.plot_multichan(d,t,400); % plot with 400 units of space between channels
 	xlabel('Time(s)');
 	ylabel('Microvolts');
 
@@ -63,7 +63,7 @@ else,
 	end;
 
 	figure;
-	plot_multichan(d,t,150); % plot with 100 units of space between channels
+	vlt.plot.plot_multichan(d,t,150); % plot with 100 units of space between channels
 	xlabel('Time(s)');
 	ylabel('Microvolts');
 

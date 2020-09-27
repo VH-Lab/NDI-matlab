@@ -60,7 +60,7 @@ classdef ndi_epochset
 				[cached_et, cached_hash] = cached_epochtable(ndi_epochset_obj);
 				if isempty(cached_et) & ~isstruct(cached_et), % is it not a struct? could be a correctly computed empty epochtable, which would be struct
 					et = ndi_epochset_obj.buildepochtable();
-					hashvalue = hashmatlabvariable(et);
+					hashvalue = vlt.data.hashmatlabvariable(et);
 					[cache,key] = getcache(ndi_epochset_obj);
 					if ~isempty(cache),
 						priority = 1; % use higher than normal priority
@@ -95,8 +95,8 @@ classdef ndi_epochset
 			% After it is read from disk once, the ET is stored in memory and is not re-read from disk
 			% unless the user calls NDI_EPOCHSET/RESETEPOCHTABLE.
 			%
-				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock',...
+				ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock',...
 					't0_t1', 'underlying_epochs');
 		end % buildepochtable
 
@@ -300,10 +300,10 @@ classdef ndi_epochset
 			% UNDERLYINGNODES are nodes that are directly linked to this NDI_EPOCHSET's node via 'underlying' epochs.
 			%
 				et = epochtable(ndi_epochset_obj);
-				nodes = emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
+				nodes = vlt.data.emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
 					'epoch_clock','t0_t1', 'underlying_epochs', 'objectname', 'objectclass');
 				if nargout>1, % only build this if we are asked to do so
-					underlyingnodes = emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
+					underlyingnodes = vlt.data.emptystruct('epoch_id', 'epoch_session_id', 'epochprobemap', ...
 						'epoch_clock', 't0_t1', 'underlying_epochs');
 				end
 
@@ -363,7 +363,7 @@ classdef ndi_epochset
 						for j=1:numel(epochnode.underlying_epochs(i).epoch_clock),
 							if epochnode.underlying_epochs(i).epoch_clock{j}==epochnode.epoch_clock,
 								% we have found a new unode, build it and add it
-								unode_here = emptystruct(fieldnames(unodes));
+								unode_here = vlt.data.emptystruct(fieldnames(unodes));
 								unode_here(1).epoch_id = epochnode.underlying_epochs(i).epoch_id;
 								unode_here(1).epoch_session_id = epochnode.underlying_epochs(i).epoch_session_id;
 								unode_here(1).epochprobemap = epochnode.underlying_epochs(i).epochprobemap;

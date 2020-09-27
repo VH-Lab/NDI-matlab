@@ -14,7 +14,7 @@ exp = ndi_session_dir(dirname);
 devs = exp.daqsystem_load('name','(.*)');
 
 for i=1:numel(devs),
-	mydev = celloritem(devs,i),
+	mydev = vlt.data.celloritem(devs,i),
 
 	disp(['Number of epochs here: ' int2str(numepochs(mydev.filenavigator)) '.'])
 end

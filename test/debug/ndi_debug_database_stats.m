@@ -17,5 +17,5 @@ if ~isempty(stim_doc),
 end;
 
 
-out = workspace2struct;
+out = vlt.data.workspace2struct;
 out = rmfield(out,'E');

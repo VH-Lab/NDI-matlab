@@ -5,7 +5,7 @@ function output = ndi_testsuite
 %
 % Loads a set of test suite instructions in the file
 % 'ndi_testsuite_list.txt'. This file is a tab-delimited table
-% that can be loaded with LOADSTRUCTARRAY with fields
+% that can be loaded with vlt.file.loadStructArray with fields
 % Field name          | Description
 % --------------------------------------------------------------------------
 % code                | The code to be run (as a Matlab evaluation)
@@ -19,9 +19,9 @@ function output = ndi_testsuite
 % errormsg            | Any error message
 %
 
-jobs = loadStructArray('ndi_testsuite_list.txt'),
+jobs = vlt.file.loadStructArray('ndi_testsuite_list.txt'),
 
-output = emptystruct('outcome','errormsg');
+output = vlt.data.emptystruct('outcome','errormsg');
 
 for i=1:numel(jobs),
 	output_here = output([]);

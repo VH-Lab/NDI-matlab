@@ -135,9 +135,9 @@ classdef ndi_epochset_param < ndi_epochset
 			%
 				etfname = epochtagfilename(ndi_epochset_param_obj, number);
 				if exist(etfname,'file'),
-					tag = loadStructArray(etfname);
+					tag = vlt.file.loadStructArray(etfname);
 				else,
-					tag = emptystruct('name','value');
+					tag = vlt.data.emptystruct('name','value');
 				end
                 end % getepochtag()
 
@@ -157,7 +157,7 @@ classdef ndi_epochset_param < ndi_epochset
 
 				etfname = epochtagfilename(ndi_epochset_param_obj, number, epochfiles);
 				if ~isempty(tag),
-					saveStructArray(etfname,tag);
+					vlt.file.saveStructArray(etfname,tag);
 				else, % delete the file so it is empty
 					if exist(etfname,'file'),
 						delete(etfname);
