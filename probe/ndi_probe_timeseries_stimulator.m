@@ -105,8 +105,8 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 					for i=1:numel(edata),
 						if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
 							counter = counter + 1;
-							t.stimon = [t.stimon(:); colvec(edata{i}(find(edata{i}(:,2)==1),1))];
-							t.stimoff = [t.stimoff(:); colvec(edata{i}(find(edata{i}(:,2)==-1),1))];
+							t.stimon = [t.stimon(:); vlt.data.colvec(edata{i}(find(edata{i}(:,2)==1),1))];
+							t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,2)==-1),1))];
 							data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,2)==1)),1)];
 						end;
 						if strcmp(channeltype(i),'md'),

@@ -206,8 +206,8 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the session and look for device strings that match this probe
 
@@ -233,7 +233,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 				end
 
 				for n=1:numel(ia),
-					et_ = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
+					et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
 					et_(1).epoch_number = n;
 					et_(1).epoch_session_id = ndi_element_obj.session.id();
 					if ~isempty(ndi_element_obj.underlying_element),
@@ -250,7 +250,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 						et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
 						et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
 					end;
-					underlying_epochs = emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
+					underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
 					if ~isempty(ndi_element_obj.underlying_element),
 						underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
 						underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
@@ -324,7 +324,7 @@ classdef ndi_element < ndi_id & ndi_epochset & ndi_documentservice
 			% about the NDI_ELEMENT.
 			%
 			% 
-				et_added = emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				et_added = vlt.data.emptystruct('epoch_number','epoch_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 				epochdocs = {};
 				if ndi_element_obj.direct,
 					% nothing can be added

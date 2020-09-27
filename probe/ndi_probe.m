@@ -71,8 +71,8 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-				ue = emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
-				et = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+				ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+				et = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
 				% pull all the devices from the session and look for device strings that match this probe
 
@@ -86,7 +86,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 
 					for n=1:numel(d_et{d}),
 						% for each epoch in this device
-						underlying_epochs = emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
+						underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
 						underlying_epochs(1).underlying = D{d};
 						match_probe_and_device = [];
 						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
@@ -103,7 +103,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 							underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);
 							underlying_epochs.epoch_clock = d_et{d}(n).epoch_clock;
 							underlying_epochs.t0_t1 = d_et{d}(n).t0_t1;
-							et_ = emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
+							et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epoch_session_id = d_et{d}(n).epoch_session_id; % this is an unambiguous reference

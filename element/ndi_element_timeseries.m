@@ -62,7 +62,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					epochdoc = epochdoc{1};
 
 					f = E.database_openbinarydoc(epochdoc);
-					[data,t] = vhsb_read(f,epoch_t0_out,epoch_t1_out);
+					[data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
 					E.database_closebinarydoc(f);
 					
 					if isnumeric(t),
@@ -103,7 +103,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					
 				E = ndi_element_timeseries_obj.session;
 				f = E.database_openbinarydoc(epochdoc);
-				vhsb_write(f,timepoints,datapoints,'use_filelock',0);
+				vlt.file.custom_file_formats.vhsb_write(f,timepoints,datapoints,'use_filelock',0);
 				E.database_closebinarydoc(f);
 		end; % addepoch()
 
