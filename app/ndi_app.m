@@ -60,7 +60,7 @@ classdef ndi_app < ndi_documentservice
 					classfilename = classfilename{1}; % take the first one if there are multiple
 				end;
 				[parentdir,filename] = fileparts(classfilename);
-				[v,url] = git_repo_version(parentdir);
+				[v,url] = vlt.git.git_repo_version(parentdir);
 
 		end; % version_url()
 

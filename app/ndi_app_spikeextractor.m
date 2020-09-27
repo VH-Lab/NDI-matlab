@@ -185,7 +185,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 					fileparameters.samplingrate = double(sample_rate);
 
 					spikewaves_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikes_doc);
-					newvhlspikewaveformfile(spikewaves_binarydoc, fileparameters); 
+					vlt.file.custom_file_formats.newvhlspikewaveformfile(spikewaves_binarydoc, fileparameters); 
 					spiketimes_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(times_doc); % we will just write double data here
 
 					% leave these files open while we extract
@@ -225,18 +225,18 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 									% Calculate stdev for channel
 									stddev = std(data(:,channel));
 									% Dot discriminator to find thresholds CHECK complex matlab c code running here, potential source of bugs in demo
-									locs_here = dotdisc(double(data(:,channel)), ...
+									locs_here = vlt.signal.dotdisc(double(data(:,channel)), ...
 										[extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter*stddev ...
 											extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]); 
 								case 'absolute',
-									locs_here = dotdisc(double(data(:,channel)), ...
+									locs_here = vlt.signal.dotdisc(double(data(:,channel)), ...
 										[extraction_doc.document_properties.spike_extraction_parameters.threshold_parameter ...
 											extraction_doc.document_properties.spike_extraction_parameters.threshold_sign  0]); 
 								otherwise,
 									error(['unknown threshold method']);
 							end
 							%Accomodates spikes according to refractory period
-							%locs_here = refractory(locs_here, refractory_samples); % only apply to all events
+							%locs_here = vlt.signal.refractory(locs_here, refractory_samples); % only apply to all events
 							locs_here = locs_here(find(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end));
 							locs = [locs(:) ; locs_here];
 						end % for
@@ -244,7 +244,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						% Sorts locs
 						locs = sort(locs);
 						% Apply refractory period to all events
-						locs = refractory(locs, refractory_samples);
+						locs = vlt.signal.refractory(locs, refractory_samples);
 
 						sample_offsets = repmat([spike_sample_start:spike_sample_end]',1,size(data,2));
 						channel_offsets = repmat([0:size(data,2)-1], spike_sample_end - spike_sample_start + 1,1);
@@ -256,14 +256,14 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						waveforms = permute(waveforms,[3 1 2]); % Nspikes X Nsamples X Nchannels
 
 						%Center spikes; if threshold is low-to-high, flip sign (assume positive-spikes)
-						waveforms = (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*centerspikes_neg( ...
+						waveforms = (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*vlt.neuro.spikesorting.centerspikes_neg( ...
 							(-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*waveforms,center_range_samples);
 
-						% Permute waveforms for addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
+						% Permute waveforms for vlt.file.custom_file_formats.addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 						waveforms = permute(waveforms, [2 3 1]);
 
 						% Store epoch waveforms in file
-						addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
+						vlt.file.custom_file_formats.addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
 					  
 						% Store epoch spike times in file
 						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs),'float32');
@@ -354,7 +354,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						[1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
 						[1 -1], [1 1], [1 1]};
 
-					[b,errormsg] = hasAllFields(extraction_params,fields_needed, sizes_needed);
+					[b,errormsg] = vlt.data.hasAllFields(extraction_params,fields_needed, sizes_needed);
 				elseif strcmpi(appdoc_type,'spikewaves'),
 					% only the app creates this type, so it passes
 					b = 1;
@@ -428,7 +428,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						if numel(spikewaves_doc)==1,
 							spikewaves_doc = spikewaves_doc{1};
 							spikewaves_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikewaves_doc);
-							[waveforms,waveparameters] = readvhlspikewaveformfile(spikewaves_binarydoc);
+							[waveforms,waveparameters] = vlt.file.custom_file_formats.readvhlspikewaveformfile(spikewaves_binarydoc);
 							waveparameters.samplerate = waveparameters.samplingrate;
 							ndi_app_spikeextractor_obj.session.database_closebinarydoc(spikewaves_binarydoc);
 						elseif numel(spikewaves_doc)>1,

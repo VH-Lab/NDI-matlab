@@ -67,7 +67,7 @@ classdef ndi_app_markgarbage < ndi_app
 			
 				match = -1;
 				for i=1:numel(vi),
-					if eqlen(vi(i),validintervalstruct),
+					if vlt.data.eqlen(vi(i),validintervalstruct),
 						match = i; 
 						return; 
 					end;
@@ -112,7 +112,7 @@ classdef ndi_app_markgarbage < ndi_app
 			%
 			% MYDOC is the NDI_DOCUMENT that was loaded.
 			%
-				vi = emptystruct('timeref_structt0','t0','timeref_structt1','t1');
+				vi = vlt.data.emptystruct('timeref_structt0','t0','timeref_structt1','t1');
 
 				searchq = ndi_query(ndi_app_markgarbage_obj.searchquery()) & ndi_query('','isa','valid_interval.json','');
 
@@ -179,7 +179,7 @@ classdef ndi_app_markgarbage < ndi_app
 							% we can find a match but not in the right epoch
 						else, % we have to carve out a bit of this region
 							% do we need to check that epoch_t0_timeref matches our timeref? I think it is guaranteed
-							explicitly_good_intervals = interval_add(explicitly_good_intervals, [epoch_t0_out epoch_t1_out]);
+							explicitly_good_intervals = vlt.math.interval_add(explicitly_good_intervals, [epoch_t0_out epoch_t1_out]);
 						end;
 				end;
 				if isempty(explicitly_good_intervals),

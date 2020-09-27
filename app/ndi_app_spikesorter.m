@@ -122,7 +122,7 @@ classdef ndi_app_spikesorter < ndi_app
             
             
 			% Uncomment to enable spikewaves_gui
-			% cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
+			% vlt.neuro.spikesorting.cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
 
 			% 'EpochStartSamples', epoch_start_samples, 'EpochNames', epoch_names);
 			disp('Done clustering.');
@@ -219,7 +219,7 @@ classdef ndi_app_spikesorter < ndi_app
 			waveparameters.samplingrate = ndi_timeseries_obj.samplerate(1); %* interpolation;% ;
             
             %call gui fct
-            cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes, 'spikewaves2NpointfeatureSampleList',  [10 15], 'spikewaves2pcaRange', [1 17]);
+            vlt.neuro.spikesorting.cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes, 'spikewaves2NpointfeatureSampleList',  [10 15], 'spikewaves2pcaRange', [1 17]);
             
         end  %calling gui fct
         
@@ -263,7 +263,7 @@ classdef ndi_app_spikesorter < ndi_app
 					% this function needs a structure
 					sort_params = sort_params.document_properties.sorting_parameters; 
 				elseif isa(sort_params, 'char') % loading struct from file 
-					sort_params = loadStructArray(sort_params);
+					sort_params = vlt.file.loadStructArray(sort_params);
 				elseif isstruct(sort_params),
 					% If sort_params was inputed as a struct then no need to parse it
 				else
@@ -276,7 +276,7 @@ classdef ndi_app_spikesorter < ndi_app
 				fields_needed = {'num_pca_features','interpolation'};
 				sizes_needed = {[1 1], [1 1]};
 
-				[good,errormsg] = hasAllFields(sort_params,fields_needed, sizes_needed);
+				[good,errormsg] = vlt.data.hasAllFields(sort_params,fields_needed, sizes_needed);
 
 				if ~good,
 					error(['Error in sort_params: ' errormsg]);

@@ -35,7 +35,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				rapp = ndi_app_tuning_response(E);
 
 				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
+				q_rdoc = ndi_query('','isa','vlt.neuro.stimulus_analysis.stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_relement)
 
 				for r=1:numel(rdoc),
@@ -114,7 +114,7 @@ classdef ndi_app_oridirtuning < ndi_app
 					response_mean(i) = nanmean(response_ind{i});
 					if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end;
 					response_stddev(i) = nanstd(response_ind{i});
-					response_stderr(i) = nanstderr(response_ind{i});
+					response_stderr(i) = vlt.data.nanstderr(response_ind{i});
 					if any(~isreal(response_ind{i})),
 						response_ind{i} = abs(response_ind{i});
 					end;
@@ -131,14 +131,14 @@ classdef ndi_app_oridirtuning < ndi_app
 						response_stderr; ];
 				response.ind = response_ind;
 
-				vi = oridir_vectorindexes(response);
-				fi = oridir_fitindexes(response);
+				vi = vlt.neuro.vision.oridir.index.oridir_vectorindexes(response);
+				fi = vlt.neuro.vision.oridir.index.oridir_fitindexes(response);
 
 				properties.coordinates = 'compass';
 				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
 				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
 
-				tuning_curve = struct('direction', rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
+				tuning_curve = struct('direction', vlt.data.rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
 					'mean', response_mean, ...
 					'stddev', response_stddev, ...
 					'stderr', response_stderr, ...
@@ -157,8 +157,8 @@ classdef ndi_app_oridirtuning < ndi_app
 					'dot_direction_significance', vi.dir_dotproduct_sig_p);
 
 				fit = struct('double_guassian_parameters', fi.fit_parameters,...
-					'double_gaussian_fit_angles', rowvec(fi.fit(1,:)), ...
-					'double_gaussian_fit_values', rowvec(fi.fit(2,:)), ...
+					'double_gaussian_fit_angles', vlt.data.rowvec(fi.fit(1,:)), ...
+					'double_gaussian_fit_values', vlt.data.rowvec(fi.fit(2,:)), ...
 					'orientation_preferred_orthogonal_ratio', fi.ot_index, ...
 					'direction_preferred_null_ratio', fi.dir_index, ...
 					'orientation_preferred_orthogonal_ratio_rectified', fi.ot_index_rectified', ...
@@ -168,7 +168,7 @@ classdef ndi_app_oridirtuning < ndi_app
 					'hwhh', fi.tuning_width);
 
 				oriprops = ndi_document('vision/oridir/orientation_direction_tuning', ...
-					'orientation_direction_tuning', var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
+					'orientation_direction_tuning', vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_oridirtuning_obj.newdocument();
 				oriprops = oriprops.set_dependency_value('element_id', stim_response_doc{1}.dependency_value('element_id'));
 				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
@@ -198,15 +198,15 @@ classdef ndi_app_oridirtuning < ndi_app
 						included(end+1) = n;
 					end;
 				end;
-				desc = structwhatvaries(stim_props(included));
-				b = eqlen(desc,{'angle'});
+				desc = vlt.data.structwhatvaries(stim_props(included));
+				b = vlt.data.eqlen(desc,{'angle'});
 		end; % is_oridir_stimulus_response
 
 		function plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
 
 				E = ndi_app_oridirtuning_obj.session;
 
-				h = myerrorbar(oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.direction, ...
+				h = vlt.plot.myerrorbar(oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.direction, ...
 					oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.mean, ...
 					oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.stderr, ...
 					oriprops_doc.document_properties.orientation_direction_tuning.tuning_curve.stderr);

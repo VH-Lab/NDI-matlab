@@ -291,7 +291,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				% this function needs a structure
 				extraction_params = extraction_parameters.document_properties.extraction_parameters; 
 			elseif isa(extraction_parameters, 'char') % loading struct from file 
-				extraction_parameters = loadStructArray(extraction_parameters);
+				extraction_parameters = vlt.file.loadStructArray(extraction_parameters);
 			elseif isstruct(extraction_parameters),
 				% If extraction_params was inputed as a struct then no need to parse it
 			else
@@ -310,7 +310,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 			% 	[1 1],[1 -1],[1 1],[1 1],[1 1],[1 1],...
 			% 	[1 -1], [1 1], [1 1]};
 
-			% [good,errormsg] = hasAllFields(extraction_params,fields_needed, sizes_needed);
+			% [good,errormsg] = vlt.data.hasAllFields(extraction_params,fields_needed, sizes_needed);
 
 			% if ~good,
 			% 	error(['Error in extraction_parameters: ' errormsg]);
@@ -363,7 +363,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 				% this function needs a structure
 				sorting_parameters = sorting_parameters.document_properties.mountainsort_parameters; 
 			elseif isa(sorting_parameters, 'char') % loading struct from file 
-				sorting_parameters = loadStructArray(sorting_parameters);
+				sorting_parameters = vlt.file.loadStructArray(sorting_parameters);
 			elseif isstruct(sorting_parameters),
 				% If extraction_params was inputed as a struct then no need to parse it
 			else

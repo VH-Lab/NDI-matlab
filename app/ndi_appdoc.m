@@ -69,7 +69,7 @@ classdef ndi_appdoc
 					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type,appdoc_struct);
 				elseif isa(appdoc_struct,'char'),
 					try,
-						appdoc_struct = loadStructArray(appdoc_strut);
+						appdoc_struct = vlt.file.loadStructArray(appdoc_strut);
 					catch,
 						error(['APPDOC_STRUCT was a character array, so it was assumed to be a file.' ...
 								' But file reading failed with error ' lasterr '.']);
@@ -254,13 +254,13 @@ classdef ndi_appdoc
 			%
 			% Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
 			% true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
-			% B is EQLEN(APPDOC_STRUCT1, APPDOC_STRUCT2).
+			% B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
 			%
 				b = 0;
 				b1 = ndi_appdoc_obj.isvalid_appdoc_struct(appdoc_type, appdoc_struct1);
 				b2 = ndi_appdoc_obj.isvalid_appdoc_struct(appdoc_type, appdoc_struct2);
 				if b1&b2,
-					b = eqlen(appdoc_struct1,appdoc_struct2);
+					b = vlt.data.eqlen(appdoc_struct1,appdoc_struct2);
 				end;
 		end; % isequal_appdoc_struct
 

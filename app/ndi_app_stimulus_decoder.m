@@ -77,11 +77,11 @@ classdef ndi_app_stimulus_decoder < ndi_app
 					% decode stimuli
 					[data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
 					% stimulus
-					mystim = emptystruct('parameters');
+					mystim = vlt.data.emptystruct('parameters');
 					for k=1:numel(data.parameters),
 						mystim(k) = struct('parameters',data.parameters{k});
 					end;
-					presentation_time = emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
+					presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
 					for z=1:numel(t.stimon),
 						timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
 							'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...

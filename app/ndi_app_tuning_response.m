@@ -147,7 +147,7 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 				end;
 
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				response_doc = {};
 
@@ -199,16 +199,16 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% load the data, get the stimulus times				
 
-				stim_stim_onsetoffsetid=[colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.onset]) ...
-						colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.offset]) ...
-						colvec([stim_doc.document_properties.stimulus_presentation.presentation_order])];
+				stim_stim_onsetoffsetid=[vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.onset]) ...
+						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.offset]) ...
+						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_order])];
 
 				stim_timeref = ndi_timereference(ndi_stim_obj, ...
 					ndi_clocktype(stim_doc.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
 					stim_doc.document_properties.epochid, 0);
 
 				[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-					colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
+					vlt.data.colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
 
 				ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.stimulus_presentation.presentation_order),2) ...
 					stim_stim_onsetoffsetid(:,3)];
@@ -238,7 +238,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 					if isempty(param_doc),
 						% make one
-						stimulus_response_scalar_parameters_basic = var2struct('temporalfreqfunc','freq_response',...
+						stimulus_response_scalar_parameters_basic = vlt.data.var2struct('temporalfreqfunc','freq_response',...
 							'prestimulus_time','prestimulus_normalization',...
 							'isspike','spiketrain_dt');
 						param_doc = ndi_document('stimulus/stimulus_response_scalar_parameters_basic.json',...
@@ -266,16 +266,16 @@ classdef ndi_app_tuning_response < ndi_app
 						end;
 					end;
 
-					response = stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
+					response = vlt.neuro.stimulus_analysis.stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
 						'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,...
 						'prestimulus_normalization',prestimulus_normalization,...
 						'isspike',isspike,'spiketrain_dt',spiketrain_dt);
 
-					response_structure = struct('stimid',rowvec(ts_stim_onsetoffsetid(:,3)),...
-						'response_real', rowvec(real([response.response])), ...
-						'response_imaginary', rowvec(imag([response.response])), ...
-						'control_response_real', rowvec(real([response.control_response])), ...
-						'control_response_imaginary',rowvec(imag([response.control_response])));
+					response_structure = struct('stimid',vlt.data.rowvec(ts_stim_onsetoffsetid(:,3)),...
+						'response_real', vlt.data.rowvec(real([response.response])), ...
+						'response_imaginary', vlt.data.rowvec(imag([response.response])), ...
+						'control_response_real', vlt.data.rowvec(real([response.control_response])), ...
+						'control_response_imaginary',vlt.data.rowvec(imag([response.control_response])));
 
 					stimulus_response_scalar_struct = struct('response_type', response_type, 'responses',response_structure);
 
@@ -312,18 +312,18 @@ classdef ndi_app_tuning_response < ndi_app
 			%                             |   tuning curves. Only stimuli that contain these fields
 			%                             |   will be included.
 			%                             |   Examples: {'angle'}  {'angle','sFrequency'}
-			% constraint ([])             | Constraints in the form of a FIELDSEARCH structure.
+			% constraint ([])             | Constraints in the form of a vlt.data.fieldsearch structure.
 			%                             |   Example: struct('field','sFrequency','operation',...
 			%                             |              'exact_number','param1',1,'param2','')
 			%
-			% See also: FIELDSEARCH
+			% See also: vlt.data.fieldsearch
 
 				independent_label = {'label1'};
 
 				independent_parameter = {};
 				constraint = [];
 
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				E = ndi_app_tuning_response_obj.session;
 
@@ -359,7 +359,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 				% Step 4: set up variables
 
-				tuning_curve = emptystruct('independent_variable_label','independent_variable_value','stimid',...
+				tuning_curve = vlt.data.emptystruct('independent_variable_label','independent_variable_value','stimid',...
 					'response_mean','response_stddev','response_stderr',...
 					'individual_responses_real','individual_responses_imaginary', 'stimulus_presentation_number', ...
 					'control_stimulus_id','control_response_mean','control_response_stddev','control_response_stderr',...
@@ -377,14 +377,14 @@ classdef ndi_app_tuning_response < ndi_app
 
 				for n=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
 					p = stim_pres_doc.document_properties.stimulus_presentation.stimuli(n).parameters;
-					isincluded(n) = fieldsearch(p,constraint);
+					isincluded(n) = vlt.data.fieldsearch(p,constraint);
 					if isincluded(n),
 						value_here = [];
 						for i=1:numel(independent_parameter),
 							% walk through all stimuli, pull out values
 							value_here(i) = eval(['p.' independent_parameter{i} ';']);
 						end;
-						independent_variable_value = [independent_variable_value; rowvec(value_here)];
+						independent_variable_value = [independent_variable_value; vlt.data.rowvec(value_here)];
 					end;
 				end;
 
@@ -408,7 +408,7 @@ classdef ndi_app_tuning_response < ndi_app
 				for n=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
 					p = stim_pres_doc.document_properties.stimulus_presentation.stimuli(n).parameters;
 					if isincluded(n),
-						I = findrowvec(tuning_curve.independent_variable_value, independent_variable_value(n,:));
+						I = vlt.data.findrowvec(tuning_curve.independent_variable_value, independent_variable_value(n,:));
 						if isempty(I),
 							error(['unexpected..cannot find stimulus values. Should not happen.']);
 						end;
@@ -429,7 +429,7 @@ classdef ndi_app_tuning_response < ndi_app
 							tuning_curve.response_mean = abs(tuning_curve.response_mean);
 						end;
 						tuning_curve.response_stddev(I)          = nanstd   (all_responses);
-						tuning_curve.response_stderr(I)          = nanstderr(all_responses);
+						tuning_curve.response_stderr(I)          = vlt.data.nanstderr(all_responses);
 						all_control_responses = tuning_curve.control_individual_responses_real{I} + ...
 							sqrt(-1)*tuning_curve.control_individual_responses_imaginary{I};
 						tuning_curve.control_response_mean(I)    = nanmean  (all_control_responses);
@@ -437,7 +437,7 @@ classdef ndi_app_tuning_response < ndi_app
 							tuning_curve.control_response_mean = abs(tuning_curve.control_response_mean);
 						end;
 						tuning_curve.control_response_stddev(I)  = nanstd   (all_control_responses);
-						tuning_curve.control_response_stderr(I)  = nanstderr(all_control_responses);
+						tuning_curve.control_response_stderr(I)  = vlt.data.nanstderr(all_control_responses);
 					end;
 				end;
 
@@ -522,7 +522,7 @@ classdef ndi_app_tuning_response < ndi_app
 				controlid = 'isblank';
 				controlid_value = 1;
 			
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				switch (lower(control_stim_method)),
 					case 'psuedorandom'
@@ -532,7 +532,7 @@ classdef ndi_app_tuning_response < ndi_app
 		
 						controlstimid = [];
 						for n=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
-							if fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
+							if vlt.data.fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
 								struct('field',controlid,'operation','exact_number','param1',controlid_value,'param2',[])),
 								controlstimid(end+1) = n;
 							end;
@@ -548,7 +548,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 						stimids = stim_doc.document_properties.stimulus_presentation.presentation_order;
 
-						[reps,isregular] = stimids2reps(stimids,numel(stim_doc.document_properties.stimulus_presentation.stimuli));
+						[reps,isregular] = vlt.neuro.stimulus_analysis.stimids2reps(stimids,numel(stim_doc.document_properties.stimulus_presentation.stimuli));
 
 						control_stim_indexes = [];
 						if ~isempty(controlstimid),
@@ -568,7 +568,7 @@ classdef ndi_app_tuning_response < ndi_app
 								% slow
 								presentation_onsets = [stim_doc.document_properties.stimulus_presentation.presentation_time.onset];
 								for n=1:numel(stimids),
-									i=findclosest(presentation_onsets(control_stim_indexes), presentation_onsets(n));
+									i=vlt.data.findclosest(presentation_onsets(control_stim_indexes), presentation_onsets(n));
 									cs_ids(n) = control_stim_indexes(i);
 								end;
 							end;
@@ -640,15 +640,15 @@ classdef ndi_app_tuning_response < ndi_app
 				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
 					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
 					document_properties.tuning_curve.individual_responses_real = ...
-							matrow2cell(document_properties.tuning_curve.individual_responses_real);
+							vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_real);
                                         document_properties.tuning_curve.individual_responses_imaginary= ...
-                                                        matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+                                                        vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
 					document_properties.tuning_curve.control_individual_responses_real = ...
-							matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
 					document_properties.tuning_curve.control_individual_responses_imaginary= ...
-							matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
 					document_properties.tuning_curve.stimulus_presentation_number = ...
-							matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+							vlt.data.matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
                                 end;
 
 				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
