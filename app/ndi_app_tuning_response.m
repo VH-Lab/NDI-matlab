@@ -266,7 +266,7 @@ classdef ndi_app_tuning_response < ndi_app
 						end;
 					end;
 
-					response = vlt.neuro.stimulus_analysis.stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
+					response = vlt.neuro.stimulus.stimulus_response_scalar(data, t_raw, ts_stim_onsetoffsetid, 'control_stimid', controlstimids,...
 						'freq_response', freq_response*freq_mult, 'prestimulus_time',prestimulus_time,...
 						'prestimulus_normalization',prestimulus_normalization,...
 						'isspike',isspike,'spiketrain_dt',spiketrain_dt);
@@ -548,7 +548,7 @@ classdef ndi_app_tuning_response < ndi_app
 
 						stimids = stim_doc.document_properties.stimulus_presentation.presentation_order;
 
-						[reps,isregular] = vlt.neuro.stimulus_analysis.stimids2reps(stimids,numel(stim_doc.document_properties.stimulus_presentation.stimuli));
+						[reps,isregular] = vlt.neuro.stimulus.stimids2reps(stimids,numel(stim_doc.document_properties.stimulus_presentation.stimuli));
 
 						control_stim_indexes = [];
 						if ~isempty(controlstimid),
