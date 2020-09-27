@@ -30,17 +30,17 @@ classdef ndi_cache < handle
 			%
 			% Note that the cache is not 'secure', any function can query the data added.
 			%
-			% See also: NAMEVALUEPAIR
+			% See also: vlt.data.namevaluepair
 
 				maxMemory = 100e6; % 100 MB
 				replacement_rule = 'fifo';
 
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				if nargin==0,
 					ndi_cache_obj.maxMemory = maxMemory;
 					ndi_cache_obj.replacement_rule = replacement_rule;
-					ndi_cache_obj.table = emptystruct('key','type','timestamp','priority','bytes','data');
+					ndi_cache_obj.table = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
 					return;
 				end;
 
@@ -103,7 +103,7 @@ classdef ndi_cache < handle
 				end
 
 				% now there's room
-				newentry = emptystruct('key','type','timestamp','priority','bytes','data');
+				newentry = vlt.data.emptystruct('key','type','timestamp','priority','bytes','data');
 				newentry(1).key = key;
 				newentry(1).type = type;
 				newentry(1).timestamp = now; % serial date number
@@ -133,10 +133,10 @@ classdef ndi_cache < handle
 			% leavehandle (0)             | If the 'data' field of a cache entry is a handle,
 			%                             |   leave it in memory.
 			%
-			% See also: NAMEVALUEPAIR
+			% See also: vlt.data.namevaluepair
 
 				leavehandle = 0;	
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 			
 				if isnumeric(index_or_key),
 					index = index_or_key;

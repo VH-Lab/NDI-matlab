@@ -147,9 +147,9 @@ startup
  % embedded version
 
 function b = git_embedded_assert
-% GIT_ASSERT - do we have command line git on this machine?
+% GIT_EMBEDDED_ASSERT - do we have command line git on this machine?
 %
-% B = GIT_ASSERT
+% B = GIT_EMBEDDED_ASSERT
 %
 % Tests for presence of 'git' using SYSTEM.
 %
@@ -161,9 +161,9 @@ b = (status==0 | status==1) & ~isempty(result);
 
 
 function b = git_embedded_install(dirname, repository)
-% GIT_PULL - pull changes to a git repository
+% GIT_EMBEDDED_PULL - pull changes to a git repository
 %
-% B = GIT_PULL(DIRNAME, REPOSITORY)
+% B = GIT_EMBEDDED_PULL(DIRNAME, REPOSITORY)
 %
 % 'Install' is our term for forcing the local directory DIRNAME to match the
 % remote REPOSITORY, either by cloning or pulling the latest changes. Any files
@@ -210,9 +210,9 @@ end;
 
 
 function b = git_embedded_pull(dirname)
-% GIT_PULL - pull changes to a git repository
+% GIT_EMBEDDED_PULL - pull changes to a git repository
 %
-% B = GIT_PULL(DIRNAME)
+% B = GIT_EMBEDDED_PULL(DIRNAME)
 %
 % Pulls the remote changes to a GIT repository into the local directory
 % DIRNAME.
@@ -241,9 +241,9 @@ b = pull_success;
 
 
 function b = git_embedded_isgitdirectory(dirname)
-% GIT_ISGITDIRECTORY - is a given directory a GIT directory?
+% GIT_EMBEDDED_ISGITDIRECTORY - is a given directory a GIT directory?
 %
-% B = GIT_ISGITDIRECTORY(DIRNAME)
+% B = GIT_EMBEDDED_ISGITDIRECTORY(DIRNAME)
 %
 % Examines whether DIRNAME is a GIT directory.
 %
@@ -257,9 +257,9 @@ end;
 
 
 function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
-% GIT_STATUS - return git working tree status
+% GIT_EMBEDDED_STATUS - return git working tree status
 %
-% [UPTODATE, CHANGES, UNTRACKED_PRESENT] = GIT_STATUS(DIRNAME)
+% [UPTODATE, CHANGES, UNTRACKED_PRESENT] = GIT_EMBEDDED_STATUS(DIRNAME)
 %
 % Examines whether a git working tree is up to date with its current branch
 %
@@ -269,7 +269,7 @@ function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
 %
 % An error is generated if DIRNAME is not a GIT directory.
 %
-% See also: GIT_ISGITDIRECTORY
+% See also: GIT_EMBEDDED_ISGITDIRECTORY
 
 b = git_embedded_isgitdirectory(dirname);
 
@@ -292,9 +292,9 @@ end;
 
 
 function b = git_embedded_clone(repository, localparentdir)
-% GIT_CLONE - clone a git repository onto the local computer
+% GIT_EMBEDDED_CLONE - clone a git repository onto the local computer
 %
-% B = GIT_CLONE(REPOSITORY, LOCALPARENTDIR)
+% B = GIT_EMBEDDED_CLONE(REPOSITORY, LOCALPARENTDIR)
 %
 % Clones a git repository REPOSITORY into the local directory
 % LOCALPARENTDIR.
@@ -323,9 +323,9 @@ b = (status==0);
 
 
 function c = text2cellstr_embedded(filename)
-% TEXT2CELLSTR - Read a cell array of strings from a text file
+% TEXT2CELLSTR_EMBEDDED - Read a cell array of strings from a text file
 %
-%  C = TEXT2CELLSTR(FILENAME)
+%  C = TEXT2CELLSTR_EMBEDDED(FILENAME)
 %
 %  Reads a text file and imports each line as an entry 
 %  in a cell array of strings.
@@ -346,9 +346,9 @@ end;
 fclose(fid);
 
 function cellstr2text_embedded(filename, cs)
-% CELLSTR2TEXT - Write a cell string to a text file
+% CELLSTR2TEXT_EMBEDDED - Write a cell string to a text file
 %
-%   CELLSTR2TEXT(FILENAME, CS)
+%   CELLSTR2TEXT_EMBEDDED(FILENAME, CS)
 %
 %  Writes the cell array of strings CS to the new text file FILENAME.
 %

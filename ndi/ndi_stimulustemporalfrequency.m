@@ -16,7 +16,7 @@ tf_name = '';
 
 ndi_globals;
 
-j = textfile2char([ndi.path.commonpath filesep 'stimulus' filesep 'ndi_stimulusparameters2temporalfrequency.json']);
+j = vlt.file.textfile2char([ndi.path.commonpath filesep 'stimulus' filesep 'ndi_stimulusparameters2temporalfrequency.json']);
 
 ndi_stimTFinfo = jsondecode(j);
 
