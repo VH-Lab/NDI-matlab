@@ -35,7 +35,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				rapp = ndi_app_tuning_response(E);
 
 				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi_query('','isa','vlt.neuro.stimulus_analysis.stimulus_response_scalar.json','');
+				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_relement)
 
 				for r=1:numel(rdoc),
