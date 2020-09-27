@@ -50,9 +50,9 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         % look for RHD files
         % mypath = getpath(getsession(sAPI_dev));
         %
-        % filelist = findfiletype(mypath,'.rhd');
+        % filelist = vlt.file.findfiletype(mypath,'.rhd');
 
-        filelist = findfiletype(getpath(getsession(sAPI_dev)),'tif');
+        filelist = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
 
 
         channels = struct('name',[],'type',[]);
@@ -107,7 +107,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %  REPORT is the data collection for specific image channels
 
 
-        file_names = findfiletype(getpath(getsession(sAPI_dev)),'tif');  %%use the files as object fields later
+        file_names = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');  %%use the files as object fields later
 
         %file_names,
           % here we want to convert t0, and t1, which are in units of sAPI_clock
@@ -126,7 +126,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
 
 
-        report = emptystruct('channeltype','channel','epoch','frame','data');     %%initial structure
+        report = vlt.data.emptystruct('channeltype','channel','epoch','frame','data');     %%initial structure
         for i = 1:size(file_names,1),
             [sz,~] = getsamplesize(file_names{i});
             if t1 - t0 > sz,
@@ -150,7 +150,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         %
         % SR is the list of sample rate from specified channels
 
-        file_names = findfiletype(getpath(getsession(sAPI_dev)),'tif');
+        file_names = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
 
         head = imfinfo(file_names{1});
 
@@ -191,7 +191,7 @@ classdef ndi_image_tiffstack < handle & ndi_daqsystem_mfdaq
         intervals = struct('file',[],'local_epoch_order',[]);
         intervals = ([]);
 
-        filelist = findfiletype(getpath(getsession(sAPI_dev)),'tif');
+        filelist = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
             for i=1:length(filelist),
                 intervals(end+1).file = filelist{i};
                 intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list

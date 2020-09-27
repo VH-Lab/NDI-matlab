@@ -45,15 +45,15 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 				% name_ should be a filename
 				ndi_struct = [];
 				if exist(name_,'file'),
-					ndi_struct= loadStructArray(name_);
+					ndi_struct= vlt.file.loadStructArray(name_);
 				end;
 				if isempty(ndi_struct),
-					ndi_struct = emptystruct('name','reference','type','devicestring','subjectstring');
+					ndi_struct = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
 				end
 				fn = fieldnames(ndi_struct);
-				if ~eqlen(fn,{'name','reference','type','devicestring','subjectstring'}');
+				if ~vlt.data.eqlen(fn,{'name','reference','type','devicestring','subjectstring'}');
 					error(['fields must be (case-sensitive match): name, reference, type, devicestring, subjectstring; fields were ' ...
-						cell2str(fn) '.']);
+						vlt.data.cell2str(fn) '.']);
 				end;
 				obj = [];
 				for i=1:length(ndi_struct),
@@ -72,7 +72,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 			end;
 
 			%name, check for errors
-			[b,errormsg] = islikevarname(name_);
+			[b,errormsg] = vlt.data.islikevarname(name_);
 			if ~b,
 				error(['Error in name field: ' errormsg ]);
 			end;
@@ -81,18 +81,18 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 
 			% reference, check for errors
 
-			if reference_ < 0 | ~isint(reference_) | ~eqlen(size(reference_),[1 1]),
+			if reference_ < 0 | ~vlt.data.isint(reference_) | ~vlt.data.eqlen(size(reference_),[1 1]),
 				error(['reference of ndi_epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
-			[b,errormsg] = islikevarname(type_);
+			[b,errormsg] = vlt.data.islikevarname(type_);
 			if ~b,
 				error(['Error in type field: ' errormsg ]);
 			end;
 			obj.type = type_;
 
-			[b,errormsg] = islikevarname(devicestring_);
+			[b,errormsg] = vlt.data.islikevarname(devicestring_);
 			if ~b,
 				error(['Error in devicestring field: ' errormsg ]);
 			end;
@@ -110,7 +110,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		%
 		%
 			fn = {'name','reference','type','devicestring','subjectstring'};
-			mystruct = emptystruct(fn{:});
+			mystruct = vlt.data.emptystruct(fn{:});
 			for i=1:length(ndi_epochprobemap_daqsystem_obj),
 				mynewstruct = struct;
 				for j=1:length(fn),
@@ -118,7 +118,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 				end;
 				mystruct(i) = mynewstruct;
 			end;
-			saveStructArray(filename, mystruct);
+			vlt.file.saveStructArray(filename, mystruct);
 		end;
 	end  % methods
 end

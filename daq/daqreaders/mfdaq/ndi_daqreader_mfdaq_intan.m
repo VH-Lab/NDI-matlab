@@ -38,7 +38,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 		%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
 		%
 
-			channels = emptystruct('name','type');
+			channels = vlt.data.emptystruct('name','type');
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -97,7 +97,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			% that holds the data files and ISDIRECTORY is 1.
 
 			s1 = ['.*\.rhd\>']; % equivalent of *.ext on the command line
-			[tf, matchstring, substring] = strcmp_substitution(s1,filename_array,'UseSubstituteString',0);
+			[tf, matchstring, substring] = vlt.string.strcmp_substitution(s1,filename_array,'UseSubstituteString',0);
 			parentdir = '';
 			isdirectory = 0;
 
@@ -111,7 +111,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 				[parentdir, fname, ext] = fileparts(filename);
 				if strcmp(fname,'info'),
 					s2 = ['time\.dat\>']; % equivalent of *.ext on the command line
-					tf2 = strcmp_substitution(s2,filename_array,'UseSubstituteString',0);
+					tf2 = vlt.string.strcmp_substitution(s2,filename_array,'UseSubstituteString',0);
 					if any(tf),
 						% we will call it a directory
 						isdirectory = 1;
@@ -180,7 +180,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 
 				head = read_Intan_RHD2000_header(filename);
 				for i=1:numel(channel),
-					channeltype_here = celloritem(channeltype,i);
+					channeltype_here = vlt.data.celloritem(channeltype,i);
 					freq_fieldname = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
 					sr(i) = getfield(head.frequency_parameters,freq_fieldname);
 				end

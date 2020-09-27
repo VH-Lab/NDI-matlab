@@ -92,7 +92,7 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 			% Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER
 			% document, this function loads in the metadata.
 				parameters = {};
-				stimparameters = loadStructArray(file);
+				stimparameters = vlt.file.loadStructArray(file);
 				for i=1:numel(stimparameters),
 					parameters{i} = stimparameters(i);
 				end;
@@ -107,7 +107,7 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 			% TF is 0 otherwise.
 				tf = 0;
 				if strcmp(class(ndi_daqmetadatareader_obj_a),class(ndi_daqmetadatareader_obj_b)),
-					tf = eqlen(properties(ndi_daqmetadatareader_obj_a),properties(ndi_daqmetadatareader_obj_b));
+					tf = vlt.data.eqlen(properties(ndi_daqmetadatareader_obj_a),properties(ndi_daqmetadatareader_obj_b));
 				end;
 		end; % eq()
 

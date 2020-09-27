@@ -218,7 +218,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 
 				et = epochtable(ndi_daqsystem_obj);
 
-				probes_struct = emptystruct('name','reference','type','subject_id');
+				probes_struct = vlt.data.emptystruct('name','reference','type','subject_id');
 				
 				for n=1:numel(et),
 					epc = et(n).epochprobemap;
@@ -236,7 +236,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 						end
 					end
 				end
-				probes_struct = equnique(probes_struct);
+				probes_struct = vlt.data.equnique(probes_struct);
 		end % getprobes()
 
 		function exp=session(ndi_daqsystem_obj)

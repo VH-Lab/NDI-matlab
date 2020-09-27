@@ -119,7 +119,7 @@ classdef ndi_daqsystemstring
 					if isempty(firstnumber),
 						error(['No number in ndi_daqsystem substring: ' mysubstr '.']);
 					end
-					channelshere = str2intseq(mysubstr(firstnumber:end));
+					channelshere = vlt.string.str2intseq(mysubstr(firstnumber:end));
 					channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
 					channel = cat(2,channel,channelshere(:)');
 				end
@@ -149,14 +149,14 @@ classdef ndi_daqsystemstring
 					elseif ~strcmp(currentchanneltype,prevchanneltype)
 						% we need to write the previous channels
 						if ~isempty(newchannellist), % do the writing
-							devstr = cat(2,devstr, [prevchanneltype intseq2str(newchannellist) ]);
+							devstr = cat(2,devstr, [prevchanneltype vlt.string.intseq2str(newchannellist) ]);
 							devstr(end+1) = ';';
 						end
 						% start off the new list
 						newchannellist = [self.channellist(i)];
 					end
 					if i==numel(self.channellist), % need to write any channels accumulated 
-						devstr = cat(2,devstr, [currentchanneltype intseq2str(newchannellist) ]);
+						devstr = cat(2,devstr, [currentchanneltype vlt.string.intseq2str(newchannellist) ]);
 					end
 					prevchanneltype = currentchanneltype;
 				end;

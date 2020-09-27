@@ -53,8 +53,8 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				[parentpath, localdirname] = fileparts(filepath);
 				subjectfile = [parentpath filesep 'subject.txt'];
 				if exist(subjectfile,'file'),
-					subjecttext = textfile2char(subjectfile);
-					subject_id = trimws(line_n(subjecttext,1));
+					subjecttext = vlt.file.textfile2char(subjectfile);
+					subject_id = vlt.string.trimws(vlt.string.line_n(subjecttext,1));
 				else,
 					error(['No subject.txt file found:' subjectfile '.']);
 				end;
@@ -88,15 +88,15 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				end	
 				vhdevice_string = vhdevice_string{1}; 
 	
-				ndi_struct = loadStructArray(filename);
+				ndi_struct = vlt.file.loadStructArray(filename);
 				fn = fieldnames(ndi_struct);
-				if ~eqlen(fn,{'name','ref','channel_list'}'),
+				if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}'),
 					error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
 				end;
 
 				% now pull reference.txt file to determine type
 				[myfilepath,myfilename] = fileparts(filename);
-				ref_struct = loadStructArray([myfilepath filesep 'reference.txt']);
+				ref_struct = vlt.file.loadStructArray([myfilepath filesep 'reference.txt']);
 
 				ndi_globals;
 
@@ -124,7 +124,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 					nextentry = ndi_epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
 							ndi_struct(i).ref,...
 							ec_type, ...  % type
-							[vhdevice_string ':ai' intseq2str(ndi_struct(i).channel_list)], ...  % device string
+							[vhdevice_string ':ai' vlt.string.intseq2str(ndi_struct(i).channel_list)], ...  % device string
 							subject_id);
 					obj(i) = nextentry;
 				end;

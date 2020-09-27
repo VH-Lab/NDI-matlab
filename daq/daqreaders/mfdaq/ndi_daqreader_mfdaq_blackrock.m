@@ -39,7 +39,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 
 			[ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles);
 				% to do: need to search nev file
-			channels = emptystruct('name','type');
+			channels = vlt.data.emptystruct('name','type');
 			for i=1:numel(ns_h.MetaTags.ChannelID),
 				newchannel.type = 'analog_in';
 				newchannel.name = ['ai' int2str(ns_h.MetaTags.ChannelID(i))];
@@ -101,7 +101,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 				return;
 			end;
 
-			if strcmp(celloritem(channeltype,1),'ai'),
+			if strcmp(vlt.data.celloritem(channeltype,1),'ai'),
 				for i=1:numel(channel),
 					ns_out = openNSx(nsv_files{1},'read','precision','double','uV','sample',...
 						['t:' int2str(s0) ':' int2str(s1)], ['c:' int2str(channel(i))]);
@@ -111,7 +111,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 					data = cat(2,data,ns_out.Data');
 				end;
 
-			elseif strcmp(celloritem(channeltype,1),'time'),
+			elseif strcmp(vlt.data.celloritem(channeltype,1),'time'),
 				data = cat(1,data,ns_h.MetaTags.Timestamp+((s0:s1)'-1)*1./ns_h.MetaTags.SamplingFreq);
 			end;
 
@@ -133,7 +133,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 				[ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channel);
 				
 				for i=1:numel(channel),
-					ct = celloritem(channeltype,i);
+					ct = vlt.data.celloritem(channeltype,i);
 					if strcmpi(ct,'ai') | strcmpi(ct,'time'),
 						sr(i) = ns_h.MetaTags.SamplingFreq;
 					else,
@@ -167,7 +167,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 
 				if nargin>=3,
 					for i=1:numel(channels),
-						ct = celloritem(channeltype,i);
+						ct = vlt.data.celloritem(channeltype,i);
 						if strcmpi(ct,'ai'),
 							if isempty(ns_h),
 								error(['ai channels in Blackrock must be stored in .ns# files, but there is none.']);
@@ -219,11 +219,11 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 			% data files. 
 			%
 				sv = ['.*\.ns\d\>']; 
-				tf_sv = strcmp_substitution(sv,filename_array,'UseSubstituteString',0);
+				tf_sv = vlt.string.strcmp_substitution(sv,filename_array,'UseSubstituteString',0);
 				nsvfiles = filename_array(find(tf_sv));
 
 				ne_search = ['.*\.nev\>']; 
-				tf_ne = strcmp_substitution(ne_search,filename_array,'UseSubstituteString',0);
+				tf_ne = vlt.string.strcmp_substitution(ne_search,filename_array,'UseSubstituteString',0);
 				nevfiles = filename_array(find(tf_ne));
 
 				if numel(nsvfiles)+numel(nevfiles) == 0,

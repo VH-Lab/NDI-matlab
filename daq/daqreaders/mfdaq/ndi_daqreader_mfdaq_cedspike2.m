@@ -39,7 +39,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
 			%
 
-				channels = emptystruct('name','type');
+				channels = vlt.data.emptystruct('name','type');
 
 				multifunctiondaq_channel_types = ndi_daqsystem_mfdaq.mfdaq_channeltypes();
 

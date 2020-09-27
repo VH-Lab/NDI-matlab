@@ -332,7 +332,7 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 
 		function filename = filenamefromepochfiles(ndi_daqreader_mfdaq_spikegadgets_obj, filename)
 				s1 = ['.*\.rec\>']; % equivalent of *.ext on the command line
-				[tf, matchstring, substring] = strcmp_substitution(s1,filename,'UseSubstituteString',0);
+				[tf, matchstring, substring] = vlt.string.strcmp_substitution(s1,filename,'UseSubstituteString',0);
 				index = find(tf);
 				if numel(index)> 1,
 					error(['Need only 1 .rec file per epoch.']);

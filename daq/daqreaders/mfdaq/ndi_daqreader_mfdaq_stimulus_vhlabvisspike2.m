@@ -104,15 +104,15 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 				mappingfile1 = [pathname{1} filesep 'stimtimes2stimtimes_mapping.txt'];
 				if exist(mappingfile1,'file'),
 					mapping = load(mappingfile1,'-ascii');
-					stimid = stimid(dropnan(mapping));
-					stimtimes = stimtimes(dropnan(mapping));
-					frametimes = frametimes(dropnan(mapping));
+					stimid = stimid(vlt.data.dropnan(mapping));
+					stimtimes = stimtimes(vlt.data.dropnan(mapping));
+					frametimes = frametimes(vlt.data.dropnan(mapping));
 				end
 				[ss,mti]=getstimscript(pathname{1});
 				mappingfile2 = [pathname{1} filesep 'mti2stimtimes_mapping.txt'];
 				if exist(mappingfile2,'file'),
 					mapping = load(mappingfile2,'-ascii');
-					mti = mti(dropnan(mapping));
+					mti = mti(vlt.data.dropnan(mapping));
 				end
 				stimofftimes = [];
 				stimsetuptimes = [];

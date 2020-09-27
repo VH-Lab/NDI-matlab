@@ -156,7 +156,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 								transitions_off_samples = [];
 							end;
 						end;
-						data{i} = [ [colvec(time_here(transitions_on_samples)); colvec(time_here(transitions_off_samples)) ] ...
+						data{i} = [ [vlt.data.colvec(time_here(transitions_on_samples)); vlt.data.colvec(time_here(transitions_off_samples)) ] ...
 								[ones(numel(transitions_on_samples),1); -ones(numel(transitions_off_samples),1) ] ];
 						if ~isempty(transitions_off_samples),
 							[dummy,order] = sort(data{i}(:,1));

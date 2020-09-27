@@ -106,7 +106,7 @@ classdef ndi_daqsystem_mfdaq < ndi_daqsystem
 				for n=1:N,
 					epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, n);
 					channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
-					channels = equnique( [channels(:); channels_here(:)] );
+					channels = vlt.data.equnique( [channels(:); channels_here(:)] );
 				end
 		end; % getchannels
 
