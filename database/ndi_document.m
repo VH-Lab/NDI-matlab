@@ -138,7 +138,7 @@ classdef ndi_document
 				end;
 
 				% Step 3): Merge the other fields
-				ndi_document_obj_out.document_properties = structmerge(ndi_document_obj_out.document_properties,...
+				ndi_document_obj_out.document_properties = vlt.data.structmerge(ndi_document_obj_out.document_properties,...
 					otherproperties);
 		end; % plus() 
 
@@ -159,7 +159,7 @@ classdef ndi_document
 			%
 			%
 				ErrorIfNotFound = 1;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				d = [];
 				notfound = 1;
@@ -196,7 +196,7 @@ classdef ndi_document
 			%
 			%
 				ErrorIfNotFound = 1;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				notfound = 1;
 
@@ -238,7 +238,7 @@ classdef ndi_document
 			%
 			%
 				ErrorIfNotFound = 1;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				d = {};
 				notfound = 1;
@@ -282,7 +282,7 @@ classdef ndi_document
 			%
 			%
 				ErrorIfNotFound = 1;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 
 				d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
@@ -311,7 +311,7 @@ classdef ndi_document
 			%
 			%
 				ErrorIfNotFound = 1;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
 				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
@@ -371,7 +371,7 @@ classdef ndi_document
 				s_is_empty = 0;
 				if nargin<2,
 					s_is_empty = 1;
-					s = emptystruct;
+					s = vlt.data.emptystruct;
 				end
 
 				% Step 1): read the information we have here
@@ -387,7 +387,7 @@ classdef ndi_document
 				if isfield(j,'document_class'),
 					if isfield(j.document_class,'superclasses'),
 						for i=1:numel(j.document_class.superclasses),
-							item = celloritem(j.document_class.superclasses, i, 1);
+							item = vlt.data.celloritem(j.document_class.superclasses, i, 1);
 							s_super{end+1} = ndi_document.readblankdefinition(item.definition);
 						end
 					end
@@ -416,9 +416,9 @@ classdef ndi_document
 						[dummy,unique_indexes] = unique({s.depends_on.name});
 						s.depends_on= s.depends_on(unique_indexes);
 					else,
-						% regular structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
+						% regular vlt.data.structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
 					end;
-					s = structmerge(s,s_super{i});
+					s = vlt.data.structmerge(s,s_super{i});
 				end;
 		end % readblankdefinition() 
 
@@ -439,10 +439,10 @@ classdef ndi_document
 				s = strfind(jsonfilelocationstring, searchString);
 				if ~isempty(s), % insert the location
 					filename = [ndi.path.documentpath filesep ...
-						filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi_filesep, filesep)];
+						vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi_filesep, filesep)];
 				else,
 					% first, guess that it is a complete path from $NDIDOCUMENTPATH
-					filename = [ndi.path.documentpath filesep filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
+					filename = [ndi.path.documentpath filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
 					if ~exist(filename,'file'),
 						% try adding extension
 						filename = [filename '.json'];
@@ -466,10 +466,10 @@ classdef ndi_document
 
 				% filename could be url or filename
 
-				if isurl(filename),
+				if vlt.file.isurl(filename),
 					t = urlread(filename);
 				else,
-					t = textfile2char(filename);
+					t = vlt.file.textfile2char(filename);
 				end
 		end
 

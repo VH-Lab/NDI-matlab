@@ -53,12 +53,12 @@ fit_equation_mod = fit_equation;
 
 for i=1:numel(fit_parameter_names),
 	fit_equation_mod = regexprep(fit_equation_mod,['(?<![\w\d])' fit_parameter_names{i} '(?![\w\d])'],['ndi_evaluate_fitcurve_' fit_parameter_names{i}]);
-	assign(['ndi_evaluate_fitcurve_' fit_parameter_names{i}], fit_parameter_values(i));
+	vlt.data.assign(['ndi_evaluate_fitcurve_' fit_parameter_names{i}], fit_parameter_values(i));
 end;
 
 for i=1:numel(fit_independent_variables),
 	fit_equation_mod = regexprep(fit_equation_mod,['(?<![\w\d])' fit_independent_variables{i} '(?![\w\d])'],['ndi_evaluate_fitcurve_' fit_independent_variables{i}]);
-	assign(['ndi_evaluate_fitcurve_' fit_independent_variables{i}], varargin{i});
+	vlt.data.assign(['ndi_evaluate_fitcurve_' fit_independent_variables{i}], varargin{i});
 end;
 
 for i=1:numel(fit_dependent_variables),
@@ -67,5 +67,5 @@ end;
 
 eval([fit_equation_mod ';']);
 
-assign('y', eval(['ndi_evaluate_fitcurve_' fit_dependent_variables{i}])); 
+vlt.data.assign('y', eval(['ndi_evaluate_fitcurve_' fit_dependent_variables{i}])); 
 

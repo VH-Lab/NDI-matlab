@@ -9,7 +9,7 @@ function [G] = ndi_readGenBankNodes(filename)
 % 
 
 if ischar(filename),
-	T = text2cellstr(filename);
+	T = vlt.file.text2cellstr(filename);
 else,
 	T = filename; % hidden mode for debugging
 end;

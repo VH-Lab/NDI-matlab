@@ -1,4 +1,4 @@
-classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
+classdef ndi_binarydoc_matfid < ndi_binarydoc & vlt.file.fileobj
 
 	properties,
 		key            %  The key that is created when the binary doc is locked
@@ -11,14 +11,14 @@ classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
 			%
 			% NDI_BINARYDOC_MATFID_OBJ = NDI_BINARYDOC_MATFID(PARAM1,VALUE1, ...)
 			%
-			% Follows same arguments as FILEOBJ
+			% Follows same arguments as vlt.file.fileobj
 			%
-			% See also: FILEOBJ, FILEOBJ/FILEOBJ
+			% See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
 			%
 				key = '';
 				doc_unique_id = '';
-				assign(varargin{:});
-				ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@fileobj(varargin{:});
+				vlt.data.assign(varargin{:});
+				ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@vlt.file.fileobj(varargin{:});
 				ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
 				ndi_binarydoc_matfid_obj.key = key;
 				ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
@@ -31,7 +31,7 @@ classdef ndi_binarydoc_matfid < ndi_binarydoc & fileobj
 			% user cannot re-use the object without checking out another binary document from
 			% the database.
 			%
-				ndi_binarydoc_matfid_obj.fclose@fileobj();
+				ndi_binarydoc_matfid_obj.fclose@vlt.file.fileobj();
 				ndi_binarydoc_matfid_obj.permission = 'r';
 		end % fclose()
 	end;

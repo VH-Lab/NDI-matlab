@@ -31,7 +31,7 @@ classdef  ndi_postgresdb < ndi_database
     %             disp(ndi_postgresdb_obj)
     %             
     %             disp('objdb:')
-    %                ndi_postgresdb_obj.db = dumbjsondb(varargin{3:end},...
+    %                ndi_postgresdb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
     %  				'dirname','dumbjsondb','unique_object_id_field','ndi_document.id');
 
             conn = database(dbname,username,password);

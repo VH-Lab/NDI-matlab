@@ -36,12 +36,12 @@ nodefile = 'nodes.dmp';
 namefile = 'names.dmp';
 outname = 'GenBankControlledVocabulary.tsv';
 
-assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 disp(['Reading nodes']);
-N = text2cellstr([dirname filesep nodefile]);
+N = vlt.file.text2cellstr([dirname filesep nodefile]);
 disp(['Reading names']);
-T = text2cellstr([dirname filesep namefile]);
+T = vlt.file.text2cellstr([dirname filesep namefile]);
 
  % open file so we are ready and don't have a permissions error after 2 hours of running code
 

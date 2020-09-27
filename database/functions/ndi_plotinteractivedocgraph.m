@@ -39,7 +39,7 @@ if nargin==0,
 	X = get(ch(1),'XData');
 	Y = get(ch(1),'YData');
 	Z = get(ch(1),'ZData'); % in case we want to go to 3-d
-	ind = findclosest( sqrt( (X-pt(1)).^2 + (Y-pt(2)).^2), 0);
+	ind = vlt.data.findclosest( sqrt( (X-pt(1)).^2 + (Y-pt(2)).^2), 0);
 
 	id = ud.nodes(ind);
 
@@ -63,7 +63,7 @@ layout = varargin{5};
 
 f = figure;
 
-ud = var2struct('docs','G','mdigraph','nodes');
+ud = vlt.data.var2struct('docs','G','mdigraph','nodes');
 
 set(f,'userdata',ud);
 

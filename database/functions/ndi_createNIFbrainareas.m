@@ -33,7 +33,7 @@ depth_exclude = 1;
 outname = 'NIFBrainAreaControlledVocabulary.tsv';
 exclude_ontologies = {'CL'};
 
-assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 command = ['https://scicrunch.org/api/1/sparc-scigraph/graph/neighbors/' ...
 		root ...

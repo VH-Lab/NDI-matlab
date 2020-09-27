@@ -11,7 +11,7 @@ classdef ndi_query
 			%
 			% Creates an NDI_QUERY object, which has a single property
 			% SEARCH that is a structure array of search structures
-			% appropriate for use with FIELDSEARCH.
+			% appropriate for use with vlt.data.fieldsearch.
 			%
 			% Tha is, SEARCH has the fields:
 			% Field:                   | Description
@@ -40,7 +40,7 @@ classdef ndi_query
 			% param1                     | Search parameter 1. Meaning depends on 'operation' (see above).
 			% param2                     | Search parameter 2. Meaning depends on 'operation' (see above).
 			% ---------------------------------------------------------------------------
-			% See FIELDSEARCH for full documentation of the search structure.
+			% See vlt.data.fieldsearch for full documentation of the search structure.
 			%  
 			% There are a few creator options:
 			%
@@ -57,11 +57,11 @@ classdef ndi_query
 			%
 			%  creates a SEARCHSTRUCT with the fields of the appropriate names.
 			% 
-				ndi_query_obj.searchstructure = emptystruct('field','operation','param1','param2');
+				ndi_query_obj.searchstructure = vlt.data.emptystruct('field','operation','param1','param2');
 				if nargin==1,
 					if isstruct(varargin{1}),
 						% check arguments
-						if ~eqlen(sort(fieldnames(varargin{1})),sort({'field','operation','param1','param2'})),
+						if ~vlt.data.eqlen(sort(fieldnames(varargin{1})),sort({'field','operation','param1','param2'})),
 							error(['Field names of search structure do not match expected fields.']);
 						end;
 						ndi_query_obj.searchstructure = varargin{1};
@@ -108,14 +108,14 @@ classdef ndi_query
 			% SEARCHSTRUCTURE = TO_SEARCHSTRUCTURE(NDI_QUERY_OBJ)
 			%
 			% Converts an NDI_QUERY_OBJECT to a set of search structures without any
-			% NDI_QUERY dependencies (see FIELDSEARCH).
+			% NDI_QUERY dependencies (see vlt.data.fieldsearch).
 			%
-			% See also: FIELDSEARCH
+			% See also: vlt.data.fieldsearch
 			%
-				searchstructure = emptystruct('field','operation','param1','param2');
+				searchstructure = vlt.data.emptystruct('field','operation','param1','param2');
 				for i=1:numel(ndi_query_obj)
 					for j=1:numel(ndi_query_obj(i).searchstructure),
-						ss_here = emptystruct('field','operation','param1','param2');
+						ss_here = vlt.data.emptystruct('field','operation','param1','param2');
 						ss_here(1).field = ndi_query_obj(i).searchstructure(j).field;
 						% check to see if we have a special case that needs to be reduced
 						if strcmpi('isa',ndi_query_obj(i).searchstructure(j).operation), % replace with search structures
@@ -171,13 +171,13 @@ classdef ndi_query
 			% into a SEARCHSTRUCT with the 'regexp' operator in the case of a character 'value' or the 'exact_number'
 			% operator in the case of a non-character value.
 			% 
-			% See also: FIELDSEARCH, NDI_QUERY/NDI_QUERY
+			% See also: vlt.data.fieldsearch, NDI_QUERY/NDI_QUERY
 			%
 				if ~iscell(searchcellarray) | mod(numel(searchcellarray),2)~=0,
 					error(['Input must be a cell array in the form {''property1'',value1,...}']);
 				end;
 
-				searchstruct = emptystruct('field','operation','param1','param2');
+				searchstruct = vlt.data.emptystruct('field','operation','param1','param2');
 
 				for i=1:2:numel(searchcellarray),
 					if ischar(searchcellarray{i+1}),
@@ -198,7 +198,7 @@ classdef ndi_query
 			%
 			% Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.
 			% 
-			% See also: FIELDSEARCH, NDI_QUERY/NDI_QUERY
+			% See also: vlt.data.fieldsearch, NDI_QUERY/NDI_QUERY
 				searchstruct_out = struct('field',field,'operation',operation,'param1',param1,'param2',param2);	 
 		end; 
 	end; % methods (Static)

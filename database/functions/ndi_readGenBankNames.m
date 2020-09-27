@@ -22,7 +22,7 @@ function [genbanknames] = ndi_readGenBankNames(filename)
 %                      |   other_commonname{i}{j} is the jth other common name for node i
 
 if ischar(filename),
-	T = text2cellstr(filename);
+	T = vlt.file.text2cellstr(filename);
 else,
 	T = filename; % hidden mode for debugging
 end;
@@ -83,5 +83,5 @@ end;
 
 progressbar(1);
 
-genbanknames = var2struct('genbank_commonname','scientific_name','synonym','other_commonname');
+genbanknames = vlt.data.var2struct('genbank_commonname','scientific_name','synonym','other_commonname');
 

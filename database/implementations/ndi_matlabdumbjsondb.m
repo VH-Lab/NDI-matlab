@@ -1,7 +1,7 @@
 classdef  ndi_matlabdumbjsondb < ndi_database
 
 	properties
-		db		% dumbjsondb object
+		db		% vlt.file.dumbjsondb object
 	end
 
 	methods
@@ -17,9 +17,9 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 		% should be the full pathname of the location where the files
 		% should be stored on disk.
 		%
-		% See also: DUMBJSONDB, DUMBJSONDB/DUMBJSONDB
+		% See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
 			ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj@ndi_database(varargin{:});
-			ndi_matlabdumbjsondb_obj.db = dumbjsondb(varargin{3:end},...
+			ndi_matlabdumbjsondb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
 				'dirname','dumbjsondb','unique_object_id_field','ndi_document.id');
 		end; % ndi_matlabdumbjsondb()
 

@@ -62,10 +62,10 @@ classdef ndi_database
 			% 'Update'  (1)            | If document exists, update it. If 0, an error is 
 			%                          |   generated if a document with the same ID exists
 			% 
-			% See also: NAMEVALUEPAIR 
+			% See also: vlt.data.namevaluepair 
 				Update = 1;
-				assign(varargin{:});
-				add_parameters = var2struct('Update');
+				vlt.data.assign(varargin{:});
+				add_parameters = vlt.data.var2struct('Update');
 				ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
 		end % add()
 
@@ -184,7 +184,7 @@ classdef ndi_database
 			% 
 			% CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
 			%
-			% Removes all documents from the DUMBJSONDB object.
+			% Removes all documents from the vlt.file.dumbjsondb object.
 			% 
 			% Use with care. If AREYOUSURE is 'yes' then the
 			% function will proceed. Otherwise, it will not.
