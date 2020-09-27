@@ -34,11 +34,11 @@ classdef ndi_sessiontable
 			% Returns the session table, a structure with fields 'SESSION_ID' and 'PATH'. Each entry
 			% in the table corresponds to a recently-opened or added path of NDI_SESSION_DIR. 
 			%
-				t = emptystruct('session_id','path');
+				t = vlt.data.emptystruct('session_id','path');
 				fname = ndi_sessiontable.localtablefilename();
 				if exist(fname,'file'),
 					try,
-						t = loadStructArray(fname);
+						t = vlt.file.loadStructArray(fname);
 						if ~isfield(t,'path'),
 							error(['path is a required field.']);
 						end;
@@ -109,7 +109,7 @@ classdef ndi_sessiontable
 			% have the right form, then RESULTS is empty.
 			%
 				b = 0;
-				results = emptystruct('exists');
+				results = vlt.data.emptystruct('exists');
 				t = ndi_sessiontable_obj.getsessiontable();
 				[b,msg] = ndi_sessiontable_obj.isvalidtable(t);
 				if b,
@@ -173,7 +173,7 @@ classdef ndi_sessiontable
 			%
 				fname = ndi_sessiontable.localtablefilename();
 				if exist(fname,'file'), % nothing to do if there's no file
-					backupname = filebackup(fname);
+					backupname = vlt.file.filebackup(fname);
 					[success,message]=copyfile(fname,backupname);
 					if ~success,
 						error(['Could not make backup file: ' message]);
@@ -210,7 +210,7 @@ classdef ndi_sessiontable
 				if nargin<2,
 					makebackup = 0;
 				end;
-				t = emptystruct('session_id','path');
+				t = vlt.data.emptystruct('session_id','path');
 				if makebackup, 
 					ndi_sessiontable_obj.backupsessiontable();
 				end;
@@ -234,9 +234,9 @@ classdef ndi_sessiontable
 				end;
 				fname = ndi_sessiontable.localtablefilename();
 				lockfilename = [fname '-lockfile'];
-				lockfid = checkout_lock_file(lockfilename);
+				lockfid = vlt.file.checkout_lock_file(lockfilename);
 				if lockfid > 0,
-					saveStructArray(fname,t);
+					vlt.file.saveStructArray(fname,t);
 					fclose(lockfid);
 					delete(lockfilename);
 				else

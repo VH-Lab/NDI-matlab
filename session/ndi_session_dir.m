@@ -35,14 +35,14 @@ classdef ndi_session_dir < ndi_session
 				ndi_session_dir_obj.path = path;
 				d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
 				if ~isempty(d),
-					ndi_session_dir_obj.reference = strtrim(textfile2char(...
+					ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(...
 						[ndi_session_dir_obj.ndipathname() filesep 'reference.txt']));
 				elseif nargin==1,
 					error(['Could not load the REFERENCE field from the path ' ndi_session_dir_obj.ndipathname() '.']);
 				end
 				d = dir([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
-					ndi_session_dir_obj.identifier = strtrim(textfile2char(...
+					ndi_session_dir_obj.identifier = strtrim(vlt.file.textfile2char(...
 						[ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
 					ndi_session_dir_obj.identifier = ndi_id.ndi_unique_id();
@@ -62,9 +62,9 @@ classdef ndi_session_dir < ndi_session
 					ndi_session_dir_obj.syncgraph = ndi_document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
 				end;
 
-				str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...
+				vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...
 					ndi_session_dir_obj.reference);
-				str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
+				vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
 					ndi_session_dir_obj.id());
 
 				st = ndi_sessiontable();

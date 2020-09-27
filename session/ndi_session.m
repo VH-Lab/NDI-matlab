@@ -269,7 +269,7 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 			%
 			% See also: DATABASE_ADD, NDI_SESSION
 				ErrIfNotFound = 0;
-				assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				if isempty(doc_unique_id),
 					return;
@@ -420,7 +420,7 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 				trydatabase = 0;
 				tryprobelist = 0;
 
-				if isa_text(obj_classname,'ndi_probe'),
+				if vlt.matlab.isa_text(obj_classname,'ndi_probe'),
 					tryprobelist = 1;
 				elseif isa(obj_classname,'ndi_daqsystem'),
 					trydaqsystem = 1;
@@ -479,12 +479,12 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 				probestruct = [];
 				devs = ndi_session_obj.daqsystem_load('name','(.*)');
 				if ~isempty(devs),
-					probestruct = getprobes(celloritem(devs,1));
+					probestruct = getprobes(vlt.data.celloritem(devs,1));
 				end
 				for d=2:numel(devs),
 					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
-				probestruct = equnique(probestruct);
+				probestruct = vlt.data.equnique(probestruct);
 				probes = ndi_probestruct2probe(probestruct, ndi_session_obj);
 
 				if numel(varargin)==1,
