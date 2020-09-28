@@ -1,39 +1,39 @@
-classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
-	% NDI_FILENAVIGATOR - object class for accessing files on disk
+classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
+	% ndi.file.navigator - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
-		session                    % The NDI_SESSION to be examined (handle)
-		fileparameters                % The parameters for finding files (see NDI_FILENAVIGATOR/SETFILEPARAMETERS)
-		epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS)
+		session                    % The ndi.session to be examined (handle)
+		fileparameters                % The parameters for finding files (see ndi.file.navigator/SETFILEPARAMETERS)
+		epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS)
 	end
 
 	methods
-	        function obj = ndi_filenavigator(session_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
-		% NDI_FILENAVIGATOR - Create a new NDI_FILENAVIGATOR object that is associated with an session and daqsystem
+	        function obj = navigator(session_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
+		% ndi.file.navigator - Create a new ndi.file.navigator object that is associated with an session and daqsystem
 		%
-		%   OBJ = NDI_FILENAVIGATOR(SESSION, [ FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
+		%   OBJ = ndi.file.navigator(SESSION, [ FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%                 or
-		%   OBJ = NDI_FILENAVIGATOR(SESSION, NDI_FILENAVIGATOR_DOC_OBJ)
+		%   OBJ = ndi.file.navigator(SESSION, NDI_FILENAVIGATOR_DOC_OBJ)
 		%
-		% Creates a new NDI_FILENAVIGATOR object that negotiates the data tree of daqsystem's data that is
+		% Creates a new ndi.file.navigator object that negotiates the data tree of daqsystem's data that is
 		% stored at the file path PATH.
 		%
 		% Inputs:
-		%      SESSION: an NDI_SESSION
+		%      SESSION: an ndi.session
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
-		%          data tree style (see NDI_FILENAVIGATOR/SETFILEPARAMETERS for description)
-		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi_epochprobemap_daqsystem' is used by default
+		%          data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.epoch.epochprobemap_daqsystem' is used by default
 		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
-		%          present in each epoch (see NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
-		%          specified in NDI_FILENAVIGATOR/EPOCHPROBEMAPFILENAME is used
+		%          present in each epoch (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
+		%          specified in ndi.file.navigator/EPOCHPROBEMAPFILENAME is used
 		%
-		% Output: OBJ - an NDI_FILENAVIGATOR object
+		% Output: OBJ - an ndi.file.navigator object
 		%
-		% See also: NDI_SESSION
+		% See also: ndi.session
 		%
 
-			if nargin==2 & isa(session_,'ndi_session') & isa(fileparameters_,'ndi_document'),
+			if nargin==2 & isa(session_,'ndi.session') & isa(fileparameters_,'ndi.document'),
 				filenavdoc = fileparameters_;
 				% extract parameters from the document
 				if ~isempty(filenavdoc.document_properties.filenavigator.fileparameters),
@@ -53,7 +53,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 					epochprobemap_fileparameters_ = [];
 				end;
 				if nargin<3,
-					epochprobemap_class_ = 'ndi_epochprobemap_daqsystem';
+					epochprobemap_class_ = 'ndi.epoch.epochprobemap_daqsystem';
 				end;
 				if nargin<2,
 					fileparameters_ = [];
@@ -66,8 +66,8 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			% now we have our parameters defined, build the object
 
 			if ~isempty(session_),
-				if ~isa(session_,'ndi_session'),
-					error(['experiement must be an NDI_SESSION object']);
+				if ~isa(session_,'ndi.session'),
+					error(['experiement must be an ndi.session object']);
 				else,
 					obj.session= session_;
 				end;
@@ -84,7 +84,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			if ~isempty(epochprobemap_class_),
 				obj.epochprobemap_class = epochprobemap_class_;
 			else,
-				obj.epochprobemap_class = 'ndi_epochprobemap_daqsystem';
+				obj.epochprobemap_class = 'ndi.epoch.epochprobemap_daqsystem';
 			end;
 
 			if ~isempty(epochprobemap_fileparameters_),
@@ -98,11 +98,11 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		%% functions that used to override HANDLE
 
 		function b = eq(ndi_filenavigator_obj_a, ndi_filenavigator_obj_b)
-			% EQ - determines whether two NDI_FILENAVIGATOR objects are equivalent
+			% EQ - determines whether two ndi.file.navigator objects are equivalent
 			%
 			% B = EQ(NDI_FILENAVIGATOR_OBJ_A, NDI_FILENAVIGATOR_OBJ_B)
 			%
-			% Returns 1 if the NDI_FILENAVIGATOR objects are equivalent, and 0 otherwise.
+			% Returns 1 if the ndi.file.navigator objects are equivalent, and 0 otherwise.
 			% This equivalency does not depend on NDI_FILENAVIGATOR_OBJ_A and NDI_FILENAVIGATOR_OBJ_B are 
 			% the same HANDLE objects. They can be equivalent and occupy different places in memory.
 				parameternames = {'session','fileparameters','epochprobemap_class','epochprobemap_fileparameters'};
@@ -117,19 +117,19 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 
 		%% functions that override NDI_BASE
 
-		%% functions that override the methods of NDI_EPOCHSET_PARAM
+		%% functions that override the methods of ndi.epoch.epochset.param
 
 		function [cache,key] = getcache(ndi_filenavigator_obj)
-			% GETCACHE - return the NDI_CACHE and key for NDI_FILENAVIGATOR
+			% GETCACHE - return the NDI_CACHE and key for ndi.file.navigator
 			%
 			% [CACHE,KEY] = GETCACHE(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Returns the CACHE and KEY for the NDI_FILENAVIGATOR object.
+			% Returns the CACHE and KEY for the ndi.file.navigator object.
 			%
 			% The CACHE is returned from the associated session.
 			% The KEY is the string 'filenavigator_' followed by the object's id.
 			%
-			% See also: NDI_FILENAVIGATOR
+			% See also: ndi.file.navigator
 			
 				cache = [];
 				key = [];
@@ -140,7 +140,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		end
 
 		function [et] = buildepochtable(ndi_filenavigator_obj)
-			% EPOCHTABLE - Return an epoch table for NDI_FILENAVIGATOR
+			% EPOCHTABLE - Return an epoch table for ndi.file.navigator
 			%
                         % ET = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)
                         %
@@ -152,10 +152,10 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
                         %                           |   This uniquely specifies the epoch within the session.
 			% 'epoch_session_id'           | The ID of the session that contains this epoch.
 			% 'epochprobemap'           | The epochprobemap object from each epoch
-			% 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
-			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
+			% 'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
+			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
 			%                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
-                        % 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
+                        % 'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                         %                           |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochprobemap'
 			%                           |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
 			%                           |   match those of NDI_FILENAVIGATOR_OBJ
@@ -173,7 +173,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 					et_here(1).underlying_epochs(1).underlying = all_epochs{i};
 					et_here(1).underlying_epochs(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
 					et_here(1).underlying_epochs(1).epoch_session_id = ndi_filenavigator_obj.session.id();
-					et_here(1).underlying_epochs(1).epoch_clock = {ndi_clocktype('no_time')}; % filenavigator does not keep time
+					et_here(1).underlying_epochs(1).epoch_clock = {ndi.time.clocktype('no_time')}; % filenavigator does not keep time
 					et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filenavigator does not keep time
 					et_here(1).epoch_number = i;
 					et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i);
@@ -204,22 +204,22 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 					id = text2cellstr(eidfname);
 					id = id{1};
 				else,
-					id = ['epoch_' ndi_id.ndi_unique_id()];
+					id = ['epoch_' ndi.ido.ndi_unique_id()];
 					str2text(eidfname,id);
 				end
 		end %epochid()
 
 		function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
-			% EPOCHPROBEMAPFILENAME - return the file path for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the EPOCHPROBEMAPFILENAME for the NDI_DAQSYSTEM NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
+			% the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
 				if nargin<3, % undocumented 3rd argument
@@ -234,18 +234,18 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		end % epochidfilename()
 
 		function ecfname = epochprobemapfilename(ndi_filenavigator_obj, number)
-			% EPOCHPROBEMAPFILENAME - return the file name for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the EPOCHPROBEMAPFILENAME for the NDI_FILENAVIGATOR NDI_FILENAVIGATOR_OBJ for epoch NUMBER.
+			% Returns the EPOCHPROBEMAPFILENAME for the ndi.file.navigator NDI_FILENAVIGATOR_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. The file name is returned with
 			% a full path. NUMBER cannot be an epoch_id.
 			%
 			% The file name is determined by examining if the user has specified any
 			% EPOCHPROBEMAP_FILEPARAMETERS; if not, then the DEFAULTEPOCHPROBEMAPFILENAME is used.
 			%
-			% See also: NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS, NDI_FILENAVIGATOR/DEFAULTEPOCHPROBEMAPFILENAME
+			% See also: ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS, ndi.file.navigator/DEFAULTEPOCHPROBEMAPFILENAME
 			%
 				% default   
 				ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number);
@@ -271,19 +271,19 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		end % epochprobemapfilename
 
 		function ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number)
-			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the NDI_EPOCHPROBEMAP_DAQSYSTEM file for an epoch
+			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = DEFAULTEPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
-			% Returns the default EPOCHPROBEMAPFILENAME for the NDI_DAQSYSTEM NDI_DEVICE_OBJ for epoch NUMBER.
+			% Returns the default EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. NUMBER cannot be an epoch id.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the default NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
+			% the default ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
 			% This may be overridden if there is an EPOCHPROBEMAP_FILEPARAMETERS set.
 			%
-			% See also: NDI_FILENAVIGATOR/SETEPOCHPROBEMAPFILEPARAMETERS
+			% See also: ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
@@ -301,13 +301,13 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%
 			% ETFNAME = EPOCHTAGFILENAME(NDI_FILENAVIGATOR_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Returns the tag file name for the NDI_FILENAVIGATOR NDI_FILENAVIGATOR_OBJ for epoch EPOCH_NUMBER_OR_ID.
+			% Returns the tag file name for the ndi.file.navigator NDI_FILENAVIGATOR_OBJ for epoch EPOCH_NUMBER_OR_ID.
 			% EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
 			% an error is generated.
 			%
-			% In the base class, NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the NDI_EPOCHPROBEMAP_DAQSYSTEM data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
+			% the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
@@ -322,10 +322,10 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 				end
 		end % epochtagfilename()
 
-		%% functions that set and return internal parameters of NDI_FILENAVIGATOR
+		%% functions that set and return internal parameters of ndi.file.navigator
 
 		function ndi_filenavigator_obj = setfileparameters(ndi_filenavigator_obj, thefileparameters)
-			% SETFILEPARAMETERS - Set the fileparameters field of a NDI_FILENAVIGATOR object
+			% SETFILEPARAMETERS - Set the fileparameters field of a ndi.file.navigator object
 			%
 			%  NDI_FILENAVIGATOR_OBJ = SETFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEFILEPARAMETERS)
 			%
@@ -357,7 +357,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		end %setfileparameters()
 
 		function ndi_filenavigator_obj = setepochprobemapfileparameters(ndi_filenavigator_obj, theepochprobemapfileparameters)
-			% SETEPOCHPROBEMAPFILEPARAMETERS - Set the epoch record fileparameters field of a NDI_FILENAVIGATOR object
+			% SETEPOCHPROBEMAPFILEPARAMETERS - Set the epoch record fileparameters field of a ndi.file.navigator object
 			%
 			%  NDI_FILENAVIGATOR_OBJ = SETEPOCHPROBEMAPFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEEPOCHPROBEMAPFILEPARAMETERS)
 			%
@@ -366,7 +366,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%   [EXP]/.ndi/device_name/epoch_NNNNNNNNN.ndierf, where [EXP] is the session's path.
 			%
 			%  However, one can pass search parameters that will search among all the file names returned by
-			%  NDI_FILENAVIGATOR/GETEPOCHS. The search parameter should be a regular expression or a set of regular
+			%  ndi.file.navigator/GETEPOCHS. The search parameter should be a regular expression or a set of regular
 			%  expressions such as:
 			%
 			%         Example: theepochprobemapfileparameters = '.*\.ext\>'
@@ -383,15 +383,15 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 		end % setepochprobemapfileparameters()
 
 		function thepath = path(ndi_filenavigator_obj)
-			% PATH - Return the file path for the NDI_FILENAVIGATOR object
+			% PATH - Return the file path for the ndi.file.navigator object
 			%
 			% THEPATH = PATH(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Returns the path of the NDI_SESSION associated with the NDI_FILENAVIGATOR object
+			% Returns the path of the ndi.session associated with the ndi.file.navigator object
 			% NDI_FILENAVIGATOR_OBJ.
 			%
-				if ~isa(ndi_filenavigator_obj.session,'ndi_session'),
-					error(['No valid NDI_SESSION associated with this filenavigator object.']);
+				if ~isa(ndi_filenavigator_obj.session,'ndi.session'),
+					error(['No valid ndi.session associated with this filenavigator object.']);
 				else,
 					thepath = ndi_filenavigator_obj.session.getpath;
 				end
@@ -406,9 +406,9 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%
 			% EPOCHFILES{n} will be a cell list of the files in epoch n.
 			%
-			% For NDI_FILENAVIGATOR, this simply uses the file matching parameters.
+			% For ndi.file.navigator, this simply uses the file matching parameters.
 			%
-			% See also: NDI_FILENAVIGATOR/SETFILEPARAMETERS
+			% See also: ndi.file.navigator/SETFILEPARAMETERS
 			%
 				exp_path = ndi_filenavigator_obj.path();
 				epochfiles = findfilegroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
@@ -430,7 +430,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%  can be a cell array of strings of multiple epoch identifiers; in this case, a cell array of cell
 			%  arrays is returned in FULLPATHFILENAMES.
 			%
-			%  Uses the FILEPARAMETERS (see NDI_FILENAVIGATOR/SETFILEPARAMETERS) to identify recording
+			%  Uses the FILEPARAMETERS (see ndi.file.navigator/SETFILEPARAMETERS) to identify recording
 			%  epochs under the SESSION path.
 			%
 			%  See also: EPOCHID
@@ -492,7 +492,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%  an EPOCH_ID. If EPOCH_NUMBER is an array, then a cell array of cell arrays is returned in
 			%  FULLPATHFILENAMES.
 			%
-			%  Uses the FILEPARAMETERS (see NDI_FILENAVIGATOR/SETFILEPARAMETERS) to identify recording
+			%  Uses the FILEPARAMETERS (see ndi.file.navigator/SETFILEPARAMETERS) to identify recording
 			%  epochs under the SESSION path.
 			%
 			%  See also: GETEPOCHFILES
@@ -546,22 +546,22 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			end
 
 		function ndi_filenavigator_obj=setsession(ndi_filenavigator_obj, session)
-			% SETSESSION - set the SESSION for an NDI_FILENAVIGATOR object
+			% SETSESSION - set the SESSION for an ndi.file.navigator object
 			%
 			% NDI_FILENAVIGATOR_OBJ = SETSESSION(NDI_FILENAVIGATOR_OBJ, SESSION)
 			%
-			% Set the SESSION property of an NDI_FILENAVIGATOR object
+			% Set the SESSION property of an ndi.file.navigator object
 			%
 				ndi_filenavigator_obj.session = session;
 		end; % setsession()
 
-		%% functions that override ndi_documentservice
+		%% functions that override ndi.documentservice
 		function ndi_document_obj = newdocument(ndi_filenavigator_obj)
-			% NEWDOCUMENT - create an NDI_DOCUMENT that is based on an NDI_FILENAVIGATOR object
+			% NEWDOCUMENT - create an ndi.document that is based on an ndi.file.navigator object
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Creates an NDI_DOCUMENT of type 'ndi_document_filenavigator.json'
+			% Creates an ndi.document of type 'ndi_document_filenavigator.json'
 			%
 				filenavigator_structure.ndi_filenavigator_class = class(ndi_filenavigator_obj);
 				if ~isempty(ndi_filenavigator_obj.fileparameters),
@@ -579,7 +579,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 				end;
 				filenavigator_structure.session_id = ndi_filenavigator_obj.session.id();
 				
-				ndi_document_obj = ndi_document('daq/ndi_document_filenavigator.json',...
+				ndi_document_obj = ndi.document('daq/ndi_document_filenavigator.json',...
 					'filenavigator',filenavigator_structure,...
 					'ndi_document.id', ndi_filenavigator_obj.id(),...
 					'ndi_document.session_id', ndi_filenavigator_obj.session.id());
@@ -590,7 +590,7 @@ classdef ndi_filenavigator < ndi_id & ndi_epochset_param & ndi_documentservice
 			%
 			% SQ = SEARCHQUERY(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Returns a database search query for this NDI_FILENAVIGATOR object.
+			% Returns a database search query for this ndi.file.navigator object.
 			%
 				sq = {'ndi_document.id', ndi_filenavigator_obj.id(), ...
 					'ndi_document.session_id', ndi_filenavigator_obj.session.id() };
