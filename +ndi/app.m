@@ -1,17 +1,17 @@
-classdef ndi_app < ndi_documentservice
+classdef app < nd._documentservice
 
 	properties (SetAccess=protected,GetAccess=public)
-		session % the NDI_SESSION object that the app will operate on
+		session % the ndi.session object that the app will operate on
 		name % the name of the app
 	end % properties
 
 	methods
-		function ndi_app_obj = ndi_app(varargin)
-			% NDI_APP - create a new NDI_APP object
+		function ndi_app_obj = app(varargin)
+			% ndi.app - create a new ndi.app object
 			%
-			% NDI_APP_OBJ = NDI_APP(SESSION)
+			% NDI_APP_OBJ = ndi.app(SESSION)
 			%
-			% Creates a new NDI_APP object that operates on the NDI_SESSION
+			% Creates a new ndi.app object that operates on the ndi.session
 			% object called SESSION.
 			%
 				session = [];
@@ -25,7 +25,7 @@ classdef ndi_app < ndi_documentservice
 
 				ndi_app_obj.session = session;
 				ndi_app_obj.name = name;
-		end % ndi_app()
+		end % ndi.app()
 
 		% functions related to generic variables
 
@@ -65,12 +65,12 @@ classdef ndi_app < ndi_documentservice
 		end; % version_url()
 
 		function c = searchquery(ndi_app_obj)
-			% SEARCHQUERY - return a search query for an NDI_DOCUMENT related to this app
+			% SEARCHQUERY - return a search query for an ndi.document related to this app
 			%
 			% C = SEARCHQUERY(NDI_APP_OBJ)
 			%
 			% Returns a cell array of strings that allow the creation or searching of an
-			% NDI_DATABASE document for this app with field 'app' that has subfield 'name' equal
+			% ndi.database document for this app with field 'app' that has subfield 'name' equal
 			% to the app's VARAPPNAME.
 			%
 				c = {'ndi_document.session_id', ...
@@ -79,11 +79,11 @@ classdef ndi_app < ndi_documentservice
 		end;
 
 		function ndi_document_obj = newdocument(ndi_app_obj)
-			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on an app
+			% NEWDOCUMENT - return a new database document of type ndi.document based on an app
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
 			%
-			% Creates a blank NDI_DOCUMENT object of type 'ndi_document_app'. The 'app.name' field
+			% Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
 			% is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 			%
 				[~,osversion] = detectOS;

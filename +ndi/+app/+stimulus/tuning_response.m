@@ -1,5 +1,4 @@
-
-classdef ndi_app_tuning_response < ndi_app
+classdef tuning_response < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -7,12 +6,12 @@ classdef ndi_app_tuning_response < ndi_app
 
 	methods
 
-		function ndi_app_tuning_response_obj = ndi_app_tuning_response(varargin)
-			% NDI_APP_TUNING_RESPONSE - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
+		function ndi_app_tuning_response_obj = tuning_response(varargin)
+			% ndi.app.stimulus.tuning_response - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_TUNING_RESPONSE_OBJ = NDI_APP_TUNING_RESPONSE(SESSION)
+			% NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
 			%
-			% Creates a new NDI_APP_TUNING_RESPONSE object that can operate on
+			% Creates a new ndi.app.stimulus.tuning_response object that can operate on
 			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
 				session = [];
@@ -20,16 +19,16 @@ classdef ndi_app_tuning_response < ndi_app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi_app(session, name);
+				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi.app(session, name);
 
-		end % ndi_app_tuning_response() creator
+		end % ndi.app.stimulus.tuning_response() creator
 
 		function stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_ELEMENT stimulus object
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus object
 			%
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
-			% Examines a the NDI_SESSION associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
+			% Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
@@ -44,11 +43,11 @@ classdef ndi_app_tuning_response < ndi_app
 				E = ndi_app_tuning_response_obj.session;
 
 				% find all stimulus records from the stimulus element
-				sq_nditimeseries = ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
-				sq_stimelement = ndi_query('','depends_on','stimulus_element_id',ndi_element_stim.id()); 
-				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
-				sq_tune = ndi_query('','isa','stimulus_tuningcurve.json','');
+				sq_nditimeseries = ndi.query('','depends_on','element_id',ndi_timeseries_obj.id());
+				sq_stimelement = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id()); 
+				sq_e = ndi.query(E.searchquery());
+				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
+				sq_tune = ndi.query('','isa','stimulus_tuningcurve.json','');
 				doc_stim = E.database_search(sq_stim&sq_e&sq_stimelement),
 				doc_tune = E.database_search(sq_tune&sq_e&sq_stimelement&sq_nditimeseries),
 
@@ -61,12 +60,12 @@ classdef ndi_app_tuning_response < ndi_app
 					% ASSUMPTION: each stimulus element epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
 					if numel(doc_stim{i}.document_properties.stimulus_presentation.presentation_time)>0, % make sure there is at least 1 stimulus 
-						stim_timeref = ndi_timereference(ndi_element_stim, ...
-							ndi_clocktype(doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
+						stim_timeref = ndi.time.timereference(ndi_element_stim, ...
+							ndi.time.clocktype(doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
 							doc_stim{i}.document_properties.epochid, ...
 							doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).onset);
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-							0, ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
+							0, ndi_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 							% time is 0 because stim_timeref is relative to 1st stim
 						if ~isempty(ts_epoch_t0_out),
 							ndi_ts_epochs{i} = ts_epoch_timeref.epoch;
@@ -78,8 +77,8 @@ classdef ndi_app_tuning_response < ndi_app
 
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
-						ctrl_search = ndi_query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
-							ndi_query('','isa','control_stimulus_ids.json','');
+						ctrl_search = ndi.query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
+							ndi.query('','isa','control_stimulus_ids.json','');
 						control_stim_doc = E.database_search(ctrl_search);
 						for j=1:numel(control_stim_doc);
 							% okay, now how to analyze these stims?
@@ -108,10 +107,10 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			% RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
 			%
-			% Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an NDI_DOCUMENT of class 'ndi_document_stimulus_presentation'), and a
-			% CONTROL_DOC (an NDI_DOCUMENT of class 'ndi_document_control_stimulus_ids'), this
+			% Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'ndi_document_stimulus_presentation'), and a
+			% CONTROL_DOC (an ndi.document of class 'ndi_document_control_stimulus_ids'), this
 			% function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
-			% NDI_DOCUMENT of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
+			% ndi.document of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
 			% fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses,
 			% F1, F2).
 			%
@@ -121,7 +120,7 @@ classdef ndi_app_tuning_response < ndi_app
 			% Parameter (default)                  | Description
 			% ---------------------------------------------------------------------------------
 			% temporalfreqfunc                     |
-			%   ('ndi_stimulustemporalfrequency')  |
+			%   ('ndi.fun.stimulustemporalfrequency')  |
 			% freq_response ([])                   | Frequency response to measure. If empty, then the function is 
 			%                                      |   called 3 times with values 0, 1, and 2 times the fundamental frequency.
 			% prestimulus_time ([])                | Calculate a baseline using a certain amount of TIMESERIES signal during
@@ -134,7 +133,7 @@ classdef ndi_app_tuning_response < ndi_app
 			% isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
 			% spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform
 			%
-				temporalfreqfunc = 'ndi_stimulustemporalfrequency';
+				temporalfreqfunc = 'ndi.fun.stimulustemporalfrequency';
 				freq_response = [];
 				prestimulus_time = [];
 				prestimulus_normalization = [];
@@ -152,7 +151,7 @@ classdef ndi_app_tuning_response < ndi_app
 				response_doc = {};
 
 				E = ndi_app_tuning_response_obj.session;
-				gapp = ndi_app_markgarbage(E);
+				gapp = ndi.app.markgarbage(E);
 
 				if isempty(freq_response),
 					% do we have any stims that we know have a fundamental stimulus frequency?
@@ -174,22 +173,22 @@ classdef ndi_app_tuning_response < ndi_app
 				end;
 
 				% build up search for existing parameter documents
-				q_doc = ndi_query('','isa','stimulus_response_scalar_parameters_basic.json','');
-				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','') & ...
-					ndi_query('','depends_on','element_id',ndi_timeseries_obj.id());
-				q_r_stimdoc = ndi_query('','depends_on','stimulus_presentation_id',stim_doc.id());
-				q_r_stimcontroldoc = ndi_query('','depends_on','stimulus_control_id',control_doc.id());
-				q_e = ndi_query(E.searchquery());
+				q_doc = ndi.query('','isa','stimulus_response_scalar_parameters_basic.json','');
+				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','') & ...
+					ndi.query('','depends_on','element_id',ndi_timeseries_obj.id());
+				q_r_stimdoc = ndi.query('','depends_on','stimulus_presentation_id',stim_doc.id());
+				q_r_stimcontroldoc = ndi.query('','depends_on','stimulus_control_id',control_doc.id());
+				q_e = ndi.query(E.searchquery());
 
-				q_match{1} = ndi_query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
+				q_match{1} = ndi.query('stimulus_response_scalar_parameters_basic.temporalfreqfunc',...
 					'exact_string',temporalfreqfunc,'');
-				q_match{2} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_time',...
+				q_match{2} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_time',...
 					'exact_number',prestimulus_time,'');
-				q_match{3} = ndi_query('stimulus_response_scalar_parameters_basic.prestimulus_normalization',...
+				q_match{3} = ndi.query('stimulus_response_scalar_parameters_basic.prestimulus_normalization',...
 					'exact_number',prestimulus_normalization,'');
-				q_match{4} = ndi_query('stimulus_response_scalar_parameters_basic.isspike',...
+				q_match{4} = ndi.query('stimulus_response_scalar_parameters_basic.isspike',...
 					'exact_number',isspike,'');
-				q_match{5} = ndi_query('stimulus_response_scalar_parameters_basic.spiketrain_dt',...
+				q_match{5} = ndi.query('stimulus_response_scalar_parameters_basic.spiketrain_dt',...
 					'exact_number',spiketrain_dt,'');
 				q_matchtot = q_match{1};
 				for j=2:numel(q_match),
@@ -203,12 +202,12 @@ classdef ndi_app_tuning_response < ndi_app
 						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.offset]) ...
 						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_order])];
 
-				stim_timeref = ndi_timereference(ndi_stim_obj, ...
-					ndi_clocktype(stim_doc.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
+				stim_timeref = ndi.time.timereference(ndi_stim_obj, ...
+					ndi.time.clocktype(stim_doc.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
 					stim_doc.document_properties.epochid, 0);
 
 				[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
-					vlt.data.colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi_clocktype('dev_local_time'));
+					vlt.data.colvec(stim_stim_onsetoffsetid(:,[1 2])), ndi_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 
 				ts_stim_onsetoffsetid = [reshape(ts_epoch_t0_out,numel(stim_doc.document_properties.stimulus_presentation.presentation_order),2) ...
 					stim_stim_onsetoffsetid(:,3)];
@@ -231,7 +230,7 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 
 					% step 1, build the parameter document, if necessary; if we can find an example, use it
-					q_matchhere = ndi_query('stimulus_response_scalar_parameters_basic.freq_response',...
+					q_matchhere = ndi.query('stimulus_response_scalar_parameters_basic.freq_response',...
 						'exact_number',freq_response,'');
 
 					param_doc = E.database_search(q_matchtot&q_matchhere);
@@ -241,7 +240,7 @@ classdef ndi_app_tuning_response < ndi_app
 						stimulus_response_scalar_parameters_basic = vlt.data.var2struct('temporalfreqfunc','freq_response',...
 							'prestimulus_time','prestimulus_normalization',...
 							'isspike','spiketrain_dt');
-						param_doc = ndi_document('stimulus/stimulus_response_scalar_parameters_basic.json',...
+						param_doc = ndi.document('stimulus/stimulus_response_scalar_parameters_basic.json',...
 							'stimulus_response_scalar_parameters_basic', stimulus_response_scalar_parameters_basic') + ...
 							E.newdocument();
 						E.database_add(param_doc);
@@ -251,7 +250,7 @@ classdef ndi_app_tuning_response < ndi_app
 					% look for existing response docs
 
 					rdoc = E.database_search(q_e&q_rdoc&q_r_stimdoc&q_r_stimcontroldoc&...
-						ndi_query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
+						ndi.query('','depends_on','stimulus_response_scalar_parameters_id',param_doc{1}.id()));
 
 					E.database_rm(rdoc);
 
@@ -282,7 +281,7 @@ classdef ndi_app_tuning_response < ndi_app
 					stimulus_response_struct = struct( 'stimulator_epochid', stim_doc.document_properties.epochid, ...
 						'element_epochid', ts_epoch_timeref.epoch);
 
-					response_doc{end+1} = ndi_document('stimulus/stimulus_response_scalar',...
+					response_doc{end+1} = ndi.document('stimulus/stimulus_response_scalar',...
 						'stimulus_response_scalar',stimulus_response_scalar_struct,...
 						'stimulus_response', stimulus_response_struct)+E.newdocument();
 					response_doc{end} = response_doc{end}.set_dependency_value('stimulus_response_scalar_parameters_id', ...
@@ -349,7 +348,7 @@ classdef ndi_app_tuning_response < ndi_app
 				% Step 3:
 
 				% load stimulus information 
-				stim_pres_doc = E.database_search(ndi_query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = E.database_search(ndi.query('ndi_document.id', 'exact_string', ...
 					stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
 					error(['Could not load stimulus presentation document ' ...
@@ -441,7 +440,7 @@ classdef ndi_app_tuning_response < ndi_app
 					end;
 				end;
 
-				tuning_doc = ndi_document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
+				tuning_doc = ndi.document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('element_id',stim_response_doc.dependency_value('element_id'));
 				E.database_add(tuning_doc);
@@ -462,20 +461,20 @@ classdef ndi_app_tuning_response < ndi_app
 			% empty, then it is taken to be 0.
 			%
 			% The method of finding the control stimulus can be provided by providing extra name/value pairs.
-			% See NDI_APP_TUNING_RESPONSE/CONTROL_STIMULUS for parameters.
+			% See ndi.app.stimulus.tuning_response/CONTROL_STIMULUS for parameters.
 			% 
 				if nargin<3,
 					reset = 0;
 				end;
 
-				sq_stimulus_element = ndi_query('','depends_on','stimulus_element_id',stimulus_element_obj.id());
-				sq_stim = ndi_query('','isa','stimulus_presentation.json','');
+				sq_stimulus_element = ndi.query('','depends_on','stimulus_element_id',stimulus_element_obj.id());
+				sq_stim = ndi.query('','isa','stimulus_presentation.json','');
 				stim_doc = ndi_app_tuning_response_obj.session.database_search(sq_stim&sq_stimulus_element);
 
 				if reset,
-					sq_csi = ndi_query('','isa','control_stimulus_ids.json','');
+					sq_csi = ndi.query('','isa','control_stimulus_ids.json','');
 					for i=1:numel(stim_doc),
-						sq_csi_stim = ndi_query('','depends_on','stimulus_presentation_id',stim_doc{i}.id());
+						sq_csi_stim = ndi.query('','depends_on','stimulus_presentation_id',stim_doc{i}.id());
 						old_cs_doc = ndi_app_tuning_response_obj.session.database_search(sq_csi&sq_csi_stim);
 						ndi_app_tuning_response_obj.session.database_rm(old_cs_doc);
 					end;
@@ -494,9 +493,9 @@ classdef ndi_app_tuning_response < ndi_app
 			%
 			% [CS_IDS, CS_DOC] = CONTROL_STIMULUS(NDI_APP_TUNING_RESPONSE_OBJ, STIM_DOC, ...)
 			%
-			% For a given set of stimuli described in NDI_DOCUMENT of type 'ndi_document_stimulus',
+			% For a given set of stimuli described in ndi.document of type 'ndi_document_stimulus',
 			% this function returns the control stimulus ID for each stimulus in the vector CS_IDS 
-			% and a corresponding NDI_DOCUMENT of type ndi_document_control_stimulus_ids that describes this relationship.
+			% and a corresponding ndi.document of type ndi_document_control_stimulus_ids that describes this relationship.
 			%
 			%
 			% This function accepts parameters in the form of NAME/VALUE pairs:
@@ -581,7 +580,7 @@ classdef ndi_app_tuning_response < ndi_app
 				% now we have cs_ids for each stimulus, so make the document
 
 				control_stim_ids_struct = struct('control_stimulus_ids', cs_ids,'control_stimulus_id_method',control_stim_id_method);
-				cs_doc = ndi_document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct) ...
+				cs_doc = ndi.document('stimulus/control_stimulus_ids','control_stimulus_ids',control_stim_ids_struct) ...
 					+ ndi_app_tuning_response_obj.newdocument();
 				cs_doc = cs_doc.set_dependency_value('stimulus_presentation_id',stim_doc.id());
 
@@ -600,9 +599,9 @@ classdef ndi_app_tuning_response < ndi_app
 				tc_doc = {};
 				srs_doc = {};
 
-				q_e = ndi_query(E.searchquery());
-				q_tc = ndi_query('','isa','stimulus_tuningcurve.json','');
-				q_elementr = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
+				q_e = ndi.query(E.searchquery());
+				q_tc = ndi.query('','isa','stimulus_tuningcurve.json','');
+				q_elementr = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 
 				tc_doc_matches = E.database_search(q_e&q_tc&q_elementr);
 
@@ -610,7 +609,7 @@ classdef ndi_app_tuning_response < ndi_app
 				srs = {};
 
 				for i=1:numel(tc_doc_matches),
-					q_stimresponsescalar = ndi_query('ndi_document.id','exact_string',...
+					q_stimresponsescalar = ndi.query('ndi_document.id','exact_string',...
 						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'),'');
 					srs{i} = E.database_search(q_e&q_stimresponsescalar);
 					if ~isempty(srs),

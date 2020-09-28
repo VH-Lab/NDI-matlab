@@ -1,4 +1,4 @@
-classdef ndi_app_oridirtuning < ndi_app
+classdef oridirtuning < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -6,36 +6,36 @@ classdef ndi_app_oridirtuning < ndi_app
 
 	methods
 
-		function ndi_app_oridirtuning_obj = ndi_app_oridirtuning(varargin)
-			% NDI_APP_ORIDIRTUNING - an app to calculate and analyze orientation/direction tuning curves
+		function ndi_app_oridirtuning_obj = oridirtuning(varargin)
+			% ndi.app.oridirtuning - an app to calculate and analyze orientation/direction tuning curves
 			%
-			% NDI_APP_ORIDIRTUNING_OBJ = NDI_APP_ORIDIRTUNING(SESSION)
+			% NDI_APP_ORIDIRTUNING_OBJ = ndi.app.oridirtuning(SESSION)
 			%
-			% Creates a new NDI_APP_ORIDIRTUNING object that can operate on
-			% NDI_SESSIONS. The app is named 'ndi_app_oridirtuning'.
+			% Creates a new ndi.app.oridirtuning object that can operate on
+			% NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.
 			%
 				session = [];
 				name = 'ndi_app_oridirtuning';
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi_app(session, name);
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
 
-		end % ndi_app_oridirtuning() creator
+		end % ndi.app.oridirtuning() creator
 
 		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
-			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, NDI_ELEMENT)
+			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
 			%
 			% 
 				tuning_doc = {};
 
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi_app_tuning_response(E);
+				rapp = ndi.app.stimulus.tuning_response(E);
 
-				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
+				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
+				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_relement)
 
 				for r=1:numel(rdoc),
@@ -55,18 +55,18 @@ classdef ndi_app_oridirtuning < ndi_app
 			%
 				oriprops = {};
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi_app_tuning_response(E);
+				rapp = ndi.app.stimulus.tuning_response(E);
 
-				q_relement = ndi_query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi_query('','isa','stimulus_response_scalar.json','');
+				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
+				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_relement);
 
 
 				for r=1:numel(rdoc),
 					if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
 						% find the tuning curve doc
-						q_tdoc = ndi_query('','isa','stimulus_tuningcurve.json','');
-						q_tdocrdoc = ndi_query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
+						q_tdoc = ndi.query('','isa','stimulus_tuningcurve.json','');
+						q_tdocrdoc = ndi.query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
 						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),
 							oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
@@ -82,7 +82,7 @@ classdef ndi_app_oridirtuning < ndi_app
 			%
 			%
 				E = ndi_app_oridirtuning_obj.session;
-				tapp = ndi_app_tuning_response(E);
+				tapp = ndi.app.stimulus.tuning_response(E);
 				ind = {};
 				ind_real = {};
 				control_ind = {};
@@ -92,7 +92,7 @@ classdef ndi_app_oridirtuning < ndi_app
 				response_stddev = [];
 				response_stderr = [];
 
-				stim_response_doc = E.database_search(ndi_query('ndi_document.id','exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
+				stim_response_doc = E.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
 
 				if isempty(stim_response_doc),
 					error(['cannot find stimulus response document. Do not know what to do.']);
@@ -167,7 +167,7 @@ classdef ndi_app_oridirtuning < ndi_app
 					'direction_angle_preference', fi.dirpref, ...
 					'hwhh', fi.tuning_width);
 
-				oriprops = ndi_document('vision/oridir/orientation_direction_tuning', ...
+				oriprops = ndi.document('vision/oridir/orientation_direction_tuning', ...
 					'orientation_direction_tuning', vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_oridirtuning_obj.newdocument();
 				oriprops = oriprops.set_dependency_value('element_id', stim_response_doc{1}.dependency_value('element_id'));
@@ -184,7 +184,7 @@ classdef ndi_app_oridirtuning < ndi_app
 			%
 				E = ndi_app_oridirtuning_obj.session;
 					% does this stimulus vary in orientation or direction tuning?
-				stim_pres_doc = E.database_search(ndi_query('ndi_document.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
+				stim_pres_doc = E.database_search(ndi.query('ndi_document.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
 					error(['empty stimulus response doc, do not know what to do.']);
 				end;
@@ -220,11 +220,11 @@ classdef ndi_app_oridirtuning < ndi_app
 					oriprops_doc.document_properties.orientation_direction_tuning.fit.double_gaussian_fit_values,'k-');
 				box off;
 
-				element_doc = E.database_search(ndi_query('ndi_document.id','exact_string',dependency_value(oriprops_doc,'element_id'),'')); 
+				element_doc = E.database_search(ndi.query('ndi_document.id','exact_string',dependency_value(oriprops_doc,'element_id'),'')); 
 				if isempty(element_doc),
 					error(['Empty element document, don''t know what to do.']);
 				end;
-				element = ndi_document2ndi_object(element_doc{1}, E);
+				element = ndi.database.fun.document2ndi_object(element_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
 				title([element.elementstring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
@@ -238,6 +238,6 @@ classdef ndi_app_oridirtuning < ndi_app
 
 	end; % static methods
 
-end % ndi_app_oridirtuning
+end % ndi.app.oridirtuning
 
 

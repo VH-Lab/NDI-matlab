@@ -1,4 +1,4 @@
-classdef ndi_app_stimulus_decoder < ndi_app
+classdef decoder < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -6,12 +6,12 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 	methods
 
-		function ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder(varargin)
-			% NDI_APP_STIMULUS_DECODER - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
+		function ndi_app_stimulus_decoder_obj = decoder(varargin)
+			% ndi.app.stimulus.decoder - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_STIMULUS_DECODER_OBJ = NDI_APP_STIMULUS_DECODER(SESSION)
+			% NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
 			%
-			% Creates a new NDI_APP_STIMULUS_DECODER object that can operate on
+			% Creates a new ndi.app.stimulus.decoder object that can operate on
 			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
 				session = [];
@@ -19,16 +19,16 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi_app(session, name);
+				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi.app(session, name);
 
-		end % ndi_app_stimulus_decoder() creator
+		end % ndi.app.stimulus.decoder() creator
 
 		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_element_stim, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an NDI_ELEMENT stimulus probe
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus probe
 			%
 			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
 			%
-			% Examines a the NDI_SESSION associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
+			% Examines a the ndi.session associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
@@ -48,9 +48,9 @@ classdef ndi_app_stimulus_decoder < ndi_app
 
 				E = ndi_app_stimulus_decoder_obj.session;
 
-				sq_probe = ndi_query('','depends_on','stimulus_element_id',ndi_element_stim.id());
-				sq_e = ndi_query(E.searchquery());
-				sq_stim = ndi_query('','isa','stimulus_presentation.json',''); % presentation
+				sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
+				sq_e = ndi.query(E.searchquery());
+				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
 
 				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
 
@@ -101,5 +101,5 @@ classdef ndi_app_stimulus_decoder < ndi_app
 				E.database_add(newdocs);
 		end % 
 	end; % methods
-end % ndi_app_stimulus_decoder
+end % ndi.app.stimulus.decoder
 

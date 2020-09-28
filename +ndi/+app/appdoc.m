@@ -1,4 +1,4 @@
-classdef ndi_appdoc
+classdef appdoc
 
 	properties
 		doc_types;         % types of the parameter documents; the app developer can choose (cell array)
@@ -7,27 +7,27 @@ classdef ndi_appdoc
 	end
 
 	methods
-		function ndi_appdoc_obj = ndi_appdoc(doc_types, doc_document_types, doc_session)
-			% NDI_APPDOC - create a new NDI_APPDOC document
+		function ndi_appdoc_obj = appdoc(doc_types, doc_document_types, doc_session)
+			% ndi.app.appdoc - create a new ndi.app.appdoc document
 			% 
-			% NDI_APPDOC_OBJ = NDI_APPDOC(DOC_TYPES, DOC_DOCUMENT_TYPES, DOC_SESSION)
+			% NDI_APPDOC_OBJ = ndi.app.appdoc(DOC_TYPES, DOC_DOCUMENT_TYPES, DOC_SESSION)
 			%
-			% Creates and initializes a new NDI_APPDOC object.
+			% Creates and initializes a new ndi.app.appdoc object.
 			%
 			% DOC_TYPES should be a cell array of strings describing the internal names
 			%    of the document types.
 			% DOC_DOCUMENT_TYPES should be a cell array of strings describing the
 			%    NDI_document datatypes for each parameter document.
-			% NOC_SESSION should be an NDI_SESSION object that is used to access the 
+			% NOC_SESSION should be an ndi.session object that is used to access the 
 			%    connected database.
 			%
 			% Example:
-			%   ndi_appdoc_obj = ndi_appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
+			%   ndi_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
 			%
 					ndi_appdoc_obj.doc_types = doc_types;
 					ndi_appdoc_obj.doc_document_types = doc_document_types;
 					ndi_appdoc_obj.doc_session = doc_session;
-		end; % ndi_appdoc() 
+		end; % ndi.app.appdoc() 
 
 		function doc = add_appdoc(ndi_appdoc_obj, appdoc_type, appdoc_struct, docexistsaction, varargin)
 			% ADD_APPDOC - Load data from an application document
@@ -35,7 +35,7 @@ classdef ndi_appdoc
 			% [...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
 			%     APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])
 			%
-			% Creates a new NDI_DOCUMENT that is based on the type APPDOC_TYPE with creation data
+			% Creates a new ndi.document that is based on the type APPDOC_TYPE with creation data
 			% specified by APPDOC_STRUCT.  [additional inputs] are used to find or specify the
 			% NDI_document in the database. They are passed to the function FIND_APPDOC,
 			% so see help FIND_APPDOC for the documentation for each app.
@@ -44,15 +44,15 @@ classdef ndi_appdoc
 			% 1 if the document already exists).
 			%
 			% If APPDOC_STRUCT is empty, then default values are used. If it is a character array, then it is
-			% assumed to be a filename of a tab-separated-value text file. If it is an NDI_DOCUMENT, then it
-			% is assumed to be an NDI_DOCUMENT and it will be converted to the parameters using DOC2STRUCT.
+			% assumed to be a filename of a tab-separated-value text file. If it is an ndi.document, then it
+			% is assumed to be an ndi.document and it will be converted to the parameters using DOC2STRUCT.
 			%
 			% This function also takes a string DOCEXISTSACTION that describes what it should do
 			% in the event that the document fitting the [additional inputs] already exists:
 			% DOCEXISTACTION value      | Description
 			% ----------------------------------------------------------------------------------
 			% 'Error'                   | An error is generating indicating the document exists.
-			% 'NoAction'                | The existing document is left alone. The existing NDI_DOCUMENT
+			% 'NoAction'                | The existing document is left alone. The existing ndi.document
 			%                           |    is returned in DOC.
 			% 'Replace'                 | Replace the document; note that this deletes all NDI_DOCUMENTS
 			%                           |    that depend on the original.
@@ -65,7 +65,7 @@ classdef ndi_appdoc
 
 				if isempty(appdoc_struct),
 					appdoc_struct = ndi_appdoc_obj.defaultstruct_appdoc(appdoc_type);
-				elseif isa(appdoc_struct,'ndi_document'),
+				elseif isa(appdoc_struct,'ndi.document'),
 					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type,appdoc_struct);
 				elseif isa(appdoc_struct,'char'),
 					try,
@@ -128,11 +128,11 @@ classdef ndi_appdoc
 		end; % add_appdoc
 
 		function doc = struct2doc(ndi_appdoc_obj, appdoc_type, appdoc_struct, varargin)
-			% STRUCT2DOC - create an NDI_DOCUMENT from an input structure and input parameters
+			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
 			%
-			% Create an NDI_DOCUMENT from a data structure APPDOC_STRUCT. The NDI_DOCUMENT is created
+			% Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
 			% according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.
 			%
 			% In the base class, this always returns empty. It must be overridden in subclasses.
@@ -142,14 +142,14 @@ classdef ndi_appdoc
 		end; % struct2doc()
 
 		function appdoc_struct = doc2struct(ndi_appdoc_obj, appdoc_type, doc)
-			% DOC2STRUCT - create an NDI_DOCUMENT from an input structure and input parameters
+			% DOC2STRUCT - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
 			%
-			% Create an NDI_DOCUMENT from a data structure APPDOC_STRUCT. The NDI_DOCUMENT is created
+			% Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
 			% according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.
 			%
-			% In the base class, this uses the property info in the NDI_DOCUMENT to load the data structure.
+			% In the base class, this uses the property info in the ndi.document to load the data structure.
 			%
 				listname = doc.document_properties.document_class.property_list_name;
 				appdoc_struct = getfield(doc.document_properties,listname);
@@ -160,14 +160,14 @@ classdef ndi_appdoc
 			%
 			% APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
 			%
-			% Return the default data structure for a given APPDOC_TYPE of an NDI_APPDOC object.
+			% Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.
 			%
-			% In the base class, the blank version of the NDI_DOCUMENT is read in and the
-			% default structure is built from the NDI_DOCUMENT's class property list.
+			% In the base class, the blank version of the ndi.document is read in and the
+			% default structure is built from the ndi.document's class property list.
 			%
 				ind = find(strcmpi(appdoc_type,ndi_appdoc_obj.doc_types));
 				if ~isempty(ind),
-					appdoc_doc = ndi_document(ndi_appdoc_obj.doc_document_types{ind});
+					appdoc_doc = ndi.document(ndi_appdoc_obj.doc_document_types{ind});
 					appdoc_struct = ndi_appdoc_obj.doc2struct(appdoc_type, appdoc_doc);
 				else,
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
@@ -193,7 +193,7 @@ classdef ndi_appdoc
 		end; % loaddata_appdoc()
 
 		function b = clear_appdoc(ndi_appdoc_obj, appdoc_type, varargin)
-			% CLEAR_APPDOC - remove an NDI_APPDOC document from a session database
+			% CLEAR_APPDOC - remove an ndi.app.appdoc document from a session database
 			% 
 			% B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
 			%
@@ -214,12 +214,12 @@ classdef ndi_appdoc
 		end; % clear_appdoc()
 
 		function doc = find_appdoc(ndi_appdoc_obj, appdoc_type, varargin)
-			% FIND_APPDOC - find an NDI_APPDOC document in the session database
+			% FIND_APPDOC - find an ndi.app.appdoc document in the session database
 			%
 			% DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
 			%
 			% Using search criteria that is supported by [additional inputs], FIND_APPDOC
-			% searches the database for the NDI_DOCUMENT object DOC that is
+			% searches the database for the ndi.document object DOC that is
 			% described by APPDOC_TYPE.
 			%
 			% DOC is always a cell array of all matching NDI_DOCUMENTs.
@@ -239,7 +239,7 @@ classdef ndi_appdoc
 			% [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
 			%
 			% Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
-			% NDI_DOCUMENT described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
+			% ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
 			%
 			% In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'
 			%
@@ -314,7 +314,7 @@ classdef ndi_appdoc
 			%      INPUT1 - first input needed to find doctype1 documents
 			%      INPUT2 - the second input needed to find doctype1 documents
 			%   OUTPUT:
-			%      DOCTYPE1_DOC - the NDI_DOCUMENT of the application document DOCTYPE1
+			%      DOCTYPE1_DOC - the ndi.document of the application document DOCTYPE1
 			%
 			%   ------------------------
 			%   | DOCTYPE1 - LOADING |
@@ -331,10 +331,10 @@ classdef ndi_appdoc
 			%      OUTPUT2 - the second type of loaded data contained in DOCTYPE1 documents
 			%
 			% (If there were more appdoc types, list them here...)
-				eval(['help ndi_appdoc/appdoc_description']); % change to your class here
+				eval(['help ndi.app.appdoc/appdoc_description']); % change to your class here
 		end; % appdoc_description()
 			
 	end;
 
 
-end % ndi_appdoc
+end % ndi.app.appdoc

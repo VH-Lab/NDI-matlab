@@ -1,4 +1,4 @@
-classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
+classdef spikeextractor < ndi.app & ndi.appdoc
 	% NDI_APP_SPIKEEXTRACTOR 
 	%
 	% 
@@ -9,12 +9,12 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 	methods
 
-		function ndi_app_spikeextractor_obj = ndi_app_spikeextractor(varargin)
-			% NDI_APP_SPIKEEXTRACTOR - an app to extract elements found in sessions
+		function ndi_app_spikeextractor_obj = spikeextractor(varargin)
+			% ndi.app.spikeextractor - an app to extract elements found in sessions
 			%
-			% NDI_APP_SPIKEEXTRACTOR_OBJ = NDI_APP_SPIKEEXTRACTOR(SESSION)
+			% NDI_APP_SPIKEEXTRACTOR_OBJ = ndi.app.spikeextractor(SESSION)
 			%
-			% Creates a new NDI_APP_SPIKEEXTRACTOR object that can operate on
+			% Creates a new ndi.app.spikeextractor object that can operate on
 			% NDI_SESSIONS. The app is named 'ndi_app_spikeextractor'.
 			%
 				session = [];
@@ -23,14 +23,14 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 					session = varargin{1};
 				end
 				
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_app(session, name);
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_appdoc(...
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app(session, name);
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.appdoc(...
 					{'extraction_parameters','extraction_parameters_modification', 'spikewaves','spiketimes'},...
 					{'apps/spikeextractor/spike_extraction_parameters','apps/spikeextractor/spike_extraction_parameters_modification',...
 						'apps/spikeextractor/spikewaves','apps/spikeextractor/spiketimes'},...
 					session);
 
-		end % ndi_app_spikeextractor() creator
+		end % ndi.app.spikeextractor() creator
 
 		function filterstruct = makefilterstruct(ndi_app_spikeextractor_obj, extraction_doc, sample_rate)
 			% MAKEFILTERSTRUCT - make a filter structure for a given sampling rate and extraction parameters
@@ -58,7 +58,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%
 			% DATA_OUT = FILTER(NDI_APP_SPIKEEXTRACTOR_OBJ, DATA_IN, FILTERSTRUCT)
 			%
-			% Filters data based on FILTERSTRUCT (see NDI_APP_SPIKEEXTRACTOR/MAKEFILTERSTRUCT)
+			% Filters data based on FILTERSTRUCT (see ndi.app.spikeextractor/MAKEFILTERSTRUCT)
 			%
 				if isempty(filterstruct),
 					data_out = data_in;
@@ -77,7 +77,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			% EXTRACTION_NAME name given to find ndi_doc in database
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
 
-				ndi_globals;
+				ndi.globals;
 
 				ndi_globals.log.msg('system',1,'Beginning of extraction.');
 
@@ -278,14 +278,14 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 				end % epoch n
 		end % extract
 
-		% functions that override ndi_appdoc
+		% functions that override ndi.app.appdoc
 
 		function doc = struct2doc(ndi_app_spikeextractor_obj, appdoc_type, appdoc_struct, varargin)
-			% STRUCT2DOC - create an NDI_DOCUMENT from an input structure and input parameters
+			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
 			%
-			% For NDI_APP_SPIKEEXTRACTOR, one can use an APPDOC_TYPE of the following:
+			% For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
 			% APPDOC_TYPE                 | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'     | A document that describes the parameters to be used for extraction
@@ -296,16 +296,16 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			% 
 				if strcmpi(appdoc_type,'extraction_parameters'),
 					extraction_name = varargin{1};
-					doc = ndi_document('apps/spikeextractor/spike_extraction_parameters',...
+					doc = ndi.document('apps/spikeextractor/spike_extraction_parameters',...
 						'spike_extraction_parameters',appdoc_struct) + ...
 						ndi_app_spikeextractor_obj.newdocument() + ...
-						ndi_document('ndi_document','ndi_document.name',extraction_name);
+						ndi.document('ndi_document','ndi_document.name',extraction_name);
 				elseif strcmpi(appdoc_type,'extraction_parameters_modification'),
 					ndi_timeseries_obj = varargin{1};
 					epochid = varargin{2};
 					extraction_name = varargin{3};
-					if ~isa(ndi_timeseries_obj,'ndi_timeseries'),
-						error(['ndi_timeseries_obj must be a member of class NDI_TIMESERIES.']);
+					if ~isa(ndi_timeseries_obj,'ndi.time.timeseries'),
+						error(['ndi_timeseries_obj must be a member of class ndi.time.timeseries.']);
 					end;
 					epoch_string = ndi_timeseries_obj.epoch2str(epochid); % make sure to use string form
 					extraction_doc = ndi_app_spikeextractor_obj.find_appdoc('extraction_parameters', extraction_name);
@@ -313,9 +313,9 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						error(['Could not find an extraction parameters document named ' extraction_name '.']);
 					end;
 
-					doc = ndi_document('apps/spikeextractor/spike_extraction_parameters_modification',...
+					doc = ndi.document('apps/spikeextractor/spike_extraction_parameters_modification',...
 						'spike_extraction_parameters_modification',appdoc_struct,'epochid',epoch_string) + ...
-						ndi_app_spikeextractor_obj.newdocument() + ndi_document('ndi_document','ndi_document.name',extraction_name);
+						ndi_app_spikeextractor_obj.newdocument() + ndi.document('ndi_document','ndi_document.name',extraction_name);
 					doc = doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
 					doc = doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
 				elseif strcmpi(appdoc_type,'spikewaves'),
@@ -334,9 +334,9 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			% [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
 			%
 			% Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
-			% NDI_DOCUMENT described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
+			% ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
 			%
-			% For NDI_APP_SPIKEEXTRACTOR, one can use an APPDOC_TYPE of the following:
+			% For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
 			% APPDOC_TYPE               | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'   | A document that describes the parameters to be used for extraction
@@ -368,18 +368,18 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 		end; % isvalid_appdoc_struct()
 
                 function doc = find_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
-                        % FIND_APPDOC - find an NDI_APPDOC document in the session database
+                        % FIND_APPDOC - find an ndi.app.appdoc document in the session database
                         %
-			% See NDI_APP_SPIKEEXTRACTOR/APPDOC_DESCRIPTION for documentation.
+			% See ndi.app.spikeextractor/APPDOC_DESCRIPTION for documentation.
 			%
-			% See also: NDI_APP_SPIKEEXTRACTOR/APPDOC_DESCRIPTION
+			% See also: ndi.app.spikeextractor/APPDOC_DESCRIPTION
 			%
         			switch(lower(appdoc_type)),
 					case 'extraction_parameters',
 						extraction_parameters_name = varargin{1};
 		
-						extract_searchq = ndi_query('ndi_document.name','exact_string',extraction_parameters_name,'') & ...
-							ndi_query('','isa','spike_extraction_parameters','');
+						extract_searchq = ndi.query('ndi_document.name','exact_string',extraction_parameters_name,'') & ...
+							ndi.query('','isa','spike_extraction_parameters','');
 						doc = ndi_app_spikeextractor_obj.session.database_search(extract_searchq);
 
 					case {'extraction_parameters_modification', 'spikewaves','spiketimes'}, 
@@ -390,13 +390,13 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 						extraction_parameters_doc = ndi_app_spikeextractor_obj.find_appdoc('extraction_parameters',extraction_parameters_name);
 
 						epoch_string = ndi_timeseries_obj.epoch2str(epoch); % make sure to use string form
-						spikedocs_searchq = ndi_query(ndi_app_spikeextractor_obj.searchquery()) & ...
-							ndi_query('epochid','exact_string',epoch_string,'') & ...
-							ndi_query('','depends_on','element_id',ndi_timeseries_obj.id()) & ...
-							ndi_query('','depends_on','extraction_parameters_id',extraction_parameters_doc{1}.id());
-						spikewaves_search = ndi_query('','isa','spikewaves','');
-						spiketimes_search = ndi_query('','isa','spiketimes','');
-						extraction_parameters_modification_search = ndi_query('','isa','spike_extraction_parameters_modification','');
+						spikedocs_searchq = ndi.query(ndi_app_spikeextractor_obj.searchquery()) & ...
+							ndi.query('epochid','exact_string',epoch_string,'') & ...
+							ndi.query('','depends_on','element_id',ndi_timeseries_obj.id()) & ...
+							ndi.query('','depends_on','extraction_parameters_id',extraction_parameters_doc{1}.id());
+						spikewaves_search = ndi.query('','isa','spikewaves','');
+						spiketimes_search = ndi.query('','isa','spiketimes','');
+						extraction_parameters_modification_search = ndi.query('','isa','spike_extraction_parameters_modification','');
 						if strcmp(appdoc_type,'spikewaves'),
 							spikedocs_searchq = spikedocs_searchq & spikewaves_search;
 						elseif strcmp(appdoc_type,'spiketimes'),
@@ -415,9 +415,9 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 		function varargout = loaddata_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
 			% LOADDATA_APPDOC - load data from an application document
 			%
-			% See NDI_APP_SPIKEEXTRACTOR/APPDOC_DESCRIPTION for documentation.
+			% See ndi.app.spikeextractor/APPDOC_DESCRIPTION for documentation.
 			%
-			% See also: NDI_APP_SPIKEEXTRACTOR/APPDOC_DESCRIPTION
+			% See also: ndi.app.spikeextractor/APPDOC_DESCRIPTION
 			%
 				switch(lower(appdoc_type)),
 					case {'extraction_parameters','extraction_parameters_modification'},
@@ -469,7 +469,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 		function appdoc_description(ndi_appdoc_obj)
 			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
 			%
-			% For NDI_APP_SPIKEEXTRACTOR, there are the following types:
+			% For ndi.app.spikeextractor, there are the following types:
 			% APPDOC_TYPE                 | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'     | A document that describes the parameters to be used for extraction
@@ -533,7 +533,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%   INPUTS: 
 			%     EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
 			%   OUPUT: 
-			%     Returns the extraction parameters NDI_DOCUMENT with the name EXTRACTION_NAME.
+			%     Returns the extraction parameters ndi.document with the name EXTRACTION_NAME.
 			%
 			%   ------------------------------------
 			%   | EXTRACTION_PARAMETERS -- LOADING |
@@ -545,7 +545,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%   INPUTS: 
 			%     EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
 			%   OUPUT: 
-			%     Returns the extraction parameters NDI_DOCUMENT with the name EXTRACTION_NAME.
+			%     Returns the extraction parameters ndi.document with the name EXTRACTION_NAME.
 			%
 			%
 			% ----------------------------------------------------------------------------------------------
@@ -601,11 +601,11 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%        'extraction_parameters_modification', NDI_TIMESERIES_OBJ, EPOCHID, EXTRACTION_NAME)
 			%
 			%   INPUTS: 
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
 			%   OUPUT: 
-			%     Returns the extraction parameters modification NDI_DOCUMENT with the name EXTRACTION_NAME
+			%     Returns the extraction parameters modification ndi.document with the name EXTRACTION_NAME
 			%      for the named EPOCHID and NDI_TIMESERIES_OBJ.
 			%
 			%   -------------------------------------------------
@@ -616,11 +616,11 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%        'extraction_parameters_modification', NDI_TIMESERIES_OBJ, EPOCHID, EXTRACTION_NAME)
 			% 
 			%   INPUTS: 
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
 			%   OUPUT: 
-			%     Returns the extraction parameters modification NDI_DOCUMENT with the name EXTRACTION_NAME.
+			%     Returns the extraction parameters modification ndi.document with the name EXTRACTION_NAME.
 			%
 			% ----------------------------------------------------------------------------------------------
 			% APPDOC 3: SPIKEWAVES
@@ -631,7 +631,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%   -----------------------
 			%
 			%   SPIKEWAVES documents store the spike waveforms that are read during a spike extraction. It
-			%   DEPENDS ON the NDI_TIMESERIES object on which the extraction is performed and the EXTRACTION_PARAMETERS
+			%   DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the EXTRACTION_PARAMETERS
 			%   that descibed the extraction.
 			%
 			%   Definition: app/spikeextractor/spikewaves
@@ -650,11 +650,11 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%                               NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
 			%
 			%   INPUTS:
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
 			%   OUTPUT:
-			%      SPIKEWAVES_DOC - the NDI_DOCUMENT of the extracted spike waves.
+			%      SPIKEWAVES_DOC - the ndi.document of the extracted spike waves.
 			%
 			%   ------------------------
 			%   | SPIKEWAVES - LOADING |
@@ -664,7 +664,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%                               NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
 			%
 			%   INPUTS:
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
 			%   
@@ -680,7 +680,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%        S1                 | Number of samples after spike center
 			%                           |    (usually positive)
 			%        samplerate         | The sampling rate
-			%      SPIKEWAVES_DOC - the NDI_DOCUMENT of the extracted spike waves.
+			%      SPIKEWAVES_DOC - the ndi.document of the extracted spike waves.
 			%
 			% ----------------------------------------------------------------------------------------------
 			% APPDOC 4: SPIKETIMES
@@ -691,7 +691,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%   -----------------------
 			%
 			%   SPIKETIMES documents store the times spike waveforms that are read during a spike extraction. It
-			%   DEPENDS ON the NDI_TIMESERIES object on which the extraction is performed and the EXTRACTION_PARAMETERS
+			%   DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the EXTRACTION_PARAMETERS
 			%   that descibed the extraction. The times are in the local epoch time units.
 			%
 			%   Definition: app/spikeextractor/spiketimes
@@ -710,11 +710,11 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%                               NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
 			%
 			%   INPUTS:
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
 			%   OUTPUT:
-			%      SPIKEWAVES_DOC - the NDI_DOCUMENT of the extracted spike waves.
+			%      SPIKEWAVES_DOC - the ndi.document of the extracted spike waves.
 			%
 			%   ------------------------
 			%   | SPIKETIMES - LOADING |
@@ -724,19 +724,19 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 			%                               NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME)
 			%
 			%   INPUTS:
-			%      NDI_TIMESERIES_OBJ - the NDI_TIMESERIES object that was used in the extraction
+			%      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
 			%      EPOCH - the epoch identifier to be accessed
 			%      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
 			%   
 			%   OUTPUTS:
 			%      SPIKETIMES - the time of each spike wave, in local epoch time coordinates
-			%      SPIKETIMES_DOC - the NDI_DOCUMENT of the extracted spike times.
+			%      SPIKETIMES_DOC - the ndi.document of the extracted spike times.
 			%
  	 		% ----------------------------------------------------------------------------------------------
 			%
-				eval(['help ndi_app_spikeextractor/appdoc_description']); 
+				eval(['help ndi.app.spikeextractor/appdoc_description']); 
 		end; % appdoc_description()
 
 	end; % methods
 
-end % ndi_app_spikeextractor
+end % ndi.app.spikeextractor

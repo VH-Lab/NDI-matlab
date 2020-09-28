@@ -5,7 +5,7 @@ ndi_app_spikeextractor	ndi.app.spikeextractor
 ndi_app_spikesorter	ndi.app.spikesorter
 ndi_app_spikesorter_hengen	ndi.app.spikesorter.hengen
 ndi_app_stimulus_decoder	ndi.app.stimulus.decoder
-ndi_app_tuning_response	ndi.app.tuning.response
+ndi_app_tuning_response	ndi.app.stimulus.tuning_response
 ndi_appdoc	ndi.app.appdoc
 ndi_daqmetadatareader	ndi.daq.metadatareader
 ndi_daqmetadatareader_AngelucciStims	ndi.daq.metadatareader.AngelucciStims
