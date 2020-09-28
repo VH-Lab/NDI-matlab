@@ -1,31 +1,31 @@
-classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
-% NDI_PROBE_TIMESERIES_STIMULATOR - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
+classdef stimulator < ndi.probe.timeseries
+% ndi.probe.timeseries.stimulator - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = ndi_probe_timeseries_stimulator(varargin)
-			% NDI_PROBE_TIMESERIES_STIMULATOR - create a new NDI_PROBE_TIMESERIES_STIMULATOR object
+		function obj = ndi.probe.timeseries.stimulator(varargin)
+			% ndi.probe.timeseries.stimulator - create a new ndi.probe.timeseries.stimulator object
 			%
-			% OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
+			% OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE)
 			%
-			% Creates an NDI_PROBE_TIMESERIES_STIMULATOR associated with an NDI_SESSION object SESSION and
+			% Creates an ndi.probe.timeseries.stimulator associated with an ndi.session object SESSION and
 			% with name NAME (a string that must start with a letter and contain no white space),
 			% reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			% probe (a string that must start with a letter and contain no white space).
 			%
-				obj = obj@ndi_probe_timeseries(varargin{:});
-		end % ndi_probe_timeseries_stimulator()
+				obj = obj@ndi.probe.timeseries(varargin{:});
+		end % ndi.probe.timeseries.stimulator()
 
 		function [data, t, timeref] = readtimeseriesepoch(ndi_probe_timeseries_stimulator_obj, epoch, t0, t1)
-			% READ_STIMULUSEPOCH - Read stimulus data from an NDI_PROBE_TIMESERIES_STIMULATOR object
+			% READ_STIMULUSEPOCH - Read stimulus data from an ndi.probe.timeseries.stimulator object
 			%
 			% [DATA, T, TIMEREF] = READTIMESERIESEPOCH(NDI_PROBE_TIMESERIES_STIMULATOR_OBJ, EPOCH, T0, T1)
 			%  STIMON, STIMOFF, STIMID, PARAMETERS, STIMOPENCLOSE] = ...
 			%    READSTIMULUSEPOCH(NDI_PROBE_STIMULTOR_OBJ, EPOCH, T0, T1)
 			%
-			% Reads stimulus delivery information from an NDI_PROBE_TIMESERIES_STIMULATOR object for a given EPOCH.
+			% Reads stimulus delivery information from an ndi.probe.timeseries.stimulator object for a given EPOCH.
 			% T0 and T1 are in epoch time.
 			%
 			% T.STIMON is an Nx1 vector with the ON times of each stimulus delivery in the time units of
@@ -50,9 +50,9 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 			%    will be defined by +1 and -1 marks on the third marker channel.
 			%
 			% 
-			% TIMEREF is an NDI_TIMEREFERENCE object that refers to this EPOCH.
+			% TIMEREF is an ndi.time.timereference object that refers to this EPOCH.
 			%
-			% See also: NDI_PROBE_TIMESERIES/READTIMESERIES
+			% See also: ndi.probe.timeseries/READTIMESERIES
 			%
 				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
 				eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
@@ -121,7 +121,7 @@ classdef ndi_probe_timeseries_stimulator < ndi_probe_timeseries
 					t.stimopenclose(:,2) = t.stimoff;
 				end;
 
-				timeref = ndi_timereference(ndi_probe_timeseries_stimulator_obj, ndi_clocktype('dev_local_time'), eid, 0);
+				timeref = ndi.time.timereference(ndi_probe_timeseries_stimulator_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
 		end %readtimeseriesepoch()
 
 	end; % methods

@@ -1,24 +1,24 @@
-classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
+classdef mfdaq < ndi.probe.timeseries
 % NDI_PROBE_TIMESERIES_MFDAQ - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_DAQSYSTEM_MFDAQ objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = ndi_probe_timeseries_mfdaq(varargin)
-			% NDI_PROBE - create a new NDI_PROBE object
+		function obj = mfdaq(varargin)
+			% ndi.probe - create a new ndi.probe object
 			%
-			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE)
+			%  OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
+			%  Creates an ndi.probe associated with an ndi.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  NDI_PROBE is an abstract class, and a specific implementation must be called.
+			%  ndi.probe is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@ndi_probe_timeseries(varargin{:});
-		end % ndi_probe_timeseries_mfdaq
+				obj = obj@ndi.probe.timeseries(varargin{:});
+		end % ndi.probe.timeseries.mfdaq
 
 		function [data,t,timeref_out] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1)
 			%  READ_EPOCHSAMPLES - read the data from a specified epoch
@@ -29,7 +29,7 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 			%
 			%  DATA will have one column per channel.
 			%  T is the time of each sample, relative to the beginning of the epoch.
-			%  TIMEREF_OUT is an NDI_TIMEREFERENCE object that describes the epoch.
+			%  TIMEREF_OUT is an ndi.time.timereference object that describes the epoch.
 			%
 			%  
 				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
@@ -45,7 +45,7 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 					[t] = readchannels_epochsamples(dev{1}, {'time'}, channel(1), devepoch{1}, s0, s1);
 				end
 				if nargout>=3,
-					timeref_out = ndi_timereference(ndi_probe_timeseries_mfdaq_obj, ndi_clocktype('dev_local_time'), eid, 0);
+					timeref_out = ndi.time.timereference(ndi_probe_timeseries_mfdaq_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
 				end
 		end % read_epochsamples()
 
@@ -58,7 +58,7 @@ classdef ndi_probe_timeseries_mfdaq < ndi_probe_timeseries
 			%
 			%  DATA will have one column per channel.
 			%  T is the time of each sample, relative to the beginning of the epoch.
-			%  TIMEREF_OUT is an NDI_TIMEREFERENCE object that describes the epoch.
+			%  TIMEREF_OUT is an ndi.time.timereference object that describes the epoch.
 			%
 				[dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_mfdaq_obj.getchanneldevinfo(epoch);
 				eid = ndi_probe_timeseries_mfdaq_obj.epochid(epoch);

@@ -1,50 +1,50 @@
-classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
-% NDI_PROBE_TIMESERIES - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_DAQSYSTEM_MFDAQ objects
+classdef timeseries < ndi.probe & ndi.timeseries
+% ndi.probe.timeseries - Create a new ndi.probe.timeseries class object 
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = ndi_probe_timeseries(varargin)
-			% NDI_PROBE_TIMESERIES - create a new NDI_PROBE_TIMESERIES object
+		function obj = timeseries(varargin)
+			% ndi.probe.timeseries - create a new ndi.probe.timeseries object
 			%
-			%  OBJ = NDI_PROBE_TIMESERIES(SESSION, NAME, REFERENCE, TYPE)
+			%  OBJ = ndi.probe.timeseries(SESSION, NAME, REFERENCE, TYPE)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
+			%  Creates an ndi.probe associated with an ndi.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  NDI_PROBE_TIMESERIES is an abstract class, and a specific implementation must be called.
+			%  ndi.probe.timeseries is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@ndi_probe(varargin{:});
-		end % ndi_probe_timeseries
+				obj = obj@ndi.probe(varargin{:});
+		end % ndi.probe.timeseries
 
 		function [data, t, timeref] = readtimeseries(ndi_probe_timeseries_obj, timeref_or_epoch, t0, t1)
 			%  READTIMESERIES - read the probe data based on specified time relative to an NDI_TIMEFERENCE or epoch
 			%
 			%  [DATA, T, TIMEREF] = READTIMESERIES(NDI_PROBE_TIMESERIES_OBJ, TIMEREF_OR_EPOCH, T0, T1)
 			%
-			%  Reads timeseries data from an NDI_PROBE_TIMESERIES object. The DATA and time information T that are
-			%  returned depend on the the specific subclass of NDI_PROBE_TIMESERIES that is called (see READTIMESERIESEPOCH).
+			%  Reads timeseries data from an ndi.probe.timeseries object. The DATA and time information T that are
+			%  returned depend on the the specific subclass of ndi.probe.timeseries that is called (see READTIMESERIESEPOCH).
 			%
-			%  TIMEREF_OR_EPOCH is either an NDI_TIMEREFERENCE object indicating the time reference for
+			%  TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the time reference for
 			%  T0, T1, or it can be a single number, which will indicate the data are to be read from that
 			%  epoch.
 			%
 			%  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
-			%  NDI_TIMEREFERENCE object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
+			%  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 			%
-				if isa(timeref_or_epoch,'ndi_timereference'),
+				if isa(timeref_or_epoch,'ndi.time.timereference'),
 					timeref = timeref_or_epoch;
 				else,
-					timeref = ndi_timereference(ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
+					timeref = ndi.time.timereference(ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'), timeref_or_epoch, 0);
 				end;
 				
 				[epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
-					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+					ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 				[epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
-					ndi_probe_timeseries_obj, ndi_clocktype('dev_local_time'));
+					ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 
 				if isempty(epoch_timeref),
 					error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
@@ -71,12 +71,12 @@ classdef ndi_probe_timeseries < ndi_probe & ndi_timeseries
 
 		function ndi_document_obj = newdocument(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				ndi_document_obj = newdocument@ndi_probe(ndi_probe_timeseries_obj, varargin{:});
+				ndi_document_obj = newdocument@ndi.probe(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 		function sq = searchquery(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				sq = searchquery@ndi_probe(ndi_probe_timeseries_obj, varargin{:});
+				sq = searchquery@ndi.probe(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 	end; % methods

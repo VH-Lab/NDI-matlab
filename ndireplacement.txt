@@ -1,4 +1,4 @@
-.original	replacemen2
+original	replacement
 ndi_app_markgarbage	ndi.app.markgarbage
 ndi_app_oridirtuning	ndi.app.oridirtuning
 ndi_app_spikeextractor	ndi.app.spikeextractor
@@ -78,8 +78,8 @@ ndi_stimulustemporalfrequency	ndi.fun.stimulustemporalfrequency
 ndi_version	ndi.version
 ndi_app	ndi.app
 ndi_probe	ndi.probe
-ndi_probestruct2probe	ndi.fun.probestruct2probe
-ndi_probetype2objectinit	ndi.fun.probetype2objectinit
+ndi_probestruct2probe	ndi.probe.fun.probestruct2probe
+ndi_probetype2objectinit	ndi.probe.fun.probetype2objectinit
 ndi_probe_timeseries	ndi.probe.timeseries
 ndi_probe_timeseries_mfdaq	ndi.probe.timeseries.mfdaq
 ndi_probe_timeseries_stimulator	ndi.probe.timeseries.stimulator

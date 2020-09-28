@@ -1,4 +1,4 @@
-classdef ndi_sessiontable 
+classdef sessiontable 
 % NDI_SESSIONTABLE - a table for managing the file paths of NDI sessions
 %
 %
@@ -11,11 +11,11 @@ classdef ndi_sessiontable
 	methods 
 
 		function thepath = getsessionpath(ndi_sessiontable_obj, session_id)
-			% GETSESSIONPATH - look up the path of an NDI_SESSION by its ID
+			% GETSESSIONPATH - look up the path of an ndi.session by its ID
 			%
 			% THEPATH = GETSESIONPATH(SESSION_ID)
 			%
-			% Examines the NDI_SESSIONTABLE object to see if a path is known for a session
+			% Examines the ndi.sessiontable object to see if a path is known for a session
 			% with an ID of SESSION_ID. Otherwise, empty ([]) is returned;
 			%
 				thepath = [];
@@ -32,10 +32,10 @@ classdef ndi_sessiontable
 			% T = GETSESSIONTABLE(NDI_SESSIONTABLE_OBJ)
 			%
 			% Returns the session table, a structure with fields 'SESSION_ID' and 'PATH'. Each entry
-			% in the table corresponds to a recently-opened or added path of NDI_SESSION_DIR. 
+			% in the table corresponds to a recently-opened or added path of ndi.session.dir. 
 			%
 				t = vlt.data.emptystruct('session_id','path');
-				fname = ndi_sessiontable.localtablefilename();
+				fname = ndi.sessiontable.localtablefilename();
 				if exist(fname,'file'),
 					try,
 						t = vlt.file.loadStructArray(fname);
@@ -57,7 +57,7 @@ classdef ndi_sessiontable
 		end; % getsessiontable()
 
 		function addtableentry(ndi_sessiontable_obj, session_id, path);
-			% ADDTABLEENTRY - add an entry to an NDI_SESSIONTABLE
+			% ADDTABLEENTRY - add an entry to an ndi.sessiontable
 			%
 			% ADDTABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID, PATH)
 			% 
@@ -78,11 +78,11 @@ classdef ndi_sessiontable
 		end; % addtableentry()
 
 		function removetableentry(ndi_sessiontable_obj, session_id)
-			% REMOVETABLEENTRY - remove an entry of an NDI_SESSIONTABLE
+			% REMOVETABLEENTRY - remove an entry of an ndi.sessiontable
 			%
 			% REMOVETABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID)
 			%
-			% Removes the entry of an NDI_SESSIONTABLE with the given SESSION_ID.
+			% Removes the entry of an ndi.sessiontable with the given SESSION_ID.
 			%
 			%
 				t = ndi_sessiontable_obj.getsessiontable();
@@ -100,7 +100,7 @@ classdef ndi_sessiontable
 			%
 			% [B, RESULTS] = CHECKTABLE(NDI_SESSIONTABLE_OBJ)
 			%
-			% Check the NDI_SESSIONTABLE object's session table to see if it has the right
+			% Check the ndi.sessiontable object's session table to see if it has the right
 			% form (B is 1 if it does, B is 0 otherwise). (It has the right form if it is a structure with fieldnames
 			% 'path' and 'sesion_id'.
 			%
@@ -163,7 +163,7 @@ classdef ndi_sessiontable
 		end; % isvalidtable() 
 
 		function backupsessiontable(ndi_sessiontable_obj)
-			% BACKUP_SESSION_TABLE - create a backup file for an NDI_SESSIONTABLE
+			% BACKUP_SESSION_TABLE - create a backup file for an ndi.sessiontable
 			%
 			% BACKUP_SESSION_TABLE(NDI_SESSIONTABLE_OBJ)
 			%
@@ -171,7 +171,7 @@ classdef ndi_sessiontable
 			% The session table file is backed up in the [USERPATH]/Preferences/NDI directory
 			% and be named 'local_sessiontableNNN.txt', where NNN is a number.
 			%
-				fname = ndi_sessiontable.localtablefilename();
+				fname = ndi.sessiontable.localtablefilename();
 				if exist(fname,'file'), % nothing to do if there's no file
 					backupname = vlt.file.filebackup(fname);
 					[success,message]=copyfile(fname,backupname);
@@ -189,7 +189,7 @@ classdef ndi_sessiontable
 			% Returns a list of backup files that are available. Backup files have 
 			% the name [USERPATH]/Preferences/NDI/local_sessiontable_bkupNNN.txt.
 			%
-				fname = ndi_sessiontable.localtablefilename();
+				fname = ndi.sessiontable.localtablefilename();
 				[parentdir,fn,ext] = fileparts(fname);
 				d = dir([parentdir filesep fn '_*' ext]);
 				f = {};
@@ -199,11 +199,11 @@ classdef ndi_sessiontable
 		end; % backupfilelist()
 
 		function clearsessiontable(ndi_sessiontable_obj, makebackup)
-			% CLEARSESSIONTABLE - clear an NDI_SESSIONTABLE object's data
+			% CLEARSESSIONTABLE - clear an ndi.sessiontable object's data
 			%
 			% CLEARSESSIONTABLE(NDI_SESSIONTABLE_OBJ, [MAKEBACKUP])
 			%
-			% Removes all entries from the NDI_SESSIONTABLE's file.
+			% Removes all entries from the ndi.sessiontable's file.
 			% If MAKEBACKUP is present and is 1, then the session table file
 			% is backed up first (in the Preferences/NDI directory).
 			% 
@@ -232,7 +232,7 @@ classdef ndi_sessiontable
 				if ~b,
 					error(['Session table not valid: ' msg ]);
 				end;
-				fname = ndi_sessiontable.localtablefilename();
+				fname = ndi.sessiontable.localtablefilename();
 				lockfilename = [fname '-lockfile'];
 				lockfid = vlt.file.checkout_lock_file(lockfilename);
 				if lockfid > 0,
@@ -254,7 +254,7 @@ classdef ndi_sessiontable
 			%
 			% F = LOCALTABLEFILENAME()
 			%
-				ndi_globals;
+				ndi.globals;
 				f = [ndi_globals.path.preferences filesep 'local_sessiontable.txt'];
 		end; % tablefilename()
 

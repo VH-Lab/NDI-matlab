@@ -1,4 +1,4 @@
-classdef ndi_subject < ndi_id & ndi_documentservice
+classdef subject < ndi_ido & ndi_documentservice
 % NDI_SUBJECT - the subject of a measurement or stimulation
 %
 
@@ -9,15 +9,15 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 
 	methods
 
-		function ndi_subject_obj = ndi_subject(varargin)
-			% NDI_SUBJECT - create a new NDI_SUBJECT object
+		function ndi_subject_obj = subject(varargin)
+			% ndi.subject - create a new ndi.subject object
 			%
-			% NDI_SUBJECT_OBJ = NDI_SUBJECT(LOCAL_IDENTIFIER, DESCRIPTION)
+			% NDI_SUBJECT_OBJ = ndi.subject(LOCAL_IDENTIFIER, DESCRIPTION)
 			%   or
-			% NDI_SUBJECT_OBJ = NDI_SUBJECT(NDI_SESSION_OBJ, NDI_SUBJECT_DOCUMENT)
+			% NDI_SUBJECT_OBJ = ndi.subject(NDI_SESSION_OBJ, NDI_SUBJECT_DOCUMENT)
 			%
-			% Creates an NDI_SUBJECT object, either from a local identifier name or 
-			% an NDI_SESSION object and an NDI_DOCUMENT that describes the NDI_SUBJECT object.
+			% Creates an ndi.subject object, either from a local identifier name or 
+			% an ndi.session object and an ndi.document that describes the ndi.subject object.
 			%
 			% 
 				local_identifier_ = '';
@@ -25,9 +25,9 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 				
 				if numel(varargin==2),
 					E = varargin{1};
-					if ~isa(E,'ndi_session'),
+					if ~isa(E,'ndi.session'),
 						local_identifier_ = varargin{1};
-						[b,msg] = ndi_subject.isvalidlocalidentifierstring(local_identifier_);
+						[b,msg] = ndi.subject.isvalidlocalidentifierstring(local_identifier_);
 						if ~b,
 							error(msg);
 						end;
@@ -36,14 +36,14 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 							error(['description must be a string.']);
 						end;
 					else,
-						if ~isa(E,'ndi_session'),
-							error(['First input argument must be an NDI_SESSION input']);
+						if ~isa(E,'ndi.session'),
+							error(['First input argument must be an ndi.session input']);
 						end;
-						if ~isa(varargin{2},'ndi_document'),
-							subject_search = E.database_search(ndi_query('ndi_document.id',...
+						if ~isa(varargin{2},'ndi.document'),
+							subject_search = E.database_search(ndi.query('ndi_document.id',...
 								'exact_string',varargin{2},''));
 							if numel(subject_search)~=1,
-								error(['When 2 input arguments are given, 2nd input must be an NDI_DOCUMENT or document ID.']);
+								error(['When 2 input arguments are given, 2nd input must be an ndi.document or document ID.']);
 							end;
 							subject_doc = subject_search{1};
 						else,
@@ -55,18 +55,18 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 				end;
 				ndi_subject_obj.local_identifier = local_identifier_;
 				ndi_subject_obj.description = description_;
-		end; % ndi_subject()
+		end; % ndi.subject()
 
-		%%% NDI_DOCUMENTSERVICE methods
+		%%% ndi.documentservice methods
 
 		function ndi_document_obj = newdocument(ndi_subject_obj)
-			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a subject
+			% NEWDOCUMENT - return a new database document of type ndi.document based on a subject
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SUBJECT_OBJ)
 			%
-			% Creates a new NDI_DOCUMENT of type 'ndi_document_subject'.
+			% Creates a new ndi.document of type 'ndi_document_subject'.
 			%
-				ndi_document_obj = ndi_document('ndi_document_subject',...
+				ndi_document_obj = ndi.document('ndi_document_subject',...
 					'subject.local_identifier', ndi_subject_obj.local_identifier,...
 					'subject.description', ndi_subject_obj.description,...
 					'ndi_document.id', ndi_subject_obj.id());
@@ -74,7 +74,7 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 		end; % newdocument()
 
 		function sq = searchquery(ndi_subject_obj)
-			% SEARCHQUERY - return a search query for an NDI_DOCUMENT based on this element
+			% SEARCHQUERY - return a search query for an ndi.document based on this element
 			%
 			% SQ = SEARCHQUERY(NDI_SUBJECT_OBJ)
 			%
@@ -116,8 +116,8 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 			%    SUBJECTSTRING, MAKEIT)
 			%
 			% Given a SUBJECTSTRING, which is either the local identifier for a subject in the
-			% NDI_SESSION object, or a document ID in the database, determine if the SUBJECTSTRING
-			% corresponds to an NDI_DOCUMENT already in the database. If so, then the ID of that document
+			% ndi.session object, or a document ID in the database, determine if the SUBJECTSTRING
+			% corresponds to an ndi.document already in the database. If so, then the ID of that document
 			% is returned in SUBJECT_ID and B is 1. If it is not there, and if MAKEIT is 1, then
 			% a new entry is made and the document id is returned in SUBJECT_ID. If MAKEIT is 0, and it is
 			% not there, then B is 0 and SUBJECT_ID is empty.
@@ -126,13 +126,13 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 				b = 0;
 				subject_id = '';
 
-				islocal = ndi_subject.isvalidlocalidentifierstring(subjectstring);
+				islocal = ndi.subject.isvalidlocalidentifierstring(subjectstring);
 				if islocal,
 					subject_doc = ndi_session_obj.database_search(...
-						ndi_query('subject.local_identifier','exact_string',subjectstring,''));
+						ndi.query('subject.local_identifier','exact_string',subjectstring,''));
 				else,
 					subject_doc = ndi_session_obj.database_search(...
-						ndi_query('ndi_document.id','exact_string',subjectstring,''));
+						ndi.query('ndi_document.id','exact_string',subjectstring,''));
 				end;
 				if numel(subject_doc)==1,
 					subject_id = subject_doc{1}.document_properties.ndi_document.id;
@@ -140,7 +140,7 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 					return;
 				elseif numel(subject_doc)==0,
 					if islocal&makeit,
-						newsubject = ndi_subject(subjectstring,'');
+						newsubject = ndi.subject(subjectstring,'');
 						subject_doc = newsubject.newdocument();
 						ndi_session_obj.database_add(subject_doc);
 						subject_id = subject_doc.document_properties.ndi_document.id;
@@ -153,6 +153,6 @@ classdef ndi_subject < ndi_id & ndi_documentservice
 				end;
 		end; % does_subjectstring_match_session_document()
 	end; % static methods
-end % classdef ndi_subject
+end % classdef ndi.subject
 
 

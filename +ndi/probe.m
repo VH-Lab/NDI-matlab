@@ -1,17 +1,17 @@
-classdef ndi_probe < ndi_element & ndi_documentservice
-% NDI_PROBE - the base class for PROBES -- measurement or stimulation devices
+classdef probe < ndi.element & ndi.documentservice
+% ndi.probe - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
 % or to STIMULATE.
 %
-% Typically, a probe is associated with an NDI_DAQSYSTEM that performs data acquisition or
+% Typically, a probe is associated with an ndi.daq.system that performs data acquisition or
 % even control of a stimulator. 
 %
 % A probe is uniquely identified by 3 fields and an session:
 %    session- the session where the probe is used
 %    name      - the name of the probe
 %    reference - the reference number of the probe
-%    type      - the type of probe (see type NDI_PROBETYPE2OBJECTINIT)
+%    type      - the type of probe (see type ndi.fun.probetype2objectinit)
 %
 % Examples:
 %    A multichannel extracellular electrode might be named 'extra', have a reference of 1, and
@@ -29,19 +29,19 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 	end
 
 	methods
-		function obj = ndi_probe(varargin)
-			% NDI_PROBE - create a new NDI_PROBE object
+		function obj = ndi.probe(varargin)
+			% ndi.probe - create a new ndi.probe object
 			%
-			%  OBJ = NDI_PROBE(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
+			%  OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
 			%         or
-			%  OBJ = NDI_PROBE(SESSION, NDI_DOCUMENT_OBJ)
+			%  OBJ = ndi.probe(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an NDI_PROBE associated with an NDI_SESSION object SESSION and
+			%  Creates an ndi.probe associated with an ndi.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  NDI_PROBE is an abstract class, and a specific implementation must be called.
+			%  ndi.probe is an abstract class, and a specific implementation must be called.
 			%
 				inputs = varargin;
 				if nargin==5,
@@ -49,11 +49,11 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 					inputs{5} = [];
 					inputs{6} = 1;
 				end;
-				obj = obj@ndi_element(inputs{:});
-		end % ndi_probe
+				obj = obj@ndi.element(inputs{:});
+		end % ndi.probe
 
 		function et = buildepochtable(ndi_probe_obj)
-			% BUILDEPOCHTABLE - build the epoch table for an NDI_PROBE
+			% BUILDEPOCHTABLE - build the epoch table for an ndi.probe
 			%
 			% ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
 			%
@@ -65,10 +65,10 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			%                           |   This uniquely specifies the epoch.
 			% 'epoch_session_id'           | The ID of the session
 			% 'epochprobemap'           | The epochprobemap object from each epoch
-                        % 'epoch_clock'             | A cell array of NDI_CLOCKTYPE objects that describe the type of clocks available
-                        % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each NDI_CLOCKTYPE, the start and stop
+                        % 'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
+                        % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
                         %                           |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
-			% 'underlying_epochs'       | A structure array of the ndi_epochset objects that comprise these epochs.
+			% 'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
 			%                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
 				ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
@@ -91,7 +91,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 						match_probe_and_device = [];
 						H = find(ndi_probe_obj.epochprobemapmatch(d_et{d}(n).epochprobemap));
 						for h=1:numel(H),
-							daqst = ndi_daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
+							daqst = ndi.daq.daqsystemstring(d_et{d}(n).epochprobemap(H(h)).devicestring);
 							if strcmpi(D{d}.name,daqst.devicename),
 								match_probe_and_device(end+1) = H(h);
 							end;
@@ -107,7 +107,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epoch_session_id = d_et{d}(n).epoch_session_id; % this is an unambiguous reference
-							et_(1).epochprobemap = []; % not applicable for ndi_probe objects
+							et_(1).epochprobemap = []; % not applicable for ndi.probe objects
 							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
 							et_(1).t0_t1 = d_et{d}(n).t0_t1; % inherit the time
 							et_(1).underlying_epochs = underlying_epochs;
@@ -118,38 +118,38 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		end % buildepochtable
 
 		function ec = epochclock(ndi_probe_obj, epoch_number)
-			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
+			% EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
 			%
 			% EC = EPOCHCLOCK(NDI_PROBE_OBJ, EPOCH_NUMBER)
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The NDI_PROBE class always returns the clock type(s) of the device it is based on
+			% The ndi.probe class always returns the clock type(s) of the device it is based on
 			%
 				et = ndi_probe_obj.epochtableentry(epoch_number);
 				ec = et.epoch_clock;
 		end % epochclock
 
 		function b = issyncgraphroot(ndi_epochset_obj)
-			% ISSYNCGRAPHROOT - should this object be a root in an NDI_SYNCGRAPH epoch graph?
+			% ISSYNCGRAPHROOT - should this object be a root in an ndi.time.syncgraph epoch graph?
 			%
 			% B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
 			%
-			% This function tells an NDI_SYNCGRAPH object whether it should continue 
+			% This function tells an ndi.time.syncgraph object whether it should continue 
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For NDI_EPOCHSET and NDI_PROBE this returns 0 so that the underlying NDI_DAQSYSTEM epochs are added.
+			% For ndi.epoch.epochset and ndi.probe this returns 0 so that the underlying ndi.daq.system epochs are added.
 				b = 0;
 		end % issyncgraphroot
 
 		function name = epochsetname(ndi_probe_obj)
-			% EPOCHSETNAME - the name of the NDI_PROBE object, for EPOCHNODES
+			% EPOCHSETNAME - the name of the ndi.probe object, for EPOCHNODES
 			%
 			% NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
 			%
 			% Returns the object name that is used when creating epoch nodes.
 			%
-			% For NDI_PROBE objects, this is the string 'probe: ' followed by
+			% For ndi.probe objects, this is the string 'probe: ' followed by
 			% PROBESTRING(NDI_PROBE_OBJ).
 				name = ['probe: ' elementstring(ndi_probe_obj)];
 		end % epochsetname
@@ -168,13 +168,13 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		end
 
 		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(ndi_probe_obj, epoch_number_or_id)
-			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for NDI_PROBE
+			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for ndi.probe
 			%
 			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NDI_PROBE_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Given an NDI_PROBE object and an EPOCH number, this function returns the corresponding channel and device info.
+			% Given an ndi.probe object and an EPOCH number, this function returns the corresponding channel and device info.
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
-			%   DEV is a 1xC cell array of NDI_DAQSYSTEM objects for each channel
+			%   DEV is a 1xC cell array of ndi.daq.system objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
 			%   DEVEPOCH is a 1xC array with the epoch id of the probe's EPOCH on each device
 			%   CHANNELTYPE is a cell array of the type of each channel
@@ -207,7 +207,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 					for j=1:numel(et(i).underlying_epochs),
 						for k=1:numel(et(i).underlying_epochs(j).epochprobemap),
 							if ndi_probe_obj.epochprobemapmatch(et(i).underlying_epochs(j).epochprobemap(k)),
-								devstr = ndi_daqsystemstring(et(i).underlying_epochs(j).epochprobemap(k).devicestring);
+								devstr = ndi.daq.daqsystemstring(et(i).underlying_epochs(j).epochprobemap(k).devicestring);
 								[devname_here, channeltype_here, channellist_here] = devstr.ndi_daqsystemstring2channel();
 								dev{end+1} = et(i).underlying_epochs.underlying; % underlying device
 								devname = cat(2,devname,devname_here);
@@ -226,7 +226,7 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 			%
 			% B = EPOCHPROBEMAPMATCH(NDI_PROBE_OBJ, EPOCHPROBEMAP)
 			%
-			% Returns 1 if the NDI_EPOCHPROBEMAP object EPOCHPROBEMAP is a match for
+			% Returns 1 if the ndi.epoch.epochprobemap object EPOCHPROBEMAP is a match for
 			% the NDI_PROBE_OBJ probe and 0 otherwise.
 			%
 				b = strcmp(ndi_probe_obj.name,{epochprobemap.name}) & ...
@@ -235,12 +235,12 @@ classdef ndi_probe < ndi_element & ndi_documentservice
 		end % epochprobemapmatch()
 
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
-			% EQ - are 2 NDI_PROBE objects equal?
+			% EQ - are 2 ndi.probe objects equal?
 			%
 			% Returns 1 if the objects share an object class, session, and probe string.
 			%
 				b = 0;
-				if isa(ndi_probe_obj2,'ndi_probe'),
+				if isa(ndi_probe_obj2,'ndi.probe'),
 					b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
 						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );

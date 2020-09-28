@@ -1,12 +1,12 @@
-function ndi_gui(varargin)
-% NDI_GUI - A gui to display the contents of an NDI_SESSION
+function gui(varargin)
+% GUI - A gui to display the contents of an NDI_SESSION
 %
-%  NDI_GUI(NDI_SESSION_OBJ)
+%  ndi.gui.gui(NDI_SESSION_OBJ)
 %
-%  Brings up a graphical user interface to view the NDI_SESSION
+%  Brings up a graphical user interface to view the ndi.session
 %  NDI_SESSION_OBJ
 %
-%  See also: NDI_SESSION
+%  See also: ndi.session
 
 
 if nargin==1
@@ -34,14 +34,14 @@ vlt.data.assign(varargin{:});
 command, 
 
 if isempty(fig)
-	z = findobj(allchild(0),'flat','tag','ndi_gui');
+	z = findobj(allchild(0),'flat','tag','ndi.gui.gui');
 	if isempty(z)
 		fig = figure('name','NDI_GUI','NumberTitle','off'); % we need to make a new figure
     else
         success,
 		fig = z;
 		figure(fig); % makes the figure specified by fig the current figure and displays it on top of all other figures.
-		ndi_gui('fig',fig,'command','UpdateDBList');
+		ndi.gui.gui('fig',fig,'command','UpdateDBList');
 		return; % just pop up the existing window after updating
     end
 end
@@ -60,9 +60,9 @@ end
 switch command
 	case 'Main'
 		set(fig,'userdata',ud);
-		ndi_gui('fig',fig,'command','NewWindow');
-		ndi_gui('fig',fig,'command','UpdateDBList');
-		ndi_gui('fig',fig,'command','UpdateDAQList');
+		ndi.gui.gui('fig',fig,'command','NewWindow');
+		ndi.gui.gui('fig',fig,'command','UpdateDBList');
+		ndi.gui.gui('fig',fig,'command','UpdateDAQList');
         
 	case 'NewWindow'
         
@@ -104,8 +104,8 @@ switch command
 			top = ud.windowheight;
 			row = ud.windowrowheight;
 		
-		% Figure/Window layout & Static Texts at top of the NDI_GUI Window
-		set(fig,'position',[50 50 right top],'tag','ndi_gui','name',['NDI: ' ud.ndi_session_obj.reference],'Visible','off');
+		% Figure/Window layout & Static Texts at top of the ndi.gui.gui Window
+		set(fig,'position',[50 50 right top],'tag','ndi.gui.gui','name',['NDI: ' ud.ndi_session_obj.reference],'Visible','off');
 		movegui(fig,'center');
 
 
@@ -148,8 +148,8 @@ switch command
 		fig.Visible = 'on';
 		
 	case 'UpdateBt' 
-		ndi_gui('fig',fig,'command','UpdateDBList');
-		ndi_gui('fig',fig,'command','UpdateDAQList');
+		ndi.gui.gui('fig',fig,'command','UpdateDBList');
+		ndi.gui.gui('fig',fig,'command','UpdateDAQList');
 		case 'ImportBt'
 		vhintan_importcells(ud.ds);
 	case 'ClusterBt'
@@ -169,7 +169,7 @@ switch command
 		end
 
 		set(findobj(fig,'tag','DAQList'),'string',names,'value',[],'userdata',unique_names);
-		ndi_gui('fig',fig,'command','EnableDisable');
+		ndi.gui.gui('fig',fig,'command','EnableDisable');
         
  
 
@@ -184,7 +184,7 @@ switch command
 %         end
 %         name_list;
 % 		set(findobj(fig,'tag','DBList'),'string',name_list,'value',[],'userdata',doc_ref);
-% 		ndi_gui('fig',fig,'command','EnableDisable');
+% 		ndi.gui.gui('fig',fig,'command','EnableDisable');
 %         
 %     
         
@@ -199,7 +199,7 @@ switch command
 		    %j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
 		    set(findobj(fig,'tag','doc_properties'),'string',j_pretty);
 		end
-		ndi_gui('fig',fig,'command','EnableDisable');
+		ndi.gui.gui('fig',fig,'command','EnableDisable');
 		    
 	case 'UpdateDBList'
 		ud.ndi_session_obj,
@@ -212,7 +212,7 @@ switch command
 		end
 		name_list;
 		set(findobj(fig,'tag','DBList'),'string',name_list,'value',[],'userdata',doc_ref);
-		ndi_gui('fig',fig,'command','EnableDisable');
+		ndi.gui.gui('fig',fig,'command','EnableDisable');
         
 	
 	case 'EnableDisable'
