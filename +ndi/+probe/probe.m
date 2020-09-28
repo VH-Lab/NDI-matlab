@@ -1,5 +1,5 @@
 classdef probe < ndi.element & ndi.documentservice
-% ndi.probe - the base class for PROBES -- measurement or stimulation devices
+% ndi.probe.probe - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
 % or to STIMULATE.
@@ -30,18 +30,18 @@ classdef probe < ndi.element & ndi.documentservice
 
 	methods
 		function obj = probe(varargin)
-			% ndi.probe - create a new ndi.probe object
+			% ndi.probe.probe - create a new ndi.probe.probe object
 			%
-			%  OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
+			%  OBJ = ndi.probe.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
 			%         or
-			%  OBJ = ndi.probe(SESSION, NDI_DOCUMENT_OBJ)
+			%  OBJ = ndi.probe.probe(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an ndi.probe associated with an ndi.session object SESSION and
+			%  Creates an ndi.probe.probe associated with an ndi.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  ndi.probe is an abstract class, and a specific implementation must be called.
+			%  ndi.probe.probe is a essentially an abstract class, and a specific implementation must be called.
 			%
 				inputs = varargin;
 				if nargin==5,
@@ -50,10 +50,10 @@ classdef probe < ndi.element & ndi.documentservice
 					inputs{6} = 1;
 				end;
 				obj = obj@ndi.element(inputs{:});
-		end % ndi.probe
+		end % ndi.probe.probe
 
 		function et = buildepochtable(ndi_probe_obj)
-			% BUILDEPOCHTABLE - build the epoch table for an ndi.probe
+			% BUILDEPOCHTABLE - build the epoch table for an ndi.probe.*
 			%
 			% ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
 			%
@@ -107,7 +107,7 @@ classdef probe < ndi.element & ndi.documentservice
 							et_(1).epoch_number = 1+numel(et);
 							et_(1).epoch_id = d_et{d}(n).epoch_id; % this is an unambiguous reference
 							et_(1).epoch_session_id = d_et{d}(n).epoch_session_id; % this is an unambiguous reference
-							et_(1).epochprobemap = []; % not applicable for ndi.probe objects
+							et_(1).epochprobemap = []; % not applicable for ndi.probe.* objects
 							et_(1).epoch_clock = d_et{d}(n).epoch_clock; % inherit the clock
 							et_(1).t0_t1 = d_et{d}(n).t0_t1; % inherit the time
 							et_(1).underlying_epochs = underlying_epochs;
@@ -124,7 +124,7 @@ classdef probe < ndi.element & ndi.documentservice
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The ndi.probe class always returns the clock type(s) of the device it is based on
+			% The ndi.probe.probe class always returns the clock type(s) of the device it is based on
 			%
 				et = ndi_probe_obj.epochtableentry(epoch_number);
 				ec = et.epoch_clock;
@@ -138,18 +138,18 @@ classdef probe < ndi.element & ndi.documentservice
 			% This function tells an ndi.time.syncgraph object whether it should continue 
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For ndi.epoch.epochset and ndi.probe this returns 0 so that the underlying ndi.daq.system epochs are added.
+			% For ndi.epoch.epochset and ndi.probe.* this returns 0 so that the underlying ndi.daq.system epochs are added.
 				b = 0;
 		end % issyncgraphroot
 
 		function name = epochsetname(ndi_probe_obj)
-			% EPOCHSETNAME - the name of the ndi.probe object, for EPOCHNODES
+			% EPOCHSETNAME - the name of the ndi.probe.* object, for EPOCHNODES
 			%
 			% NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
 			%
 			% Returns the object name that is used when creating epoch nodes.
 			%
-			% For ndi.probe objects, this is the string 'probe: ' followed by
+			% For ndi.probe.probe objects, this is the string 'probe: ' followed by
 			% PROBESTRING(NDI_PROBE_OBJ).
 				name = ['probe: ' elementstring(ndi_probe_obj)];
 		end % epochsetname
@@ -168,11 +168,11 @@ classdef probe < ndi.element & ndi.documentservice
 		end
 
 		function [dev, devname, devepoch, channeltype, channellist] = getchanneldevinfo(ndi_probe_obj, epoch_number_or_id)
-			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for ndi.probe
+			% GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for ndi.probe.*
 			%
 			% [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NDI_PROBE_OBJ, EPOCH_NUMBER_OR_ID)
 			%
-			% Given an ndi.probe object and an EPOCH number, this function returns the corresponding channel and device info.
+			% Given an ndi.probe.* object and an EPOCH number, this function returns the corresponding channel and device info.
 			% Suppose there are C channels corresponding to a probe. Then the outputs are
 			%   DEV is a 1xC cell array of ndi.daq.system objects for each channel
 			%   DEVNAME is a 1xC cell array of the names of each device in DEV
@@ -235,12 +235,12 @@ classdef probe < ndi.element & ndi.documentservice
 		end % epochprobemapmatch()
 
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
-			% EQ - are 2 ndi.probe objects equal?
+			% EQ - are 2 ndi.probe.probe objects equal?
 			%
 			% Returns 1 if the objects share an object class, session, and probe string.
 			%
 				b = 0;
-				if isa(ndi_probe_obj2,'ndi.probe'),
+				if isa(ndi_probe_obj2,'ndi.probe.probe'),
 					b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
 						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );

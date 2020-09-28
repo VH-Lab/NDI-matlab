@@ -556,7 +556,7 @@ classdef epochset
 			% This function tells an ndi.time.syncgraph object whether it should continue 
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For ndi.epoch.epochset objects, this returns 1. For some object types (ndi.probe, for example)
+			% For ndi.epoch.epochset objects, this returns 1. For some object types (ndi.probe.*, for example)
 			% this will return 0 so that the underlying ndi.daq.system epochs are added.
 				b = 1;
 		end % issyncgraphroot

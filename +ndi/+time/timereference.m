@@ -3,7 +3,7 @@ classdef timereference
 % 
 % 
 	properties (SetAccess=protected, GetAccess=public)
-		referent % the ndi.daq.system, ndi.probe,... that is referred to (must be a subclass of ndi.epoch.epochset)
+		referent % the ndi.daq.system, ndi.probe.*,... that is referred to (must be a subclass of ndi.epoch.epochset)
 		clocktype % the ndi.time.clocktype: can be 'utc', 'exp_global_time', 'dev_global_time', or 'dev_local_time'
 		epoch % the epoch that may be referred to (required if the time type is 'dev_local_time')
 		time  % the time of the referent that is referred to

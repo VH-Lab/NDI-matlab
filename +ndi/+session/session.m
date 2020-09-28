@@ -420,7 +420,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				trydatabase = 0;
 				tryprobelist = 0;
 
-				if vlt.matlab.isa_text(obj_classname,'ndi.probe'),
+				if vlt.matlab.isa_text(obj_classname,'ndi.probe.probe'),
 					tryprobelist = 1;
 				elseif isa(obj_classname,'ndi.daq.system'),
 					trydaqsystem = 1;
@@ -457,10 +457,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% PROBES = GETPROBES(NDI_SESSION_OBJ, ...)
 			%
 			% Examines all ndi.daq.system entries in the NDI_SESSION_OBJ's device array
-			% and returns all ndi.probe entries that can be constructed from each device's
+			% and returns all ndi.probe.* entries that can be constructed from each device's
 			% ndi.epoch.epochprobemap entries.
 			%
-			% PROBES is a cell array of ndi.probe objects.
+			% PROBES is a cell array of ndi.probe.* objects.
 			%
 			% One can pass additional arguments that specify the classnames of the probes
 			% that are returned:
@@ -528,7 +528,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% Examines all the database of NDI_SESSION_OBJ and returns all ndi.element
 			% entries.
 			%
-			% ELEMENTS is a cell array of ndi.probe objects.
+			% ELEMENTS is a cell array of ndi.element.* objects.
 			%
 			% ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
 			%

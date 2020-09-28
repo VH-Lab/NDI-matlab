@@ -20,7 +20,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%    or
 			% NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
-			% Creates an ndi.element object, either from a name and and associated ndi.probe object,
+			% Creates an ndi.element object, either from a name and and associated ndi.probe.probe object,
 			% or builds the ndi.element in memory from an ndi.document of type 'ndi_document_element'.
 			%
 			% If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
@@ -121,7 +121,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% This function tells an ndi.time.syncgraph object whether it should continue
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For ndi.element objects, this returns 0 so that underlying ndi.probe epochs are added.
+			% For ndi.element objects, this returns 0 so that underlying ndi.probe.probe epochs are added.
 				b = isempty(ndi_element_obj.underlying_element);
 		end; % issyncgraphroot
 
@@ -295,7 +295,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%   
 				epochdoc = [];
 				if ndi_element_obj.direct,
-					error(['Cannot add external observations to an ndi.element that is directly based on ndi.probe.']);
+					error(['Cannot add external observations to an ndi.element that is directly based on ndi.probe.*']);
 				end;
 				E = ndi_element_obj.session;
 				if ~isempty(E),
