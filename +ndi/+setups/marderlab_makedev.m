@@ -1,12 +1,12 @@
 function exp = ndi_marderlab_makedev(exp, devname)
 % NDI_MARDERLAB_MAKEDEV - initialize devices used by MARDERLAB
 %
-% EXP = NDI_MARDERLAB_MAKEDEV(EXP, DEVNAME)
+% EXP = ndi.setups.marderlab.makedev(EXP, DEVNAME)
 %
 % Creates devices that look for files in the MARDERLAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using NDI_FILENAVIGATOR_EPOCHDIR). DEVNAME should be the 
-% name a device in the table below. These devices are added to the NDI_SESSION
+% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
+% name a device in the table below. These devices are added to the ndi.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
 % If the function is called with no input arguments, then it returns a list
@@ -21,7 +21,7 @@ function exp = ndi_marderlab_makedev(exp, devname)
 %                    |    files '[something].smr' and
 %                    |    '[something].epochprobemap.txt'
 %
-% See also: NDI_FILENAVIGATOR_EPOCHDIR
+% See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
 	exp = {'marder_ced'};
@@ -30,15 +30,15 @@ end;
 
 if iscell(devname),
 	for i=1:length(devname),
-		exp = ndi_marderlab_makedev(exp, devname{i});
+		exp = ndi.setups.marderlab.makedev(exp, devname{i});
 	end
 	return;
 end
 
 fileparameters = {};
-objectclass = 'ndi_daqsystem_mfdaq';
-readerobjectclass = 'ndi_daqreader_mfdaq';
-epochprobemapclass = 'ndi_epochprobemap_daqsystem';
+objectclass = 'ndi.daq.system.mfdaq';
+readerobjectclass = 'ndi.daq.reader.mfdaq';
+epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
 switch devname,
 	case 'marder_ced',
@@ -51,7 +51,7 @@ switch devname,
 
 end
 
-ft = ndi_filenavigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
+ft = ndi.file.navigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
 

@@ -1,12 +1,12 @@
-function exp = ndi_vhlab_makedev(exp, devname)
-% NDI_VHLAB_MAKEDEV - initialize devices used by VHLAB
+function exp = vhlab_makedev(exp, devname)
+% VHLAB_MAKEDEV - initialize devices used by VHLAB
 %
-% EXP = NDI_VHLAB_MAKEDEV(EXP, DEVNAME)
+% EXP = ndi.setups.vhlab_makedev(EXP, DEVNAME)
 %
 % Creates devices that look for files in the VHLAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using NDI_FILENAVIGATOR_EPOCHDIR). DEVNAME should be the 
-% name a device in the table below. These devices are added to the NDI_SESSION
+% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
+% name a device in the table below. These devices are added to the ndi.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
 % If the function is called with no input arguments, then it returns a list
@@ -25,7 +25,7 @@ function exp = ndi_vhlab_makedev(exp, devname)
 %                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
 %                    |    'stims.mat', and 'spike2data.smr'.
 %
-% See also: NDI_FILENAVIGATOR_EPOCHDIR
+% See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
 	exp = {'vhintan', 'vhspike2', 'vhvis_spike2'};
@@ -34,15 +34,15 @@ end;
 
 if iscell(devname),
 	for i=1:length(devname),
-		exp = ndi_vhlab_makedev(exp, devname{i});
+		exp = ndi.setups.vhlab_makedev(exp, devname{i});
 	end
 	return;
 end
 
 fileparameters = {'reference.txt'};
-objectclass = 'ndi_daqsystem_mfdaq';
-readerobjectclass = 'ndi_daqreader_mfdaq';
-epochprobemapclass = 'ndi_epochprobemap_daqsystem_vhlab';
+objectclass = 'ndi.daq.system.mfdaq';
+readerobjectclass = 'ndi.daq.reader.mfdaq';
+epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem.vhlab';
 
 switch devname,
 	case 'vhintan',
@@ -64,13 +64,13 @@ switch devname,
 		fileparameters{end+1} = 'spike2data.smr'; 
 		readerobjectclass = [readerobjectclass '_stimulus_vhlabvisspike2'];
 		epochprobemapfileparameters = {'stimtimes.txt'}; 
-		mdr = {ndi_daqmetadatareader_NewStimStims('stims.mat')};
+		mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
 end
 
-ft = ndi_filenavigator_epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
+ft = ndi.file.navigator.epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
 

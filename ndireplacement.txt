@@ -90,10 +90,10 @@ ndi_angeluccilab_expdir	ndi.setups.angeluccilab_expdir
 ndi_angeluccilab_makedev	ndi.setups.angeluccilab_makedev
 ndi_katzlab_expdir	ndi.setups.katzlab_expdir
 ndi_katzlab_makedev	ndi.setups.katzlab_makedev
-ndi_marderlab_expdir	ndi.setups.marderlab.expdir
-ndi_marderlab_makedev	ndi.setups.marderlab.makedev
-ndi_vhlab_expdir	ndi.setups.vhlab.expdir
-ndi_vhlab_makedev	ndi.setups.vhlab.makedev
+ndi_marderlab_expdir	ndi.setups.marderlab_expdir
+ndi_marderlab_makedev	ndi.setups.marderlab_makedev
+ndi_vhlab_expdir	ndi.setups.vhlab_expdir
+ndi_vhlab_makedev	ndi.setups.vhlab_makedev
 ndi_subject	ndi.subject
 ndi_test_markgarbage	ndi.test.app.markgarbage
 ndi_test_spikeextractor	ndi.test.app.spikeextractor
