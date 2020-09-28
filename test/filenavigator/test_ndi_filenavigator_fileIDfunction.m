@@ -4,7 +4,7 @@ function [fileName,fileID] = test_ndi_filenavigator_fileIDfunction
 % Extended description
 
 ndi_globals;
-example_directory = [ndi.path.exampleexperpath];
+example_directory = [ndi_globals.path.exampleexperpath];
 input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
 example_exp = ndi_session_dir('exp1',input_dir_name);
 %creating a new filenavigator that looks for .tif files.

@@ -1,7 +1,7 @@
-classdef ndi_timemapping
-% NDI_TIMEMAPPING - class for managing mapping of time across epochs and devices
+classdef timemapping
+% NDI.TIME.TIMEMAPPING - class for managing mapping of time across epochs and devices
 %
-% Describes mapping from one time base to another. The base class, NDI_TIMEMAPPING, provides
+% Describes mapping from one time base to another. The base class, ndi.time.timemapping, provides
 % polynomial mapping, although usually only linear mapping is used.
 % The property MAPPING is a vector of length N+1 that describes the coefficients of a
 % polynomial such that:
@@ -14,7 +14,7 @@ classdef ndi_timemapping
 % 
 
         properties (SetAccess=protected,GetAccess=public)
-		mapping  % mapping parameters; in the NDI_TIMEMAPPING base class, this is a polynomial (see help POLYVAL)
+		mapping  % mapping parameters; in the ndi.time.timemapping base class, this is a polynomial (see help POLYVAL)
         end % properties
         properties (SetAccess=protected,GetAccess=protected)
 		
@@ -22,15 +22,15 @@ classdef ndi_timemapping
 
         methods
 
-		function ndi_timemapping_obj = ndi_timemapping(varargin)
-			% NDI_TIMEMAPPING
+		function ndi_timemapping_obj = timemapping(varargin)
+			% ndi.time.timemapping
 			%
-			% NDI_TIMEMAPPING_OBJ = NDI_TIMEMAPPING()
+			% NDI_TIMEMAPPING_OBJ = ndi.time.timemapping()
 			%    or
-			% NDI_TIMEMAPPING_OBJ = NDI_TIMEMAPPING(MAPPING)
+			% NDI_TIMEMAPPING_OBJ = ndi.time.timemapping(MAPPING)
 			%
-			% Creates a new NDI_TIMEMAPPING object. In this base class,
-			% the NDI_TIMEMAPPING object specifies a polynomial mapping
+			% Creates a new ndi.time.timemapping object. In this base class,
+			% the ndi.time.timemapping object specifies a polynomial mapping
 			% from one time base to another.
 			% 
 			% If the function is called with no input arguments, then
@@ -46,7 +46,7 @@ classdef ndi_timemapping
 				elseif nargin==1,
 					mapping = varargin{1};
 				else,
-					error(['Too many inputs to ndi_timemapping creator.']);
+					error(['Too many inputs to ndi.time.timemapping creator.']);
 				end;
 
 				ndi_timemapping_obj.mapping = mapping;
@@ -57,7 +57,7 @@ classdef ndi_timemapping
 					error(['A test of the mapping with t_in = 0 failed: ' lasterr]);
 				end
 				
-		end % ndi_timemapping
+		end % ndi.time.timemapping
 
 		function t_out = map(ndi_timemapping_obj, t_in)
 			% MAP - perform a mapping from one time base to another
@@ -66,10 +66,10 @@ classdef ndi_timemapping
 			%
 			% Perform the mapping described by NDI_TIMEMAPPING_OBJ from one time base to another.
 			%
-			% In the base class NDI_TIMEMAPPING, the mapping is a polynomial.
+			% In the base class ndi.time.timemapping, the mapping is a polynomial.
 				t_out = polyval(ndi_timemapping_obj.mapping, t_in);
 		end % map
 
 	end % methods
-end % class ndi_timemapping
+end % class ndi.time.timemapping
 

@@ -15,7 +15,7 @@ function test_ndi_daqsystem_documents
 %   d) Create a new object based on the database entry, and test that it matches the original
 %
 	ndi_globals;
-	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
 	    
 	E = ndi_session_dir('exp1',dirname);
 

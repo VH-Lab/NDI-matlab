@@ -438,11 +438,11 @@ classdef ndi_document
 				searchString = '$NDIDOCUMENTPATH';
 				s = strfind(jsonfilelocationstring, searchString);
 				if ~isempty(s), % insert the location
-					filename = [ndi.path.documentpath filesep ...
+					filename = [ndi_globals.path.documentpath filesep ...
 						vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi_filesep, filesep)];
 				else,
 					% first, guess that it is a complete path from $NDIDOCUMENTPATH
-					filename = [ndi.path.documentpath filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
+					filename = [ndi_globals.path.documentpath filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi_filesep,filesep)];
 					if ~exist(filename,'file'),
 						% try adding extension
 						filename = [filename '.json'];
@@ -454,7 +454,7 @@ classdef ndi_document
 							filename = [filename '.json'];
 						end;
 						if ~exist(filename,'file'),
-							filename2 = [ndi.path.documentpath filesep filename];
+							filename2 = [ndi_globals.path.documentpath filesep filename];
 							if ~exist(filename2,'file'),
 								error(['Cannot find file ' filename '.']);
 							else,

@@ -1,4 +1,4 @@
-function ndi_convertoldnsd2ndi(pathname)
+function ndi_convertoldnsd2ndi_globals.pathname)
 % NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
 %
 % NDI_CONVERTOLDNSD2NDI(PATHNAME)

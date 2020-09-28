@@ -32,8 +32,8 @@ classdef ndi_validate
             
             % Initialization
             ndi_globals;
-            if ~any(strcmp(javaclasspath,[ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            if ~any(strcmp(javaclasspath,[ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
+                eval("javaaddpath([ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             end
             import com.ndi.*;
             import org.json.*;
@@ -210,14 +210,14 @@ classdef ndi_validate
             %  the JSON file ndi_validate_config.json
             %
             ndi_globals;
-            if ~any(strcmp(javaclasspath,[ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            if ~any(strcmp(javaclasspath,[ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
+                eval("javaaddpath([ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             end
             import com.ndi.*;
             import org.json.*;
             import org.everit.*;
-            json_path = [ndi.path.documentpath filesep 'ndi_validate_config.json'];
-            schema_path = [ndi.path.documentschemapath filesep 'ndi_validate_config_schema.json'];
+            json_path = [ndi_globals.path.documentpath filesep 'ndi_validate_config.json'];
+            schema_path = [ndi_globals.path.documentschemapath filesep 'ndi_validate_config_schema.json'];
             json_object = JSONObject(fileread(json_path));
             schema_json_object = JSONObject(fileread(schema_path));
             report = Validator(json_object, schema_json_object).getReport();
@@ -241,10 +241,10 @@ classdef ndi_validate
         
         function new_path = replace_ndipath(path)
             ndi_globals;
-            fn = fieldnames(ndi.path);
+            fn = fieldnames(ndi_globals.path);
             for i = 1:numel(fn)
                 if numel( strfind(path, "$NDI" + (string(fn{i}).upper())) )~= 0
-                    new_path = strrep(path, "$NDI" + (string(fn{i}).upper()), ndi.path.(fn{i}));
+                    new_path = strrep(path, "$NDI" + (string(fn{i}).upper()), ndi_globals.path.(fn{i}));
                     return;
                 end
             end
@@ -261,7 +261,7 @@ classdef ndi_validate
             schema_json = "";
             if isa(ndi_document_obj, 'ndi_document')
                 schema_path = ndi_document_obj.document_properties.document_class.validation;
-                schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.path.documentschemapath);
+                schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi_globals.path.documentschemapath);
                 try
                     schema_json = fileread(schema_path);
                 catch
@@ -271,9 +271,9 @@ classdef ndi_validate
             if isa(ndi_document_obj, 'char') || isa(ndi_document_obj, 'string')
                 schema_path = string(ndi_document_obj).replace('.json', '_schema.json');
                 if  numel( strfind(ndi_document_obj, '$NDIDOCUMENTPATH') ) ~= 0
-                    schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi.path.documentschemapath);
+                    schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi_globals.path.documentschemapath);
                 elseif numel( strfind(ndi_document_obj, '$NDISCHEMAPATH') ) ~= 0
-                    schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.path.documentsschemapath);
+                    schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi_globals.path.documentsschemapath);
                 end
                 try
                     schema_json = fileread(schema_path);

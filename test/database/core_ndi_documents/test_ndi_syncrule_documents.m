@@ -15,7 +15,7 @@ function test_ndi_syncrule_documents
 %
 
 	ndi_globals;
-	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
 
 	E = ndi_session_dir('exp1',dirname);
 	 % remove any existing syncrules

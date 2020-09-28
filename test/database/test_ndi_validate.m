@@ -46,7 +46,7 @@ disp("")
 
 % validate more complicated classes that may contain depends-on and more
 % super-classes
-dirname = [ndi.path.exampleexperpath filesep 'exp1_eg_saved'];
+dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg_saved'];
 E = ndi_session_dir('exp1',dirname);
 
 disp('Let us clear the database first before we proceed')

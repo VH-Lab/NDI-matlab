@@ -17,14 +17,14 @@ ndi_globals;
 
 db = [];
 
-for i=1:numel(ndi.databasehierarchy),
-	d = dir([database_path filesep '*' ndi.databasehierarchy(i).extension]);
+for i=1:numel(ndi_globals.databasehierarchy),
+	d = dir([database_path filesep '*' ndi_globals.databasehierarchy(i).extension]);
 	if ~isempty(d), % found one
 		if numel(d)>1,
 			error(['Too many matching files.']);
 		end;
 		fname = [database_path filesep d(1).name];
-		evalstr = strrep(ndi.databasehierarchy(i).code,'FILENAME',fname);
+		evalstr = strrep(ndi_globals.databasehierarchy(i).code,'FILENAME',fname);
 		evalstr = strrep(evalstr,'FILEPATH',[database_path filesep]);
 		evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
 		eval(evalstr);
@@ -33,9 +33,9 @@ for i=1:numel(ndi.databasehierarchy),
 end;
 
 if isempty(db),
-	for i=1:numel(ndi.databasehierarchy),
-		if ~isempty(ndi.databasehierarchy(i).newcode),
-			evalstr = strrep(ndi.databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
+	for i=1:numel(ndi_globals.databasehierarchy),
+		if ~isempty(ndi_globals.databasehierarchy(i).newcode),
+			evalstr = strrep(ndi_globals.databasehierarchy(i).newcode,'FILEPATH',[database_path filesep]);
 			evalstr = strrep(evalstr,'SESSION_REFERENCE',session_unique_reference);
 			eval(evalstr);
 		end;

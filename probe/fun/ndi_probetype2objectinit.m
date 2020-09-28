@@ -1,4 +1,4 @@
-function ndi_probetype2objectinit
+function ndi_globals.probetype2objectinit
 % NDI_PROBETYPE2OBJECTINIT - Initializes the NDI_PROBETYPE2OBJECT global variable in NDI package
 %
 % NDI_PROBETYPE2OBJECTINIT
@@ -11,8 +11,8 @@ function ndi_probetype2objectinit
 
 ndi_globals
 
-j = vlt.file.textfile2char([ndi.path.commonpath filesep 'probe' filesep 'ndi_probetype2object.json']);
+j = vlt.file.textfile2char([ndi_globals.path.commonpath filesep 'probe' filesep 'ndi_globals.probetype2object.json']);
 
-ndi.probetype2object = jsondecode(j);
+ndi_globals.probetype2object = jsondecode(j);
 
 

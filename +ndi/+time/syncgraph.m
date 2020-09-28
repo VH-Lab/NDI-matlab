@@ -1,34 +1,34 @@
-classdef ndi_syncgraph < ndi_id
+classdef syncgraph < ndi.ido
 
 	properties (SetAccess=protected,GetAccess=public)
-		session      % NDI_SESSION object
-		rules		% cell array of NDI_SYNCRULE objects to apply
+		session      % ndi.session object
+		rules		% cell array of ndi.time.syncrule objects to apply
 	end
 	properties (SetAccess=protected,GetAccess=private)
 	end
 
 	methods
 	
-		function ndi_syncgraph_obj = ndi_syncgraph(varargin)
-			% NDI_SYNCGRAPH - create a new NDI_SYNCGRAPH object
+		function ndi_syncgraph_obj = syncgraph(varargin)
+			% ndi.time.syncgraph - create a new ndi.time.syncgraph object
 			%
-			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(SESSION)
+			% NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION)
 			% 
-			% Builds a new NDI_SYNCGRAPH object and sets its SESSION
-			% property to SESSION, which should be an NDI_SESSION object.
+			% Builds a new ndi.time.syncgraph object and sets its SESSION
+			% property to SESSION, which should be an ndi.session object.
 			%
 			% This function can be called in another form:
-			% NDI_SYNCGRAPH_OBJ = NDI_SYNCGRAPH(SESSION, NDI_DOCUMENT_OBJ)
-			% where NDI_DOCUMENT_OBJ is an NDI_DOCUMENT of class ndi_document_syncgraph.
+			% NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
+			% where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.
 			%
 			
-			%need to be tested after ndi_syncrule creator is done
-			if nargin == 2 && isa(varargin{1},'ndi_session') && isa(varargin{2}, 'ndi_document')
+			%need to be tested after ndi.time.syncrule creator is done
+			if nargin == 2 && isa(varargin{1},'ndi.session') && isa(varargin{2}, 'ndi.document')
 				ndi_syncgraph_obj.session = varargin{1};
-				[syncgraph_doc, syncrule_doc] = ndi_syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
+				[syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
 				ndi_syncgraph_obj.identifier = varargin{2}.id();
 				for i=1:numel(syncrule_doc),
-					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
+					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.document2ndi_object(syncrule_doc{i},varargin{1}));
 				end;
             		else,
 				session = [];
@@ -46,14 +46,14 @@ classdef ndi_syncgraph < ndi_id
 					end;
 				end;
 			end;
-		end % ndi_syncgraph
+		end % ndi.time.syncgraph
 
 		function b = eq(ndi_syncgraph_obj1, ndi_syncgraph_obj2)
-			% EQ - are 2 NDI_SYNCGRAPH objects equal?
+			% EQ - are 2 ndi.time.syncgraph objects equal?
 			%
 			% B = EQ(NDI_SYNCGRAPH_OBJ1, NDI_SYNCHGRAPH_OBJ2)
 			%
-			% B is 1 if the NDI_SYNCGRAPH objects have equal sessions and if 
+			% B is 1 if the ndi.time.syncgraph objects have equal sessions and if 
 			% all syncrules are equal.
 			%
 				b = eq(ndi_syncgraph_obj1.session, ndi_syncgraph_obj2.session);
@@ -66,22 +66,22 @@ classdef ndi_syncgraph < ndi_id
 		end; % eq();
 
 		function ndi_syncgraph_obj = addrule(ndi_syncgraph_obj, ndi_syncrule_obj)
-			% ADDRULE - add an NDI_SYNCRULE to an NDI_SYNCGRAPH object
+			% ADDRULE - add an ndi.time.syncrule to an ndi.time.syncgraph object
 			%
 			% NDI_SYNCGRAPH_OBJ = ADDRULE(NDI_SYNCGRAPH_OBJ, NDI_SYNCRULE_OBJ)
 			%
-			% Adds the NDI_SYNCRULE object indicated as a rule for
-			% the NDI_SYNCGRAPH NDI_SYNCGRAPH_OBJ. If the NDI_SYNCRULE is already
+			% Adds the ndi.time.syncrule object indicated as a rule for
+			% the ndi.time.syncgraph NDI_SYNCGRAPH_OBJ. If the ndi.time.syncrule is already
 			% there, then 
 			%
-			% See also: NDI_SYNCGRAPH/REMOVERULE
+			% See also: ndi.time.syncgraph/REMOVERULE
 
 				if ~iscell(ndi_syncrule_obj),
 					ndi_syncrule_obj = {ndi_syncrule_obj};
 				end
 
 				for i=1:numel(ndi_syncrule_obj),
-					if isa(ndi_syncrule_obj{i},'ndi_syncrule'),
+					if isa(ndi_syncrule_obj{i},'ndi.time.syncrule'),
 						% check for duplication
 						match = -1;
 						for j=1:numel(ndi_syncgraph_obj.rules),
@@ -94,14 +94,14 @@ classdef ndi_syncgraph < ndi_id
 							ndi_syncgraph_obj.rules{end+1} = ndi_syncrule_obj{i};
 						end
 					else,
-						error('Input not of type NDI_SYNCRULE.');
+						error('Input not of type ndi.time.syncrule.');
 					end
 				end
 
 		end % addrule()
 
 		function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
-			% REMOVERULE - remove a given NDI_SYNCRULE from an NDI_SYNCGRAPH object
+			% REMOVERULE - remove a given ndi.time.syncrule from an ndi.time.syncgraph object
 			%
 			% NDI_SYNCGRAPH_OBJ = REMOVERULE(NDI_SYNCGRAPH_OBJ, INDEX)
 			%
@@ -119,10 +119,10 @@ classdef ndi_syncgraph < ndi_id
 			% The graph information GINFO is a structure with the following fields:
 			% Fieldname              | Description
 			% ---------------------------------------------------------------------
-			% nodes                  | The epochnodes (see NDI_EPOCHSET/EPOCHNODE)
+			% nodes                  | The epochnodes (see ndi.epoch.epochset/EPOCHNODE)
 			% G                      | The epoch node graph adjacency matrix. G(i,j) is the cost of
 			%                        |   converting between node i and j.
-			% mapping                | A cell matrix with NDI_TIMEMAPPING objects that describes the
+			% mapping                | A cell matrix with ndi.time.timemapping objects that describes the
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			%
 				[ginfo, hashvalue] = cached_graphinfo(ndi_syncgraph_obj);
@@ -133,7 +133,7 @@ classdef ndi_syncgraph < ndi_id
 		end % graphinfo
 				
 		function [ginfo] = buildgraphinfo(ndi_syncgraph_obj)
-			% BUILDGRAPHINFO - build graph info for an NDI_SYNCGRAPH object
+			% BUILDGRAPHINFO - build graph info for an ndi.time.syncgraph object
 			%
 			% [GINFO] = BUILDGRAPHINFO(NDI_SYNCGRAPH_OBJ)
 			%
@@ -143,10 +143,10 @@ classdef ndi_syncgraph < ndi_id
 			% The graph information GINFO is a structure with the following fields:
 			% Fieldname              | Description
 			% ---------------------------------------------------------------------
-			% nodes                  | The epochnodes (see NDI_EPOCHSET/EPOCHNODE)
+			% nodes                  | The epochnodes (see ndi.epoch.epochset/EPOCHNODE)
 			% G                      | The epoch node graph adjacency matrix. G(i,j) is the cost of
 			%                        |   converting between node i and j.
-			% mapping                | A cell matrix with NDI_TIMEMAPPING objects that describes the
+			% mapping                | A cell matrix with ndi.time.timemapping objects that describes the
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
 			%
@@ -165,7 +165,7 @@ classdef ndi_syncgraph < ndi_id
 		end % buildgraphinfo
 
 		function [ginfo,hashvalue]=cached_graphinfo(ndi_syncgraph_obj)
-			% CACHED_GRAPHINFO - return the cached graph info of an NDI_SYNCGRAPH object
+			% CACHED_GRAPHINFO - return the cached graph info of an ndi.time.syncgraph object
 			%
 			% [GINFO, HASHVALUE] = CACHED_EPOCHTABLE(NDI_SYNCGRAPH_OBJ)
 			%
@@ -203,17 +203,17 @@ classdef ndi_syncgraph < ndi_id
 		end % set_cached_graphinfo
 
 		function ginfo = addepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
-			% ADDEPOCH - add an NDI_EPOCHSET to the graph
+			% ADDEPOCH - add an ndi.epoch.epochset to the graph
 			% 
 			% NEW_GINFO = ADDEPOCH(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 			%
-			% Adds an NDI_EPOCHSET to the NDI_SYNCGRAPH
+			% Adds an ndi.epoch.epochset to the ndi.time.syncgraph
 			%
 			% Note: this does not update the cache
 			% 
 				% Step 1: make sure we have the right kind of input object
-				if ~isa(ndi_daqsystem_obj, 'ndi_daqsystem'),
-					error(['The input NDI_DAQSYSTEM_OBJ must be of class NDI_DAQSYSTEM or a subclass.']);
+				if ~isa(ndi_daqsystem_obj, 'ndi.daq.system'),
+					error(['The input NDI_DAQSYSTEM_OBJ must be of class ndi.daq.system or a subclass.']);
 				end
 
 				% Step 2: make sure it is not duplicative
@@ -247,7 +247,7 @@ classdef ndi_syncgraph < ndi_id
 				ginfo.G = [ ginfo.G inf(oldn,newn); inf(newn,oldn) newcost ] ;
 				ginfo.mapping = [ ginfo.mapping cell(oldn,newn) ; cell(newn,oldn) newmapping];
 				
-					% Step 3.2: add any 'duh' connections ('utc' -> 'utc', etc) based purely on ndi_clocktype
+					% Step 3.2: add any 'duh' connections ('utc' -> 'utc', etc) based purely on ndi.time.clocktype
 
 				% the brute force way; could be better if we expect low diversity of epoch_clocks, which we do;
 				% we can do better, could search for all clocka->clockb instances
@@ -299,24 +299,24 @@ classdef ndi_syncgraph < ndi_id
 		end % addepoch
 
 		function ginfo = addunderlyingepochs(ndi_syncgraph_obj, ndi_epochset_obj, ginfo)
-			% ADDUNDERLYINGEPOCH - add an NDI_EPOCHSET to the graph
+			% ADDUNDERLYINGEPOCH - add an ndi.epoch.epochset to the graph
 			% 
 			% NEW_GINFO = ADDUNDERLYINGEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_EPOCHSET_OBJ, GINFO)
 			%
-			% Adds an NDI_EPOCHSET to the NDI_SYNCGRAPH
+			% Adds an ndi.epoch.epochset to the ndi.time.syncgraph
 			%
 			% Note: this DOES update the cache
 			% 
 				% Step 1: make sure we have the right kind of input object
-				if ~isa(ndi_epochset_obj, 'ndi_epochset'),
-					error(['The input NDI_EPOCHSET_OBJ must be of class NDI_EPOCHSET or a subclass.']);
+				if ~isa(ndi_epochset_obj, 'ndi.epoch.epochset'),
+					error(['The input NDI_EPOCHSET_OBJ must be of class ndi.epoch.epochset or a subclass.']);
 				end;
 
 				enodes = epochnodes(ndi_epochset_obj);
 				% do we search for duplicates?
 
 				for i=1:numel(enodes),
-					index = ndi_findepochnode(enodes(i), ginfo.nodes);
+					index = ndi.epoch.findepochnode(enodes(i), ginfo.nodes);
 
 					if isempty(index), % we don't have this one, we need to add it
 
@@ -328,7 +328,7 @@ classdef ndi_syncgraph < ndi_id
 
 						u_node_index_in_main = NaN(numel(u_nodes),1);
 						for j=1:numel(u_nodes),
-							myindex = ndi_findepochnode(u_nodes(j), ginfo.nodes);
+							myindex = ndi.epoch.findepochnode(u_nodes(j), ginfo.nodes);
 							if ~isempty(myindex),
 								u_node_index_in_main(j) = myindex;
 							end
@@ -364,7 +364,7 @@ classdef ndi_syncgraph < ndi_id
 		end % addunderlyingnodes
 
 		function ginfo = removeepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
-			% REMOVEEPOCHS - remove an NDI_EPOCHSET from the graph
+			% REMOVEEPOCHS - remove an ndi.epoch.epochset from the graph
 			%
 			% GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 			%
@@ -387,15 +387,15 @@ classdef ndi_syncgraph < ndi_id
 		end % removeepoch
 
 		function [t_out, timeref_out, msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out)
-			% TIME_CONVERT - convert time from one NDI_TIMEREFERENCE to another
+			% TIME_CONVERT - convert time from one ndi.time.timereference to another
 			%
 			% [T_OUT, TIMEREF_OUT, MSG] = TIME_CONVERT(NDI_SYNCGRAPH_OBJ, TIMEREF_IN, T_IN, REFERENT_OUT, CLOCKTYPE_OUT)
 			%
-			% Attempts to convert a time T_IN that is referred to by NDI_TIMEREFERENCE object TIMEREF_IN 
-			% to T_OUT that is referred to by the requested REFERENT_OUT object (must be type NDI_EPOCHSET and NDI_BASE)
-			% with the requested NDI_CLOCKTYPE CLOCKTYPE_OUT.
+			% Attempts to convert a time T_IN that is referred to by ndi.time.timereference object TIMEREF_IN 
+			% to T_OUT that is referred to by the requested REFERENT_OUT object (must be type ndi.epoch.epochset and NDI_BASE)
+			% with the requested ndi.time.clocktype CLOCKTYPE_OUT.
 			% 
-			% T_OUT is the output time with respect to the NDI_TIMEREFERENCE TIMEREF_OUT that incorporates REFERENT_OUT
+			% T_OUT is the output time with respect to the ndi.time.timereference TIMEREF_OUT that incorporates REFERENT_OUT
 			% and CLOCKTYPE_OUT with the appropriate epoch and time reference.
 			%
 			% If the conversion cannot be made, T_OUT is empty and MSG contains a text message describing
@@ -425,7 +425,7 @@ classdef ndi_syncgraph < ndi_id
 
 				% STEP 1: identify the source node
 
-				sourcenodeindex = ndi_findepochnode(...
+				sourcenodeindex = ndi.epoch.findepochnode(...
 					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
 					'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
 					'epoch_clock', timeref_in.clocktype),...
@@ -440,7 +440,7 @@ classdef ndi_syncgraph < ndi_id
 					ndi_syncgraph_obj.addunderlyingepochs(timeref_in.referent,ginfo);
 					ginfo = graphinfo(ndi_syncgraph_obj);
 
-					sourcenodeindex = ndi_findepochnode(...
+					sourcenodeindex = ndi.epoch.findepochnode(...
 						struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
 						'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
 						'epoch_clock', timeref_in.clocktype),...
@@ -461,13 +461,13 @@ classdef ndi_syncgraph < ndi_id
 				% STEP 2: narrow the search for the destination node. It has to match our referent and it has to 
 				%     match the requested clock type
 
-				destinationnodeindexes = ndi_findepochnode(...
+				destinationnodeindexes = ndi.epoch.findepochnode(...
 					struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), ...
 					'epoch_clock', clocktype_out), ginfo.nodes);
 
 				if isempty(destinationnodeindexes),
 					% no candidate output nodes, see if any are there any from that referent
-					any_referent_outs = ndi_findepochnode(...
+					any_referent_outs = ndi.epoch.findepochnode(...
 						struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out)), ...
 						ginfo.nodes);
 					if isempty(any_referent_outs), % add the referent to the table and try again
@@ -495,7 +495,7 @@ classdef ndi_syncgraph < ndi_id
 				destinationnodeindex = destinationnodeindexes(indexes);
 
 				% make the timeref_out based on the node we found, use timeref of 0
-				timeref_out = ndi_timereference(referent_out, ginfo.nodes(destinationnodeindex).epoch_clock, ...
+				timeref_out = ndi.time.timereference(referent_out, ginfo.nodes(destinationnodeindex).epoch_clock, ...
 					ginfo.nodes(destinationnodeindex).epoch_id, 0);
 
 				path = shortestpath(ginfo.diG, sourcenodeindex, destinationnodeindex);
@@ -513,16 +513,16 @@ classdef ndi_syncgraph < ndi_id
 		% cache
 
 		function [cache,key] = getcache(ndi_syncgraph_obj)
-			% GETCACHE - return the NDI_CACHE and key for NDI_SYNCGRAPH
+			% GETCACHE - return the NDI_CACHE and key for ndi.time.syncgraph
 			%
 			% [CACHE,KEY] = GETCACHE(NDI_SYNCGRAPH_OBJ)
 			%
-			% Returns the CACHE and KEY for the NDI_SYNCGRAPH object.
+			% Returns the CACHE and KEY for the ndi.time.syncgraph object.
 			%
 			% The CACHE is returned from the associated session.
 			% The KEY is the string 'syncgraph_' followed by the object's id.
 			%
-			% See also: NDI_SYNCGRAPH, NDI_BASE
+			% See also: ndi.time.syncgraph, NDI_BASE
 
 				cache = [];
 				key = [];
@@ -533,16 +533,16 @@ classdef ndi_syncgraph < ndi_id
 				end
 		end; % getcache()
 		
-                %% functions that override ndi_documentservice
+                %% functions that override ndi.documentservice
 
 		function ndi_document_obj_set = newdocument(ndi_syncgraph_obj)
-			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_SYNCGRAPH object
+			% NEWDOCUMENT - create a new ndi.document for an ndi.time.syncgraph object
 			%
 			% NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_SYNCGRAPH_OBJ)
 			%
-			% Creates an NDI_DOCUMENT object DOC that represents the
-			%    NDI_SYNCRULE object.
-				ndi_document_obj_set{1} = ndi_document('ndi_document_syncgraph.json',...
+			% Creates an ndi.document object DOC that represents the
+			%    ndi.time.syncrule object.
+				ndi_document_obj_set{1} = ndi.document('ndi_document_syncgraph.json',...
 					'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
 					'ndi_document.id', ndi_syncgraph_obj.id(),...
 					'ndi_document.session_id', ndi_syncgraph_obj.session.id());
@@ -553,11 +553,11 @@ classdef ndi_syncgraph < ndi_id
 		end; % newdocument()
 
 		function sq = searchquery(ndi_syncgraph_obj)
-			% SEARCHQUERY - create a search for this NDI_SYNCGRAPH object
+			% SEARCHQUERY - create a search for this ndi.time.syncgraph object
 			%
 			% SQ = SEARCHQUERY(NDI_SYNCGRAPH_OBJ)
 			%
-			% Creates a search query for the NDI_SYNCGRAPH object.
+			% Creates a search query for the ndi.time.syncgraph object.
 			%
 				sq = {'ndi_document.id', ndi_syncgraph_obj.id() , ...
 					'ndi_document.session_id', ndi_syncgraph_obj.session.id() };
@@ -573,12 +573,12 @@ classdef ndi_syncgraph < ndi_id
 			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_SESSION_OBJ,...
 			%					SYNCGRAPH_DOC_ID)
 			%
-			% Given an NDI_SESSION object and the document identifier of an NDI_SYNCGRAPH object,
-			% this function loads the NDI_DOCUMENT associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
+			% Given an ndi.session object and the document identifier of an ndi.time.syncgraph object,
+			% this function loads the ndi.document associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
 			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
 			%
 				syncrule_docs = {};
-				syncgraph_doc = ndi_session_obj.database_search(ndi_query('ndi_document.id', 'exact_string', ...
+				syncgraph_doc = ndi_session_obj.database_search(ndi.query('ndi_document.id', 'exact_string', ...
 					syncgraph_doc_id,''));
 				switch numel(syncgraph_doc),
 					case 0,
@@ -593,7 +593,7 @@ classdef ndi_syncgraph < ndi_id
 
 				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
 				for i=1:numel(rules_id_list),
-					rules_doc = ndi_session_obj.database_search(ndi_query(...
+					rules_doc = ndi_session_obj.database_search(ndi.query(...
 						'ndi_document.id','exact_string',rules_id_list{i},''));
 					if numel(rules_doc)~=1,
 						error(['Could not find syncrule with id ' rules_id_list{i} ...
@@ -604,4 +604,4 @@ classdef ndi_syncgraph < ndi_id
 		end; % load_all_syncgraph_docs()
 	end % static methods
 
-end % classdef ndi_syncgraph
+end % classdef ndi.time.syncgraph

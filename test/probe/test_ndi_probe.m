@@ -13,7 +13,7 @@ function test_ndi_probe(dirname)
 
 if nargin<1,
 	ndi_globals;
-	dirname = [ndi.path.exampleexperpath filesep 'exp1_eg_saved'];
+	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg_saved'];
 end;
 
 disp(['reading session from directory ' dirname ' ...']);

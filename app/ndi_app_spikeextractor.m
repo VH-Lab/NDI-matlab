@@ -79,7 +79,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 				ndi_globals;
 
-				ndi.log.msg('system',1,'Beginning of extraction.');
+				ndi_globals.log.msg('system',1,'Beginning of extraction.');
 
 				% process input arguments
 
@@ -112,7 +112,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 				for n=1:numel(epoch),
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
-					ndi.log.msg('system',1,['Beginning to set up for epoch ' epoch_string '.']);
+					ndi_globals.log.msg('system',1,['Beginning to set up for epoch ' epoch_string '.']);
 
 					% begin an epoch, get ready
 
@@ -191,7 +191,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 					% leave these files open while we extract
 
 					epochtic = tic; % Timer variable to measure duration of epoch extraction
-					ndi.log.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
+					ndi_globals.log.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
 
 					% now read the file in chunks
 					while (~endReached)
@@ -274,7 +274,7 @@ classdef ndi_app_spikeextractor < ndi_app & ndi_appdoc
 
 					ndi_app_spikeextractor_obj.session.database_closebinarydoc(spikewaves_binarydoc);
 					ndi_app_spikeextractor_obj.session.database_closebinarydoc(spiketimes_binarydoc);
-					ndi.log.msg('system',1,['Epoch ' int2str(n) ' spike extraction done.']);
+					ndi_globals.log.msg('system',1,['Epoch ' int2str(n) ' spike extraction done.']);
 				end % epoch n
 		end % extract
 

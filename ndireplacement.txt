@@ -1,4 +1,4 @@
-original	replacement
+.original	replacemen2
 ndi_app_markgarbage	ndi.app.markgarbage
 ndi_app_oridirtuning	ndi.app.oridirtuning
 ndi_app_spikeextractor	ndi.app.spikeextractor
@@ -72,7 +72,7 @@ ndi_gui_v2	ndi.gui_v2
 ndi_convertoldnsd2ndi	ndi.fun.convertoldnsd2ndi
 ndi_filesep	ndi.filesep
 ndi_globals	ndi.globals
-ndi_id	ndi.id
+ndi_id	ndi.ido
 ndi_install	ndi_install
 ndi_stimulustemporalfrequency	ndi.fun.stimulustemporalfrequency
 ndi_version	ndi.version

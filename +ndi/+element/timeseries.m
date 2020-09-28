@@ -7,41 +7,41 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 
 	methods
 		function ndi_element_timeseries_obj = ndi_element_timeseries(varargin)
-			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi_element(varargin{:});
-		end; % ndi_element_timeseries()
+			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element(varargin{:});
+		end; % ndi.element.timeseries()
 
-		%%%%% NDI_TIMESERIES methods
+		%%%%% ndi.time.timeseries methods
 
 		function [data, t, timeref] = readtimeseries(ndi_element_timeseries_obj, timeref_or_epoch, t0, t1)
-			%  READTIMESERIES - read the NDI_ELEMENT_TIMESERIES data from a probe based on specified time relative to an NDI_TIMEFERENCE or epoch
+			%  READTIMESERIES - read the ndi.element.timeseries data from a probe based on specified time relative to an NDI_TIMEFERENCE or epoch
 			%
 			%  [DATA, T, TIMEREF] = READTIMESERIES(NDI_ELEMENT_TIMESERIES_OBJ, TIMEREF_OR_EPOCH, T0, T1)
 			%
-			%  Reads timeseries data from an NDI_ELEMENT_TIMESERIES object. The DATA and time information T that are
-			%  returned depend on the the specific subclass of NDI_ELEMENT_TIMESERIES that is called (see READTIMESERIESEPOCH).
+			%  Reads timeseries data from an ndi.element.timeseries object. The DATA and time information T that are
+			%  returned depend on the the specific subclass of ndi.element.timeseries that is called (see READTIMESERIESEPOCH).
 			%
 			%  In the base class, this function merely calls the element's probe's READTIMESERIES function. 
-			%  TIMEREF_OR_EPOCH is either an NDI_TIMEREFERENCE object indicating the time reference for
+			%  TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the time reference for
 			%  T0, T1, or it can be a single number, which will indicate the data are to be read from that
 			%  epoch.
 			%
 			%  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
-			%  NDI_TIMEREFERENCE object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
+			%  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 			%
 				if ndi_element_timeseries_obj.direct,
 					[data,t,timeref] = ndi_element_timeseries_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1);
 				else,
-					if isa(timeref_or_epoch,'ndi_timereference'),
+					if isa(timeref_or_epoch,'ndi.time.timereference'),
 						timeref = timeref_or_epoch;
 					else,
 						timeref_or_epoch = ndi_element_timeseries_obj.epochid(timeref_or_epoch);
-						timeref = ndi_timereference(ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'), timeref_or_epoch, 0);
+						timeref = ndi.time.timereference(ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'), timeref_or_epoch, 0);
 					end;
 
 					[epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
-							ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'));
+							ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 					[epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
-							ndi_element_timeseries_obj, ndi_clocktype('dev_local_time'));
+							ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 
 					if isempty(epoch_timeref),
 						error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
@@ -51,9 +51,9 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 					% now we know the epoch to read, finally!
 
 					element_doc = ndi_element_timeseries_obj.load_element_doc();
-					sq = ndi_query('depends_on','depends_on','element_id',element_doc.id()) & ...
-						ndi_query('','isa','ndi_document_element_epoch.json','') & ...
-						ndi_query('epochid','exact_string',epoch_timeref.epoch,'');
+					sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
+						ndi.query('','isa','ndi_document_element_epoch.json','') & ...
+						ndi.query('epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_element_timeseries_obj.session;
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)~=1,
@@ -72,17 +72,17 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 				end;
 		end %readtimeseries()
 
-		%%%%% NDI_ELEMENT methods
+		%%%%% ndi.element methods
 
 		function [ndi_element_timeseries_obj, epochdoc] = addepoch(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
-			% ADDEPOCH - add an epoch to the NDI_ELEMENT
+			% ADDEPOCH - add an epoch to the ndi.element
 			%
 			% [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
 			%
 			% Registers the data for an epoch with the NDI_ELEMENT_OBJ.
 			%
 			% Inputs:
-			%   NDI_ELEMENT_OBJ: The NDI_ELEMENT object to modify
+			%   NDI_ELEMENT_OBJ: The ndi.element object to modify
 			%   EPOCHID:       The name of the epoch to add; should match the name of an epoch from the probe
 			%   EPOCHCLOCK:    The epoch clock; must be a single clock type that matches one of the clock types
 			%                     of the probe
@@ -97,9 +97,9 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%  
 				if ndi_element_timeseries_obj.direct,
-					error(['Cannot add external observations to an NDI_ELEMENT that is directly based on another NDI_ELEMENT.']);
+					error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
 				end;
-				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi_element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
+				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
 					
 				E = ndi_element_timeseries_obj.session;
 				f = E.database_openbinarydoc(epochdoc);
@@ -115,12 +115,12 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 
                 function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
                         % TODO - need docs here
-                                ndi_document_obj = newdocument@ndi_element(ndi_element_timeseries_obj, varargin{:});
+                                ndi_document_obj = newdocument@ndi.element(ndi_element_timeseries_obj, varargin{:});
                 end % newdocument
 
                 function sq = searchquery(ndi_element_timeseries_obj, varargin)
                         % TODO - need docs here
-                                sq = searchquery@ndi_element(ndi_element_timeseries_obj, varargin{:});
+                                sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
                 end % searchquery
 
 	end; % methods

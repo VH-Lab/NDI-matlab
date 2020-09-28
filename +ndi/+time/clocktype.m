@@ -1,4 +1,4 @@
-classdef ndi_clocktype
+classdef clocktype
 % NDI_CLOCKTYPE - a class for specifying a clock type in the NDI framework
 %
 %
@@ -7,12 +7,12 @@ classdef ndi_clocktype
 	end
 
 	methods
-		function obj = ndi_clocktype(type)
-			% NDI_CLOCKTYPE - Creates a new NDI_CLOCKTYPE object
+		function obj = clocktype(type)
+			% ndi.time.clocktype - Creates a new ndi.time.clocktype object
 			%
-			% OBJ = NDI_CLOCKTYPE(TYPE)
+			% OBJ = ndi.time.clocktype(TYPE)
 			%
-			% Creates a new NDI_CLOCKTYPE object. TYPE can be
+			% Creates a new ndi.time.clocktype object. TYPE can be
 			% any of the following strings (with description):
 			%
 			% TYPE string               | Description
@@ -37,11 +37,11 @@ classdef ndi_clocktype
 		end % ndi_clock()
 		
 		function ndi_clocktype_obj = setclocktype(ndi_clocktype_obj, type)
-			% SETCLOCKTYPE - Set the type of an NDI_CLOCKTYPE
+			% SETCLOCKTYPE - Set the type of an ndi.time.clocktype
 			%
 			% NDI_CLOCKTYPE_OBJ = SETCLOCKTYPE(NDI_CLOCKTYPE_OBJ, TYPE)
 			%
-			% Sets the TYPE property of an NDI_CLOCKTYPE object NDI_CLOCKTYPE_OBJ.
+			% Sets the TYPE property of an ndi.time.clocktype object NDI_CLOCKTYPE_OBJ.
 			% Valid values for the TYPE string are as follows:
 			%
 			% TYPE string               | Description
@@ -82,7 +82,7 @@ classdef ndi_clocktype
 			%
 			% [COST, MAPPING] = EPOCHGRAPH_EDGE(NDI_CLOCKTYPE_A, NDI_CLOCKTYPE_B)
 			%
-			% Returns the COST and NDI_TIMEMAPPING object MAPPING that describes the
+			% Returns the COST and ndi.time.timemapping object MAPPING that describes the
 			% automatic mapping between epochs that have clock types NDI_CLOCKTYPE_A
 			% and NDI_CLOCKTYPE_B.
 			%
@@ -112,7 +112,7 @@ classdef ndi_clocktype
 				index = find(  strcmp(ndi_clocktype_a.type,from_list) & strcmp(ndi_clocktype_b.type,to_list) );
 				if ~isempty(index),
 					cost = 1;
-					mapping = ndi_timemapping([1 0]); % trivial mapping
+					mapping = ndi.time.timemapping([1 0]); % trivial mapping
 				end
 		end  % epochgraph_edge
 
@@ -121,7 +121,7 @@ classdef ndi_clocktype
 			%
 			% B = NEEDSEPOCH(NDI_CLOCKTYPE_OBJ)
 			%
-			% Does this NDI_CLOCKTYPE object need an epoch in order to specify time?
+			% Does this ndi.time.clocktype object need an epoch in order to specify time?
 			%
 			% Returns 1 for 'dev_local_time', 0 otherwise.
 			%
@@ -133,13 +133,13 @@ classdef ndi_clocktype
 			%
 			% STR = NDI_CLOCKTYPE2CHAR(NDI_CLOCKTYPE_OBJ)
 			%
-			% Return a string STR equal to the NDI_CLOCKTYPE object's type parameter.
+			% Return a string STR equal to the ndi.time.clocktype object's type parameter.
 			%
 				str = ndi_clocktype_obj.type;
 		end % ndi_clocktype2char()
 
 		function b = eq(ndi_clocktype_obj_a, ndi_clocktype_obj_b)
-			% EQ - are two NDI_CLOCKTYPE objects equal?
+			% EQ - are two ndi.time.clocktype objects equal?
 			%
 			% B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
 			%
@@ -150,7 +150,7 @@ classdef ndi_clocktype
 		end % eq()
 
 		function b = ne(ndi_clocktype_obj_a, ndi_cock_obj_b)
-			% NE - are two NDI_CLOCKTYPE objects not equal?
+			% NE - are two ndi.time.clocktype objects not equal?
 			%
 			% B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
 			%
@@ -161,6 +161,6 @@ classdef ndi_clocktype
 		end % ne()
 
 	end % methods
-end % ndi_clocktype class
+end % ndi.time.clocktype class
 
 

@@ -1,4 +1,4 @@
-classdef ndi_neuron_hengen < ndi_element_timeseries
+classdef hengen < ndi.element.timeseries
 	properties (SetAccess=protected, GetAccess=public)
 		quality
 		source
@@ -7,7 +7,7 @@ classdef ndi_neuron_hengen < ndi_element_timeseries
 	methods
 		function ndi_neuron_hengen_obj = ndi_neuron_hengen(varargin)
 
-			ndi_neuron_hengen_obj = ndi_neuron_hengen_obj@ndi_element_timeseries(varargin{:});
+			ndi_neuron_hengen_obj = ndi_neuron_hengen_obj@ndi.element.timeseries(varargin{:});
     
 			if numel(varargin) == 2
 				ndi_neuron_hengen_obj.quality = varargin{2}.document_properties.element.quality;
@@ -17,10 +17,10 @@ classdef ndi_neuron_hengen < ndi_element_timeseries
 				ndi_neuron_hengen_obj.source = varargin{8};
 			end
 			
-		end; % ndi_neuron_hengen()
+		end; % ndi.neuron.hengen()
 
 		function ndi_document_obj = newdocument(ndi_neuron_hengen_obj)
-			% NEWDOCUMENT - return a new database document of type NDI_DOCUMENT based on a neuron_hengen
+			% NEWDOCUMENT - return a new database document of type ndi.document based on a neuron_hengen
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(ndi_neuron_hengen_obj)
 			%
@@ -34,7 +34,7 @@ classdef ndi_neuron_hengen < ndi_element_timeseries
 			%
 				ndi_document_obj = ndi_neuron_hengen_obj.load_element_doc();
 				if isempty(ndi_document_obj),
-					ndi_document_obj = ndi_document('ndi_document_element_neuron_hengen',...
+					ndi_document_obj = ndi.document('ndi_document_element_neuron_hengen',...
 						'element.ndi_element_class', class(ndi_neuron_hengen_obj), ...
 						'element.name',ndi_neuron_hengen_obj.name,...
 						'element.reference', ndi_neuron_hengen_obj.reference, ...

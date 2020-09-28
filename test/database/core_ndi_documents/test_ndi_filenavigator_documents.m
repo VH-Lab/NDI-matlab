@@ -14,7 +14,7 @@ function test_ndi_filenavigator_documents(dirname)
 
 	%No directory has passed in as a parameter
 	if nargin<1
-		dirname = [ndi.path.exampleexperpath filesep 'exp1_eg'];
+		dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
 	end
 
 	%Create and NDI_session object

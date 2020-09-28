@@ -21,7 +21,7 @@ failures = {};
 
 ndi_globals;
 
-json_docs = vlt.file.findfilegroups(ndi.path.documentpath,{'.*\.json\>'});
+json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,{'.*\.json\>'});
 
 for i=1:numel(json_docs),
 	[parentdir,filename,ext] = fileparts(json_docs{i}{1});

@@ -200,7 +200,7 @@ classdef ndi_app_spikesorter_hengen < ndi_app
 
 			ndi_globals;
 
-			prev_folder = cd([ndi.path.path filesep 'app' filesep 'spikesorter_hengen']);
+			prev_folder = cd([ndi_globals.path.path filesep 'app' filesep 'spikesorter_hengen']);
 
 			% python spikeinterface_currentall.py -f json_input_files/spkint_wrapper_input_64ch.json
 			warning(['using /usr/local/opt/python@3.8/bin/python3' newline 'modify source to use a different python installation'])

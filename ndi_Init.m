@@ -25,44 +25,44 @@ ndi_globals;
 
  % paths
 
-ndi.path = [];
+ndi_globals.path = [];
 
-ndi.path.path = myndipath;
-ndi.path.commonpath = [ndi.path.path filesep 'ndi_common'];
-ndi.path.documentpath = [ndi.path.commonpath filesep 'database_documents'];
-ndi.path.documentschemapath = [ndi.path.commonpath filesep 'schema_documents'];
-ndi.path.exampleexperpath = [ndi.path.commonpath filesep 'example_sessions'];
-ndi.path.temppath = [tempdir filesep 'nditemp'];
-ndi.path.testpath = [tempdir filesep 'nditestcode'];
-ndi.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' filesep 'NDI-filecache'];
-ndi.path.logpath = [userpath filesep 'Documents' filesep 'NDI' filesep 'Logs'];
-ndi.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
+ndi_globals.path.path = myndipath;
+ndi_globals.path.commonpath = [ndi_globals.path.path filesep 'ndi_common'];
+ndi_globals.path.documentpath = [ndi_globals.path.commonpath filesep 'database_documents'];
+ndi_globals.path.documentschemapath = [ndi_globals.path.commonpath filesep 'schema_documents'];
+ndi_globals.path.exampleexperpath = [ndi_globals.path.commonpath filesep 'example_sessions'];
+ndi_globals.path.temppath = [tempdir filesep 'nditemp'];
+ndi_globals.path.testpath = [tempdir filesep 'nditestcode'];
+ndi_globals.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' filesep 'NDI-filecache'];
+ndi_globals.path.logpath = [userpath filesep 'Documents' filesep 'NDI' filesep 'Logs'];
+ndi_globals.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
 
-if ~exist(ndi.path.temppath,'dir'),
-	mkdir(ndi.path.temppath);
+if ~exist(ndi_globals.path.temppath,'dir'),
+	mkdir(ndi_globals.path.temppath);
 end;
 
-if ~exist(ndi.path.testpath,'dir'),
-	mkdir(ndi.path.testpath);
+if ~exist(ndi_globals.path.testpath,'dir'),
+	mkdir(ndi_globals.path.testpath);
 end;
 
-if ~exist(ndi.path.filecachepath,'dir'),
-	mkdir(ndi.path.filecachepath);
+if ~exist(ndi_globals.path.filecachepath,'dir'),
+	mkdir(ndi_globals.path.filecachepath);
 end;
 
-if ~exist(ndi.path.preferences,'dir'),
-	mkdir(ndi.path.preferences);
+if ~exist(ndi_globals.path.preferences,'dir'),
+	mkdir(ndi_globals.path.preferences);
 end;
 
  % initialization
 
-ndi_probetype2objectinit;
-ndi_databasehierarchyinit;
+ndi_globals.probetype2objectinit;
+ndi_globals.databasehierarchyinit;
 
-ndi.debug.veryverbose = 1;
+ndi_globals.debug.veryverbose = 1;
 
  % test write access to preferences, testpath, filecache, temppath
-paths = {ndi.path.testpath, ndi.path.temppath, ndi.path.filecachepath, ndi.path.preferences};
+paths = {ndi_globals.path.testpath, ndi_globals.path.temppath, ndi_globals.path.filecachepath, ndi_globals.path.preferences};
 pathnames = {'NDI test path', 'NDI temporary path', 'NDI filecache path', 'NDI preferences path'};
 
 for i=1:numel(paths),
@@ -75,10 +75,10 @@ for i=1:numel(paths),
 	delete(fname);
 end;
 
-ndi.log = vlt.app.log(...
-	'system_logfile',[ndi.path.logpath filesep 'system.log'],...
-	'error_logfile', [ndi.path.logpath filesep 'error.log'],...
-	'debug_logfile', [ndi.path.logpath filesep 'debug.log'],...
+ndi_globals.log = vlt.app.log(...
+	'system_logfile',[ndi_globals.path.logpath filesep 'system.log'],...
+	'error_logfile', [ndi_globals.path.logpath filesep 'error.log'],...
+	'debug_logfile', [ndi_globals.path.logpath filesep 'debug.log'],...
 	'system_verbosity',5,...
 	'error_verbosity',5, ...
 	'debug_verbosity', 5, ...
