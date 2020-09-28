@@ -1,4 +1,4 @@
-classdef oridirtuning < ndi.app
+classdef oridirtuning < ndi.app.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,9 +19,9 @@ classdef oridirtuning < ndi.app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.app(session, name);
 
-		end % ndi.app.oridirtuning() creator
+		end % ndi.app.app.oridirtuning() creator
 
 		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
@@ -32,7 +32,7 @@ classdef oridirtuning < ndi.app
 				tuning_doc = {};
 
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi.app.stimulus.tuning_response(E);
+				rapp = ndi.app.tuning_response(E);
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
@@ -55,7 +55,7 @@ classdef oridirtuning < ndi.app
 			%
 				oriprops = {};
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi.app.stimulus.tuning_response(E);
+				rapp = ndi.app.tuning_response(E);
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
@@ -82,7 +82,7 @@ classdef oridirtuning < ndi.app
 			%
 			%
 				E = ndi_app_oridirtuning_obj.session;
-				tapp = ndi.app.stimulus.tuning_response(E);
+				tapp = ndi.app.tuning_response(E);
 				ind = {};
 				ind_real = {};
 				control_ind = {};
@@ -238,6 +238,6 @@ classdef oridirtuning < ndi.app
 
 	end; % static methods
 
-end % ndi.app.oridirtuning
+end % ndi.app.app.oridirtuning
 
 

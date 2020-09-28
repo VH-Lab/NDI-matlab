@@ -20,4 +20,6 @@ end;
 fuse = vlt.matlab.findfunctionusedir('/Users/vanhoosr/Documents/MATLAB/tools/NDI-matlab/demo',m);
 
 
+status = vlt.matlab.replacefunction(fuse,rt,'Disable',0)
+
 

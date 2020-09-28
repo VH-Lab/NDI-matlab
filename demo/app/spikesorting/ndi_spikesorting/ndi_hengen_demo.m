@@ -6,7 +6,7 @@
 
 % probes = E.getprobes('element.name', 'tetrode7')
 
-% spikesorter_hengen = ndi.app.spikesorter.hengen(E)
+% spikesorter_hengen = ndi.ap0.spikesorter.hengen(E)
 
 % spikesorter_hengen.extract_and_sort(probes{1})
 
@@ -51,7 +51,7 @@ sorting_name = 'hengen_sorting_test'
 
 probes = E.getprobes()
 
-spikesorter_hengen = ndi.app.spikesorter.hengen(E)
+spikesorter_hengen = ndi.ap0.spikesorter.hengen(E)
 
 spikesorter_hengen.add_extraction_doc(extraction_name, [])
 

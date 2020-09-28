@@ -1,7 +1,4 @@
-classdef spikeextractor < ndi.app & ndi.appdoc
-	% NDI_APP_SPIKEEXTRACTOR 
-	%
-	% 
+classdef spikeextractor < ndi.app.app & ndi_app_appdoc
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -14,7 +11,7 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 			%
 			% NDI_APP_SPIKEEXTRACTOR_OBJ = ndi.app.spikeextractor(SESSION)
 			%
-			% Creates a new ndi.app.spikeextractor object that can operate on
+			% Creates a new ndi_app_spikeextractor object that can operate on
 			% NDI_SESSIONS. The app is named 'ndi_app_spikeextractor'.
 			%
 				session = [];
@@ -23,14 +20,14 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 					session = varargin{1};
 				end
 				
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app(session, name);
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.appdoc(...
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.app(session, name);
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_app_appdoc(...
 					{'extraction_parameters','extraction_parameters_modification', 'spikewaves','spiketimes'},...
 					{'apps/spikeextractor/spike_extraction_parameters','apps/spikeextractor/spike_extraction_parameters_modification',...
 						'apps/spikeextractor/spikewaves','apps/spikeextractor/spiketimes'},...
 					session);
 
-		end % ndi.app.spikeextractor() creator
+		end % ndi_app_spikeextractor() creator
 
 		function filterstruct = makefilterstruct(ndi_app_spikeextractor_obj, extraction_doc, sample_rate)
 			% MAKEFILTERSTRUCT - make a filter structure for a given sampling rate and extraction parameters
@@ -58,7 +55,7 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 			%
 			% DATA_OUT = FILTER(NDI_APP_SPIKEEXTRACTOR_OBJ, DATA_IN, FILTERSTRUCT)
 			%
-			% Filters data based on FILTERSTRUCT (see ndi.app.spikeextractor/MAKEFILTERSTRUCT)
+			% Filters data based on FILTERSTRUCT (see ndi_app_spikeextractor/MAKEFILTERSTRUCT)
 			%
 				if isempty(filterstruct),
 					data_out = data_in;
@@ -278,14 +275,14 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 				end % epoch n
 		end % extract
 
-		% functions that override ndi.app.appdoc
+		% functions that override ndi_app_appdoc
 
 		function doc = struct2doc(ndi_app_spikeextractor_obj, appdoc_type, appdoc_struct, varargin)
 			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
 			%
-			% For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
+			% For ndi_app_spikeextractor, one can use an APPDOC_TYPE of the following:
 			% APPDOC_TYPE                 | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'     | A document that describes the parameters to be used for extraction
@@ -336,7 +333,7 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 			% Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
 			% ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
 			%
-			% For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
+			% For ndi_app_spikeextractor, one can use an APPDOC_TYPE of the following:
 			% APPDOC_TYPE               | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'   | A document that describes the parameters to be used for extraction
@@ -368,11 +365,11 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 		end; % isvalid_appdoc_struct()
 
                 function doc = find_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
-                        % FIND_APPDOC - find an ndi.app.appdoc document in the session database
+                        % FIND_APPDOC - find an ndi_app_appdoc document in the session database
                         %
-			% See ndi.app.spikeextractor/APPDOC_DESCRIPTION for documentation.
+			% See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
 			%
-			% See also: ndi.app.spikeextractor/APPDOC_DESCRIPTION
+			% See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
 			%
         			switch(lower(appdoc_type)),
 					case 'extraction_parameters',
@@ -415,9 +412,9 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 		function varargout = loaddata_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
 			% LOADDATA_APPDOC - load data from an application document
 			%
-			% See ndi.app.spikeextractor/APPDOC_DESCRIPTION for documentation.
+			% See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
 			%
-			% See also: ndi.app.spikeextractor/APPDOC_DESCRIPTION
+			% See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
 			%
 				switch(lower(appdoc_type)),
 					case {'extraction_parameters','extraction_parameters_modification'},
@@ -466,10 +463,10 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 				end; % switch
 		end; % loaddata_appdoc()
 
-		function appdoc_description(ndi_appdoc_obj)
+		function appdoc_description(ndi.app.appdoc_obj)
 			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
 			%
-			% For ndi.app.spikeextractor, there are the following types:
+			% For ndi_app_spikeextractor, there are the following types:
 			% APPDOC_TYPE                 | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'extraction_parameters'     | A document that describes the parameters to be used for extraction
@@ -734,9 +731,9 @@ classdef spikeextractor < ndi.app & ndi.appdoc
 			%
  	 		% ----------------------------------------------------------------------------------------------
 			%
-				eval(['help ndi.app.spikeextractor/appdoc_description']); 
+				eval(['help ndi_app_spikeextractor/appdoc_description']); 
 		end; % appdoc_description()
 
 	end; % methods
 
-end % ndi.app.spikeextractor
+end % ndi_app_spikeextractor

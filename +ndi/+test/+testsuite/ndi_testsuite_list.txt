@@ -1,0 +1,14 @@
+code	runit	comment
+ndi.test.cache	1	Tests cache
+ndi.test.database.test_ndi_document	1	Tests ndi_document and the database
+ndi.test.filenavigator.test_ndi_filenavigator	1	Tests basic functions of ndi_filenavigator
+ndi.test.daq.intan_flat	1	Tests Intan daqsystem
+ndi.test.daq.intan_flat_metadata	1	Tests Intan daqsystem and metadata option of daqsystem
+ndi.test.daq.build_intan_flat_exp	1	Tests saving experiment parameters, documents
+ndi.test.daq.sg_flat	1	Tests reading from SpikeGadgets ndi_daqsystem_mfdaq_sg
+ndi.test.probe.test_ndi_probe	1	Tests basic probe functions
+ndi.test.element.test_ndi_element	1	Test basic nsd_element functions
+ndi.test.database.test_ndi_document_jsons	1	Test ability to make an NDI_DOCUMENT out of all JSON definitions
+ndi.test.filenavigator.test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream
+ndi.test.app.markgarbage	1	Tests app markgarbage
+ndi.test.database.test_ndi_daq_documents	1	Tests creating NDI_DOCUMENT objects out of core ndi daq objects, and re-building them

@@ -1,4 +1,4 @@
-classdef spikesorter < ndi.app
+classdef spikesorter < ndi.app.app
 
 	properties (SetAccess=protected,GetAccess=public)
 	end % properties
@@ -6,9 +6,9 @@ classdef spikesorter < ndi.app
 	methods
 
 		function ndi_app_spikesorter_obj =spikesorter(varargin)
-		% NDI_APP_spikesorter - an app to sort spikewaves found in sessions
+		% NDI.APP.spikesorter - an app to sort spikewaves found in sessions
 		%
-		% NDI_APP_spikesorter_OBJ = ndi.app.spikesorter(SESSION)
+		% NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)
 		%
 		% Creates a new NDI_APP_spikesorter object that can operate on
 		% NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.
@@ -18,7 +18,7 @@ classdef spikesorter < ndi.app
 			if numel(varargin)>0,
 				session = varargin{1};
 			end
-			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app(session, name);
+			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.app(session, name);
 
 		end % ndi.app.spikesorter() creator
 		%%%%%%
@@ -61,7 +61,7 @@ classdef spikesorter < ndi.app
 			end;
 
 			% Read spikewaves here
-			spike_extractor = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session);
+			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session);
 			[waveforms, ~, spikewaves_doc] = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 
 			% Interpolation
@@ -336,23 +336,23 @@ classdef spikesorter < ndi.app
 		end % clear_sort()
 
 		function waveforms = load_spikewaves_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)
-			waveforms = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session).load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			waveforms = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
 		end
 
 		function times = load_spiketimes_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)
-			times = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session).load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			times = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
 		end
 
 		function spikes = load_spikes(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
 			probe = ndi_app_spikesorter_obj.session.getprobes('name',name,'type',type); % can add reference
-			spikes = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session).load_spikes(probe{1}, epoch, extraction_name);
+			spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spikes(probe{1}, epoch, extraction_name);
 		end
 
 		function spikes = load_times(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
 			probe = ndi_app_spikesorter_obj.session.getprobes('name',name,'type',type); % can add reference
-			spikes = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session).load_times(probe{1}, epoch, extraction_name);
+			spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_times(probe{1}, epoch, extraction_name);
 		end
 
 	end % methods
 
-end % ndi.app.spikesorter
+end % ndi_app_spikesorter

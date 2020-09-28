@@ -1,4 +1,4 @@
-classdef tuning_response < ndi.app
+classdef tuning_response < ndi.app.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -7,11 +7,11 @@ classdef tuning_response < ndi.app
 	methods
 
 		function ndi_app_tuning_response_obj = tuning_response(varargin)
-			% ndi.app.stimulus.tuning_response - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
+			% ndi.app.tuning_response - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
-			% NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
+			% NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.tuning_response(SESSION)
 			%
-			% Creates a new ndi.app.stimulus.tuning_response object that can operate on
+			% Creates a new ndi.app.tuning_response object that can operate on
 			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
 				session = [];
@@ -19,9 +19,9 @@ classdef tuning_response < ndi.app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi.app(session, name);
+				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi.app.app(session, name);
 
-		end % ndi.app.stimulus.tuning_response() creator
+		end % ndi.app.tuning_response() creator
 
 		function stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
 			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus object
@@ -461,7 +461,7 @@ classdef tuning_response < ndi.app
 			% empty, then it is taken to be 0.
 			%
 			% The method of finding the control stimulus can be provided by providing extra name/value pairs.
-			% See ndi.app.stimulus.tuning_response/CONTROL_STIMULUS for parameters.
+			% See ndi.app.tuning_response/CONTROL_STIMULUS for parameters.
 			% 
 				if nargin<3,
 					reset = 0;

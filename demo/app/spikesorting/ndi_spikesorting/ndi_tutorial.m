@@ -37,7 +37,7 @@ probe = probelist{prb};
 [d,t] = probe.read_epochsamples(e,1,Inf);
 vlt.plot.plot_multichan(d,t,10);
 
-spikeextractor = ndi.app.spikeextractor(our_exp); 
+spikeextractor = ndi.ap0.spikeextractor(our_exp); 
 spikeextractor.add_appdoc(spikeextractor.session, 'extraction_parameters', [], 'ReplaceIfDifferent', ...
 	'test_extract');
 spikeextractor.extract(probe, e,'test_extract');
@@ -49,7 +49,7 @@ title(['First spike']);
 xlabel('Samples');
 ylabel('Amplitude');
 
-spikesorter = ndi.app.spikesorter(our_exp);
+spikesorter = ndi.ap0.spikesorter(our_exp);
 spikesorter.add_sorting_doc('test_sort', []);
 spikesorter.spike_sort(probe, e, 'test_extract', 'test_sort', 0);
 

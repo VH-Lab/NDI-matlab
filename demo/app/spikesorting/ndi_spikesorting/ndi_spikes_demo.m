@@ -22,8 +22,8 @@ if isempty(d),
 	E.daqsystem_add(dev1);
 end;
 
-spike_extractor = ndi.app.spikeextractor(E);
-spike_sorter = ndi.app.spikesorter(E);
+spike_extractor = ndi.ap0.spikeextractor(E);
+spike_sorter = ndi.ap0.spikesorter(E);
 probes = E.getprobes();
 probe = probes{1};
 

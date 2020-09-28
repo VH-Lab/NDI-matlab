@@ -33,7 +33,7 @@ ndi_databasehierarchyinit	ndi.database.fun.databasehierarchyinit
 ndi_docs2graph	ndi.database.fun.docs2graph
 ndi_document2ndi_object	ndi.database.fun.document2ndi_object
 ndi_findalldependencies	ndi.database.fun.findalldependencies
-ndi_finddocs_missing_dependencies	ndi.database.fun.finddocs.missing.dependencies
+ndi_finddocs_missing_dependencies	ndi.database.fun.finddocs_missing_dependencies
 ndi_opendatabase	ndi.database.fun.opendatabase
 ndi_plotinteractivedocgraph	ndi.database.fun.plotinteractivedocgraph
 ndi_projectvardef	ndi.database.fun.projectvardef
@@ -105,7 +105,7 @@ test_intan_flat_metadata	ndi.test.daq.test_intan_flat_metadata
 test_intan_flat_saved	ndi.test.daq.intan_flat_saved
 test_ndi_device_image_tiffstack	ndi.test.daq.ndi_device_image_tiffstack
 test_ndi_image_tiffstack_multipleepoch	ndi.test.daq.ndi_image_tiffstack_multipleepoch
-test_sg_flat	ndi.test.daq.sg.flat
+test_sg_flat	ndi.test.daq.sg_flat
 test_ndi_daq_documents	ndi.test.daq.documents
 test_ndi_daqreader_documents	ndi.test.daq.reader.documents
 test_ndi_daqsystem_documents	ndi.test.daq.system.documents
@@ -113,8 +113,8 @@ test_ndi_filenavigator_documents	ndi.test.daq.filenavigator.documents
 test_ndi_syncgraph_documents	ndi.test.syncgraph.documents
 test_ndi_syncrule_documents	ndi.test.syncrule.documents
 test_ndi_document	ndi.test.document
-test_ndi_document_jsons	ndi.test.document.jsons
-test_ndi_validate	ndi.test.document.validate
+test_ndi_document_jsons	ndi.test.document_jsons
+test_ndi_validate	ndi.test.document_validate
 testpostgresdb	ndi.test.database.testpostgresdb
 testpostgresdb2	ndi.test.database.testpostgresdb2
 testpostgresdbsearch	ndi.test.database.testpostgresdbsearch

@@ -21,7 +21,7 @@ matches=(~contains(pathstoadd_cell,'.git'))&(~contains(pathstoadd_cell,'.ndi'));
 pathstoadd = char(strjoin(pathstoadd_cell(matches),pathsep));
 addpath(pathstoadd);
 
-ndi_globals;
+ndi.globals;
 
  % paths
 
@@ -56,8 +56,8 @@ end;
 
  % initialization
 
-ndi_globals.probetype2objectinit;
-ndi_globals.databasehierarchyinit;
+ndi.probe.fun.probetype2objectinit;
+ndi.probe.fun.databasehierarchyinit;
 
 ndi_globals.debug.veryverbose = 1;
 
