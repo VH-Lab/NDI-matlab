@@ -1,5 +1,5 @@
-classdef ndi_cache < handle
-% NDI_CACHE - Cache class for NDI
+classdef cache < handle
+% NDI.CACHE - Cache class for NDI
 %
 % 
 
@@ -15,12 +15,12 @@ classdef ndi_cache < handle
 
 	methods
 		
-		function ndi_cache_obj = ndi_cache(varargin)
-			% NDI_CACHE - create a new NDI cache handle
+		function ndi_cache_obj = cache(varargin)
+			% CACHE - create a new NDI cache handle
 			%
-			% NDI_CACHE_OBJ = NDI_CACHE(...)
+			% NDI_CACHE_OBJ = NDI.CACHE(...)
 			%
-			% Creates a new NDI_CACHE object. Additional arguments can be specified as
+			% Creates a new NDI.CACHE object. Additional arguments can be specified as
 			% name value pairs:
 			%
 			% Parameter (default)         | Description
@@ -44,7 +44,7 @@ classdef ndi_cache < handle
 					return;
 				end;
 
-				ndi_cache_obj = ndi_cache();
+				ndi_cache_obj = ndi.cache();
 
 				ndi_cache_obj.maxMemory = maxMemory;
 				ndi_cache_obj = set_replacement_rule(ndi_cache_obj,replacement_rule);
@@ -56,7 +56,7 @@ classdef ndi_cache < handle
 			%
 			% NDI_CACHE_OBJ = SET_REPLACEMENT_RULE(NDI_CACHE_OBJ, RULE)
 			%
-			% Sets the replacement rule for an NDI_CACHE to be used when a new entry
+			% Sets the replacement rule for an NDI.CACHE to be used when a new entry
 			% would exceed the allowed memory. The rule may be one of the following strings
 			% (case is insensitive and will be stored lower case):
 			%
@@ -75,7 +75,7 @@ classdef ndi_cache < handle
 		end % set_replacement_rule
 
 		function ndi_cache_obj = add(ndi_cache_obj, key, type, data, priority)
-			% ADD - add data to an NDI_CACHE
+			% ADD - add data to an NDI.CACHE
 			%
 			% NDI_CACHE_OBJ = ADD(NDI_CACHE_OBJ, KEY, TYPE, DATA, [PRIORITY])
 			%
@@ -115,7 +115,7 @@ classdef ndi_cache < handle
 		end % add
 
 		function ndi_cache_obj = remove(ndi_cache_obj, index_or_key, type, varargin)
-			% REMOVE - remove data from an NDI_CACHE
+			% REMOVE - remove data from an NDI.CACHE
 			%
 			% NDI_CACHE_OBJ = REMOVE(NDI_CACHE_OBJ, KEY, TYPE, ...)
 			%   or
@@ -158,11 +158,11 @@ classdef ndi_cache < handle
 		end % remove
 
 		function ndi_cache_obj = clear(ndi_cache_obj)
-			% CLEAR - clear data from an NDI_CACHE
+			% CLEAR - clear data from an NDI.CACHE
 			%
 			% NDI_CACHE_OBJ = CLEAR(NDI_CACHE_OBJ)
 			%
-			% Clears all entries from the NDI_CACHE object NDI_CACHE_OBJ.
+			% Clears all entries from the NDI.CACHE object NDI_CACHE_OBJ.
 			%
 				ndi_cache_obj = ndi_cache_obj.remove(1:numel(ndi_cache_obj.table),[]);
 		end % clear
@@ -175,7 +175,7 @@ classdef ndi_cache < handle
 			% Remove entries to free at least FREEBYTES memory. Entries will be removed, first by PRIORITY and then by
 			% the replacement_rule parameter.
 			%
-			% See also: NDI_CACHE/ADD, NDI_CACHE/SET_REPLACEMENT_RULE
+			% See also: NDI.CACHE/ADD, NDI.CACHE/SET_REPLACEMENT_RULE
 			%
 				stats = [ [ndi_cache_obj.table.priority]' [ndi_cache_obj.table.timestamp]' [ndi_cache_obj.table.bytes]' ];
 				thesign = 1;
@@ -192,7 +192,7 @@ classdef ndi_cache < handle
 		end
 
 		function tableentry = lookup(ndi_cache_obj, key, type)
-			% LOOKUP - retrieve the NDI_CACHE data table corresponding to KEY and TYPE
+			% LOOKUP - retrieve the NDI.CACHE data table corresponding to KEY and TYPE
 			%
 			% TABLEENTRY = LOOKUP(NDI_CACHE_OBJ, KEY, TYPE)
 			%
@@ -213,7 +213,7 @@ classdef ndi_cache < handle
 		end % tableentry
 
 		function b = bytes(ndi_cache_obj)
-			% BYTES - memory size of an NDI_CACHE object in bytes
+			% BYTES - memory size of an NDI.CACHE object in bytes
 			%
 			% B = BYTES(NDI_CACHE_OBJ)
 			%
@@ -227,4 +227,4 @@ classdef ndi_cache < handle
 		end % bytes
 
 	end % methods
-end % ndi_cache
+end % ndi.cache

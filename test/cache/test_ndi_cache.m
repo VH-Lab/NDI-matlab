@@ -1,12 +1,12 @@
 function test_ndi_cache
 % TEST_NDI_CACHE - test the NDI_CACHE object
 %
-% Adds several entries to NDI_CACHE objects to test the functions.
+% Adds several entries to NDI.CACHE objects to test the functions.
 % 
 
-disp(['Create an NDI_CACHE object that is small enough to test the memory functions.']);
+disp(['Create an NDI.CACHE object that is small enough to test the memory functions.']);
 
-cache = ndi_cache('maxMemory',1024,'replacement_rule','fifo'); % 1K 
+cache = ndi.cache('maxMemory',1024,'replacement_rule','fifo'); % 1K 
 
 disp(['About to add elements to the cache']);
 

@@ -5,7 +5,7 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 		reference         % A string reference for the session
 		identifier        % A unique identifier
 		syncgraph         % An NDI_SYNCGRAPH object related to this session
-		cache             % An NDI_CACHE object for the session's use
+		cache             % An NDI.CACHE object for the session's use
 	end
 	properties (GetAccess=protected, SetAccess = protected)
 		database          % An NDI_DATABASE associated with this session
@@ -29,7 +29,7 @@ classdef ndi_session < handle % & ndi_documentservice & % ndi_id Matlab does not
 				ndi_session_obj.database = [];
 				ndi_session_obj.identifier = ndi_id.ndi_unique_id();
 				ndi_session_obj.syncgraph = ndi_syncgraph(ndi_session_obj);
-				ndi_session_obj.cache = ndi_cache();
+				ndi_session_obj.cache = ndi.cache();
 		end
 
 		function identifier = id(ndi_session_obj)
