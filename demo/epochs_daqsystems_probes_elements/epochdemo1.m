@@ -1,37 +1,37 @@
 function epochdemo1
 % EPOCHDEMO1 - Demonstrate the relationship between epochs, daqsystems, probes, and elements
 %
-%  EPOCHDEMO1
+%  ndi.demo.epochdemo1
 %
 %  This is the code that forms the basis for the Jupyter notebook: epochdemo1.ipynb
 %
 
-ndi_globals;
+ndi.globals;
 dirname = [ndiexampleexperpath filesep 'intracell_example'];
 
 disp(['creating a new session object...']);
-E = ndi_session_dir('exp1',dirname);
+E = ndi.session.dir('exp1',dirname);
 
 disp(['Now adding our acquisition device (CED Spike2):']);
 
-  % A NDI_DAQSYSTEM requires two objects: an ndi_filenavigator that describes
-  %  where the files are stored on disk, and an ndi_daqreader that describes
+  % A ndi.daq.system requires two objects: an ndi.file.navigator that describes
+  %  where the files are stored on disk, and an ndi.daq.reader that describes
   % how to read the files. Further, this daqsystem is a multifunction daq, which
   % allows simultaneous (potential) use of analog inputs, analog outputs, digital inputs,
   % digital outputs, and a clock. 
 
-  % Step 1.1: Prepare the ndi_filenavigator; we will just look for .smr
+  % Step 1.1: Prepare the ndi.file.navigator; we will just look for .smr
   %         files in any organization within the directory that also have a corresponding
   %         .epochmetadata file that describes the probes that were acquired during each
   %         epoch.
 
-fn = ndi_filenavigator(E, {'.*\.smr\>','.*\.epochmetadata\>'},...
-	'ndi_epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
+fn = ndi.file.navigator(E, {'.*\.smr\>','.*\.epochmetadata\>'},...
+	'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
 
 
   % Step 1.2: create the daqsystem object and add it to the session:
 
-dev1 = ndi_daqsystem_mfdaq('myspike2',fn, ndi_daqreader_mfdaq_cedspike2());
+dev1 = ndi.daq.system.mfdaq('myspike2',fn, ndi.daq.reader.mfdaq.cedspike2());
 E.daqsystem_add(dev1);
 
   % Now let's explore the epochs that are here

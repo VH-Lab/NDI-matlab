@@ -11,23 +11,23 @@ if exist(dot_ndi, 'dir') == 7
 end
 
 disp(['opening session object...']);
-E = ndi_session_dir('exp1', dirname);
+E = ndi.session.dir('exp1', dirname);
 d = E.daqsystem_load('name','SpikeGadgets');
 
 if isempty(d),
 	disp(['Now adding our acquisition device (SpikeGadgets):']);
-	filenav = ndi_filenavigator(E, '.*\.rec\>');  % look for .rec files
-	dr = ndi_daqreader_mfdaq_spikegadgets;
-	dev1 = ndi_daqsystem_mfdaq('SpikeGadgets',filenav, dr);
+	filenav = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files
+	dr = ndi.daq.reader.mfdaq.spikegadgets;
+	dev1 = ndi.daq.system.mfdaq('SpikeGadgets',filenav, dr);
 	E.daqsystem_add(dev1);
 end;
 
-spike_extractor = ndi_app_spikeextractor(E);
-spike_sorter = ndi_app_spikesorter(E);
+spike_extractor = ndi.app.spikeextractor(E);
+spike_sorter = ndi.app.spikesorter(E);
 probes = E.getprobes();
 probe = probes{1};
 
-% d = E.database_search({'ndi_document.name','test','spike_extraction_parameters.filter_type','(.*)'});
+% d = E.database_search({'ndi.document.name','test','spike_extraction_parameters.filter_type','(.*)'});
 % if isempty(d),
 % 	spike_extractor.add_extraction_doc('test');
 % end;
