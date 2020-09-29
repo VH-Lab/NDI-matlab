@@ -116,7 +116,7 @@ classdef markgarbage < ndi.app
 
 				searchq = ndi.query(ndi_app_markgarbage_obj.searchquery()) & ndi.query('','isa','valid_interval.json','');
 
-				if isa(ndi_epochset_obj,'ndi.element.base'),
+				if isa(ndi_epochset_obj,'ndi.element'),
 					searchq2 = ndi.query('','depends_on','element_id',ndi_epochset_obj.id());
 					searchq = searchq & searchq2; 
 				end

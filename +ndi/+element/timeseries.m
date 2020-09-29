@@ -7,7 +7,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 
 	methods
 		function ndi_element_timeseries_obj = ndi_element_timeseries(varargin)
-			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element.base(varargin{:});
+			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element(varargin{:});
 		end; % ndi.element.timeseries()
 
 		%%%%% ndi.time.timeseries methods
@@ -72,17 +72,17 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 				end;
 		end %readtimeseries()
 
-		%%%%% ndi.element.base methods
+		%%%%% ndi.element methods
 
 		function [ndi_element_timeseries_obj, epochdoc] = addepoch(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
-			% ADDEPOCH - add an epoch to the ndi.element.base
+			% ADDEPOCH - add an epoch to the ndi.element
 			%
 			% [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
 			%
 			% Registers the data for an epoch with the NDI_ELEMENT_OBJ.
 			%
 			% Inputs:
-			%   NDI_ELEMENT_OBJ: The ndi.element.base object to modify
+			%   NDI_ELEMENT_OBJ: The ndi.element object to modify
 			%   EPOCHID:       The name of the epoch to add; should match the name of an epoch from the probe
 			%   EPOCHCLOCK:    The epoch clock; must be a single clock type that matches one of the clock types
 			%                     of the probe
@@ -97,9 +97,9 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 			%    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 			%  
 				if ndi_element_timeseries_obj.direct,
-					error(['Cannot add external observations to an ndi.element.base that is directly based on another ndi.element.base.']);
+					error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
 				end;
-				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element.base(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
+				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
 					
 				E = ndi_element_timeseries_obj.session;
 				f = E.database_openbinarydoc(epochdoc);
@@ -115,12 +115,12 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 
                 function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
                         % TODO - need docs here
-                                ndi_document_obj = newdocument@ndi.element.base(ndi_element_timeseries_obj, varargin{:});
+                                ndi_document_obj = newdocument@ndi.element(ndi_element_timeseries_obj, varargin{:});
                 end % newdocument
 
                 function sq = searchquery(ndi_element_timeseries_obj, varargin)
                         % TODO - need docs here
-                                sq = searchquery@ndi.element.base(ndi_element_timeseries_obj, varargin{:});
+                                sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
                 end % searchquery
 
 	end; % methods

@@ -24,7 +24,7 @@ classdef tuning_response < ndi.app
 		end % ndi.app.tuning_response() creator
 
 		function stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element.base stimulus object
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus object
 			%
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%

@@ -1,4 +1,4 @@
-classdef probe < ndi.element.base & ndi.documentservice
+classdef probe < ndi.element & ndi.documentservice
 % ndi.probe - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -49,7 +49,7 @@ classdef probe < ndi.element.base & ndi.documentservice
 					inputs{5} = [];
 					inputs{6} = 1;
 				end;
-				obj = obj@ndi.element.base(inputs{:});
+				obj = obj@ndi.element(inputs{:});
 		end % ndi.probe
 
 		function et = buildepochtable(ndi_probe_obj)
