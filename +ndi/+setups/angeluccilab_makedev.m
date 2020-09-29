@@ -5,7 +5,7 @@ function exp = angeluccilab_makedev(exp, devname)
 %
 % Creates devices that look for files in the ANGELUCCILAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
+% subdirectories (using ndi.file.navigator_epochdir). DEVNAME should be the 
 % name a device in the table below. These devices are added to the ndi.session.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
@@ -22,7 +22,7 @@ function exp = angeluccilab_makedev(exp, devname)
 % angelucci_visstim     |  ndi.daq.system.mfdaq that looks for
 %                       |    files '#.nev', '#.ns4', and 'stimData.mat'
 %
-% See also: ndi.file.navigator.epochdir
+% See also: ndi.file.navigator_epochdir
 
 if nargin == 0,
 	exp = {'angelucci_blackrock5', 'angelucci_visstim'};

@@ -4,7 +4,7 @@ function test_ndi_filenavigator_documents(dirname)
 % ndi.test.daq.filenavigator.documents(DIRNAME)
 %
 % Given a directory that corresponds to an session, this function tries to create
-% an ndi.file.navigator object and an ndi.file.navigator.epochdir object and do the following:
+% an ndi.file.navigator object and an ndi.file.navigator_epochdir object and do the following:
 %   a) Create a new database document
 %   b) Add the database document to the database
 %   c) Search for the database document
@@ -21,7 +21,7 @@ function test_ndi_filenavigator_documents(dirname)
 	E = ndi.session.dir('exp1',dirname);
 
 	fn{1} = ndi.file.navigator(E, '.*\.rhd\>');
-	fn{2} = ndi.file.navigator.epochdir(E, '.*\.rhd\>');
+	fn{2} = ndi.file.navigator_epochdir(E, '.*\.rhd\>');
 
 	%Delete any demo ndi.document stored in the session
 	doc = E.database_search(ndi.query('','isa','ndi_document_filenavigator.json',''));

@@ -5,7 +5,7 @@ function exp = ndi_marderlab_makedev(exp, devname)
 %
 % Creates devices that look for files in the MARDERLAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
+% subdirectories (using ndi.file.navigator_epochdir). DEVNAME should be the 
 % name a device in the table below. These devices are added to the ndi.session.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
@@ -21,7 +21,7 @@ function exp = ndi_marderlab_makedev(exp, devname)
 %                    |    files '[something].smr' and
 %                    |    '[something].epochprobemap.txt'
 %
-% See also: ndi.file.navigator.epochdir
+% See also: ndi.file.navigator_epochdir
 
 if nargin == 0,
 	exp = {'marder_ced'};
