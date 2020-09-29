@@ -1,6 +1,6 @@
 % NDI_DAQSYSTEM_MFDAQ - Multifunction DAQ object class
 %
-% The ndi.daq.system.mfdaq.mfdaq object class.
+% The ndi.daq.system.mfdaq object class.
 %
 % This object allows one to address multifunction data acquisition systems that
 % sample a variety of data types potentially simultaneously. 
@@ -18,10 +18,10 @@
 % 'mark', or 'mk'             | Mark channel (contains value at specified times)
 % 
 %
-% See also: ndi.daq.system.mfdaq.mfdaq/ndi.daq.system.mfdaq.mfdaq
+% See also: ndi.daq.system.mfdaq/ndi.daq.system.mfdaq
 %
 
-classdef mfdaq < ndi.daq.system.system
+classdef mfdaq < ndi.daq.system.base
 
 	properties (GetAcces=public,SetAccess=protected)
 	end
@@ -29,21 +29,21 @@ classdef mfdaq < ndi.daq.system.system
 	end
 
 	methods
-		function obj = ndi.daq.system.mfdaq.mfdaq(varargin)
-			% ndi.daq.system.mfdaq.mfdaq - Create a new multifunction DAQ object
+		function obj = ndi.daq.system.mfdaq(varargin)
+			% ndi.daq.system.mfdaq - Create a new multifunction DAQ object
 			%
-			%  D = ndi.daq.system.mfdaq.mfdaq(NAME, THEFILENAVIGATOR)
+			%  D = ndi.daq.system.mfdaq(NAME, THEFILENAVIGATOR)
 			%
-			%  Creates a new ndi.daq.system.mfdaq.mfdaq object with NAME, and FILENAVIGATOR.
+			%  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
 				obj = obj@ndi.daq.system(varargin{:});
 
 				if ~isempty(obj.daqreader),
 					if ~isa(obj.daqreader,'ndi.daq.reader.mfdaq.base'),
-						error(['The DAQREADER for an ndi.daq.system.mfdaq.mfdaq object must be a type of ndi.daq.reader.mfdaq.base.']);
+						error(['The DAQREADER for an ndi.daq.system.mfdaq object must be a type of ndi.daq.reader.mfdaq.base.']);
 					end;
 				end;
-		end; % ndi.daq.system.mfdaq.mfdaq
+		end; % ndi.daq.system.mfdaq
 
 		% functions that override ndi.epoch.epochset
 
@@ -55,7 +55,7 @@ classdef mfdaq < ndi.daq.system.system
                         % Return the clock types available for this epoch as a cell array
                         % of ndi.time.clocktype objects (or sub-class members).
 			% 
-			% For the generic ndi.daq.system.mfdaq.mfdaq, this returns a single clock
+			% For the generic ndi.daq.system.mfdaq, this returns a single clock
 			% type 'dev_local'time';
 			%
 			% See also: ndi.time.clocktype
@@ -243,12 +243,12 @@ classdef mfdaq < ndi.daq.system.system
 
 	methods (Static), % functions that don't need the object
 		function ct = mfdaq_channeltypes
-			% MFDAQ_CHANNELTYPES - channel types for ndi.daq.system.mfdaq.mfdaq objects
+			% MFDAQ_CHANNELTYPES - channel types for ndi.daq.system.mfdaq objects
 			%
-			%  CT = MFDAQ_CHANNELTYPES - channel types for ndi.daq.system.mfdaq.mfdaq objects
+			%  CT = MFDAQ_CHANNELTYPES - channel types for ndi.daq.system.mfdaq objects
 			%
 			%  Returns a cell array of strings of supported channels of the
-			%  ndi.daq.system.mfdaq.mfdaq class. These are the following:
+			%  ndi.daq.system.mfdaq class. These are the following:
 			%
 			%  Channel type:       | Description: 
 			%  -------------------------------------------------------------
@@ -259,7 +259,7 @@ classdef mfdaq < ndi.daq.system.system
 			%  digital_out         | Digital output channel
 			%  marker              | 
 			%
-			% See also: ndi.daq.system.mfdaq.mfdaq/MFDAQ_TYPE
+			% See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
 			ct = { 'analog_in', 'aux_in', 'analog_out', 'digital_in', 'digital_out', 'marker', 'event', 'time' };
 		end;
 
@@ -289,7 +289,7 @@ classdef mfdaq < ndi.daq.system.system
 			% 'digital_in_mark_pos','dim' |
 			% 'digital_in_mark_neg','dimn'| 'dimn'
 			%
-			% See also: ndi.daq.system.mfdaq.mfdaq/MFDAQ_TYPE
+			% See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
 			%
 				switch channeltype,
 					case {'analog_in','ai'},
@@ -340,7 +340,7 @@ classdef mfdaq < ndi.daq.system.system
 			% 'mark', 'marker', or 'mk'   | 'mark'
 			% 'event' or 'e'              | 'event'
 			%
-			% See also: ndi.daq.system.mfdaq.mfdaq/MFDAQ_PREFIX
+			% See also: ndi.daq.system.mfdaq/MFDAQ_PREFIX
 			%
 				switch channeltype,
 					case {'analog_in','ai'},
