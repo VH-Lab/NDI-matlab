@@ -36,7 +36,7 @@ ndi_projectvardef	ndi.database.fun.projectvardef
 ndi_readGenBankNames	ndi.database.fun.readGenBankNames
 ndi_readGenBankNodes	ndi.database.fun.readGenBankNodes
 ndi_binarydoc_matfid	ndi.database.binarydoc.matfid
-ndi_matlabdumbjsondb	ndi.database.matlabdumbjsondb
+ndi_matlabdumbjsondb	ndi.database.implementations.matlabdumbjsondb
 ndi_postgresdb	ndi.database.postgresdb
 ndi_binarydoc	ndi.database.binarydoc
 ndi_database	ndi.database

@@ -16,7 +16,7 @@
 % e3              | pretime trigger
 %
 
-classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.base
+classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -31,7 +31,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.base
 			%
 			%  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi.daq.reader.mfdaq.base(varargin{:});
+				obj = obj@ndi.daq.reader.mfdaq(varargin{:});
 		end; % vhlabvisspike2()
 
 		function ec = epochclock(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)

@@ -39,8 +39,8 @@ classdef mfdaq < ndi.daq.system.base
 				obj = obj@ndi.daq.system(varargin{:});
 
 				if ~isempty(obj.daqreader),
-					if ~isa(obj.daqreader,'ndi.daq.reader.mfdaq.base'),
-						error(['The DAQREADER for an ndi.daq.system.mfdaq object must be a type of ndi.daq.reader.mfdaq.base.']);
+					if ~isa(obj.daqreader,'ndi.daq.reader.mfdaq'),
+						error(['The DAQREADER for an ndi.daq.system.mfdaq object must be a type of ndi.daq.reader.mfdaq.']);
 					end;
 				end;
 		end; % ndi.daq.system.mfdaq

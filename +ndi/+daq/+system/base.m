@@ -9,7 +9,7 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 	properties (GetAccess=public, SetAccess=protected)
 		name               % The name of the daq system
 		filenavigator      % The ndi.file.navigator associated with this device
-		daqreader          % The ndi.daq.reader.base associated with this device
+		daqreader          % The ndi.daq.reader associated with this device
 		daqmetadatareader  % The ndi.daq.metadatareader.base associated with this device (cell array)
 	end
 
@@ -20,16 +20,16 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			%  OBJ = ndi.daq.system.base(NAME, THEFILENAVIGATOR, THEDAQREADER)
 			%
 			%  Creates an ndi.daq.system with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
-			%  and ndi.daq.reader.base THEDAQREADER.
+			%  and ndi.daq.reader THEDAQREADER.
 			%
 			%  An ndi.file.navigator is an interface object to the raw data files
-			%  on disk that are read by the ndi.daq.reader.base object.
+			%  on disk that are read by the ndi.daq.reader object.
 			%
 			%  ndi.daq.system.base is an abstract class, and a specific implementation must be called.
 			%
 				obj = obj@ndi.ido();
 				loadfromfile = 0;
-				if nargin==2 & isa(name,'ndi.session.base') & isa(thefilenavigator,'ndi.document');
+				if nargin==2 & isa(name,'ndi.session') & isa(thefilenavigator,'ndi.document');
 					session = name;
 					daqsystem_doc = thefilenavigator;
 					daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
@@ -82,8 +82,8 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 						end;
 					end;
 					if nargin>=3,
-						if ~isa(thedaqreader,'ndi.daq.reader.base'),
-							error(['thedaqreader must be of type ndi.daq.reader.base']);
+						if ~isa(thedaqreader,'ndi.daq.reader'),
+							error(['thedaqreader must be of type ndi.daq.reader']);
 						end;
 					end;
 
@@ -240,11 +240,11 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 		end % getprobes()
 
 		function exp=session(ndi_daqsystem_obj)
-			% SESSION - return the ndi.session.base object associated with the ndi.daq.system object
+			% SESSION - return the ndi.session object associated with the ndi.daq.system object
 			%
 			% EXP = SESSION(NDI_DAQSYSTEM_OBJ)
 			%
-			% Return the ndi.session.base object associated with the ndi.daq.system of the
+			% Return the ndi.session object associated with the ndi.daq.system of the
 			% ndi.daq.system object.
 			%
 				exp = ndi_daqsystem_obj.filenavigator.session;

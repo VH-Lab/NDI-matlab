@@ -6,21 +6,21 @@
 %
 %
 
-classdef blackrock < ndi.daq.reader.mfdaq.base
+classdef blackrock < ndi.daq.reader.mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi.daq.reader.mfdaq.blackrock(varargin)
+		function obj = blackrock(varargin)
 		% ndi.daq.reader.mfdaq.blackrock - Create a new NDI_DEVICE_MFDAQ_BLACKROCK object
 		%
 		%  D = ndi.daq.reader.mfdaq.blackrock()
 		%
 		%  Creates a new ndi.daq.reader.mfdaq.blackrock object 
 		%
-			obj = obj@ndi.daq.reader.mfdaq.base(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_blackrock_obj, epochfiles)

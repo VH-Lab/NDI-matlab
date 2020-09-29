@@ -1,4 +1,4 @@
-classdef cedspike2 < ndi.daq.reader.mfdaq.base
+classdef cedspike2 < ndi.daq.reader.mfdaq
 % NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
 %
 % This class reads data from CED Spike2 .SMR or .SON file formats.
@@ -22,7 +22,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq.base
 			%  Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
-			obj = obj@ndi.daq.reader.mfdaq.base(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)

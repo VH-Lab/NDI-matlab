@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ_INTAN - Device driver for Intan Technologies RHD file format
+% NDI_DAQREADER_MFDAQ_INTAN - Device driver for Intan Technologies RHD file forma
 %
 % This class reads data from Intan Technologies .RHD file format.
 %
@@ -6,14 +6,14 @@
 %
 %
 
-classdef intan < ndi.daq.reader.mfdaq.base
+classdef intan < ndi.daq.reader.mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi.daq.reader.mfdaq.intan(varargin)
+		function obj = intan(varargin)
 		% ndi.daq.reader.mfdaq.intan - Create a new NDI_DEVICE_MFDAQ_INTAN object
 		%
 		%  D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
@@ -21,7 +21,7 @@ classdef intan < ndi.daq.reader.mfdaq.base
 		%  Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
 		%  filenavigator THEFILENAVIGATOR.
 		%
-			obj = obj@ndi.daq.reader.mfdaq.base(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_intan_obj, epochfiles)
@@ -226,11 +226,11 @@ classdef intan < ndi.daq.reader.mfdaq.base
 	methods (Static)  % helper functions
 
 		function intanchanheadertype = mfdaqchanneltype2intanheadertype(channeltype)
-		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the ndi.daq.reader.mfdaq.base channel types and Intan headers
+		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the ndi.daq.reader.mfdaq channel types and Intan headers
 		%
 		% INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
 		% 
-		% Given a standard ndi.daq.reader.mfdaq.base channel type, returns the name of the type as
+		% Given a standard ndi.daq.reader.mfdaq channel type, returns the name of the type as
 		% indicated in Intan header files.
 
 			switch (channeltype),
@@ -249,11 +249,11 @@ classdef intan < ndi.daq.reader.mfdaq.base
 		end % mfdaqchanneltype2intanheadertype()
 
 		function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
-		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.reader.mfdaq.base channel types 
+		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.reader.mfdaq channel types 
 		%
 		% CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard ndi.daq.reader.mfdaq.base channel type
+		% Given an Intan header file type, returns the standard ndi.daq.reader.mfdaq channel type
 
 			switch (intanchanneltype),
 				case {'amplifier_channels'},
@@ -295,13 +295,13 @@ classdef intan < ndi.daq.reader.mfdaq.base
 		end % mfdaqchanneltype2intanchanneltype()
 
 		function [ channame ] = intanname2mfdaqname(ndi_daqreader_mfdaq_intan_obj, type, name )
-		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to ndi.daq.reader.mfdaq.base format.
+		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to ndi.daq.reader.mfdaq format.
 		%
 		% MFDAQNAME = INTANNAME2MFDAQNAME(ndi.daq.reader.mfdaq.intan, MFDAQTYPE, NAME)
 		%   
 		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
-		% ndi.daq.reader.mfdaq.base channel type string (see NDI_DEVICE_MFDAQ), this function
-		% produces an ndi.daq.reader.mfdaq.base channel name (e.g., 'ai1').
+		% ndi.daq.reader.mfdaq channel type string (see NDI_DEVICE_MFDAQ), this function
+		% produces an ndi.daq.reader.mfdaq channel name (e.g., 'ai1').
 		%  
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));

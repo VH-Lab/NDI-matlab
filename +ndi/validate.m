@@ -25,9 +25,9 @@ classdef validate
     end
     
     methods
-        function ndi_validate_obj = validate(ndi_document_obj,ndi__session_obj)
+        function ndi_validate_obj = validate(ndi_document_obj,ndi_session_obj)
             if nargin == 0
-                error("You must pass in an instance of ndi_document_obj and an instance of ndi__session_obj as arguments");
+                error("You must pass in an instance of ndi_document_obj and an instance of ndi_session_obj as arguments");
             end
             
             % Initialization
@@ -56,9 +56,9 @@ classdef validate
             end
             % Allow users to pass in only one argument if ndi_document_obj
             % does not have depends-on fields (since we don't really need
-            % the ndi__session_obj)
+            % the ndi_session_obj)
             if nargin == 1
-                ndi__session_obj = 0;
+                ndi_session_obj = 0;
             end
             
             % Check if the user has passed in a valid ndi_document_obj
@@ -67,11 +67,11 @@ classdef validate
             end
             
             % Only check if the user passed in a valid instance of
-            % ndi.session.base if ndi_document_obj has dependency
+            % ndi.session if ndi_document_obj has dependency
             if isfield(ndi_document_obj.document_properties, 'depends_on')
                 has_dependencies = 1;
-                if ~isa(ndi__session_obj, 'ndi.session.base')
-                    error('You must pass in an instnce of ndi.session.base as your second argument to check for dependency')
+                if ~isa(ndi_session_obj, 'ndi.session')
+                    error('You must pass in an instnce of ndi.session as your second argument to check for dependency')
                 end
             end 
             
@@ -146,7 +146,7 @@ classdef validate
             end
             
             % check if there is depends-on field, if it exsists we need to
-            % search through the ndi.session.base database to check 
+            % search through the ndi.session database to check 
             has_dependencies_error = 0;
             if has_dependencies == 1
                 numofdependencies = numel(ndi_document_obj.document_properties.depends_on);
@@ -157,7 +157,7 @@ classdef validate
                 errormsgdependencies = "We cannot find the following necessary dependency from the database:" + newline;
                 for i = 1:numofdependencies
                     searchquery = {'ndi_document.id', ndi_document_obj.document_properties.depends_on(i).value};
-                    if numel(ndi__session_obj.database_search(searchquery)) < 1
+                    if numel(ndi_session_obj.database_search(searchquery)) < 1
                         ndi_validate_obj.reports.dependencies.(ndi_document_obj.document_properties.depends_on(i).name) = 'fail';
                         errormsgdependencies = errormsgdependencies + ndi_document_obj.document_properties.depends_on(i).name + newline;
                         ndi_validate_obj.is_valid = false;

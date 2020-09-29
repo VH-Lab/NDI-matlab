@@ -19,7 +19,9 @@ function output = ndi_testsuite
 % errormsg            | Any error message
 %
 
-jobs = vlt.file.loadStructArray('ndi_testsuite_list.txt'),
+w = which('ndi.test.testsuite.ndi_testsuite');
+p = fileparts(w);
+jobs = vlt.file.loadStructArray([p filesep 'ndi_testsuite_list.txt']),
 
 output = vlt.data.emptystruct('outcome','errormsg');
 

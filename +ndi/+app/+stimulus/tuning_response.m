@@ -28,7 +28,7 @@ classdef tuning_response < ndi.app.base
 			%
 			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
-			% Examines a the ndi.session.base associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
+			% Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%

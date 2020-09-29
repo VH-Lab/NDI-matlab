@@ -28,7 +28,7 @@ classdef decoder < ndi.app.base
 			%
 			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
 			%
-			% Examines a the ndi.session.base associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
+			% Examines a the ndi.session associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%

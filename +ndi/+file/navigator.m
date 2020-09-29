@@ -2,7 +2,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 	% ndi.file.navigator - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
-		session                    % The ndi.session.base to be examined (handle)
+		session                    % The ndi.session to be examined (handle)
 		fileparameters                % The parameters for finding files (see ndi.file.navigator/SETFILEPARAMETERS)
 		epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS)
 	end
@@ -19,7 +19,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 		% stored at the file path PATH.
 		%
 		% Inputs:
-		%      SESSION: an ndi.session.base
+		%      SESSION: an ndi.session
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
@@ -30,10 +30,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 		%
 		% Output: OBJ - an ndi.file.navigator object
 		%
-		% See also: ndi.session.base
+		% See also: ndi.session
 		%
 
-			if nargin==2 & isa(session_,'ndi.session.base') & isa(fileparameters_,'ndi.document'),
+			if nargin==2 & isa(session_,'ndi.session') & isa(fileparameters_,'ndi.document'),
 				filenavdoc = fileparameters_;
 				% extract parameters from the document
 				if ~isempty(filenavdoc.document_properties.filenavigator.fileparameters),
@@ -66,8 +66,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			% now we have our parameters defined, build the object
 
 			if ~isempty(session_),
-				if ~isa(session_,'ndi.session.base'),
-					error(['experiement must be an ndi.session.base object']);
+				if ~isa(session_,'ndi.session'),
+					error(['experiement must be an ndi.session object']);
 				else,
 					obj.session= session_;
 				end;
@@ -387,11 +387,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			%
 			% THEPATH = PATH(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Returns the path of the ndi.session.base associated with the ndi.file.navigator object
+			% Returns the path of the ndi.session associated with the ndi.file.navigator object
 			% NDI_FILENAVIGATOR_OBJ.
 			%
-				if ~isa(ndi_filenavigator_obj.session,'ndi.session.base'),
-					error(['No valid ndi.session.base associated with this filenavigator object.']);
+				if ~isa(ndi_filenavigator_obj.session,'ndi.session'),
+					error(['No valid ndi.session associated with this filenavigator object.']);
 				else,
 					thepath = ndi_filenavigator_obj.session.getpath;
 				end

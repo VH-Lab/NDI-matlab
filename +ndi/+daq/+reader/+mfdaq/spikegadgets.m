@@ -6,13 +6,13 @@
 %
 %
 
-classdef spikegadgets < ndi.daq.reader.mfdaq.base
+classdef spikegadgets < ndi.daq.reader.mfdaq
 
 	properties
 	end
 
 	methods
-		function obj = ndi.daq.reader.mfdaq.spikegadgets(varargin)
+		function obj = spikegadgets(varargin)
 			% NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS - Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object
 			%
 			%  D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)
@@ -21,7 +21,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq.base
 			%  filenavigator THEFILENAVIGATOR.
 			%
 			%
-				obj = obj@ndi.daq.reader.mfdaq.base(varargin{:});
+				obj = obj@ndi.daq.reader.mfdaq(varargin{:});
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)

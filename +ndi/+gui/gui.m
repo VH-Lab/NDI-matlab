@@ -3,14 +3,14 @@ function gui(varargin)
 %
 %  ndi.gui.gui(NDI_SESSION_OBJ)
 %
-%  Brings up a graphical user interface to view the ndi.session.base
+%  Brings up a graphical user interface to view the ndi.session
 %  NDI_SESSION_OBJ
 %
-%  See also: ndi.session.base
+%  See also: ndi.session
 
 
 if nargin==1
-    ndi__session_obj = varargin{1};
+    ndi_session_obj = varargin{1};
 end
 
  % internal variables, for the function only
@@ -27,7 +27,7 @@ windowrowheight = 35;
 ds = [];               % dirstruct
 windowlabel = 'NDI GUI';
 
-varlist = {'ndi__session_obj','windowheight','windowwidth','windowrowheight','windowlabel'};
+varlist = {'ndi_session_obj','windowheight','windowwidth','windowrowheight','windowlabel'};
 
 vlt.data.assign(varargin{:});
 
@@ -105,14 +105,14 @@ switch command
 			row = ud.windowrowheight;
 		
 		% Figure/Window layout & Static Texts at top of the ndi.gui.gui Window
-		set(fig,'position',[50 50 right top],'tag','ndi.gui.gui','name',['NDI: ' ud.ndi__session_obj.reference],'Visible','off');
+		set(fig,'position',[50 50 right top],'tag','ndi.gui.gui','name',['NDI: ' ud.ndi_session_obj.reference],'Visible','off');
 		movegui(fig,'center');
 
 
 		uicontrol(txt,'position',[0.01 0.95 0.95 0.04],'string',ud.windowlabel,'horizontalalignment','left','fontweight','bold','fontsize', 18); % Label
-			uicontrol(txt,'position',[0.01 0.95-0.05 0.30 0.04],'string',['Path:' getpath(ud.ndi__session_obj)],'fontsize',13); % Path
-		uicontrol(txt,'position',[0.36 0.95-0.05 0.15 0.04],'string',['Reference: ' ud.ndi__session_obj.reference],'fontsize',13); % Reference
-		uicontrol(txt,'position',[0.61 0.95-0.05 0.35 0.04],'string',['ID: ' ud.ndi__session_obj.id()],'fontsize',13); % Unique Reference
+			uicontrol(txt,'position',[0.01 0.95-0.05 0.30 0.04],'string',['Path:' getpath(ud.ndi_session_obj)],'fontsize',13); % Path
+		uicontrol(txt,'position',[0.36 0.95-0.05 0.15 0.04],'string',['Reference: ' ud.ndi_session_obj.reference],'fontsize',13); % Reference
+		uicontrol(txt,'position',[0.61 0.95-0.05 0.35 0.04],'string',['ID: ' ud.ndi_session_obj.id()],'fontsize',13); % Unique Reference
 		
 		
 		% "Update" PushButton
@@ -159,8 +159,8 @@ switch command
 		end
       
 	case 'UpdateDAQList'
-		ud.ndi__session_obj,
-		daq_list = ud.ndi__session_obj.daqsystem_load;
+		ud.ndi_session_obj,
+		daq_list = ud.ndi_session_obj.daqsystem_load;
 		names = {};
 		unique_names = {};
 		for i=1:numel(daq_list)
@@ -174,8 +174,8 @@ switch command
  
 
 %      case 'DeleDAQList'
-%         ud.ndi__session_obj,
-%         daq_list = ud.ndi__session_obj.daqsystem_load;
+%         ud.ndi_session_obj,
+%         daq_list = ud.ndi_session_obj.daqsystem_load;
 %         name_list = {};
 %         doc_ref = {};
 %         for i=1:numel(daq_list)
@@ -193,7 +193,7 @@ switch command
 		ref_list = get(findobj(fig,'tag','DBList'),'userdata'); 
 		value = get(findobj(fig,'tag','DBList'),'value');
 		if ~isempty(value)
-		    mydaq = ud.ndi__session_obj.database_search({'ndi_document.id',ref_list{value}});
+		    mydaq = ud.ndi_session_obj.database_search({'ndi_document.id',ref_list{value}});
 		    j_pretty = vlt.data.prettyjson(vlt.data.jsonencodenan(mydaq{1}.document_properties));
 		    j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
 		    %j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
@@ -202,8 +202,8 @@ switch command
 		ndi.gui.gui('fig',fig,'command','EnableDisable');
 		    
 	case 'UpdateDBList'
-		ud.ndi__session_obj,
-		doc_list = ud.ndi__session_obj.database_search({'document_class.class_name','(.*)'});
+		ud.ndi_session_obj,
+		doc_list = ud.ndi_session_obj.database_search({'document_class.class_name','(.*)'});
 		name_list = {};
 		doc_ref = {};
 		for i=1:numel(doc_list)
