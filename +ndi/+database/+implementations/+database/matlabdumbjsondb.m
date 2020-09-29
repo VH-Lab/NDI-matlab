@@ -1,4 +1,4 @@
-classdef  ndi_matlabdumbjsondb < ndi_database
+classdef  matlabdumbjsondb < ndi.database
 
 	properties
 		db		% vlt.file.dumbjsondb object
@@ -6,10 +6,10 @@ classdef  ndi_matlabdumbjsondb < ndi_database
 
 	methods
 
-		function ndi_matlabdumbjsondb_obj = ndi.database.matlabdumbjsondb(varargin)
+		function ndi_matlabdumbjsondb_obj = matlabdumbjsondb(varargin)
 		% ndi.database.matlabdumbjsondb make a new ndi.database.matlabdumbjsondb object
 		% 
-		% NDI_MATLABDUMBJSONDB_OBJ = ndi.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
+		% NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
 		%
 		% Creates a new ndi.database.matlabdumbjsondb object.
 		%
