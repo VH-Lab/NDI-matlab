@@ -1,4 +1,4 @@
-function ndi_globals.databasehierarchyinit
+function databasehierarchyinit
 % NDI_DATABASEHIERARCHYINIT - Initializes the list of databases to try
 %
 % ndi.database.fun.databasehierarchyinit

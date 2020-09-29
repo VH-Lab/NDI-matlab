@@ -66,7 +66,7 @@ paths = {ndi_globals.path.testpath, ndi_globals.path.temppath, ndi_globals.path.
 pathnames = {'NDI test path', 'NDI temporary path', 'NDI filecache path', 'NDI preferences path'};
 
 for i=1:numel(paths),
-	fname = [paths{i} filesep 'testfile_' ndi_id.ndi_unique_id() '.txt'];
+	fname = [paths{i} filesep 'testfile_' ndi.ido.ndi_unique_id() '.txt'];
 	fid = fopen(fname,'wt');
 	if fid<0,
 		error(['We do not have write access to the ' pathnames{i} ' at '  paths{i} '.']);
