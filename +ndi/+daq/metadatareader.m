@@ -1,4 +1,4 @@
-classdef base < ndi.ido & ndi.documentservice
+classdef metadatareader < ndi.ido & ndi.documentservice
 % NDI.DAQ.METADATAREADER.BASE - a class for reading metadata related to data acquisition, such as stimulus parameter information
 %
 % 
@@ -13,7 +13,7 @@ classdef base < ndi.ido & ndi.documentservice
 
 	methods
 
-		function obj = base(varargin)
+		function obj = metadatareader(varargin)
 			% ndi.daq.metadatareader.base - Create a new multifunction DAQ object
 			%
 			%  D = ndi.daq.metadatareader.base()
