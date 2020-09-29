@@ -67,11 +67,11 @@ classdef validate
             end
             
             % Only check if the user passed in a valid instance of
-            % ndi.session.session if ndi_document_obj has dependency
+            % ndi.session.base if ndi_document_obj has dependency
             if isfield(ndi_document_obj.document_properties, 'depends_on')
                 has_dependencies = 1;
-                if ~isa(ndi__session_obj, 'ndi.session.session')
-                    error('You must pass in an instnce of ndi.session.session as your second argument to check for dependency')
+                if ~isa(ndi__session_obj, 'ndi.session.base')
+                    error('You must pass in an instnce of ndi.session.base as your second argument to check for dependency')
                 end
             end 
             
@@ -146,7 +146,7 @@ classdef validate
             end
             
             % check if there is depends-on field, if it exsists we need to
-            % search through the ndi.session.session database to check 
+            % search through the ndi.session.base database to check 
             has_dependencies_error = 0;
             if has_dependencies == 1
                 numofdependencies = numel(ndi_document_obj.document_properties.depends_on);

@@ -30,7 +30,7 @@ classdef timereference
 			%
 			% OBJ = ndi.time.timereference(NDI_SESSION_OBJ, NDI_TIMEREF_STRUCT)
 			%
-			% where NDI_SESSION_OBJ is an ndi.session.session and NDI_TIMEREF_STRUCT is a structure
+			% where NDI_SESSION_OBJ is an ndi.session.base and NDI_TIMEREF_STRUCT is a structure
 			% returned by ndi.time.timereference/NDI_TIMEREFERENCE_STRUCT. The NDI_SESSION_OBJ fields will
 			% be searched to find the live REFERENT to create OBJ.
 			%
@@ -50,8 +50,8 @@ classdef timereference
 	 				error(['referent must be a subclass of ndi.epoch.epochset.']);
 				else,
 					if isprop(referent,'session') | ismethod(referent,'session'),
-						if ~isa(referent.session,'ndi.session.session'),
-							error(['The referent must have an ndi.session.session with a valid id.']);
+						if ~isa(referent.session,'ndi.session.base'),
+							error(['The referent must have an ndi.session.base with a valid id.']);
 						else,
 							session_ID = referent.session.id(); % TODO: this doesn't explicitly check out from types
 						end;

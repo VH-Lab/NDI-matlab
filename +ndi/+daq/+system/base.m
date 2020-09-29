@@ -29,7 +29,7 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			%
 				obj = obj@ndi.ido();
 				loadfromfile = 0;
-				if nargin==2 & isa(name,'ndi.session.session') & isa(thefilenavigator,'ndi.document');
+				if nargin==2 & isa(name,'ndi.session.base') & isa(thefilenavigator,'ndi.document');
 					session = name;
 					daqsystem_doc = thefilenavigator;
 					daqreader_id = daqsystem_doc.dependency_value('daqreader_id');
@@ -240,11 +240,11 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 		end % getprobes()
 
 		function exp=session(ndi_daqsystem_obj)
-			% SESSION - return the ndi.session.session object associated with the ndi.daq.system object
+			% SESSION - return the ndi.session.base object associated with the ndi.daq.system object
 			%
 			% EXP = SESSION(NDI_DAQSYSTEM_OBJ)
 			%
-			% Return the ndi.session.session object associated with the ndi.daq.system of the
+			% Return the ndi.session.base object associated with the ndi.daq.system of the
 			% ndi.daq.system object.
 			%
 				exp = ndi_daqsystem_obj.filenavigator.session;

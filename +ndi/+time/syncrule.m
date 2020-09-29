@@ -17,7 +17,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
 			% This is an abstract class, so PARAMETERS must be empty.
 			%
 				parameters = [];
-				if nargin==2 & isa(varargin{1},'ndi.session.session') & isa(varargin{2},'ndi.document'),
+				if nargin==2 & isa(varargin{1},'ndi.session.base') & isa(varargin{2},'ndi.document'),
 					parameters = varargin{2}.document_properties.syncrule.parameters;
 					ndi_syncrule_obj.identifier = varargin{2}.document_properties.ndi_document.id;
 				elseif nargin >0,

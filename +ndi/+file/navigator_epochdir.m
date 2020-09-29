@@ -22,7 +22,7 @@ classdef navigator_epochdir < ndi.file.navigator
 		%
 		% (document FILEPARAMETERS)
 		%
-		% Inputs: EXP - an ndi.session.session ; FILEPARAMETERS - the files that are recorded in each epoch
+		% Inputs: EXP - an ndi.session.base ; FILEPARAMETERS - the files that are recorded in each epoch
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
 		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.daq.metadata.epochprobemap_daqsystem' is used by default
@@ -32,7 +32,7 @@ classdef navigator_epochdir < ndi.file.navigator
 		%
 		% Output: OBJ - an ndi.file.navigator_epochdir object
 		%
-		% See also: ndi.session.session, ndi.daq.system
+		% See also: ndi.session.base, ndi.daq.system
 		%
 			obj = obj@ndi.file.navigator(varargin{:});
 		end

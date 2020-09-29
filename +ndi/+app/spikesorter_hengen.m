@@ -11,7 +11,7 @@ classdef hengen < ndi.app.base
 		% NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(EXPERIMENT)
 		%
 		% Creates a new NDI.APP.spikesorter_hengen object that can operate on
-		% ndi.session.session objects. The app is named 'ndi_app_spikesorter_hengen'.
+		% ndi.session.base objects. The app is named 'ndi_app_spikesorter_hengen'.
 		%
 			session = [];
 			name = 'ndi_app_spikesorter_hengen';

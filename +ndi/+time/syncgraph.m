@@ -1,7 +1,7 @@
 classdef syncgraph < ndi.ido
 
 	properties (SetAccess=protected,GetAccess=public)
-		session      % ndi.session.session object
+		session      % ndi.session.base object
 		rules		% cell array of ndi.time.syncrule objects to apply
 	end
 	properties (SetAccess=protected,GetAccess=private)
@@ -15,7 +15,7 @@ classdef syncgraph < ndi.ido
 			% NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION)
 			% 
 			% Builds a new ndi.time.syncgraph object and sets its SESSION
-			% property to SESSION, which should be an ndi.session.session object.
+			% property to SESSION, which should be an ndi.session.base object.
 			%
 			% This function can be called in another form:
 			% NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
@@ -23,7 +23,7 @@ classdef syncgraph < ndi.ido
 			%
 			
 			%need to be tested after ndi.time.syncrule creator is done
-			if nargin == 2 && isa(varargin{1},'ndi.session.session') && isa(varargin{2}, 'ndi.document')
+			if nargin == 2 && isa(varargin{1},'ndi.session.base') && isa(varargin{2}, 'ndi.document')
 				ndi_syncgraph_obj.session = varargin{1};
 				[syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
 				ndi_syncgraph_obj.identifier = varargin{2}.id();
@@ -573,7 +573,7 @@ classdef syncgraph < ndi.ido
 			% [SYNCGRAPH_DOC, SYNCRULE_DOCS] = LOAD_ALL_SYNCGRAPH_DOCS(NDI_SESSION_OBJ,...
 			%					SYNCGRAPH_DOC_ID)
 			%
-			% Given an ndi.session.session object and the document identifier of an ndi.time.syncgraph object,
+			% Given an ndi.session.base object and the document identifier of an ndi.time.syncgraph object,
 			% this function loads the ndi.document associated with the SYNCGRAPH (SYNCGRAPH_DOC) and all of
 			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
 			%

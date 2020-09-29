@@ -1,7 +1,7 @@
 % NDI_SESSION_DIR - NDI_SESSION_DIR object class - an session with an associated file directory
 %
 
-classdef dir < ndi.session.session
+classdef dir < ndi.session.base
 	properties (GetAccess=public,SetAccess=protected)
 		path    % the file path of the session
 	end
@@ -20,7 +20,7 @@ classdef dir < ndi.session.session
 			%
 			%  E = ndi.session.dir(PATHNAME)
 			%
-			% See also: ndi.session.session, ndi.session.dir/GETPATH
+			% See also: ndi.session.base, ndi.session.dir/GETPATH
 
 				if nargin==1,
 					path = reference;
@@ -31,7 +31,7 @@ classdef dir < ndi.session.session
 					error(['Directory ' path ' does not exist.']);
 				end;
 
-				ndi_session_dir_obj = ndi_session_dir_obj@ndi.session.session(reference);
+				ndi_session_dir_obj = ndi_session_dir_obj@ndi.session.base(reference);
 				ndi_session_dir_obj.path = path;
 				d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
 				if ~isempty(d),
@@ -110,7 +110,7 @@ classdef dir < ndi.session.session
 			% (that is, have the same location in memory).
 			%
 				b = 0;
-				if eq@ndi.session.session(ndi_session_dir_obj_a, ndi_session_dir_obj_b),
+				if eq@ndi.session.base(ndi_session_dir_obj_a, ndi_session_dir_obj_b),
 					b = strcmp(ndi_session_dir_obj_a.path,ndi_session_dir_obj_b.path);
 				end;
 		end; % eq()

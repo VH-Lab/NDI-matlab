@@ -18,7 +18,7 @@ classdef appdoc
 			%    of the document types.
 			% DOC_DOCUMENT_TYPES should be a cell array of strings describing the
 			%    NDI_document datatypes for each parameter document.
-			% NOC_SESSION should be an ndi.session.session object that is used to access the 
+			% NOC_SESSION should be an ndi.session.base object that is used to access the 
 			%    connected database.
 			%
 			% Example:

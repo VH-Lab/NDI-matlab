@@ -30,7 +30,7 @@ classdef base < ndi.ido & ndi.documentservice
 					varargin = {};
 				end;
 
-				if (nargin==2) & (isa(varargin{1},'ndi.session.session')) & (isa(varargin{2},'ndi.document')),
+				if (nargin==2) & (isa(varargin{1},'ndi.session.base')) & (isa(varargin{2},'ndi.document')),
 					if isfield(varargin{2}.document_properties,'daqmetadatareader'),
 						tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
 					end;

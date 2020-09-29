@@ -3,10 +3,10 @@ function gui(varargin)
 %
 %  ndi.gui.gui(NDI_SESSION_OBJ)
 %
-%  Brings up a graphical user interface to view the ndi.session.session
+%  Brings up a graphical user interface to view the ndi.session.base
 %  NDI_SESSION_OBJ
 %
-%  See also: ndi.session.session
+%  See also: ndi.session.base
 
 
 if nargin==1

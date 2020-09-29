@@ -36,7 +36,7 @@ classdef probe < ndi.element.base & ndi.documentservice
 			%         or
 			%  OBJ = ndi.probe.base(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an ndi.probe.base associated with an ndi.session.session object SESSION and
+			%  Creates an ndi.probe.base associated with an ndi.session.base object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).

@@ -1,5 +1,5 @@
-classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not allow these subclasses because they are not handles
-	% NDI_SESSION - NDI_SESSION object class
+classdef base < handle % & ndi.documentservice & % ndi.ido Matlab does not allow these subclasses because they are not handle2
+	% NDI.SESSION.BASE - NDI.SESSION.BASE object class
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the session
@@ -11,19 +11,19 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		database          % An ndi.database associated with this session
 	end
 	methods
-		function ndi__session_obj = session(reference)
-			% ndi.session.session - Create a new ndi.session.session object
+		function ndi__session_obj = base(reference)
+			% ndi.session.base - Create a new ndi.session.base object
 			%
-			%   NDI_SESSION_OBJ=ndi.session.session(REFERENCE)
+			%   NDI_SESSION_OBJ=ndi.session.base(REFERENCE)
 			%
-			% Creates a new ndi.session.session object. The session has a unique
+			% Creates a new ndi.session.base object. The session has a unique
 			% reference REFERENCE. This class is an abstract class and typically
 			% an end user will open a specific subclass such as ndi.session.dir.
 			%
-			% ndi.session.session objects can access 0 or more ndi.daq.system objects.
+			% ndi.session.base objects can access 0 or more ndi.daq.system objects.
 			%
-			% See also: ndi.session.session/DAQSYSTEM_ADD, ndi.session.session/DAQSYSTEM_RM, 
-			%   ndi.session.session/GETPATH, ndi.session.session/GETREFERENCE
+			% See also: ndi.session.base/DAQSYSTEM_ADD, ndi.session.base/DAQSYSTEM_RM, 
+			%   ndi.session.base/GETPATH, ndi.session.base/GETREFERENCE
 
 				ndi__session_obj.reference = reference;
 				ndi__session_obj.database = [];
@@ -33,11 +33,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end
 
 		function identifier = id(ndi__session_obj)
-			% ID - return the identifier of an ndi.session.session object
+			% ID - return the identifier of an ndi.session.base object
 			%
 			% IDENTIFIER = ID(NDI_SESSION_OBJ)
 			%
-			% Returns the unique identifier of an ndi.session.session object.
+			% Returns the unique identifier of an ndi.session.base object.
 			%
 				identifier = ndi__session_obj.identifier;
 		end; % id()
@@ -50,7 +50,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)
 			%
-			% Returns the unique reference string for the ndi.session.session.
+			% Returns the unique reference string for the ndi.session.base.
 			% REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
 			% and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
 				warning('unique_reference_string depricated, use id() instead.');
@@ -61,15 +61,15 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		%%%%%% DEVICE METHODS
 
 		function ndi__session_obj = daqsystem_add(ndi__session_obj, dev)
-			%DAQSYSTEM_ADD - Add a sampling device to a ndi.session.session object
+			%DAQSYSTEM_ADD - Add a sampling device to a ndi.session.base object
 			%
 			%   NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
 			%
-			% Adds the device DEV to the ndi.session.session NDI_SESSION_OBJ
+			% Adds the device DEV to the ndi.session.base NDI_SESSION_OBJ
 			%
 			% The devices can be accessed by referencing NDI_SESSION_OBJ.device
 			%  
-			% See also: DAQSYSTEM_RM, ndi.session.session
+			% See also: DAQSYSTEM_RM, ndi.session.base
 
 				if ~isa(dev,'ndi.daq.system'),
 					error(['dev is not a ndi.daq.system']);
@@ -95,13 +95,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end;
 
 		function ndi__session_obj = daqsystem_rm(ndi__session_obj, dev)
-			% DAQSYSTEM_RM - Remove a sampling device from an ndi.session.session object
+			% DAQSYSTEM_RM - Remove a sampling device from an ndi.session.base object
 			%
 			% NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)
 			%
 			% Removes the device DEV from the device list.
 			%
-			% See also: DAQSYSTEM_ADD, ndi.session.session
+			% See also: DAQSYSTEM_ADD, ndi.session.base
             
 				if ~isa(dev,'ndi.daq.system')
 					error(['dev is not a ndi.daq.system']);
@@ -126,13 +126,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % daqsystem_rm()
 
 		function dev = daqsystem_load(ndi__session_obj, varargin)
-			% DAQSYSTEM_LOAD - Load daqsystem objects from an ndi.session.session
+			% DAQSYSTEM_LOAD - Load daqsystem objects from an ndi.session.base
 			%
 			% DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
 			%         or
 			% DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ)
 			%
-			% Returns the ndi.daq.system objects in the ndi.session.session with metadata parameters PARAMS1 that matches
+			% Returns the ndi.daq.system objects in the ndi.session.base with metadata parameters PARAMS1 that matches
 			% VALUE1, PARAMS2 that matches VALUE2, etc.
 			%
 			% One can also search for 'name' as a parameter; this will be automatically changed to search
@@ -165,11 +165,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % daqsystem_load()	
 
 		function ndi__session_obj = daqsystem_clear(ndi__session_obj)
-			% DAQSYSTEM_CLEAR - remove all DAQSYSTEM objects from an ndi.session.session
+			% DAQSYSTEM_CLEAR - remove all DAQSYSTEM objects from an ndi.session.base
 			%
 			% NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)
 			%
-			% Permanently removes all ndi.daq.system objects from an ndi.session.session.
+			% Permanently removes all ndi.daq.system objects from an ndi.session.base.
 			%
 			% Be sure you mean it!
 			%
@@ -226,17 +226,17 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		% ndi.database / ndi.document methods
 
 		function ndi__session_obj = database_add(ndi__session_obj, document)
-			%DATABASE_ADD - Add an ndi.document to an ndi.session.session object
+			%DATABASE_ADD - Add an ndi.document to an ndi.session.base object
 			%
 			% NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
 			%
-			% Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session.session NDI_SESSION_OBJ.
+			% Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session.base NDI_SESSION_OBJ.
 			% NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will all be added
 			% in turn.
 			% 
 			% The database can be queried by calling NDI_SESSION_OBJ/SEARCH
 			%  
-			% See also: DATABASE_RM, ndi.session.session, ndi.database, ndi.session.session/SEARCH
+			% See also: DATABASE_RM, ndi.session.base, ndi.database, ndi.session.base/SEARCH
 
 				if iscell(document),
 					for i=1:numel(document),
@@ -251,7 +251,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % database_add()
 
 		function ndi__session_obj = database_rm(ndi__session_obj, doc_unique_id, varargin)
-			% DATABASE_RM - Remove an ndi.document with a given document ID from an ndi.session.session object
+			% DATABASE_RM - Remove an ndi.document with a given document ID from an ndi.session.base object
 			%
 			% NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
 			%   or
@@ -267,7 +267,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% --------------------------------------------------------------------------------
 			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
 			%
-			% See also: DATABASE_ADD, ndi.session.session
+			% See also: DATABASE_ADD, ndi.session.base
 				ErrIfNotFound = 0;
 				vlt.data.assign(varargin{:});
 
@@ -310,12 +310,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % database_rm
 
 		function ndi_document_obj = database_search(ndi__session_obj, searchparameters)
-			% DATABASE_SEARCH - Search for an ndi.document in a database of an ndi.session.session object
+			% DATABASE_SEARCH - Search for an ndi.document in a database of an ndi.session.base object
 			%
 			% NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
 			%
 			% Given search parameters, which are a cell list {'PARAM1', VALUE1, 'PARAM2, VALUE2, ...},
-			% the database associated with the ndi.session.session object is searched.
+			% the database associated with the ndi.session.base object is searched.
 			%
 			% Matches are returned in a cell list NDI_DOCUMENT_OBJ.
 			%
@@ -343,7 +343,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%   Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
 			%   NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
 			% 
-			%  Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.session.session/CLOSEBINARYDOC.
+			%  Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.session.base/CLOSEBINARYDOC.
 			%  The locked nature of the binary doc is a property of the database, not the document, which is why
 			%  the database is needed in the method.
 			% 
@@ -366,7 +366,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
 			%
-			% Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session.session
+			% Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session.base
 			% object NDI_SESSION_OBJ. 
 			%
 				ndi__session_obj.syncgraph = ndi__session_obj.syncgraph.addrule(rule);
@@ -378,7 +378,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)
 			%
-			% Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session.session
+			% Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session.base
 			% object NDI_SESSION_OBJ. 
 			%
 				ndi__session_obj.syncgraph = ndi__session_obj.syncgraph.removerule(index);
@@ -392,22 +392,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			%   P = GETPATH(NDI_SESSION_OBJ)
 			%
-			% Returns the path of an ndi.session.session object.
+			% Returns the path of an ndi.session.base object.
 			%
 			% The path is some sort of reference to the storage location of 
 			% the session. This might be a URL, or a file directory, depending upon
 			% the subclass.
 			%
-			% In the ndi.session.session class, this returns empty.
+			% In the ndi.session.base class, this returns empty.
 			%
-			% See also: ndi.session.session
+			% See also: ndi.session.base
 			p = [];
 		end;
 
 		%%%%%% REFERENCE methods
 
 		function obj = findexpobj(ndi__session_obj, obj_name, obj_classname)
-			% FINEXPDOBJ - search an ndi.session.session for a specific object given name and classname
+			% FINEXPDOBJ - search an ndi.session.base for a specific object given name and classname
 			%
 			% OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
 			%
@@ -554,7 +554,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% B = EQ(E1, E2)
 			%
 			% Returns 1 if and only if the sessions have the same unique reference number.
-				if ~isa(e2,'ndi.session.session'),
+				if ~isa(e2,'ndi.session.base'),
 					b = 0;
 				else,
 					b = strcmp(e1.id(), e2.id());

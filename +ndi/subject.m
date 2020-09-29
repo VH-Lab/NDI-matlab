@@ -17,7 +17,7 @@ classdef subject < ndi_ido & ndi_documentservice
 			% NDI_SUBJECT_OBJ = ndi.subject(NDI_SESSION_OBJ, NDI_SUBJECT_DOCUMENT)
 			%
 			% Creates an ndi.subject object, either from a local identifier name or 
-			% an ndi.session.session object and an ndi.document that describes the ndi.subject object.
+			% an ndi.session.base object and an ndi.document that describes the ndi.subject object.
 			%
 			% 
 				local_identifier_ = '';
@@ -25,7 +25,7 @@ classdef subject < ndi_ido & ndi_documentservice
 				
 				if numel(varargin==2),
 					E = varargin{1};
-					if ~isa(E,'ndi.session.session'),
+					if ~isa(E,'ndi.session.base'),
 						local_identifier_ = varargin{1};
 						[b,msg] = ndi.subject.isvalidlocalidentifierstring(local_identifier_);
 						if ~b,
@@ -36,8 +36,8 @@ classdef subject < ndi_ido & ndi_documentservice
 							error(['description must be a string.']);
 						end;
 					else,
-						if ~isa(E,'ndi.session.session'),
-							error(['First input argument must be an ndi.session.session input']);
+						if ~isa(E,'ndi.session.base'),
+							error(['First input argument must be an ndi.session.base input']);
 						end;
 						if ~isa(varargin{2},'ndi.document'),
 							subject_search = E.database_search(ndi.query('ndi_document.id',...
@@ -116,7 +116,7 @@ classdef subject < ndi_ido & ndi_documentservice
 			%    SUBJECTSTRING, MAKEIT)
 			%
 			% Given a SUBJECTSTRING, which is either the local identifier for a subject in the
-			% ndi.session.session object, or a document ID in the database, determine if the SUBJECTSTRING
+			% ndi.session.base object, or a document ID in the database, determine if the SUBJECTSTRING
 			% corresponds to an ndi.document already in the database. If so, then the ID of that document
 			% is returned in SUBJECT_ID and B is 1. If it is not there, and if MAKEIT is 1, then
 			% a new entry is made and the document id is returned in SUBJECT_ID. If MAKEIT is 0, and it is
