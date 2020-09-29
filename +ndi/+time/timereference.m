@@ -20,7 +20,7 @@ classdef timereference
 			% specify a unique time. 
 			%
 			% REFERENT is any subclass of ndi.epoch.epochset object that has a 'session' property
-			%   (e.g., ndi.daq.system, ndi.element, etc...).
+			%   (e.g., ndi.daq.system, ndi.element.element, etc...).
 			% TYPE is the time type, can be 'utc', 'exp_global_time', or 'dev_global_time' or 'dev_local_time'
 			% If TYPE is 'dev_local_time', then the EPOCH identifier is necessary. Otherwise, it can be empty.
 			% If EPOCH is specified, then TIME is taken to be relative to the EPOCH number of the

@@ -26,7 +26,7 @@ classdef oridirtuning < ndi.app.app
 		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
-			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
+			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element.element)
 			%
 			% 
 				tuning_doc = {};

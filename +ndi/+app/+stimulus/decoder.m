@@ -24,7 +24,7 @@ classdef decoder < ndi.app.app
 		end % ndi_app_stimulus.decoder() creator
 
 		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus.decoder_obj, ndi_element_stim, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus probe
+			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element.element stimulus probe
 			%
 			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
 			%
