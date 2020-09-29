@@ -9,7 +9,7 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 	properties (GetAccess=public, SetAccess=protected)
 		name               % The name of the daq system
 		filenavigator      % The ndi.file.navigator associated with this device
-		daqreader          % The ndi.daq.reader associated with this device
+		daqreader          % The ndi.daq.reader.reader associated with this device
 		daqmetadatareader  % The ndi.daq.metadatareader.metadatareader associated with this device (cell array)
 	end
 
@@ -20,10 +20,10 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 			%  OBJ = ndi.daq.system(NAME, THEFILENAVIGATOR, THEDAQREADER)
 			%
 			%  Creates an ndi.daq.system with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
-			%  and ndi.daq.reader THEDAQREADER.
+			%  and ndi.daq.reader.reader THEDAQREADER.
 			%
 			%  An ndi.file.navigator is an interface object to the raw data files
-			%  on disk that are read by the ndi.daq.reader.
+			%  on disk that are read by the ndi.daq.reader.reader object.
 			%
 			%  ndi.daq.system is an abstract class, and a specific implementation must be called.
 			%
@@ -82,8 +82,8 @@ classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
 						end;
 					end;
 					if nargin>=3,
-						if ~isa(thedaqreader,'ndi.daq.reader'),
-							error(['thedaqreader must be of type ndi.daq.reader.']);
+						if ~isa(thedaqreader,'ndi.daq.reader.reader'),
+							error(['thedaqreader must be of type ndi.daq.reader.reader']);
 						end;
 					end;
 
