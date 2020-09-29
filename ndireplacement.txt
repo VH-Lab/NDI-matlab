@@ -19,7 +19,7 @@ ndi_daqreader_mfdaq_blackrock	ndi.daq.reader.mfdaq.blackrock
 ndi_daqreader_mfdaq_cedspike2	ndi.daq.reader.mfdaq.cedspike2
 ndi_daqreader_mfdaq_intan	ndi.daq.reader.mfdaq.intan
 ndi_daqreader_mfdaq_spikegadgets	ndi.daq.reader.mfdaq.spikegadgets
-ndi_daqreader_mfdaq_stimulus_angelucci_visstim	ndi.daq.reader.mfdaq.stimulus.angelucci.visstim
+ndi_daqreader_mfdaq_stimulus_angelucci_visstim	ndi.daq.reader.mfdaq.stimulus.angelucci_visstim
 ndi_daqreader_mfdaq_stimulus_vhlabvisspike2	ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2
 ndi_daqreader_mfdaq	ndi.daq.reader.mfdaq.mfdaq
 ndi_daqsystem_mfdaq	ndi.daq.system.mfdaq.mfdaq
