@@ -21,7 +21,7 @@
 % See also: ndi.daq.system.mfdaq/ndi.daq.system.mfdaq
 %
 
-classdef mfdaq < ndi.daq.system.base
+classdef mfdaq < ndi.daq.system
 
 	properties (GetAcces=public,SetAccess=protected)
 	end

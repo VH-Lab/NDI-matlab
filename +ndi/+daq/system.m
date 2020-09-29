@@ -1,7 +1,7 @@
-classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
-% ndi.daq.system.base - Create a new NDI_DEVICE class handle object
+classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
+% ndi.daq.system - Create a new NDI_DEVICE class handle object
 %
-%  D = ndi.daq.system.base(NAME, THEFILENAVIGATOR)
+%  D = ndi.daq.system(NAME, THEFILENAVIGATOR)
 %
 %  Creates a new ndi.daq.system object with name and specific data tree object.
 %  This is an abstract class that is overridden by specific devices.
@@ -14,10 +14,10 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 	end
 
 	methods
-		function obj = base(name,thefilenavigator,thedaqreader,thedaqmetadatareader)
+		function obj = system(name,thefilenavigator,thedaqreader,thedaqmetadatareader)
 			% ndi.daq.system - create a new NDI_DEVICE object
 			%
-			%  OBJ = ndi.daq.system.base(NAME, THEFILENAVIGATOR, THEDAQREADER)
+			%  OBJ = ndi.daq.system(NAME, THEFILENAVIGATOR, THEDAQREADER)
 			%
 			%  Creates an ndi.daq.system with name NAME, NDI_FILENAVIGTOR THEFILENAVIGATOR and
 			%  and ndi.daq.reader THEDAQREADER.
@@ -25,7 +25,7 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			%  An ndi.file.navigator is an interface object to the raw data files
 			%  on disk that are read by the ndi.daq.reader object.
 			%
-			%  ndi.daq.system.base is an abstract class, and a specific implementation must be called.
+			%  ndi.daq.system is an abstract class, and a specific implementation must be called.
 			%
 				obj = obj@ndi.ido();
 				loadfromfile = 0;
@@ -107,7 +107,7 @@ classdef base < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 						obj = obj.set_daqmetadatareader(thedaqmetadatareader);
 					end;
 				end;
-		end; % ndi.daq.system.base()
+		end; % ndi.daq.system()
 
 		function ndi_daqsystem_obj = set_daqmetadatareader(ndi_daqsystem_obj, thedaqmetadatareaders)
 			% SET_DAQMETADATAREADER - set the cell array of ndi.daq.metadatareader.base objects
