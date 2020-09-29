@@ -1,4 +1,4 @@
-classdef decoder < ndi.app.base
+classdef decoder < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,7 +19,7 @@ classdef decoder < ndi.app.base
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_stimulus.decoder_obj = ndi_app_stimulus.decoder_obj@ndi.app.base(session, name);
+				ndi_app_stimulus.decoder_obj = ndi_app_stimulus.decoder_obj@ndi.app(session, name);
 
 		end % ndi_app_stimulus.decoder() creator
 

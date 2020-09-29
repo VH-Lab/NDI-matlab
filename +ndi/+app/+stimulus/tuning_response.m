@@ -1,4 +1,4 @@
-classdef tuning_response < ndi.app.base
+classdef tuning_response < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,7 +19,7 @@ classdef tuning_response < ndi.app.base
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi.app.base(session, name);
+				ndi_app_tuning_response_obj = ndi_app_tuning_response_obj@ndi.app(session, name);
 
 		end % ndi.app.tuning_response() creator
 

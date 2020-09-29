@@ -1,4 +1,4 @@
-classdef hengen < ndi.app.base
+classdef hengen < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 	end % properties
@@ -18,7 +18,7 @@ classdef hengen < ndi.app.base
 			if numel(varargin)>0,
 				session = varargin{1};
 			end
-			ndi_app_spikesorter_hengen_obj = ndi_app_spikesorter_hengen_obj@ndi.app.base(session, name);
+			ndi_app_spikesorter_hengen_obj = ndi_app_spikesorter_hengen_obj@ndi.app(session, name);
 
 		end % ndi_app_spikesorter() creator
 

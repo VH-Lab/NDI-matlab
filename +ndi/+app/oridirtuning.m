@@ -1,4 +1,4 @@
-classdef oridirtuning < ndi.app.base
+classdef oridirtuning < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,7 +19,7 @@ classdef oridirtuning < ndi.app.base
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.base(session, name);
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
 
 		end % ndi.app.oridirtuning() creator
 
