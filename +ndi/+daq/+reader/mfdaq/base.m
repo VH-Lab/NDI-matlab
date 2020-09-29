@@ -21,7 +21,7 @@
 % See also: ndi.daq.reader.mfdaq.mfdaq/ndi.daq.reader.mfdaq.mfdaq
 %
 
-classdef ndi.daq.reader.mfdaq.mfdaq < ndi.daq.reader
+classdef ndi.daq.reader.mfdaq.mfdaq < ndi.daq.reader.base
 	properties (GetAccess=public,SetAccess=protected)
 
 	end

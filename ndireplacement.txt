@@ -13,8 +13,8 @@ ndi_daqmetadatareader_NewStimStims	ndi.daq.metadatareader.NewStimStims
 ndi_daqsystemstring	ndi.daq.metadata.daqsystemstring
 ndi_epochprobemap_daqsystem	ndi.daq.metadata.epochprobemap_daqsystem
 ndi_epochprobemap_daqsystem_vhlab	ndi.daq.metadata.epochprobemap_daqsystem_vhlab
-ndi_daqreader	ndi.daq.reader
-ndi_daqsystem	ndi.daq.system
+ndi_daqreader	ndi.daq.reader.base
+ndi_daqsystem	ndi.daq.system.base
 ndi_daqreader_mfdaq_blackrock	ndi.daq.reader.mfdaq.blackrock
 ndi_daqreader_mfdaq_cedspike2	ndi.daq.reader.mfdaq.cedspike2
 ndi_daqreader_mfdaq_intan	ndi.daq.reader.mfdaq.intan

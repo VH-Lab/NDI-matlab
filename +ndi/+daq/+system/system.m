@@ -1,7 +1,7 @@
-classdef ndi_daqsystem < ndi_id & ndi_epochset_param & ndi_documentservice
-% NDI_DAQSYSTEM - Create a new NDI_DEVICE class handle object
+classdef system < ndi.ido & ndi_epochset_param & ndi_documentservice
+% ndi.daq.system.system - Create a new NDI_DEVICE class handle object
 %
-%  D = ndi.daq.system(NAME, THEFILENAVIGATOR)
+%  D = ndi.daq.system.system(NAME, THEFILENAVIGATOR)
 %
 %  Creates a new ndi.daq.system object with name and specific data tree object.
 %  This is an abstract class that is overridden by specific devices.

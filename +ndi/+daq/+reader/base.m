@@ -1,4 +1,4 @@
-classdef ndi_daqreader < ndi_id & ndi_documentservice
+classdef base < ndi.ido & ndi.documentservice
 % NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
 %
 %
@@ -7,18 +7,18 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 
 	methods
 
-		function obj = ndi.daq.reader(varargin)
+		function obj = base(varargin)
 		% ndi.daq.reader - create a new ndi.daq.reader object
 		%
 		%  OBJ = ndi.daq.reader()
 		%  
 		%  Creates an ndi.daq.reader. 
 		%
-		%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+		%  OBJ = ndi.daq.reader.base(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
 		%    
-		%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
+		%  Creates an ndi.daq.reader.base from an NDI_DOCUMENT_OBJ.
 		%
-		%  ndi.daq.reader is an abstract class, and a specific implementation must be used.
+		%  ndi.daq.reader.base is essentially an abstract class, and a specific implementation must be used.
 		%
 			obj = obj@ndi.ido();
 
