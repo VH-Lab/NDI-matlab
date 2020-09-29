@@ -48,7 +48,7 @@ function test_ndi_daqsystem_documents
 	ds_fromdoc = {};
 
 	for i=1:numel(ds_doc),
-		ds_fromdoc{i} = ndi.database.fun.document2ndi_object(daqsys_docs{i}{3},E);
+		ds_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqsys_docs{i}{3},E);
 		if eq(ds_fromdoc{i},daqsys{i}),
 			disp(['Daqsystem number ' int2str(i) ' matches.']);
 		else,

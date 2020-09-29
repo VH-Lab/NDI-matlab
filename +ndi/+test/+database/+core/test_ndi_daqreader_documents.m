@@ -57,7 +57,7 @@ function test_ndi_daqreader_documents
 	dr_fromdoc = {};
 
 	for i=1:numel(daqreader_docs),
-		dr_fromdoc{i} = ndi.database.fun.document2ndi_object(daqreader_docs{i}{1},E);
+		dr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqreader_docs{i}{1},E);
 		if eq(dr_fromdoc{i},dr{i}),
 			disp(['Daqreader number ' int2str(i) ' matches.']);
 		else,

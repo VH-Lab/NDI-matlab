@@ -1,7 +1,7 @@
 function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 % NDI_DOCUMENT2NDI_OBJECT - create an NDI object from an NDI_DOCUMENT
 %
-% O = ndi.database.fun.document2ndi_object(NDI_DOCUMENT_OBJ, NDI_SESSION_OBJ)
+% O = ndi.database.fun.ndi_document2ndi_object(NDI_DOCUMENT_OBJ, NDI_SESSION_OBJ)
 %
 % Create an NDI object O from an ndi.document object and a related
 % ndi.session object.

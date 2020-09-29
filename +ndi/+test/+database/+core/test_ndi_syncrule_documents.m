@@ -48,7 +48,7 @@ function test_ndi_syncrule_documents
 	sr_fromdoc = {};
 
 	for i=1:numel(syncrule_docs),
-		sr_fromdoc{i} = ndi.database.fun.document2ndi_object(syncrule_docs{i}{1},E);
+		sr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncrule_docs{i}{1},E);
 		if eq(sr_fromdoc{i},sr{i}),
 			disp(['Syncrule number ' int2str(i) ' matches.']);
 		else,

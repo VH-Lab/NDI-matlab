@@ -28,7 +28,7 @@ classdef syncgraph < ndi.ido
 				[syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
 				ndi_syncgraph_obj.identifier = varargin{2}.id();
 				for i=1:numel(syncrule_doc),
-					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.document2ndi_object(syncrule_doc{i},varargin{1}));
+					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
 				end;
             		else,
 				session = [];

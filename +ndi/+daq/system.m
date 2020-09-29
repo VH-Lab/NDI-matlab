@@ -54,11 +54,11 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 							error(['Could ont find daqmetadatareader document with id ' D{i} '.']);
 						end;
 						metadatadocs{i} = metadatadocs{i}{1};
-						thedaqmetadatareader{i} = ndi.database.fun.document2ndi_object(metadatadocs{i},session);
+						thedaqmetadatareader{i} = ndi.database.fun.ndi_document2ndi_object(metadatadocs{i},session);
 					end;
 					
-					obj.daqreader = ndi.database.fun.document2ndi_object(daqreader_doc, session);
-					obj.filenavigator = ndi.database.fun.document2ndi_object(filenavigator_doc,session);
+					obj.daqreader = ndi.database.fun.ndi_document2ndi_object(daqreader_doc, session);
+					obj.filenavigator = ndi.database.fun.ndi_document2ndi_object(filenavigator_doc,session);
 					obj.name = daqsystem_doc.document_properties.ndi_document.name;
 					obj.identifier = daqsystem_doc.document_properties.ndi_document.id;
 					obj = obj.set_daqmetadatareader(thedaqmetadatareader);

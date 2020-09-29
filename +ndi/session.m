@@ -156,7 +156,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				dev_doc = ndi_session_obj.database_search(q);
 				% dev is cell list of ndi.document objects
 				for i=1:numel(dev_doc),
-					dev{i} = ndi.database.fun.document2ndi_object(dev_doc{i},ndi_session_obj);
+					dev{i} = ndi.database.fun.ndi_document2ndi_object(dev_doc{i},ndi_session_obj);
 				end;
 				
 				if numel(dev)==1,
@@ -544,7 +544,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				doc = ndi_session_obj.database_search(q_E&q_t);
 				elements = {};
 				for i=1:numel(doc),
-					elements{i} = ndi.database.fun.document2ndi_object(doc{i}, ndi_session_obj);
+					elements{i} = ndi.database.fun.ndi_document2ndi_object(doc{i}, ndi_session_obj);
 				end;
 		end; % getelements()
 

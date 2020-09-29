@@ -52,7 +52,7 @@ function test_ndi_filenavigator_documents(dirname)
 			error(['Could not find document, i=' int2str(i)]);
 		end; 
 		read_doc{1}.document_properties.filenavigator,
-		fn_withdoc{i} = ndi.database.fun.document2ndi_object(read_doc{1},E);
+		fn_withdoc{i} = ndi.database.fun.ndi_document2ndi_object(read_doc{1},E);
 	end;
 
 	%Initialize the filenavigator using the ndi.document

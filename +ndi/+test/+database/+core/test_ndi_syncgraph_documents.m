@@ -45,7 +45,7 @@ function test_ndi_syncgraph_documents
 	sg_fromdoc = {};
 
 	for i=1:numel(syncgraph_docs),
-		sg_fromdoc{i} = ndi.database.fun.document2ndi_object(syncgraph_docs{i}{1},E);
+		sg_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncgraph_docs{i}{1},E);
 		if eq(sg_fromdoc{i},sg{i}),
 			disp(['Syncgraph number ' int2str(i) ' matches.']);
 		else,

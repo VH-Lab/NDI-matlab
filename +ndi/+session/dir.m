@@ -59,7 +59,7 @@ classdef dir < ndi.session
 					if numel(syncgraph_doc)~=1,
 						error(['Too many syncgraph documents found. Confused. There should be only 1.']);
 					end;
-					ndi_session_dir_obj.syncgraph = ndi.database.fun.document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
+					ndi_session_dir_obj.syncgraph = ndi.database.fun.ndi_document2ndi_object(syncgraph_doc{1},ndi_session_dir_obj);
 				end;
 
 				vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'reference.txt'], ...

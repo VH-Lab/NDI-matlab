@@ -224,7 +224,7 @@ classdef oridirtuning < ndi.app
 				if isempty(element_doc),
 					error(['Empty element document, don''t know what to do.']);
 				end;
-				element = ndi.database.fun.document2ndi_object(element_doc{1}, E);
+				element = ndi.database.fun.ndi_document2ndi_object(element_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
 				title([element.basestring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);

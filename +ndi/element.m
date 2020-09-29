@@ -80,7 +80,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					if isempty(element_doc.dependency_value('underlying_element_id')),
 						element_underlying_element = [];
 					else,
-						element_underlying_element = ndi.database.fun.document2ndi_object(...
+						element_underlying_element = ndi.database.fun.ndi_document2ndi_object(...
 							 dependency_value(element_doc,'underlying_element_id'), element_session);
 					end;
 					if ischar(element_doc.document_properties.element.direct),

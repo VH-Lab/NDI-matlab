@@ -27,7 +27,7 @@ ndi_createGenBankControlledVocabulary	ndi.database.fun.createGenBankControlledVo
 ndi_createNIFbrainareas	ndi.database.fun.createNIFbrainareas
 ndi_databasehierarchyinit	ndi.database.fun.databasehierarchyinit
 ndi_docs2graph	ndi.database.fun.docs2graph
-ndi_document2ndi_object	ndi.database.fun.document2ndi_object
+ndi_document2ndi_object	ndi.database.fun.ndi_document2ndi_object
 ndi_findalldependencies	ndi.database.fun.findalldependencies
 ndi_finddocs_missing_dependencies	ndi.database.fun.finddocs_missing_dependencies
 ndi_opendatabase	ndi.database.fun.opendatabase
