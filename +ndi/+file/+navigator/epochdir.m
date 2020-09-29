@@ -6,18 +6,18 @@
 %  This class in inhereted from filenavigator and with epochdir organization
 %
 
-classdef navigator_epochdir < ndi.file.navigator
+classdef epochdir < ndi.file.navigator
 	properties
 	end
 
 	methods
 
-		function obj = navigator_epochdir(varargin)
-		% ndi.file.navigator_epochdir - Create a new ndi.file.navigator_epochdir object that is associated with an session and device
+		function obj = epochdir(varargin)
+		% ndi.file.navigator.epochdir - Create a new ndi.file.navigator.epochdir object that is associated with an session and device
 		%
-		%   OBJ = ndi.file.navigator_epochdir(EXP, [FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
+		%   OBJ = ndi.file.navigator.epochdir(EXP, [FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPROBEMAP_FILEPARAMETERS])
 		%
-		% Creates a new ndi.file.navigator_epochdir object that negotiates the data tree of device's data that is
+		% Creates a new ndi.file.navigator.epochdir object that negotiates the data tree of device's data that is
 		% stored in an session EXP.
 		%
 		% (document FILEPARAMETERS)
@@ -30,7 +30,7 @@ classdef navigator_epochdir < ndi.file.navigator
 		%          present in each epoch (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
 		%          specified in ndi.file.navigator/EPOCHPROBEMAPFILENAME is used
 		%
-		% Output: OBJ - an ndi.file.navigator_epochdir object
+		% Output: OBJ - an ndi.file.navigator.epochdir object
 		%
 		% See also: ndi.session, ndi.daq.system
 		%
@@ -47,7 +47,7 @@ classdef navigator_epochdir < ndi.file.navigator
 		% ID = EPOCHID(NDI_FILENAVIGATOR_EPOCHDIR_OBJ, EPOCH_NUMBER, [EPOCHFILES])
 		%
 		% Returns the epoch identifier string for the epoch EPOCH_NUMBER.
-		% For the ndi.file.navigator_epochdir object, each EPOCH is organized in its own subdirectory,
+		% For the ndi.file.navigator.epochdir object, each EPOCH is organized in its own subdirectory,
 		% and the epoch identifier is the _name_ of the subdirectory.
 		%
 		% For example, if my device has a file tree that reads files with extension .dat,
@@ -77,7 +77,7 @@ classdef navigator_epochdir < ndi.file.navigator
 			%
 			% EPOCHFILES{n} will be a cell list of the files in epoch n.
 			%
-			% For ndi.file.navigator_epochdir, this uses the file matching parameters in all
+			% For ndi.file.navigator.epochdir, this uses the file matching parameters in all
 			% subdirectories within the session (at a folder depth of 1; that is, it doesn't
 			% search folders in folders).
 			%

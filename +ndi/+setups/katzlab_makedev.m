@@ -5,7 +5,7 @@ function exp = katzlab_makedev(exp, devname)
 %
 % Creates devices that look for files in the KATZLAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using ndi.file.navigator_epochdir). DEVNAME should be the 
+% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
 % name a device in the table below. These devices are added to the ndi.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
@@ -20,7 +20,7 @@ function exp = katzlab_makedev(exp, devname)
 % narendra_intan     |  ndi_daqsystem_multichannel_mfdaq that looks for
 %                    |    files 'time.dat, 'info.rhd', and 'epochprobemap.txt'
 %
-% See also: ndi.file.navigator_epochdir
+% See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
 	exp = {'narendra_intan'};
@@ -57,7 +57,7 @@ switch devname,
 
 end
 
-ft = ndi.file.navigator_epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
+ft = ndi.file.navigator.epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
 

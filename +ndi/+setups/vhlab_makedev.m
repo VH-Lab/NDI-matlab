@@ -5,7 +5,7 @@ function exp = vhlab_makedev(exp, devname)
 %
 % Creates devices that look for files in the VHLAB standard recording
 % scheme, where data from different epochs are organized into
-% subdirectories (using ndi.file.navigator_epochdir). DEVNAME should be the 
+% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
 % name a device in the table below. These devices are added to the ndi.session
 % object EXP. If DEVNAME is a cell list of strings, then multiple items are added.
 %
@@ -25,7 +25,7 @@ function exp = vhlab_makedev(exp, devname)
 %                    |    looks for files 'stimtimes.txt', 'verticalblanking.txt',
 %                    |    'stims.mat', and 'spike2data.smr'.
 %
-% See also: ndi.file.navigator_epochdir
+% See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
 	exp = {'vhintan', 'vhspike2', 'vhvis_spike2'};
@@ -70,7 +70,7 @@ switch devname,
 
 end
 
-ft = ndi.file.navigator_epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
+ft = ndi.file.navigator.epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
 
