@@ -11,4 +11,4 @@ ndi.test.element.test_ndi_element	1	Test basic nsd_element functions
 ndi.test.database.test_ndi_document_jsons	1	Test ability to make an NDI_DOCUMENT out of all JSON definitions
 ndi.test.filenavigator.test_ndi_filenavigator_fileIDfunction	0	Note in current testing stream
 ndi.test.app.markgarbage	1	Tests app markgarbage
-ndi.test.database.test_ndi_daq_documents	1	Tests creating NDI_DOCUMENT objects out of core ndi daq objects, and re-building them
+ndi.test.database.core.test_ndi_daq_documents	1	Tests creating NDI_DOCUMENT objects out of core ndi daq objects, and re-building them

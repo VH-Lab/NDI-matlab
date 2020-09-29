@@ -15,16 +15,16 @@ classdef markgarbage < ndi.app
 			% NDI_SESSIONS. The app is named 'ndi.app.markgarbage'.
 			%
 				session = [];
-				name = 'ndi.app.markgarbage';
+				name = 'ndi_app_markgarbage';
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi.app.markgarbage_obj = ndi.app.markgarbage_obj@ndi.app(session, name);
+				ndi_app_markgarbage_obj = ndi_app_markgarbage_obj@ndi.app(session, name);
 
 		end % ndi.app.markgarbage() creator
 
 		% developer note: it would be great to have a 'markinvalidinterval' companion
-		function b = markvalidinterval(ndi.app.markgarbage_obj, ndi_epochset_obj, t0, timeref_t0, t1, timeref_t1)
+		function b = markvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj, t0, timeref_t0, t1, timeref_t1)
 			% MARKVALIDINTERVAL - mark a valid intervalin an epoch (all else is garbage)
 			%
 			% B = MARKVALIDINTERVAL(NDI_APP_MARKGARBAGE_APP, NDI_EPOCHSET_OBJ, T0, TIMEREF_T0, ...
@@ -43,11 +43,11 @@ classdef markgarbage < ndi.app
 				validinterval.timeref_structt1 = timeref_t1.ndi_timereference_struct();
 				validinterval.t1 = t1;
 
-				b = ndi.app.markgarbage_obj.savevalidinterval(ndi_epochset_obj, validinterval);
+				b = ndi_app_markgarbage_obj.savevalidinterval(ndi_epochset_obj, validinterval);
 
 		end % markvalidinterval()
 
-		function b = savevalidinterval(ndi_appmarkgarbage_obj, ndi_epochset_obj, validintervalstruct)
+		function b = savevalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj, validintervalstruct)
 			% SAVEVALIDINTERVAL - save a valid interval structure to the session database
 			%
 			% B = SAVEVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ, VALIDINTERVALSTRUCT)
@@ -103,7 +103,7 @@ classdef markgarbage < ndi.app
 
 		end % clearvalidinteraval()
 
-		function [vi,mydoc] = loadvalidinterval(ndi.app.markgarbage_obj, ndi_epochset_obj)
+		function [vi,mydoc] = loadvalidinterval(ndi_app_markgarbage_obj, ndi_epochset_obj)
 			% LOADVALIDINTERVAL - Load all valid interval records from session database
 			%
 			% [VI,MYDOC] = LOADVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ)
