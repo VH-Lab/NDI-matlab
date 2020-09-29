@@ -42,7 +42,7 @@ end
 fileparameters = {'reference.txt'};
 objectclass = 'ndi.daq.system.mfdaq';
 readerobjectclass = 'ndi.daq.reader.mfdaq';
-epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem.vhlab';
+epochprobemapclass = 'ndi.daq.metadata.epochprobemap_daqsystem_vhlab';
 
 switch devname,
 	case 'vhintan',

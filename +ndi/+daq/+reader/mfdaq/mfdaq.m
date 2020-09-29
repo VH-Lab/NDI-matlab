@@ -1,6 +1,6 @@
 % NDI_DAQREADER_MFDAQ - Multifunction DAQ reader class
 %
-% The NDI_DAQREADER_MFDAQ object class.
+% The ndi.daq.reader.mfdaq.mfdaq object class.
 %
 % This object allows one to address multifunction data acquisition systems that
 % sample a variety of data types potentially simultaneously. 
@@ -18,10 +18,10 @@
 % 'mark', or 'mk'             | Mark channel (contains value at specified times)
 % 
 %
-% See also: NDI_DAQREADER_MFDAQ/NDI_DAQREADER_MFDAQ
+% See also: ndi.daq.reader.mfdaq.mfdaq/ndi.daq.reader.mfdaq.mfdaq
 %
 
-classdef ndi_daqreader_mfdaq < ndi_daqreader
+classdef ndi.daq.reader.mfdaq.mfdaq < ndi.daq.reader
 	properties (GetAccess=public,SetAccess=protected)
 
 	end
@@ -29,32 +29,32 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 	end
 
 	methods
-		function obj = ndi_daqreader_mfdaq(varargin)
-			% NDI_DAQREADER_MFDAQ - Create a new multifunction DAQ object
+		function obj = ndi.daq.reader.mfdaq.mfdaq(varargin)
+			% ndi.daq.reader.mfdaq.mfdaq - Create a new multifunction DAQ object
 			%
-			%  D = NDI_DAQREADER_MFDAQ()
+			%  D = ndi.daq.reader.mfdaq.mfdaq()
 			%
-			%  Creates a new NDI_DAQREADER_MFDAQ object.
+			%  Creates a new ndi.daq.reader.mfdaq.mfdaq object.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi_daqreader(varargin{:});
-		end; % ndi_daqreader_mfdaq
+				obj = obj@ndi.daq.reader(varargin{:});
+		end; % ndi.daq.reader.mfdaq.mfdaq
 
-		% functions that override ndi_epochset
+		% functions that override ndi.epoch.epochset
 
                 function ec = epochclock(ndi_daqreader_mfdaq_obj, epoch_number)
-                        % EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
+                        % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
                         %
                         % EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
                         %
                         % Return the clock types available for this epoch as a cell array
-                        % of NDI_CLOCKTYPE objects (or sub-class members).
+                        % of ndi.time.clocktype objects (or sub-class members).
 			% 
-			% For the generic NDI_DAQREADER_MFDAQ, this returns a single clock
+			% For the generic ndi.daq.reader.mfdaq.mfdaq, this returns a single clock
 			% type 'dev_local'time';
 			%
-			% See also: NDI_CLOCKTYPE
+			% See also: ndi.time.clocktype
                         %
-                                ec = {ndi_clocktype('dev_local_time')};
+                                ec = {ndi.time.clocktype('dev_local_time')};
                 end % epochclock
 
 		function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
@@ -66,7 +66,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 			%
 			% The abstract class always returns {[NaN NaN]}.
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 				t0t1 = {[NaN NaN]};
 		end % t0t1
@@ -130,7 +130,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
+			%  TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
 				if ~isempty(intersect(channeltype,{'dep','den','dimp','dimn'})),
 					data = {};
@@ -190,7 +190,7 @@ classdef ndi_daqreader_mfdaq < ndi_daqreader
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-			%  TIMEREF is an NDI_TIMEREFERENCE with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
+			%  TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
 				data = []; % abstract class
 		end; % readevents_epochsamples

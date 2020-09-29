@@ -14,7 +14,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 	end % properties
 
 	methods
-		function obj = ndi_daqreader_mfdaq_cedspike2(varargin)
+		function obj = ndi.daq.reader.mfdaq.cedspike2(varargin)
 			% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
 			%
 			%  D = NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
@@ -22,7 +22,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			%  Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
 			%  filenavigator THEFILENAVIGATOR.
 			%
-			obj = obj@ndi_daqreader_mfdaq(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
@@ -41,7 +41,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 
 				channels = vlt.data.emptystruct('name','type');
 
-				multifunctiondaq_channel_types = ndi_daqsystem_mfdaq.mfdaq_channeltypes();
+				multifunctiondaq_channel_types = ndi.daq.system.mfdaq.mfdaq.mfdaq_channeltypes();
 
 				% open SMR files, and examine the headers for all channels present
 				%   for any new channel that hasn't been identified before,
@@ -56,7 +56,7 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 
 				for k=1:length(header.channelinfo),
 					newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
-					newchannel.name = [ ndi_daqsystem_mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.name = [ ndi.daq.system.mfdaq.mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
 					channels(end+1) = newchannel;
 				end
 		end % getchannels()
@@ -66,13 +66,13 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			%
 			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHFILES)
 			%
-			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
+			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
-			% For the abstract class NDI_DAQSYSTEM, EPOCHPROBEMAP is always valid as long as
-			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
+			% For the abstract class ndi.daq.system, EPOCHPROBEMAP is always valid as long as
+			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
 			%
-			% See also: NDI_DAQSYSTEM, NDI_EPOCHPROBEMAP_DAQSYSTEM
+			% See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 				b = 1;
 				msg = '';
 				% UPDATE NEEDED
@@ -139,10 +139,10 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			% T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
 			%
 			% Return the beginning (t0) and end (t1) times of the EPOCHFILES that define this
-			% epoch in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% epoch in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 				header = read_CED_SOMSMR_header(filename);
@@ -221,11 +221,11 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 		end
 
 		function channeltype = cedspike2headertype2mfdaqchanneltype(cedspike2channeltype)
-		% CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQSYSTEM_MFDAQ channel types 
+		% CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.system.mfdaq.mfdaq channel types 
 		%
 		% CHANNELTYPE = CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE(CEDSPIKE2CHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard NDI_DAQSYSTEM_MFDAQ channel type
+		% Given an Intan header file type, returns the standard ndi.daq.system.mfdaq.mfdaq channel type
 
 			switch (cedspike2channeltype),
 				case {1,9},

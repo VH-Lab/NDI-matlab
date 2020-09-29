@@ -10,19 +10,19 @@ classdef ndi_daqmetadatareader_AngelucciStims < ndi_daqmetadatareader
 
 	methods
 
-		function obj = ndi_daqmetadatareader_AngelucciStims(varargin)
+		function obj = ndi.daq.metadatareader.AngelucciStims(varargin)
 			% NDI_DAQMETADATAREADER_ANGELUCCI_STIMS - Create a new multifunction DAQ object
 			%
 			%  D = NDI_DAQMETADATAREADER_ANGELUCCI_STIMS()
 			%  or
-			%  D = NDI_DAQMETADATAREADER(STIMDATA_MAT_FILE)
+			%  D = ndi.daq.metadatareader.metadatareader(STIMDATA_MAT_FILE)
 			%
-			%  Creates a new NDI_DAQMETADATAREADER object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader.metadatareader object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
-				obj = obj@ndi_daqmetadatareader(varargin{:});
-		end; % ndi_daqmetadatareader_AngelucciStims
+				obj = obj@ndi.daq.metadatareader.metadatareader(varargin{:});
+		end; % ndi.daq.metadatareader.AngelucciStims
 
 		function [parameters,stimorder,stimtimes] = readmetadatafromfile(ndi_daqmetadatareader_angelucci_stims_obj, file)
 			% PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified

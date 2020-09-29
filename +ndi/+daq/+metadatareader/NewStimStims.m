@@ -10,18 +10,18 @@ classdef ndi_daqmetadatareader_NewStimStims < ndi_daqmetadatareader
 
 	methods
 
-		function obj = ndi_daqmetadatareader_NewStimStims(varargin)
-			% NDI_DAQMETADATAREADER_NEWSTIMSTIMS - Create a new multifunction DAQ object
+		function obj = ndi.daq.metadatareader.NewStimStims(varargin)
+			% ndi.daq.metadatareader.NewStimStims - Create a new multifunction DAQ object
 			%
-			%  D = NDI_DAQMETADATAREADER_NEWSTIMSTIMS()
+			%  D = ndi.daq.metadatareader.NewStimStims()
 			%  or
-			%  D = NDI_DAQMETADATAREADER(TSVFILE_REGEXPRESSION)
+			%  D = ndi.daq.metadatareader.metadatareader(TSVFILE_REGEXPRESSION)
 			%
-			%  Creates a new NDI_DAQMETADATAREADER object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader.metadatareader object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
-				obj = obj@ndi_daqmetadatareader(varargin{:});
+				obj = obj@ndi.daq.metadatareader.metadatareader(varargin{:});
 		end; % ndi_daqmetadatareader_NewStimStim
 
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)
@@ -29,7 +29,7 @@ classdef ndi_daqmetadatareader_NewStimStims < ndi_daqmetadatareader
 			%
 			% PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_NEWSTIMSTIMS_OBJ, FILE)
 			%
-			% Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER_NEWSTIMSTIMS
+			% Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.NewStimStims
 			% document, this function loads in the metadata.
 				[parentdir,filename,ext] = fileparts(file);
 				[ss,mti]=getstimscript(parentdir);

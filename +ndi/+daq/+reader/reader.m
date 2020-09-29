@@ -7,24 +7,24 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 
 	methods
 
-		function obj = ndi_daqreader(varargin)
-		% NDI_DAQREADER - create a new NDI_DAQREADER object
+		function obj = ndi.daq.reader(varargin)
+		% ndi.daq.reader - create a new ndi.daq.reader object
 		%
-		%  OBJ = NDI_DAQREADER()
+		%  OBJ = ndi.daq.reader()
 		%  
-		%  Creates an NDI_DAQREADER. 
+		%  Creates an ndi.daq.reader. 
 		%
-		%  OBJ = NDI_DAQREADER(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+		%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
 		%    
-		%  Creates an NDI_DAQREADER from an NDI_DOCUMENT_OBJ.
+		%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
 		%
-		%  NDI_DAQREADER is an abstract class, and a specific implementation must be used.
+		%  ndi.daq.reader is an abstract class, and a specific implementation must be used.
 		%
-			obj = obj@ndi_id();
+			obj = obj@ndi.ido();
 
 			loadfromfile = 0;
 
-			if nargin==2 & isa(varargin{1},'ndi_session') & isa(varargin{2},'ndi_document'),
+			if nargin==2 & isa(varargin{1},'ndi.session.session') & isa(varargin{2},'ndi_document'),
 				obj.identifier = varargin{2}.document_properties.ndi_document.id;
 			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command
@@ -39,24 +39,24 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 			if loadfromfile,
 				error(['Load from file no longer supported.']);
 			end
-		end % ndi_daqreader
+		end % ndi.daq.reader
 
 		% EPOCHSET functions, although this object is NOT an EPOCHSET object
 
 		function ec = epochclock(ndi_daqreader_obj, epochfiles)
-			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
+			% EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
 			%
 			% EC = EPOCHCLOCK(NDI_DAQREADER_OBJ, EPOCHFILES)
 			%
 			% Return the clock types available for this epoch as a cell array
-			% of NDI_CLOCKTYPE objects (or sub-class members).
+			% of ndi.time.clocktype objects (or sub-class members).
 			%
-			% For the generic NDI_DAQREADER, this returns a single clock
+			% For the generic ndi.daq.reader, this returns a single clock
 			% type 'no_time';
 			%
-			% See also: NDI_CLOCKTYPE
+			% See also: ndi.time.clocktype
 			%
-				ec = {ndi_clocktype('no_time')};
+				ec = {ndi.time.clocktype('no_time')};
 		end % epochclock
 
 		function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
@@ -65,11 +65,11 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			% The abstract class always returns {[NaN NaN]}.
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 				t0t1 = {[NaN NaN]};
 		end % t0t1
@@ -79,17 +79,17 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 			%
 			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the NDI_EPOCHPROBEMAP_DAQSYSTEM EPOCHPROBEMAP and determines if it is valid for the given device
+			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
-			% For the abstract class NDI_DAQREADER, EPOCHPROBEMAP is always valid as long as
-			% EPOCHPROBEMAP is an NDI_EPOCHPROBEMAP_DAQSYSTEM object.
+			% For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
+			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
 			%
-			% See also: NDI_DAQREADER, NDI_EPOCHPROBEMAP_DAQSYSTEM
+			% See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
 				msg = '';
-				b = isa(epochprobemap, 'ndi_epochprobemap_daqsystem');
+				b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
 				if ~b,
-					msg = 'epochprobemap is not a member of the class NDI_EPOCHPROBEMAP_DAQSYSTEM; it must be.';
+					msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
 					return;
 				end;
 
@@ -104,41 +104,41 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 		end % verifyepochprobemap
 
 		function b = eq(ndi_daqreader_obj1, ndi_daqreader_obj2)
-			% EQ - tests whether 2 NDI_DAQREADER objects are equal
+			% EQ - tests whether 2 ndi.daq.reader objects are equal
 			%
 			% B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
 			%
-			% Examines whether or not the NDI_DAQREADER objects are equal.
+			% Examines whether or not the ndi.daq.reader objects are equal.
 			%
 				b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
 				b = b & strcmp(ndi_daqreader_obj1.id(), ndi_daqreader_obj2.id());
 		end; % eq()
 		
-		%% functions that override ndi_documentservice
+		%% functions that override ndi.documentservice
 
 		function ndi_document_obj = newdocument(ndi_daqreader_obj)
-			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_DAQREADER object
+			% NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
 			%
 			% DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
 			%
-			% Creates an NDI_DOCUMENT object DOC that represents the
-			%    NDI_DAQREADER object. 
-				ndi_document_obj = ndi_document('ndi_document_daqreader.json',...
+			% Creates an ndi.document object DOC that represents the
+			%    ndi.daq.reader object. 
+				ndi_document_obj = ndi.document('ndi_document_daqreader.json',...
 					'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
 					'ndi_document.id', ndi_daqreader_obj.id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_daqreader_obj)
-			% SEARCHQUERY - create a search for this NDI_DAQREADER object
+			% SEARCHQUERY - create a search for this ndi.daq.reader object
 			%
 			% SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
 			%
-			% Creates a search query for the NDI_DAQREADER object. 
+			% Creates a search query for the ndi.daq.reader object. 
 			% 
 				sq = {'ndi_document.id', ndi_daqreader_obj.id() };
 		end; % searchquery()
 
 	end % methods
 		
-end % ndi_daqreader classdef
+end % ndi.daq.reader classdef
 

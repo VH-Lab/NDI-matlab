@@ -6,21 +6,21 @@
 %
 %
 
-classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
+classdef ndi.daq.reader.mfdaq.blackrock < ndi.daq.reader.mfdaq.mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi_daqreader_mfdaq_blackrock(varargin)
-		% NDI_DAQREADER_MFDAQ_BLACKROCK - Create a new NDI_DEVICE_MFDAQ_BLACKROCK object
+		function obj = ndi.daq.reader.mfdaq.blackrock(varargin)
+		% ndi.daq.reader.mfdaq.blackrock - Create a new NDI_DEVICE_MFDAQ_BLACKROCK object
 		%
-		%  D = NDI_DAQREADER_MFDAQ_BLACKROCK()
+		%  D = ndi.daq.reader.mfdaq.blackrock()
 		%
-		%  Creates a new NDI_DAQREADER_MFDAQ_BLACKROCK object 
+		%  Creates a new ndi.daq.reader.mfdaq.blackrock object 
 		%
-			obj = obj@ndi_daqreader_mfdaq(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_blackrock_obj, epochfiles)
@@ -56,7 +56,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 			% Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
 			% with epoch files EPOCHFILES.
 			%
-			% See also: NDI_DAQREADER, NDI_EPOCHPROBEMAP_DAQREADER
+			% See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
 				b = 1;
 				msg = '';
 				% UPDATE NEEDED
@@ -75,7 +75,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 		%
 		%  DATA is the channel data (each column contains data from an indvidual channel) 
 		%
-			[nev_files, nsv_files] = ndi_daqreader_mfdaq_blackrock.filenamefromepochfiles(epochfiles);
+			[nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
 
 			[ns_h,nev_h,headers] = ndi_daqreader_mfdaq_blackrock_obj.read_blackrock_headers(epochfiles);
 
@@ -147,7 +147,7 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 			%
 			% [NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])
 			%
-				[nev_files, nsv_files] = ndi_daqreader_mfdaq_blackrock.filenamefromepochfiles(epochfiles);
+				[nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
 				if ~isempty(nsv_files{1}),
 					ns_h = openNSx(nsv_files{1},'noread');
 				else,
@@ -192,11 +192,11 @@ classdef ndi_daqreader_mfdaq_blackrock < ndi_daqreader_mfdaq
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			% The abstract class always returns {[NaN NaN]}.
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 				[ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles); 
 						% need to convert from duration of whole recording to time labels of the first and last sample

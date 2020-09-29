@@ -1,20 +1,20 @@
 % NDI_DAQSYSTEMSTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_DAQSYSTEM
 %
-%  NDI_DAQSYSTEMSTRING
+%  ndi.daq.daqsystemstring
 %
-%  A 'devicestring' is a part of an NDI_EPOCHPROBEMAP_DAQSYSTEM that indicates the channel types and
+%  A 'devicestring' is a part of an ndi.epoch.epochprobemap_daqsystem that indicates the channel types and
 %  channel numbers that correspond to a particular record.
 %
 %  For example, one may specify that a 4-channel extracellular recording with name
 %  'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-%  on channels 27-28 and 45 and 88 with the following ndi_epochprobemap_daqsystem entry:
+%  on channels 27-28 and 45 and 88 with the following ndi.epoch.epochprobemap_daqsystem entry:
 %           name: 'ctx'
 %      reference: 1
 %           type: 'extracellular_electrode-4'
 %   devicestring: 'mydevice:ai27-28,45,88
 %
 %  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
-%  NDI_DAQSYSTEM object, CT is the channel type identifier, and #### is a list of channels.
+%  ndi.daq.system object, CT is the channel type identifier, and #### is a list of channels.
 %  The #### list of channels should be numbered from 1, and can use the symbols '-' to
 %  indicate a sequential run of channels, and ',' to separate channels.
 %  Use a semicolon to separate channel types (e.g., 'ai27-28;di1')
@@ -25,10 +25,10 @@
 %     ''               corresponds to []  % if the device doesn't have channels
 %
 % 
-%  See also: NDI_DAQSYSTEMSTRING/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
+%  See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 %
 
-classdef ndi_daqsystemstring
+classdef ndi.daq.daqsystemstring
 	properties (GetAccess=public, SetAccess=protected)
 		devicename    % The name of the device
 		channeltype   % The type of channels that are used by the device
@@ -36,18 +36,18 @@ classdef ndi_daqsystemstring
 	end
 
 	methods
-		function obj = ndi_daqsystemstring(devicename, channeltype, channellist)
-			% NDI_DAQSYSTEMSTRING - Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list
+		function obj = daqsystemstring(devicename, channeltype, channellist)
+			% ndi.daq.daqsystemstring - Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list
 			%
-			% DEVSTR = NDI_DAQSYSTEMSTRING(DEVICENAME, CHANNELTYPE, CHANNELLIST)
-			%    or DEVSTR = NDI_DAQSYSTEMSTRING(DEVSTRING)
+			% DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
+			%    or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)
 			%
-			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_DAQSYSTEM from a DEVICENAME,
+			% Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from a DEVICENAME,
 			% a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
 			%
 			% Inputs:
 			%    In the first form:
-			%      DEVICENAME should be the name of an NDI_DAQSYSTEM
+			%      DEVICENAME should be the name of an ndi.daq.system
 			%      CHANNEL_PREFIX should be the prefix for a particular type of channel. These channel type will vary from
 			%          device to device. For example, a NDI_DAQSYSTEM_MULTICHANNELDAQ might use:
 			%            'ai' - analog input
@@ -66,7 +66,7 @@ classdef ndi_daqsystemstring
 			%      myndi_daqsystemstring1 = ndi_devicestring('mydevice','ai',[1:5 7 23])
 			%      myndi_daqsystemstring2 = ndi_devicestring('mydevice:ai1-5,7,23');
 			%
-			% See also: NDI_DAQSYSTEMSTRING
+			% See also: ndi.daq.daqsystemstring
 			%
 				if nargin==1,
 					% it is a string
@@ -76,10 +76,10 @@ classdef ndi_daqsystemstring
 					obj.channeltype = channeltype;
 					obj.channellist = channellist;
 				end;
-		end % ndi_daqsystemstring
+		end % ndi.daq.daqsystemstring
 
 		function [devicename, channeltype, channel] = ndi_daqsystemstring2channel(self, devstr)
-			% NDI_DAQSYSTEMSTRING2CHANNELS - Convert an ndi_daqsystemstring to device, channel type, channel list
+			% NDI_DAQSYSTEMSTRING2CHANNELS - Convert an ndi.daq.daqsystemstring to device, channel type, channel list
 			%
 			% [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)
 			%
@@ -94,11 +94,11 @@ classdef ndi_daqsystemstring
 			%    CHANNELLIST is an array of the channel numbers
 			%
 			% Example:
-			%    devstr = ndi_daqsystemstring('mydevice:ai1-5,13,18');
+			%    devstr = ndi.daq.daqsystemstring('mydevice:ai1-5,13,18');
 			%    [devicename, channeltype, channel] = ndi_daqsystemstring2channel(devstr);
 			%    % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]
 			%
-			% See also: NDI_DAQSYSTEMSTRING, NDI_DEVICESTRING/DEVICESTRING
+			% See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING
 			%
 				if nargin<2,
 					devstr = self.devicestring();
@@ -117,7 +117,7 @@ classdef ndi_daqsystemstring
 					mysubstr = devstr(separators(i)+1:separators(i+1)-1);
 					firstnumber = find(  ~isletter(mysubstr), 1);
 					if isempty(firstnumber),
-						error(['No number in ndi_daqsystem substring: ' mysubstr '.']);
+						error(['No number in ndi.daq.system substring: ' mysubstr '.']);
 					end
 					channelshere = vlt.string.str2intseq(mysubstr(firstnumber:end));
 					channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
@@ -126,19 +126,19 @@ classdef ndi_daqsystemstring
 		end % ndi_daqsystemstring2channel
 
 		function devstr = devicestring(self);
-			% DEVICESTRING - Produce an NDI_DAQSYSTEMSTRING character string 
+			% DEVICESTRING - Produce an ndi.daq.daqsystemstring character string 
 			%
 			% DEVSTR = DEVICESTRING(SELF)
 			%
-			% Creates a device string suitable for a NDI_EPOCHPROBEMAP_DAQSYSTEM from an NDI_DAQSYSTEMSTRING object.
+			% Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.
 			%
 			% Inputs:
-			%    SELF - an NDI_DAQSYSTEMSTRING object
+			%    SELF - an ndi.daq.daqsystemstring object
 			% Outputs:
 			%    DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23'
 			%
 			%
-			% See also: NDI_DAQSYSTEMSTRING
+			% See also: ndi.daq.daqsystemstring
 				devstr = [self.devicename ':'];
 				prevchanneltype = '';
 				newchannellist = [];

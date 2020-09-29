@@ -7,7 +7,7 @@ classdef (Abstract) ndi_daqsystem_image < ndi_device
 
     methods
         function obj = ndi_daqsystem_image(name,filenavigator)
-            obj = obj@ndi_daqsystem(name,filenavigator);
+            obj = obj@ndi.daq.system(name,filenavigator);
         end
     end
     

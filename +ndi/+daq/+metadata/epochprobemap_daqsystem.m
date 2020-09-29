@@ -3,16 +3,16 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
 		type          % The type of recording that is present in the data
-		devicestring  % An NDI_DAQSYSTEMSTRING that indicates the device and channels that comprise the data
+		devicestring  % An ndi.daq.daqsystemstring that indicates the device and channels that comprise the data
 		subjectstring % A string describing the local_id or unique document ID of the subject of the probe
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_)
-			% NDI_EPOCHPROBEMAP_DAQSYSTEM - Create a new ndi_epochprobemap_daqsystem object
+		function obj = ndi.epoch.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_)
+			% ndi.epoch.epochprobemap_daqsystem - Create a new ndi.epoch.epochprobemap_daqsystem object
 			%
-			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
+			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
 			%
-			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -22,15 +22,15 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 			% DEVICESTRING is a string that indicates the channels that were used to acquire
 			% this record.
 			% SUBJECTSTRING describes the subject of the probe, either using the unique local identifier
-			%   or the document unique identifier (ID) of the NDI_DOCUMENT that describes the subject.
+			%   or the document unique identifier (ID) of the ndi.document that describes the subject.
 			%
 			% The function has an alternative form:
 			%
-			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP(FILENAME)
+			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
-			% one line per NDI_EPOCHPROBEMAP_DAQSYSTEM entry.
+			% one line per ndi.epoch.epochprobemap_daqsystem entry.
 			%
 
 			if nargin==0, % undocumented 0 input constructor
@@ -57,7 +57,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 				end;
 				obj = [];
 				for i=1:length(ndi_struct),
-					nextentry = ndi_epochprobemap_daqsystem(ndi_struct(i).name,...
+					nextentry = ndi.epoch.epochprobemap_daqsystem(ndi_struct(i).name,...
 							ndi_struct(i).reference,...
 							ndi_struct(i).type, ...
 							ndi_struct(i).devicestring,...
@@ -65,7 +65,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 					obj = cat(1,obj,nextentry);
 				end;
 				if isempty(obj),
-					obj = ndi_epochprobemap_daqsystem;
+					obj = ndi.epoch.epochprobemap_daqsystem;
 					obj = obj([]);
 				end
 				return;
@@ -82,7 +82,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 			% reference, check for errors
 
 			if reference_ < 0 | ~vlt.data.isint(reference_) | ~vlt.data.eqlen(size(reference_),[1 1]),
-				error(['reference of ndi_epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(reference_)]);
+				error(['reference of ndi.epoch.epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(reference_)]);
 			end;
 			obj.reference = fix(reference_);
 
@@ -102,11 +102,11 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		end;
 
 		function savetofile(ndi_epochprobemap_daqsystem_obj, filename)
-		%  SAVETOFILE - Write ndi_epochprobemap_daqsystem object array to disk
+		%  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
 		%
                 %  SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
 		%
-		%  Writes the NDI_EPOCHPROBEMAP_DAQSYSTEM object to disk in filename FILENAME (full path).
+		%  Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
 		%
 		%
 			fn = {'name','reference','type','devicestring','subjectstring'};

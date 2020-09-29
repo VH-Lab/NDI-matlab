@@ -1,4 +1,4 @@
-classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
+classdef metadatareader < ndi.ido & ndi.documentservice
 % NDI_DAQMETADATAREADER - a class for reading metadata related to data acquisition, such as stimulus parameter information
 %
 % 
@@ -13,14 +13,14 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 
 	methods
 
-		function obj = ndi_daqmetadatareader(varargin)
-			% NDI_DAQMETADATAREADER - Create a new multifunction DAQ object
+		function obj = metadatareader(varargin)
+			% ndi.daq.metadatareader.metadatareader - Create a new multifunction DAQ object
 			%
-			%  D = NDI_DAQMETADATAREADER()
+			%  D = ndi.daq.metadatareader.metadatareader()
 			%  or
-			%  D = NDI_DAQMETADATAREADER(TSVFILE_REGEXPRESSION)
+			%  D = ndi.daq.metadatareader.metadatareader(TSVFILE_REGEXPRESSION)
 			%
-			%  Creates a new NDI_DAQMETADATAREADER object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader.metadatareader object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
@@ -30,13 +30,13 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 					varargin = {};
 				end;
 
-				if (nargin==2) & (isa(varargin{1},'ndi_session')) & (isa(varargin{2},'ndi_document')),
+				if (nargin==2) & (isa(varargin{1},'ndi.session.session')) & (isa(varargin{2},'ndi.document')),
 					if isfield(varargin{2}.document_properties,'daqmetadatareader'),
 						tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
 					end;
 				end;
 				obj.tab_separated_file_parameter = tsv_p;
-		end; % ndi_daqmetadatareader
+		end; % ndi.daq.metadatareader.metadatareader
 
 		function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
 			% PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
@@ -89,7 +89,7 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 			%
 			% PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)
 			%
-			% Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER
+			% Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.metadatareader
 			% document, this function loads in the metadata.
 				parameters = {};
 				stimparameters = vlt.file.loadStructArray(file);
@@ -99,7 +99,7 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 		end;  % readmetadata
 
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
-			% EQ - are 2 ndi_daqmetadatareader objects equal?
+			% EQ - are 2 ndi.daq.metadatareader.metadatareader objects equal?
 			%
 			% TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)
 			%
@@ -114,24 +114,24 @@ classdef ndi_daqmetadatareader < ndi_id & ndi_documentservice
 		% documentservices overriden methods
 
 		function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
-			% NEWDOCUMENT - create a new NDI_DOCUMENT for an NDI_DAQMETADATAREADER object
+			% NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader.metadatareader object
 			%
-			% DOC = NEWDOCUMENT(NDI_DAQMETADATAREADER OBJ)
+			% DOC = NEWDOCUMENT(ndi.daq.metadatareader.metadatareader OBJ)
 			%
-			% Creates an NDI_DOCUMENT object DOC that represents the
-			%    NDI_DAQREADER object.
-				ndi_document_obj = ndi_document('ndi_document_daqmetadatareader.json',...
+			% Creates an ndi.document object DOC that represents the
+			%    ndi.daq.reader object.
+				ndi_document_obj = ndi.document('ndi_document_daqmetadatareader.json',...
 					'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
 					'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
 					'ndi_document.id', ndi_daqmetadatareader_obj.id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_daqmetadatareader_obj)
-			% SEARCHQUERY - create a search for this NDI_DAQREADER object
+			% SEARCHQUERY - create a search for this ndi.daq.reader object
 			%
 			% SQ = SEARCHQUERY(NDI_DAQMETADATAREADER_OBJ)
 			%
-			% Creates a search query for the NDI_DAQMETADATAREADER object.
+			% Creates a search query for the ndi.daq.metadatareader.metadatareader object.
 			%
 				sq = {'ndi_document.id', ndi_daqmetadatareader_obj.id() };
 		end; % searchquery()

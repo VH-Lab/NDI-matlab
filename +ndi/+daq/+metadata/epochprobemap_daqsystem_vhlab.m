@@ -1,13 +1,13 @@
-classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
+classdef epochprobemap_daqsystem_vhlab < daq.metadata.epochprobemap_daqsystem
 	properties
 	end % properties
 	methods
-		function obj = ndi_epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_, subjectstring_)
-			% NDI_EPOCHPROBEMAP_DAQSYSTEM_VHLAB - Create a new ndi_epochprobemap_daqsystem object derived from the vhlab device implementation
+		function obj = epochprobemap_daqsystem.vhlab(name_, reference_, type_, devicestring_, subjectstring_)
+			% ndi.epoch.epochprobemap_daqsystem.vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
 			%
 			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
 			%
-			% Creates a new NDI_EPOCHPROBEMAP_DAQSYSTEM with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -45,7 +45,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				subjectstring_ = '';
 			end
 
-			obj = obj@ndi_epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
+			obj = obj@ndi.epoch.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
 
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
@@ -59,7 +59,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 					error(['No subject.txt file found:' subjectfile '.']);
 				end;
 
-				[b,msg] = ndi_subject.isvalidlocalidentifierstring(subject_id);
+				[b,msg] = ndi.subject.isvalidlocalidentifierstring(subject_id);
 				if ~b,
 					error(['subject_id string ' subject_id ' is not a valid subject id: ' msg]);
 				end;
@@ -67,7 +67,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				if strcmp([localfile ext],'stimtimes.txt'), % vhvis_spike2
 					mylist = {'mk1','mk2','mk3','e1','e2','e3','md1'};
 					for i=1:numel(mylist),
-						nextentry = ndi_epochprobemap_daqsystem_vhlab('vhvis_spike2',...
+						nextentry = ndi.epoch.epochprobemap_daqsystem.vhlab('vhvis_spike2',...
 							1,...
 							['stimulator'  ] , ...  % type
 							['vhvis_spike2' ':' mylist{i}], ...  % device string
@@ -98,7 +98,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 				[myfilepath,myfilename] = fileparts(filename);
 				ref_struct = vlt.file.loadStructArray([myfilepath filesep 'reference.txt']);
 
-				ndi_globals;
+				ndi.globals;
 
 				for i=1:length(ndi_struct),
 					tf_name = strcmp(ndi_struct(i).name,{ref_struct.name});
@@ -121,7 +121,7 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 
 						end;
 					end
-					nextentry = ndi_epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
+					nextentry = ndi.epoch.epochprobemap_daqsystem.vhlab(ndi_struct(i).name,...
 							ndi_struct(i).ref,...
 							ec_type, ...  % type
 							[vhdevice_string ':ai' vlt.string.intseq2str(ndi_struct(i).channel_list)], ...  % device string
@@ -133,11 +133,11 @@ classdef ndi_epochprobemap_daqsystem_vhlab < ndi_epochprobemap_daqsystem
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write ndi_epochprobemap_daqsystem object array to disk
+		%  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the NDI_EPOCHPROBEMAP_DAQSYSTEM_VHLAB object to disk in filename FILENAME (full path).
+		%  Writes the ndi.epoch.epochprobemap_daqsystem.vhlab object to disk in filename FILENAME (full path).
 		%
 		%  
 			error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);

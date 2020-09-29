@@ -8,7 +8,7 @@
 % m2              | stimid 
 %
 
-classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_blackrock 
+classdef ndi.daq.reader.mfdaq.stimulus.angelucci.visstim < ndi.daq.reader.mfdaq.blackrock 
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -16,15 +16,15 @@ classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_bl
 	end
 
 	methods
-		function obj = ndi_daqreader_mfdaq_stimulus_angelucci_visstim(varargin)
+		function obj = ndi.daq.reader.mfdaq.stimulus.angelucci.visstim(varargin)
 			% NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2 - Create a new multifunction DAQ object
 			%
 			%  D = NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2(NAME, THEFILENAVIGATOR, DAQREADER)
 			%
-			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
+			%  Creates a new ndi.daq.system.mfdaq.mfdaq object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi_daqreader_mfdaq_blackrock(varargin{:});
-		end; % ndi_daqreader_mfdaq_stimulus_angelucci_visstim()
+				obj = obj@ndi.daq.reader.mfdaq.blackrock(varargin{:});
+		end; % ndi.daq.reader.mfdaq.stimulus.angelucci.visstim()
 
 		function channels = getchannelsepoch(thedev, epochfiles)
 			% FUNCTION GETCHANNELS - List the channels that are available on this device
@@ -61,7 +61,7 @@ classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_bl
 			% 
 				 
 				data = {};
-				md_reader = ndi_daqmetadatareader_AngelucciStims();
+				md_reader = ndi.daq.metadatareader.AngelucciStims();
 
 				tf = endsWith(epochfiles,'stimData.mat','IgnoreCase',true);
 				FILENAME = epochfiles{find(tf)};
@@ -75,7 +75,7 @@ classdef ndi_daqreader_mfdaq_stimulus_angelucci_visstim < ndi_daqreader_mfdaq_bl
 				stimofftimes = stimtimes + parameters{1}.stimOnDuration / 30000;
 
 				for i=1:numel(channel),
-					switch (ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i})),
+					switch (ndi.daq.system.mfdaq.mfdaq.mfdaq_prefix(channeltype{i})),
 						case 'mk',
 							% put them together, alternating stimtimes and stimofftimes in the final product
 							time1 = [stimtimes(:)' ; stimofftimes(:)'];

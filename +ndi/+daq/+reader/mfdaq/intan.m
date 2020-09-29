@@ -6,22 +6,22 @@
 %
 %
 
-classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
+classdef ndi.daq.reader.mfdaq.intan < ndi.daq.reader.mfdaq.mfdaq
 	properties
 		
 
 	end % properties
 
 	methods
-		function obj = ndi_daqreader_mfdaq_intan(varargin)
-		% NDI_DAQREADER_MFDAQ_INTAN - Create a new NDI_DEVICE_MFDAQ_INTAN object
+		function obj = ndi.daq.reader.mfdaq.intan(varargin)
+		% ndi.daq.reader.mfdaq.intan - Create a new NDI_DEVICE_MFDAQ_INTAN object
 		%
-		%  D = NDI_DAQREADER_MFDAQ_INTAN(NAME,THEFILENAVIGATOR)
+		%  D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
 		%
-		%  Creates a new NDI_DAQREADER_MFDAQ_INTAN object with name NAME and associated
+		%  Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
 		%  filenavigator THEFILENAVIGATOR.
 		%
-			obj = obj@ndi_daqreader_mfdaq(varargin{:})
+			obj = obj@ndi.daq.reader.mfdaq.mfdaq(varargin{:})
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_intan_obj, epochfiles)
@@ -46,7 +46,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 				'board_dig_in_channels'
 				'board_dig_out_channels'};
 
-			multifunctiondaq_channel_types = ndi_daqsystem_mfdaq.mfdaq_channeltypes;
+			multifunctiondaq_channel_types = ndi.daq.system.mfdaq.mfdaq.mfdaq_channeltypes;
 
 			% open RHD files, and examine the headers for all channels present
 			%   for any new channel that hasn't been identified before,
@@ -81,7 +81,7 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 		% Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
 		% with epoch files EPOCHFILES.
 		%
-		% See also: NDI_DAQREADER, NDI_EPOCHPROBEMAP_DAQREADER
+		% See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
 			b = 1;
 			msg = '';
 			% UPDATE NEEDED
@@ -192,11 +192,11 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			% The abstract class always returns {[NaN NaN]}.
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 	                        [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 				header = read_Intan_RHD2000_header(filename);
@@ -226,11 +226,11 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 	methods (Static)  % helper functions
 
 		function intanchanheadertype = mfdaqchanneltype2intanheadertype(channeltype)
-		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the NDI_DAQREADER_MFDAQ channel types and Intan headers
+		% MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the ndi.daq.reader.mfdaq.mfdaq channel types and Intan headers
 		%
 		% INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
 		% 
-		% Given a standard NDI_DAQREADER_MFDAQ channel type, returns the name of the type as
+		% Given a standard ndi.daq.reader.mfdaq.mfdaq channel type, returns the name of the type as
 		% indicated in Intan header files.
 
 			switch (channeltype),
@@ -249,11 +249,11 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 		end % mfdaqchanneltype2intanheadertype()
 
 		function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
-		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the NDI_DAQREADER_MFDAQ channel types 
+		% INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.reader.mfdaq.mfdaq channel types 
 		%
 		% CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
 		% 
-		% Given an Intan header file type, returns the standard NDI_DAQREADER_MFDAQ channel type
+		% Given an Intan header file type, returns the standard ndi.daq.reader.mfdaq.mfdaq channel type
 
 			switch (intanchanneltype),
 				case {'amplifier_channels'},
@@ -295,18 +295,18 @@ classdef ndi_daqreader_mfdaq_intan < ndi_daqreader_mfdaq
 		end % mfdaqchanneltype2intanchanneltype()
 
 		function [ channame ] = intanname2mfdaqname(ndi_daqreader_mfdaq_intan_obj, type, name )
-		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to NDI_DAQREADER_MFDAQ format.
+		% INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to ndi.daq.reader.mfdaq.mfdaq format.
 		%
-		% MFDAQNAME = INTANNAME2MFDAQNAME(NDI_DAQREADER_MFDAQ_INTAN, MFDAQTYPE, NAME)
+		% MFDAQNAME = INTANNAME2MFDAQNAME(ndi.daq.reader.mfdaq.intan, MFDAQTYPE, NAME)
 		%   
 		% Given an Intan native channel name (e.g., 'A-000') in NAME and a
-		% NDI_DAQREADER_MFDAQ channel type string (see NDI_DEVICE_MFDAQ), this function
-		% produces an NDI_DAQREADER_MFDAQ channel name (e.g., 'ai1').
+		% ndi.daq.reader.mfdaq.mfdaq channel type string (see NDI_DEVICE_MFDAQ), this function
+		% produces an ndi.daq.reader.mfdaq.mfdaq channel name (e.g., 'ai1').
 		%  
 			sep = find(name=='-');
 			chan_intan = str2num(name(sep+1:end));
 			chan = chan_intan + 1; % intan numbers from 0
-			channame = [ndi_daqsystem_mfdaq.mfdaq_prefix(type) int2str(chan)];
+			channame = [ndi.daq.system.mfdaq.mfdaq.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()
 

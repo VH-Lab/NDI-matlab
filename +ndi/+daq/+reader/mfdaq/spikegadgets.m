@@ -6,13 +6,13 @@
 %
 %
 
-classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
+classdef ndi.daq.reader.mfdaq.spikegadgets < ndi.daq.reader.mfdaq.mfdaq
 
 	properties
 	end
 
 	methods
-		function obj = ndi_daqreader_mfdaq_spikegadgets(varargin)
+		function obj = ndi.daq.reader.mfdaq.spikegadgets(varargin)
 			% NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS - Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object
 			%
 			%  D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)
@@ -21,7 +21,7 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 			%  filenavigator THEFILENAVIGATOR.
 			%
 			%
-				obj = obj@ndi_daqreader_mfdaq(varargin{:});
+				obj = obj@ndi.daq.reader.mfdaq.mfdaq(varargin{:});
 		end
 
 		function channels = getchannelsepoch(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
@@ -197,11 +197,11 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			% The abstract class always returns {[NaN NaN]}.
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
 				filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles); 
 
@@ -249,10 +249,10 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 						channels = [channels nTrodes(i).channelInfo(j).packetLocation + 1];
 					end
 					%Object that deals with channels
-					devicestringobject = ndi_daqsystemstring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
+					devicestringobject = ndi.daq.daqsystemstring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
 					devicestringstring = devicestringobject.devicestring();
 					% FIX: we need some way of specifying the subject, which is not in the file to my knowledge (although maybe it is)
-					obj = ndi_epochprobemap_daqsystem(name,reference,type,devicestringstring,'anteater52@nosuchlab.org');
+					obj = ndi.epoch.epochprobemap_daqsystem(name,reference,type,devicestringstring,'anteater52@nosuchlab.org');
 					%Append each newly made object to end of list
 					epochprobemap = [epochprobemap obj];
 				end
@@ -292,7 +292,7 @@ classdef ndi_daqreader_mfdaq_spikegadgets < ndi_daqreader_mfdaq
 				%Reads nTrodes
 				%WARNING channeltype hard coded, ask Steve
 				channeltype
-				if (strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi_daqsystem_mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
+				if (strcmp(ndi.daq.system.mfdaq.mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi.daq.system.mfdaq.mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
 					data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 
 				elseif (strcmp(channeltype,'auxiliary') || strcmp(channeltype,'aux')) %Reads analog inputs

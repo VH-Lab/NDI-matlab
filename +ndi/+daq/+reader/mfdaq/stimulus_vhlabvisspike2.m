@@ -16,7 +16,7 @@
 % e3              | pretime trigger
 %
 
-classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
+classdef ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2 < ndi.daq.reader.mfdaq.mfdaq
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -24,29 +24,29 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 	end
 
 	methods
-		function obj = ndi_daqreader_mfdaq_stimulus_vhlabvisspike2(varargin)
-			% NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Create a new multifunction DAQ object
+		function obj = ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2(varargin)
+			% ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2 - Create a new multifunction DAQ object
 			%
-			%  D = NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2(NAME, THEFILENAVIGATOR, DAQREADER)
+			%  D = ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2(NAME, THEFILENAVIGATOR, DAQREADER)
 			%
-			%  Creates a new NDI_DAQSYSTEM_MFDAQ object with NAME, and FILENAVIGATOR.
+			%  Creates a new ndi.daq.system.mfdaq.mfdaq object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi_daqreader_mfdaq(varargin{:});
-		end; % ndi_daqreader_mfdaq_stimulus_vhlabvisspike2()
+				obj = obj@ndi.daq.reader.mfdaq.mfdaq(varargin{:});
+		end; % ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2()
 
 		function ec = epochclock(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)
-			% EPOCHCLOCK - return the NDI_CLOCKTYPE objects for an epoch
+			% EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
 			%
 			% EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCHFILES)
 			%
 			% Return the clock types available for this epoch as a cell array
-			% of NDI_CLOCKTYPE objects (or sub-class members).
+			% of ndi.time.clocktype objects (or sub-class members).
 			%
 			% This returns a single clock type 'dev_local'time';
 			%
-			% See also: NDI_CLOCKTYPE
+			% See also: ndi.time.clocktype
 			%
-				ec = {ndi_clocktype('dev_local_time')};
+				ec = {ndi.time.clocktype('dev_local_time')};
 		end % epochclock
 
 		function channels = getchannelsepoch(thedev, epochfiles)
@@ -132,8 +132,8 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 				end;
 
 				for i=1:numel(channel),
-					%ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i}),
-					switch (ndi_daqsystem_mfdaq.mfdaq_prefix(channeltype{i})),
+					%ndi.daq.system.mfdaq.mfdaq.mfdaq_prefix(channeltype{i}),
+					switch (ndi.daq.system.mfdaq.mfdaq.mfdaq_prefix(channeltype{i})),
 						case 'mk',
 							% put them together, alternating stimtimes and stimofftimes in the final product
 							time1 = [stimtimes(:)' ; stimofftimes(:)'];
@@ -182,12 +182,12 @@ classdef ndi_daqreader_mfdaq_stimulus_vhlabvisspike2 < ndi_daqreader_mfdaq
 			% T0T1 = T0_T1(NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the NDI_CLOCKTYPE objects returned by EPOCHCLOCK.
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 			%
-			% See also: NDI_CLOCKTYPE, EPOCHCLOCK
+			% See also: ndi.time.clocktype, EPOCHCLOCK
 			%
-				filename = ndi_daqreader_mfdaq_cedspike2.cedspike2filelist2smrfile(epochfiles);
+				filename = ndi.daq.reader.mfdaq.cedspike2.cedspike2filelist2smrfile(epochfiles);
 				header = read_CED_SOMSMR_header(filename);
 
 				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
