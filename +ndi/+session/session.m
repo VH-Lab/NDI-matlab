@@ -521,14 +521,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % getprobes
 
 		function elements = getelements(ndi__session_obj, varargin);
-			% GETELEMENTS - Return all ndi.element.element objects that are found in session database
+			% GETELEMENTS - Return all ndi.element.base objects that are found in session database
 			%
 			% ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)
 			%
-			% Examines all the database of NDI_SESSION_OBJ and returns all ndi.element.element
+			% Examines all the database of NDI_SESSION_OBJ and returns all ndi.element.base
 			% entries.
 			%
-			% ELEMENTS is a cell array of ndi.element.element.* objects.
+			% ELEMENTS is a cell array of ndi.element.base.* objects.
 			%
 			% ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, 'PROP1', VALUE1, 'PROP2', VALUE2...)
 			%

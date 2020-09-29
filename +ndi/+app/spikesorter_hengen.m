@@ -26,7 +26,7 @@ classdef hengen < ndi.app.app
 		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi.session.directory
 		%
 		% EXTRACT_AND_SORT(REDO) - to handle selected .bin file in json input
-		% EXTRACT_AND_SORT(NDI_ELEMENT, EXTRACTION_NAME, SORTING_NAME, REDO) - to handle selected ndi.element.element
+		% EXTRACT_AND_SORT(NDI_ELEMENT, EXTRACTION_NAME, SORTING_NAME, REDO) - to handle selected ndi.element.base
 		%	
 			
 			if (numel(varargin) ~= 1) && (numel(varargin) ~= 4)
