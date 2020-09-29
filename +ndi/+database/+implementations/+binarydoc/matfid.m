@@ -7,9 +7,9 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
 
 	methods,
 		function ndi_binarydoc_matfid_obj = matfid(varargin)
-			% ndi.database.binarydoc.matfid - create a new ndi.database.binarydoc.matfid object
+			% ndi.database.implementations.binarydoc.matfid - create a new ndi.database.implementations.binarydoc.matfid object
 			%
-			% NDI_BINARYDOC_MATFID_OBJ = ndi.database.binarydoc.matfid(PARAM1,VALUE1, ...)
+			% NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,VALUE1, ...)
 			%
 			% Follows same arguments as vlt.file.fileobj
 			%
@@ -22,10 +22,10 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
 				ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
 				ndi_binarydoc_matfid_obj.key = key;
 				ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
-		end; % ndi.database.binarydoc.matfid() creator
+		end; % ndi.database.implementations.binarydoc.matfid() creator
 
 		function ndi_binarydoc_matfid_obj = fclose(ndi_binarydoc_matfid_obj)
-			% FCLOSE - close an ndi.database.binarydoc.matfid object
+			% FCLOSE - close an ndi.database.implementations.binarydoc.matfid object
 			%
 			% Closes the file, but also clears the fullpathfilename and other fields so the 
 			% user cannot re-use the object without checking out another binary document from

@@ -341,7 +341,7 @@ classdef  ndi_postgresdb < ndi_database
 % 			[fid, key] = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
 % 			if fid>0,
 % 				[filename,permission,machineformat,encoding] = fopen(fid);
-% 				ndi_binarydoc_obj = ndi.database.binarydoc.matfid('fid',fid,'fullpathfilename',filename,...
+% 				ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,'fullpathfilename',filename,...
 % 					'machineformat',machineformat,'permission',permission, 'doc_unique_id', ndi_document_id, 'key', key);
 % 				ndi_binarydoc_obj.frewind(); % move to beginning of the file
 % 			end
