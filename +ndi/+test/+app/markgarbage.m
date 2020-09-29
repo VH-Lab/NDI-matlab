@@ -1,9 +1,9 @@
 function markgarbage
-% ndi.test.app.markgarbage - Test the functionality of the app 'ndi.ap0.markgarbage'
+% ndi.test.app.markgarbage - Test the functionality of the app 'ndi.app.markgarbage'
 %
 %  ndi.test.app.markgarbage
 %
-%  Tests the ndi.ap0.markgarbage on example data in
+%  Tests the ndi.app.markgarbage on example data in
 %  [NDICOMMONPATH]/example_app_sessions/markgarbage_ex
 %
 %
@@ -37,7 +37,7 @@ E.daqsystem_add(dev1);
 
   % Step 3: create a markgarbage app
 
-gapp = ndi.ap0.markgarbage(E);
+gapp = ndi.app.markgarbage(E);
 
  % now mark a region as garbage
 

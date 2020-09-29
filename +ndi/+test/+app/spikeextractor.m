@@ -1,7 +1,7 @@
 function spikeextractor
-% ndi.test.app.spikeextractor - Test the functionality of the apps 'ndi.ap0.spikeextractor' and 'ndi.app.spikesort' with example data
+% ndi.test.app.spikeextractor - Test the functionality of the apps 'ndi.app.spikeextractor' and 'ndi.app.spikesort' with example data
 %
-% Tests the ndi.ap0.spikeextractor on example data in 
+% Tests the ndi.app.spikeextractor on example data in 
 % [NDICOMMONPATH]/example_app_sessions/exp_sg
 %
 
@@ -31,10 +31,10 @@ E.daqsystem_add(dev1);
 eparams = [dirname filesep 'extraction_parameters.txt'];
 sparams = [dirname filesep 'sorting_parameters.txt'];
 
-spike_extractor = ndi.ap0.spikeextractor(E);
-spike_sorter = ndi.ap0.spikesorter(E);
+spike_extractor = ndi.app.spikeextractor(E);
+spike_sorter = ndi.app.spikesorter(E);
 
- % I'd add someelement here that clears out any old extraction variables; see ndi.ap0.markgarbage/clearvalidinterval
+ % I'd add someelement here that clears out any old extraction variables; see ndi.app.markgarbage/clearvalidinterval
 
 spike_extractor.spike_extract_probes('Tetrode7', 'n-trode', 'test', eparams);
 
