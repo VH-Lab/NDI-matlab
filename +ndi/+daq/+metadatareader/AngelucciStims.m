@@ -1,4 +1,4 @@
-classdef AngelucciStims < ndi_daqmetadatareader
+classdef AngelucciStims < ndi.daq.metadatareader
 % NDI_DAQMETADATAREADER_ANGELUCCISTIMS - a class for reading stims from Angelucci lab example data
 %
 % 

@@ -1,4 +1,4 @@
-classdef NewStimStims < ndi_daqmetadatareader
+classdef NewStimStims < ndi.daq.metadatareader
 % NDI_DAQMETADATAREADER_NEWSTIMSTIMS - a class for reading NewStim metadata 
 %
 % 
