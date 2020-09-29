@@ -1,5 +1,5 @@
 classdef probe < ndi.element.base & ndi.documentservice
-% ndi.probe.probe - the base class for PROBES -- measurement or stimulation devices
+% ndi.probe.base - the base class for PROBES -- measurement or stimulation devices
 %
 % In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
 % or to STIMULATE.
@@ -30,18 +30,18 @@ classdef probe < ndi.element.base & ndi.documentservice
 
 	methods
 		function obj = probe(varargin)
-			% ndi.probe.probe - create a new ndi.probe.probe object
+			% ndi.probe.base - create a new ndi.probe.base object
 			%
-			%  OBJ = ndi.probe.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
+			%  OBJ = ndi.probe.base(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
 			%         or
-			%  OBJ = ndi.probe.probe(SESSION, NDI_DOCUMENT_OBJ)
+			%  OBJ = ndi.probe.base(SESSION, NDI_DOCUMENT_OBJ)
 			%
-			%  Creates an ndi.probe.probe associated with an ndi.session.session object SESSION and
+			%  Creates an ndi.probe.base associated with an ndi.session.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  ndi.probe.probe is a essentially an abstract class, and a specific implementation must be called.
+			%  ndi.probe.base is a essentially an abstract class, and a specific implementation must be called.
 			%
 				inputs = varargin;
 				if nargin==5,
@@ -50,7 +50,7 @@ classdef probe < ndi.element.base & ndi.documentservice
 					inputs{6} = 1;
 				end;
 				obj = obj@ndi.element.base(inputs{:});
-		end % ndi.probe.probe
+		end % ndi.probe.base
 
 		function et = buildepochtable(ndi_probe_obj)
 			% BUILDEPOCHTABLE - build the epoch table for an ndi.probe.*
@@ -124,7 +124,7 @@ classdef probe < ndi.element.base & ndi.documentservice
 			%
 			% Return the clock types available for this epoch.
 			%
-			% The ndi.probe.probe class always returns the clock type(s) of the device it is based on
+			% The ndi.probe.base class always returns the clock type(s) of the device it is based on
 			%
 				et = ndi_probe_obj.epochtableentry(epoch_number);
 				ec = et.epoch_clock;
@@ -149,7 +149,7 @@ classdef probe < ndi.element.base & ndi.documentservice
 			%
 			% Returns the object name that is used when creating epoch nodes.
 			%
-			% For ndi.probe.probe objects, this is the string 'probe: ' followed by
+			% For ndi.probe.base objects, this is the string 'probe: ' followed by
 			% PROBESTRING(NDI_PROBE_OBJ).
 				name = ['probe: ' elementstring(ndi_probe_obj)];
 		end % epochsetname
@@ -235,12 +235,12 @@ classdef probe < ndi.element.base & ndi.documentservice
 		end % epochprobemapmatch()
 
 		function b = eq(ndi_probe_obj1, ndi_probe_obj2)
-			% EQ - are 2 ndi.probe.probe objects equal?
+			% EQ - are 2 ndi.probe.base objects equal?
 			%
 			% Returns 1 if the objects share an object class, session, and probe string.
 			%
 				b = 0;
-				if isa(ndi_probe_obj2,'ndi.probe.probe'),
+				if isa(ndi_probe_obj2,'ndi.probe.base'),
 					b = ( ndi_probe_obj1.session==ndi_probe_obj2.session & ...
 						strcmp(ndi_probe_obj1.elementstring(), ndi_probe_obj2.elementstring()) & ...
 						strcmp(ndi_probe_obj1.type, ndi_probe_obj2.type) );

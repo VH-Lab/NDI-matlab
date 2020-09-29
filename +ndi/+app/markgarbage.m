@@ -33,7 +33,7 @@ classdef markgarbage < ndi.app.base
 			% Saves a variable marking a valid interval from T0 to T1 with respect
 			% to an ndi.time.timereference object TIMEREF_T0 (for T0) and TIMEREF_T1 (for T1) for
 			% an ndi.epoch.epochset object NDI_EPOCHSET_OBJ.  Examples of ndi.epoch.epochset objects include
-			% ndi.daq.system and ndi.probe.probe and their subclasses.
+			% ndi.daq.system and ndi.probe.base and their subclasses.
 			%
 			% TIMEREF_T0 and TIMEREF_T1 are saved as a name and type for looking up later.
 			%
@@ -58,7 +58,7 @@ classdef markgarbage < ndi.app.base
 			% If the entry is a duplicate, it is not saved but b is still 1.
 			%
 
-				if ~isa(ndi_epochset_obj, 'ndi.probe.probe'),
+				if ~isa(ndi_epochset_obj, 'ndi.probe.base'),
 					error(['do not know how to handle non-probes yet.']);
 				end
 

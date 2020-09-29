@@ -73,10 +73,10 @@ ndi_install	ndi_install
 ndi_stimulustemporalfrequency	ndi.fun.stimulustemporalfrequency
 ndi_version	ndi.version
 ndi_app	ndi.app
-ndi_probe	ndi.probe
+ndi_probe	ndi.probe.base
 ndi_probestruct2probe	ndi.probe.fun.probestruct2probe
 ndi_probetype2objectinit	ndi.probe.fun.probetype2objectinit
-ndi_probe_timeseries	ndi.probe.timeseries
+ndi_probe_timeseries	ndi.probe.timeseries.base
 ndi_probe_timeseries_mfdaq	ndi.probe.timeseries.mfdaq
 ndi_probe_timeseries_stimulator	ndi.probe.timeseries.stimulator
 ndi_session	ndi.session.session

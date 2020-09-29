@@ -20,7 +20,7 @@ classdef base < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%    or
 			% NDI_ELEMENT_OBJ = ndi.element.base(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
-			% Creates an ndi.element.base object, either from a name and and associated ndi.probe.probe object,
+			% Creates an ndi.element.base object, either from a name and and associated ndi.probe.base object,
 			% or builds the ndi.element.base in memory from an ndi.document of type 'ndi_document_element'.
 			%
 			% If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
@@ -121,7 +121,7 @@ classdef base < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% This function tells an ndi.time.syncgraph object whether it should continue
 			% adding the 'underlying' epochs to the graph, or whether it should stop at this level.
 			%
-			% For ndi.element.base objects, this returns 0 so that underlying ndi.probe.probe epochs are added.
+			% For ndi.element.base objects, this returns 0 so that underlying ndi.probe.base epochs are added.
 				b = isempty(ndi_element_obj.underlying_element);
 		end; % issyncgraphroot
 

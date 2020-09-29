@@ -1,24 +1,24 @@
-classdef timeseries < ndi.probe.probe & ndi.time.timeseries
+classdef base < ndi.probe.base & ndi.time.timeseries
 % ndi.probe.timeseries - Create a new ndi.probe.timeseries class object 
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = timeseries(varargin)
+		function obj = base(varargin)
 			% ndi.probe.timeseries - create a new ndi.probe.timeseries object
 			%
-			%  OBJ = ndi.probe.timeseries.timeseries(SESSION, NAME, REFERENCE, TYPE)
+			%  OBJ = ndi.probe.timeseries.base(SESSION, NAME, REFERENCE, TYPE)
 			%
 			%  Creates an ndi.probe associated with an ndi.session.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  ndi.probe.timeseries.timeseries is an abstract class, and a specific implementation must be called.
+			%  ndi.probe.timeseries.base is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@ndi.probe.probe(varargin{:});
-		end % ndi.probe.timeseries.timeseries
+				obj = obj@ndi.probe.base(varargin{:});
+		end % ndi.probe.timeseries.base
 
 		function [data, t, timeref] = readtimeseries(ndi_probe_timeseries_obj, timeref_or_epoch, t0, t1)
 			%  READTIMESERIES - read the probe data based on specified time relative to an NDI_TIMEFERENCE or epoch
@@ -71,12 +71,12 @@ classdef timeseries < ndi.probe.probe & ndi.time.timeseries
 
 		function ndi_document_obj = newdocument(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				ndi_document_obj = newdocument@ndi.probe.probe(ndi_probe_timeseries_obj, varargin{:});
+				ndi_document_obj = newdocument@ndi.probe.base(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 		function sq = searchquery(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				sq = searchquery@ndi.probe.probe(ndi_probe_timeseries_obj, varargin{:});
+				sq = searchquery@ndi.probe.base(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 	end; % methods
