@@ -1,4 +1,4 @@
-classdef oridirtuning < ndi.app.app
+classdef oridirtuning < ndi.app.base
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,9 +19,9 @@ classdef oridirtuning < ndi.app.app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.app(session, name);
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.base(session, name);
 
-		end % ndi.app.app.oridirtuning() creator
+		end % ndi.app.oridirtuning() creator
 
 		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
@@ -238,6 +238,6 @@ classdef oridirtuning < ndi.app.app
 
 	end; % static methods
 
-end % ndi.app.app.oridirtuning
+end % ndi.app.oridirtuning
 
 

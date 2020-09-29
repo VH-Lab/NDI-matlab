@@ -1,4 +1,4 @@
-0classdef markgarbage < ndi.app.ap2
+classdef markgarbage < ndi.app.base
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -19,7 +19,7 @@
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi.app.markgarbage_obj = ndi.app.markgarbage_obj@ndi.app.app(session, name);
+				ndi.app.markgarbage_obj = ndi.app.markgarbage_obj@ndi.app.base(session, name);
 
 		end % ndi.app.markgarbage() creator
 

@@ -1,4 +1,4 @@
-classdef spikesorter < ndi.app.app
+classdef spikesorter < ndi.app.base
 
 	properties (SetAccess=protected,GetAccess=public)
 	end % properties
@@ -18,7 +18,7 @@ classdef spikesorter < ndi.app.app
 			if numel(varargin)>0,
 				session = varargin{1};
 			end
-			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.app(session, name);
+			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.base(session, name);
 
 		end % ndi.app.spikesorter() creator
 		%%%%%%

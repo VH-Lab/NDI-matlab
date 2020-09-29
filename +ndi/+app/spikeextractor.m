@@ -1,4 +1,4 @@
-classdef spikeextractor < ndi.app.app & ndi_app_appdoc
+classdef spikeextractor < ndi.app.base & ndi_app_appdoc
 
 	properties (SetAccess=protected,GetAccess=public)
 
@@ -20,7 +20,7 @@ classdef spikeextractor < ndi.app.app & ndi_app_appdoc
 					session = varargin{1};
 				end
 				
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.app(session, name);
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.base(session, name);
 				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_app_appdoc(...
 					{'extraction_parameters','extraction_parameters_modification', 'spikewaves','spiketimes'},...
 					{'apps/spikeextractor/spike_extraction_parameters','apps/spikeextractor/spike_extraction_parameters_modification',...

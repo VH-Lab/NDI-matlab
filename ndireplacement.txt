@@ -54,7 +54,7 @@ ndi_getdaqsfromprobe	ndi.demo.session.getdaqsfromprobe
 ndi_getsessioninfo	ndi.demo.session.getsessioninfo
 syncgraph_example_figure	ndi.demo.syncgraph_example_figure
 ndi_changeobjectname	ndi.demo.changeobjectname
-ndi_element	ndi.element.element
+ndi_element	ndi.element.base
 ndi_element_timeseries	ndi.element.timeseries
 ndi_neuron_hengen	ndi.neuron.hengen
 ndi_epochprobemap	ndi.epoch.epochprobemap
