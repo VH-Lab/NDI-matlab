@@ -1,4 +1,4 @@
-classdef subject < ndi_ido & ndi_documentservice
+classdef subject < ndi.ido & ndi.documentservice
 % NDI_SUBJECT - the subject of a measurement or stimulation
 %
 

@@ -61,6 +61,8 @@ function test_ndi_daqreader_documents
 		if eq(dr_fromdoc{i},dr{i}),
 			disp(['Daqreader number ' int2str(i) ' matches.']);
 		else,
+			dr{i}, dr_doc{i}.document_properties.ndi_document,
+			dr_fromdoc{i}, daqreader_docs{i}{1}.document_properties.ndi_document
 			error(['Daqreader number ' int2str(i) ' does not match.']);
 		end;
 	end;

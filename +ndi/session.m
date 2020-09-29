@@ -1,5 +1,5 @@
 classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not allow these subclasses because they are not handle2
-	% NDI.SESSION.BASE - NDI.SESSION.BASE object class
+	% NDI.SESSION - NDI.SESSION object class
 
 	properties (GetAccess=public, SetAccess = protected)
 		reference         % A string reference for the session

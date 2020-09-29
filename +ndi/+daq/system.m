@@ -10,7 +10,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		name               % The name of the daq system
 		filenavigator      % The ndi.file.navigator associated with this device
 		daqreader          % The ndi.daq.reader associated with this device
-		daqmetadatareader  % The ndi.daq.metadatareader.base associated with this device (cell array)
+		daqmetadatareader  % The ndi.daq.metadatareader associated with this device (cell array)
 	end
 
 	methods
@@ -110,21 +110,21 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		end; % ndi.daq.system()
 
 		function ndi_daqsystem_obj = set_daqmetadatareader(ndi_daqsystem_obj, thedaqmetadatareaders)
-			% SET_DAQMETADATAREADER - set the cell array of ndi.daq.metadatareader.base objects
+			% SET_DAQMETADATAREADER - set the cell array of ndi.daq.metadatareader objects
 			%
 			% NDI_DAQSYSTEM_OBJ = SET_DAQMETADATAREADER(NDI_DAQSYSTEM_OBJ, NEWDAQMETADATAREADERS)
 			%
 			% Sets the 'daqmetadatareader' property of an ndi.daq.system object.
 			% NEWDAQMETADATAREADERS should be a cell array of objects that have 
-			% ndi.daq.metadatareader.base as a superclass.
+			% ndi.daq.metadatareader as a superclass.
 			%
 				if ~iscell(thedaqmetadatareaders),
 					error(['THEDAQMETADATAREADERS must be a cell array.']);
 				end;
 
 				for i=1:numel(thedaqmetadatareaders),
-					if ~isa(thedaqmetadatareaders{i},'ndi.daq.metadatareader.base'),
-						error(['Element ' int2str(i) ' of THEDAQMETADATAREADERS is not of type ndi.daq.metadatareader.base.']);
+					if ~isa(thedaqmetadatareaders{i},'ndi.daq.metadatareader'),
+						error(['Element ' int2str(i) ' of THEDAQMETADATAREADERS is not of type ndi.daq.metadatareader.']);
 					end;
 				end;
 				% if we are here, there are no errors
@@ -389,7 +389,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			% METADATA = GETMETADATA(NDI_DAQSYSTEM_OBJ, EPOCH, CHANNEL)
 			%
 			% Returns the metadata (cell array of entries) for EPOCH for metadata channel
-			% CHANNEL. CHANNEL indicates the number of the ndi.daq.metadatareader.base to use 
+			% CHANNEL. CHANNEL indicates the number of the ndi.daq.metadatareader to use 
 			% to obtain the data.
 				N = numel(ndi_daqsystem_obj.daqmetadatareader);
 				if ~ (channel >=1 & channel <= N),

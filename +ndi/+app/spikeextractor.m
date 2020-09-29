@@ -1,4 +1,4 @@
-classdef spikeextractor < ndi.app & ndi_app_appdoc
+classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 	properties (SetAccess=protected,GetAccess=public)
 

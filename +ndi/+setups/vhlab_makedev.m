@@ -48,13 +48,13 @@ switch devname,
 	case 'vhintan',
 		fileparameters{end+1} = '.*\.rhd\>';
 		fileparameters{end+1} = 'vhintan_channelgrouping.txt'; 
-		readerobjectclass = [readerobjectclass '_intan'];
+		readerobjectclass = [readerobjectclass '.intan'];
 		epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
 		mdr = {};
 	case 'vhspike2',
 		fileparameters{end+1} = '.*\.smr\>';
 		fileparameters{end+1} = 'vhspike2_channelgrouping.txt'; 
-		readerobjectclass = [readerobjectclass '_cedspike2'];
+		readerobjectclass = [readerobjectclass '.cedspike2'];
 		epochprobemapfileparameters = {'vhspike2_channelgrouping.txt'};
 		mdr = {};
 	case 'vhvis_spike2'
@@ -62,7 +62,7 @@ switch devname,
 		fileparameters{end+1} = 'verticalblanking.txt';
 		fileparameters{end+1} = 'stims.mat';
 		fileparameters{end+1} = 'spike2data.smr'; 
-		readerobjectclass = [readerobjectclass '_stimulus_vhlabvisspike2'];
+		readerobjectclass = [readerobjectclass '.stimulus.vhlabvisspike2'];
 		epochprobemapfileparameters = {'stimtimes.txt'}; 
 		mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')};
 	otherwise,

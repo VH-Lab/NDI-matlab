@@ -1,4 +1,4 @@
-classdef timeseries < ndi_documentservice
+classdef timeseries < ndi.documentservice
 % NDI_TIMESERIES - abstract class for managing time series data
 %
         properties (SetAccess=protected,GetAccess=public)

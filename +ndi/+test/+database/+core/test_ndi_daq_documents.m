@@ -16,9 +16,9 @@ function test_ndi_daq_documents(varargin)
 %
 %
 
-ndi.test.daq.filenavigator.documents(varargin{:});
-ndi.test.daq.reader.documents(varargin{:});
-ndi.test.daq.system.documents();
-ndi.test.syncrule.documents(varargin{:});
-ndi.test.syncgraph.documents(varargin{:});
+ndi.test.database.core.test_ndi_filenavigator_documents(varargin{:});
+ndi.test.database.core.test_ndi_daqreader_documents(varargin{:});
+ndi.test.database.core.test_ndi_daqsystem_documents();
+ndi.test.database.core.test_ndi_syncgraph_documents(varargin{:});
+ndi.test.database.core.test_ndi_syncrule_documents(varargin{:});
 

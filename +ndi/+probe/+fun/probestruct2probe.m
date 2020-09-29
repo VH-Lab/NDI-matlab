@@ -17,9 +17,9 @@ function ndi_probe_obj = probestruct2probe(probestruct, exp)
 ndi.globals;
 
 init_probetypes = 0;
-if ~isfield(ndi,'probetype2object'),
+if ~isfield(ndi_globals,'probetype2object'),
 	init_probetypes = 1;
-elseif isempty(ndi.globals.probetype2object),
+elseif isempty(ndi_globals.probetype2object),
 	init_probetypes = 1;
 end
 

@@ -1,4 +1,4 @@
-classdef mfdaq < ndi.probe.timeseries.base
+classdef mfdaq < ndi.probe.timeseries
 % NDI_PROBE_TIMESERIES_MFDAQ - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_DAQSYSTEM_MFDAQ objects
 %
 	properties (GetAccess=public, SetAccess=protected)
@@ -17,7 +17,7 @@ classdef mfdaq < ndi.probe.timeseries.base
 			%
 			%  ndi.probe is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@ndi.probe.timeseries.base(varargin{:});
+				obj = obj@ndi.probe.timeseries(varargin{:});
 		end % ndi.probe.timeseries.mfdaq
 
 		function [data,t,timeref_out] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1)

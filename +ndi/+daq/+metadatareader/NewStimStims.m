@@ -1,4 +1,4 @@
-classdef ndi_daqmetadatareader_NewStimStims < ndi_daqmetadatareader
+classdef NewStimStims < ndi_daqmetadatareader
 % NDI_DAQMETADATAREADER_NEWSTIMSTIMS - a class for reading NewStim metadata 
 %
 % 
@@ -10,18 +10,18 @@ classdef ndi_daqmetadatareader_NewStimStims < ndi_daqmetadatareader
 
 	methods
 
-		function obj = ndi.daq.metadatareader.NewStimStims(varargin)
+		function obj = NewStimStims(varargin)
 			% ndi.daq.metadatareader.NewStimStims - Create a new multifunction DAQ object
 			%
 			%  D = ndi.daq.metadatareader.NewStimStims()
 			%  or
-			%  D = ndi.daq.metadatareader.base(TSVFILE_REGEXPRESSION)
+			%  D = ndi.daq.metadatareader(TSVFILE_REGEXPRESSION)
 			%
-			%  Creates a new ndi.daq.metadatareader.base object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
-				obj = obj@ndi.daq.metadatareader.base(varargin{:});
+				obj = obj@ndi.daq.metadatareader(varargin{:});
 		end; % ndi_daqmetadatareader_NewStimStim
 
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)

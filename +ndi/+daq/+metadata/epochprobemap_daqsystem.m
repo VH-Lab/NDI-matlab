@@ -1,4 +1,4 @@
-classdef epochprobemap_daqsystem < ndi.daq.metadata.epochprobemap
+classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
 	properties
 		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined

@@ -28,7 +28,7 @@
 %  See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 %
 
-classdef ndi.daq.daqsystemstring
+classdef daqsystemstring
 	properties (GetAccess=public, SetAccess=protected)
 		devicename    % The name of the device
 		channeltype   % The type of channels that are used by the device

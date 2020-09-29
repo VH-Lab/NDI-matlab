@@ -19,6 +19,7 @@ end;
 
 disp(['creating a new session object...']);
 E = ndi.session.dir('exp1',dirname);
+E.daqsystem_clear();
 
 disp(['Now adding our acquisition device (intan):']);
 

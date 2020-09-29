@@ -29,7 +29,7 @@ classdef mfdaq < ndi.daq.system
 	end
 
 	methods
-		function obj = ndi.daq.system.mfdaq(varargin)
+		function obj = mfdaq(varargin)
 			% ndi.daq.system.mfdaq - Create a new multifunction DAQ object
 			%
 			%  D = ndi.daq.system.mfdaq(NAME, THEFILENAVIGATOR)

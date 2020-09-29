@@ -1,4 +1,4 @@
-classdef ndi_element_timeseries < ndi_element & ndi_timeseries
+classdef timeseries < ndi.element & ndi.time.timeseries
 % NDI_ELEMENT - define or examine a element in the session
 %
 	properties (SetAccess=protected, GetAccess=public)
@@ -6,7 +6,7 @@ classdef ndi_element_timeseries < ndi_element & ndi_timeseries
 	end % properties
 
 	methods
-		function ndi_element_timeseries_obj = ndi_element_timeseries(varargin)
+		function ndi_element_timeseries_obj = timeseries(varargin)
 			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element(varargin{:});
 		end; % ndi.element.timeseries()
 

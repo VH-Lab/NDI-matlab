@@ -47,7 +47,7 @@ switch devname,
 		fileparameters{end+1} = 'intraoral_canulae.tsv'; 
 		fileparameters{end+1} = 'optical_fiber1.tsv'; 
 		fileparameters{end+1} = 'optical_fiber2.tsv'; 
-		readerobjectclass = [readerobjectclass '_intan'];
+		readerobjectclass = [readerobjectclass '.intan'];
 		mdr = {ndi.daq.metadatareader('stimulus_metadata_intraoral_canulae.tsv') ...
 			ndi.daq.metadatareader('stimulus_metadata_optical_fiber1.tsv') ...
 			ndi.daq.metadatareader('stimulus_metadata_optical_fiber2.tsv')};

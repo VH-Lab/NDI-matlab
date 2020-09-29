@@ -44,7 +44,7 @@ switch devname,
 	case 'marder_ced',
 		fileparameters{end+1} = '#\.smr\>';
 		fileparameters{end+1} = '#\.epochprobemap.txt\>'; 
-		readerobjectclass = [readerobjectclass '_cedspike2'];
+		readerobjectclass = [readerobjectclass '.cedspike2'];
 		epochprobemapfileparameters = {'(.*)epochprobemap.txt'};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);

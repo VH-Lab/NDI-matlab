@@ -24,7 +24,7 @@ classdef reader < ndi.ido & ndi.documentservice
 
 			loadfromfile = 0;
 
-			if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi_document'),
+			if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
 				obj.identifier = varargin{2}.document_properties.ndi_document.id;
 			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command

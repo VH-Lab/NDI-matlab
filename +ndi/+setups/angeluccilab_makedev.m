@@ -47,12 +47,12 @@ epochprobemapclass = 'ndi.daq.metadata.epochprobemap_daqsystem';
 switch devname,
 	case 'angelucci_blackrock5',
 		fileparameters{end+1} = '#.ns5'; 
-		readerobjectclass = [readerobjectclass '_blackrock'];
+		readerobjectclass = [readerobjectclass '.blackrock'];
 		mdr = {};
 	case 'angelucci_visstim',
 		fileparameters{end+1} = '#.nev';
 		fileparameters{end+1} = '#.ns4'; 
-		readerobjectclass = [readerobjectclass '_stimulus_angelucci_visstim'];
+		readerobjectclass = [readerobjectclass '.stimulus.angelucci_visstim'];
 		mdr = {ndi.daq.metadatareader.AngelucciStims('stimData.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
