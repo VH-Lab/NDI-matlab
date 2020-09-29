@@ -1,11 +1,11 @@
-classdef base < ndi.probe.base & ndi.time.timeseries
+classdef timeseries < ndi.probe & ndi.time.timeseries
 % ndi.probe.timeseries - Create a new ndi.probe.timeseries class object 
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = base(varargin)
+		function obj = timeseries(varargin)
 			% ndi.probe.timeseries - create a new ndi.probe.timeseries object
 			%
 			%  OBJ = ndi.probe.timeseries.base(SESSION, NAME, REFERENCE, TYPE)
@@ -17,7 +17,7 @@ classdef base < ndi.probe.base & ndi.time.timeseries
 			%
 			%  ndi.probe.timeseries.base is an abstract class, and a specific implementation must be called.
 			%
-				obj = obj@ndi.probe.base(varargin{:});
+				obj = obj@ndi.probe(varargin{:});
 		end % ndi.probe.timeseries.base
 
 		function [data, t, timeref] = readtimeseries(ndi_probe_timeseries_obj, timeref_or_epoch, t0, t1)
@@ -71,12 +71,12 @@ classdef base < ndi.probe.base & ndi.time.timeseries
 
 		function ndi_document_obj = newdocument(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				ndi_document_obj = newdocument@ndi.probe.base(ndi_probe_timeseries_obj, varargin{:});
+				ndi_document_obj = newdocument@ndi.probe(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 		function sq = searchquery(ndi_probe_timeseries_obj, varargin)
 			% TODO - need docs here
-				sq = searchquery@ndi.probe.base(ndi_probe_timeseries_obj, varargin{:});
+				sq = searchquery@ndi.probe(ndi_probe_timeseries_obj, varargin{:});
 		end % newdocument
 
 	end; % methods

@@ -420,7 +420,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				trydatabase = 0;
 				tryprobelist = 0;
 
-				if vlt.matlab.isa_text(obj_classname,'ndi.probe.base'),
+				if vlt.matlab.isa_text(obj_classname,'ndi.probe'),
 					tryprobelist = 1;
 				elseif isa(obj_classname,'ndi.daq.system'),
 					trydaqsystem = 1;
