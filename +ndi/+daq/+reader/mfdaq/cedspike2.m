@@ -66,13 +66,13 @@ classdef ndi_daqreader_mfdaq_cedspike2 < ndi_daqreader_mfdaq
 			%
 			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHFILES)
 			%
-			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
+			% Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
 			% For the abstract class ndi.daq.system, EPOCHPROBEMAP is always valid as long as
-			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
+			% EPOCHPROBEMAP is an ndi.daq.metadata.epochprobemap_daqsystem object.
 			%
-			% See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
+			% See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
 				b = 1;
 				msg = '';
 				% UPDATE NEEDED

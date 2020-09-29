@@ -37,7 +37,7 @@ end
 fileparameters = {};
 objectclass = 'ndi.daq.system.mfdaq';
 readerobjectclass = 'ndi.daq.reader.mfdaq';
-epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
+epochprobemapclass = 'ndi.daq.metadata.epochprobemap_daqsystem';
 
 switch devname,
 	case 'narendra_intan',

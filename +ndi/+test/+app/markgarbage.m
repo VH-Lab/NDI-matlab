@@ -22,7 +22,7 @@ disp(['Now adding our acquisition device (intan):']);
   %         files in any organization within the directory
 
 fn = ndi.file.navigator(E, {'.*\.rhd\>','.*\.epochmetadata\>'},...
-		'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
+		'ndi.daq.metadata.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
 
   % Step 2: create the daqsystem object and add it to the session:
 

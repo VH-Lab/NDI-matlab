@@ -79,17 +79,17 @@ classdef ndi_daqreader < ndi_id & ndi_documentservice
 			%
 			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
+			% Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
 			% epoch NUMBER.
 			%
 			% For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
-			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
+			% EPOCHPROBEMAP is an ndi.daq.metadata.epochprobemap_daqsystem object.
 			%
-			% See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
+			% See also: ndi.daq.reader, ndi.daq.metadata.epochprobemap_daqsystem
 				msg = '';
-				b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
+				b = isa(epochprobemap, 'ndi.daq.metadata.epochprobemap_daqsystem');
 				if ~b,
-					msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
+					msg = 'epochprobemap is not a member of the class ndi.daq.metadata.epochprobemap_daqsystem; it must be.';
 					return;
 				end;
 
