@@ -81,7 +81,7 @@ ndi_probe_timeseries_mfdaq	ndi.probe.timeseries.mfdaq
 ndi_probe_timeseries_stimulator	ndi.probe.timeseries.stimulator
 ndi_session	ndi.session.session
 ndi_session_dir	ndi.session.dir
-ndi_sessiontable	ndi.sessiontable
+ndi_sessiontable	ndi.session.sessiontable
 ndi_angeluccilab_expdir	ndi.setups.angeluccilab_expdir
 ndi_angeluccilab_makedev	ndi.setups.angeluccilab_makedev
 ndi_katzlab_expdir	ndi.setups.katzlab_expdir

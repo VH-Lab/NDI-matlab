@@ -1,10 +1,10 @@
 function ndi_test_sessiontable
 % NDI_TEST_SESSIONTABLE 
 % 
-% Test the ndi.sessiontable object
+% Test the ndi.session.sessiontable object
 %
 
-st = ndi.sessiontable();
+st = ndi.session.sessiontable();
 
 % backup any current file
 
@@ -35,6 +35,6 @@ f = st.backupfilelist();
 
 if numel(f)>0,
 	% small risk, file not locked or checked out
-	movefile(f{end},ndi.sessiontable.localtablefilename());
+	movefile(f{end},ndi.session.sessiontable.localtablefilename());
 end;
 

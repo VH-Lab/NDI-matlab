@@ -67,7 +67,7 @@ classdef dir < ndi.session
 				vlt.file.str2text([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt'], ...
 					ndi_session_dir_obj.id());
 
-				st = ndi.sessiontable();
+				st = ndi.session.sessiontable();
 				st.addtableentry(ndi_session_dir_obj.id(), ndi_session_dir_obj.path);
 		end;
 		

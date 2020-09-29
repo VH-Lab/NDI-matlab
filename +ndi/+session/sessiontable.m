@@ -15,7 +15,7 @@ classdef sessiontable
 			%
 			% THEPATH = GETSESIONPATH(SESSION_ID)
 			%
-			% Examines the ndi.sessiontable object to see if a path is known for a session
+			% Examines the ndi.session.sessiontable object to see if a path is known for a session
 			% with an ID of SESSION_ID. Otherwise, empty ([]) is returned;
 			%
 				thepath = [];
@@ -35,7 +35,7 @@ classdef sessiontable
 			% in the table corresponds to a recently-opened or added path of ndi.session.dir. 
 			%
 				t = vlt.data.emptystruct('session_id','path');
-				fname = ndi.sessiontable.localtablefilename();
+				fname = ndi.session.sessiontable.localtablefilename();
 				if exist(fname,'file'),
 					try,
 						t = vlt.file.loadStructArray(fname);
@@ -57,7 +57,7 @@ classdef sessiontable
 		end; % getsessiontable()
 
 		function addtableentry(ndi_sessiontable_obj, session_id, path);
-			% ADDTABLEENTRY - add an entry to an ndi.sessiontable
+			% ADDTABLEENTRY - add an entry to an ndi.session.sessiontable
 			%
 			% ADDTABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID, PATH)
 			% 
@@ -78,11 +78,11 @@ classdef sessiontable
 		end; % addtableentry()
 
 		function removetableentry(ndi_sessiontable_obj, session_id)
-			% REMOVETABLEENTRY - remove an entry of an ndi.sessiontable
+			% REMOVETABLEENTRY - remove an entry of an ndi.session.sessiontable
 			%
 			% REMOVETABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID)
 			%
-			% Removes the entry of an ndi.sessiontable with the given SESSION_ID.
+			% Removes the entry of an ndi.session.sessiontable with the given SESSION_ID.
 			%
 			%
 				t = ndi_sessiontable_obj.getsessiontable();
@@ -100,7 +100,7 @@ classdef sessiontable
 			%
 			% [B, RESULTS] = CHECKTABLE(NDI_SESSIONTABLE_OBJ)
 			%
-			% Check the ndi.sessiontable object's session table to see if it has the right
+			% Check the ndi.session.sessiontable object's session table to see if it has the right
 			% form (B is 1 if it does, B is 0 otherwise). (It has the right form if it is a structure with fieldnames
 			% 'path' and 'sesion_id'.
 			%
@@ -163,7 +163,7 @@ classdef sessiontable
 		end; % isvalidtable() 
 
 		function backupsessiontable(ndi_sessiontable_obj)
-			% BACKUP_SESSION_TABLE - create a backup file for an ndi.sessiontable
+			% BACKUP_SESSION_TABLE - create a backup file for an ndi.session.sessiontable
 			%
 			% BACKUP_SESSION_TABLE(NDI_SESSIONTABLE_OBJ)
 			%
@@ -171,7 +171,7 @@ classdef sessiontable
 			% The session table file is backed up in the [USERPATH]/Preferences/NDI directory
 			% and be named 'local_sessiontableNNN.txt', where NNN is a number.
 			%
-				fname = ndi.sessiontable.localtablefilename();
+				fname = ndi.session.sessiontable.localtablefilename();
 				if exist(fname,'file'), % nothing to do if there's no file
 					backupname = vlt.file.filebackup(fname);
 					[success,message]=copyfile(fname,backupname);
@@ -189,7 +189,7 @@ classdef sessiontable
 			% Returns a list of backup files that are available. Backup files have 
 			% the name [USERPATH]/Preferences/NDI/local_sessiontable_bkupNNN.txt.
 			%
-				fname = ndi.sessiontable.localtablefilename();
+				fname = ndi.session.sessiontable.localtablefilename();
 				[parentdir,fn,ext] = fileparts(fname);
 				d = dir([parentdir filesep fn '_*' ext]);
 				f = {};
@@ -199,11 +199,11 @@ classdef sessiontable
 		end; % backupfilelist()
 
 		function clearsessiontable(ndi_sessiontable_obj, makebackup)
-			% CLEARSESSIONTABLE - clear an ndi.sessiontable object's data
+			% CLEARSESSIONTABLE - clear an ndi.session.sessiontable object's data
 			%
 			% CLEARSESSIONTABLE(NDI_SESSIONTABLE_OBJ, [MAKEBACKUP])
 			%
-			% Removes all entries from the ndi.sessiontable's file.
+			% Removes all entries from the ndi.session.sessiontable's file.
 			% If MAKEBACKUP is present and is 1, then the session table file
 			% is backed up first (in the Preferences/NDI directory).
 			% 
@@ -232,7 +232,7 @@ classdef sessiontable
 				if ~b,
 					error(['Session table not valid: ' msg ]);
 				end;
-				fname = ndi.sessiontable.localtablefilename();
+				fname = ndi.session.sessiontable.localtablefilename();
 				lockfilename = [fname '-lockfile'];
 				lockfid = vlt.file.checkout_lock_file(lockfilename);
 				if lockfid > 0,
