@@ -1,4 +1,4 @@
-classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
+classdef epochprobemap_daqsystem < ndi.daq.metadata.epochprobemap
 	properties
 		name          % Name of the contents; can by any string that begins with a letter and contains no whitespace
 		reference     % A non-negative scalar integer reference number that uniquely identifies data records that can be combined
@@ -7,7 +7,7 @@ classdef ndi_epochprobemap_daqsystem < ndi_epochprobemap
 		subjectstring % A string describing the local_id or unique document ID of the subject of the probe
 	end % properties
 	methods
-		function obj = ndi.daq.metadata.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_)
+		function obj = epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_)
 			% ndi.daq.metadata.epochprobemap_daqsystem - Create a new ndi.daq.metadata.epochprobemap_daqsystem object
 			%
 			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
