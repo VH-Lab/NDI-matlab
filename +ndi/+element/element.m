@@ -2,7 +2,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 % ndi.element - define or examine a element in the session
 %
 	properties (GetAccess=public, SetAccess=protected)
-		session   % associated ndi_session object
+		session   % associated ndi__session object
 		name         % 
 		type         % 
 		reference    % 
@@ -54,8 +54,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					end;
 				elseif numel(varargin)==2,
 					element_session = varargin{1};
-					if ~isa(element_session,'ndi.session'),
-						error(['When 2 input arguments are given, 1st input must be an ndi.session.']);
+					if ~isa(element_session,'ndi.session.session'),
+						error(['When 2 input arguments are given, 1st input must be an ndi.session.session.']);
 					end;
 					element_doc = [];
 					if ~isa(varargin{2},'ndi.document'),

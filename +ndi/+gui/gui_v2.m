@@ -1,4 +1,4 @@
-function ndi_gui_v2(ndi_session_obj)
+function ndi_gui_v2(ndi__session_obj)
     scissor = rand(32);
     scissor(1:32,1:32) = NaN;
     scissor([74 87 105:106 119:120 136:139 150:153 168:171 182:185 ...
@@ -43,11 +43,11 @@ function ndi_gui_v2(ndi_session_obj)
     lab = Lab();
     set(gcf, 'WindowButtonMotionFcn', @lab.move);
     
-    %Import ndi_session_obj
-    e = ndi_session_obj.getelements();
-    docs = ndi_session_obj.database_search({'ndi_document.id','(.*)'});
-    d = ndi_session_obj.daqsystem_load('name','(.*)');
-    p = ndi_session_obj.getprobes();
+    %Import ndi__session_obj
+    e = ndi__session_obj.getelements();
+    docs = ndi__session_obj.database_search({'ndi_document.id','(.*)'});
+    d = ndi__session_obj.daqsystem_load('name','(.*)');
+    p = ndi__session_obj.getprobes();
     s_id = {};
     for i = 1:numel(p)
         s_id{i} = p{i}.subject_id;
@@ -58,7 +58,7 @@ function ndi_gui_v2(ndi_session_obj)
     s_id = unique(s_id);
     s = {};
     for i = 1:numel(s_id)
-        s{i} = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',s_id{i},''));
+        s{i} = ndi__session_obj.database_search(ndi_query('ndi_document.id','exact_string',s_id{i},''));
     end
     
     %Add elements

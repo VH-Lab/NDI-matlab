@@ -11,7 +11,7 @@ classdef sessiontable
 	methods 
 
 		function thepath = getsessionpath(ndi_sessiontable_obj, session_id)
-			% GETSESSIONPATH - look up the path of an ndi.session by its ID
+			% GETSESSIONPATH - look up the path of an ndi.session.session by its ID
 			%
 			% THEPATH = GETSESIONPATH(SESSION_ID)
 			%

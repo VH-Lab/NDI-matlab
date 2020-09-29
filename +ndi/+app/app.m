@@ -1,7 +1,7 @@
 classdef app < ndi.documentservice
 
 	properties (SetAccess=protected,GetAccess=public)
-		session % the ndi.session object that the app will operate on
+		session % the ndi.session.session object that the app will operate on
 		name % the name of the app
 	end % properties
 
@@ -11,7 +11,7 @@ classdef app < ndi.documentservice
 			%
 			% NDI_APP_OBJ = ndi.app.app(SESSION)
 			%
-			% Creates a new ndi.app.app object that operates on the ndi.session
+			% Creates a new ndi.app.app object that operates on the ndi.session.session
 			% object called SESSION.
 			%
 				session = [];

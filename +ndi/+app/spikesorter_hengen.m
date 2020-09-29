@@ -11,7 +11,7 @@ classdef hengen < ndi.app.app
 		% NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(EXPERIMENT)
 		%
 		% Creates a new NDI.APP.spikesorter_hengen object that can operate on
-		% ndi.session objects. The app is named 'ndi_app_spikesorter_hengen'.
+		% ndi.session.session objects. The app is named 'ndi_app_spikesorter_hengen'.
 		%
 			session = [];
 			name = 'ndi_app_spikesorter_hengen';
@@ -23,7 +23,7 @@ classdef hengen < ndi.app.app
 		end % ndi_app_spikesorter() creator
 
 		function extract_and_sort(ndi_app_spikesorter_hengen_obj, varargin)
-		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi.session directory
+		% EXTRACT_AND_SORT - extracts and sorts selected .bin file in ndi.session.directory
 		%
 		% EXTRACT_AND_SORT(REDO) - to handle selected .bin file in json input
 		% EXTRACT_AND_SORT(NDI_ELEMENT, EXTRACTION_NAME, SORTING_NAME, REDO) - to handle selected ndi.element
