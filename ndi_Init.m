@@ -57,7 +57,7 @@ end;
  % initialization
 
 ndi.probe.fun.probetype2objectinit;
-ndi.probe.fun.databasehierarchyinit;
+ndi.database.fun.databasehierarchyinit;
 
 ndi_globals.debug.veryverbose = 1;
 
