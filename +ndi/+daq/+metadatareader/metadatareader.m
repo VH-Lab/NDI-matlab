@@ -1,5 +1,5 @@
-classdef metadatareader < ndi.ido & ndi.documentservice
-% NDI_DAQMETADATAREADER - a class for reading metadata related to data acquisition, such as stimulus parameter information
+classdef base < ndi.ido & ndi.documentservice
+% NDI.DAQ.METADATAREADER.BASE - a class for reading metadata related to data acquisition, such as stimulus parameter information
 %
 % 
 
@@ -13,14 +13,14 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 
 	methods
 
-		function obj = metadatareader(varargin)
-			% ndi.daq.metadatareader.metadatareader - Create a new multifunction DAQ object
+		function obj = base(varargin)
+			% ndi.daq.metadatareader.base - Create a new multifunction DAQ object
 			%
-			%  D = ndi.daq.metadatareader.metadatareader()
+			%  D = ndi.daq.metadatareader.base()
 			%  or
-			%  D = ndi.daq.metadatareader.metadatareader(TSVFILE_REGEXPRESSION)
+			%  D = ndi.daq.metadatareader.base(TSVFILE_REGEXPRESSION)
 			%
-			%  Creates a new ndi.daq.metadatareader.metadatareader object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader.base object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
@@ -36,7 +36,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 					end;
 				end;
 				obj.tab_separated_file_parameter = tsv_p;
-		end; % ndi.daq.metadatareader.metadatareader
+		end; % ndi.daq.metadatareader.base
 
 		function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
 			% PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
@@ -89,7 +89,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)
 			%
-			% Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.metadatareader
+			% Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.base
 			% document, this function loads in the metadata.
 				parameters = {};
 				stimparameters = vlt.file.loadStructArray(file);
@@ -99,7 +99,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 		end;  % readmetadata
 
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
-			% EQ - are 2 ndi.daq.metadatareader.metadatareader objects equal?
+			% EQ - are 2 ndi.daq.metadatareader.base objects equal?
 			%
 			% TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)
 			%
@@ -114,9 +114,9 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 		% documentservices overriden methods
 
 		function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
-			% NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader.metadatareader object
+			% NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader.base object
 			%
-			% DOC = NEWDOCUMENT(ndi.daq.metadatareader.metadatareader OBJ)
+			% DOC = NEWDOCUMENT(ndi.daq.metadatareader.base OBJ)
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.daq.reader object.
@@ -131,7 +131,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% SQ = SEARCHQUERY(NDI_DAQMETADATAREADER_OBJ)
 			%
-			% Creates a search query for the ndi.daq.metadatareader.metadatareader object.
+			% Creates a search query for the ndi.daq.metadatareader.base object.
 			%
 				sq = {'ndi_document.id', ndi_daqmetadatareader_obj.id() };
 		end; % searchquery()

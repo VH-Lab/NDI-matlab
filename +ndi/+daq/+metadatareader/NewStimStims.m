@@ -15,13 +15,13 @@ classdef ndi_daqmetadatareader_NewStimStims < ndi_daqmetadatareader
 			%
 			%  D = ndi.daq.metadatareader.NewStimStims()
 			%  or
-			%  D = ndi.daq.metadatareader.metadatareader(TSVFILE_REGEXPRESSION)
+			%  D = ndi.daq.metadatareader.base(TSVFILE_REGEXPRESSION)
 			%
-			%  Creates a new ndi.daq.metadatareader.metadatareader object. If TSVFILE_REGEXPRESSION
+			%  Creates a new ndi.daq.metadatareader.base object. If TSVFILE_REGEXPRESSION
 			%  is given, it indicates a regular expression to use to search EPOCHFILES
 			%  for a tab-separated-value text file that describes stimulus parameters.
 			%
-				obj = obj@ndi.daq.metadatareader.metadatareader(varargin{:});
+				obj = obj@ndi.daq.metadatareader.base(varargin{:});
 		end; % ndi_daqmetadatareader_NewStimStim
 
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)
