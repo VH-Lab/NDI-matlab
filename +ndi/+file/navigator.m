@@ -1,4 +1,4 @@
-classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
+classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 	% ndi.file.navigator - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
@@ -117,7 +117,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 
 		%% functions that override NDI_BASE
 
-		%% functions that override the methods of ndi.epoch.epochset_param
+		%% functions that override the methods of ndi.epoch.epochset.param
 
 		function [cache,key] = getcache(ndi_filenavigator_obj)
 			% GETCACHE - return the NDI_CACHE and key for ndi.file.navigator

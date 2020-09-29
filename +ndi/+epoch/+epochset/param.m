@@ -10,11 +10,11 @@ classdef param < ndi.epoch.epochset
 	methods
 
 		function obj = param(epochprobemap_class_)
-			% ndi.epoch.epochset_param - Constructor for ndi.epoch.epochset_param objects
+			% ndi.epoch.epochset.param - Constructor for ndi.epoch.epochset.param objects
 			%
-			% NDI_EPOCHSET_PARAM_OBJ = ndi.epoch.epochset_param(EPOCHPROBEMAP_CLASS)
+			% NDI_EPOCHSET_PARAM_OBJ = ndi.epoch.epochset.param(EPOCHPROBEMAP_CLASS)
 			%
-			% Create a new ndi.epoch.epochset_param object. It has one optional input argument,
+			% Create a new ndi.epoch.epochset.param object. It has one optional input argument,
 			% EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
 			% of ndi.daq.metadata.epochprobemap_daqsystem to be used.
 			%
@@ -23,7 +23,7 @@ classdef param < ndi.epoch.epochset
 				else,
 					obj.epochprobemap_class = epochprobemap_class_;
 				end
-		end % ndi.epoch.epochset_param
+		end % ndi.epoch.epochset.param
 
 		%% EPOCHPROBEMAP methods
 
@@ -43,9 +43,9 @@ classdef param < ndi.epoch.epochset
 		end % epochprobemapfilename
 
 		function [b,msg] = verifyepochprobemap(ndi_epochset_param_obj, epochprobemap, number)
-			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is appropriate for the ndi.epoch.epochset_param object
+			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is appropriate for the ndi.epoch.epochset.param object
 			%
-			%   [B,MSG] = VERIFYEPOCHPROBEMAP(ndi.epoch.epochset_param, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
+			%   [B,MSG] = VERIFYEPOCHPROBEMAP(ndi.epoch.epochset.param, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
 			%
 			% Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
 			% epoch number or epoch id EPOCH_NUMBER_OR_ID.
@@ -64,12 +64,12 @@ classdef param < ndi.epoch.epochset
                 end % verifyepochprobemap()
 
 		function epochprobemap = getepochprobemap(ndi_epochset_param_obj, N)
-			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi.epoch.epochset_param epoch number
+			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi.epoch.epochset.param epoch number
 			%
 			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)
 			%
 			% Inputs:
-			%     NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset_param object
+			%     NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset.param object
 			%     N - the epoch number or identifier
 			%
 			% Output:

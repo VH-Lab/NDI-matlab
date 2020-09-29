@@ -1,4 +1,4 @@
-classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
+classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 % ndi.daq.system - Create a new NDI_DEVICE class handle object
 %
 %  D = ndi.daq.system(NAME, THEFILENAVIGATOR)
@@ -160,7 +160,7 @@ classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 					strcmp(class(ndi_daqsystem_obj_a),class(ndi_daqsystem_obj_b));
 		end % eq()
 
-		%% functions that override ndi.epoch.epochset_param
+		%% functions that override ndi.epoch.epochset.param
 
 		function ec = epochclock(ndi_daqsystem_obj, epoch_number)
 			% EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
@@ -260,7 +260,7 @@ classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 				ndi_daqsystem_obj.filenavigator = setsession(ndi_daqsystem_obj.filenavigator,session);
 		end % setsession()
 
-		%% functions that override ndi.epoch.epochset, ndi.epoch.epochset_param
+		%% functions that override ndi.epoch.epochset, ndi.epoch.epochset.param
 
 		function deleteepoch(ndi_daqsystem_obj, number, removedata)
 		% DELETEEPOCH - Delete an epoch and an epoch record from a device
@@ -350,7 +350,7 @@ classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			%
 			% In this base class, empty is returned because it is an abstract class.
 			%
-				etfname = ndi.epoch.epochset_param.obj.filenavigator.epochtagfilename(epochnumber);
+				etfname = ndi.epoch.epochset.param.obj.filenavigator.epochtagfilename(epochnumber);
                 end % epochtagfilename()
 
 		function epochprobemap = getepochprobemap(ndi_daqsystem_obj, epoch)
@@ -359,7 +359,7 @@ classdef system < ndi.ido & ndi.epoch.epochset_param & ndi.documentservice
 			% EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCH)
 			%
 			% Inputs:
-			%     NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset_param object
+			%     NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset.param object
 			%     EPOCH - the epoch number or identifier
 			%
 			% Output:

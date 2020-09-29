@@ -59,7 +59,7 @@ ndi_element_timeseries	ndi.element.timeseries
 ndi_neuron_hengen	ndi.neuron.hengen
 ndi_epochprobemap	ndi.epoch.epochprobemap
 ndi_epochset	ndi.epoch.epochset
-ndi_epochset_param	ndi.epoch.epochset_param
+ndi_epochset_param	ndi.epoch.epochset.param
 ndi_findepochnode	ndi.epoch.findepochnode
 ndi_filenavigator	ndi.file.navigator
 ndi_filenavigator_epochdir	ndi.file.navigator.epochdir
