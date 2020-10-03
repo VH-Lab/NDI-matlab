@@ -32,7 +32,7 @@ classdef oridirtuning < ndi.app
 				tuning_doc = {};
 
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi.app.tuning_response(E);
+				rapp = ndi.app.stimulus.tuning_response(E);
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
@@ -55,7 +55,7 @@ classdef oridirtuning < ndi.app
 			%
 				oriprops = {};
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi.app.tuning_response(E);
+				rapp = ndi.app.stimulus.tuning_response(E);
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
@@ -82,7 +82,7 @@ classdef oridirtuning < ndi.app
 			%
 			%
 				E = ndi_app_oridirtuning_obj.session;
-				tapp = ndi.app.tuning_response(E);
+				tapp = ndi.app.stimulus.tuning_response(E);
 				ind = {};
 				ind_real = {};
 				control_ind = {};
@@ -227,7 +227,7 @@ classdef oridirtuning < ndi.app
 				element = ndi.database.fun.ndi_document2ndi_object(element_doc{1}, E);
 				xlabel('Direction (\circ)');
 				ylabel(oriprops_doc.document_properties.orientation_direction_tuning.properties.response_units);
-				title([element.basestring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
+				title([element.elementstring() '.' element.type '; ' oriprops_doc.document_properties.orientation_direction_tuning.properties.response_type]);
 
 		end; % plot_oridir_response
 

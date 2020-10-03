@@ -6,7 +6,7 @@ classdef decoder < ndi.app
 
 	methods
 
-		function ndi_app_stimulus.decoder_obj = decoder(varargin)
+		function ndi_app_stimulus_decoder_obj = decoder(varargin)
 			% ndi.app.stimulus.decoder - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
 			%
 			% NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
@@ -19,11 +19,11 @@ classdef decoder < ndi.app
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
-				ndi_app_stimulus.decoder_obj = ndi_app_stimulus.decoder_obj@ndi.app(session, name);
+				ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi.app(session, name);
 
-		end % ndi_app_stimulus.decoder() creator
+		end % ndi_app_stimulus_decoder() creator
 
-		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus.decoder_obj, ndi_element_stim, reset)
+		function [newdocs, existingdocs] = parse_stimuli(ndi_app_stimulus_decoder_obj, ndi_element_stim, reset)
 			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus probe
 			%
 			% [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
@@ -46,7 +46,7 @@ classdef decoder < ndi.app
 				newdocs = {};
 				existingdocs = {};
 
-				E = ndi_app_stimulus.decoder_obj.session;
+				E = ndi_app_stimulus_decoder_obj.session;
 
 				sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
 				sq_e = ndi.query(E.searchquery());
@@ -94,12 +94,12 @@ classdef decoder < ndi.app
 						'stimuli', mystim);
 					nd = E.newdocument('stimulus/stimulus_presentation.json',...
 						'stimulus_presentation', stimulus_presentation, ...
-						'epochid',epochsremaining{j}) + ndi_app_stimulus.decoder_obj.newdocument();
+						'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
 					newdocs{end+1} = nd;
 				end;
 				E.database_add(newdocs);
 		end % 
 	end; % methods
-end % ndi_app_stimulus.decoder
+end % ndi.app.stimulus.decoder
 

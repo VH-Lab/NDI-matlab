@@ -1,5 +1,6 @@
 function ndipackagebuild
 
+ % developers: follow this pipeline manually to edit directories en mass
 
 dirname = ['/Users/vanhoosr/Documents/matlab/tools/NDI-matlab'];
 

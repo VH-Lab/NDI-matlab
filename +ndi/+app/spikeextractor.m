@@ -21,7 +21,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 				end
 				
 				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app(session, name);
-				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi_app_appdoc(...
+				ndi_app_spikeextractor_obj = ndi_app_spikeextractor_obj@ndi.app.appdoc(...
 					{'extraction_parameters','extraction_parameters_modification', 'spikewaves','spiketimes'},...
 					{'apps/spikeextractor/spike_extraction_parameters','apps/spikeextractor/spike_extraction_parameters_modification',...
 						'apps/spikeextractor/spikewaves','apps/spikeextractor/spiketimes'},...
@@ -463,7 +463,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 				end; % switch
 		end; % loaddata_appdoc()
 
-		function appdoc_description(ndi.app.appdoc_obj)
+		function appdoc_description(ndi_app_appdoc_obj)
 			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
 			%
 			% For ndi_app_spikeextractor, there are the following types:

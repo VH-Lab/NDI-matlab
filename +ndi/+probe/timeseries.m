@@ -8,17 +8,17 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
 		function obj = timeseries(varargin)
 			% ndi.probe.timeseries - create a new ndi.probe.timeseries object
 			%
-			%  OBJ = ndi.probe.timeseries.base(SESSION, NAME, REFERENCE, TYPE)
+			%  OBJ = ndi.probe.timeseries(SESSION, NAME, REFERENCE, TYPE)
 			%
 			%  Creates an ndi.probe associated with an ndi.session object SESSION and
 			%  with name NAME (a string that must start with a letter and contain no white space),
 			%  reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			%  probe (a string that must start with a letter and contain no white space).
 			%
-			%  ndi.probe.timeseries.base is an abstract class, and a specific implementation must be called.
+			%  ndi.probe.timeseries is an abstract class, and a specific implementation must be called.
 			%
 				obj = obj@ndi.probe(varargin{:});
-		end % ndi.probe.timeseries.base
+		end % ndi.probe.timeseries
 
 		function [data, t, timeref] = readtimeseries(ndi_probe_timeseries_obj, timeref_or_epoch, t0, t1)
 			%  READTIMESERIES - read the probe data based on specified time relative to an NDI_TIMEFERENCE or epoch

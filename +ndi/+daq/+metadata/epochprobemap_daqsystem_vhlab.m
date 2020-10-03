@@ -1,4 +1,4 @@
-classdef epochprobemap_daqsystem_vhlab < daq.metadata.epochprobemap_daqsystem
+classdef epochprobemap_daqsystem_vhlab < ndi.daq.metadata.epochprobemap_daqsystem
 	properties
 	end % properties
 	methods

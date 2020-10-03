@@ -1,11 +1,11 @@
-classdef stimulator < ndi.probe.timeseries.base
+classdef stimulator < ndi.probe.timeseries
 % ndi.probe.timeseries.stimulator - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
 %
 	properties (GetAccess=public, SetAccess=protected)
 	end
 
 	methods
-		function obj = ndi.probe.timeseries.stimulator(varargin)
+		function obj = stimulator(varargin)
 			% ndi.probe.timeseries.stimulator - create a new ndi.probe.timeseries.stimulator object
 			%
 			% OBJ = ndi.probe.timeseries.stimulator(SESSION, NAME, REFERENCE, TYPE)
@@ -15,7 +15,7 @@ classdef stimulator < ndi.probe.timeseries.base
 			% reference number equal to REFERENCE (a non-negative integer), the TYPE of the
 			% probe (a string that must start with a letter and contain no white space).
 			%
-				obj = obj@ndi.probe.timeseries.base(varargin{:});
+				obj = obj@ndi.probe.timeseries(varargin{:});
 		end % ndi.probe.timeseries.stimulator()
 
 		function [data, t, timeref] = readtimeseriesepoch(ndi_probe_timeseries_stimulator_obj, epoch, t0, t1)
