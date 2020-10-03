@@ -1,7 +1,7 @@
 function syncgraph_example_figure
 % SYNCGRAPH_EXAMPLE_FIGURE - Create an example figure to demonstrate syncgraph
 % 
-% SYNCGRAPH_EXAMPLE_FIGURE 
+% ndi.demo.syncgraph_example_figure 
 %
 % Plots a figure that shows relationships between local and global clocks.
 % Used in the paper "A platform-independent data interface and database for

@@ -13,7 +13,7 @@ probes = ndi_session_obj.getprobes();
 
 elements = ndi_session_obj.getelements();
 
-documents = ndi_session_obj.database_search({'ndi_document.id','(.*)'});
+documents = ndi_session_obj.database_search({'ndi.document.id','(.*)'});
 
 subjects_id = {};
 
@@ -30,7 +30,7 @@ subjects_id = unique(subjects_id);
 subjects = {};
 
 for i=1:numel(subjects_id),
-	subjects{i} = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',subjects_id{i},''));
+	subjects{i} = ndi_session_obj.database_search(ndi.query('ndi.document.id','exact_string',subjects_id{i},''));
 end;
 
 
