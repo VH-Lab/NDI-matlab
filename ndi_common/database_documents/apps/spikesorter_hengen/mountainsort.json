@@ -12,7 +12,7 @@
 	},
 	"mountainsort_parameters": {
 		"sorter_name": "mountainsort4",
-		"adjacency_radius": 2,
+		"adjacency_radius": -1,
 		"curation": 0,
 		"noise_overlap_threshold": 0.15,
 		"filter": 0,

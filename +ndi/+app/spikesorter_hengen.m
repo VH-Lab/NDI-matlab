@@ -157,7 +157,7 @@ classdef hengen < ndi.app
 
 				g.channels
 
-				g.geometry = g.geometry'
+				g.geometry
 
 				g.label
 
@@ -168,8 +168,12 @@ classdef hengen < ndi.app
 				% save('ndiouttmp.mat', 'd', 'sr', 'g', 'extraction_p', 'sorting_p')
 
 				save('ndiouttmp.mat', 'sr', 'g', 'extraction_p', 'sorting_p')
+				ndiout_json = jsonencode(struct('sr', sr, 'g', g, 'extraction_p', extraction_p, 'sortiing_p', sorting_p, 'numchannels', numel(g.channels)));
+				fid = fopen('ndiouttmp.json', 'w')
+				fwrite(fid, ndiout_json)
+				fclose(fid)
 
-				writemda16i(d, 'ndiout.mda')
+				writemda16i(d, 'raw.mda')
 
 				% TODO: write json and probe_file to disk
 
