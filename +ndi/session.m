@@ -539,7 +539,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				q_E = ndi.query(ndi_session_obj.searchquery());
 				q_t = ndi.query('ndi_document.type','exact_string','ndi_element','');
 				for i=1:2:numel(varargin),
-					q_t = q_t & ndi.query(varargin{i},'exact_string',varargin{i+1},'');
+					if strfind(varargin{i},'reference'),
+						q_t = q_t & ndi.query(varargin{i},'exact_number',varargin{i+1},'');
+					else,
+						q_t = q_t & ndi.query(varargin{i},'exact_string',varargin{i+1},'');
+					end;
 				end;
 				doc = ndi_session_obj.database_search(q_E&q_t);
 				elements = {};

@@ -152,9 +152,9 @@ classdef intan < ndi.daq.reader.mfdaq
 			t0 = (s0-1)/sr;
 			t1 = (s1-1)/sr;
             
-            if strcmp(intanchanneltype,'time'),
-                channel = 1; % time only has 1 channel in Intan RHD
-            end;
+			if strcmp(intanchanneltype,'time'),
+				channel = 1; % time only has 1 channel in Intan RHD
+			end;
             
 			if ~isdirectory,
 				data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);

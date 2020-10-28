@@ -74,9 +74,8 @@ classdef mfdaq < ndi.probe.timeseries
 				sr = unique(sr);
 				s0 = 1+round(sr*t0);
 				s1 = 1+round(sr*t1);
-	
-				% save some time
 
+				% save some time
 				if nargout==1,
 					[data] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1);
 				elseif nargout==2,
