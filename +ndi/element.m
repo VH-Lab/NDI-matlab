@@ -462,8 +462,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
 					for i=1:numel(ndi_element_obj.dependencies),
-						ndi_document_obj = ndi_document_obj.set_dependency_value(ndi_document_obj.dependencies(i).name,...
-							ndi_document_obj.dependencies(i).value,'ErrorIfNotFound',0);
+						ndi_document_obj = ndi_document_obj.set_dependency_value(ndi_element_obj.dependencies(i).name,...
+							ndi_element_obj.dependencies(i).value,'ErrorIfNotFound',0);
 					end;
 					ndi_element_obj.session.database_add(ndi_document_obj);
 				end;

@@ -1,4 +1,4 @@
-function [d] = ndi_findalldependencies(E, visited, varargin)
+function [d] = findalldependencies(E, visited, varargin)
 % NDI_FINDALLDEPENDENCIES- find documents that have dependencies on documents that do not exist
 %
 % [D] = ndi.database.fun.findalldependencies(E, VISITED, DOC1, DOC2, ...)
@@ -31,7 +31,7 @@ for i=1:numel(varargin),
 		if ~any(strcmp(id_here,visited)), % we don't already know about it
 			visited = cat(1,visited,{id_here}); 
 			d = cat(1,d,{bb{j}});
-			newdocs = ndi.database.fun.finddocs_missing_dependencies(E,visited,bb{j});
+			newdocs = ndi.database.fun.findalldependencies(E,visited,bb{j});
 			if ~isempty(newdocs),
 				for k=1:numel(newdocs),
 					visited = cat(1,visited,newdocs{k}.id());
