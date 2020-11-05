@@ -9,6 +9,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 		underlying_element % does this element depend on underlying element data (epochs)?
 		direct       % is it direct from the element it underlies, or is it different with its own possibly modified epochs?
 		subject_id   % ID of the subject that is related to the ndi.element
+		dependencies % a structure of name/value pairs of document dependencies (with exception of underlying_element and subject_id)
 	end; % properties
 
 	methods
@@ -16,7 +17,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% NDI_ELEMENT_OBJ = ndi.element - creator for ndi.element
 			%
 			% NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
-			%        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, [SUBJECT_ID])
+			%        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, [SUBJECT_ID], [DEPENDENCIES])
 			%    or
 			% NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
@@ -45,12 +46,17 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 						if numel(varargin)==7,
 							warning(['Ignoring input subject_id because underlying elment is given.']);
 						end;
-					elseif numel(varargin)==7,
+					elseif numel(varargin)>=7 & ~isempty(varargin{7}),
 						subject_id = varargin{7};
 						[b,subject_id] = ndi.subject.does_subjectstring_match_session_document(element_session,subject_id,1);
 						if ~b,
 							error(['Subject does not correspond to a valid document_id entry in the database.']);
 						end;
+					end;
+                                        if numel(varargin)>=8,
+						dependencies = varargin{8};
+					else,
+						dependencies = {};
 					end;
 				elseif numel(varargin)==2,
 					element_session = varargin{1};
@@ -89,6 +95,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 						direct = logical(element_doc.document_properties.element.direct);
 					end;
 					subject_id = element_doc.dependency_value('subject_id');
+					[dependency_names,dependencies] = element_doc.dependency();
+					[dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
+					dependencies = dependencies(ia);
 				elseif numel(varargin)==0,
 					element_session='';
 					element_name = '';
@@ -108,6 +117,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				ndi_element_obj.underlying_element = element_underlying_element;
 				ndi_element_obj.direct = direct;
 				ndi_element_obj.subject_id = subject_id;
+				ndi_element_obj.dependencies = dependencies;
 				ndi_element_obj.newdocument();
 		end; % ndi.element()
 
@@ -451,6 +461,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					end;
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
 					ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
+					for i=1:numel(ndi_element_obj.dependencies),
+						ndi_document_obj = ndi_document_obj.set_dependency_value(ndi_document_obj.dependencies(i).name,...
+							ndi_document_obj.dependencies(i).value,'ErrorIfNotFound',0);
+					end;
 					ndi_element_obj.session.database_add(ndi_document_obj);
 				end;
 		end; % newdocument()

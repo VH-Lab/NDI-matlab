@@ -142,6 +142,23 @@ classdef document
 					otherproperties);
 		end; % plus() 
 
+		function [names, depend_struct] = dependency(ndi_document_obj)
+			% DEPENDENCY - return names and a structure with all dependencies for an ndi.object
+			%
+			% [NAMES, DEPEND_STRUCT] = DEPENDENCY(NDI_DOCUMENT_OBJ)
+			%
+			% Returns in the cell array NAMES the 'name' of all 'depends_on' entries in the ndi.document NDI_DOCUMENT_OBJ.
+			% Further, this function returns a structure with all 'name' and 'value' entries in DEPEND_STRUCT.
+			%
+				names = {};
+				depend_struct = vlt.data.emptystruct('name','value');
+				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				if hasdependencies, 
+					names = {ndi_document_obj.document_properties.depends_on.name};
+					depend_struct = ndi_document_obj.document_properties.depends_on;
+				end;
+		end; % dependency()
+
 		function d = dependency_value(ndi_document_obj, dependency_name, varargin)
 			% DEPENDENCY_VALUE - return dependency value given dependency name
 			%
@@ -192,7 +209,7 @@ classdef document
 			% Parameter (default)      | Description
 			% -----------------------------------------------------------------
 			% ErrorIfNotFound (1)      | If 1, generate an error if the entry is
-			%                          |   not found. Otherwise, generate no error but take no action.
+			%                          |   not found. Otherwise, add it.
 			%
 			%
 				ErrorIfNotFound = 1;
