@@ -24,6 +24,7 @@ classdef commontriggers < ndi.time.syncrule
 			% channel_daq2                 | The channel on the second daq system
 			% number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
 			%
+				error(['not ready yet.']);
 				if nargin==0,
 					parameters = struct('number_fullpath_matches', 2);
 					varargin = {parameters};
