@@ -27,6 +27,10 @@ end
  % update SYNCGRAPH
 
 nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
+n_intan2spike2 = ndi.time.syncrule.filefind(struct('number_fullpath_matches',1, ...
+	'syncfilename','vhintan_intan2spike2time.txt',...
+	'daqsystem1','vhintan','daqsystem2','vhvis_spike2'));
 
 E.syncgraph_addrule(nsf);
+E.syncgraph_addrule(n_intan2spike2);
 
