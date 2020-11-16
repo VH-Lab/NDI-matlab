@@ -20,6 +20,7 @@
 		"number_of_samples_per_channel": [],
 		"number_of_channels": [],
 		"mean_waveform": [],
+		"waveform_sample_times": [],
 		"cluster_index": 0,
 		"quality_number": 0,
 		"quality_label": ""
