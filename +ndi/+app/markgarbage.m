@@ -159,7 +159,7 @@ classdef markgarbage < ndi.app
 				explicitly_good_intervals = [];
 				vi = ndi_app_markgarbage_obj.loadvalidinterval(ndi_epochset_obj);
 				if isempty(vi),
-					intervals = [];
+					intervals = [t0 t1];
 					return;
 				end;
 				for i=1:size(vi,1),

@@ -23,23 +23,28 @@ classdef tuning_response < ndi.app
 
 		end % ndi.app.stimulus.tuning_response() creator
 
-		function stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
-			% PARSE_STIMULI - write stimulus records for all stimulus epochs of an ndi.element stimulus object
+		function rdocs = stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
+			% STIMULUS_RESPONSES - write stimulus records for all stimulus epochs of an ndi.element stimulus object
 			%
-			% [NEWDOCS, EXISITINGDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
+			% [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
 			%
 			% Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
 			% for all stimulus epochs.
 			%
-			% If STIMULUS_RESPONSE and STIMULUS_TUNINGCURVE documents already exist for a given
+			% If STIMULUS_PRESENTATION and STIMULUS_TUNINGCURVE documents already exist for a given
 			% stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.
 			%
-			% If the input argument RESET is given and is 1, then all existing documents for this probe are
-			% removed and all documents are recalculated. The default for RESET is 0 (if it is not provided).
+			% If the input argument RESET is given and is 1, then all existing tuning curve documents for this
+			% NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).
 			%
-			% Note that this function DOES add the new documents to the database.
+			% Note that this function DOES add the new documents RDOCS to the database.
 			%
+				rdocs = {};
+				if nargin<4, 
+					reset = 0;
+				end;
+					
 				E = ndi_app_tuning_response_obj.session;
 
 				% find all stimulus records from the stimulus element
@@ -48,8 +53,12 @@ classdef tuning_response < ndi.app
 				sq_e = ndi.query(E.searchquery());
 				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
 				sq_tune = ndi.query('','isa','stimulus_tuningcurve.json','');
-				doc_stim = E.database_search(sq_stim&sq_e&sq_stimelement),
-				doc_tune = E.database_search(sq_tune&sq_e&sq_stimelement&sq_nditimeseries),
+				doc_stim = E.database_search(sq_stim&sq_e&sq_stimelement);
+				doc_tune = E.database_search(sq_tune&sq_e&sq_stimelement&sq_nditimeseries);
+
+				if reset,
+					E.database_rm(doc_tune);
+				end;
 
 				ndi_ts_epochs = {};
 
@@ -80,7 +89,7 @@ classdef tuning_response < ndi.app
 						ctrl_search = ndi.query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
 							ndi.query('','isa','control_stimulus_ids.json','');
 						control_stim_doc = E.database_search(ctrl_search);
-						for j=1:numel(control_stim_doc);
+						for j=1:numel(control_stim_doc)
 							% okay, now how to analyze these stims?
 							% 
 							% want to calculate F0, F1, F2
@@ -94,7 +103,7 @@ classdef tuning_response < ndi.app
 								control_stim_doc{j}.document_properties.control_stimulus_ids
 								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
-							myrdoc = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
+							rdocs{end+1} = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
 								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
 						end;
 
@@ -306,6 +315,7 @@ classdef tuning_response < ndi.app
 			% Parameter (default)         | Description
 			% -----------------------------------------------------------------------
 			% response_units ('Spikes/s') | Response units to pass along
+			% independent_label {'label1'}| Independent parameter axis label
 			% independent_parameter {}    | Independent parameters to search for in stimuli.
 			%                             |   Can be multi-dimensional to create multi-variate 
 			%                             |   tuning curves. Only stimuli that contain these fields
@@ -404,10 +414,12 @@ classdef tuning_response < ndi.app
 				tuning_curve.control_individual_responses_imaginary = cell(1,num_points);
 				tuning_curve.stimid = nan(1,num_points);
 
+				nth_independent_value = 1;
 				for n=1:numel(stim_pres_doc.document_properties.stimulus_presentation.stimuli),
 					p = stim_pres_doc.document_properties.stimulus_presentation.stimuli(n).parameters;
 					if isincluded(n),
-						I = vlt.data.findrowvec(tuning_curve.independent_variable_value, independent_variable_value(n,:));
+						I = vlt.data.findrowvec(tuning_curve.independent_variable_value, independent_variable_value(nth_independent_value,:));
+						nth_independent_value = nth_independent_value + 1;
 						if isempty(I),
 							error(['unexpected..cannot find stimulus values. Should not happen.']);
 						end;
@@ -655,8 +667,54 @@ classdef tuning_response < ndi.app
 
 		end;  % fixcellarrays()
 
+		function tuning_docs = make_1d_tuning(ndi_app_tuning_response_obj, stim_response_doc, param_to_vary, param_to_vary_label, param_to_fix, varargin)
+			% MAKE_1D_TUNING - create 1d tuning documents out of stimulus responses that covary in 2 parameters
+			%
+			% TUNING_DOCS = MAKE_1D_TUNING(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESPONSE_DOC, PARAM_TO_VARY, PARAM_TO_VARY_LABEL, 
+			%   PARAM_TO_FIX)
+			%
+			% This function examines a stimulus response doc that covaries in 2 parameters, and "deals" the responses into several tuning
+			% curves where the parameter with name PARAM_TO_VARY varies across stimuli and the stimulus parameter with name
+			% PARAM_TO_FIX is fixed for each tuning doc.
+			%
+			%
+				tuning_docs = {};
+
+				S = ndi_app_tuning_response_obj.session;
+
+				stim_pres_doc = S.database_search(ndi.query('ndi_document.id','exact_string', ...
+					dependency_value(stim_response_doc,'stimulus_presentation_id'),''));
+				if isempty(stim_pres_doc),
+					error(['Could not find stimulus presentation doc for stimulus response doc.']);
+				end;
+				
+				stim_props = {stim_pres_doc{1}.document_properties.stimulus_presentation.stimuli.parameters};
+
+				included = [];
+				param_to_fix_values = [];
+
+				for n=1:numel(stim_props),
+					if ~isfield(stim_props{n},'isblank'),
+						included(end+1) = n;
+					elseif ~stim_props{n}.isblank,
+						included(end+1) = n;
+					end;
+					if ismember(n,included),
+						if isfield(stim_props{n},param_to_fix) & isfield(stim_props{n},param_to_vary),
+							param_to_fix_values(end+1) = getfield(stim_props{n},param_to_fix);
+						end;
+					end;
+				end;
+
+				param_to_fix_values = unique(param_to_fix_values)
+
+				for i=1:numel(param_to_fix_values),
+					constraint = struct('field',param_to_fix,'operation','exact_number','param1',param_to_fix_values(i),'param2','');
+					tuning_docs{end+1} = ndi_app_tuning_response_obj.tuning_curve(stim_response_doc, 'independent_parameter', {param_to_vary},...
+						'independent_label',{param_to_vary_label},'constraint',constraint);
+				end;
+
+		end; % make_1d_tuning
+
 	end; % methods
-
 end % ndi_app_stimulus_response
-
-
