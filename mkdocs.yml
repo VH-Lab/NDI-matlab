@@ -10,8 +10,8 @@ theme:
 pages:
   - Home: index.md
   - The NDI model:
-    - Introduction: ndimodel/1_intro.md
-    - Real world vocabulary: ndimodel/2_ndimodel_vocabulary.md
+    - Introduction: 'ndimodel/1_intro.md'
+    - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
 
 use_directory_urls: true
 
