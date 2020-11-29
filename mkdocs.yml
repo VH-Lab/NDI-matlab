@@ -3,7 +3,7 @@ repo_url: https://github.com/VH-Lab/NDI-matlab
 site_author: Steve Van Hooser
 docs_dir: 'docs'
 theme:
-  name: 'materials'
+  name: 'mkdocs'
   palette:
     primary: 'deep-purple'
     accent: 'deep-purple'
