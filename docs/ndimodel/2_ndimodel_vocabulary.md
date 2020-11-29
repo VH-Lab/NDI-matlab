@@ -2,7 +2,7 @@
 
 In order to make NDI easy to use, we sought to codify the elements of actual experiments using specific terms, in much the same way that concepts like files, folders, and windows make modern computer operating systems easier to use.
 
-## Probes, subjects, elements, DAQ systems ## 
+## Probes, subjects, elements, DAQ systems
 
 We define a **probe** as an instrument that makes a measurement of or produces a stimulus for a **subject**. 
 
