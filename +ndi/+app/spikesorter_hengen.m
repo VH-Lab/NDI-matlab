@@ -1,11 +1,11 @@
-classdef hengen < ndi.app
+classdef spikesorter_hengen < ndi.app
 
 	properties (SetAccess=protected,GetAccess=public)
 	end % properties
 
 	methods
 
-		function ndi_app_spikesorter_hengen_obj = hengen(varargin)
+		function ndi_app_spikesorter_hengen_obj = spikesorter_hengen(varargin)
 		% NDI.APP.spikesorter.hengen - an app to sort spikewaves found in experiments using hengen Spike Sorter
 		%
 		% NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(EXPERIMENT)

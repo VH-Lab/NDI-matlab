@@ -1,4 +1,4 @@
-classdef  ndi_postgresdb < ndi_database
+classdef  postgresdb < ndi.database
 
 	properties
         db          % Stores PostgreSQL database
@@ -66,9 +66,9 @@ classdef  ndi_postgresdb < ndi_database
             % Assumes input is a ndiquery converted to struct
             % Assumes params are correct
             %
-            % q = ndi.query(‘ndi_document.id’,‘exact_string’,‘ABCD’,‘’)
-            % (This means: find all documents that have a field ndi_document.id that exactly matches the string ‘ABCD’)
-            % q = ndi.query(‘list’,‘exact_string’,‘abc’,‘’)
+            % q = ndi.query('ndi_document.id','exact_string','ABCD','')
+            % (This means: find all documents that have a field ndi_document.id that exactly matches the string 'ABCD')
+            % q = ndi.query('list','exact_string','abc','')
             %
             % Example SQL query:
             % SELECT data ->> 'list' AS list                                                                  

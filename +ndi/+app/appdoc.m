@@ -1,7 +1,7 @@
 classdef appdoc
 
 	properties
-		doc_types;         % types of the parameter documents; the app developer can choose (cell array)
+		doc_types         % types of the parameter documents; the app developer can choose (cell array)
 		doc_document_types % NDI_document datatypes for each doc 
 		doc_session        % session to use to access the database
 	end

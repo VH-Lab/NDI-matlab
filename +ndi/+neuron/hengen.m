@@ -5,7 +5,7 @@ classdef hengen < ndi.element.timeseries
 	end
 
 	methods
-		function ndi_neuron_hengen_obj = ndi_neuron_hengen(varargin)
+		function ndi_neuron_hengen_obj = hengen(varargin)
 
 			ndi_neuron_hengen_obj = ndi_neuron_hengen_obj@ndi.element.timeseries(varargin{:});
     
