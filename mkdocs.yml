@@ -12,6 +12,7 @@ nav:
   - The NDI model:
     - Introduction: 'ndimodel/1_intro.md'
     - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
+  - Installation: 'installation.md'
 
 use_directory_urls: true
 
