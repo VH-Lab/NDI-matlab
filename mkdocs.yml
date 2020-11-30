@@ -1,4 +1,4 @@
-site_name: ndi-matlab
+site_name: NDI-matlab
 repo_url: https://github.com/VH-Lab/NDI-matlab
 site_author: Steve Van Hooser
 docs_dir: 'docs'
@@ -9,10 +9,20 @@ theme:
     accent: 'deep-purple'
 nav:
   - Home: index.md
-  - The NDI model:
-    - Introduction: 'ndimodel/1_intro.md'
-    - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
   - Installation: 'installation.md'
+  - Tutorials:
+    - The NDI model:
+      - Introduction: 'ndimodel/1_intro.md'
+      - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
+    - Planned soon:
+      - Analyzing your first electrophysiology experiment with NDI: 'tutorials/analyzing_first_physiology_experiment.md'
+      - Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
+      - Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'
+      - Making your own data pipeline in NDI: 'tutorials/data_pipeline.md'
+      - Making your own analysis app that uses NDI: 'tutorials/analysis_app.md'
+    - Planned later:
+      - Submitting your data to an archive: 'tutorials/archive.md'
+      - Search and analyze NDI databases on the web: 'tutorials/search_ndi_databases.md'
 
 use_directory_urls: true
 
