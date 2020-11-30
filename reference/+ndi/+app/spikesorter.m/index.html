@@ -1,0 +1,724 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <meta name="author" content="Steve Van Hooser">
+      
+      <link rel="shortcut icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.6">
+    
+    
+      
+        <title>CLASS ndi.app.spikesorter - NDI-matlab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.6910b76c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.196e0c26.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#7e56c2">
+        
+      
+    
+    
+    
+      
+        
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+      
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#class-ndiappspikesorter" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../../.." title="NDI-matlab" class="md-header-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            NDI-matlab
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              CLASS ndi.app.spikesorter
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    NDI-matlab
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../.." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../installation/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    <label class="md-nav__link" for="nav-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+    <label class="md-nav__link" for="nav-3-1">
+      The NDI model
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="The NDI model" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        The NDI model
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../ndimodel/1_intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      Real world vocabulary
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+    <label class="md-nav__link" for="nav-3-2">
+      Planned soon
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned soon" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Planned soon
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/analyzing_first_physiology_experiment/" class="md-nav__link">
+      Analyzing your first electrophysiology experiment with NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
+      Reading your own data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/case_studies_reading_data/" class="md-nav__link">
+      Case studies in reading data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/data_pipeline/" class="md-nav__link">
+      Making your own data pipeline in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/analysis_app/" class="md-nav__link">
+      Making your own analysis app that uses NDI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+    <label class="md-nav__link" for="nav-3-3">
+      Planned later
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned later" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Planned later
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/archive/" class="md-nav__link">
+      Submitting your data to an archive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/search_ndi_databases/" class="md-nav__link">
+      Search and analyze NDI databases on the web
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." class="md-nav__link">
+      Reference
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#superclasses" class="md-nav__link">
+    Superclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods-help" class="md-nav__link">
+    Methods help
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/reference/+ndi/+app/spikesorter.m.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="class-ndiappspikesorter">CLASS ndi.app.spikesorter<a class="headerlink" href="#class-ndiappspikesorter" title="Permanent link">&para;</a></h1>
+<p>NDI.APP.spikesorter - an app to sort spikewaves found in sessions</p>
+<p>NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)</p>
+<p>Creates a new NDI_APP_spikesorter object that can operate on
+  NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.app.spikesorter</span>
+<span class="err">   doc ndi.app.spikesorter</span>
+</code></pre></div>
+
+<h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
+<p><strong>ndi.app</strong>, <strong>ndi.documentservice</strong></p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>session</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>name</em></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>add_sorting_doc</em></td>
+<td>add sorting parameters document</td>
+</tr>
+<tr>
+<td><em>clear_sort</em></td>
+<td>clear all 'sorted spikes' records for an NDI_PROBE_OBJ from session database</td>
+</tr>
+<tr>
+<td><em>load_spike_clusters_doc</em></td>
+<td>ndi.app.spikesorter/load_spike_clusters_doc is a function.</td>
+</tr>
+<tr>
+<td><em>load_spikes</em></td>
+<td>ndi.app.spikesorter/load_spikes is a function.</td>
+</tr>
+<tr>
+<td><em>load_spiketimes_epoch</em></td>
+<td>ndi.app.spikesorter/load_spiketimes_epoch is a function.</td>
+</tr>
+<tr>
+<td><em>load_spikewaves_epoch</em></td>
+<td>ndi.app.spikesorter/load_spikewaves_epoch is a function.</td>
+</tr>
+<tr>
+<td><em>load_times</em></td>
+<td>ndi.app.spikesorter/load_times is a function.</td>
+</tr>
+<tr>
+<td><em>newdocument</em></td>
+<td>return a new database document of type ndi.document based on an app</td>
+</tr>
+<tr>
+<td><em>searchquery</em></td>
+<td>return a search query for an ndi.document related to this app</td>
+</tr>
+<tr>
+<td><em>spike_sort</em></td>
+<td>method that sorts spikes from specific probes in session to ndi_doc</td>
+</tr>
+<tr>
+<td><em>spikesorter</em></td>
+<td>an app to sort spikewaves found in sessions</td>
+</tr>
+<tr>
+<td><em>spikesorter_gui</em></td>
+<td>load spike waves</td>
+</tr>
+<tr>
+<td><em>varappname</em></td>
+<td>return the name of the application for use in variable creation</td>
+</tr>
+<tr>
+<td><em>version_url</em></td>
+<td>return the app version and url</td>
+</tr>
+</tbody>
+</table>
+<h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
+<p><strong>add_sorting_doc</strong> - <em>add sorting parameters document</em></p>
+<p>SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_OBJ, SORT_NAME, SORT_PARAMS)</p>
+<p>Given SORT_PARAMS as either a structure or a filename, this function returns
+  SORTING_DOC parameters as an ndi.document and checks its fields. If SORT_PARAMS is empty,
+  then the default parameters are returned. If SORT_NAME is already the name of an existing
+  ndi.document then an error is returned.</p>
+<p>SORT_PARAMS should contain the following fields:
+  Fieldname              | Description</p>
+<hr />
+<p>num_pca_features (10)     | Number of PCA features to use in klustakwik k-means clustering
+  interpolation (3)       | Interpolation factor</p>
+<hr />
+<p><strong>clear_sort</strong> - <em>clear all 'sorted spikes' records for an NDI_PROBE_OBJ from session database</em></p>
+<p>B = CLEAR_SORT(NDI_APP_SPIKESORTER_OBJ, NDI_EPOCHSET_OBJ)</p>
+<p>Clears all sorting entries from the session database for object NDI_PROBE_OBJ.</p>
+<p>Returns 1 on success, 0 otherwise.</p>
+<hr />
+<p><strong>load_spike_clusters_doc</strong> - <em>ndi.app.spikesorter/load_spike_clusters_doc is a function.</em></p>
+<p>doc = load_spike_clusters_doc(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)</p>
+<hr />
+<p><strong>load_spikes</strong> - <em>ndi.app.spikesorter/load_spikes is a function.</em></p>
+<p>spikes = load_spikes(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)</p>
+<hr />
+<p><strong>load_spiketimes_epoch</strong> - <em>ndi.app.spikesorter/load_spiketimes_epoch is a function.</em></p>
+<p>times = load_spiketimes_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)</p>
+<hr />
+<p><strong>load_spikewaves_epoch</strong> - <em>ndi.app.spikesorter/load_spikewaves_epoch is a function.</em></p>
+<p>waveforms = load_spikewaves_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)</p>
+<hr />
+<p><strong>load_times</strong> - <em>ndi.app.spikesorter/load_times is a function.</em></p>
+<p>spikes = load_times(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)</p>
+<hr />
+<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
+<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)</p>
+<p>Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
+  is filled out with the name of NDI_APP_OBJ.VARAPPNAME().</p>
+<p>Help for ndi.app.spikesorter/newdocument is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
+<p>C = SEARCHQUERY(NDI_APP_OBJ)</p>
+<p>Returns a cell array of strings that allow the creation or searching of an
+  ndi.database document for this app with field 'app' that has subfield 'name' equal
+  to the app's VARAPPNAME.</p>
+<p>Help for ndi.app.spikesorter/searchquery is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>spike_sort</strong> - <em>method that sorts spikes from specific probes in session to ndi_doc</em></p>
+<p>SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
+ %%%%%%%%%%%%
+  SORT_NAME name given to save sort to ndi_doc</p>
+<hr />
+<p><strong>spikesorter</strong> - <em>an app to sort spikewaves found in sessions</em></p>
+<p>NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)</p>
+<p>Creates a new NDI_APP_spikesorter object that can operate on
+  NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.</p>
+<hr />
+<p><strong>spikesorter_gui</strong> - <em>load spike waves</em></p>
+<hr />
+<p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
+<p>AN = VARAPPNAME(NDI_APP_OBJ)</p>
+<p>Returns the name of the app modified for use as a variable name, either as
+  a Matlab variable or a name in a document.</p>
+<p>Help for ndi.app.spikesorter/varappname is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>version_url</strong> - <em>return the app version and url</em></p>
+<p>[V, URL] = VERSION_URL(NDI_APP_OBJ)</p>
+<p>Return the version and url for the current app. In the base class,
+  it is assumed that GIT is used and is available from the command line
+  and the version and url are read from the git directory.</p>
+<p>Developers should override this method in their own class if they use a 
+  different version control system.</p>
+<p>Help for ndi.app.spikesorter/version_url is inherited from superclass NDI.APP</p>
+<hr />
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../../assets/javascripts/vendor.fd16492e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.7836ba4d.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../../..",
+          features: ['navigation.expand'],
+          search: Object.assign({
+            worker: "../../../../assets/javascripts/worker/search.4ac00218.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,681 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <meta name="author" content="Steve Van Hooser">
+      
+      <link rel="shortcut icon" href="../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.6">
+    
+    
+      
+        <title>CLASS ndi.daq.daqsystemstring - NDI-matlab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.6910b76c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.196e0c26.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#7e56c2">
+        
+      
+    
+    
+    
+      
+        
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+      
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#class-ndidaqdaqsystemstring" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../../.." title="NDI-matlab" class="md-header-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            NDI-matlab
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              CLASS ndi.daq.daqsystemstring
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    NDI-matlab
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../.." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../installation/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    <label class="md-nav__link" for="nav-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+    <label class="md-nav__link" for="nav-3-1">
+      The NDI model
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="The NDI model" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        The NDI model
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../ndimodel/1_intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      Real world vocabulary
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+    <label class="md-nav__link" for="nav-3-2">
+      Planned soon
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned soon" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Planned soon
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/analyzing_first_physiology_experiment/" class="md-nav__link">
+      Analyzing your first electrophysiology experiment with NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
+      Reading your own data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/case_studies_reading_data/" class="md-nav__link">
+      Case studies in reading data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/data_pipeline/" class="md-nav__link">
+      Making your own data pipeline in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/analysis_app/" class="md-nav__link">
+      Making your own analysis app that uses NDI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+    <label class="md-nav__link" for="nav-3-3">
+      Planned later
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned later" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Planned later
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/archive/" class="md-nav__link">
+      Submitting your data to an archive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../tutorials/search_ndi_databases/" class="md-nav__link">
+      Search and analyze NDI databases on the web
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." class="md-nav__link">
+      Reference
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#superclasses" class="md-nav__link">
+    Superclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods-help" class="md-nav__link">
+    Methods help
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/reference/+ndi/+daq/daqsystemstring.m.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="class-ndidaqdaqsystemstring">CLASS ndi.daq.daqsystemstring<a class="headerlink" href="#class-ndidaqdaqsystemstring" title="Permanent link">&para;</a></h1>
+<p>NDI_DAQSYSTEMSTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_DAQSYSTEM</p>
+<p>ndi.daq.daqsystemstring</p>
+<p>A 'devicestring' is a part of an ndi.daq.metadata.epochprobemap_daqsystem that indicates the channel types and
+   channel numbers that correspond to a particular record.</p>
+<p>For example, one may specify that a 4-channel extracellular recording with name
+   'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
+   on channels 27-28 and 45 and 88 with the following ndi.daq.metadata.epochprobemap_daqsystem entry:
+            name: 'ctx'
+       reference: 1
+            type: 'extracellular_electrode-4'
+    devicestring: 'mydevice:ai27-28,45,88</p>
+<p>The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
+   ndi.daq.system object, CT is the channel type identifier, and #### is a list of channels.
+   The #### list of channels should be numbered from 1, and can use the symbols '-' to
+   indicate a sequential run of channels, and ',' to separate channels.
+   Use a semicolon to separate channel types (e.g., 'ai27-28;di1')</p>
+<p>For example:
+      '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]
+      '2,5,11-12,8     corresponds to [2 5 11 12 8]
+      ''               corresponds to []  % if the device doesn't have channels</p>
+<p>See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.daq.daqsystemstring</span>
+<span class="err">   doc ndi.daq.daqsystemstring</span>
+</code></pre></div>
+
+<h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
+<p><em>none</em></p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>devicename</em></td>
+<td>The name of the device</td>
+</tr>
+<tr>
+<td><em>channeltype</em></td>
+<td>The type of channels that are used by the device</td>
+</tr>
+<tr>
+<td><em>channellist</em></td>
+<td>An array of the channels that are referred to by the devicestring</td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>daqsystemstring</em></td>
+<td>Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list</td>
+</tr>
+<tr>
+<td><em>devicestring</em></td>
+<td>Produce an ndi.daq.daqsystemstring character string</td>
+</tr>
+<tr>
+<td><em>ndi_daqsystemstring2channel</em></td>
+<td>Convert an ndi.daq.daqsystemstring to device, channel type, channel list</td>
+</tr>
+</tbody>
+</table>
+<h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
+<p><strong>daqsystemstring</strong> - <em>Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list</em></p>
+<p>DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
+     or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)</p>
+<p>Creates a device string suitable for a ndi.daq.metadata.epochprobemap_daqsystem from a DEVICENAME,
+  a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.</p>
+<p>Inputs:
+     In the first form:
+       DEVICENAME should be the name of an ndi.daq.system
+       CHANNEL_PREFIX should be the prefix for a particular type of channel. These channel type will vary from
+           device to device. For example, a NDI_DAQSYSTEM_MULTICHANNELDAQ might use:
+             'ai' - analog input
+             'ao' - analog output (it is an 'o' like 'oh', not 0)
+             'di' - digital input
+             'do' - digital output
+       CHANNELLIST should be an array of channel numbers, which must start from 1 (that is,
+             the first channel is 1).
+     In the second form:
+       DEVSTRING should be in the form: 'devicename:ct#,#-#,#,#'
+         where devicename is the name of the device, ct is a string that corresponds to the channel type, and
+         the numbers and separators specify the channel numbers to be accessed.</p>
+<p>Examples:</p>
+<div class="codehilite"><pre><span></span><code><span class="err">   myndi_daqsystemstring1 = ndi_devicestring(&#39;mydevice&#39;,&#39;ai&#39;,[1:5 7 23])</span>
+<span class="err">   myndi_daqsystemstring2 = ndi_devicestring(&#39;mydevice:ai1-5,7,23&#39;);</span>
+</code></pre></div>
+
+<p>See also: ndi.daq.daqsystemstring</p>
+<hr />
+<p><strong>devicestring</strong> - <em>Produce an ndi.daq.daqsystemstring character string</em></p>
+<p>DEVSTR = DEVICESTRING(SELF)</p>
+<p>Creates a device string suitable for a ndi.daq.metadata.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.</p>
+<p>Inputs:
+     SELF - an ndi.daq.daqsystemstring object
+  Outputs:
+     DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23'</p>
+<p>See also: ndi.daq.daqsystemstring</p>
+<hr />
+<p><strong>ndi_daqsystemstring2channel</strong> - <em>Convert an ndi.daq.daqsystemstring to device, channel type, channel list</em></p>
+<p>[DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)</p>
+<p>Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
+  (CHANNEL) of a device string.</p>
+<p>Inputs:
+     DEVSTR should be an NDI devicestring in the form: devicename:ct#,#-#,#,#
+  Outputs:
+     DEVICENAME is the string corresponding to the device name
+     CHANNELTYPE is a cell array of strings with channel types
+     CHANNELLIST is an array of the channel numbers</p>
+<p>Example:
+     devstr = ndi.daq.daqsystemstring('mydevice:ai1-5,13,18');
+     [devicename, channeltype, channel] = ndi_daqsystemstring2channel(devstr);
+     % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]</p>
+<p>See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING</p>
+<hr />
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../../assets/javascripts/vendor.fd16492e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.7836ba4d.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../../..",
+          features: ['navigation.expand'],
+          search: Object.assign({
+            worker: "../../../../assets/javascripts/worker/search.4ac00218.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,781 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <meta name="author" content="Steve Van Hooser">
+      
+      <link rel="shortcut icon" href="../../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.6">
+    
+    
+      
+        <title>CLASS ndi.app.stimulus.tuning_response - NDI-matlab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.6910b76c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../../assets/stylesheets/palette.196e0c26.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#7e56c2">
+        
+      
+    
+    
+    
+      
+        
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+      
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#class-ndiappstimulustuning_response" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../../../.." title="NDI-matlab" class="md-header-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            NDI-matlab
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              CLASS ndi.app.stimulus.tuning_response
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    NDI-matlab
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../.." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../installation/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    <label class="md-nav__link" for="nav-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+    <label class="md-nav__link" for="nav-3-1">
+      The NDI model
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="The NDI model" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        The NDI model
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../ndimodel/1_intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      Real world vocabulary
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+    <label class="md-nav__link" for="nav-3-2">
+      Planned soon
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned soon" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Planned soon
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/analyzing_first_physiology_experiment/" class="md-nav__link">
+      Analyzing your first electrophysiology experiment with NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
+      Reading your own data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/case_studies_reading_data/" class="md-nav__link">
+      Case studies in reading data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/data_pipeline/" class="md-nav__link">
+      Making your own data pipeline in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/analysis_app/" class="md-nav__link">
+      Making your own analysis app that uses NDI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+    <label class="md-nav__link" for="nav-3-3">
+      Planned later
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned later" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Planned later
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/archive/" class="md-nav__link">
+      Submitting your data to an archive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../tutorials/search_ndi_databases/" class="md-nav__link">
+      Search and analyze NDI databases on the web
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../.." class="md-nav__link">
+      Reference
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#superclasses" class="md-nav__link">
+    Superclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods-help" class="md-nav__link">
+    Methods help
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/reference/+ndi/+app/+stimulus/tuning_response.m.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="class-ndiappstimulustuning_response">CLASS ndi.app.stimulus.tuning_response<a class="headerlink" href="#class-ndiappstimulustuning_response" title="Permanent link">&para;</a></h1>
+<p>ndi.app.stimulus.tuning_response - an app to decode stimulus information from NDI_PROBE_STIMULUS objects</p>
+<p>NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)</p>
+<p>Creates a new ndi.app.stimulus.tuning_response object that can operate on
+  NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.app.stimulus.tuning_response</span>
+<span class="err">   doc ndi.app.stimulus.tuning_response</span>
+</code></pre></div>
+
+<h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
+<p><strong>ndi.app</strong>, <strong>ndi.documentservice</strong></p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>session</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>name</em></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>compute_stimulus_response_scalar</em></td>
+<td>compute responses to a stimulus set</td>
+</tr>
+<tr>
+<td><em>control_stimulus</em></td>
+<td>determine the control stimulus ID for each stimulus in a stimulus set</td>
+</tr>
+<tr>
+<td><em>find_tuningcurve_document</em></td>
+<td>find a tuning curve document of a particular element, epochid, etc...</td>
+</tr>
+<tr>
+<td><em>label_control_stimuli</em></td>
+<td>label control stimuli for all stimulus presentation documents for a given stimulator</td>
+</tr>
+<tr>
+<td><em>make_1d_tuning</em></td>
+<td>create 1d tuning documents out of stimulus responses that covary in 2 parameters</td>
+</tr>
+<tr>
+<td><em>newdocument</em></td>
+<td>return a new database document of type ndi.document based on an app</td>
+</tr>
+<tr>
+<td><em>searchquery</em></td>
+<td>return a search query for an ndi.document related to this app</td>
+</tr>
+<tr>
+<td><em>stimulus_responses</em></td>
+<td>write stimulus records for all stimulus epochs of an ndi.element stimulus object</td>
+</tr>
+<tr>
+<td><em>tuning_curve</em></td>
+<td>compute a tuning curve from stimulus responses</td>
+</tr>
+<tr>
+<td><em>tuning_response</em></td>
+<td>an app to decode stimulus information from NDI_PROBE_STIMULUS objects</td>
+</tr>
+<tr>
+<td><em>tuningdoc_fixcellarrays</em></td>
+<td>make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document</td>
+</tr>
+<tr>
+<td><em>varappname</em></td>
+<td>return the name of the application for use in variable creation</td>
+</tr>
+<tr>
+<td><em>version_url</em></td>
+<td>return the app version and url</td>
+</tr>
+</tbody>
+</table>
+<h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
+<p><strong>compute_stimulus_response_scalar</strong> - <em>compute responses to a stimulus set</em></p>
+<p>RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)</p>
+<p>Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'ndi_document_stimulus_presentation'), and a
+  CONTROL_DOC (an ndi.document of class 'ndi_document_control_stimulus_ids'), this
+  function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
+  ndi.document of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
+  fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses,
+  F1, F2).</p>
+<p>Note that we recommend making a new app subclass if one wants to write additional classes of analysis procedures.</p>
+<p>This function also takes name/value pairs that alter the behavior:
+  Parameter (default)                  | Description</p>
+<hr />
+<p>temporalfreqfunc                     |
+    ('ndi.fun.stimulustemporalfrequency')  |
+  freq_response ([])                   | Frequency response to measure. If empty, then the function is 
+                                       |   called 3 times with values 0, 1, and 2 times the fundamental frequency.
+  prestimulus_time ([])                | Calculate a baseline using a certain amount of TIMESERIES signal during
+                                       |     the pre-stimulus time given here
+  prestimulus_normalization ([])       | Normalize the stimulus response based on the prestimulus measurement.
+                                       | [] or 0) No normalization
+                                       |       1) Subtract: Response := Response - PrestimResponse
+                                       |       2) Fractional change Response:= ((Response-PrestimResponse)/PrestimResponse)
+                                       |       3) Divide: Response:= Response ./ PreStimResponse
+  isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
+  spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform</p>
+<hr />
+<p><strong>control_stimulus</strong> - <em>determine the control stimulus ID for each stimulus in a stimulus set</em></p>
+<p>[CS_IDS, CS_DOC] = CONTROL_STIMULUS(NDI_APP_TUNING_RESPONSE_OBJ, STIM_DOC, ...)</p>
+<p>For a given set of stimuli described in ndi.document of type 'ndi_document_stimulus',
+  this function returns the control stimulus ID for each stimulus in the vector CS_IDS 
+  and a corresponding ndi.document of type ndi_document_control_stimulus_ids that describes this relationship.</p>
+<p>This function accepts parameters in the form of NAME/VALUE pairs:
+  Parameter (default)              | Description</p>
+<hr />
+<p>control_stim_method              | The method to be used to find the control stimulu for
+   ('psuedorandom')                |    each stimulus:
+                        -----------|
+                        |   pseudorandom: Find the stimulus with a parameter
+                        |      'controlid' that is in the same pseudorandom trial. In the
+                        |      event that there is no match that divides evenly into 
+                        |      complete repetitions of the stimulus set, then the
+                        |      closest stimulus with field 'controlid' is chosen.
+                        |    <br />
+                        |    <br />
+                        -----------|
+  controlid ('isblank')            | For some methods, the parameter that defines whether
+                                   |    a stimulus is a 'control' stimulus or not.
+  controlid_value (1)              | For some methods, the parameter value of 'controlid' that
+                                   |    defines whether a stimulus is a control stimulus or not.</p>
+<hr />
+<p><strong>find_tuningcurve_document</strong> - <em>find a tuning curve document of a particular element, epochid, etc...</em></p>
+<p>[TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, ELEMENT_OBJ, EPOCHID, RESPONSE_TYPE)</p>
+<hr />
+<p><strong>label_control_stimuli</strong> - <em>label control stimuli for all stimulus presentation documents for a given stimulator</em></p>
+<p>CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_ELEMENT_OBJ, RESET, ...)</p>
+<p>Thus function will look for all 'ndi_document_stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
+  compute the corresponding control stimuli, and save them as an 'control_stimulus_ids' 
+  document that is also returned as a cell list in CS_DOC.</p>
+<p>If RESET is 1, then any existing documents of this type are first removed. If RESET is not provided or is
+  empty, then it is taken to be 0.</p>
+<p>The method of finding the control stimulus can be provided by providing extra name/value pairs.
+  See ndi.app.stimulus.tuning_response/CONTROL_STIMULUS for parameters.</p>
+<hr />
+<p><strong>make_1d_tuning</strong> - <em>create 1d tuning documents out of stimulus responses that covary in 2 parameters</em></p>
+<p>TUNING_DOCS = MAKE_1D_TUNING(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESPONSE_DOC, PARAM_TO_VARY, PARAM_TO_VARY_LABEL, 
+    PARAM_TO_FIX)</p>
+<p>This function examines a stimulus response doc that covaries in 2 parameters, and "deals" the responses into several tuning
+  curves where the parameter with name PARAM_TO_VARY varies across stimuli and the stimulus parameter with name
+  PARAM_TO_FIX is fixed for each tuning doc.</p>
+<hr />
+<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
+<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)</p>
+<p>Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
+  is filled out with the name of NDI_APP_OBJ.VARAPPNAME().</p>
+<p>Help for ndi.app.stimulus.tuning_response/newdocument is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
+<p>C = SEARCHQUERY(NDI_APP_OBJ)</p>
+<p>Returns a cell array of strings that allow the creation or searching of an
+  ndi.database document for this app with field 'app' that has subfield 'name' equal
+  to the app's VARAPPNAME.</p>
+<p>Help for ndi.app.stimulus.tuning_response/searchquery is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>stimulus_responses</strong> - <em>write stimulus records for all stimulus epochs of an ndi.element stimulus object</em></p>
+<p>[RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])</p>
+<p>Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
+  probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
+  for all stimulus epochs.</p>
+<p>If STIMULUS_PRESENTATION and STIMULUS_TUNINGCURVE documents already exist for a given
+  stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.</p>
+<p>If the input argument RESET is given and is 1, then all existing tuning curve documents for this
+  NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).</p>
+<p>Note that this function DOES add the new documents RDOCS to the database.</p>
+<hr />
+<p><strong>tuning_curve</strong> - <em>compute a tuning curve from stimulus responses</em></p>
+<p>TUNING_DOC = TUNING_CURVE(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESOPNSE_DOC, ...)</p>
+<p>This function accepts name/value pairs that modifies its basic operation:</p>
+<p>Parameter (default)         | Description</p>
+<hr />
+<p>response_units ('Spikes/s') | Response units to pass along
+  independent_label {'label1'}| Independent parameter axis label
+  independent_parameter {}    | Independent parameters to search for in stimuli.
+                              |   Can be multi-dimensional to create multi-variate 
+                              |   tuning curves. Only stimuli that contain these fields
+                              |   will be included.
+                              |   Examples: {'angle'}  {'angle','sFrequency'}
+  constraint ([])             | Constraints in the form of a vlt.data.fieldsearch structure.
+                              |   Example: struct('field','sFrequency','operation',...
+                              |              'exact_number','param1',1,'param2','')</p>
+<p>See also: vlt.data.fieldsearch</p>
+<hr />
+<p><strong>tuning_response</strong> - <em>an app to decode stimulus information from NDI_PROBE_STIMULUS objects</em></p>
+<p>NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)</p>
+<p>Creates a new ndi.app.stimulus.tuning_response object that can operate on
+  NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.</p>
+<hr />
+<p><strong>tuningdoc_fixcellarrays</strong> - <em>make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document</em></p>
+<hr />
+<p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
+<p>AN = VARAPPNAME(NDI_APP_OBJ)</p>
+<p>Returns the name of the app modified for use as a variable name, either as
+  a Matlab variable or a name in a document.</p>
+<p>Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclass NDI.APP</p>
+<hr />
+<p><strong>version_url</strong> - <em>return the app version and url</em></p>
+<p>[V, URL] = VERSION_URL(NDI_APP_OBJ)</p>
+<p>Return the version and url for the current app. In the base class,
+  it is assumed that GIT is used and is available from the command line
+  and the version and url are read from the git directory.</p>
+<p>Developers should override this method in their own class if they use a 
+  different version control system.</p>
+<p>Help for ndi.app.stimulus.tuning_response/version_url is inherited from superclass NDI.APP</p>
+<hr />
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../../../assets/javascripts/vendor.fd16492e.min.js"></script>
+      <script src="../../../../../assets/javascripts/bundle.7836ba4d.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../../../..",
+          features: ['navigation.expand'],
+          search: Object.assign({
+            worker: "../../../../../assets/javascripts/worker/search.4ac00218.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>

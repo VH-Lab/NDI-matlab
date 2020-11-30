@@ -1,0 +1,1133 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <meta name="author" content="Steve Van Hooser">
+      
+      <link rel="shortcut icon" href="../../../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.6">
+    
+    
+      
+        <title>CLASS ndi.database.implementations.binarydoc.matfid - NDI-matlab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.6910b76c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.196e0c26.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#7e56c2">
+        
+      
+    
+    
+    
+      
+        
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+      
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#class-ndidatabaseimplementationsbinarydocmatfid" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../../../../.." title="NDI-matlab" class="md-header-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            NDI-matlab
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              CLASS ndi.database.implementations.binarydoc.matfid
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    NDI-matlab
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../.." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../installation/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    <label class="md-nav__link" for="nav-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+    <label class="md-nav__link" for="nav-3-1">
+      The NDI model
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="The NDI model" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        The NDI model
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../ndimodel/1_intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      Real world vocabulary
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+    <label class="md-nav__link" for="nav-3-2">
+      Planned soon
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned soon" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Planned soon
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/analyzing_first_physiology_experiment/" class="md-nav__link">
+      Analyzing your first electrophysiology experiment with NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
+      Reading your own data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/case_studies_reading_data/" class="md-nav__link">
+      Case studies in reading data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/data_pipeline/" class="md-nav__link">
+      Making your own data pipeline in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/analysis_app/" class="md-nav__link">
+      Making your own analysis app that uses NDI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+    <label class="md-nav__link" for="nav-3-3">
+      Planned later
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned later" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Planned later
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/archive/" class="md-nav__link">
+      Submitting your data to an archive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../tutorials/search_ndi_databases/" class="md-nav__link">
+      Search and analyze NDI databases on the web
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../.." class="md-nav__link">
+      Reference
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#superclasses" class="md-nav__link">
+    Superclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods-help" class="md-nav__link">
+    Methods help
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/reference/+ndi/+database/+implementations/+binarydoc/matfid.m.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="class-ndidatabaseimplementationsbinarydocmatfid">CLASS ndi.database.implementations.binarydoc.matfid<a class="headerlink" href="#class-ndidatabaseimplementationsbinarydocmatfid" title="Permanent link">&para;</a></h1>
+<p>ndi.database.implementations.binarydoc.matfid - create a new ndi.database.implementations.binarydoc.matfid object</p>
+<p>NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,VALUE1, ...)</p>
+<p>Follows same arguments as vlt.file.fileobj</p>
+<p>See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid</span>
+<span class="err">   doc ndi.database.implementations.binarydoc.matfid</span>
+</code></pre></div>
+
+<h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
+<p><strong>ndi.database.binarydoc</strong>, <strong>handle</strong>, <strong>vlt.file.fileobj</strong></p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>key</em></td>
+<td>The key that is created when the binary doc is locked</td>
+</tr>
+<tr>
+<td><em>doc_unique_id</em></td>
+<td>The document unique id</td>
+</tr>
+<tr>
+<td><em>fullpathfilename</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>fid</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>permission</em></td>
+<td></td>
+</tr>
+<tr>
+<td><em>machineformat</em></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>addlistener</em></td>
+<td>ADDLISTENER  Add listener for event.</td>
+</tr>
+<tr>
+<td><em>delete</em></td>
+<td>close an ndi.database.binarydoc and delete its handle</td>
+</tr>
+<tr>
+<td><em>eq</em></td>
+<td>== (EQ)   Test handle equality.</td>
+</tr>
+<tr>
+<td><em>fclose</em></td>
+<td>close an ndi.database.implementations.binarydoc.matfid object</td>
+</tr>
+<tr>
+<td><em>feof</em></td>
+<td>test to see if a FILEOBJ is at END-OF-FILE</td>
+</tr>
+<tr>
+<td><em>ferror</em></td>
+<td>return the last file error message for FILEOBJ</td>
+</tr>
+<tr>
+<td><em>fgetl</em></td>
+<td>get a line from a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>fgets</em></td>
+<td>get a line from a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>fileparts</em></td>
+<td>return filename parts for the file associated with FILEOBJ</td>
+</tr>
+<tr>
+<td><em>findobj</em></td>
+<td>FINDOBJ   Find objects matching specified conditions.</td>
+</tr>
+<tr>
+<td><em>findprop</em></td>
+<td>FINDPROP   Find property of MATLAB handle object.</td>
+</tr>
+<tr>
+<td><em>fopen</em></td>
+<td>open a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>fprintf</em></td>
+<td>print data to a FILEOBJ_OBJ</td>
+</tr>
+<tr>
+<td><em>fread</em></td>
+<td>read data from a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>frewind</em></td>
+<td>'rewind' a FILEOBJ back to the beginning</td>
+</tr>
+<tr>
+<td><em>fscanf</em></td>
+<td>scan data from a FILEOBJ_OBJ</td>
+</tr>
+<tr>
+<td><em>fseek</em></td>
+<td>seek to a location within a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>ftell</em></td>
+<td>find current location within a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>fwrite</em></td>
+<td>write data to a FILEOBJ</td>
+</tr>
+<tr>
+<td><em>ge</em></td>
+<td>&gt;= (GE)   Greater than or equal relation for handles.</td>
+</tr>
+<tr>
+<td><em>gt</em></td>
+<td>&gt; (GT)   Greater than relation for handles.</td>
+</tr>
+<tr>
+<td><em>isvalid</em></td>
+<td>ISVALID   Test handle validity.</td>
+</tr>
+<tr>
+<td><em>le</em></td>
+<td>&lt;= (LE)   Less than or equal relation for handles.</td>
+</tr>
+<tr>
+<td><em>listener</em></td>
+<td>LISTENER  Add listener for event without binding the listener to the source object.</td>
+</tr>
+<tr>
+<td><em>lt</em></td>
+<td>&lt; (LT)   Less than relation for handles.</td>
+</tr>
+<tr>
+<td><em>matfid</em></td>
+<td>create a new ndi.database.implementations.binarydoc.matfid object</td>
+</tr>
+<tr>
+<td><em>ne</em></td>
+<td>~= (NE)   Not equal relation for handles.</td>
+</tr>
+<tr>
+<td><em>notify</em></td>
+<td>NOTIFY   Notify listeners of event.</td>
+</tr>
+<tr>
+<td><em>setproperties</em></td>
+<td>set the properties of a FILEOBJ</td>
+</tr>
+</tbody>
+</table>
+<h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
+<p><strong>addlistener</strong> - <em>ADDLISTENER  Add listener for event.</em></p>
+<p>el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
+    for the event named Eventname.  The source of the event is the handle 
+    object hSource.  If hSource is an array of source handles, the listener
+    responds to the named event on any handle in the array.  callbackFcn
+    is a function handle that is invoked when the event is triggered.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>
+<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span>
+<span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> 
+<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> <span class="n">a</span> 
+<span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="ow">or</span> <span class="n">more</span> 
+<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span>  <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+<span class="n">properties</span><span class="o">.</span>
+
+<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">addlistener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">addlistener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>
+
+<span class="n">ADDLISTENER</span> <span class="n">binds</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is the </span>
+<span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Unless</span> <span class="n">you</span> <span class="n">explicitly</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span>
+<span class="n">destroyed</span> <span class="n">only</span> <span class="n">when</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="k">is</span> <span class="n">destroyed</span><span class="o">.</span>  <span class="n">To</span> <span class="n">control</span> <span class="n">the</span>
+<span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">independently</span> <span class="n">from</span> <span class="n">the</span> <span class="n">event</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> 
+<span class="n">use</span> <span class="n">listener</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span> <span class="n">constructor</span> <span class="n">to</span> <span class="n">create</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">IMPLEMENTATIONS</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="o">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/addlistener is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/addlistener</span>
+<span class="err">   doc handle.addlistener</span>
+</code></pre></div>
+
+<hr />
+<p><strong>delete</strong> - <em>close an ndi.database.binarydoc and delete its handle</em></p>
+<p>DELETE(NDI_BINARYDOC_OBJ)</p>
+<p>Closes an ndi.database.binarydoc (if necessary) and then deletes the handle.</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/delete is inherited from superclass NDI.DATABASE.BINARYDOC</p>
+<hr />
+<p><strong>eq</strong> - <em>== (EQ)   Test handle equality.</em></p>
+<p>Handles are equal if they are handles for the same object.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">H1</span> <span class="o">==</span> <span class="n">H2</span> <span class="n">performs</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">comparisons</span> <span class="k">between</span> <span class="n">handle</span> <span class="n">arrays</span> <span class="n">H1</span> <span class="k">and</span>
+<span class="n">H2</span><span class="p">.</span>  <span class="n">H1</span> <span class="k">and</span> <span class="n">H2</span> <span class="n">must</span> <span class="n">be</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span> <span class="n">unless</span> <span class="n">one</span> <span class="k">is</span> <span class="n">a</span> <span class="n">scalar</span><span class="p">.</span>
+<span class="n">The</span> <span class="k">result</span> <span class="k">is</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span><span class="p">,</span> <span class="k">where</span> <span class="k">each</span>
+<span class="n">element</span> <span class="k">is</span> <span class="n">an</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">equality</span> <span class="k">result</span><span class="p">.</span>
+
+<span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">EQ</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> 
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">NE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/eq is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/eq</span>
+<span class="err">   doc handle.eq</span>
+</code></pre></div>
+
+<hr />
+<p><strong>fclose</strong> - <em>close an ndi.database.implementations.binarydoc.matfid object</em></p>
+<p>Closes the file, but also clears the fullpathfilename and other fields so the 
+  user cannot re-use the object without checking out another binary document from
+  the database.</p>
+<hr />
+<p><strong>feof</strong> - <em>test to see if a FILEOBJ is at END-OF-FILE</em></p>
+<p>B = FEOF(FILEOBJ_OBJ)</p>
+<p>Returns 1 if FILEOBJ_OBJ is at its end of file, 0 otherwise.</p>
+<p>See also: FSEEK, FILEOBJ/FSEEK, FTELL</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/feof is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>ferror</strong> - <em>return the last file error message for FILEOBJ</em></p>
+<p>[MESSAGE, ERRORNUM] = FERROR(FILEOBJ_OBJ, COMMAND)</p>
+<p>Return the most recent file error MESSAGE and ERRORNUM for
+  the file associated with FERROR.</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/ferror is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fgetl</strong> - <em>get a line from a FILEOBJ</em></p>
+<p>TLINE = FGETL(FILEOBJ_OBJ)</p>
+<p>Returns the next line (not including NEWLINE character) just like FGETL.</p>
+<p>See also: FGETL</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fgetl is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fgets</strong> - <em>get a line from a FILEOBJ</em></p>
+<p>TLINE = FGETS(FILEOBJ_OBJ, [NCHAR])</p>
+<p>Returns the next line (including NEWLINE character) just like FGETS.</p>
+<p>See also: FGETS</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fgets is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fileparts</strong> - <em>return filename parts for the file associated with FILEOBJ</em></p>
+<p>[PATHSTR,NAME,EXT] = FILEPARTS(FILEOBJ_OBJ)</p>
+<p>Returns FILEPARTS of the 'fullpathfilename' field of FILEOBJ.</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fileparts is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>findobj</strong> - <em>FINDOBJ   Find objects matching specified conditions.</em></p>
+<p>The FINDOBJ method of the HANDLE class follows the same syntax as the 
+    MATLAB FINDOBJ command, except that the first argument must be an array
+    of handles to objects.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">HM</span> <span class="o">=</span> <span class="n">FINDOBJ</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="o">&lt;</span><span class="n">conditions</span><span class="o">&gt;</span><span class="p">)</span> <span class="n">searches</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">object</span> <span class="nb">array</span> <span class="n">H</span> <span class="k">and</span> 
+<span class="k">returns</span> <span class="n">an</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">handle</span> <span class="n">objects</span> <span class="n">matching</span> <span class="n">the</span> <span class="n">specified</span> <span class="n">conditions</span><span class="p">.</span>
+<span class="k">Only</span> <span class="n">the</span> <span class="k">public</span> <span class="n">members</span> <span class="k">of</span> <span class="n">the</span> <span class="n">objects</span> <span class="k">of</span> <span class="n">H</span> <span class="k">are</span> <span class="n">considered</span> <span class="k">when</span> 
+<span class="n">evaluating</span> <span class="n">the</span> <span class="n">conditions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">FINDOBJ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/findobj is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/findobj</span>
+<span class="err">   doc handle.findobj</span>
+</code></pre></div>
+
+<hr />
+<p><strong>findprop</strong> - <em>FINDPROP   Find property of MATLAB handle object.</em></p>
+<p>p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
+    associated with property name PROPNAME of scalar handle object H.
+    PROPNAME can be a string scalar or character vector.  It can be the 
+    name of a property defined by the class of H or a dynamic property 
+    added to scalar object H.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="k">no</span> <span class="n">property</span> <span class="n">named</span> <span class="n">PROPNAME</span> <span class="k">exists</span> <span class="k">for</span> <span class="k">object</span> <span class="n">H</span><span class="p">,</span> <span class="n">an</span> <span class="n">empty</span> 
+<span class="n">META</span><span class="p">.</span><span class="n">PROPERTY</span> <span class="nb">array</span> <span class="k">is</span> <span class="n">returned</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">FINDOBJ</span><span class="p">,</span> <span class="n">DYNAMICPROPS</span><span class="p">,</span> <span class="n">META</span><span class="p">.</span><span class="n">PROPERTY</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/findprop is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/findprop</span>
+<span class="err">   doc handle.findprop</span>
+</code></pre></div>
+
+<hr />
+<p><strong>fopen</strong> - <em>open a FILEOBJ</em></p>
+<p>FILEOBJ_OBJ = FOPEN(FILEOBJ_OBJ, [ , PERMISSION], [MACHINEFORMAT],[FILENAME])</p>
+<p>Opens the file associated with a FILEOBJ_OBJ object. If FILENAME, PERMISSION, 
+  and MACHINEFORMAT are given, then those variables of FILEOBJ_OBJ are updated. If they
+  are not given, then the existing values in the FILEOBJ_OBJ are used.</p>
+<p>Note that the order of the input arguments differs from FOPEN, so that the object
+  can be called in place of an FID (e.g., fid=fopen(myvariable), where myvariable is
+  either a file name or a FILEOBJ object).</p>
+<p>If the operation is successful, then FILEOBJ_OBJ.fid is greater than 3. Otherwise,
+  FILEOBJ_OBJ.fid is -1.</p>
+<p>See also: FOPEN, FILEOBJ/FCLOSE, FCLOSE</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fopen is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fprintf</strong> - <em>print data to a FILEOBJ_OBJ</em></p>
+<p>[COUNT] = FPRINTF(FID,FORMAT,A, ...)</p>
+<p>Call FPRINTF (see FPRINTF for inputs) for the file associated with
+  FILEOBJ_OBJ.</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fprintf is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fread</strong> - <em>read data from a FILEOBJ</em></p>
+<p>COUNT = FWRITE(FILEOBJ_OBJ, COUNT, [PRECISION], [SKIP], [MACHINEFORMAT])</p>
+<p>Attempts to read COUNT elements with resolution PRECISION. If PRECISION is not 
+  provided, then 'char' is assumed. If SKIP is provided, then SKIP is in number of bytes, unless
+  PRECISION is in bits, in which case SKIP is in bits. MACHINEFORMAT is the machine format to use.</p>
+<p>See FREAD for a full description of these input arguments.</p>
+<p>See also: FREAD</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fread is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>frewind</strong> - <em>'rewind' a FILEOBJ back to the beginning</em></p>
+<p>FREWIND(FILEOBJ_OBJ)</p>
+<p>Seeks to the beginning of the file.</p>
+<p>See also: FSEEK, FILEOBJ/FSEEK, FTELL</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/frewind is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fscanf</strong> - <em>scan data from a FILEOBJ_OBJ</em></p>
+<p>[A,COUNT] = FSCANF(FID,FORMAT,[SIZEA])</p>
+<p>Call FSCANF (see FSCANF for inputs) for the file associated with
+  FILEOBJ_OBJ.</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fscanf is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fseek</strong> - <em>seek to a location within a FILEOBJ</em></p>
+<p>B = FSEEK(FILEOBJ_OBJ, OFFSET, REFERENCE)</p>
+<p>Seeks the file to the location OFFSET (in bytes) relative to
+  REFERENCE. REFERENCE can be 
+      'bof' or -1   Beginning of file
+      'cof' or  0   Current position in file
+      'eof' or  1   End of file</p>
+<p>B is 0 on success and -1 on failure.</p>
+<p>See also: FSEEK, FILEOBJ/FTELL</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fseek is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>ftell</strong> - <em>find current location within a FILEOBJ</em></p>
+<p>LOCATION = FTELL(FILEOBJ_OBJ)</p>
+<p>Returns the current location (in bytes) relative to the beginning of the
+  file. If the query fails, -1 is returned.</p>
+<p>See also: FSEEK, FILEOBJ/FSEEK, FTELL</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/ftell is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>fwrite</strong> - <em>write data to a FILEOBJ</em></p>
+<p>COUNT = FWRITE(FILEOBJ_OBJ, DATA, [PRECISION], [SKIP], [MACHINEFORMAT])</p>
+<p>Attempts to write DATA elements with resolution PRECISION. If PRECISION is not 
+  provided, then 'char' is assumed. If SKIP is provided, then SKIP is in number of bytes, unless
+  PRECISION is in bits, in which case SKIP is in bits. MACHINEFORMAT is the machine format to use.</p>
+<p>See FWRITE for a full description of these input arguments.</p>
+<p>See also: FWRITE</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/fwrite is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+<p><strong>ge</strong> - <em>&gt;= (GE)   Greater than or equal relation for handles.</em></p>
+<p>H1 &gt;= H2 performs element-wise comparisons between handle arrays H1 and
+    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
+    The result is a logical array of the same dimensions, where each
+    element is an element-wise &gt;= result.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">GE</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> 
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">EQ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">NE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/ge is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/ge</span>
+<span class="err">   doc handle.ge</span>
+</code></pre></div>
+
+<hr />
+<p><strong>gt</strong> - <em>&gt; (GT)   Greater than relation for handles.</em></p>
+<p>H1 &gt; H2 performs element-wise comparisons between handle arrays H1 and 
+    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.<br />
+    The result is a logical array of the same dimensions, where each
+    element is an element-wise &gt; result.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">GT</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> 
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">EQ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">NE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/gt is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/gt</span>
+<span class="err">   doc handle.gt</span>
+</code></pre></div>
+
+<hr />
+<p><strong>isvalid</strong> - <em>ISVALID   Test handle validity.</em></p>
+<p>TF = ISVALID(H) performs an element-wise check for validity on the 
+    handle elements of H.  The result is a logical array of the same 
+    dimensions as H, where each element is the element-wise validity 
+    result.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">A</span> <span class="n">handle</span> <span class="k">is</span> <span class="n">invalid</span> <span class="k">if</span> <span class="n">it</span> <span class="n">has</span> <span class="n">been</span> <span class="n">deleted</span> <span class="k">or</span> <span class="k">if</span> <span class="n">it</span> <span class="k">is</span> <span class="n">an</span> <span class="n">element</span>
+<span class="k">of</span> <span class="n">a</span> <span class="n">handle</span> <span class="nb">array</span> <span class="k">and</span> <span class="n">has</span> <span class="k">not</span> <span class="n">yet</span> <span class="n">been</span> <span class="n">initialized</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="k">DELETE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/isvalid is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/isvalid</span>
+<span class="err">   doc handle.isvalid</span>
+</code></pre></div>
+
+<hr />
+<p><strong>le</strong> - <em>&lt;= (LE)   Less than or equal relation for handles.</em></p>
+<p>Handles are equal if they are handles for the same object.  All 
+    comparisons use a number associated with each handle object.  Nothing
+    can be assumed about the result of a handle comparison except that the
+    repeated comparison of two handles in the same MATLAB session will 
+    yield the same result.  The order of handle values is purely arbitrary 
+    and has no connection to the state of the handle objects being 
+    compared.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">H1</span> <span class="o">&lt;=</span> <span class="n">H2</span> <span class="n">performs</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">comparisons</span> <span class="k">between</span> <span class="n">handle</span> <span class="n">arrays</span> <span class="n">H1</span> <span class="k">and</span>
+<span class="n">H2</span><span class="p">.</span>  <span class="n">H1</span> <span class="k">and</span> <span class="n">H2</span> <span class="n">must</span> <span class="n">be</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span> <span class="n">unless</span> <span class="n">one</span> <span class="k">is</span> <span class="n">a</span> <span class="n">scalar</span><span class="p">.</span>
+<span class="n">The</span> <span class="k">result</span> <span class="k">is</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span><span class="p">,</span> <span class="k">where</span> <span class="k">each</span>
+<span class="n">element</span> <span class="k">is</span> <span class="n">an</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="o">&gt;=</span> <span class="k">result</span><span class="p">.</span>
+
+<span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">LE</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> 
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">EQ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">NE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/le is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/le</span>
+<span class="err">   doc handle.le</span>
+</code></pre></div>
+
+<hr />
+<p><strong>listener</strong> - <em>LISTENER  Add listener for event without binding the listener to the source object.</em></p>
+<p>el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
+    for the event named Eventname.  The source of the event is the handle<br />
+    object hSource.  If hSource is an array of source handles, the listener
+    responds to the named event on any handle in the array.  callbackFcn
+    is a function handle that is invoked when the event is triggered.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
+<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
+<span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
+<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
+<span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
+<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+<span class="n">properties</span><span class="o">.</span>
+
+<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
+<span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
+<span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span>
+
+<span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
+<span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
+<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
+<span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
+<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
+<span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
+<span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
+<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">IMPLEMENTATIONS</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="o">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/listener is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/listener</span>
+<span class="err">   doc handle.listener</span>
+</code></pre></div>
+
+<hr />
+<p><strong>lt</strong> - <em>&lt; (LT)   Less than relation for handles.</em></p>
+<p>H1 &lt; H2 performs element-wise comparisons between handle arrays H1 and
+    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
+    The result is a logical array of the same dimensions, where each
+    element is an element-wise &lt; result.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">LT</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> 
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">EQ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">NE</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/lt is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/lt</span>
+<span class="err">   doc handle.lt</span>
+</code></pre></div>
+
+<hr />
+<p><strong>matfid</strong> - <em>create a new ndi.database.implementations.binarydoc.matfid object</em></p>
+<p>NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,VALUE1, ...)</p>
+<p>Follows same arguments as vlt.file.fileobj</p>
+<p>See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ</p>
+<hr />
+<p><strong>ne</strong> - <em>~= (NE)   Not equal relation for handles.</em></p>
+<p>Handles are equal if they are handles for the same object and are 
+    unequal otherwise.</p>
+<div class="codehilite"><pre><span></span><code><span class="n">H1</span> <span class="o">~=</span> <span class="n">H2</span> <span class="n">performs</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">comparisons</span> <span class="k">between</span> <span class="n">handle</span> <span class="n">arrays</span> <span class="n">H1</span> 
+<span class="k">and</span> <span class="n">H2</span><span class="p">.</span>  <span class="n">H1</span> <span class="k">and</span> <span class="n">H2</span> <span class="n">must</span> <span class="n">be</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span> <span class="n">unless</span> <span class="n">one</span> <span class="k">is</span> <span class="n">a</span> 
+<span class="n">scalar</span><span class="p">.</span>  <span class="n">The</span> <span class="k">result</span> <span class="k">is</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span> <span class="n">dimensions</span><span class="p">,</span> <span class="k">where</span> 
+<span class="k">each</span> <span class="n">element</span> <span class="k">is</span> <span class="n">an</span> <span class="n">element</span><span class="o">-</span><span class="n">wise</span> <span class="n">equality</span> <span class="k">result</span><span class="p">.</span>
+
+<span class="k">If</span> <span class="n">one</span> <span class="k">of</span> <span class="n">H1</span> <span class="k">or</span> <span class="n">H2</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">scalar</span> <span class="n">expansion</span> <span class="k">is</span> <span class="n">performed</span> <span class="k">and</span> <span class="n">the</span> 
+<span class="k">result</span> <span class="n">will</span> <span class="k">match</span> <span class="n">the</span> <span class="n">dimensions</span> <span class="k">of</span> <span class="n">the</span> <span class="nb">array</span> <span class="n">that</span> <span class="k">is</span> <span class="k">not</span> <span class="n">scalar</span><span class="p">.</span>
+
+<span class="n">TF</span> <span class="o">=</span> <span class="n">NE</span><span class="p">(</span><span class="n">H1</span><span class="p">,</span> <span class="n">H2</span><span class="p">)</span> <span class="n">stores</span> <span class="n">the</span> <span class="k">result</span> <span class="k">in</span> <span class="n">a</span> <span class="n">logical</span> <span class="nb">array</span> <span class="k">of</span> <span class="n">the</span> <span class="n">same</span>
+<span class="n">dimensions</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">EQ</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">GT</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LE</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LT</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/ne is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/ne</span>
+<span class="err">   doc handle.ne</span>
+</code></pre></div>
+
+<hr />
+<p><strong>notify</strong> - <em>NOTIFY   Notify listeners of event.</em></p>
+<p>NOTIFY(H, eventname) notifies listeners added to the event named 
+    eventname for handle object array H that the event is taking place. 
+    eventname can be a string scalar or character vector.<br />
+    H is the array of handles to the event source objects, and 'eventname'
+    must be a character vector.</p>
+<div class="codehilite"><pre><span></span><code><span class="k">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">eventname</span><span class="p">,</span><span class="n">ed</span><span class="p">)</span> <span class="n">provides</span> <span class="n">a</span> <span class="n">way</span> <span class="k">of</span> <span class="n">encapsulating</span> <span class="n">information</span> 
+<span class="n">about</span> <span class="n">an</span> <span class="n">event</span> <span class="n">which</span> <span class="n">can</span> <span class="k">then</span> <span class="n">be</span> <span class="n">accessed</span> <span class="k">by</span> <span class="k">each</span> <span class="n">registered</span> <span class="n">listener</span><span class="p">.</span>
+<span class="n">ed</span> <span class="n">must</span> <span class="n">belong</span> <span class="k">to</span> <span class="n">the</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span> <span class="k">class</span><span class="p">.</span>
+
+<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="p">.</span><span class="n">IMPLEMENTATIONS</span><span class="p">.</span><span class="n">BINARYDOC</span><span class="p">.</span><span class="n">MATFID</span><span class="o">/</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span><span class="p">,</span> <span class="n">EVENTS</span>
+</code></pre></div>
+
+<p>Help for ndi.database.implementations.binarydoc.matfid/notify is inherited from superclass HANDLE</p>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.database.implementations.binarydoc.matfid/notify</span>
+<span class="err">   doc handle.notify</span>
+</code></pre></div>
+
+<hr />
+<p><strong>setproperties</strong> - <em>set the properties of a FILEOBJ</em></p>
+<p>FILEOBJ_OBJ = SETPROPERTIES(FILEOBJ_OBJ, 'PROPERTY1',VALUE1, ...)</p>
+<p>Sets the properties of a FILEOBJ with name/value pairs.</p>
+<p>Properties are:
+    fullpathfilename; % the full path file name of the file
+    fid;              % The Matlab file identifier
+    permission;       % The file permission
+    machineformat     % big-endian ('b'), little-endian ('l'), or native ('n')</p>
+<p>Help for ndi.database.implementations.binarydoc.matfid/setproperties is inherited from superclass VLT.FILE.FILEOBJ</p>
+<hr />
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../../../../assets/javascripts/vendor.fd16492e.min.js"></script>
+      <script src="../../../../../../assets/javascripts/bundle.7836ba4d.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../../../../..",
+          features: ['navigation.expand'],
+          search: Object.assign({
+            worker: "../../../../../../assets/javascripts/worker/search.4ac00218.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>

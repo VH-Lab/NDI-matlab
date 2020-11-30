@@ -1,0 +1,792 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <meta name="author" content="Steve Van Hooser">
+      
+      <link rel="shortcut icon" href="../../../../../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-6.1.6">
+    
+    
+      
+        <title>CLASS ndi.daq.reader.mfdaq.stimulus.angelucci_visstim - NDI-matlab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../../../../../assets/stylesheets/main.6910b76c.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../../../../../assets/stylesheets/palette.196e0c26.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#7e56c2">
+        
+      
+    
+    
+    
+      
+        
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto",-apple-system,BlinkMacSystemFont,Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono",SFMono-Regular,Consolas,Menlo,monospace}</style>
+      
+    
+    
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="deep-purple" data-md-color-accent="deep-purple">
+      
+  
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#class-ndidaqreadermfdaqstimulusangelucci_visstim" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid" aria-label="Header">
+    <a href="../../../../../../.." title="NDI-matlab" class="md-header-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header-nav__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header-nav__title" data-md-component="header-title">
+      
+        <div class="md-header-nav__ellipsis">
+          <span class="md-header-nav__topic md-ellipsis">
+            NDI-matlab
+          </span>
+          <span class="md-header-nav__topic md-ellipsis">
+            
+              CLASS ndi.daq.reader.mfdaq.stimulus.angelucci_visstim
+            
+          </span>
+        </div>
+      
+    </div>
+    
+      <label class="md-header-nav__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0116 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 019.5 16 6.5 6.5 0 013 9.5 6.5 6.5 0 019.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" data-md-component="search-reset" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header-nav__source">
+        
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../../../../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 003-3 3 3 0 00-3-3 3 3 0 00-3 3 3 3 0 003 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    NDI-matlab
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/VH-Lab/NDI-matlab/" title="Go to repository" class="md-source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05L244 40.45a28.87 28.87 0 00-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 01-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 000 40.81l195.61 195.6a28.86 28.86 0 0040.8 0l194.69-194.69a28.86 28.86 0 000-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../.." class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../installation/" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" >
+    <label class="md-nav__link" for="nav-3">
+      Tutorials
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+      <label class="md-nav__title" for="nav-3">
+        <span class="md-nav__icon md-icon"></span>
+        Tutorials
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-1" type="checkbox" id="nav-3-1" >
+    <label class="md-nav__link" for="nav-3-1">
+      The NDI model
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="The NDI model" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-1">
+        <span class="md-nav__icon md-icon"></span>
+        The NDI model
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../ndimodel/1_intro/" class="md-nav__link">
+      Introduction
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      Real world vocabulary
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-2" type="checkbox" id="nav-3-2" >
+    <label class="md-nav__link" for="nav-3-2">
+      Planned soon
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned soon" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-2">
+        <span class="md-nav__icon md-icon"></span>
+        Planned soon
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/analyzing_first_physiology_experiment/" class="md-nav__link">
+      Analyzing your first electrophysiology experiment with NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
+      Reading your own data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/case_studies_reading_data/" class="md-nav__link">
+      Case studies in reading data in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/data_pipeline/" class="md-nav__link">
+      Making your own data pipeline in NDI
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/analysis_app/" class="md-nav__link">
+      Making your own analysis app that uses NDI
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item md-nav__item--nested">
+    
+    <input class="md-nav__toggle md-toggle" data-md-toggle="nav-3-3" type="checkbox" id="nav-3-3" >
+    <label class="md-nav__link" for="nav-3-3">
+      Planned later
+      <span class="md-nav__icon md-icon"></span>
+    </label>
+    <nav class="md-nav" aria-label="Planned later" data-md-level="2">
+      <label class="md-nav__title" for="nav-3-3">
+        <span class="md-nav__icon md-icon"></span>
+        Planned later
+      </label>
+      <ul class="md-nav__list" data-md-scrollfix>
+        
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/archive/" class="md-nav__link">
+      Submitting your data to an archive
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../../../tutorials/search_ndi_databases/" class="md-nav__link">
+      Search and analyze NDI databases on the web
+    </a>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+        
+      </ul>
+    </nav>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../../../../.." class="md-nav__link">
+      Reference
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#superclasses" class="md-nav__link">
+    Superclasses
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#properties" class="md-nav__link">
+    Properties
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#methods" class="md-nav__link">
+    Methods
+  </a>
+  
+    <nav class="md-nav" aria-label="Methods">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#methods-help" class="md-nav__link">
+    Methods help
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/reference/+ndi/+daq/+reader/+mfdaq/+stimulus/angelucci_visstim.m.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="class-ndidaqreadermfdaqstimulusangelucci_visstim">CLASS ndi.daq.reader.mfdaq.stimulus.angelucci_visstim<a class="headerlink" href="#class-ndidaqreadermfdaqstimulusangelucci_visstim" title="Permanent link">&para;</a></h1>
+<p>NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM - Device object for Angelucci lab visual stimulus system</p>
+<p>This device reads the 'stimData.mat' to obtain stimulus parameters and a *.ns4 file (digital events on ai1).</p>
+<table>
+<thead>
+<tr>
+<th>Channel name:</th>
+<th>Signal description:</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>m1</td>
+<td>stimulus on/off</td>
+</tr>
+<tr>
+<td>m2</td>
+<td>stimid</td>
+</tr>
+</tbody>
+</table>
+<div class="codehilite"><pre><span></span><code><span class="err">Documentation for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim</span>
+<span class="err">   doc ndi.daq.reader.mfdaq.stimulus.angelucci_visstim</span>
+</code></pre></div>
+
+<h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
+<p><strong>ndi.daq.reader.mfdaq.blackrock</strong>, <strong>ndi.daq.reader.mfdaq</strong>, <strong>ndi.daq.reader</strong>, <strong>ndi.ido</strong>, <strong>ndi.documentservice</strong></p>
+<h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>identifier</em></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="methods">Methods<a class="headerlink" href="#methods" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>angelucci_visstim</em></td>
+<td>Create a new multifunction DAQ object</td>
+</tr>
+<tr>
+<td><em>epochclock</em></td>
+<td>return the ndi.time.clocktype objects for an epoch</td>
+</tr>
+<tr>
+<td><em>eq</em></td>
+<td>tests whether 2 ndi.daq.reader objects are equal</td>
+</tr>
+<tr>
+<td><em>filenamefromepochfiles</em></td>
+<td>return the file name that corresponds to the NEV/NSV files</td>
+</tr>
+<tr>
+<td><em>getchannelsepoch</em></td>
+<td>List the channels that are available on this device</td>
+</tr>
+<tr>
+<td><em>id</em></td>
+<td>return the identifier of an ndi.ido object</td>
+</tr>
+<tr>
+<td><em>ndi_unique_id</em></td>
+<td>Generate a unique ID number for NDI projects</td>
+</tr>
+<tr>
+<td><em>newdocument</em></td>
+<td>create a new ndi.document for an ndi.daq.reader object</td>
+</tr>
+<tr>
+<td><em>read_blackrock_headers</em></td>
+<td>read information from Blackrock Micro header files</td>
+</tr>
+<tr>
+<td><em>readchannels_epochsamples</em></td>
+<td>read the data based on specified channels</td>
+</tr>
+<tr>
+<td><em>readevents_epochsamples</em></td>
+<td>read events or markers of specified channels for a specified epoch</td>
+</tr>
+<tr>
+<td><em>readevents_epochsamples_native</em></td>
+<td>read events or markers of specified channels for a specified epoch</td>
+</tr>
+<tr>
+<td><em>samplerate</em></td>
+<td>GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL</td>
+</tr>
+<tr>
+<td><em>searchquery</em></td>
+<td>create a search for this ndi.daq.reader object</td>
+</tr>
+<tr>
+<td><em>t0_t1</em></td>
+<td>return the t0_t1 (beginning and end) epoch times for an epoch</td>
+</tr>
+<tr>
+<td><em>verifyepochprobemap</em></td>
+<td>Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk</td>
+</tr>
+</tbody>
+</table>
+<h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
+<p><strong>angelucci_visstim</strong> - <em>Create a new multifunction DAQ object</em></p>
+<p>D = NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2(NAME, THEFILENAVIGATOR, DAQREADER)</p>
+<p>Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
+   This is an abstract class that is overridden by specific devices.</p>
+<hr />
+<p><strong>epochclock</strong> - <em>return the ndi.time.clocktype objects for an epoch</em></p>
+<p>EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)</p>
+<p>Return the clock types available for this epoch as a cell array
+  of ndi.time.clocktype objects (or sub-class members).</p>
+<p>For the generic ndi.daq.reader.mfdaq, this returns a single clock
+  type 'dev_local'time';</p>
+<p>See also: ndi.time.clocktype</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ</p>
+<hr />
+<p><strong>eq</strong> - <em>tests whether 2 ndi.daq.reader objects are equal</em></p>
+<p>B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)</p>
+<p>Examines whether or not the ndi.daq.reader objects are equal.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/eq is inherited from superclass NDI.DAQ.READER</p>
+<hr />
+<p><strong>filenamefromepochfiles</strong> - <em>return the file name that corresponds to the NEV/NSV files</em></p>
+<p>[NEVFILES, NSVFILES] = FILENAMEFROMEPOCHFILES(FILENAME_ARRAY)</p>
+<p>Examines the list of filenames in FILENAME_ARRAY (cell array of full path file strings) and determines which
+  ones have the extension '.nev' (neuro event file) and which have the extension '.ns#', where # is a number, or the source
+  data files.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim.filenamefromepochfiles is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+<p><strong>getchannelsepoch</strong> - <em>List the channels that are available on this device</em></p>
+<p>CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)</p>
+<p>This device produces the following channels in each epoch:
+  Channel name:   | Signal description:
+  ----------------|------------------------------------------
+  mk1             | stimulus on/off
+  mk2             | stimid</p>
+<hr />
+<p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
+<p>IDENTIFIER = ID(NDI_ID_OBJ)</p>
+<p>Returns the unique identifier of an ndi.ido object.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/id is inherited from superclass NDI.IDO</p>
+<hr />
+<p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
+<p>ID = NDI_UNIQUE_ID</p>
+<p>Generates a unique ID character array based on the current time and a random
+  number. It is a hexidecimal representation of the serial date number in
+  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
+  The integer portion of the date is the whole number of days and the fractional part of the date number
+  is the fraction of days.</p>
+<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
+<p>See also: NUM2HEX, NOW, RAND</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim.ndi_unique_id is inherited from superclass NDI.IDO</p>
+<hr />
+<p><strong>newdocument</strong> - <em>create a new ndi.document for an ndi.daq.reader object</em></p>
+<p>DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)</p>
+<p>Creates an ndi.document object DOC that represents the
+     ndi.daq.reader object.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/newdocument is inherited from superclass NDI.DAQ.READER</p>
+<hr />
+<p><strong>read_blackrock_headers</strong> - <em>read information from Blackrock Micro header files</em></p>
+<p>[NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/read_blackrock_headers is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+<p><strong>readchannels_epochsamples</strong> - <em>read the data based on specified channels</em></p>
+<p>DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)</p>
+<p>CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)</p>
+<p>CHANNEL is a vector of the channel numbers to read, beginning from 1</p>
+<p>EPOCH is set of epoch files</p>
+<p>DATA is the channel data (each column contains data from an indvidual channel)</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/readchannels_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+<p><strong>readevents_epochsamples</strong> - <em>read events or markers of specified channels for a specified epoch</em></p>
+<p>DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)</p>
+<p>SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM object.</p>
+<p>CHANNELTYPE is a cell array of strings describing the the type(s) of channel(s) to read
+   ('event','marker', etc)</p>
+<p>CHANNEL is a vector with the identity of the channel(s) to be read.</p>
+<p>EPOCH is the cell array of file names associated with an epoch</p>
+<p>DATA is a two-column vector; the first column has the time of the event. The second
+   column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
+   is requested, DATA is returned as a cell array, one entry per channel.</p>
+<hr />
+<p><strong>readevents_epochsamples_native</strong> - <em>read events or markers of specified channels for a specified epoch</em></p>
+<p>[DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)</p>
+<p>CHANNELTYPE is the type of channel to read
+   ('event','marker', etc). It must be a string (not a cell array of strings).</p>
+<p>CHANNEL is a vector with the identity of the channel(s) to be read.</p>
+<p>EPOCH is the epoch number or epochID</p>
+<p>DATA is a two-column vector; the first column has the time of the event. The second
+   column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
+   is requested, DATA is returned as a cell array, one entry per channel.</p>
+<p>TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ</p>
+<hr />
+<p><strong>samplerate</strong> - <em>GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL</em></p>
+<p>SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
+  CHANNELTYPE can be either a string or a cell array of
+  strings the same length as the vector CHANNEL.
+  If CHANNELTYPE is a single string, then it is assumed that
+  that CHANNELTYPE applies to every entry of CHANNEL.</p>
+<p>SR is the list of sample rate from specified channels</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/samplerate is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+<p><strong>searchquery</strong> - <em>create a search for this ndi.daq.reader object</em></p>
+<p>SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)</p>
+<p>Creates a search query for the ndi.daq.reader object.</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/searchquery is inherited from superclass NDI.DAQ.READER</p>
+<hr />
+<p><strong>t0_t1</strong> - <em>return the t0_t1 (beginning and end) epoch times for an epoch</em></p>
+<p>T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)</p>
+<p>Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+  in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.</p>
+<p>The abstract class always returns {[NaN NaN]}.</p>
+<p>See also: ndi.time.clocktype, EPOCHCLOCK</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/t0_t1 is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+<p><strong>verifyepochprobemap</strong> - <em>Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk</em></p>
+<p>B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHPROBEMAP, EPOCHFILES)</p>
+<p>Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
+  with epoch files EPOCHFILES.</p>
+<p>See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER</p>
+<p>Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/verifyepochprobemap is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK</p>
+<hr />
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../../../../../assets/javascripts/vendor.fd16492e.min.js"></script>
+      <script src="../../../../../../../assets/javascripts/bundle.7836ba4d.min.js"></script><script id="__lang" type="application/json">{"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}</script>
+      
+      <script>
+        app = initialize({
+          base: "../../../../../../..",
+          features: ['navigation.expand'],
+          search: Object.assign({
+            worker: "../../../../../../../assets/javascripts/worker/search.4ac00218.min.js"
+          }, typeof search !== "undefined" && search)
+        })
+      </script>
+      
+    
+  </body>
+</html>
