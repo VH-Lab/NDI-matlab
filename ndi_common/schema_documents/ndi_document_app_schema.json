@@ -5,25 +5,46 @@
 	"type": "object",
 	"properties": {
 		"name": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "ndi.app",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the application"
 		},
 		"version": {
-			"type": "number"
+			"type": "number",
+			"doc_default_value": "-",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The version of the app according to the app's own version schedule; often this is a Git commit identifier"
 		},
 		"url" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "URL as a character array (ASCII)",
+			"doc_description": "The home page of the application"
 		},
 		"os" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The operating system that ran the application"
 		},
 		"os_version" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The operating system version"
 		},
 		"interpreter" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "If applicable, the name of the interpreter (Matlab, python3, etc)"
 		},
 		"interpreter_version" : {
-			"type" : "number"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "If applicable, the version of the interpreter"
 		}
 	}
 }

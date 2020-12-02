@@ -3,6 +3,7 @@
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_schema.json",
 		"class_name":						"ndi_document_stimulus_stimulus_response",
+		"property_list_name":					"stimulus_response",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}

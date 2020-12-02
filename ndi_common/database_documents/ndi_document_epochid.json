@@ -3,11 +3,15 @@
 		"definition":						"$NDIDOCUMENTPATH\/ndi_document_epochid.json",
 		"validation":						"$NDISCHEMAPATH\/ndi_document_epochid_schema.json",
 		"class_name":						"ndi_document_epochid",
+		"property_list_name":					"epochid_fix",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
-	"epochid":							""
+	"epochid":							"",
+	"epochid_fix": {
+		"epochid":						""
+	}
 }
 

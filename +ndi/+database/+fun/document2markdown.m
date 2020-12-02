@@ -74,9 +74,13 @@ info.definition_url = strrep(info.definition, '$NDIDOCUMENTPATH/', giturl_path);
 md = cat(2,md,['**Definition**: [' info.definition '](' info.definition_url ')<br>' newline]);
 info.validation = ndi_document_obj.document_properties.document_class.validation;
 info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
-ndi.globals
+ndi.globals;
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi_globals.path.documentschemapath);
-info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
+try,
+	info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
+catch,
+	info.validation_json.properties = '';
+end;
 md = cat(2,md,['**Schema for validation**: [' info.validation '](' info.validation_url ')<br>' newline]);
 info.property_list_name = ndi_document_obj.document_properties.document_class.property_list_name;
 md = cat(2,md,['**Property_list_name**: `' info.property_list_name '`<br>' newline]);
@@ -106,7 +110,7 @@ if numel(fn)>0, % we have field names
 		phere.data_type = '';
 		phere.description = '';
 		if isfield(info.validation_json.properties,fn{i}),
-			v=getfield(info.validation_json.properties,fn{i}),
+			v=getfield(info.validation_json.properties,fn{i});
 			if isfield(v,'doc_description'),
 				phere.description = getfield(v,'doc_description');
 			end;
