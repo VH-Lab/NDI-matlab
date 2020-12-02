@@ -5,10 +5,16 @@
 	"type": "object",
 	"properties": {
 		"local_identifier": {
-			"type": "string"
+			"type": "string", 
+			"doc_default_value": "-",
+			"doc_data_type": "A globally unique identifier that is meaningful to a local group",
+			"doc_description": "The identifier is usually constructed by concatenating a local identifier with the name of the group, such as `mouse123@vhlab.org`"
 		},
 		"description": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character string (ASCII)",
+			"doc_description": "A character string that is free for the user to choose"
 		}
 	}
 }

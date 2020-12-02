@@ -6,27 +6,45 @@
 	"properties": {
 		"session_id": {
 			"description": "the unique identifier of the ndi_session this document is associated with",
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "-",
+			"doc_data_type": "NDI ID string",
+			"doc_description": "The globally unique identifier of any data session that produced this document"
 		},
 		"id": {
 			"description": "the unique identifier of this ndi_document",
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "-",
+			"doc_data_type": "NDI ID string",
+			"doc_description": "The globally unique identifier of this document"
 		},
 		"name": {
 			"description": "the name of the ndi_document",
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "A user-specified name, free for users/developers to use as they like"
 		},
 		"type": {
 			"description": "the document_type of this ndi_document",
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "A user-specified type, free for users/developers to use as they like (deprecated, will be removed)"
 		},
-		"datastamp": {
+		"datestamp": {
 			"description": "the time this ndi_document is created in ISO8601 format",
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "(current time)",
+			"doc_data_type": "ISO-8601 date string, time zone must be UTC leap seconds",
+			"doc_description": "Time of document creation"
 		},
 		"database_version": {
 			"description": "the version of the json database",
-			"type": "number"
+			"type": "number",
+			"doc_default_value": "-",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "Version of this document in the database"
 		}
 	}
 }

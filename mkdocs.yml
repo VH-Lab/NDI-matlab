@@ -25,7 +25,7 @@ nav:
     - Planned later:
       - Submitting your data to an archive: 'tutorials/archive.md'
       - Search and analyze NDI databases on the web: 'tutorials/search_ndi_databases.md'
-  - Reference:
+  - Code reference:
     - ndi_Init: 'reference/ndi_Init.m.md'
     - ndi_install: 'reference/ndi_install.m.md'
     - ndi PACKAGE:
