@@ -9,6 +9,7 @@ It is recommended that the developer also install vhlab_vhtools, available at ht
 
 It is assumed that the function `ndi_Init.m` is run at startup. Please add this to your `startup.m` file. (If you use the http://github.com/VH-Lab/vhlab_vhtools distribution, it will be run automatically.)
 
+Documentation is at https://vh-lab.github.io/NDI-matlab/
 
 Still in early development
 
