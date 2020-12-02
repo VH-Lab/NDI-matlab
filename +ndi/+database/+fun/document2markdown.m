@@ -26,8 +26,12 @@ end;
 info.class_name = ndi_document_obj.document_properties.document_class.class_name;
 info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
 info.url = fileparts(info.url);
+if ~isempty(info.url),
+	info.url(end+1) = '/';
+end;
 info.url = [info.url info.class_name '.md'];
-
+info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
+info.localurl = [info.class_name '.md'];
 
 
 md = '';
@@ -37,7 +41,7 @@ md = cat(2,md,['# ' info.class_name ' (ndi.document class)' newline newline]);
 
 md = cat(2,md,['## Class definition' newline newline]);
 
-md = cat(2,md,['**Class name**: [' info.class_name '](' info.url  ')' newline newline ]);
+md = cat(2,md,['**Class name**: [' info.class_name '](' info.localurl  ')' newline newline ]);
 
 	 % Superclasses
 
@@ -52,7 +56,7 @@ if examine_superclasses,
 		for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses),
 			d=ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
 			[blank,info_here] = ndi.database.fun.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1);
-			md=cat(2,md,['[' info_here.class_name '](' info_here.url ')']);
+			md=cat(2,md,['[' info_here.class_name '](' [info.my_path_to_root info_here.url] ')']);
 			superclass_info{end+1} = info_here;
 			if i~=numel(ndi_document_obj.document_properties.document_class.superclasses),
 				md = cat(2,md,', ');
@@ -91,7 +95,7 @@ fn = fieldnames(prop_list);
 info.prop_list = vlt.data.emptystruct('field','default_value','data_type','description');
 
 if numel(fn)>0, % we have field names
-	md = cat(2,md,['## [' info.class_name '](' info.url ') fields' newline newline]);
+	md = cat(2,md,['## [' info.class_name '](' info.localurl ') fields' newline newline]);
 	md = cat(2,md,['Accessed by `' info.property_list_name '.field` where *field* is one of the field names below' newline newline]);
 	md = cat(2,md,['| field | default_value | data type | description |' newline]);
 	md = cat(2,md,['| --- | --- | --- | --- |' newline]);
@@ -125,7 +129,8 @@ end;
 if numel(superclass_info)>0,
 	for i=1:numel(info.superclass_info),
 		if numel(info.superclass_info{i}.prop_list)>0,
-			md = cat(2,md,['## [' info.superclass_info{i}.class_name '](' info.superclass_info{i}.url  ') fields' newline newline]);
+			md = cat(2,md,['## [' info.superclass_info{i}.class_name '](' [info.my_path_to_root info.superclass_info{i}.url] ...
+				 ') fields' newline newline]);
 			md = cat(2,md,['Accessed by `' info.superclass_info{i}.property_list_name '.field` where *field* is one of the field names below' newline newline]);
 			md = cat(2,md,['| field | default_value | data type | description |' newline]);
 			md = cat(2,md,['| --- | --- | --- | --- |' newline]);
