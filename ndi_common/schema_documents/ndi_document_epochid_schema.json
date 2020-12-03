@@ -5,7 +5,10 @@
 	"type": "object",
 	"properties": {
 		"epochid": {
-			"type": "string"
+			"type": "string",
+                        "doc_default_value": "",
+                        "doc_data_type": "character array (ASCII)",
+                        "doc_description": "The epoch id that is referred to"
 		}
 	}
 }

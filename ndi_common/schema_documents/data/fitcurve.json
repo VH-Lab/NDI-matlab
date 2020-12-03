@@ -5,31 +5,55 @@
 	"type": "object",
 	"properties": {
 		"fit_name": {
-			"type": ["number", "string"]
+			"type": ["number", "string"],
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the fit being stored (free for the user to choose)"
 		},
 		"fit_equation": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the fit being stored (free for the user to choose)"
 		},
 		"data_size" : {
-			"type" : "number"
+			"type" : "number",
+			"doc_default_value": "",
+			"doc_data_type": "Data size",
+			"doc_description": "The size of each data point (note: need to describe what this is)"
 		},
 		"fit_parameters" : {
 			"type" : "array",
 			"items" : {
 				"type" : "number"
-			}
+			},
+			"doc_default_value": "",
+			"doc_data_type": "float array",
+			"doc_description": "The values of the fit parameters"
 		},
 		"fit_parameter_names" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The titles of the fit parameters"
 		},
 		"fit_independent_variable_names" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The names of the independent variables"
 		},
 		"fit_dependent_variable_names" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The names of the dependent variables"
 		},	
 		"fit_sse" : {
-			"type" : "number"
+			"type" : "number",
+			"doc_default_value": "",
+			"doc_data_type": "float array",
+			"doc_description": "The sum of squared error of the fit"
 		},
 		"fit_constraints" : {
 			"type" : "array",

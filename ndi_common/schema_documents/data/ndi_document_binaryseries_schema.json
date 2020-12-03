@@ -5,22 +5,40 @@
 	"type": "object",
 	"properties": {
 		"time_size": {
-			"type": "number"
+			"type": "number",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer array [n m]",
+			"doc_description": "Number of independent variable entries (often time)"
 		},
 		"time_type": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "Type of the time variable ('float64', 'uint32', etc) (note: make better)"
 		},
 		"data_size" : {
-			"type" : "number"
+			"type" : "number",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer array [n m]",
+			"doc_description": "Number of data entries)"
 		},
 		"data_type" : {
-			"type" : "string"
+			"type" : "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "Type of the time variable ('float64', 'uint32', etc) (note: make better)"
 		},
 		"data_dim" : {
-			"type" : "number"
+			"type" : "number",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer array [n m]",
+			"doc_description": "Dimensions of each data series"
 		},
 		"samples_regular_intervals" : {
-			"type" : "number"
+			"type" : "number",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer (0 or 1)",
+			"doc_description": "is the data always sampled at regular intervals?"
 		}
 	}
 }

@@ -5,10 +5,16 @@
 	"type": "object",
 	"properties": {
 		"epoch_clock": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "'dev_local"time'",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The clock type (of the ndi.time.clocktype object) that describes this epoch."
 		},
 		"t0_t1": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "[0 1]",
+			"doc_data_type": "1x2 float",
+			"doc_description": "The start time and the stop time of this epoch, in time units of the epoch_clock."
 		},
 		"depends_on" : {
 			"type" : "array",

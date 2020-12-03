@@ -5,22 +5,34 @@
 	"type": "object",
 	"properties": {
 		"ndi_element_class": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "ndi.element",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the ndi.element class that is stored."
 		},
 		"name": {
-			"type": "string"
-		},
-		"lab": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of element. Elements are uniquely defined by a name, reference, and type."
 		},
 		"reference": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer",
+			"doc_description": "The reference number of the element. Elements are uniquely defined by a name, reference, and type."
 		},
 		"type": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The type of the element. Common probe types are in probetype2object.json"
 		},
 		"direct": {
 			"type" : "integer"
+			"doc_default_value": "0",
+			"doc_data_type": "Integer (0 or 1)",
+			"doc_description": "Does this element directly feed data from an underlying element?"
 		},
 		"depends_on" : {
 			"type" : "array",

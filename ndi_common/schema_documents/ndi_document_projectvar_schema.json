@@ -5,19 +5,34 @@
 	"type": "object",
 	"properties": {
 		"project": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the project"
 		},
 		"id": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "any",
+			"doc_description": "An identifier that is free for the user to choose"
 		},
 		"lab": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the lab in a format that is free for the user to choose"
 		},
 		"description": {
-			"type": "string"
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "A description that is free for the user to choose"
 		},
 		"date": {
-			"type": "date-time"
+			"type": "date-time",
+			"doc_default_value": "",
+			"doc_data_type": "ISO 8601 Date + Time with time zone",
+			"doc_description": "A time stamp of the measurement"
 		},
 		"depends_on" : {
 			"type" : "array",
