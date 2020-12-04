@@ -18,8 +18,8 @@ Accessed by `stimulus_presentation.field` where *field* is one of the field name
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| presentation_order |  |  |  |
-| presentation_time |  |  |  |
+| presentation_order | - | Integer array | An array of the order of stimulus presentation (each stimulus has an integer ID) |
+| presentation_time |  | Structure with fields clocktype, stimopen, onset, offset, stimclose | clocktype is the string describing the type of clock (from ndi. |
 | stimuli |  |  |  |
 
 
@@ -43,6 +43,6 @@ Accessed by `epochid_fix.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| epochid |  |  |  |
+| epochid |  | character array (ASCII) | The epoch id that is referred to |
 
 

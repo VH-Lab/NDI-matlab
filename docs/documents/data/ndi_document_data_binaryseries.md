@@ -18,12 +18,12 @@ Accessed by `binary_series_parameters.field` where *field* is one of the field n
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| time_size |  |  |  |
-| time_type |  |  |  |
-| data_size |  |  |  |
-| data_type |  |  |  |
-| data_dim |  |  |  |
-| samples_regular_intervals |  |  |  |
+| time_size | 1 | Integer array [n m] | Number of independent variable entries (often time) |
+| time_type |  | character array (ASCII) | Type of the time variable ('float64', 'uint32', etc) (note: make better) |
+| data_size | 1 | Integer array [n m] | Number of data entries) |
+| data_type |  | character array (ASCII) | Type of the time variable ('float64', 'uint32', etc) (note: make better) |
+| data_dim | 1 | Integer array [n m] | Dimensions of each data series |
+| samples_regular_intervals | 1 | Integer (0 or 1) | is the data always sampled at regular intervals? |
 
 
 ## [ndi_document](../ndi_document.md) fields

@@ -18,7 +18,7 @@ Accessed by `epochid_fix.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| epochid |  |  |  |
+| epochid |  | character array (ASCII) | The epoch id that is referred to |
 
 
 ## [ndi_document](ndi_document.md) fields

@@ -8,17 +8,28 @@
 			"type": "array",
 			"items" : {
 				"type" : "string"
-			}
+			},
+			"doc_default_value": "-",
+			"doc_data_type": "Integer array",
+			"doc_description": "An array of the order of stimulus presentation (each stimulus has an integer ID)"
 		},
 		"presentation_time" : {
 			"type" : "object",
 			"properties" : {
-				"clocktype" : "string",
+				"clocktype" : {
+					"type": "string",
+					"doc_default_value": "dev_local_clock",
+					"doc_data_type": "character string (ASCII) matching types in ndi.time.clocktime",
+					"doc_description": "The type of clock that is used to specify the time of the stimuli."
+				}, 
 				"stimopen" : "number",
 				"onset" : "number",
 				"offset" : "number",
 				"stimclose" : "number"
-			}
+			},
+			"doc_default_value": "",
+			"doc_data_type": "Structure with fields clocktype, stimopen, onset, offset, stimclose",
+			"doc_description": "clocktype is the string describing the type of clock (from ndi.time.clocktime)"
 		},
 		"stimuli": {
 			"type": "object",

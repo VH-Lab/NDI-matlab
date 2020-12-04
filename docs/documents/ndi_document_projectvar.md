@@ -18,10 +18,10 @@ Accessed by `projectvar.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| project |  |  |  |
+| project |  | character array (ASCII) | The name of the project |
 | user |  |  |  |
-| lab |  |  |  |
-| description |  |  |  |
+| lab |  | character array (ASCII) | The name of the lab in a format that is free for the user to choose |
+| description |  | character array (ASCII) | A description that is free for the user to choose |
 | data |  |  |  |
 
 

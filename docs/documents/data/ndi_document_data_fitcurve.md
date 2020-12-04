@@ -18,13 +18,13 @@ Accessed by `fitcurve.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| fit_name |  |  |  |
-| fit_equation |  |  |  |
-| fit_parameters |  |  |  |
-| fit_parameter_names |  |  |  |
-| fit_independent_variable_names |  |  |  |
-| fit_dependent_variable_names |  |  |  |
-| fit_sse |  |  |  |
+| fit_name |  | character array (ASCII) | The name of the fit being stored (free for the user to choose) |
+| fit_equation |  | character array (ASCII) | The name of the fit being stored (free for the user to choose) |
+| fit_parameters |  | float array | The values of the fit parameters |
+| fit_parameter_names |  | character array (ASCII) | The titles of the fit parameters |
+| fit_independent_variable_names |  | character array (ASCII) | The names of the independent variables |
+| fit_dependent_variable_names |  | character array (ASCII) | The names of the dependent variables |
+| fit_sse |  | float array | The sum of squared error of the fit |
 | fit_constraints |  |  |  |
 | fit_data |  |  |  |
 

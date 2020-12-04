@@ -18,8 +18,8 @@ Accessed by `control_stimulus_ids.field` where *field* is one of the field names
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| control_stimulus_ids |  |  |  |
-| control_stimulus_id_method |  |  |  |
+| control_stimulus_ids |  | Integer array | An array of the control stimulus identifier for each stimulus. For example, if a stimulus set has IDs [1 2 3], and 3 is a control (or 'blank') stimulus, then this is indicated by control_stimulus_ids = [3 3 3] |
+| control_stimulus_id_method |  | Structure with fields 'method','controlid', and 'controlid_value | The method field indicates the method used (such as 'pseudorandom'), the controlid is a stimulus parameter that the control stimulus will have (such as 'isblank'), and the controlis_value is the vaue of that parameter (such as 1) |
 
 
 ## [ndi_document](../ndi_document.md) fields
