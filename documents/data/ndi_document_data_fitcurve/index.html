@@ -430,13 +430,13 @@
     
     <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     <label class="md-nav__link" for="nav-4">
-      Built-in Documents
+      Document reference
       <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" aria-label="Built-in Documents" data-md-level="1">
+    <nav class="md-nav" aria-label="Document reference" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
         <span class="md-nav__icon md-icon"></span>
-        Built-in Documents
+        Document reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -4193,6 +4193,12 @@
 <td>The name of the fit being stored (free for the user to choose)</td>
 </tr>
 <tr>
+<td>data_size</td>
+<td></td>
+<td>Data size</td>
+<td>The size of each data point (note: need to describe what this is)</td>
+</tr>
+<tr>
 <td>fit_parameters</td>
 <td></td>
 <td>float array</td>
@@ -4249,16 +4255,16 @@
 </thead>
 <tbody>
 <tr>
-<td>id</td>
-<td>-</td>
-<td>NDI ID string</td>
-<td>The globally unique identifier of this document</td>
-</tr>
-<tr>
 <td>session_id</td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td>id</td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
 </tr>
 <tr>
 <td>name</td>

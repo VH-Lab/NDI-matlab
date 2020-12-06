@@ -430,13 +430,13 @@
     
     <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     <label class="md-nav__link" for="nav-4">
-      Built-in Documents
+      Document reference
       <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" aria-label="Built-in Documents" data-md-level="1">
+    <nav class="md-nav" aria-label="Document reference" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
         <span class="md-nav__icon md-icon"></span>
-        Built-in Documents
+        Document reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -4196,21 +4196,45 @@
 <tbody>
 <tr>
 <td>presentation_order</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>Integer array</td>
+<td>An array of the order of stimulus presentation (each stimulus has an integer ID)</td>
 </tr>
 <tr>
 <td>presentation_time</td>
 <td></td>
-<td></td>
-<td></td>
+<td>Structure with fields clocktype, stimopen, onset, offset, stimclose</td>
+<td>clocktype is the string describing the type of clock (from ndi.time.clocktime)</td>
+</tr>
+<tr>
+<td>presentation_time.clocktype</td>
+<td>dev_local_clock</td>
+<td>character string (ASCII) matching types in ndi.time.clocktime</td>
+<td>The type of clock that is used to specify the time of the stimuli.</td>
 </tr>
 <tr>
 <td>stimuli</td>
 <td></td>
 <td></td>
 <td></td>
+</tr>
+<tr>
+<td>stimuli.parameters</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on</td>
+<td></td>
+<td>structures with fields ''name'' and ''value''</td>
+<td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
+</tr>
+<tr>
+<td>depends_on: stimulus_element_id</td>
+<td></td>
+<td>NDI document ID</td>
+<td>The ID of the element of the stimulator (usually the probe that provided the stimulation)</td>
 </tr>
 </tbody>
 </table>
@@ -4227,16 +4251,16 @@
 </thead>
 <tbody>
 <tr>
-<td>id</td>
-<td>-</td>
-<td>NDI ID string</td>
-<td>The globally unique identifier of this document</td>
-</tr>
-<tr>
 <td>session_id</td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td>id</td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
 </tr>
 <tr>
 <td>name</td>

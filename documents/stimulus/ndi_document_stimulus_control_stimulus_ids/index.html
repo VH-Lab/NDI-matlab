@@ -430,13 +430,13 @@
     
     <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     <label class="md-nav__link" for="nav-4">
-      Built-in Documents
+      Document reference
       <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" aria-label="Built-in Documents" data-md-level="1">
+    <nav class="md-nav" aria-label="Document reference" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
         <span class="md-nav__icon md-icon"></span>
-        Built-in Documents
+        Document reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -4183,11 +4183,23 @@
 <tr>
 <td>control_stimulus_ids</td>
 <td></td>
+<td>Integer array</td>
+<td>An array of the control stimulus identifier for each stimulus. For example, if a stimulus set has IDs [1 2 3], and 3 is a control (or 'blank') stimulus, then this is indicated by control_stimulus_ids = [3 3 3]</td>
+</tr>
+<tr>
+<td>control_stimulus_id_method</td>
+<td></td>
+<td>Structure with fields 'method','controlid', and 'controlid_value</td>
+<td>The method field indicates the method used (such as 'pseudorandom'), the controlid is a stimulus parameter that the control stimulus will have (such as 'isblank'), and the controlis_value is the vaue of that parameter (such as 1)</td>
+</tr>
+<tr>
+<td>depends_on</td>
+<td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_stimulus_id_method</td>
+<td>depends_on: stimulus_presentation_id</td>
 <td></td>
 <td></td>
 <td></td>
@@ -4207,16 +4219,16 @@
 </thead>
 <tbody>
 <tr>
-<td>id</td>
-<td>-</td>
-<td>NDI ID string</td>
-<td>The globally unique identifier of this document</td>
-</tr>
-<tr>
 <td>session_id</td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td>id</td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
 </tr>
 <tr>
 <td>name</td>

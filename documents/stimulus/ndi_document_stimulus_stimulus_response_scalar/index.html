@@ -430,13 +430,13 @@
     
     <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     <label class="md-nav__link" for="nav-4">
-      Built-in Documents
+      Document reference
       <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" aria-label="Built-in Documents" data-md-level="1">
+    <nav class="md-nav" aria-label="Document reference" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
         <span class="md-nav__icon md-icon"></span>
-        Built-in Documents
+        Document reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -4201,7 +4201,49 @@
 <td></td>
 </tr>
 <tr>
-<td>responses</td>
+<td>response</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>response.stimid</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>response.response_real</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>response.response_imaginary</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>response.control_response_real</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>response.control_response_imaginary</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: stimulus_response_scalar_parameters_id</td>
 <td></td>
 <td></td>
 <td></td>
@@ -4221,16 +4263,16 @@
 </thead>
 <tbody>
 <tr>
-<td>id</td>
-<td>-</td>
-<td>NDI ID string</td>
-<td>The globally unique identifier of this document</td>
-</tr>
-<tr>
 <td>session_id</td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td>id</td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
 </tr>
 <tr>
 <td>name</td>
@@ -4278,6 +4320,36 @@
 </tr>
 <tr>
 <td>element_epochid</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: element_id</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: stimulator_id</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: stimulus_presentation_id</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: stimulus_control_id</td>
 <td></td>
 <td></td>
 <td></td>

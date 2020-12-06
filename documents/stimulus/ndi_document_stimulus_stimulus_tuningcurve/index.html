@@ -430,13 +430,13 @@
     
     <input class="md-nav__toggle md-toggle" data-md-toggle="nav-4" type="checkbox" id="nav-4" checked>
     <label class="md-nav__link" for="nav-4">
-      Built-in Documents
+      Document reference
       <span class="md-nav__icon md-icon"></span>
     </label>
-    <nav class="md-nav" aria-label="Built-in Documents" data-md-level="1">
+    <nav class="md-nav" aria-label="Document reference" data-md-level="1">
       <label class="md-nav__title" for="nav-4">
         <span class="md-nav__icon md-icon"></span>
-        Built-in Documents
+        Document reference
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -4181,97 +4181,127 @@
 </thead>
 <tbody>
 <tr>
-<td>independent_variable_label</td>
+<td>tuning_curve</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>independent_variable_value</td>
+<td>tuning_curve.independent_variable_label</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>stimid</td>
+<td>tuning_curve.independent_variable_value</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response_mean</td>
+<td>tuning_curve.stimid</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response_stddev</td>
+<td>tuning_curve.response_mean</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response_stderr</td>
+<td>tuning_curve.response_stddev</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>individual_responses_real</td>
+<td>tuning_curve.response_mean_1</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>individual_responses_imaginary</td>
+<td>tuning_curve.response_stderr</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>stimulus_presentation_number</td>
+<td>tuning_curve.individual_responses_real</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_stimid</td>
+<td>tuning_curve.individual_responses_imaginary</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_response_mean</td>
+<td>tuning_curve.stimulus_presentation_number</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_response_stddev</td>
+<td>tuning_curve.stimulus_presentation_number_1</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_response_stderr</td>
+<td>tuning_curve.control_response_mean</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_individual_responses_real</td>
+<td>tuning_curve.control_response_stddev</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>control_individual_responses_imaginary</td>
+<td>tuning_curve.control_response_stderr</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response_units</td>
+<td>tuning_curve.control_individual_responses_real</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>tuning_curve.control_individual_responses_imaginary</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>tuning_curve.response_units</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: element_id</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>depends_on: stimulus_response_scalar_id</td>
 <td></td>
 <td></td>
 <td></td>
@@ -4291,16 +4321,16 @@
 </thead>
 <tbody>
 <tr>
-<td>id</td>
-<td>-</td>
-<td>NDI ID string</td>
-<td>The globally unique identifier of this document</td>
-</tr>
-<tr>
 <td>session_id</td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td>id</td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
 </tr>
 <tr>
 <td>name</td>
