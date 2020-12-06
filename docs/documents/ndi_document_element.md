@@ -18,11 +18,14 @@ Accessed by `element.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| ndi_element_class |  |  |  |
-| name |  |  |  |
-| reference |  |  |  |
-| type |  |  |  |
-| direct |  |  |  |
+| ndi_element_class | ndi.element | character array (ASCII) | The name of the ndi.element class that is stored. |
+| name |  | character array (ASCII) | The name of element. Elements are uniquely defined by a name, reference, and type. |
+| reference | 1 | Integer | The reference number of the element. Elements are uniquely defined by a name, reference, and type. |
+| type |  | character array (ASCII) | The type of the element. Common probe types are in probetype2object.json |
+| direct | 0 | Integer (0 or 1) | Does this element directly feed data from an underlying element? |
+| depends_on |  |  |  |
+| depends_on: underlying_element_id |  |  |  |
+| depends_on: subject_id |  |  |  |
 
 
 ## [ndi_document](ndi_document.md) fields
@@ -31,8 +34,8 @@ Accessed by `ndi_document.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| id | - | NDI ID string | The globally unique identifier of this document |
 | session_id | - | NDI ID string | The globally unique identifier of any data session that produced this document |
+| id | - | NDI ID string | The globally unique identifier of this document |
 | name |  | character array (ASCII) | A user-specified name, free for users/developers to use as they like |
 | type |  | character array (ASCII) | A user-specified type, free for users/developers to use as they like (deprecated, will be removed) |
 | datestamp | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |

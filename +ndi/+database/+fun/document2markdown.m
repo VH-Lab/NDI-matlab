@@ -76,10 +76,10 @@ info.validation = ndi_document_obj.document_properties.document_class.validation
 info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
 ndi.globals;
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi_globals.path.documentschemapath);
-try,
+if ~exist(info.validation_path,'file'),
+	info.validation_json = struct('properties',vlt.data.emptystruct());
+else,
 	info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
-catch,
-	info.validation_json.properties = '';
 end;
 md = cat(2,md,['**Schema for validation**: [' info.validation '](' info.validation_url ')<br>' newline]);
 info.property_list_name = ndi_document_obj.document_properties.document_class.property_list_name;
@@ -91,39 +91,47 @@ md = cat(2,md,[newline newline]);
 
  % core fields here
 
-prop_list = getfield(ndi_document_obj.document_properties, info.property_list_name);
-
-fn = fieldnames(prop_list);
-
-
 info.prop_list = vlt.data.emptystruct('field','default_value','data_type','description');
 
-if numel(fn)>0, % we have field names
+info.prop_list = ndi.database.fun.schemastructure2docstructure(info.validation_json);
+
+if isempty(info.prop_list), % reading from schema did not succeed
+	prop_list = getfield(ndi_document_obj.document_properties, info.property_list_name);
+
+	fn = fieldnames(prop_list);
+	if numel(fn)>0, % we have field names
+		for i=1:numel(fn),
+			phere.property = fn{i};
+			phere.doc_default_value = '';
+			phere.doc_data_type = '';
+			phere.doc_description = '';
+			if isfield(info.validation_json.properties,fn{i}),
+				v=getfield(info.validation_json.properties,fn{i});
+				if isfield(v,'doc_description'),
+					phere.doc_description = getfield(v,'doc_description');
+				end;
+				if isfield(v,'doc_data_type'),
+					phere.doc_data_type = getfield(v,'doc_data_type');
+				end;
+				if isfield(v,'doc_default_value'),
+					phere.doc_default_value = getfield(v,'doc_default_value');
+				end;
+			end;
+			info.prop_list(end+1) = phere;
+		end;
+	end;
+end;
+
+if ~isempty(info.prop_list),
 	md = cat(2,md,['## [' info.class_name '](' info.localurl ') fields' newline newline]);
 	md = cat(2,md,['Accessed by `' info.property_list_name '.field` where *field* is one of the field names below' newline newline]);
 	md = cat(2,md,['| field | default_value | data type | description |' newline]);
 	md = cat(2,md,['| --- | --- | --- | --- |' newline]);
-	for i=1:numel(fn),
-		% need to expand any structures
-		phere.field = fn{i};
-		phere.default_value = '';
-		phere.data_type = '';
-		phere.description = '';
-		if isfield(info.validation_json.properties,fn{i}),
-			v=getfield(info.validation_json.properties,fn{i});
-			if isfield(v,'doc_description'),
-				phere.description = getfield(v,'doc_description');
-			end;
-			if isfield(v,'doc_data_type'),
-				phere.data_type = getfield(v,'doc_data_type');
-			end;
-			if isfield(v,'doc_default_value'),
-				phere.default_value = getfield(v,'doc_default_value');
-			end;
-		end;
-		info.prop_list(end+1) = phere;
-		md = cat(2,md,['| ' phere.field  ' | ' phere.default_value  ' | ' phere.data_type  ' | ' phere.description  ' |' newline]);
+	for i=1:numel(info.prop_list),
+		phere = info.prop_list(i);
+		md = cat(2,md,['| ' phere.property  ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
 	end;
+
 	md = cat(2,md,[newline newline]);
 end;
 
@@ -140,7 +148,7 @@ if numel(superclass_info)>0,
 			md = cat(2,md,['| --- | --- | --- | --- |' newline]);
 			for j=1:numel(info.superclass_info{i}.prop_list),
 				phere = info.superclass_info{i}.prop_list(j);
-				md=cat(2,md,['| ' phere.field  ' | ' phere.default_value  ' | ' phere.data_type  ' | ' phere.description  ' |' newline]);
+				md=cat(2,md,['| ' phere.property ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
 			end;
 			md = cat(2,md,[newline newline]);
 		end;

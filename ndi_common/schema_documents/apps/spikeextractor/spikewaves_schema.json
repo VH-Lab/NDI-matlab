@@ -5,7 +5,7 @@
 	"type": "object",
 	"properties": {
 		"extraction_name": {
-			"type": "string",
+			"type": "string"
 		},
 		"depends_on" : {
 			"type" : "array",

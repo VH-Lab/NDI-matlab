@@ -5,10 +5,10 @@
 	"type": "object",
 	"properties": {
 		"num_pca_features": {
-			"type": "number",
+			"type": "number"
 		},
 		"interpolation": {
-			"type": "number",
+			"type": "number"
 		},		
 		"depends_on" : {
 			"type" : "array",

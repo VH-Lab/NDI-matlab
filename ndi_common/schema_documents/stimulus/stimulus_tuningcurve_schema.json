@@ -4,116 +4,121 @@
 	"title": "ndi_document_stimulus_stimulus_tuningcurve",
 	"type": "object",
 	"properties": {
-		"independent_variable_label": {
-			"type": "array",
-			"items" : {
-				"type" : "array", 
-			}
-		},
-		"independent_variable_value": {
-			"type": "array",
-			"items" : {
-				"type" : "string"
-			}
-		},
-		"stimid": {
-			"type": "array",
-			"items" : {
-				"type" : "string"
-			}
-		},	
-		"response_mean": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"response_stddev": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"response_mean": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"response_stderr": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"individual_responses_real": {
-			"type": "array",
-			"items" : {
-				"type" : "array", 
-				"item" : {
-					"type" : "number"
+		"tuning_curve": {
+			"type": "object",
+			"properties": {
+				"independent_variable_label": {
+					"type": "array",
+					"items" : {
+						"type" : "array"
+					}
+				},
+				"independent_variable_value": {
+					"type": "array",
+					"items" : {
+						"type" : "string"
+					}
+				},
+				"stimid": {
+					"type": "array",
+					"items" : {
+						"type" : "string"
+					}
+				},	
+				"response_mean": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"response_stddev": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"response_mean": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"response_stderr": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"individual_responses_real": {
+					"type": "array",
+					"items" : {
+						"type" : "array", 
+						"item" : {
+							"type" : "number"
+						}
+					}
+				},
+				"individual_responses_imaginary": {
+					"type": "array",
+					"items" : {
+						"type" : "array", 
+						"item" : {
+							"type" : "number"
+						}
+					}
+				},
+				"stimulus_presentation_number": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"stimulus_presentation_number": {
+					"type": "array",
+					"items" : {
+						"type" : "string"
+					}
+				},
+				"control_response_mean": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},		
+				"control_response_stddev": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},	
+				"control_response_stderr": {
+					"type": "array",
+					"items" : {
+						"type" : "number"
+					}
+				},
+				"control_individual_responses_real": {
+					"type": "array",
+					"items" : {
+						"type" : "array", 
+						"item" : {
+							"type" : "number"
+						}
+					}
+				},
+				"control_individual_responses_imaginary": {
+					"type": "array",
+					"items" : {
+						"type" : "array", 
+						"item" : {
+							"type" : "number"
+						}
+					}
+				},		
+				"response_units" : {
+					"type" : "string"
 				}
 			}
-		},
-		"individual_responses_imaginary": {
-			"type": "array",
-			"items" : {
-				"type" : "array", 
-				"item" : {
-					"type" : "number"
-				}
-			}
-		},
-		"stimulus_presentation_number": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"stimulus_presentation_number": {
-			"type": "array",
-			"items" : {
-				"type" : "string"
-			}
-		},
-		"control_response_mean": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},		
-		"control_response_stddev": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},	
-		"control_response_stderr": {
-			"type": "array",
-			"items" : {
-				"type" : "number"
-			}
-		},
-		"control_individual_responses_real": {
-			"type": "array",
-			"items" : {
-				"type" : "array", 
-				"item" : {
-					"type" : "number"
-				}
-			}
-		},
-		"control_individual_responses_imaginary": {
-			"type": "array",
-			"items" : {
-				"type" : "array", 
-				"item" : {
-					"type" : "number"
-				}
-			}
-		},		
-		"response_units" : {
-			"type" : "string"
 		},
 		"depends_on" : {
 			"type" : "array",

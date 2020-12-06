@@ -19,7 +19,7 @@
 			}
 		},
 		"tuning_curve" : {
-			"properties" : "object",
+			"type" : "object",
 			"properties" : {
 				"direction": {
 					"type": "number"
@@ -78,7 +78,7 @@
 				},
 				"dot_direction_significance": {
 					"type" : "number"
-				},
+				}
 			}
 		},
 		"fit" : {
@@ -127,8 +127,8 @@
 					}
 				},
 				"orientation_angle_preference" : {
-					"type" : "number",
-				},	
+					"type" : "number"
+				},
 				"direction_angle_preference" : {
 					"type" : "number"
 				},		

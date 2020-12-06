@@ -21,16 +21,18 @@ docs = vlt.data.emptystruct('property',docstring{:});
 fn = fieldnames(schema);
 
 property_match = find(strcmpi('properties',fn));
+items_match = find(strcmpi('items',fn));
 
 if ~isempty(property_match),
 	v = getfield(schema,'properties');
 	if ~isstruct(v),
-		error(['Expected ''properties'' field to be a struct.']);
+		warning(['Expected ''properties'' field to be a struct.']);
+		return;
 	end;
 	fns = fieldnames(v);
 
 	for i=1:numel(fns),
-		fns{i}
+		%fns{i}
 		v_i = getfield(v,fns{i});
 		p_here = vlt.data.emptystruct('property',docstring{:});
 		if isstruct(v_i),
@@ -54,13 +56,36 @@ if ~isempty(property_match),
 			docs(end+1) = p_here;
 		end;
 
+		if strcmpi(fns{i},'depends_on'), % special case, depends on:
+			for j=1:numel(v_i.items),
+				% first name
+				p_here = vlt.data.emptystruct('property',docstring{:});
+				if isfield(v_i.items(j).properties.name,'const'),
+					p_here(1).property = ['depends_on: ' v_i.items(j).properties.name.const];
+				else,
+					p_here(1).property = ['depends_on: *variable dependencies*'];
+				end;
+				fni = fieldnames(v_i.items(j).properties);
+				for k=1:numel(docstring),
+					ds = find(strcmpi(docstring{k},fni));
+					if ~isempty(ds),
+						p_here(1)=setfield(p_here(1),docstring{k},...
+							getfield(v_i.items(j).properties,docstring{k}));
+					end;
+				end;
+				if ~isempty(p_here),
+					docs(end+1) = p_here;
+				end;
+
+			end;
+			subitem_match = []; % we don't want to follow this type of item, we handled it
+		end;
+
 		% it remains possible that there is more to explore here
 		% such as properties.thing.properties
 		%  or properties.thing.items
 		
 		if ~isempty(subproperty_match) | ~isempty(subitem_match),
-			disp(['Exploring deeper:']);
-			v_i,
 			pmore = ndi.database.fun.schemastructure2docstructure(v_i);
 			for j=1:numel(pmore),
 				pmore(j).property = [fns{i} '.' pmore(j).property];
@@ -69,3 +94,4 @@ if ~isempty(property_match),
 		end;
 	end;
 end;
+

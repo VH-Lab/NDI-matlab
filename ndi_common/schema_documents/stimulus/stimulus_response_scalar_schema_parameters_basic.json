@@ -5,13 +5,13 @@
 	"type": "object",
 	"properties": {
 		"temporalfreqfunc": {
-			"type": "string",
+			"type": "string"
 		},
 		"freq_response" : {
-			"type" : "string",
+			"type" : "string"
 		},
 		"prestimulus_time": {
-			"type": "string",
+			"type": "string"
 		},
 		"prestimulus_normalization" : {
 			"type" : "string"

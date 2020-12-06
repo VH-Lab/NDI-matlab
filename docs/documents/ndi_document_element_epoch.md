@@ -18,8 +18,10 @@ Accessed by `element_epoch.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| epoch_clock |  |  |  |
-| t0_t1 |  |  |  |
+| epoch_clock | 'dev_local_time' | character array (ASCII) | The clock type (of the ndi.time.clocktype object) that describes this epoch. |
+| t0_t1 | [0 1] | 1x2 float | The start time and the stop time of this epoch, in time units of the epoch_clock. |
+| depends_on |  |  |  |
+| depends_on: element_id |  |  |  |
 
 
 ## [ndi_document_data_binaryseries](data/ndi_document_data_binaryseries.md) fields
@@ -42,8 +44,8 @@ Accessed by `ndi_document.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| id | - | NDI ID string | The globally unique identifier of this document |
 | session_id | - | NDI ID string | The globally unique identifier of any data session that produced this document |
+| id | - | NDI ID string | The globally unique identifier of this document |
 | name |  | character array (ASCII) | A user-specified name, free for users/developers to use as they like |
 | type |  | character array (ASCII) | A user-specified type, free for users/developers to use as they like (deprecated, will be removed) |
 | datestamp | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |

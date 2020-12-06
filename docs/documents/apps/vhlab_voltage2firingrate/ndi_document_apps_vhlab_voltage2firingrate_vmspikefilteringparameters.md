@@ -26,6 +26,8 @@ Accessed by `vmspikefilteringparameters.field` where *field* is one of the field
 | filter_algorithm_parameters |  |  |  |
 | rm60Hz |  |  |  |
 | refract |  |  |  |
+| depends_on |  |  |  |
+| depends_on: element_id |  |  |  |
 
 
 ## [ndi_document](../../ndi_document.md) fields
@@ -34,8 +36,8 @@ Accessed by `ndi_document.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| id | - | NDI ID string | The globally unique identifier of this document |
 | session_id | - | NDI ID string | The globally unique identifier of any data session that produced this document |
+| id | - | NDI ID string | The globally unique identifier of this document |
 | name |  | character array (ASCII) | A user-specified name, free for users/developers to use as they like |
 | type |  | character array (ASCII) | A user-specified type, free for users/developers to use as they like (deprecated, will be removed) |
 | datestamp | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |

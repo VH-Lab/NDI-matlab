@@ -20,6 +20,7 @@ Accessed by `fitcurve.field` where *field* is one of the field names below
 | --- | --- | --- | --- |
 | fit_name |  | character array (ASCII) | The name of the fit being stored (free for the user to choose) |
 | fit_equation |  | character array (ASCII) | The name of the fit being stored (free for the user to choose) |
+| data_size |  | Data size | The size of each data point (note: need to describe what this is) |
 | fit_parameters |  | float array | The values of the fit parameters |
 | fit_parameter_names |  | character array (ASCII) | The titles of the fit parameters |
 | fit_independent_variable_names |  | character array (ASCII) | The names of the independent variables |
@@ -35,8 +36,8 @@ Accessed by `ndi_document.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| id | - | NDI ID string | The globally unique identifier of this document |
 | session_id | - | NDI ID string | The globally unique identifier of any data session that produced this document |
+| id | - | NDI ID string | The globally unique identifier of this document |
 | name |  | character array (ASCII) | A user-specified name, free for users/developers to use as they like |
 | type |  | character array (ASCII) | A user-specified type, free for users/developers to use as they like (deprecated, will be removed) |
 | datestamp | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |

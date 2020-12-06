@@ -5,22 +5,22 @@
 	"type": "object",
 	"properties": {
 		"center_range_time": {
-			"type": "number",
+			"type": "number"
 		},
 		"overlap": {
-			"type": "number",
+			"type": "number"
 		},
 		"read_time": {
-			"type": "number",
+			"type": "number"
 		},
 		"refractory_time": {
-			"type": "number",
+			"type": "number"
 		},		
 		"spike_start_time": {
-			"type": "number",
+			"type": "number"
 		},
 		"spike_end_time": {
-			"type": "number",
+			"type": "number"
 		},		
 		"do_filter" : {
 			"type" : "number"

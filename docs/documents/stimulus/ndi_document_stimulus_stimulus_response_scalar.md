@@ -19,7 +19,14 @@ Accessed by `stimulus_response_scalar.field` where *field* is one of the field n
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
 | response_type |  |  |  |
-| responses |  |  |  |
+| response |  |  |  |
+| response.stimid |  |  |  |
+| response.response_real |  |  |  |
+| response.response_imaginary |  |  |  |
+| response.control_response_real |  |  |  |
+| response.control_response_imaginary |  |  |  |
+| depends_on |  |  |  |
+| depends_on: stimulus_response_scalar_parameters_id |  |  |  |
 
 
 ## [ndi_document](../ndi_document.md) fields
@@ -28,8 +35,8 @@ Accessed by `ndi_document.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| id | - | NDI ID string | The globally unique identifier of this document |
 | session_id | - | NDI ID string | The globally unique identifier of any data session that produced this document |
+| id | - | NDI ID string | The globally unique identifier of this document |
 | name |  | character array (ASCII) | A user-specified name, free for users/developers to use as they like |
 | type |  | character array (ASCII) | A user-specified type, free for users/developers to use as they like (deprecated, will be removed) |
 | datestamp | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |
@@ -44,5 +51,10 @@ Accessed by `stimulus_response.field` where *field* is one of the field names be
 | --- | --- | --- | --- |
 | stimulator_epochid |  |  |  |
 | element_epochid |  |  |  |
+| depends_on |  |  |  |
+| depends_on: element_id |  |  |  |
+| depends_on: stimulator_id |  |  |  |
+| depends_on: stimulus_presentation_id |  |  |  |
+| depends_on: stimulus_control_id |  |  |  |
 
 

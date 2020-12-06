@@ -14,19 +14,19 @@
 			"type" : "object",
 			"properties" : {
 				"stimid": {
-					"type" : "array",
+					"type" : "array"
 				},
 				"response_real": {
-					"type" : "array",
+					"type" : "array"
 				},				
 				"response_imaginary": {
-					"type" : "array",
+					"type" : "array"
 				},
 				"control_response_real": {
-					"type" : "array",
+					"type" : "array"
 				},	
 				"control_response_imaginary" : {
-					"type" : "array",
+					"type" : "array"
 				}		
 			}
 		},

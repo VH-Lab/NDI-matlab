@@ -29,7 +29,7 @@
 			"doc_description": "The type of the element. Common probe types are in probetype2object.json"
 		},
 		"direct": {
-			"type" : "integer"
+			"type" : "integer",
 			"doc_default_value": "0",
 			"doc_data_type": "Integer (0 or 1)",
 			"doc_description": "Does this element directly feed data from an underlying element?"

@@ -6,7 +6,7 @@
 	"properties": {
 		"epoch_clock": {
 			"type": "string",
-			"doc_default_value": "'dev_local"time'",
+			"doc_default_value": "'dev_local_time'",
 			"doc_data_type": "character array (ASCII)",
 			"doc_description": "The clock type (of the ndi.time.clocktype object) that describes this epoch."
 		},

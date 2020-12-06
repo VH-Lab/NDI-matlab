@@ -50,10 +50,16 @@
 						},
 						"value" : {
 							"type" : "string"
-						}
+						},
+						"doc_default_value": "",
+						"doc_data_type": "NDI document ID",
+						"doc_description": "The ID of the element of the stimulator (usually the probe that provided the stimulation)"
 					}
 				}				
-			]
+			],
+			"doc_default_value": "",
+			"doc_data_type": "structures with fields ''name'' and ''value''",
+			"doc_description": "Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`."
 		}		
 	}
 }
