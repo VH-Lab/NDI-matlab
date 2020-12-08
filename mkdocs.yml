@@ -25,7 +25,7 @@ nav:
     - Planned later:
       - Submitting your data to an archive: 'tutorials/archive.md'
       - Search and analyze NDI databases on the web: 'tutorials/search_ndi_databases.md'
-  - Built-in Documents:
+  - Document reference:
     - ndi_document : 'documents/ndi_document.md'
     - ndi_document_animalsubject : 'documents/ndi_document_animalsubject.md'
     - ndi_document_app : 'documents/ndi_document_app.md'
@@ -262,6 +262,8 @@ nav:
           - ndi.time.syncrule.commontriggers: 'reference/+ndi/+time/+syncrule/commontriggers.m.md'
           - ndi.time.syncrule.filefind: 'reference/+ndi/+time/+syncrule/filefind.m.md'
           - ndi.time.syncrule.filematch: 'reference/+ndi/+time/+syncrule/filematch.m.md'
+  - FAQ: 'faq.md'
+
 
 use_directory_urls: true
 

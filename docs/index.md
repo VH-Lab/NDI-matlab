@@ -1,10 +1,37 @@
 # NDI
 
-NDI (Neuroscience Data Interface) is a means for specifying and accessing neuroscience data regardless of the format of the files or the organization of the files and data on disk. It allows the creation of analysis code that is invariant to data format and organization, so the analysis process can be independent of the raw format. NDI also includes a database for storing analyses, and analyses of analyses, etc. NDI allows an application ecospace where individual applications can read raw data and read from the database, and write their results back to the database in a human-readable and machine-readable manner.
+## About
+
+[NDI](http://ndi.vhlab.org) (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses. Its goals include:
+
+- Providing a means for specifying and accessing neuroscience data regardless of the format of the files or the organization of the files and data on disk or in the cloud.
+
+- Allowing the creation of analysis code that is invariant to data format and organization, so the analysis process can be independent of the raw format.
+
+- Providing a database for storing human- and machine-readable documents that describe analyses, analyses of analyses, etc, that is searchable with or without knowing the formal schema of the documents of interest.
+
+- Allowing the creation of an application ecosystem where individual applications can read raw data and read from the database, and write results back to the database to participate in analysis pipelines.
+
+- Eliminating the need for different procedures between online and offline analyses.
+
+- Maintaining a ready-to-share version of the analysis pipeline at all times, so data can be shared with other groups or archives without additional work.
+
+Analysts can use NDI to quickly gain access to a collaborator's dataset (by specifying the organization and format of the data in a few parameters) and labs can share their data and results with others in a well-described format.
+
+## Availability
 
 A mature prototype of NDI is available in [Matlab](https://github.com/VH-Lab/NDI-matlab) and a version for Python is well under construction.
 
+## Installation
+
 Check out the [Installation Guide](https://vh-lab.github.io/NDI-matlab/installation/).
 
+## Pre-print
+
 Check out the [NDI pre-print](https://www.biorxiv.org/content/10.1101/2020.05.13.093542v1) available on [biorxiv](http://biorxiv.org/). 
+
+## Support
+
+Supported by the [NIH BRAIN Initiative informatics group](https://braininitiative.nih.gov/brain-programs/informatics), grant MH114678.
+
 
