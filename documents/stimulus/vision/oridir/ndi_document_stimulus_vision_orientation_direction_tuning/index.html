@@ -4270,153 +4270,153 @@
 </tr>
 <tr>
 <td>significance</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>structure</td>
+<td>Structure with information about the significance of response variation across stimuli</td>
 </tr>
 <tr>
 <td>significance.visual_response_anova_p</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>P-value of ANOVA test across all stimuli and control stimuli; indicates if there is any evidence of a significant visual response</td>
 </tr>
 <tr>
 <td>significance.across_stimuli_anova_p</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>P-value of ANOVA test across all stimuli but excluding the blank; indicates if there is any evidence of a significant response variation across the stimuli</td>
 </tr>
 <tr>
 <td>vector</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>structure</td>
+<td>Structure with information about vector analyses of orientation / direction data</td>
 </tr>
 <tr>
 <td>vector.circular_variance</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>Circular variance: see <a href="https://pubmed.ncbi.nlm.nih.gov/12097515/">pubmed 12097515</a></td>
 </tr>
 <tr>
 <td>vector.direction_circular_variance</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>Circular variance in direction space: see <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>vector.hotelling2test</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>P-value of Hotelling T2 test of whether the cloud of points determined by the trial-by-trial orientation vectors differs significantly from the point 0,0 (a test of significant orientation selectivity): see <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>vector.orientation_preference</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The angle (in orientation space, [0,180)) of the mean response vector; this is a vector-based definition of orientation preference; see <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>vector.direction_preference</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The angle (in direction space, [0,360)) of the mean response vector; this is a vector-based definition of direction preference (which can be noisy); see <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>vector.direction_hotelling2test</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>P-value of Hotelling T2 test of whether the cloud of points determined by the trial-by-trial orientation vectors differs significantly from the point 0,0 (a test of significant orientation selectivity): see <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>vector.dot_direction_significance</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>P-value of test of whether trial-by-trial vectors have a statistically signifant tendency to point in one of the two opposite directions defined by the preferred orientation; defined in <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>fit</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>structure</td>
+<td>Structure with information about double gaussian fit analyses of orientation / direction data</td>
 </tr>
 <tr>
 <td>fit.double_gaussian_parameters</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>1x5 float</td>
+<td>Fit parameters of double gaussian fit: [offset Rp Op sigm Rn]; the fit function is R(theta) = offset + Rp<em>exp(-(angdiff(theta-OpP).^2))+Rn</em>exp(-(angdiff(theta-Op+180).^2)). See <a href="https://pubmed.ncbi.nlm.nih.gov/10627623/">pubmed 10627623</a> and <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">pubmed 25147504</a></td>
 </tr>
 <tr>
 <td>fit.double_gaussian_fit_angles</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>1x360 float</td>
+<td>Angle values for plotting the double gaussian direction fit</td>
 </tr>
 <tr>
 <td>fit.double_gaussian_fit_values</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>1x360 float</td>
+<td>Fit response values for plotting the double gaussian direction fit</td>
 </tr>
 <tr>
 <td>fit.orientation_preferred_orthogonal_ratio</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred to orthogonal ratio</td>
 </tr>
 <tr>
 <td>fit.direction_preferred_null_ratio</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred to opposite ratio</td>
 </tr>
 <tr>
 <td>fit.orientation_preferred_orthogonal_ratio_rectified</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred to orthogonal ratio, where each response is rectified to be not less than 0</td>
 </tr>
 <tr>
 <td>fit.direction_preferred_null_ratio_rectified</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred to null ratio, where each response is rectified to be not less than 0</td>
 </tr>
 <tr>
 <td>fit.orientation_angle_preference</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred orientation as determined by the double gaussian fit, in [0,180)</td>
 </tr>
 <tr>
 <td>fit.direction_angle_preference</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The preferred direction as determined by the double gaussian fit, in [0,360)</td>
 </tr>
 <tr>
 <td>fit.hwhh</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>float</td>
+<td>The half width at half height from the double gaussian fit, calculated as ln(4) * sigm, see [pubmed 10627623](https://pubmed.ncbi.nlm.nih.gov/10627623/</td>
 </tr>
 <tr>
 <td>depends_on</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>structure</td>
+<td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
 </tr>
 <tr>
 <td>depends_on: element_id</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>NDI document ID of an ndi_document_element object</td>
+<td>The element from which the responses are derived</td>
 </tr>
 <tr>
 <td>depends_on: stimulus_tuningcurve_id</td>
-<td></td>
-<td></td>
-<td></td>
+<td>-</td>
+<td>NDI document ID of an ndi_document_stimulus_stimulus_tuningcurve object</td>
+<td>The tuning curve from which the responses are derived</td>
 </tr>
 </tbody>
 </table>
