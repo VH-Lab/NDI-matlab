@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document_epochid](ndi_document_epochid.md)
-
+**Class name**: [ndi_document_epochid](ndi_document_epochid.md)<br>
+**Short name**: [ndi_document_epochid](ndi_document_epochid.md)<br>
 **Superclasses**: [ndi_document](ndi_document.md)
 
 **Definition**: [$NDIDOCUMENTPATH/ndi_document_epochid.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/ndi_document_epochid.json)<br>

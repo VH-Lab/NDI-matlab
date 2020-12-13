@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document_animalsubject](ndi_document_animalsubject.md)
-
+**Class name**: [ndi_document_animalsubject](ndi_document_animalsubject.md)<br>
+**Short name**: [ndi_document_animalsubject](ndi_document_animalsubject.md)<br>
 **Superclasses**: [ndi_document](ndi_document.md)
 
 **Definition**: [$NDIDOCUMENTPATH/ndi_document_animalsubject.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/ndi_document_animalsubject.json)<br>

@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document_subjectmeasurement](ndi_document_subjectmeasurement.md)
-
+**Class name**: [ndi_document_subjectmeasurement](ndi_document_subjectmeasurement.md)<br>
+**Short name**: [ndi_document_subjectmeasurement](ndi_document_subjectmeasurement.md)<br>
 **Superclasses**: [ndi_document](ndi_document.md), [ndi_document_subject](ndi_document_subject.md)
 
 **Definition**: [$NDIDOCUMENTPATH/ndi_document_subjectmeasurement.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/ndi_document_subjectmeasurement.json)<br>

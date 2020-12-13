@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document](ndi_document.md)
-
+**Class name**: [ndi_document](ndi_document.md)<br>
+**Short name**: [ndi_document](ndi_document.md)<br>
 **Superclasses**: *none*
 
 **Definition**: [$NDIDOCUMENTPATH/ndi_document.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/ndi_document.json)<br>

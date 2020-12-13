@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document_projectvar](ndi_document_projectvar.md)
-
+**Class name**: [ndi_document_projectvar](ndi_document_projectvar.md)<br>
+**Short name**: [ndi_document_projectvar](ndi_document_projectvar.md)<br>
 **Superclasses**: [ndi_document](ndi_document.md)
 
 **Definition**: [$NDIDOCUMENTPATH/ndi_document_projectvar.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/ndi_document_projectvar.json)<br>
@@ -23,7 +23,7 @@ Accessed by `projectvar.field` where *field* is one of the field names below
 | lab |  | character array (ASCII) | The name of the lab in a format that is free for the user to choose |
 | description |  | character array (ASCII) | A description that is free for the user to choose |
 | date |  | ISO 8601 Date + Time with time zone | A time stamp of the measurement |
-| depends_on |  |  |  |
+| depends_on | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
 | depends_on: element_id |  |  |  |
 
 

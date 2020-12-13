@@ -35,7 +35,7 @@ if ~isempty(property_match),
 		%fns{i}
 		v_i = getfield(v,fns{i});
 		p_here = vlt.data.emptystruct('property',docstring{:});
-		if isstruct(v_i),
+		if isstruct(v_i) & ~strcmp(fns{i},'depends_on'),
 			p_here(1).property = fns{i};
 			fnss = fieldnames(v_i);
 			subproperty_match = find(strcmpi('properties',fnss));
@@ -57,6 +57,13 @@ if ~isempty(property_match),
 		end;
 
 		if strcmpi(fns{i},'depends_on'), % special case, depends on:
+			p_here = vlt.data.emptystruct('property',docstring{:});
+			p_here(1).property = 'depends_on';
+			p_here(1).doc_default_value = '-';
+			p_here(1).doc_data_type = 'structure';
+			p_here(1).doc_description = ['Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`.'];
+			docs(end+1) = p_here;
+
 			for j=1:numel(v_i.items),
 				% first name
 				p_here = vlt.data.emptystruct('property',docstring{:});

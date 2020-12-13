@@ -2,8 +2,8 @@
 
 ## Class definition
 
-**Class name**: [ndi_document_daqmetadatareader](ndi_document_daqmetadatareader.md)
-
+**Class name**: [ndi_document_daqmetadatareader](ndi_document_daqmetadatareader.md)<br>
+**Short name**: [ndi_document_daqmetadatareader](ndi_document_daqmetadatareader.md)<br>
 **Superclasses**: [ndi_document](../ndi_document.md)
 
 **Definition**: [$NDIDOCUMENTPATH/daq/ndi_document_daqmetadatareader.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/daq/ndi_document_daqmetadatareader.json)<br>

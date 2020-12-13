@@ -25,23 +25,25 @@ end;
 
 info.class_name = ndi_document_obj.document_properties.document_class.class_name;
 info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
-info.url = fileparts(info.url);
+[info.url, shortname, ext] = fileparts(info.url);
 if ~isempty(info.url),
 	info.url(end+1) = '/';
 end;
+info.shortname = shortname;
 info.url = [info.url info.class_name '.md'];
 info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
-info.localurl = [info.class_name '.md'];
+info.localurl = [info.shortname '.md'];
 
 
 md = '';
 
-md = cat(2,md,['# ' info.class_name ' (ndi.document class)' newline newline]);
+md = cat(2,md,['# ' info.shortname ' (ndi.document class)' newline newline]);
 
 
 md = cat(2,md,['## Class definition' newline newline]);
 
-md = cat(2,md,['**Class name**: [' info.class_name '](' info.localurl  ')' newline newline ]);
+md = cat(2,md,['**Class name**: [' info.class_name '](' info.localurl  ')' '<br>' newline ]);
+md = cat(2,md,['**Short name**: [' info.shortname '](' info.localurl  ')' '<br>' newline ]);
 
 	 % Superclasses
 
