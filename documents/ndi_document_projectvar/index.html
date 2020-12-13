@@ -4192,6 +4192,18 @@
 </thead>
 <tbody>
 <tr>
+<td>depends_on</td>
+<td>-</td>
+<td>structure</td>
+<td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
+</tr>
+<tr>
+<td>depends_on: element_id</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
 <td>project</td>
 <td></td>
 <td>character array (ASCII)</td>
@@ -4220,18 +4232,6 @@
 <td></td>
 <td>ISO 8601 Date + Time with time zone</td>
 <td>A time stamp of the measurement</td>
-</tr>
-<tr>
-<td>depends_on</td>
-<td>-</td>
-<td>structure</td>
-<td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
-</tr>
-<tr>
-<td>depends_on: element_id</td>
-<td></td>
-<td></td>
-<td></td>
 </tr>
 </tbody>
 </table>
