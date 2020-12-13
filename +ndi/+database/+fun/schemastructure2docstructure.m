@@ -31,6 +31,11 @@ if ~isempty(property_match),
 	end;
 	fns = fieldnames(v);
 
+	hasdependson = find(strcmpi('depends_on',fns));
+	if ~isempty(hasdependson),
+		fns = fns([hasdependson 1:hasdependson-1 hasdependson+1:end]);
+	end;
+
 	for i=1:numel(fns),
 		%fns{i}
 		v_i = getfield(v,fns{i});

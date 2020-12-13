@@ -30,7 +30,7 @@ if ~isempty(info.url),
 	info.url(end+1) = '/';
 end;
 info.shortname = shortname;
-info.url = [info.url info.class_name '.md'];
+info.url = [info.url info.shortname '.md'];
 info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
 info.localurl = [info.shortname '.md'];
 
@@ -58,7 +58,7 @@ if examine_superclasses,
 		for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses),
 			d=ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
 			[blank,info_here] = ndi.database.fun.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1);
-			md=cat(2,md,['[' info_here.class_name '](' [info.my_path_to_root info_here.url] ')']);
+			md=cat(2,md,['[' info_here.shortname '](' [info.my_path_to_root info_here.url] ')']);
 			superclass_info{end+1} = info_here;
 			if i~=numel(ndi_document_obj.document_properties.document_class.superclasses),
 				md = cat(2,md,', ');

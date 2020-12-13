@@ -18,14 +18,14 @@ Accessed by `element.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
+| depends_on | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
+| depends_on: underlying_element_id |  |  |  |
+| depends_on: subject_id |  |  |  |
 | ndi_element_class | ndi.element | character array (ASCII) | The name of the ndi.element class that is stored. |
 | name |  | character array (ASCII) | The name of element. Elements are uniquely defined by a name, reference, and type. |
 | reference | 1 | Integer | The reference number of the element. Elements are uniquely defined by a name, reference, and type. |
 | type |  | character array (ASCII) | The type of the element. Common probe types are in probetype2object.json |
 | direct | 0 | Integer (0 or 1) | Does this element directly feed data from an underlying element? |
-| depends_on | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
-| depends_on: underlying_element_id |  |  |  |
-| depends_on: subject_id |  |  |  |
 
 
 ## [ndi_document](ndi_document.md) fields

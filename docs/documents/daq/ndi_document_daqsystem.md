@@ -18,10 +18,10 @@ Accessed by `daqsystem.field` where *field* is one of the field names below
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
-| ndi_daqsystem_class |  |  |  |
 | depends_on | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
 | depends_on: filenavigator_id |  |  |  |
 | depends_on: daqreader_id |  |  |  |
+| ndi_daqsystem_class |  |  |  |
 
 
 ## [ndi_document](../ndi_document.md) fields

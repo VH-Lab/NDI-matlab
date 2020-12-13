@@ -37,28 +37,28 @@ nav:
     - ndi_document_subjectmeasurement : 'documents/ndi_document_subjectmeasurement.md'
     - apps:
       - jrclust:
-        - ndi_document_apps_jrclust_jrclust_clusters : 'documents/apps/jrclust/ndi_document_apps_jrclust_jrclust_clusters.md'
+        - jrclust_clusters : 'documents/apps/jrclust/jrclust_clusters.md'
       - markgarbage:
-        - ndi_document_apps_markgarbage_valid_interval : 'documents/apps/markgarbage/ndi_document_apps_markgarbage_valid_interval.md'
+        - valid_interval : 'documents/apps/markgarbage/valid_interval.md'
       - spikeextractor:
-        - ndi_document_apps_spikeextractor_spike_extraction_parameters : 'documents/apps/spikeextractor/ndi_document_apps_spikeextractor_spike_extraction_parameters.md'
-        - ndi_document_apps_spikeextractor_spike_extraction_parameters_modification : 'documents/apps/spikeextractor/ndi_document_apps_spikeextractor_spike_extraction_parameters_modification.md'
-        - ndi_document_apps_spikeextractor_spikeextractor_spiketimes : 'documents/apps/spikeextractor/ndi_document_apps_spikeextractor_spikeextractor_spiketimes.md'
-        - ndi_document_apps_spikeextractor_spikeextractor_spikewaves : 'documents/apps/spikeextractor/ndi_document_apps_spikeextractor_spikeextractor_spikewaves.md'
+        - spike_extraction_parameters : 'documents/apps/spikeextractor/spike_extraction_parameters.md'
+        - spike_extraction_parameters_modification : 'documents/apps/spikeextractor/spike_extraction_parameters_modification.md'
+        - spiketimes : 'documents/apps/spikeextractor/spiketimes.md'
+        - spikewaves : 'documents/apps/spikeextractor/spikewaves.md'
       - spikesorter:
-        - ndi_document_apps_spikesorter_sorting_parameters : 'documents/apps/spikesorter/ndi_document_apps_spikesorter_sorting_parameters.md'
-        - ndi_document_apps_spikesorter_spikesorter_spike_clusters : 'documents/apps/spikesorter/ndi_document_apps_spikesorter_spikesorter_spike_clusters.md'
+        - sorting_parameters : 'documents/apps/spikesorter/sorting_parameters.md'
+        - spike_clusters : 'documents/apps/spikesorter/spike_clusters.md'
       - spikesorter_hengen:
-        - ndi_document_apps_spikesorter_hengen_extraction_parameters : 'documents/apps/spikesorter_hengen/ndi_document_apps_spikesorter_hengen_extraction_parameters.md'
-        - ndi_document_apps_spikesorter_hengen_mountainsort_parameters : 'documents/apps/spikesorter_hengen/ndi_document_apps_spikesorter_hengen_mountainsort_parameters.md'
-        - ndi_document_apps_spikesorter_hengen_neuron_hengen : 'documents/apps/spikesorter_hengen/ndi_document_apps_spikesorter_hengen_neuron_hengen.md'
-        - ndi_document_apps_spikesorter_hengen_probe_geometry : 'documents/apps/spikesorter_hengen/ndi_document_apps_spikesorter_hengen_probe_geometry.md'
+        - extraction_parameters : 'documents/apps/spikesorter_hengen/extraction_parameters.md'
+        - mountainsort_parameters : 'documents/apps/spikesorter_hengen/mountainsort_parameters.md'
+        - neuron_hengen : 'documents/apps/spikesorter_hengen/neuron_hengen.md'
+        - probe_geometry : 'documents/apps/spikesorter_hengen/probe_geometry.md'
       - vhlab_voltage2firingrate:
-        - ndi_document_apps_vhlab_voltage2firingrate_binnedspikeratevm : 'documents/apps/vhlab_voltage2firingrate/ndi_document_apps_vhlab_voltage2firingrate_binnedspikeratevm.md'
-        - ndi_document_apps_vhlab_voltage2firingrate_vmneuralresponseresiduals : 'documents/apps/vhlab_voltage2firingrate/ndi_document_apps_vhlab_voltage2firingrate_vmneuralresponseresiduals.md'
-        - ndi_document_apps_vhlab_voltage2firingrate_vmspikefilteringparameters : 'documents/apps/vhlab_voltage2firingrate/ndi_document_apps_vhlab_voltage2firingrate_vmspikefilteringparameters.md'
-        - ndi_document_apps_vhlab_voltage2firingrate_vmspikefit : 'documents/apps/vhlab_voltage2firingrate/ndi_document_apps_vhlab_voltage2firingrate_vmspikefit.md'
-        - ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary : 'documents/apps/vhlab_voltage2firingrate/ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary.md'
+        - binnedspikeratevm : 'documents/apps/vhlab_voltage2firingrate/binnedspikeratevm.md'
+        - vmneuralresponseresiduals : 'documents/apps/vhlab_voltage2firingrate/vmneuralresponseresiduals.md'
+        - vmspikefilteringparameters : 'documents/apps/vhlab_voltage2firingrate/vmspikefilteringparameters.md'
+        - vmspikefit : 'documents/apps/vhlab_voltage2firingrate/vmspikefit.md'
+        - vmspikesummary : 'documents/apps/vhlab_voltage2firingrate/vmspikesummary.md'
     - daq:
       - ndi_document_daqmetadatareader : 'documents/daq/ndi_document_daqmetadatareader.md'
       - ndi_document_daqreader : 'documents/daq/ndi_document_daqreader.md'
@@ -67,23 +67,23 @@ nav:
       - ndi_document_syncgraph : 'documents/daq/ndi_document_syncgraph.md'
       - ndi_document_syncrule : 'documents/daq/ndi_document_syncrule.md'
     - data:
-      - ndi_document_data_fitcurve : 'documents/data/ndi_document_data_fitcurve.md'
-      - ndi_document_data_binaryseries : 'documents/data/ndi_document_data_binaryseries.md'
+      - fitcurve : 'documents/data/fitcurve.md'
+      - ndi_document_binaryseries : 'documents/data/ndi_document_binaryseries.md'
     - neuron:
-      - ndi_document_neuron_extracellular : 'documents/neuron/ndi_document_neuron_extracellular.md'
+      - neuron_extracellular : 'documents/neuron/neuron_extracellular.md'
     - newdoctemplate:
       - ndi_document_newdoctemplate : 'documents/newdoctemplate/ndi_document_newdoctemplate.md'
     - stimulus:
-      - ndi_document_stimulus_control_stimulus_ids : 'documents/stimulus/ndi_document_stimulus_control_stimulus_ids.md'
-      - ndi_document_stimulus_stimulus_presentation : 'documents/stimulus/ndi_document_stimulus_stimulus_presentation.md'
-      - ndi_document_stimulus_stimulus_response : 'documents/stimulus/ndi_document_stimulus_stimulus_response.md'
-      - ndi_document_stimulus_stimulus_response_scalar : 'documents/stimulus/ndi_document_stimulus_stimulus_response_scalar.md'
-      - ndi_document_stimulus_stimulus_response_scalar_parameters : 'documents/stimulus/ndi_document_stimulus_stimulus_response_scalar_parameters.md'
-      - ndi_document_stimulus_stimulus_response_scalar_parameters : 'documents/stimulus/ndi_document_stimulus_stimulus_response_scalar_parameters.md'
-      - ndi_document_stimulus_stimulus_tuningcurve : 'documents/stimulus/ndi_document_stimulus_stimulus_tuningcurve.md'
+      - control_stimulus_ids : 'documents/stimulus/control_stimulus_ids.md'
+      - stimulus_presentation : 'documents/stimulus/stimulus_presentation.md'
+      - stimulus_response : 'documents/stimulus/stimulus_response.md'
+      - stimulus_response_scalar : 'documents/stimulus/stimulus_response_scalar.md'
+      - stimulus_response_scalar_parameters : 'documents/stimulus/stimulus_response_scalar_parameters.md'
+      - stimulus_response_scalar_parameters_basic : 'documents/stimulus/stimulus_response_scalar_parameters_basic.md'
+      - stimulus_tuningcurve : 'documents/stimulus/stimulus_tuningcurve.md'
       - vision:
         - oridir:
-          - ndi_document_stimulus_vision_orientation_direction_tuning : 'documents/stimulus/vision/oridir/ndi_document_stimulus_vision_orientation_direction_tuning.md'
+          - orientation_direction_tuning : 'documents/stimulus/vision/oridir/orientation_direction_tuning.md'
   - Code reference: 
     - ndi_Init: 'reference/ndi_Init.m.md'
     - ndi_install: 'reference/ndi_install.m.md'
