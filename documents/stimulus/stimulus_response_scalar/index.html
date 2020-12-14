@@ -1250,8 +1250,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_stimulus_stimulus_response_scalar-fields" class="md-nav__link">
-    ndi_document_stimulus_stimulus_response_scalar fields
+  <a href="#stimulus_response_scalar-fields" class="md-nav__link">
+    stimulus_response_scalar fields
   </a>
   
 </li>
@@ -1264,8 +1264,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_stimulus_stimulus_response-fields" class="md-nav__link">
-    ndi_document_stimulus_stimulus_response fields
+  <a href="#stimulus_response-fields" class="md-nav__link">
+    stimulus_response fields
   </a>
   
 </li>
@@ -4149,8 +4149,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_stimulus_stimulus_response_scalar-fields" class="md-nav__link">
-    ndi_document_stimulus_stimulus_response_scalar fields
+  <a href="#stimulus_response_scalar-fields" class="md-nav__link">
+    stimulus_response_scalar fields
   </a>
   
 </li>
@@ -4163,8 +4163,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_stimulus_stimulus_response-fields" class="md-nav__link">
-    ndi_document_stimulus_stimulus_response fields
+  <a href="#stimulus_response-fields" class="md-nav__link">
+    stimulus_response fields
   </a>
   
 </li>
@@ -4195,7 +4195,7 @@
 <strong>Schema for validation</strong>: <a href="https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/stimulus/stimulus_response_scalar_schema.json">$NDISCHEMAPATH/stimulus/stimulus_response_scalar_schema.json</a><br>
 <strong>Property_list_name</strong>: <code>stimulus_response_scalar</code><br>
 <strong>Class_version</strong>: <code>1</code><br></p>
-<h2 id="ndi_document_stimulus_stimulus_response_scalar-fields"><a href="./">ndi_document_stimulus_stimulus_response_scalar</a> fields<a class="headerlink" href="#ndi_document_stimulus_stimulus_response_scalar-fields" title="Permanent link">&para;</a></h2>
+<h2 id="stimulus_response_scalar-fields"><a href="./">stimulus_response_scalar</a> fields<a class="headerlink" href="#stimulus_response_scalar-fields" title="Permanent link">&para;</a></h2>
 <p>Accessed by <code>stimulus_response_scalar.field</code> where <em>field</em> is one of the field names below</p>
 <table>
 <thead>
@@ -4208,55 +4208,55 @@
 </thead>
 <tbody>
 <tr>
-<td>depends_on</td>
+<td><strong>depends_on</strong></td>
 <td>-</td>
 <td>structure</td>
 <td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
 </tr>
 <tr>
-<td>depends_on: stimulus_response_scalar_parameters_id</td>
+<td><strong>depends_on</strong>: stimulus_response_scalar_parameters_id</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response_type</td>
+<td><strong>response_type</strong></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response</td>
+<td><strong>response</strong></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response.stimid</td>
+<td><strong>response</strong>.stimid</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response.response_real</td>
+<td><strong>response</strong>.response_real</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response.response_imaginary</td>
+<td><strong>response</strong>.response_imaginary</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response.control_response_real</td>
+<td><strong>response</strong>.control_response_real</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>response.control_response_imaginary</td>
+<td><strong>response</strong>.control_response_imaginary</td>
 <td></td>
 <td></td>
 <td></td>
@@ -4276,44 +4276,44 @@
 </thead>
 <tbody>
 <tr>
-<td>session_id</td>
+<td><strong>session_id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
 </tr>
 <tr>
-<td>id</td>
+<td><strong>id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of this document</td>
 </tr>
 <tr>
-<td>name</td>
+<td><strong>name</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified name, free for users/developers to use as they like</td>
 </tr>
 <tr>
-<td>type</td>
+<td><strong>type</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified type, free for users/developers to use as they like (deprecated, will be removed)</td>
 </tr>
 <tr>
-<td>datestamp</td>
+<td><strong>datestamp</strong></td>
 <td>(current time)</td>
 <td>ISO-8601 date string, time zone must be UTC leap seconds</td>
 <td>Time of document creation</td>
 </tr>
 <tr>
-<td>database_version</td>
+<td><strong>database_version</strong></td>
 <td>-</td>
 <td>character array (ASCII)</td>
 <td>Version of this document in the database</td>
 </tr>
 </tbody>
 </table>
-<h2 id="ndi_document_stimulus_stimulus_response-fields"><a href="../stimulus_response/">ndi_document_stimulus_stimulus_response</a> fields<a class="headerlink" href="#ndi_document_stimulus_stimulus_response-fields" title="Permanent link">&para;</a></h2>
+<h2 id="stimulus_response-fields"><a href="../stimulus_response/">stimulus_response</a> fields<a class="headerlink" href="#stimulus_response-fields" title="Permanent link">&para;</a></h2>
 <p>Accessed by <code>stimulus_response.field</code> where <em>field</em> is one of the field names below</p>
 <table>
 <thead>
@@ -4326,43 +4326,43 @@
 </thead>
 <tbody>
 <tr>
-<td>depends_on</td>
+<td><strong>depends_on</strong></td>
 <td>-</td>
 <td>structure</td>
 <td>Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use <code>ndi.document</code> methods <code>dependency</code>, <code>dependency_value</code>,<code>add_dependency_value_n</code>,<code>dependency_value_n</code>,<code>remove_dependency_value_n</code>, and <code>set_dependency_value</code> to read and edit <code>depends_on</code> fields of an <code>ndi.document</code>.</td>
 </tr>
 <tr>
-<td>depends_on: element_id</td>
+<td><strong>depends_on</strong>: element_id</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>depends_on: stimulator_id</td>
+<td><strong>depends_on</strong>: stimulator_id</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>depends_on: stimulus_presentation_id</td>
+<td><strong>depends_on</strong>: stimulus_presentation_id</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>depends_on: stimulus_control_id</td>
+<td><strong>depends_on</strong>: stimulus_control_id</td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>stimulator_epochid</td>
+<td><strong>stimulator_epochid</strong></td>
 <td></td>
 <td></td>
 <td></td>
 </tr>
 <tr>
-<td>element_epochid</td>
+<td><strong>element_epochid</strong></td>
 <td></td>
 <td></td>
 <td></td>

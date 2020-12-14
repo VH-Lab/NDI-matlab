@@ -1103,8 +1103,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_data_binaryseries-fields" class="md-nav__link">
-    ndi_document_data_binaryseries fields
+  <a href="#ndi_document_binaryseries-fields" class="md-nav__link">
+    ndi_document_binaryseries fields
   </a>
   
 </li>
@@ -4142,8 +4142,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_data_binaryseries-fields" class="md-nav__link">
-    ndi_document_data_binaryseries fields
+  <a href="#ndi_document_binaryseries-fields" class="md-nav__link">
+    ndi_document_binaryseries fields
   </a>
   
 </li>
@@ -4181,7 +4181,7 @@
 <strong>Schema for validation</strong>: <a href="https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/data/ndi_document_binaryseries_schema.json">$NDISCHEMAPATH/data/ndi_document_binaryseries_schema.json</a><br>
 <strong>Property_list_name</strong>: <code>binary_series_parameters</code><br>
 <strong>Class_version</strong>: <code>1</code><br></p>
-<h2 id="ndi_document_data_binaryseries-fields"><a href="./">ndi_document_data_binaryseries</a> fields<a class="headerlink" href="#ndi_document_data_binaryseries-fields" title="Permanent link">&para;</a></h2>
+<h2 id="ndi_document_binaryseries-fields"><a href="./">ndi_document_binaryseries</a> fields<a class="headerlink" href="#ndi_document_binaryseries-fields" title="Permanent link">&para;</a></h2>
 <p>Accessed by <code>binary_series_parameters.field</code> where <em>field</em> is one of the field names below</p>
 <table>
 <thead>
@@ -4194,37 +4194,37 @@
 </thead>
 <tbody>
 <tr>
-<td>time_size</td>
+<td><strong>time_size</strong></td>
 <td>1</td>
 <td>Integer array [n m]</td>
 <td>Number of independent variable entries (often time)</td>
 </tr>
 <tr>
-<td>time_type</td>
+<td><strong>time_type</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>Type of the time variable ('float64', 'uint32', etc) (note: make better)</td>
 </tr>
 <tr>
-<td>data_size</td>
+<td><strong>data_size</strong></td>
 <td>1</td>
 <td>Integer array [n m]</td>
 <td>Number of data entries)</td>
 </tr>
 <tr>
-<td>data_type</td>
+<td><strong>data_type</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>Type of the time variable ('float64', 'uint32', etc) (note: make better)</td>
 </tr>
 <tr>
-<td>data_dim</td>
+<td><strong>data_dim</strong></td>
 <td>1</td>
 <td>Integer array [n m]</td>
 <td>Dimensions of each data series</td>
 </tr>
 <tr>
-<td>samples_regular_intervals</td>
+<td><strong>samples_regular_intervals</strong></td>
 <td>1</td>
 <td>Integer (0 or 1)</td>
 <td>is the data always sampled at regular intervals?</td>
@@ -4244,37 +4244,37 @@
 </thead>
 <tbody>
 <tr>
-<td>session_id</td>
+<td><strong>session_id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
 </tr>
 <tr>
-<td>id</td>
+<td><strong>id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of this document</td>
 </tr>
 <tr>
-<td>name</td>
+<td><strong>name</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified name, free for users/developers to use as they like</td>
 </tr>
 <tr>
-<td>type</td>
+<td><strong>type</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified type, free for users/developers to use as they like (deprecated, will be removed)</td>
 </tr>
 <tr>
-<td>datestamp</td>
+<td><strong>datestamp</strong></td>
 <td>(current time)</td>
 <td>ISO-8601 date string, time zone must be UTC leap seconds</td>
 <td>Time of document creation</td>
 </tr>
 <tr>
-<td>database_version</td>
+<td><strong>database_version</strong></td>
 <td>-</td>
 <td>character array (ASCII)</td>
 <td>Version of this document in the database</td>

@@ -869,8 +869,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_apps_spikesorter_hengen_probe_geometry-fields" class="md-nav__link">
-    ndi_document_apps_spikesorter_hengen_probe_geometry fields
+  <a href="#probe_geometry-fields" class="md-nav__link">
+    probe_geometry fields
   </a>
   
 </li>
@@ -4151,8 +4151,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#ndi_document_apps_spikesorter_hengen_probe_geometry-fields" class="md-nav__link">
-    ndi_document_apps_spikesorter_hengen_probe_geometry fields
+  <a href="#probe_geometry-fields" class="md-nav__link">
+    probe_geometry fields
   </a>
   
 </li>
@@ -4197,7 +4197,7 @@
 <strong>Schema for validation</strong>: <a href="https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/apps/spikesorter_hengen/probe_geometry_schema.json">$NDISCHEMAPATH/apps/spikesorter_hengen/probe_geometry_schema.json</a><br>
 <strong>Property_list_name</strong>: <code>geometry</code><br>
 <strong>Class_version</strong>: <code>1</code><br></p>
-<h2 id="ndi_document_apps_spikesorter_hengen_probe_geometry-fields"><a href="./">ndi_document_apps_spikesorter_hengen_probe_geometry</a> fields<a class="headerlink" href="#ndi_document_apps_spikesorter_hengen_probe_geometry-fields" title="Permanent link">&para;</a></h2>
+<h2 id="probe_geometry-fields"><a href="./">probe_geometry</a> fields<a class="headerlink" href="#probe_geometry-fields" title="Permanent link">&para;</a></h2>
 <p>Accessed by <code>geometry.field</code> where <em>field</em> is one of the field names below</p>
 <table>
 <thead>
@@ -4230,37 +4230,37 @@
 </thead>
 <tbody>
 <tr>
-<td>session_id</td>
+<td><strong>session_id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of any data session that produced this document</td>
 </tr>
 <tr>
-<td>id</td>
+<td><strong>id</strong></td>
 <td>-</td>
 <td>NDI ID string</td>
 <td>The globally unique identifier of this document</td>
 </tr>
 <tr>
-<td>name</td>
+<td><strong>name</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified name, free for users/developers to use as they like</td>
 </tr>
 <tr>
-<td>type</td>
+<td><strong>type</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>A user-specified type, free for users/developers to use as they like (deprecated, will be removed)</td>
 </tr>
 <tr>
-<td>datestamp</td>
+<td><strong>datestamp</strong></td>
 <td>(current time)</td>
 <td>ISO-8601 date string, time zone must be UTC leap seconds</td>
 <td>Time of document creation</td>
 </tr>
 <tr>
-<td>database_version</td>
+<td><strong>database_version</strong></td>
 <td>-</td>
 <td>character array (ASCII)</td>
 <td>Version of this document in the database</td>
@@ -4280,43 +4280,43 @@
 </thead>
 <tbody>
 <tr>
-<td>name</td>
+<td><strong>name</strong></td>
 <td>ndi.app</td>
 <td>character array (ASCII)</td>
 <td>The name of the application</td>
 </tr>
 <tr>
-<td>version</td>
+<td><strong>version</strong></td>
 <td>-</td>
 <td>character array (ASCII)</td>
 <td>The version of the app according to the app's own version schedule; often this is a Git commit identifier</td>
 </tr>
 <tr>
-<td>url</td>
+<td><strong>url</strong></td>
 <td></td>
 <td>URL as a character array (ASCII)</td>
 <td>The home page of the application</td>
 </tr>
 <tr>
-<td>os</td>
+<td><strong>os</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>The operating system that ran the application</td>
 </tr>
 <tr>
-<td>os_version</td>
+<td><strong>os_version</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>The operating system version</td>
 </tr>
 <tr>
-<td>interpreter</td>
+<td><strong>interpreter</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>If applicable, the name of the interpreter (Matlab, python3, etc)</td>
 </tr>
 <tr>
-<td>interpreter_version</td>
+<td><strong>interpreter_version</strong></td>
 <td></td>
 <td>character array (ASCII)</td>
 <td>If applicable, the version of the interpreter</td>
