@@ -125,7 +125,7 @@ if isempty(info.prop_list), % reading from schema did not succeed
 end;
 
 if ~isempty(info.prop_list),
-	md = cat(2,md,['## [' info.class_name '](' info.localurl ') fields' newline newline]);
+	md = cat(2,md,['## [' info.shortname '](' info.localurl ') fields' newline newline]);
 	md = cat(2,md,['Accessed by `' info.property_list_name '.field` where *field* is one of the field names below' newline newline]);
 	md = cat(2,md,['| field | default_value | data type | description |' newline]);
 	md = cat(2,md,['| --- | --- | --- | --- |' newline]);
@@ -143,7 +143,7 @@ end;
 if numel(superclass_info)>0,
 	for i=1:numel(info.superclass_info),
 		if numel(info.superclass_info{i}.prop_list)>0,
-			md = cat(2,md,['## [' info.superclass_info{i}.class_name '](' [info.my_path_to_root info.superclass_info{i}.url] ...
+			md = cat(2,md,['## [' info.superclass_info{i}.shortname '](' [info.my_path_to_root info.superclass_info{i}.url] ...
 				 ') fields' newline newline]);
 			md = cat(2,md,['Accessed by `' info.superclass_info{i}.property_list_name '.field` where *field* is one of the field names below' newline newline]);
 			md = cat(2,md,['| field | default_value | data type | description |' newline]);

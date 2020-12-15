@@ -1,4 +1,4 @@
-function docs = schemastructure2docstructure(schema)
+function docs = schemastructure2docstructure(schema, varargin)
 % schemastructure2docstructure - return documentation information from an ndi document schema
 %
 % DOCS = SCHEMASTRUCTURE2DOCSTRUCTURE(SCHEMA)
@@ -13,6 +13,10 @@ function docs = schemastructure2docstructure(schema)
 %   - doc_description 
 %
 %
+
+depth = 1;
+
+assign(varargin{:});
 
 docstring = {'doc_default_value', 'doc_data_type','doc_description'};
 
@@ -41,7 +45,11 @@ if ~isempty(property_match),
 		v_i = getfield(v,fns{i});
 		p_here = vlt.data.emptystruct('property',docstring{:});
 		if isstruct(v_i) & ~strcmp(fns{i},'depends_on'),
-			p_here(1).property = fns{i};
+			if depth == 1, 
+				p_here(1).property = ['**' fns{i} '**'];
+			else,
+				p_here(1).property = [fns{i}];
+			end;
 			fnss = fieldnames(v_i);
 			subproperty_match = find(strcmpi('properties',fnss));
 			subitem_match = find(strcmpi('items',fnss));
@@ -63,7 +71,7 @@ if ~isempty(property_match),
 
 		if strcmpi(fns{i},'depends_on'), % special case, depends on:
 			p_here = vlt.data.emptystruct('property',docstring{:});
-			p_here(1).property = 'depends_on';
+			p_here(1).property = '**depends_on**';
 			p_here(1).doc_default_value = '-';
 			p_here(1).doc_data_type = 'structure';
 			p_here(1).doc_description = ['Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`.'];
@@ -73,9 +81,9 @@ if ~isempty(property_match),
 				% first name
 				p_here = vlt.data.emptystruct('property',docstring{:});
 				if isfield(v_i.items(j).properties.name,'const'),
-					p_here(1).property = ['depends_on: ' v_i.items(j).properties.name.const];
+					p_here(1).property = ['**depends_on**: ' v_i.items(j).properties.name.const];
 				else,
-					p_here(1).property = ['depends_on: *variable dependencies*'];
+					p_here(1).property = ['**depends_on**: *variable dependencies*'];
 				end;
 				fni = fieldnames(v_i.items(j).properties);
 				for k=1:numel(docstring),
@@ -98,9 +106,13 @@ if ~isempty(property_match),
 		%  or properties.thing.items
 		
 		if ~isempty(subproperty_match) | ~isempty(subitem_match),
-			pmore = ndi.database.fun.schemastructure2docstructure(v_i);
+			pmore = ndi.database.fun.schemastructure2docstructure(v_i,'depth',depth+1);
 			for j=1:numel(pmore),
-				pmore(j).property = [fns{i} '.' pmore(j).property];
+				if depth==1,
+					pmore(j).property = ['**' fns{i} '**.' pmore(j).property];
+				else,
+					pmore(j).property = [fns{i} '.' pmore(j).property];
+				end;
 				docs(end+1) = pmore(j);
 			end;
 		end;
