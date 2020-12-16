@@ -1,4 +1,4 @@
-classdef spikesorter < ndi.app
+classdef spikesorter < ndi.app & ndi.app.appdoc
 
 	properties (SetAccess=protected,GetAccess=public)
 	end % properties
@@ -19,7 +19,12 @@ classdef spikesorter < ndi.app
 				session = varargin{1};
 			end
 			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app(session, name);
-
+        %intiate app doc
+            ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.appdoc(...
+                {'sorting_parameters','spike_clusters'},...
+                {'apps/spikesorter/sorting_parameters','apps/spikesorter/spike_clusters'},...
+				session);
+            
 		end % ndi.app.spikesorter() creator
 		%%%%%%
 		%% TODO: Figure out how to pass parameters to save in database
@@ -49,9 +54,12 @@ classdef spikesorter < ndi.app
 			% Clear sort within probe with sort_name
 			ndi_app_spikesorter_obj.clear_sort(ndi_timeseries_obj, epoch, sort_name);
 
-			sort_searchq = ndi.query('ndi_document.name','exact_string',sort_name,'') & ...
-					ndi.query('','isa','sorting_parameters','');
-					sorting_parameters_doc = ndi_app_spikesorter_obj.session.database_search(sort_searchq);
+% 			sort_searchq = ndi.query('ndi_document.name','exact_string',sort_name,'') & ...
+% 					ndi.query('','isa','sorting_parameters','');
+% 					sorting_parameters_doc = ndi_app_spikesorter_obj.session.database_search(sort_searchq);
+            
+            sorting_parameters_doc = ndi_app_spikesorter_obj.find_appdoc('sorting_parameters', sort_name);
+                    
 			if isempty(sorting_parameters_doc),
 				error(['No sorting_parameters document named ' sort_name ' found.']);
 			elseif numel(sorting_parameters_doc)>1,
@@ -351,8 +359,137 @@ classdef spikesorter < ndi.app
 		function spikes = load_times(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
 			probe = ndi_app_spikesorter_obj.session.getprobes('name',name,'type',type); % can add reference
 			spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_times(probe{1}, epoch, extraction_name);
-		end
-
+        end
+        
+        %% functions that override ndi_app_appdoc
+        
+        function doc = struct2doc(ndi_app_spikesorter_obj, appdoc_type, appdoc_struct, varargin)
+			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
+			%
+			% DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
+			%
+			% For ndi_app_spikeextractor, one can use an APPDOC_TYPE of the following:
+			% APPDOC_TYPE                 | Description
+			% ----------------------------------------------------------------------------------------------
+			% 'sorting_parameters'  | A document that 
+			% 'spike_clusters'      | A document that  
+			% 
+			%
+			% See APPDOC_DESCRIPTION for a list of the parameters.
+			% 
+            if strcmpi(appdoc_type,'sorting_parameters'),
+				sorting_name = varargin{1};
+				doc = ndi.document('apps/spikesorter/sorting_parameters',...
+					'sorting_parameters',appdoc_struct) + ...
+				ndi_app_spikesorter_obj.newdocument() + ...
+				ndi.document('ndi_document','ndi_document.name',sorting_name);
+            
+            elseif strcmpi(appdoc_type,'spike_clusters'),
+				sorting_name = varargin{1};
+				epoch = varargin{2};
+				clusterid = varargin{3};
+                numcluscters = varargin{4};
+                epochid = varargin{5};
+                
+                epochid_string = ndi_timeseries_obj.epoch2string(epochid); %make sure to use string form
+                
+                doc= ndi.dociment('apps/spikesorter/spike_clusters',...
+                    'spike_clusters', appdoc_struct, 'epoch', epoch, 'clusterid', clusterid, 'numcluscters', numcluscters, 'epochid', epochid_string) + ...
+                    ndi_app_spikesorter_obj.newdocument() + ...
+                    ndi.document('ndi_document', 'ndi_document.name', sorting_name);
+            else
+                error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+            end
+            
+        end %struct2doc()
+        
+        function [b,errormsg] = isvalid_appdoc_struct(ndi_app_spikesorter_obj, appdoc_type, appdoc_struct)
+			% ISVALID_APPDOC_STRUCT - is an input structure a valid descriptor for an APPDOC?
+			%
+			% [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
+			%
+			% Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
+			% ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
+			%
+			% For ndi_app_spikesorter, one can use an APPDOC_TYPE of the following:
+			% APPDOC_TYPE               | Description
+			% ----------------------------------------------------------------------------------------------
+			% 'sorting_parameters'   | A document that describes the parameters to be used for sorting
+			% 'spike_clusters'       | A document that describes the 
+            
+            errormsg = '';
+            
+            if strcmpi(appdoc_type,'sorting_parameters')
+                sorting_parameters = appdoc_struct;
+                
+                %check parameters here
+                fields_needed = {'num_pca_features', 'interpolation'};
+                sizes_needed = {[1 10],[1 3]};
+                
+                [b,errormsg] = vlt.data.hasALLFields(sorting_parameters, fields_needed, sizes_needed);
+                
+            elseif strcmpi(appdoc_type,'spike_clusters')
+                spike_clusters = appdoc_struct;
+                
+                %check parameters here
+                fields_needed = {'epoch','clusterids', 'spiketimes', 'numclusters', 'epochid'};
+                sizes_needed = {[1 1], [1 -1], [1 -1], [1 -1], [1 -1]};
+                
+                [b,errormsg] = vlt.data.hasALLFields(spike_clusters, fields_needed, sizes_needed);
+                
+            else
+                error(['Unknown appdoc_type' appdoc_type '.']);
+            
+            end
+            
+        end %isvalid_appdoc_struct
+        
+        function doc = find_appdoc(ndi_app_spikesorter_obj, appdoc_type, varargin)
+            % FIND_APPDOC - find an ndi_app_appdoc document in the session database
+            %
+			% See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
+			%
+            
+            switch(lower(appdoc_type))
+                case 'sorting_parameters'
+                    sorting_parameters_name = varargin{1};
+                    
+                    sorting_search = ndi.query('ndi_document.name','exact_string',sorting_parameters_name,'') & ...
+                        ndi.query('','isa','sorting_parameters', '');
+                    doc = ndi_app_spikesorter_obj.session.datebase_search(sorting_search);
+                
+                case 'spike_clusters'
+                    spike_clusters_name = varargin{1};
+                    
+                    cluster_search = ndi.query('ndi.document.name', 'exact_string', spike_clusters_name, '') & ...
+                        ndi.query('', 'isa', 'spike_clusters', '');
+                    doc = ndi_app_spikesorter_obj.session.datebase_search(cluster_search);
+                
+                otherwise
+                    error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+            end %switch
+        end %find_appdoc
+        
+        function varargout = loaddata_appdoc(ndi_app_spikesorter_obj, appdoc_type, varargin)
+			% LOADDATA_APPDOC - load data from an application document
+			%
+			% See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
+			%
+            switch(lower(appdoc_type))
+                case {'sorting_parameters','spike_clusters'}
+                varargout{1} = ndi_app_spikesorter_obj.find_appdoc(appdoc_type,varargin{:});
+                
+                otherwise
+                    error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+            end %switch
+            
+            
+        end %loaddata_appdoc
+        
+        function appdoc_description(ndi_app_appdoc_obj)
+			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
+        end
 	end % methods
 
 end % ndi_app_spikesorter
+

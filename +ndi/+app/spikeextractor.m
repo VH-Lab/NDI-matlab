@@ -406,7 +406,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 					otherwise,
 						error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-				end; % switch
+                    end; % switch
                 end; % find_appdoc
 
 		function varargout = loaddata_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
