@@ -17,7 +17,8 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 			name = 'ndi_app_spikesorter';
 			if numel(varargin)>0,
 				session = varargin{1};
-			end
+            end
+            
 			ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app(session, name);
         %intiate app doc
             ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.appdoc(...
@@ -26,15 +27,19 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				session);
             
 		end % ndi.app.spikesorter() creator
+        
 		%%%%%%
 		%% TODO: Figure out how to pass parameters to save in database
 		%%%%%%
+        
 		function spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name, redo)
 		% SPIKE_SORT - method that sorts spikes from specific probes in session to ndi_doc
 		%
 		% SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
 		%%%%%%%%%%%%%%
 		% SORT_NAME name given to save sort to ndi_doc
+        
+        %TODO: fix redo%
 			
 			if exist('redo') == 0
 				redo = 0
@@ -69,8 +74,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 			end;
 
 			% Read spikewaves here
-			spike_extractor = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session);
-			[waveforms, ~, spikewaves_doc] = spike_extractor.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+			ndi_app_spikeextractor_obj = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session);
+            
+            [waveforms, ~, spikewaves_doc] = ndi_app_spikeextractor_obj.loaddata_appdoc('spikewaves', ...
+               ndi_timeseries_obj, epoch, extraction_name);
 
 			% Interpolation
 			interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
@@ -124,10 +131,12 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 			% waveparameters.comment = '';
 			% waveparameters.samplingrate = probe.samplerate(1) * interpolation;% ;
 
-			% spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
-			times = ndi_app_spikesorter_obj.load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
-			% spiketimes_samples = ndi_timeseries_obj.times2samples(1, times);
+			% spikewaves = ndi_app_spikeextractor_obj.loaddata_appdoc('spikewaves', ...
+                %ndi_timeseries_obj, epoch, extraction_name);
+
+			times = ndi_app_spikeextractor_obj.loaddata_appdoc('spiketimes', ndi_timeseries_obj, epoch, extraction_name);
             
+			% spiketimes_samples = ndi_timeseries_obj.times2samples(1, times);
             
 			% Uncomment to enable spikewaves_gui
 			% vlt.neuro.spikesorting.cluster_spikewaves_gui('waves', spikewaves, 'waveparameters', waveparameters, 'clusterids', spikeclusterids, 'wavetimes', spiketimes);
@@ -168,6 +177,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				et = ndi_timeseries_obj.epochtable;
 				
 				neuron_times_idxs = find(clusterids == nNeuron);
+                keyboard
 				neuron_spiketimes = times(neuron_times_idxs);
                 
         disp(['---Number of Spikes ' num2str(length(neuron_spiketimes)) '---'])
@@ -201,14 +211,17 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
         function spikesorter_gui(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name)
             
             %load spike waves
-            spikewaves = ndi_app_spikesorter_obj.load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
+            spikewaves = ndi_app_spikeextractor_obj.loaddata_appdoc('spikewaves', ...
+                ndi_timeseries_obj, epoch, extraction_name);
+            
             
             %load clusterids
             doc_spike_clusters = ndi_app_spikesorter_obj.load_spike_clusters_doc(ndi_timeseries_obj, epoch, sort_name);
             spikeclusterids = doc_spike_clusters{1, 1}.document_properties.spike_sort.clusterids; 
             
             %load wavetimes/spike times
-            spiketimes = ndi_app_spikesorter_obj.load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
+            spiketimes = loaddata_appdoc(ndi_app_spikeextractor_obj, 'spiketimes', ...
+                ndi_timeseries_obj, epoch, extraction_name);
             
             
             %load and create waveparameters
@@ -343,32 +356,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 			end
 		end % clear_sort()
 
-		function waveforms = load_spikewaves_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)
-			waveforms = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spikewaves_epoch(ndi_timeseries_obj, epoch, extraction_name);
-		end
-
-		function times = load_spiketimes_epoch(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name)
-			times = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spiketimes_epoch(ndi_timeseries_obj, epoch, extraction_name);
-		end
-
-		function spikes = load_spikes(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
-			probe = ndi_app_spikesorter_obj.session.getprobes('name',name,'type',type); % can add reference
-			spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_spikes(probe{1}, epoch, extraction_name);
-		end
-
-		function spikes = load_times(ndi_app_spikesorter_obj, name, type, epoch, extraction_name)
-			probe = ndi_app_spikesorter_obj.session.getprobes('name',name,'type',type); % can add reference
-			spikes = ndi_app_spikeextractor(ndi_app_spikesorter_obj.session).load_times(probe{1}, epoch, extraction_name);
-        end
-        
         %% functions that override ndi_app_appdoc
         
         function doc = struct2doc(ndi_app_spikesorter_obj, appdoc_type, appdoc_struct, varargin)
 			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
-			% DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
+			% DOC = STRUCT2DOC(ndi.app.spikeextractor_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
 			%
-			% For ndi_app_spikeextractor, one can use an APPDOC_TYPE of the following:
+			% For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
 			% APPDOC_TYPE                 | Description
 			% ----------------------------------------------------------------------------------------------
 			% 'sorting_parameters'  | A document that 
@@ -406,7 +401,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
         function [b,errormsg] = isvalid_appdoc_struct(ndi_app_spikesorter_obj, appdoc_type, appdoc_struct)
 			% ISVALID_APPDOC_STRUCT - is an input structure a valid descriptor for an APPDOC?
 			%
-			% [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
+			% [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(ndi.app.spikeextractor_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
 			%
 			% Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
 			% ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.
@@ -456,14 +451,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                     
                     sorting_search = ndi.query('ndi_document.name','exact_string',sorting_parameters_name,'') & ...
                         ndi.query('','isa','sorting_parameters', '');
-                    doc = ndi_app_spikesorter_obj.session.datebase_search(sorting_search);
+                    doc = ndi_app_spikesorter_obj.session.database_search(sorting_search);
                 
                 case 'spike_clusters'
                     spike_clusters_name = varargin{1};
                     
                     cluster_search = ndi.query('ndi.document.name', 'exact_string', spike_clusters_name, '') & ...
                         ndi.query('', 'isa', 'spike_clusters', '');
-                    doc = ndi_app_spikesorter_obj.session.datebase_search(cluster_search);
+                    doc = ndi_app_spikesorter_obj.session.database_search(cluster_search);
                 
                 otherwise
                     error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
