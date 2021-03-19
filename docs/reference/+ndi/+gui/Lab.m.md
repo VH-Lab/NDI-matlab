@@ -2,9 +2,6 @@
 
  Create lab
 
-    Documentation for ndi.gui.Lab
-       doc ndi.gui.Lab
-
 ## Superclasses
 **handle**
 

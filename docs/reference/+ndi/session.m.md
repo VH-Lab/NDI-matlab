@@ -2,9 +2,6 @@
 
   NDI.SESSION - NDI.SESSION object class
 
-    Documentation for ndi.session
-       doc ndi.session
-
 ## Superclasses
 **handle**
 

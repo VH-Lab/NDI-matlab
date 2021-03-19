@@ -2,11 +2,8 @@
 
   ndi.file.navigator - object class for accessing files on disk
 
-    Documentation for ndi.file.navigator
-       doc ndi.file.navigator
-
 ## Superclasses
-**ndi.ido**, **ndi.epoch.epochset.param**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.epoch.epochset.param](../+epoch/+epochset/param.m.md)**, **[ndi.epoch.epochset](../+epoch/epochset.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

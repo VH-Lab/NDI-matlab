@@ -7,11 +7,8 @@
   Creates a new ndi.app object that operates on the ndi.session
   object called SESSION.
 
-    Documentation for ndi.app
-       doc ndi.app
-
 ## Superclasses
-**ndi.documentservice**
+**[ndi.documentservice](documentservice.m.md)**
 
 ## Properties
 

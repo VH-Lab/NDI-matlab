@@ -2,11 +2,8 @@
 
   NDI_TIMESERIES - abstract class for managing time series data
 
-    Documentation for ndi.time.timeseries
-       doc ndi.time.timeseries
-
 ## Superclasses
-**ndi.documentservice**
+**[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

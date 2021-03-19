@@ -6,11 +6,8 @@
  
   Blackrock Microsystems: https://www.blackrockmicro.com/
 
-    Documentation for ndi.daq.reader.mfdaq.blackrock
-       doc ndi.daq.reader.mfdaq.blackrock
-
 ## Superclasses
-**ndi.daq.reader.mfdaq**, **ndi.daq.reader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.reader.mfdaq](../mfdaq.m.md)**, **[ndi.daq.reader](../../reader.m.md)**, **[ndi.ido](../../../ido.m.md)**, **[ndi.documentservice](../../../documentservice.m.md)**
 
 ## Properties
 

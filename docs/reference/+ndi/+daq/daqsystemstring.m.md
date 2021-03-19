@@ -29,9 +29,6 @@
   
    See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 
-    Documentation for ndi.daq.daqsystemstring
-       doc ndi.daq.daqsystemstring
-
 ## Superclasses
 *none*
 

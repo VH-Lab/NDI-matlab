@@ -7,11 +7,8 @@
   Creates a new ndi.app.stimulus.tuning_response object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 
-    Documentation for ndi.app.stimulus.tuning_response
-       doc ndi.app.stimulus.tuning_response
-
 ## Superclasses
-**ndi.app**, **ndi.documentservice**
+**[ndi.app](../../app.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

@@ -2,9 +2,6 @@
 
   NDI.CACHE - Cache class for NDI
 
-    Documentation for ndi.cache
-       doc ndi.cache
-
 ## Superclasses
 **handle**
 

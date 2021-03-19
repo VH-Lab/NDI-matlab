@@ -7,11 +7,8 @@
   Creates a new ndi.app.oridirtuning object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.
 
-    Documentation for ndi.app.oridirtuning
-       doc ndi.app.oridirtuning
-
 ## Superclasses
-**ndi.app**, **ndi.documentservice**
+**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

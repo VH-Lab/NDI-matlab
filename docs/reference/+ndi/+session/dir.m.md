@@ -2,11 +2,8 @@
 
   NDI_SESSION_DIR - NDI_SESSION_DIR object class - an session with an associated file directory
 
-    Documentation for ndi.session.dir
-       doc ndi.session.dir
-
 ## Superclasses
-**ndi.session**, **handle**
+**[ndi.session](../session.m.md)**, **handle**
 
 ## Properties
 

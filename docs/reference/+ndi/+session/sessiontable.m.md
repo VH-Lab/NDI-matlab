@@ -2,9 +2,6 @@
 
   NDI_SESSIONTABLE - a table for managing the file paths of NDI sessions
 
-    Documentation for ndi.session.sessiontable
-       doc ndi.session.sessiontable
-
 ## Superclasses
 *none*
 

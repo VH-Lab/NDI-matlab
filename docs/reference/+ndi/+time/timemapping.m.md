@@ -13,9 +13,6 @@
  
   t_out = scale * t_in + shift
 
-    Documentation for ndi.time.timemapping
-       doc ndi.time.timemapping
-
 ## Superclasses
 *none*
 

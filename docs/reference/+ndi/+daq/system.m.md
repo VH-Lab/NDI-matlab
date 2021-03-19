@@ -7,11 +7,8 @@
    Creates a new ndi.daq.system object with name and specific data tree object.
    This is an abstract class that is overridden by specific devices.
 
-    Documentation for ndi.daq.system
-       doc ndi.daq.system
-
 ## Superclasses
-**ndi.ido**, **ndi.epoch.epochset.param**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.epoch.epochset.param](../+epoch/+epochset/param.m.md)**, **[ndi.epoch.epochset](../+epoch/epochset.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

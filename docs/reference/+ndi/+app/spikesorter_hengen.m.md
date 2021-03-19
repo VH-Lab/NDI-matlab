@@ -7,11 +7,8 @@
   Creates a new NDI.APP.spikesorter_hengen object that can operate on
   ndi.session objects. The app is named 'ndi_app_spikesorter_hengen'.
 
-    Documentation for ndi.app.spikesorter_hengen
-       doc ndi.app.spikesorter_hengen
-
 ## Superclasses
-**ndi.app**, **ndi.documentservice**
+**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

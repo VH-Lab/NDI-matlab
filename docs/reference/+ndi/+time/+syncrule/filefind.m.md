@@ -21,11 +21,8 @@
   daqsystem1 ('mydaq1')        | The name of the first daq system
   daqsystem2 ('mydaq2')        | The name of the second daq system
 
-    Documentation for ndi.time.syncrule.filefind
-       doc ndi.time.syncrule.filefind
-
 ## Superclasses
-**ndi.time.syncrule**, **ndi.ido**, **ndi.documentservice**
+**[ndi.time.syncrule](../syncrule.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

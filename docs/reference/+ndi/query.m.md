@@ -50,9 +50,6 @@
  
    creates a SEARCHSTRUCT with the fields of the appropriate names.
 
-    Documentation for ndi.query
-       doc ndi.query
-
 ## Superclasses
 *none*
 

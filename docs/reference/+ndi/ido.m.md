@@ -7,9 +7,6 @@
   Creates a new ndi.ido object and generates a unique id
   that is stored in the property 'identifier'.
 
-    Documentation for ndi.ido
-       doc ndi.ido
-
 ## Superclasses
 *none*
 

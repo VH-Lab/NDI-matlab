@@ -9,11 +9,8 @@
   Creates a new ndi.time.syncrule object with the given PARAMETERS (a structure).
   This is an abstract class, so PARAMETERS must be empty.
 
-    Documentation for ndi.time.syncrule
-       doc ndi.time.syncrule
-
 ## Superclasses
-**ndi.ido**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

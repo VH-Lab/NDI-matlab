@@ -18,11 +18,8 @@
   channel_daq2                 | The channel on the second daq system
   number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
 
-    Documentation for ndi.time.syncrule.commontriggers
-       doc ndi.time.syncrule.commontriggers
-
 ## Superclasses
-**ndi.time.syncrule**, **ndi.ido**, **ndi.documentservice**
+**[ndi.time.syncrule](../syncrule.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

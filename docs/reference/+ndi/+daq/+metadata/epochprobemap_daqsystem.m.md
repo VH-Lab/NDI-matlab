@@ -24,11 +24,8 @@
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
   one line per ndi.daq.metadata.epochprobemap_daqsystem entry.
 
-    Documentation for ndi.daq.metadata.epochprobemap_daqsystem
-       doc ndi.daq.metadata.epochprobemap_daqsystem
-
 ## Superclasses
-**ndi.epoch.epochprobemap**
+**[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
 
 ## Properties
 

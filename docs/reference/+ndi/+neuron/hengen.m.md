@@ -3,11 +3,8 @@
 ndi.neuron.hengen is a class.
     ndi_neuron_hengen_obj = hengen(varargin)
 
-    Documentation for ndi.neuron.hengen
-       doc ndi.neuron.hengen
-
 ## Superclasses
-**ndi.element.timeseries**, **ndi.element**, **ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**, **ndi.time.timeseries**
+**[ndi.element.timeseries](../+element/timeseries.m.md)**, **[ndi.element](../element.m.md)**, **[ndi.ido](../ido.m.md)**, **[ndi.epoch.epochset](../+epoch/epochset.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.time.timeseries](../+time/timeseries.m.md)**
 
 ## Properties
 

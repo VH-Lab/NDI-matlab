@@ -11,11 +11,8 @@
   NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
   where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.
 
-    Documentation for ndi.time.syncgraph
-       doc ndi.time.syncgraph
-
 ## Superclasses
-**ndi.ido**
+**[ndi.ido](../ido.m.md)**
 
 ## Properties
 

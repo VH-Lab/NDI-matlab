@@ -2,9 +2,6 @@
 
   NDI_CLOCKTYPE - a class for specifying a clock type in the NDI framework
 
-    Documentation for ndi.time.clocktype
-       doc ndi.time.clocktype
-
 ## Superclasses
 *none*
 

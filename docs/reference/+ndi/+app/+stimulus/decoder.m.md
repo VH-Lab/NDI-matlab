@@ -7,11 +7,8 @@
   Creates a new ndi_app_stimulus.decoder object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
 
-    Documentation for ndi.app.stimulus.decoder
-       doc ndi.app.stimulus.decoder
-
 ## Superclasses
-**ndi.app**, **ndi.documentservice**
+**[ndi.app](../../app.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

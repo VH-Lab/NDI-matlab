@@ -1,4 +1,19 @@
 classdef markgarbage < ndi.app
+        % ndi.app.markgarbage - an application for marking portions of recordings as "garbage" that shouldn't be analyzed
+        %
+        % **Example 1**: Mark a time period as VALID (the rest of the interval is "garbage"), on an ndi.element E from ndi.session S
+	%  
+        %   G = ndi.app.markgarbage(S); % create app instance
+        %   epoch_id = 'myepochid';
+        %   timeref = ndi.time.timereference(E, 'dev_local_time', epoch_id, 0); % time reference is local time on ndi.element E
+        %   t0 = 10; t1 = 100; % mark from 10 to 100 seconds as valid
+        %   G.markvalidinterval(E, t0, timeref, t1, timeref); 
+        %   
+        % **Example 2**: Clear previously marked garbage periods on an ndi.element E from ndi.session S
+	%
+        %   G = ndi.app.markgarbage(S); % create app instance
+	%   G.clearvalidinterval(E);
+        %   
 
 	properties (SetAccess=protected,GetAccess=public)
 

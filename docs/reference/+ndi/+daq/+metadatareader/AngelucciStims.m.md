@@ -2,11 +2,8 @@
 
   NDI_DAQMETADATAREADER_ANGELUCCISTIMS - a class for reading stims from Angelucci lab example data
 
-    Documentation for ndi.daq.metadatareader.AngelucciStims
-       doc ndi.daq.metadatareader.AngelucciStims
-
 ## Superclasses
-**ndi.daq.metadatareader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.metadatareader](../metadatareader.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

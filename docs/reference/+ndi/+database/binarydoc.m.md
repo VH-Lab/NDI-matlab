@@ -2,9 +2,6 @@
 
   NDI_BINARYDOC - a binary file class that handles reading/writing
 
-    Documentation for ndi.database.binarydoc
-       doc ndi.database.binarydoc
-
 ## Superclasses
 **handle**
 

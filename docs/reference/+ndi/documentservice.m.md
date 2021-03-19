@@ -2,9 +2,6 @@
 
   ndi.documentservice - a class of methods that allows objects to interact with ndi.document objects
 
-    Documentation for ndi.documentservice
-       doc ndi.documentservice
-
 ## Superclasses
 *none*
 

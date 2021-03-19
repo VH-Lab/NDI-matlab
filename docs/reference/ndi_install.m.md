@@ -2,7 +2,7 @@
 
   NDI_INSTALL - install the NDI distribution and its ancillary directories
  
-  B = NDI_INSTALL
+      B = NDI_INSTALL
  
   Installs the GitHub distributions necessary to run NDI-matlab.
   These are installed at [USERPATH filesep 'tools']

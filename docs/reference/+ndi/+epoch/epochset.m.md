@@ -2,9 +2,6 @@
 
   NDI_EPOCHSET - routines for managing a set of epochs and their dependencies
 
-    Documentation for ndi.epoch.epochset
-       doc ndi.epoch.epochset
-
 ## Superclasses
 *none*
 

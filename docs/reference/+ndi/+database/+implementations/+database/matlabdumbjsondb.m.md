@@ -12,11 +12,8 @@
  
   See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
 
-    Documentation for ndi.database.implementations.database.matlabdumbjsondb
-       doc ndi.database.implementations.database.matlabdumbjsondb
-
 ## Superclasses
-**ndi.database**
+**[ndi.database](../../../database.m.md)**
 
 ## Properties
 

@@ -7,11 +7,8 @@
    Creates a new file tree object with the session name 
    This class in inhereted from filenavigator and with epochdir organization
 
-    Documentation for ndi.file.navigator.epochdir
-       doc ndi.file.navigator.epochdir
-
 ## Superclasses
-**ndi.file.navigator**, **ndi.ido**, **ndi.epoch.epochset.param**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.file.navigator](../navigator.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.epoch.epochset.param](../../+epoch/+epochset/param.m.md)**, **[ndi.epoch.epochset](../../+epoch/epochset.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

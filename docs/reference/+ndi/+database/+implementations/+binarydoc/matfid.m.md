@@ -8,11 +8,8 @@
  
   See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
 
-    Documentation for ndi.database.implementations.binarydoc.matfid
-       doc ndi.database.implementations.binarydoc.matfid
-
 ## Superclasses
-**ndi.database.binarydoc**, **handle**, **vlt.file.fileobj**
+**[ndi.database.binarydoc](../../binarydoc.m.md)**, **handle**, **vlt.file.fileobj**
 
 ## Properties
 

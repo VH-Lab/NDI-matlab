@@ -15,11 +15,8 @@
   number_fullpath_matches (2)  | The number of full path matches of the underlying 
                                |  filenames that must match in order for the epochs to match.
 
-    Documentation for ndi.time.syncrule.filematch
-       doc ndi.time.syncrule.filematch
-
 ## Superclasses
-**ndi.time.syncrule**, **ndi.ido**, **ndi.documentservice**
+**[ndi.time.syncrule](../syncrule.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

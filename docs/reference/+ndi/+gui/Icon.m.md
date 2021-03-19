@@ -3,9 +3,6 @@
 ndi.gui.Icon is a class.
     obj = Icon(src, len, elem, hShift, vShift, w, h, color)
 
-    Documentation for ndi.gui.Icon
-       doc ndi.gui.Icon
-
 ## Superclasses
 **handle**
 

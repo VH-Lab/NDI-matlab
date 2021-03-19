@@ -2,11 +2,8 @@
 
   ndi.element - define or examine a element in the session
 
-    Documentation for ndi.element
-       doc ndi.element
-
 ## Superclasses
-**ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.ido](ido.m.md)**, **[ndi.epoch.epochset](+epoch/epochset.m.md)**, **[ndi.documentservice](documentservice.m.md)**
 
 ## Properties
 

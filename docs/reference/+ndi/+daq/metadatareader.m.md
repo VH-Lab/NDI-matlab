@@ -2,11 +2,8 @@
 
   NDI.DAQ.METADATAREADER.BASE - a class for reading metadata related to data acquisition, such as stimulus parameter information
 
-    Documentation for ndi.daq.metadatareader
-       doc ndi.daq.metadatareader
-
 ## Superclasses
-**ndi.ido**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

@@ -3,9 +3,6 @@
  NDI.DOCUMENT - NDI_database storage item, general purpose data and parameter storage
   The ndi.document datatype for storing results in the ndi.database
 
-    Documentation for ndi.document
-       doc ndi.document
-
 ## Superclasses
 *none*
 

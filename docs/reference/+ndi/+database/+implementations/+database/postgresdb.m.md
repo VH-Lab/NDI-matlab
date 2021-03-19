@@ -2,11 +2,8 @@
 
 ndi.database.implementations.database.postgresdb is a class.
 
-    Documentation for ndi.database.implementations.database.postgresdb
-       doc ndi.database.implementations.database.postgresdb
-
 ## Superclasses
-**ndi.database**
+**[ndi.database](../../../database.m.md)**
 
 ## Properties
 

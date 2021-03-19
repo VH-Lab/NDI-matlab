@@ -9,11 +9,8 @@
   sigTOOL is also included in the https://github.com/VH-Lab/vhlab-thirdparty-matlab bundle and
   can be installed with instructions at http://code.vhlab.org.
 
-    Documentation for ndi.daq.reader.mfdaq.cedspike2
-       doc ndi.daq.reader.mfdaq.cedspike2
-
 ## Superclasses
-**ndi.daq.reader.mfdaq**, **ndi.daq.reader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.reader.mfdaq](../mfdaq.m.md)**, **[ndi.daq.reader](../../reader.m.md)**, **[ndi.ido](../../../ido.m.md)**, **[ndi.documentservice](../../../documentservice.m.md)**
 
 ## Properties
 

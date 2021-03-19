@@ -7,9 +7,6 @@
   for Java, based on org.json API. It implements the DRAFT 7 version
   of the JSON Schema: https://json-schema.org/
 
-    Documentation for ndi.validate
-       doc ndi.validate
-
 ## Superclasses
 *none*
 

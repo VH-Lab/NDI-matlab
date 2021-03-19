@@ -22,11 +22,8 @@
  
   See also: ndi.daq.reader.mfdaq/ndi.daq.reader.mfdaq
 
-    Documentation for ndi.daq.reader.mfdaq
-       doc ndi.daq.reader.mfdaq
-
 ## Superclasses
-**ndi.daq.reader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.reader](../reader.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

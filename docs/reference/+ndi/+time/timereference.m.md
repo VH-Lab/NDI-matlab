@@ -2,9 +2,6 @@
 
   NDI.TIME.TIMEREFERENCE - a class for specifying time relative to an NDI_CLOCK
 
-    Documentation for ndi.time.timereference
-       doc ndi.time.timereference
-
 ## Superclasses
 *none*
 

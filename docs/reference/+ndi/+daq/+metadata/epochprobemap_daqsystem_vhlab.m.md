@@ -27,11 +27,8 @@
   acqusition code), 'vhspike2', or 'vhwillow'. The device name will be taken from the filename,
   following [VHDEVICENAME '_channelgrouping.txt']
 
-    Documentation for ndi.daq.metadata.epochprobemap_daqsystem_vhlab
-       doc ndi.daq.metadata.epochprobemap_daqsystem_vhlab
-
 ## Superclasses
-**ndi.daq.metadata.epochprobemap_daqsystem**, **ndi.epoch.epochprobemap**
+**[ndi.daq.metadata.epochprobemap_daqsystem](epochprobemap_daqsystem.m.md)**, **[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
 
 ## Properties
 

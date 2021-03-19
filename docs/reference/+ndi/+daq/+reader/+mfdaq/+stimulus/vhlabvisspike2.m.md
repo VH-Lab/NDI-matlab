@@ -17,11 +17,8 @@
   e2              | vertical refresh trigger
   e3              | pretime trigger
 
-    Documentation for ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2
-       doc ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2
-
 ## Superclasses
-**ndi.daq.reader.mfdaq**, **ndi.daq.reader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.reader.mfdaq](../../mfdaq.m.md)**, **[ndi.daq.reader](../../../reader.m.md)**, **[ndi.ido](../../../../ido.m.md)**, **[ndi.documentservice](../../../../documentservice.m.md)**
 
 ## Properties
 

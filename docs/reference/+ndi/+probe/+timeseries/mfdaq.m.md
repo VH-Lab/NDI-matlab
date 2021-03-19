@@ -2,11 +2,8 @@
 
   NDI_PROBE_TIMESERIES_MFDAQ - Create a new NDI_PROBE_MFAQ class object that handles probes that are associated with NDI_DAQSYSTEM_MFDAQ objects
 
-    Documentation for ndi.probe.timeseries.mfdaq
-       doc ndi.probe.timeseries.mfdaq
-
 ## Superclasses
-**ndi.probe.timeseries**, **ndi.probe**, **ndi.element**, **ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**, **ndi.time.timeseries**
+**[ndi.probe.timeseries](../timeseries.m.md)**, **[ndi.probe](../../probe.m.md)**, **[ndi.element](../../element.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.epoch.epochset](../../+epoch/epochset.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**, **[ndi.time.timeseries](../../+time/timeseries.m.md)**
 
 ## Properties
 

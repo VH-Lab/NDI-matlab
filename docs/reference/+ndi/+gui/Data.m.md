@@ -3,9 +3,6 @@
 ndi.gui.Data is a class.
     obj = Data
 
-    Documentation for ndi.gui.Data
-       doc ndi.gui.Data
-
 ## Superclasses
 **handle**
 

@@ -16,9 +16,6 @@
   Example:
     ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
 
-    Documentation for ndi.app.appdoc
-       doc ndi.app.appdoc
-
 ## Superclasses
 *none*
 

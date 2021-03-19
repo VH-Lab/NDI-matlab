@@ -2,9 +2,6 @@
 
   A (primarily abstract) database class for NDI that stores and manages virtual documents (NoSQL database)
 
-    Documentation for ndi.database
-       doc ndi.database
-
 ## Superclasses
 *none*
 

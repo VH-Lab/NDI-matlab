@@ -7,11 +7,8 @@
   Creates a new ndi_app_spikeextractor object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikeextractor'.
 
-    Documentation for ndi.app.spikeextractor
-       doc ndi.app.spikeextractor
-
 ## Superclasses
-**ndi.app**, **ndi.documentservice**, **ndi.app.appdoc**
+**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.app.appdoc](appdoc.m.md)**
 
 ## Properties
 
