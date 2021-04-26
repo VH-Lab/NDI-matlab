@@ -152,10 +152,10 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function data = readevents_epoch(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
-			%  FUNCTION READEVENTS - read events or markers of specified channels for a specified epoch
+		function data = readevents_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
+			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+			%  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
@@ -173,12 +173,16 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 					data = {};
 					for i=1:numel(channel),
 						data{i} = [];
-						[data{i}(:,2),dummy,dummy,dummy,data{i}(:,1)]=read_CED_SOMSMR_datafile(filename, ...
+						[d,dummy,dummy,dummy,t]=read_CED_SOMSMR_datafile(filename, ...
 							'',channel(i),t0,t1);
+						data{i}(:,1) = t(:,1);
+						data{i}(:,2:size(d,2)+1) = d;
 					end
 				else,
 					data = [];
-					[data(:,2),dummy,dummy,dummy,data(:,1)] = read_CED_SOMSMR_datafile(filename,'',channel,t0,t1);
+					[d,dummy,dummy,dummy,t] = read_CED_SOMSMR_datafile(filename,'',channel,t0,t1);
+					data(:,1) = t(:,1);
+					data(:,2:size(d,2)+1) = d;
 				end
 		end % readevents_epoch()
 
