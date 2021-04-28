@@ -59,8 +59,9 @@ classdef stimulator < ndi.probe.timeseries
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
 					% developer note: it would be pretty easy to extend this, just loop over the devices
-				[edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
+				[timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
 				if ~iscell(edata),
+					timestamps = {timestamps};
 					edata = {edata};
 				end;
 				channel_labels = getchannels(dev{1});
@@ -74,20 +75,23 @@ classdef stimulator < ndi.probe.timeseries
 				if markermode,
 					for i=1:numel(channeltype),
 						switch(channeltype{i}),
-							case 'mk',
+							case {'mk','text'},
 								mk_ = mk_ + 1;
 								switch mk_,
 									case 1, % stimonoff
-										%edata{i},
-										t.stimon = edata{i}(find(edata{i}(:,2)>0),1);
-										t.stimoff = edata{i}(find(edata{i}(:,2)==-1),1);
+										t.stimon = timestamps{i}(find(edata{i}(:,1)>0),1);
+										t.stimoff = timestamps{i}(find(edata{i}(:,1)==-1),1);
 									case 2, % stimid
 										for dd=1:size(edata{i},1),
-											data.stimid(:,dd) = eval([edata{i}(dd,2:end)]);
+											if strcmp(channeltype{i},'text'),
+												data.stimid(dd,1) = eval([edata{i}(dd,:)]);
+											else,
+												data.stimid(dd,:) = edata{i}(dd,:);
+											end;
 										end;
 									case 3, % stimopenclose
-										t.stimopenclose(:,1) = edata{i}( find(edata{i}(:,2)>0) , 1); 
-										t.stimopenclose(:,2) = edata{i}( find(edata{i}(:,2)==-1) , 1); 
+										t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1); 
+										t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1); 
 									otherwise,
 										error(['Got more mark channels than expected.']);
 								end;
@@ -108,9 +112,9 @@ classdef stimulator < ndi.probe.timeseries
 					for i=1:numel(edata),
 						if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
 							counter = counter + 1;
-							t.stimon = [t.stimon(:); vlt.data.colvec(edata{i}(find(edata{i}(:,2)==1),1))];
-							t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,2)==-1),1))];
-							data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,2)==1)),1)];
+							t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
+							t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
+							data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
 						end;
 						if strcmp(channeltype(i),'md'),
 							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));

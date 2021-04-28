@@ -41,10 +41,10 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 				channels(end+1) = struct('name','mk2','type','marker');  
 		end; % getchannelsepoch()
 
-		function data = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_angelucci_visstim_obj, channeltype, channel, epochfiles, t0, t1)
+		function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_angelucci_visstim_obj, channeltype, channel, epochfiles, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+			%  [TIMESTAMPS,DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM object.
 			%
@@ -88,7 +88,8 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 							data2 = [stimid(:)];
 							ch{2} = [time2 data2];
 
-							data{i} = ch{channel(i)};
+							timestamps{i} = ch{channel(i)}(:,1);
+							data{i} = ch{channel(i)}(:,2:end);
 						case 'md',
 							
 						otherwise,
@@ -97,6 +98,7 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 				end
 
 				if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+					timestamps = timestamps{1};
 					data = data{1};
 				end; 
 

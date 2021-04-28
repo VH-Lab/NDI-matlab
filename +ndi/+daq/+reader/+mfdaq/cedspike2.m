@@ -152,7 +152,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function data = readevents_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
+		function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
 			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
@@ -168,22 +168,17 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
+                                timestamps = {};
+                                data = {};
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
-				if numel(channel)>1,
-					data = {};
-					for i=1:numel(channel),
-						data{i} = [];
-						[d,dummy,dummy,dummy,t]=read_CED_SOMSMR_datafile(filename, ...
-							'',channel(i),t0,t1);
-						data{i}(:,1) = t(:,1);
-						data{i}(:,2:size(d,2)+1) = d;
-					end
-				else,
-					data = [];
-					[d,dummy,dummy,dummy,t] = read_CED_SOMSMR_datafile(filename,'',channel,t0,t1);
-					data(:,1) = t(:,1);
-					data(:,2:size(d,2)+1) = d;
-				end
+                                for i=1:numel(channel),
+                                        [data{i},dummy,dummy,dummy,timestamps{i}]= ndr.format.ced.read_SOMSMR_datafile(filename, ...
+                                                '',channel(i),t0,t1);
+                                end
+                                if numel(channel)==1,
+                                        timestamps = timestamps{1};
+                                        data = data{1};
+                                end;
 		end % readevents_epoch()
 
 		function sr = samplerate(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles, channeltype, channel)

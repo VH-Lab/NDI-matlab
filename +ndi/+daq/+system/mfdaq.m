@@ -171,7 +171,7 @@ classdef mfdaq < ndi.daq.system
 			[data] = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel, s0, s1);
 		end %readchannels()
 
-		function data = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
+		function [timestamps,data] = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels
 			%
 			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
@@ -184,9 +184,11 @@ classdef mfdaq < ndi.daq.system
 			%  TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the clock for T0, T1, or
 			%  it can be a single number, which will indicate the data are to be read from that epoch.
 			%
-			%  DATA is a two-column-per-channel vector; the first column has the time of the event. The second
-			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
-			%  is requested, DATA is returned as a cell array, one entry per channel.
+			%  TIMESTAMPS is an array of the timestamps read. If more than one channel is requested, then TIMESTAMPS
+			%  will be a cell array of timestamp arrays, one per channel.
+			%
+			%  DATA is an array of the event data. If more than one channel is requested, then DATA will be a cell array of
+			%  data arrays, one per channel.
 			%
 
 			if isa(timeref_or_epoch,'ndi.time.timereference'),
@@ -195,11 +197,11 @@ classdef mfdaq < ndi.daq.system
 			else,
 				epoch = timeref_or_epoch;
 				%disp('here, about to call readchannels_epochsamples')
-				[data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
+				[timestamps,data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
 			end
 		end % readevents
 
-		function [data, timeref] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t0, t1)
+		function [timestamps,data,timeref] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
 			%  [DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
@@ -220,7 +222,7 @@ classdef mfdaq < ndi.daq.system
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
 				epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
 				timeref = ndi.time.timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
-				data = ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype, channel, epochfiles, t0, t1);
+				[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype,channel,epochfiles,t0,t1);
 		end; % readevents_epochsamples
 
                 function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
