@@ -72,10 +72,10 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 				channels(end+1) = struct('name','e3','type','event');  
 		end; % getchannelsepoch()
 
-		function data = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
+		function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+			%  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
 			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
@@ -90,6 +90,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%  
+				timestamps = {};
 				data = {};
 
 				pathname = {};
@@ -152,16 +153,20 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 							data3 = reshape(data3,numel(data3),1);
 							ch{3} = [time3 data3];
 
-							data{i} = ch{channel(i)};
+							timestamps{i} = ch{channel(i)}(:,1);
+							data{i} = ch{channel(i)}(:,2:end);
 						case 'e',
 							if channel(i)==1, % frametimes
 								allframetimes = cat(1,frametimes{:});
-								data{end+1} = [allframetimes(:) ones(size(allframetimes(:)))];
+								timestamps{end+1} = [allframetimes(:)];
+								data{end+1} = [ones(size(allframetimes(:)))];
 							elseif channel(i)==2, % vertical refresh
 								vr = load(epochfiles{find(strcmp('verticalblanking',fname))},'-ascii');
-								data{end+1} = [vr(:) ones(size(vr(:)))];
+								timestamps{end+1} = [vr(:)];
+								data{end+1} = [ones(size(vr(:)))];
 							elseif channel(i)==3, % background trigger, simulated
-								data{end+1} = [stimsetuptimes(:) ones(size(stimsetuptimes(:)))];
+								timestamps{end+1} = stimsetuptimes(:);
+								data{end+1} = [ones(size(stimsetuptimes(:)))];
 							end
 						case 'md',
 							
@@ -171,6 +176,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 				end
 
 				if numel(data)==1,% if only 1 channel entry to return, make it non-cell
+					timestamps = timestamps{1};
 					data = data{1};
 				end; 
 
