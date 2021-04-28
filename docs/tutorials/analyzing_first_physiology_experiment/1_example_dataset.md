@@ -256,8 +256,8 @@ You'll see a structure with the following fields:
 
 | `timeref_p_ctx1`  | [timereference](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) with properties |
 | ---- | ---- |
-| referent |  `[1×1 ndi.probe.timeseries.mfdaq]` | 
-| clocktype |  `[1×1 ndi.time.clocktype]` |
+| referent |  `[1x1 ndi.probe.timeseries.mfdaq]` | 
+| clocktype |  `[1x1 ndi.time.clocktype]` |
 | epoch |  1 |
 | time |  0 |
 | session_ID |  `'412687ba08e28694_c0d9c07d0b8726cf'` |

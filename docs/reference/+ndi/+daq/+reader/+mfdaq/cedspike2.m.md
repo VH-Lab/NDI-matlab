@@ -33,8 +33,7 @@
 | *ndi_unique_id* | Generate a unique ID number for NDI projects |
 | *newdocument* | create a new ndi.document for an ndi.daq.reader object |
 | *readchannels_epochsamples* | read the data based on specified channels |
-| *readevents_epoch* | read events or markers of specified channels for a specified epoch |
-| *readevents_epochsamples* | read events, markers, and digital events of specified channels for a specified epoch |
+| *readevents_epochsamples* | read events or markers of specified channels for a specified epoch |
 | *readevents_epochsamples_native* | read events or markers of specified channels for a specified epoch |
 | *samplerate* | GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL |
 | *searchquery* | create a search for this ndi.daq.reader object |
@@ -174,9 +173,9 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
 
 ---
 
-**readevents_epoch** - *read events or markers of specified channels for a specified epoch*
+**readevents_epochsamples** - *read events or markers of specified channels for a specified epoch*
 
-DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    CHANNELTYPE is the type of channel to read
    ('event','marker', etc)
@@ -192,31 +191,9 @@ DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 
 ---
 
-**readevents_epochsamples** - *read events, markers, and digital events of specified channels for a specified epoch*
-
-[DATA] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
- 
-   CHANNELTYPE is the type of channel to read
-   ('event','marker', 'dep', 'dimp', 'dimn', etc). It must be a a cell array of strings.
-   
-   CHANNEL is a vector with the identity of the channel(s) to be read.
-   
-   EPOCH is the epoch number or epochID
- 
-   DATA is a two-column vector; the first column has the time of the event. The second
-   column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
-   is requested, DATA is returned as a cell array, one entry per channel.
- 
-   TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
-
-Help for ndi.daq.reader.mfdaq.cedspike2/readevents_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ
-
-
----
-
 **readevents_epochsamples_native** - *read events or markers of specified channels for a specified epoch*
 
-[DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    CHANNELTYPE is the type of channel to read
    ('event','marker', etc). It must be a string (not a cell array of strings).

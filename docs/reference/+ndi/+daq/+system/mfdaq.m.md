@@ -697,9 +697,11 @@ DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
    TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the clock for T0, T1, or
    it can be a single number, which will indicate the data are to be read from that epoch.
  
-   DATA is a two-column-per-channel vector; the first column has the time of the event. The second
-   column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
-   is requested, DATA is returned as a cell array, one entry per channel.
+   TIMESTAMPS is an array of the timestamps read. If more than one channel is requested, then TIMESTAMPS
+   will be a cell array of timestamp arrays, one per channel.
+ 
+   DATA is an array of the event data. If more than one channel is requested, then DATA will be a cell array of
+   data arrays, one per channel.
 
 
 ---

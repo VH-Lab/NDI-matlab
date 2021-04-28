@@ -86,6 +86,10 @@
       - ndi.epoch.findepochnode: 'reference/+ndi/+epoch/findepochnode.m.md'
       - epochset PACKAGE:
         - ndi.epoch.epochset.param: 'reference/+ndi/+epoch/+epochset/param.m.md'
+    - example PACKAGE:
+      - tutorial PACKAGE:
+        - ndi.example.tutorial.plottreeshrewdata: 'reference/+ndi/+example/+tutorial/plottreeshrewdata.m.md'
+        - ndi.example.tutorial.tutorial_01_01: 'reference/+ndi/+example/+tutorial/tutorial_01_01.m.md'
     - file PACKAGE:
       - ndi.file.navigator: 'reference/+ndi/+file/navigator.m.md'
       - navigator PACKAGE:

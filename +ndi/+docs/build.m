@@ -17,7 +17,7 @@ ymlpath = 'reference';
 disp(['Writing documents pass 1']);
 
 out1 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath);
-os = vlt.docs.markdownoutput2objectstruct(out); % get object structures
+os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
 disp(['Writing documents pass 2, with all links']);
 out2 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath, os);

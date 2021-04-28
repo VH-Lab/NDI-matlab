@@ -16,8 +16,10 @@ nav:
     - The NDI model:
       - Introduction: 'ndimodel/1_intro.md'
       - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
+    - Under construction:
+      - 1 Analzying your first electrophysiology experiment with NDI:
+        - 1.1 Reading an example dataset: 'tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
     - Planned soon:
-      - Analyzing your first electrophysiology experiment with NDI: 'tutorials/analyzing_first_physiology_experiment.md'
       - Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
       - Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'
       - Making your own data pipeline in NDI: 'tutorials/data_pipeline.md'
@@ -172,6 +174,10 @@ nav:
       - ndi.epoch.findepochnode: 'reference/+ndi/+epoch/findepochnode.m.md'
       - epochset PACKAGE:
         - ndi.epoch.epochset.param: 'reference/+ndi/+epoch/+epochset/param.m.md'
+    - example PACKAGE:
+      - tutorial PACKAGE:
+        - ndi.example.tutorial.plottreeshrewdata: 'reference/+ndi/+example/+tutorial/plottreeshrewdata.m.md'
+        - ndi.example.tutorial.tutorial_01_01: 'reference/+ndi/+example/+tutorial/tutorial_01_01.m.md'
     - file PACKAGE:
       - ndi.file.navigator: 'reference/+ndi/+file/navigator.m.md'
       - navigator PACKAGE:

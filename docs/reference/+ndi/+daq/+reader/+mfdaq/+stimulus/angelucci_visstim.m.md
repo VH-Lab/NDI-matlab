@@ -177,7 +177,7 @@ Help for ndi.daq.reader.mfdaq.stimulus.angelucci_visstim/readchannels_epochsampl
 
 **readevents_epochsamples** - *read events or markers of specified channels for a specified epoch*
 
-DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+[TIMESTAMPS,DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM object.
  
@@ -197,7 +197,7 @@ DATA = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 
 **readevents_epochsamples_native** - *read events or markers of specified channels for a specified epoch*
 
-[DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    CHANNELTYPE is the type of channel to read
    ('event','marker', etc). It must be a string (not a cell array of strings).

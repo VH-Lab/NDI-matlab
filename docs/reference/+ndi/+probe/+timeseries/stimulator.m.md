@@ -555,11 +555,11 @@ Help for ndi.probe.timeseries.stimulator/readtimeseries is inherited from superc
  
   T.STIMON is an Nx1 vector with the ON times of each stimulus delivery in the time units of
      the epoch or the clock. If marker channels 'mk' are present, then STIMON is taken to be occurrences
-     where the first marker channel registers a 1. Alternatively, if 'dim*' channels are present,
+     where the first marker channel registers a value greater than 0. Alternatively, if 'dim*' channels are present,
      then STIMON is taken to be times whenever ANY of the dim channels registers an event onset.
   T.STIMOFF is an Nx1 vector with the OFF times of each stimulus delivery in the time units of
      the epoch or the clock. If STIMOFF data is not provided, these values will be NaN. If marker channels 'mk'
-     are present, then STIMOFF is taken to be occurrences where the first marker channels registers a -1.
+     are present, then STIMOFF is taken to be occurrences where the first marker channels registers a value less than 0.
      Alternatively, if 'dim*' channels are present, then STIMOFF is taken to be the times when *any* of the 'dim*'
      channels go off. 
   DATA.STIMID is an Nx1 vector with the STIMID values. If STIMID values are not provided, these values
