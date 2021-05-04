@@ -3,7 +3,7 @@
 ndi.database.implementations.database.postgresdb is a class.
 
 ## Superclasses
-**[ndi.database](../../../database.m.md)**
+**ndi.database**
 
 ## Properties
 

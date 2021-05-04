@@ -8,7 +8,7 @@
   NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
 
 ## Superclasses
-**[ndi.app](../../app.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
+**ndi.app**, **ndi.documentservice**
 
 ## Properties
 

@@ -13,7 +13,7 @@
   See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
 
 ## Superclasses
-**[ndi.database](../../../database.m.md)**
+**ndi.database**
 
 ## Properties
 

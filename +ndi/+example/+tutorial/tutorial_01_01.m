@@ -9,7 +9,7 @@
 
  % Code block 1.1.2.1
 
-prefix = [userpath]; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
+prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 ls([prefix filesep 'ts_exper1' filesep 't*']); % list all the files in the t0000N folders
 
  % Code block 1.1.2.2

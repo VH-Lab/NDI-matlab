@@ -8,7 +8,7 @@
   NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.
 
 ## Superclasses
-**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.app.appdoc](appdoc.m.md)**
+**ndi.app**, **ndi.documentservice**, **ndi.app.appdoc**
 
 ## Properties
 

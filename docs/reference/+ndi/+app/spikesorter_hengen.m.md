@@ -8,7 +8,7 @@
   ndi.session objects. The app is named 'ndi_app_spikesorter_hengen'.
 
 ## Superclasses
-**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
+**ndi.app**, **ndi.documentservice**
 
 ## Properties
 

@@ -16,7 +16,7 @@
     G.clearvalidinterval(E);
 
 ## Superclasses
-**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
+**ndi.app**, **ndi.documentservice**
 
 ## Properties
 

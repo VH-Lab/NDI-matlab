@@ -2,8 +2,13 @@
 
 ## 1.1: Reading an example dataset
 
-We will start with learning to read an example dataset into NDI. These data are available in a folder here. You can put the folder anywhere, but
-we will assume that you put them in your MATLAB folder. Normally, we'd use some helper functions to open our data to make this process even
+We will start with learning to read an example dataset into NDI. We assume you have already
+[installed NDI](https://vh-lab.github.io/NDI-matlab/installation/). These data are available in a
+compressed folder
+[here](https://drive.google.com/file/d/1j7IAeMSrH64-qIDLB5EJYUofJSdinwuU/view?usp=sharing). 
+You can put the folder anywhere, but
+we will assume that you put them in your MATLAB/Documents/NDI folder, where MATLAB is your normal user path
+in Matlab (usually `/Users/username/Documents/MATLAB` on a Mac). Normally, we'd use some helper functions to open our data to make this process even
 easier, but this tutorial takes the user through the full manual process for training purposes.
 
 ### 1.1.1 Introduction to the experiment
@@ -31,12 +36,12 @@ gratings that either vary in orientation or in spatial frequency. The data as pr
 - `spike2data.smr` - a CED Spike2 file that has the raw electrophysiology data and the stimulus timing information
 - `stims.mat` - A Matlab file that has detailed parameters of the stimuli that were run
 
-First, let's list these files using the `ls` command and take a quick look at what is in them. Set up the "prefix" path to your data as necessary. (Here, we assume you put the `ts_exper1` folder into your Matlab `userpath` folder but you can put it anywhere.
+First, let's list these files using the `ls` command (that's the letter `l` followed by the letter `s`, short for *list*) and take a quick look at what is in them. Set up the "prefix" path to your data as necessary. (Here, we assume you put the `ts_exper1` folder into your Matlab `userpath` folder but you can put it anywhere.
 
 #### Code block 1.1.2.1. Type this in to Matlab:
 
 ```matlab
-prefix = [userpath]; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
+prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 ls([prefix filesep 'ts_exper1' filesep 't*']); % list all the files in the t0000N folders
 ```
 

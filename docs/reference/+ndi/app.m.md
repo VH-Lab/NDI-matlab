@@ -8,7 +8,7 @@
   object called SESSION.
 
 ## Superclasses
-**[ndi.documentservice](documentservice.m.md)**
+**ndi.documentservice**
 
 ## Properties
 

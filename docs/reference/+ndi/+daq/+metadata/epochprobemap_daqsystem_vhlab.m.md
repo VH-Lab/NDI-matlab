@@ -28,7 +28,7 @@
   following [VHDEVICENAME '_channelgrouping.txt']
 
 ## Superclasses
-**[ndi.daq.metadata.epochprobemap_daqsystem](epochprobemap_daqsystem.m.md)**, **[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
+**ndi.daq.metadata.epochprobemap_daqsystem**, **ndi.epoch.epochprobemap**
 
 ## Properties
 

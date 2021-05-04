@@ -25,7 +25,7 @@
   one line per ndi.daq.metadata.epochprobemap_daqsystem entry.
 
 ## Superclasses
-**[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
+**ndi.epoch.epochprobemap**
 
 ## Properties
 

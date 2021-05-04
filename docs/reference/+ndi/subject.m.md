@@ -19,7 +19,7 @@
    does_subjectstring_match_session_document - Does an ndi.subject object already have a representation in an ndi.database? (Static)
 
 ## Superclasses
-**[ndi.ido](ido.m.md)**, **[ndi.documentservice](documentservice.m.md)**
+**ndi.ido**, **ndi.documentservice**
 
 ## Properties
 
