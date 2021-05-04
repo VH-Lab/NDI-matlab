@@ -6,7 +6,7 @@
   object that has a different type so that it can be searched easily.
 
 ## Superclasses
-**ndi.element.timeseries**, **ndi.element**, **ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**, **ndi.time.timeseries**
+**[ndi.element.timeseries](+element/timeseries.m.md)**, **[ndi.element](element.m.md)**, **[ndi.ido](ido.m.md)**, **[ndi.epoch.epochset](+epoch/epochset.m.md)**, **[ndi.documentservice](documentservice.m.md)**, **[ndi.time.timeseries](+time/timeseries.m.md)**
 
 ## Properties
 

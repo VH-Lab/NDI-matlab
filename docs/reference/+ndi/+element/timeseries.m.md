@@ -3,7 +3,7 @@
   NDI_ELEMENT - define or examine a element in the session
 
 ## Superclasses
-**ndi.element**, **ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**, **ndi.time.timeseries**
+**[ndi.element](../element.m.md)**, **[ndi.ido](../ido.m.md)**, **[ndi.epoch.epochset](../+epoch/epochset.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.time.timeseries](../+time/timeseries.m.md)**
 
 ## Properties
 

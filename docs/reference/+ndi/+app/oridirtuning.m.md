@@ -8,7 +8,7 @@
   NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.
 
 ## Superclasses
-**ndi.app**, **ndi.documentservice**
+**[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

@@ -9,7 +9,7 @@
   See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
 
 ## Superclasses
-**ndi.database.binarydoc**, **handle**, **vlt.file.fileobj**
+**[ndi.database.binarydoc](../../binarydoc.m.md)**, **handle**, **vlt.file.fileobj**
 
 ## Properties
 

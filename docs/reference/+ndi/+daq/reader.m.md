@@ -3,7 +3,7 @@
   NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
 
 ## Superclasses
-**ndi.ido**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 

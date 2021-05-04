@@ -3,7 +3,7 @@
   NDI_EPOCHSET_PARAM - special class of NDI_EPOCHSET that can read/write parameters about epochs
 
 ## Superclasses
-**ndi.epoch.epochset**
+**[ndi.epoch.epochset](../epochset.m.md)**
 
 ## Properties
 

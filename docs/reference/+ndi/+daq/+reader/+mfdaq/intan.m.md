@@ -7,7 +7,7 @@
   Intan Technologies: http://intantech.com/
 
 ## Superclasses
-**ndi.daq.reader.mfdaq**, **ndi.daq.reader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.reader.mfdaq](../mfdaq.m.md)**, **[ndi.daq.reader](../../reader.m.md)**, **[ndi.ido](../../../ido.m.md)**, **[ndi.documentservice](../../../documentservice.m.md)**
 
 ## Properties
 

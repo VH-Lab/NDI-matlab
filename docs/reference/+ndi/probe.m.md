@@ -26,7 +26,7 @@
      (Talk about epochprobemap records of devices, probes are created from these elements.)
 
 ## Superclasses
-**ndi.element**, **ndi.ido**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.element](element.m.md)**, **[ndi.ido](ido.m.md)**, **[ndi.epoch.epochset](+epoch/epochset.m.md)**, **[ndi.documentservice](documentservice.m.md)**
 
 ## Properties
 

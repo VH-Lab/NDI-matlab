@@ -3,7 +3,7 @@
   NDI_DAQMETADATAREADER_NEWSTIMSTIMS - a class for reading NewStim metadata
 
 ## Superclasses
-**ndi.daq.metadatareader**, **ndi.ido**, **ndi.documentservice**
+**[ndi.daq.metadatareader](../metadatareader.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
 ## Properties
 

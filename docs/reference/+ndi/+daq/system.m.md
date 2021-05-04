@@ -8,7 +8,7 @@
    This is an abstract class that is overridden by specific devices.
 
 ## Superclasses
-**ndi.ido**, **ndi.epoch.epochset.param**, **ndi.epoch.epochset**, **ndi.documentservice**
+**[ndi.ido](../ido.m.md)**, **[ndi.epoch.epochset.param](../+epoch/+epochset/param.m.md)**, **[ndi.epoch.epochset](../+epoch/epochset.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
 ## Properties
 
