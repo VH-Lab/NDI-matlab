@@ -1,27 +1,23 @@
-function E = vhlab_expdir(ref, dirname)
-% NDI.VHLAB_EXPERDIR - initialize an ndi.session.dir with VHLAB devices
+function S = vhlab(ref, dirname)
+% ndi.setup.vhlab - initialize an ndi.session.dir with VHLAB devices
 %
-%  E = ndi.setups.vhlab_expdir(REF, DIRNAME)
+%  S = ndi.setup.vhlab(REF, DIRNAME)
 %
 %  Initializes an ndi.session.dir object for the directory
 %  DIRNAME with the standard compliment of VHLAB devices, as
-%  found in ndi.setups.vhlab_makedev.
+%  found in ndi.setup.daq.system.vhlab.
 %
 %  If the devices are already added, they are not re-created.
 %
 
-E = ndi.session.dir(ref, dirname);
-
-vhlabdevnames = ndi.setups.vhlab_makedev;
-
-devclocks = {};
+S = ndi.session.dir(ref, dirname);
+vhlabdevnames = ndi.setup.daq.system.vhlab(); % returns list of daq system names
 
 for i=1:numel(vhlabdevnames),
-	dev = E.daqsystem_load('name',vhlabdevnames{i});
+	dev = S.daqsystem_load('name',vhlabdevnames{i});
 	if isempty(dev),
-		E = ndi.setups.vhlab_makedev(E, vhlabdevnames{i});
+		S = ndi.setup.daq.system.vhlab(S, vhlabdevnames{i});
 	end
-	dev = E.daqsystem_load('name',vhlabdevnames{i});
 end
 
  % update SYNCGRAPH
@@ -31,6 +27,5 @@ n_intan2spike2 = ndi.time.syncrule.filefind(struct('number_fullpath_matches',1, 
 	'syncfilename','vhintan_intan2spike2time.txt',...
 	'daqsystem1','vhintan','daqsystem2','vhvis_spike2'));
 
-E.syncgraph_addrule(nsf);
-E.syncgraph_addrule(n_intan2spike2);
-
+S.syncgraph_addrule(nsf);
+S.syncgraph_addrule(n_intan2spike2);

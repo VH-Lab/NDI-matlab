@@ -16,7 +16,7 @@
 % e3              | pretime trigger
 %
 
-classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
+classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 	properties (GetAcces=public,SetAccess=protected)
 
 	end
@@ -25,13 +25,13 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 
 	methods
 		function obj = vhlabvisspike2(varargin)
-			% ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2 - Create a new multifunction DAQ object
+			% ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2 - Create a new multifunction DAQ object
 			%
-			%  D = ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2(NAME, THEFILENAVIGATOR, DAQREADER)
+			%  D = ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2(NAME, THEFILENAVIGATOR, DAQREADER)
 			%
 			%  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
 			%  This is an abstract class that is overridden by specific devices.
-				obj = obj@ndi.daq.reader.mfdaq(varargin{:});
+				obj = obj@ndi.daq.reader.mfdaq.cedspike2(varargin{:});
 		end; % vhlabvisspike2()
 
 		function ec = epochclock(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)
@@ -182,25 +182,6 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 
 		end % readevents_epochsamples()
 
-		function t0t1 = t0_t1(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles)
-			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
-			%
-			% T0T1 = T0_T1(NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCH_NUMBER)
-			%
-			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
-			%
-			%
-			% See also: ndi.time.clocktype, EPOCHCLOCK
-			%
-				filename = ndi.daq.reader.mfdaq.cedspike2.cedspike2filelist2smrfile(epochfiles);
-				header = read_CED_SOMSMR_header(filename);
-
-				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
-				t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
-				t0t1 = {[t0 t1]};
-		end % t0t1
-
 		function sr = samplerate(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, epochfiles, channeltype, channel)
 			%
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
@@ -212,7 +193,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq
 			   %so, these are all events, and it doesn't much matter, so
 			   % let's make a guess that should apply well in all cases
 
-			sr = 1e-4 * ones(size(channel));
+			sr = NaN;
 		end
 
 	end; % methods

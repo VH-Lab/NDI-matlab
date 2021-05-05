@@ -28,9 +28,13 @@ Check out the [Installation Guide](https://vh-lab.github.io/NDI-matlab/installat
 
 ## Pre-print
 
-Check out the [NDI pre-print](https://www.biorxiv.org/content/10.1101/2020.05.13.093542v1) available on [biorxiv](http://biorxiv.org/). 
+Check out the [NDI pre-print](https://www.biorxiv.org/content/10.1101/2020.05.13.093542v2) available on [biorxiv](http://biorxiv.org/). 
 
-## Support
+## Help and Support
+
+Use the [issue tracker](https://github.com/VH-Lab/NDI-matlab/issues) to submit questions, bugs, and issues.
+
+## Financial Support
 
 Supported by the [NIH BRAIN Initiative informatics group](https://braininitiative.nih.gov/brain-programs/informatics), grant MH114678.
 
