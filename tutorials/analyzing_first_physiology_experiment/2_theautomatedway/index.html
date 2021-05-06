@@ -4875,12 +4875,12 @@ vhlab now. You'll see that these directories have a few more files. It's not nec
 <p>To import data from our lab, we created 4 Matlab files:</p>
 <ul>
 <li><code>+ndi/+setup/vhlab.m</code> - A function that builds an ndi.session object with daq systems that read from our lab's major devices.</li>
-<li><code>+ndi/+setup/+daq/+metadata/epochprobemap_daqsystem_vhlab.m</code> - A class that examines our lab's metadata files that describe the mapping between probes and data acquisition systems and returns an epochprobemap that NDI can interpret. Overrides the default <a href="link">ndi.daq.metadata.epochprobemap_daqsystem.m</a> class that reads the <code>probemap.txt</code> text files we saw in <a href="../1_example_dataset/">Tutorial 1.1</a>. </li>
+<li><code>+ndi/+setup/+daq/+metadata/epochprobemap_daqsystem_vhlab.m</code> - A class that examines our lab's metadata files that describe the mapping between probes and data acquisition systems and returns an epochprobemap that NDI can interpret. Overrides the default <a href="link">ndi.daq.metadata.epochprobemap_daqsystem.m</a> class that reads the <code>probemap.txt</code> text files we saw in <a href="../1_example_dataset/">Tutorial 2.1</a>. </li>
 <li><code>+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m</code> - A class that reads stimulus event data from our custom acquisition files.</li>
 <li><code>+ndi/+daq/+metadatareader/NewStimStims.m</code> - A class that imports stimulus metadata from our lab's open source <a href="https://github.com/VH-Lab/vhlab-NewStim-matlab">NewStim</a> package. (We put it in NDI proper because it is an open source program, not intended solely for our lab.)</li>
 </ul>
 <h3 id="223-creating-a-setup-file">2.2.3 Creating a <code>setup</code> file.<a class="headerlink" href="#223-creating-a-setup-file" title="Permanent link">&para;</a></h3>
-<p>The setup file accomplishes, in an automated fashion, exactly what we did in <a href="../1_example_dataset/">Tutorial 1.1</a>: it 
+<p>The setup file accomplishes, in an automated fashion, exactly what we did in <a href="../1_example_dataset/">Tutorial 2.1</a>: it 
 opens an <a href="link">ndi.session</a> with a particular reference name and directory path, and adds the daq systems that are necessary
 to read the probe data. It normally lives in <code>+ndi/+setup/LABORINVESTIGATORNAME.m</code>. We include the code here:</p>
 <h4 id="code-block-2231-content-of-ndisetupvhlabm-do-not-type-into-matlab-command-line">Code block 2.2.3.1: Content of <code>+ndi/+setup/vhlab.m</code>. (Do not type into Matlab command line.)<a class="headerlink" href="#code-block-2231-content-of-ndisetupvhlabm-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
@@ -5042,7 +5042,7 @@ as a set of event channels. We define 5 fixed channels for our daq system: </p>
 <p>Rather than copying the entire code here, we will include a link to the file: <a href="link_here">link_here</a> . It should be relatively
 self-explanitory for someone with a coding background to read and mimic this file.</p>
 <h3 id="226-creating-a-custom-epochprobemap-class">2.2.6 Creating a custom epochprobemap class<a class="headerlink" href="#226-creating-a-custom-epochprobemap-class" title="Permanent link">&para;</a></h3>
-<p>In <a href="../1_example_dataset/">Tutorial 1.1</a>, we saw that each epoch of data had an associated epochprobemap that contained the 
+<p>In <a href="../1_example_dataset/">Tutorial 2.1</a>, we saw that each epoch of data had an associated epochprobemap that contained the 
 following fields of information:</p>
 <table>
 <thead>
@@ -5105,7 +5105,7 @@ stimulator:</p>
 </table>
 <p>We will not reproduce the code here but refer the reader to the <a href="link">link for the source code</a> of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap_daqsystem</a>.</p>
 <h3 id="227-putting-it-all-together">2.2.7 Putting it all together<a class="headerlink" href="#227-putting-it-all-together" title="Permanent link">&para;</a></h3>
-<p>Now that we have these pieces together, we can read our example data that we call <code>ts_exper2</code>. We will pull up the same plots that we pulled up in <a href="../1_example_dataset/">Tutorial 1.1</a>.</p>
+<p>Now that we have these pieces together, we can read our example data that we call <code>ts_exper2</code>. We will pull up the same plots that we pulled up in <a href="../1_example_dataset/">Tutorial 2.1</a>.</p>
 <h4 id="code-block-2271-type-this-into-matlab">Code block 2.2.7.1 Type this into Matlab<a class="headerlink" href="#code-block-2271-type-this-into-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">prefix</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="nb">userpath</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;Documents&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;NDI&#39;</span><span class="p">];</span><span class="w"> </span><span class="c">% if you put the folder somewhere else, edit this</span><span class="w"></span>
 <span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">vhlab</span><span class="p">(</span><span class="s">&#39;ts_exper2&#39;</span><span class="p">,[</span><span class="n">prefix</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">]);</span><span class="w"></span>
