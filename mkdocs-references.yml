@@ -32,8 +32,6 @@
       - ndi.daq.metadatareader: 'reference/+ndi/+daq/metadatareader.m.md'
       - ndi.daq.reader: 'reference/+ndi/+daq/reader.m.md'
       - ndi.daq.system: 'reference/+ndi/+daq/system.m.md'
-      - metadata PACKAGE:
-        - ndi.daq.metadata.epochprobemap_daqsystem: 'reference/+ndi/+daq/+metadata/epochprobemap_daqsystem.m.md'
       - metadatareader PACKAGE:
         - ndi.daq.metadatareader.NewStimStims: 'reference/+ndi/+daq/+metadatareader/NewStimStims.m.md'
       - reader PACKAGE:
@@ -77,6 +75,7 @@
       - ndi.element.timeseries: 'reference/+ndi/+element/timeseries.m.md'
     - epoch PACKAGE:
       - ndi.epoch.epochprobemap: 'reference/+ndi/+epoch/epochprobemap.m.md'
+      - ndi.epoch.epochprobemap_daqsystem: 'reference/+ndi/+epoch/epochprobemap_daqsystem.m.md'
       - ndi.epoch.epochset: 'reference/+ndi/+epoch/epochset.m.md'
       - ndi.epoch.findepochnode: 'reference/+ndi/+epoch/findepochnode.m.md'
       - epochset PACKAGE:
