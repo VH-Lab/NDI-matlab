@@ -10,6 +10,12 @@ function build()
 
 ndi.globals
 
+disp(['Writing NDI document documentation...']);
+
+ndi.docs.all_documents2markdown();
+
+disp(['Now writing function reference...']);
+
 ndi_path = ndi_globals.path.path;
 ndi_docs = [ndi_path filesep 'docs' filesep 'reference']; % code reference path
 ymlpath = 'reference';

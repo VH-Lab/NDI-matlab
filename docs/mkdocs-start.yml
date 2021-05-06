@@ -13,12 +13,12 @@ nav:
   - Home: index.md
   - Installation: 'installation.md'
   - Tutorials:
-    - The NDI model:
-      - Introduction: 'ndimodel/1_intro.md'
-      - Real world vocabulary: 'ndimodel/2_ndimodel_vocabulary.md'
-    - Under construction:
-      - 1 Analzying your first electrophysiology experiment with NDI:
-        - 1.1 Reading an example dataset: 'tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
+    - 1 The NDI model:
+      - 1.1 Introduction: 'tutorials/ndimodel/1_intro.md'
+      - 1.2 Real world vocabulary: 'tutorials/ndimodel/2_ndimodel_vocabulary.md'
+    - 2 Analzying your first electrophysiology experiment with NDI:
+      - 2.1 Reading an example dataset: 'tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
+      - 2.2 Automating data reading with NDI: 'tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
     - Planned soon:
       - Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
       - Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'

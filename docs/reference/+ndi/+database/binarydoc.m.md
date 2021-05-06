@@ -73,8 +73,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.binarydoc/addlistener is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/addlistener
-       doc handle.addlistener
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/addlistener
 
 
 ---
@@ -114,8 +114,8 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.database.binarydoc/eq is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/eq
-       doc handle.eq
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/eq
 
 
 ---
@@ -162,8 +162,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.database.binarydoc/findobj is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/findobj
-       doc handle.findobj
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/findobj
 
 
 ---
@@ -183,8 +183,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.database.binarydoc/findprop is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/findprop
-       doc handle.findprop
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/findprop
 
 
 ---
@@ -545,8 +545,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/ge is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/ge
-       doc handle.ge
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/ge
 
 
 ---
@@ -568,8 +568,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/gt is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/gt
-       doc handle.gt
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/gt
 
 
 ---
@@ -588,8 +588,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.database.binarydoc/isvalid is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/isvalid
-       doc handle.isvalid
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/isvalid
 
 
 ---
@@ -619,8 +619,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.database.binarydoc/le is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/le
-       doc handle.le
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/le
 
 
 ---
@@ -664,8 +664,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.binarydoc/listener is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/listener
-       doc handle.listener
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/listener
 
 
 ---
@@ -687,8 +687,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/lt is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/lt
-       doc handle.lt
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/lt
 
 
 ---
@@ -713,8 +713,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.database.binarydoc/ne is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/ne
-       doc handle.ne
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/ne
 
 
 ---
@@ -735,8 +735,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.database.binarydoc/notify is inherited from superclass HANDLE
 
-    Documentation for ndi.database.binarydoc/notify
-       doc handle.notify
+    Reference page in Doc Center
+       doc ndi.database.binarydoc/notify
 
 
 ---

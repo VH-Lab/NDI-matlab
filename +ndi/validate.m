@@ -233,7 +233,7 @@ classdef validate
             end
             json_object = json_object.put("string_format", json_array);
             format_validator_list = EnumFormatValidator.buildFromJSON(json_object);
-            ndi.validators.format_validators = format_validator_list;
+            ndi_globals.validators.format_validators = format_validator_list;
         end
     end
 

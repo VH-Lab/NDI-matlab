@@ -34,9 +34,7 @@
       - ndi.daq.system: 'reference/+ndi/+daq/system.m.md'
       - metadata PACKAGE:
         - ndi.daq.metadata.epochprobemap_daqsystem: 'reference/+ndi/+daq/+metadata/epochprobemap_daqsystem.m.md'
-        - ndi.daq.metadata.epochprobemap_daqsystem_vhlab: 'reference/+ndi/+daq/+metadata/epochprobemap_daqsystem_vhlab.m.md'
       - metadatareader PACKAGE:
-        - ndi.daq.metadatareader.AngelucciStims: 'reference/+ndi/+daq/+metadatareader/AngelucciStims.m.md'
         - ndi.daq.metadatareader.NewStimStims: 'reference/+ndi/+daq/+metadatareader/NewStimStims.m.md'
       - reader PACKAGE:
         - ndi.daq.reader.mfdaq: 'reference/+ndi/+daq/+reader/mfdaq.m.md'
@@ -45,9 +43,6 @@
           - ndi.daq.reader.mfdaq.cedspike2: 'reference/+ndi/+daq/+reader/+mfdaq/cedspike2.m.md'
           - ndi.daq.reader.mfdaq.intan: 'reference/+ndi/+daq/+reader/+mfdaq/intan.m.md'
           - ndi.daq.reader.mfdaq.spikegadgets: 'reference/+ndi/+daq/+reader/+mfdaq/spikegadgets.m.md'
-          - stimulus PACKAGE:
-            - ndi.daq.reader.mfdaq.stimulus.angelucci_visstim: 'reference/+ndi/+daq/+reader/+mfdaq/+stimulus/angelucci_visstim.m.md'
-            - ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2: 'reference/+ndi/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m.md'
       - system PACKAGE:
         - ndi.daq.system.mfdaq: 'reference/+ndi/+daq/+system/mfdaq.m.md'
     - data PACKAGE:
@@ -55,12 +50,10 @@
     - database PACKAGE:
       - ndi.database.binarydoc: 'reference/+ndi/+database/binarydoc.m.md'
       - fun PACKAGE:
-        - ndi.database.fun.all_documents2markdown: 'reference/+ndi/+database/+fun/all_documents2markdown.m.md'
         - ndi.database.fun.createGenBankControlledVocabulary: 'reference/+ndi/+database/+fun/createGenBankControlledVocabulary.m.md'
         - ndi.database.fun.createNIFbrainareas: 'reference/+ndi/+database/+fun/createNIFbrainareas.m.md'
         - ndi.database.fun.databasehierarchyinit: 'reference/+ndi/+database/+fun/databasehierarchyinit.m.md'
         - ndi.database.fun.docs2graph: 'reference/+ndi/+database/+fun/docs2graph.m.md'
-        - ndi.database.fun.document2markdown: 'reference/+ndi/+database/+fun/document2markdown.m.md'
         - ndi.database.fun.findalldependencies: 'reference/+ndi/+database/+fun/findalldependencies.m.md'
         - ndi.database.fun.finddocs_missing_dependencies: 'reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
         - ndi.database.fun.ndi_document2ndi_object: 'reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
@@ -69,7 +62,6 @@
         - ndi.database.fun.projectvardef: 'reference/+ndi/+database/+fun/projectvardef.m.md'
         - ndi.database.fun.readGenBankNames: 'reference/+ndi/+database/+fun/readGenBankNames.m.md'
         - ndi.database.fun.readGenBankNodes: 'reference/+ndi/+database/+fun/readGenBankNodes.m.md'
-        - ndi.database.fun.schemastructure2docstructure: 'reference/+ndi/+database/+fun/schemastructure2docstructure.m.md'
       - implementations PACKAGE:
         - binarydoc PACKAGE:
           - ndi.database.implementations.binarydoc.matfid: 'reference/+ndi/+database/+implementations/+binarydoc/matfid.m.md'
@@ -77,7 +69,10 @@
           - ndi.database.implementations.database.matlabdumbjsondb: 'reference/+ndi/+database/+implementations/+database/matlabdumbjsondb.m.md'
           - ndi.database.implementations.database.postgresdb: 'reference/+ndi/+database/+implementations/+database/postgresdb.m.md'
     - docs PACKAGE:
+      - ndi.docs.all_documents2markdown: 'reference/+ndi/+docs/all_documents2markdown.m.md'
       - ndi.docs.build: 'reference/+ndi/+docs/build.m.md'
+      - ndi.docs.document2markdown: 'reference/+ndi/+docs/document2markdown.m.md'
+      - ndi.docs.schemastructure2docstructure: 'reference/+ndi/+docs/schemastructure2docstructure.m.md'
     - element PACKAGE:
       - ndi.element.timeseries: 'reference/+ndi/+element/timeseries.m.md'
     - epoch PACKAGE:
@@ -116,15 +111,26 @@
     - session PACKAGE:
       - ndi.session.dir: 'reference/+ndi/+session/dir.m.md'
       - ndi.session.sessiontable: 'reference/+ndi/+session/sessiontable.m.md'
-    - setups PACKAGE:
-      - ndi.setups.angeluccilab_expdir: 'reference/+ndi/+setups/angeluccilab_expdir.m.md'
-      - ndi.setups.angeluccilab_makedev: 'reference/+ndi/+setups/angeluccilab_makedev.m.md'
-      - ndi.setups.katzlab_expdir: 'reference/+ndi/+setups/katzlab_expdir.m.md'
-      - ndi.setups.katzlab_makedev: 'reference/+ndi/+setups/katzlab_makedev.m.md'
-      - ndi.setups.marderlab_expdir: 'reference/+ndi/+setups/marderlab_expdir.m.md'
-      - ndi.setups.marderlab_makedev: 'reference/+ndi/+setups/marderlab_makedev.m.md'
-      - ndi.setups.vhlab_expdir: 'reference/+ndi/+setups/vhlab_expdir.m.md'
-      - ndi.setups.vhlab_makedev: 'reference/+ndi/+setups/vhlab_makedev.m.md'
+    - setup PACKAGE:
+      - ndi.setup.angeluccilab: 'reference/+ndi/+setup/angeluccilab.m.md'
+      - ndi.setup.dbkatzlab: 'reference/+ndi/+setup/dbkatzlab.m.md'
+      - ndi.setup.marderlab: 'reference/+ndi/+setup/marderlab.m.md'
+      - ndi.setup.vhlab: 'reference/+ndi/+setup/vhlab.m.md'
+      - daq PACKAGE:
+        - metadatareader PACKAGE:
+          - ndi.setup.daq.metadatareader.AngelucciStims: 'reference/+ndi/+setup/+daq/+metadatareader/AngelucciStims.m.md'
+        - reader PACKAGE:
+          - mfdaq PACKAGE:
+            - stimulus PACKAGE:
+              - ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim: 'reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/angelucci_visstim.m.md'
+              - ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2: 'reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m.md'
+        - system PACKAGE:
+          - ndi.setup.daq.system.angeluccilab: 'reference/+ndi/+setup/+daq/+system/angeluccilab.m.md'
+          - ndi.setup.daq.system.dbkatzlab: 'reference/+ndi/+setup/+daq/+system/dbkatzlab.m.md'
+          - ndi.setup.daq.system.marderlab: 'reference/+ndi/+setup/+daq/+system/marderlab.m.md'
+          - ndi.setup.daq.system.vhlab: 'reference/+ndi/+setup/+daq/+system/vhlab.m.md'
+      - epoch PACKAGE:
+        - ndi.setup.epoch.epochprobemap_daqsystem_vhlab: 'reference/+ndi/+setup/+epoch/epochprobemap_daqsystem_vhlab.m.md'
     - test PACKAGE:
       - ndi.test.cache: 'reference/+ndi/+test/cache.m.md'
       - app PACKAGE:
@@ -164,11 +170,10 @@
         - ndi.test.probe.test_ndi_probe: 'reference/+ndi/+test/+probe/test_ndi_probe.m.md'
       - session PACKAGE:
         - ndi.test.session.ndi_test_sessiontable: 'reference/+ndi/+test/+session/ndi_test_sessiontable.m.md'
-      - setups PACKAGE:
-        - ndi.test.setups.ndi_angeluccilab_test: 'reference/+ndi/+test/+setups/ndi_angeluccilab_test.m.md'
-        - ndi.test.setups.ndi_katzlab_narendra_test: 'reference/+ndi/+test/+setups/ndi_katzlab_narendra_test.m.md'
-        - ndi.test.setups.ndi_marderlab_hamood_test: 'reference/+ndi/+test/+setups/ndi_marderlab_hamood_test.m.md'
-        - ndi.test.setups.ndi_testvhlabsetup: 'reference/+ndi/+test/+setups/ndi_testvhlabsetup.m.md'
+      - setup PACKAGE:
+        - ndi.test.setup.angeluccilab: 'reference/+ndi/+test/+setup/angeluccilab.m.md'
+        - ndi.test.setup.dbkatzlab_narendra: 'reference/+ndi/+test/+setup/dbkatzlab_narendra.m.md'
+        - ndi.test.setup.marderlab_hamood: 'reference/+ndi/+test/+setup/marderlab_hamood.m.md'
       - testsuite PACKAGE:
         - ndi.test.testsuite.ndi_testsuite: 'reference/+ndi/+test/+testsuite/ndi_testsuite.m.md'
       - time PACKAGE:
