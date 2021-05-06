@@ -50,12 +50,10 @@
     - database PACKAGE:
       - ndi.database.binarydoc: 'reference/+ndi/+database/binarydoc.m.md'
       - fun PACKAGE:
-        - ndi.database.fun.all_documents2markdown: 'reference/+ndi/+database/+fun/all_documents2markdown.m.md'
         - ndi.database.fun.createGenBankControlledVocabulary: 'reference/+ndi/+database/+fun/createGenBankControlledVocabulary.m.md'
         - ndi.database.fun.createNIFbrainareas: 'reference/+ndi/+database/+fun/createNIFbrainareas.m.md'
         - ndi.database.fun.databasehierarchyinit: 'reference/+ndi/+database/+fun/databasehierarchyinit.m.md'
         - ndi.database.fun.docs2graph: 'reference/+ndi/+database/+fun/docs2graph.m.md'
-        - ndi.database.fun.document2markdown: 'reference/+ndi/+database/+fun/document2markdown.m.md'
         - ndi.database.fun.findalldependencies: 'reference/+ndi/+database/+fun/findalldependencies.m.md'
         - ndi.database.fun.finddocs_missing_dependencies: 'reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
         - ndi.database.fun.ndi_document2ndi_object: 'reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
@@ -64,7 +62,6 @@
         - ndi.database.fun.projectvardef: 'reference/+ndi/+database/+fun/projectvardef.m.md'
         - ndi.database.fun.readGenBankNames: 'reference/+ndi/+database/+fun/readGenBankNames.m.md'
         - ndi.database.fun.readGenBankNodes: 'reference/+ndi/+database/+fun/readGenBankNodes.m.md'
-        - ndi.database.fun.schemastructure2docstructure: 'reference/+ndi/+database/+fun/schemastructure2docstructure.m.md'
       - implementations PACKAGE:
         - binarydoc PACKAGE:
           - ndi.database.implementations.binarydoc.matfid: 'reference/+ndi/+database/+implementations/+binarydoc/matfid.m.md'
@@ -72,7 +69,10 @@
           - ndi.database.implementations.database.matlabdumbjsondb: 'reference/+ndi/+database/+implementations/+database/matlabdumbjsondb.m.md'
           - ndi.database.implementations.database.postgresdb: 'reference/+ndi/+database/+implementations/+database/postgresdb.m.md'
     - docs PACKAGE:
+      - ndi.docs.all_documents2markdown: 'reference/+ndi/+docs/all_documents2markdown.m.md'
       - ndi.docs.build: 'reference/+ndi/+docs/build.m.md'
+      - ndi.docs.document2markdown: 'reference/+ndi/+docs/document2markdown.m.md'
+      - ndi.docs.schemastructure2docstructure: 'reference/+ndi/+docs/schemastructure2docstructure.m.md'
     - element PACKAGE:
       - ndi.element.timeseries: 'reference/+ndi/+element/timeseries.m.md'
     - epoch PACKAGE:
