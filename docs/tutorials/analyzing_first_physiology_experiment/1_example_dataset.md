@@ -17,7 +17,7 @@ These data are single neuron recordings made with electrodes in the anesthetized
 [Van Hooser et al. 2013](https://pubmed.ncbi.nlm.nih.gov/23843520/). This
 example data is a very small subset of the original data for the purposes of illustration.
 
-INSERT IMAGE HERE
+![Dataset setup](ndi_tutorial_0101_dataset_setup.png)
 
 In this experiment, a single unit recording electrode was inserted into either lateral geniculate nucleus or V1. The electrode was connected to 
 an amplifier, and the output signal was recorded by a Cambridge Electronic Design (CED) micro1401 digital acquisition board. A CED Spike2 software
