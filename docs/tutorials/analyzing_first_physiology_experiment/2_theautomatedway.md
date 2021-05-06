@@ -1,4 +1,6 @@
-# 1.2 Automating the reading of data from your rig or lab or collaborator
+# Tutorial 1: Analyzing your first electrophysiology experiment with NDI
+
+## 1.2 Automating the reading of data from your rig or lab or collaborator
 
 In the previous tutorial, we reviewed the steps necessary to create [ndi.daqsystem](link) objects to read in a dataset, and
 to add the metadata that is necessary to tell NDI about the contents of each epoch. 
@@ -11,6 +13,9 @@ line command such as
 ```matlab
 S = ndi.setup.vhlab([reference],[foldername]);
 ```
+
+Once this command has been run once, the directory can be opened with the standard `ndi.session.dir` command thereafter
+(though there is no harm to re-issuing the `ndi.setup.*` command).
 
 It's our guess that many labs have at least one person handy with code, and this task might fall to them. This tutorial is
 written for people who already have some familiarity with coding. If you'd like help creating these functions for your lab,
@@ -29,7 +34,26 @@ of `ndi`. In Matlab, packages are denoted by putting a `+` in the folder name:
     - `+reader/`
     - `+system/`  
 
-## 1.2.1 Example files for vhlab
+### 1.2.1 Download an experiment with all vhlab metadata left intact 
+
+Please download an example data directory called [ts_exper2](https://drive.google.com/file/d/1otNMkVgZ6KBIn2Y-W2oYVj2DgSOgV-xE/view?usp=sharing). Be sure to unzip the files, and we recommend placing them in your Matlab userpath under 'MATLAB/Documents/NDI/' as before. This directory contains the files that were generated at the
+time of acquisition on Steve's rig in the Fitzpatrick lab at Duke, which is nearly identical to the format that we use in the
+vhlab now. You'll see that these directories have a few more files. It's not necessary to follow the identities of the files in detail, but let's look at what is in t00001 as an example:
+
+- `t00001`
+  - `filetime.txt` - The time of the acquisition beginning in seconds from midnight
+  - `reference.txt` = A file describing the probes that are present in this directory
+  - `spike2data.S2R` - This is an irrelevant file! But it's there every time.
+  - `spike2data.smr` - The raw data file acquired by CED's program Spike2 (data acquired via Micro1401)
+  - `spike2datalog.txt` - A text log file (not relevant)
+  - `stims.mat` - The record of stimulation as produced by the stimulus computer. It uses [NewStim](http://github.com/VH-Lab/vhlab-NewStim-matlab) stimuli and is written by VH lab's [RunExperiment](http://github.com/VH-Lab/vhlab-RunExperiment-matlab) program.
+  - `stimtimes.txt` - A text file where each line contains a) the stimulus onset trigger, b) the stimulus ID number between 1-255, and c) an array of video frame trigger times (when the video frame was changed)
+  - `twophotontimes.txt` - A record of triggers of all 2-photon frames. None in this experiment.
+  - `verticalblanking.txt` - A record of each refresh of the monitor. This was not yet used in these experiments but is now part of the VH lab's suite.
+  - `vhspike2_channelgrouping.txt` - A text file that indicates which acquisition channels of our vhspike2 DAQ system are connected to each probe.
+
+
+### 1.2.2 Example NDI-matlab files for vhlab
 
 To import data from our lab, we created 4 Matlab files:
 
@@ -38,13 +62,13 @@ To import data from our lab, we created 4 Matlab files:
 - `+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m` - A class that reads stimulus event data from our custom acquisition files.
 - `+ndi/+daq/+metadatareader/NewStimStims.m` - A class that imports stimulus metadata from our lab's open source [NewStim](https://github.com/VH-Lab/vhlab-NewStim-matlab) package. (We put it in NDI proper because it is an open source program, not intended solely for our lab.)
 
-## 1.2.2 Creating a `setup` file.
+### 1.2.3 Creating a `setup` file.
 
 The setup file accomplishes, in an automated fashion, exactly what we did in [Tutorial 1.1](../1_example_dataset/): it 
 opens an [ndi.session](link) with a particular reference name and directory path, and adds the daq systems that are necessary
 to read the probe data. It normally lives in `+ndi/+setup/LABORINVESTIGATORNAME.m`. We include the code here:
 
-#### Code block 1.2.2.1: Content of `+ndi/+setup/vhlab.m`. (Do not type into Matlab command line.)
+#### Code block 1.2.3.1: Content of `+ndi/+setup/vhlab.m`. (Do not type into Matlab command line.)
 
 ```matlab
 function S = vhlab(ref, dirname)
@@ -87,17 +111,18 @@ also produces a file `vhintan_intan2spike2time.txt` that has the time shift and 
 and our CED Spike2 acquisition system, and we instruct NDI to use that file to synchronize the 2 devices using shift and scale 
 in that file.
 
-## 1.2.3 Creating a function that creates the daq systems for a lab
+### 1.2.4 Creating a function that creates the daq systems for a lab
 
 We also write a function that builds the daq systems that we use in our lab. This process involves 1) naming the daq system,
 2) specifying the [ndi.daq.reader](link) that is used, 3) specifying any [ndi.daq.metadatareader] if necessary, and 
 4) specifying the [ndi.file.navigator](link) to find the files that comprise each epoch.
 
-If this function here is called with 0 input arguments, then it returns a list of all known daq systems objects for our lab.
+If this function here is called with 0 input arguments, then it returns a list of all known daq systems objects for our lab
+(`'vhintan', 'vhspike2', 'vhvis_spike2'`).
 Otherwise, if it is called with the name of a daq system that this function knows how to build, it builds it. It adds the
 appropriate [ndi.daq.reader](link), [ndi.daq.metadatareader](link), and [ndi.file.navigator](link).
 
-#### Code block 1.2.3.1: Content of `+ndi/+setup/+daq/+system/vhlab.m`. (Do not type into Matlab command line.)
+#### Code block 1.2.4.1: Content of `+ndi/+setup/+daq/+system/vhlab.m`. (Do not type into Matlab command line.)
 
 ```matlab
 function S = vhlab(S, daqsystemname)
@@ -188,5 +213,99 @@ different epochmap metadata file (`vhspike2_channelgrouping.txt`).
 
 - `vhvis_spike2` - This system is more custom. It relies on text files that are generated by our scripts that run on our CED Micro1401 acquisition system: `stimtimes.txt`, `verticalblanking.txt`, `spike2data.smr`, and a file generated by our visual stimulation system called `stims.mat`. We add a metadatareader `ndi.daq.metadatareader.NewStimStims` that knows how to interpret the `stims.mat` file. We will cover this custom [ndi.daq.reader](link) next.
 
+### 1.2.5 Creating a custom [ndi.daq.reader.mfdaq.stimulus](link) object:
+
+Our visual stimulation system produces a variety of event data, including information about stimulus onset and offset, the
+vertical refresh signal from the monitor, an 8-bit code for each stimulus ID, a video frame trigger (every time we update the
+image on the screen), and a signal we call the "pretime" trigger that is generally issued 0.5 seconds _before_ a stimulus is
+begun (used for baseline subtracting in intrinsic signal imaging experiments among other applications).
+
+Our acquisition system running on a CED Micro1401 generates text files related to these events, and we propagate them through
+as a set of event channels. We define 5 fixed channels for our daq system: 
+
+- `mk1`: a marker channel that indicates stim ON (+1) or stim OFF (-1)
+- `mk2`: a marker channel that indicates the 8-bit stimulus identifier (stimid)
+- `mk3`: a marker channel that indicates when the stimulus period opens (+1) and closes (-1); this includes interstimulus "background" time
+- `e1`: an event channel that indicates each frame trigger / video frame update
+- `e2`: an event channel that indicates the vertical refresh times of the stimulus monitor
+- `e3`: an event channel that indicates the pre-stimulus trigger (indicates stimulus is upcoming, usually 0.5s away)
+
+Rather than copying the entire code here, we will include a link to the file: [link_here](link_here) . It should be relatively
+self-explanitory for someone with a coding background to read and mimic this file.
+
+### 1.2.6 Creating a custom epochprobemap class
+
+In [Tutorial 1.1](../1_example_dataset/), we saw that each epoch of data had an associated epochprobemap that contained the 
+following fields of information:
+
+| name | reference | type | devicestring | subjectstring |
+| ---- | --------- | ---- | ------------ | ------------- |
+|  ctx |      1    |  n-trode          | ced_daqsystem:ai11 | treeshrew_12345@mylab.org |
+| vis_stim | 1 | stimulator | vis_daqsystem:mk30;text30;md1 | treeshrew_12345@mylab.org |
+
+We need to write a substitute class that is a subclass of [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/) that reads the epoch information and returns all of this same information.
+
+In our vhlab session directories, we always have a single subject whose unique identifier is specified in a text file called
+`subject.txt` in the top directory. This file is read, and this text is used as the `subjectstring` for all probes.
+
+In each vhlab epoch directory, we have a file called `reference.txt` that includes the name, reference, and type of recording
+present in each epoch. Our class's creator reads this file, and uses it to pull out the `name` and `reference` number for all
+electrode (or imaging) probes. 
+
+If our `reference.txt` file indicates that our vhlab "type" is singleEC (single extracellular) or 'ntrode', then it looks for
+other text files that contain a mapping between the name and reference of each probe and the channels that were used on a
+recording device to acquire it. In this experiment, we have `vhspike2_channelgrouping.txt` that indicates that our
+probe 'ctx | 1' was acquired on channel 11 of our CED Micro1401/Spike2 system. 
+
+Finally, if a file named `stimtimes.txt` exists in the epoch directory, then we add in an epochprobemap entry for our visual
+stimulator:
+
+| name | reference | type | devicestring | subjectstring |
+| ---- | --------- | ---- | ------------ | ------------- |
+| vis_stim | 1 | stimulator | vhvis_spike2:mk1-3;e1-3;md1 | treeshrew_12345@mylab.org |
+
+We will not reproduce the code here but refer the reader to the [link for the source code](link) of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/).
+
+### 1.2.7 Putting it all together
+
+Now that we have these pieces together, we can read our example data that we call `ts_exper2`. We will pull up the same plots that we pulled up in [Tutorial 1.1](../1_example_dataset/).
+
+#### Code block 1.2.7.1 Type this into Matlab
+
+```matlab
+prefix = [userpath filesep 'Documents' filesep 'NDI']; % if you put the folder somewhere else, edit this
+S = ndi.setup.vhlab('ts_exper2',[prefix filesep 'ts_exper2']);
+
+p_ctx1_list = S.getprobes('name','ctx','reference',1) % returns a cell array of matches
+p_ctx1 = p_ctx1_list{1}; % take the first one, should be the only one
+
+epoch_to_read = 1;
+[data,t,timeref_p_ctx1]=p_ctx1.readtimeseries(epoch_to_read,-Inf,Inf); % read all data from epoch 1
+figure(100);
+plot(t,data);
+xlabel('Time(s)');
+ylabel('Voltage (V)');
+set(gca,'xlim',[t(1) t(end)]);
+box off;
+
+p_visstim_list = S.getprobes('type','stimulator') % returns a cell array of matches
+p_visstim = p_visstim_list{1}; % take the first one, should be the only one
+[data,t,timeref_stim]=p_visstim.readtimeseries(timeref_p_ctx1,-Inf,Inf); % read all data from epoch 1 of p_ctx1 !
+figure(100);
+hold on;
+vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimoff,'stimid',data.stimid);
+```
+
+If you are paying close attention, you'll notice we got a little more information out of the `readtimeseries` command here. `t.stimoff` exists (it's extracted from our stimulus metadata), so we don't have to know the stimulus duration from elsewhere. That information is not directly accessible in the event record of the smr file, so there is an advantage to reading all the metadata that is available from all sources with a custom object.
+
+### 1.2.8 Conclusion
+
+This concludes our tutorial on setting up code files to read one's own data and metadata into NDI.
+
+To help make this process clearer, we also include 3 other case studies in reading data (tutorials currently under construction):
+
+-  Alessandra Angelluci lab (reads unpublished recording)
+-  Don Katz lab (reads [Mukherjee et al., 2019](https://pubmed.ncbi.nlm.nih.gov/31232693/)) 
+-  Eve Marder lab (reads [Hamood et al., 2015](https://pubmed.ncbi.nlm.nih.gov/25914899/))
 
 

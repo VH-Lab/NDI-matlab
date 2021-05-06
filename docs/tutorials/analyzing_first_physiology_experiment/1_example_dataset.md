@@ -64,7 +64,7 @@ In this example, we have already prepared the metadata files that are necessary 
 
 First, we need to tell NDI what **probes** we have in our experiment. A **probe** is anything that measures or stimulates; one end of a probe 
 is connected to a **subject**, and the other end of a probe is connected to a data acquisition device. We tell NDI how the probe is connected by
-creating an [ndi.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Usually, we do this with a little
+creating an [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Usually, we do this with a little
 code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example we will use the
 generic [ndi.daq.metadata.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file.
 
@@ -300,6 +300,8 @@ keep track of when our stimulus turned off. (For later analysis, we will need to
 
 You can also see that `data` has some metadata about the stimuli. It has the ID number of each stimulus that was shown (`data.stimid(1)` is the stimulus that turned on at `t.stimon(1)`), and
 it has the parameters of each stimulus. `data.parameters{1}` is the parameters of the stimulus with ID number 1.
+
+## 1.1.6 Conclusion
 
 This concludes our tutorial on the fully manual way of reading data through NDI. 
 

@@ -9,8 +9,8 @@
 %
 % Channel name:   | Signal description:
 % ----------------|------------------------------------------
-% m1              | stimulus on/off
-% m2              | stimid 
+% mk1             | stimulus on/off
+% mk2             | stimid 
 % e1              | frame trigger
 % e2              | vertical refresh trigger
 % e3              | pretime trigger

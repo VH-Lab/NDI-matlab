@@ -1,4 +1,4 @@
-function exp = ndi_marderlab_makedev(exp, devname)
+function exp = marderlab(exp, devname)
 % NDI_MARDERLAB_MAKEDEV - initialize devices used by MARDERLAB
 %
 % EXP = ndi.setups.marderlab.makedev(EXP, DEVNAME)

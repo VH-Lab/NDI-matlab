@@ -61,7 +61,7 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 			% 
 				 
 				data = {};
-				md_reader = ndi.daq.metadatareader.AngelucciStims();
+				md_reader = ndi.setup.daq.metadatareader.AngelucciStims();
 
 				tf = endsWith(epochfiles,'stimData.mat','IgnoreCase',true);
 				FILENAME = epochfiles{find(tf)};

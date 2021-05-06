@@ -1,7 +1,7 @@
-function exp = angeluccilab_makedev(exp, devname)
-% ANGELUCCILAB_MAKEDEV - initialize devices used by ANGELUCCILAB
+function exp = angeluccilab(exp, devname)
+% ANGELUCCILAB - initialize devices used by ANGELUCCILAB
 %
-% EXP = ndi.setups.angeluccilab_makedev(EXP, DEVNAME)
+% EXP = ndi.setup.daq.system.angeluccilab(EXP, DEVNAME)
 %
 % Creates devices that look for files in the ANGELUCCILAB standard recording
 % scheme, where data from different epochs are organized into
@@ -31,7 +31,7 @@ end;
 
 if iscell(devname),
 	for i=1:length(devname),
-		exp = ndi.setups.angeluccilab_makedev(exp, devname{i});
+		exp = ndi.setup.daq.system.angeluccilab(exp, devname{i});
 	end
 	return;
 end
@@ -52,8 +52,8 @@ switch devname,
 	case 'angelucci_visstim',
 		fileparameters{end+1} = '#.nev';
 		fileparameters{end+1} = '#.ns4'; 
-		readerobjectclass = [readerobjectclass '.stimulus.angelucci_visstim'];
-		mdr = {ndi.daq.metadatareader.AngelucciStims('stimData.mat')};
+		readerobjectclass = ['ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim'];
+		mdr = {ndi.setup.daq.metadatareader.AngelucciStims('stimData.mat')};
 	otherwise,
 		error(['Unknown device requested ' devname '.']);
 
@@ -62,7 +62,6 @@ end
 ft = ndi.file.navigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
 
 eval(['dr = ' readerobjectclass '();']);
-
 
 eval(['mydev = ' objectclass '(devname, ft, dr, mdr );']);
 

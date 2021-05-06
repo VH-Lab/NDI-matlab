@@ -41,7 +41,7 @@ if iscell(daqsystemname),
 end
 
   % all of our daq systems use this custom epochprobemap class
-epochprobemapclass = 'ndi.setup.daq.metadata.epochprobemap_daqsystem_vhlab';
+epochprobemapclass = 'ndi.setup.epoch.epochprobemap_daqsystem_vhlab';
 
 switch daqsystemname,
 	case 'vhintan',

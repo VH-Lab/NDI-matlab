@@ -1,4 +1,4 @@
-function E = ndi_katzlab_narendra_test(ref, dirname)
+function E = dbkatzlab_narendra(ref, dirname)
 % NDI_KATZLAB_NARENDRA_TEST - test reading from Murkherjee et al. 2019
 %
 % E = ndi.test.setups.katzlab.narendra_test(REF, DIRNAME)
@@ -6,7 +6,7 @@ function E = ndi_katzlab_narendra_test(ref, dirname)
 % Open a directory from Murkherjee et al. (2019, Don Katz lab)
 %
 % Example:
-%   E = ndi.test.setups.katzlab.narendra_test('/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Katz/NM43_Raw');
+%   E = ndi.test.setup.dbkatzlab_narendra('/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Katz/NM43_Raw');
 %
 %
 
@@ -16,7 +16,7 @@ if nargin==0,
 	dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Katz/NM43_Raw',
 end;
 
-E = ndi.setups.katzlab_expdir(ref, dirname); 
+E = ndi.setup.dbkatzlab(ref, dirname); 
 
 p = E.getprobes('type','n-trode')
 

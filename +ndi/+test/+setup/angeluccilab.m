@@ -1,12 +1,12 @@
-function E = ndi_angeluccilab_test(ref, dirname)
-% NDI_ANGELUCCILAB_TEST - test reading from Angelucci lab data
+function E = angeluccilab(ref, dirname)
+% ndi.test.setup.angeluccilab - test reading from Angelucci lab data
 %
-% E = ndi.test.setups.angeluccilab_test(REF, DIRNAME)
+% E = ndi.test.setup.angeluccilab(REF, DIRNAME)
 %
 % Open a directory from test data provided by Angelucci lab 
 %
 % Example:
-%   E = ndi.test.setups.angeluccilab_test('/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Angelucci/2017-09-11');
+%   E = ndi.test.setup.angeluccilab('2017-09-11','/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Angelucci/2017-09-11');
 %
 %
 
@@ -16,7 +16,7 @@ if nargin==0,
 	dirname = '/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Angelucci/2017-09-11'
 end;
 
-E = ndi.setups.angeluccilab_expdir(ref, dirname); 
+E = ndi.setup.angeluccilab(ref, dirname); 
 
 p = E.getprobes('type','n-trode')
 

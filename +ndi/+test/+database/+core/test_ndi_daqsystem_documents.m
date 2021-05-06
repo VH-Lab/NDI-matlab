@@ -25,16 +25,16 @@ function test_ndi_daqsystem_documents
 	doc = E.database_search(ndi.query('','isa','ndi_document_daqsystem.json',''));
 	E.database_rm(doc);
 
-	% we will create one of all types returned by ndi.setups.vhlab_makedev
+	% we will create one of all types returned by ndi.setup.daq.system.vhlab
 
-	devlist = ndi.setups.vhlab_makedev;
+	devlist = ndi.setup.daq.system.vhlab;
 
 	daqsys = {};
 	daqsys_docs = {};
 
 	for i=1:numel(devlist),
 		disp(['Making object ' devlist{i} '.']);
-		E = ndi.setups.vhlab_makedev(E, devlist{i});
+		E = ndi.setup.daq.system.vhlab(E, devlist{i});
 		daqsys{i} = E.daqsystem_load('name',devlist{i});
 		disp(['Making document for ' devlist{i} '.']);
 		daqsys_docs{i} = daqsys{i}.newdocument();
