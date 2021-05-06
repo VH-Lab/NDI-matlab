@@ -4818,7 +4818,7 @@ in Matlab has a subpackage called <code>setup</code>. Here, we have placed m-fil
 settings for various labs or users. The <code>setup</code> package also has a subpackage structure that mimics the subpackage structure
 of <code>ndi</code>. In Matlab, packages are denoted by putting a <code>+</code> in the folder name:</p>
 <ul>
-<li><code>+ndi/+setup/</code></li>
+<li><code>+ndi/+setup/</code><ul>
 <li><code>+daq/</code><ul>
 <li><code>+metadata/</code></li>
 <li><code>+metadatareader/</code></li>
@@ -4827,12 +4827,14 @@ of <code>ndi</code>. In Matlab, packages are denoted by putting a <code>+</code>
 </ul>
 </li>
 </ul>
+</li>
+</ul>
 <h3 id="221-download-an-experiment-with-all-vhlab-metadata-left-intact">2.2.1 Download an experiment with all vhlab metadata left intact<a class="headerlink" href="#221-download-an-experiment-with-all-vhlab-metadata-left-intact" title="Permanent link">&para;</a></h3>
 <p>Please download an example data directory called <a href="https://drive.google.com/file/d/1otNMkVgZ6KBIn2Y-W2oYVj2DgSOgV-xE/view?usp=sharing">ts_exper2</a>. Be sure to unzip the files, and we recommend placing them in your Matlab userpath under 'MATLAB/Documents/NDI/' as before. This directory contains the files that were generated at the
 time of acquisition on Steve's rig in the Fitzpatrick lab at Duke, which is nearly identical to the format that we use in the
 vhlab now. You'll see that these directories have a few more files. It's not necessary to follow the identities of the files in detail, but let's look at what is in t00001 as an example:</p>
 <ul>
-<li><code>t00001</code></li>
+<li><code>t00001/</code><ul>
 <li><code>filetime.txt</code> - The time of the acquisition beginning in seconds from midnight</li>
 <li><code>reference.txt</code> = A file describing the probes that are present in this directory</li>
 <li><code>spike2data.S2R</code> - This is an irrelevant file! But it's there every time.</li>
@@ -4843,6 +4845,8 @@ vhlab now. You'll see that these directories have a few more files. It's not nec
 <li><code>twophotontimes.txt</code> - A record of triggers of all 2-photon frames. None in this experiment.</li>
 <li><code>verticalblanking.txt</code> - A record of each refresh of the monitor. This was not yet used in these experiments but is now part of the VH lab's suite.</li>
 <li><code>vhspike2_channelgrouping.txt</code> - A text file that indicates which acquisition channels of our vhspike2 DAQ system are connected to each probe.</li>
+</ul>
+</li>
 </ul>
 <h3 id="222-example-ndi-matlab-files-for-vhlab">2.2.2 Example NDI-matlab files for vhlab<a class="headerlink" href="#222-example-ndi-matlab-files-for-vhlab" title="Permanent link">&para;</a></h3>
 <p>To import data from our lab, we created 4 Matlab files:</p>
