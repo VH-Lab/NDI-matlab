@@ -23,7 +23,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		% Optional inputs:
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
-		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.daq.metadata.epochprobemap_daqsystem' is used by default
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.epoch.epochprobemap_daqsystem' is used by default
 		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
 		%          specified in ndi.file.navigator/EPOCHPROBEMAPFILENAME is used
@@ -53,7 +53,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 					epochprobemap_fileparameters_ = [];
 				end;
 				if nargin<3,
-					epochprobemap_class_ = 'ndi.daq.metadata.epochprobemap_daqsystem';
+					epochprobemap_class_ = 'ndi.epoch.epochprobemap_daqsystem';
 				end;
 				if nargin<2,
 					fileparameters_ = [];
@@ -84,7 +84,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			if ~isempty(epochprobemap_class_),
 				obj.epochprobemap_class = epochprobemap_class_;
 			else,
-				obj.epochprobemap_class = 'ndi.daq.metadata.epochprobemap_daqsystem';
+				obj.epochprobemap_class = 'ndi.epoch.epochprobemap_daqsystem';
 			end;
 
 			if ~isempty(epochprobemap_fileparameters_),
@@ -210,16 +210,16 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		end %epochid()
 
 		function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
-			% EPOCHPROBEMAPFILENAME - return the file path for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
 			% Returns the EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated.
 			%
-			% In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
+			% the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);
 				if nargin<3, % undocumented 3rd argument
@@ -234,7 +234,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		end % epochidfilename()
 
 		function ecfname = epochprobemapfilename(ndi_filenavigator_obj, number)
-			% EPOCHPROBEMAPFILENAME - return the file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch
+			% EPOCHPROBEMAPFILENAME - return the file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
@@ -271,16 +271,16 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		end % epochprobemapfilename
 
 		function ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number)
-			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch
+			% DEFAULTEPOCHPROBEMAPFILENAME - return the default file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch
 			%
 			% ECFNAME = DEFAULTEPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
 			%
 			% Returns the default EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
 			% If there are no files in epoch NUMBER, an error is generated. NUMBER cannot be an epoch id.
 			%
-			% In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the default ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
+			% the default ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
 			% This may be overridden if there is an EPOCHPROBEMAP_FILEPARAMETERS set.
 			%
 			% See also: ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS
@@ -305,9 +305,9 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			% EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
 			% an error is generated.
 			%
-			% In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+			% In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
 			% as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-			% the ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
+			% the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
 			%
 			%
 				fmstr = filematch_hashstring(ndi_filenavigator_obj);

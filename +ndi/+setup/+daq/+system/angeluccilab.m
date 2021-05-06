@@ -42,7 +42,7 @@ fileparameters{end+1} = '^epochprobemap.txt$';
 epochprobemapfileparameters = {'^epochprobemap.txt$'};
 objectclass = 'ndi.daq.system.mfdaq';
 readerobjectclass = 'ndi.daq.reader.mfdaq';
-epochprobemapclass = 'ndi.daq.metadata.epochprobemap_daqsystem';
+epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
 switch devname,
 	case 'angelucci_blackrock5',

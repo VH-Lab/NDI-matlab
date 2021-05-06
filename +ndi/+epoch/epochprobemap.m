@@ -16,7 +16,7 @@ classdef epochprobemap
 			%
 			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
 			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-			% one line per ndi.daq.metadata.epochprobemap_daqsystem entry.
+			% one line per ndi.epoch.epochprobemap_daqsystem entry.
 
 
 		end % creator

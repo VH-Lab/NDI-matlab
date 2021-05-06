@@ -1,10 +1,10 @@
-# CLASS ndi.daq.metadata.epochprobemap_daqsystem
+# CLASS ndi.epoch.epochprobemap_daqsystem
 
-  ndi.daq.metadata.epochprobemap_daqsystem - Create a new ndi.daq.metadata.epochprobemap_daqsystem object
+  ndi.epoch.epochprobemap_daqsystem - Create a new ndi.epoch.epochprobemap_daqsystem object
  
   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
-  Creates a new ndi.daq.metadata.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
   and devicestring DEVICESTRING.
  
   NAME can be any string that begins with a letter and contains no whitespace. It
@@ -22,10 +22,10 @@
  
   Here, FILENAME is assumed to be a tab-delimitted text file with a header row
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
-  one line per ndi.daq.metadata.epochprobemap_daqsystem entry.
+  one line per ndi.epoch.epochprobemap_daqsystem entry.
 
 ## Superclasses
-**[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
+**[ndi.epoch.epochprobemap](epochprobemap.m.md)**
 
 ## Properties
 
@@ -42,17 +42,17 @@
 
 | Method | Description |
 | --- | --- |
-| *epochprobemap_daqsystem* | Create a new ndi.daq.metadata.epochprobemap_daqsystem object |
-| *savetofile* | Write ndi.daq.metadata.epochprobemap_daqsystem object array to disk |
+| *epochprobemap_daqsystem* | Create a new ndi.epoch.epochprobemap_daqsystem object |
+| *savetofile* | Write ndi.epoch.epochprobemap_daqsystem object array to disk |
 
 
 ### Methods help 
 
-**epochprobemap_daqsystem** - *Create a new ndi.daq.metadata.epochprobemap_daqsystem object*
+**epochprobemap_daqsystem** - *Create a new ndi.epoch.epochprobemap_daqsystem object*
 
 MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
-  Creates a new ndi.daq.metadata.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
   and devicestring DEVICESTRING.
  
   NAME can be any string that begins with a letter and contains no whitespace. It
@@ -70,16 +70,16 @@ MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, D
  
   Here, FILENAME is assumed to be a tab-delimitted text file with a header row
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
-  one line per ndi.daq.metadata.epochprobemap_daqsystem entry.
+  one line per ndi.epoch.epochprobemap_daqsystem entry.
 
 
 ---
 
-**savetofile** - *Write ndi.daq.metadata.epochprobemap_daqsystem object array to disk*
+**savetofile** - *Write ndi.epoch.epochprobemap_daqsystem object array to disk*
 
 SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
  
-   Writes the ndi.daq.metadata.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
+   Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
 
 
 ---

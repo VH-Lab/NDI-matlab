@@ -1,10 +1,10 @@
 # CLASS ndi.setup.epoch.epochprobemap_daqsystem_vhlab
 
-  ndi.daq.metadata.epochprobemap_daqsystem_vhlab - Create a new ndi.daq.metadata.epochprobemap_daqsystem object derived from the vhlab device implementation
+  ndi.epoch.epochprobemap_daqsystem_vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
  
   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
-  Creates a new ndi.daq.metadata.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
   and devicestring DEVICESTRING.
  
   NAME can be any string that begins with a letter and contains no whitespace. It
@@ -28,7 +28,7 @@
   following [VHDEVICENAME '_channelgrouping.txt']
 
 ## Superclasses
-**[ndi.daq.metadata.epochprobemap_daqsystem](../../+daq/+metadata/epochprobemap_daqsystem.m.md)**, **[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
+**[ndi.epoch.epochprobemap_daqsystem](../../+epoch/epochprobemap_daqsystem.m.md)**, **[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
 
 ## Properties
 
@@ -45,17 +45,17 @@
 
 | Method | Description |
 | --- | --- |
-| *epochprobemap_daqsystem_vhlab* | Create a new ndi.daq.metadata.epochprobemap_daqsystem object derived from the vhlab device implementation |
-| *savetofile* | Write ndi.daq.metadata.epochprobemap_daqsystem object array to disk |
+| *epochprobemap_daqsystem_vhlab* | Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation |
+| *savetofile* | Write ndi.epoch.epochprobemap_daqsystem object array to disk |
 
 
 ### Methods help 
 
-**epochprobemap_daqsystem_vhlab** - *Create a new ndi.daq.metadata.epochprobemap_daqsystem object derived from the vhlab device implementation*
+**epochprobemap_daqsystem_vhlab** - *Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation*
 
 MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
-  Creates a new ndi.daq.metadata.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
   and devicestring DEVICESTRING.
  
   NAME can be any string that begins with a letter and contains no whitespace. It
@@ -81,11 +81,11 @@ MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, D
 
 ---
 
-**savetofile** - *Write ndi.daq.metadata.epochprobemap_daqsystem object array to disk*
+**savetofile** - *Write ndi.epoch.epochprobemap_daqsystem object array to disk*
 
 SAVETOFILE(OBJ, FILENAME)
   
-   Writes the ndi.daq.metadata.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
+   Writes the ndi.epoch.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
 
 
 ---

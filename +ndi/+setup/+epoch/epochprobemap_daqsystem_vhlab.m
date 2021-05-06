@@ -1,13 +1,13 @@
-classdef epochprobemap_daqsystem_vhlab < ndi.daq.metadata.epochprobemap_daqsystem
+classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 	properties
 	end % properties
 	methods
 		function obj = epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_, subjectstring_)
-			% ndi.daq.metadata.epochprobemap_daqsystem_vhlab - Create a new ndi.daq.metadata.epochprobemap_daqsystem object derived from the vhlab device implementation
+			% ndi.epoch.epochprobemap_daqsystem_vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
 			%
 			% MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
 			%
-			% Creates a new ndi.daq.metadata.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+			% Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
 			% and devicestring DEVICESTRING.
 			%
 			% NAME can be any string that begins with a letter and contains no whitespace. It
@@ -45,7 +45,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.daq.metadata.epochprobemap_daqsyste
 				subjectstring_ = '';
 			end
 
-			obj = obj@ndi.daq.metadata.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
+			obj = obj@ndi.epoch.epochprobemap_daqsystem(name_, reference_, type_, devicestring_, subjectstring_);
 
 			if nargin==1,
 				[filepath, localfile, ext] = fileparts(filename);
@@ -133,11 +133,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.daq.metadata.epochprobemap_daqsyste
 		end;
         
 		function savetofile(obj, filename)
-		%  SAVETOFILE - Write ndi.daq.metadata.epochprobemap_daqsystem object array to disk
+		%  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
 		%    
                 %    SAVETOFILE(OBJ, FILENAME)
 		% 
-		%  Writes the ndi.daq.metadata.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
+		%  Writes the ndi.epoch.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
 		%
 		%  
 			error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);

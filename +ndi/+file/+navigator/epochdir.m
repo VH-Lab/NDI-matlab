@@ -25,7 +25,7 @@ classdef epochdir < ndi.file.navigator
 		% Inputs: EXP - an ndi.session ; FILEPARAMETERS - the files that are recorded in each epoch
 		%      FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
 		%          data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
-		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.daq.metadata.epochprobemap_daqsystem' is used by default
+		%      EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.epoch.epochprobemap_daqsystem' is used by default
 		%      EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
 		%          present in each epoch (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
 		%          specified in ndi.file.navigator/EPOCHPROBEMAPFILENAME is used

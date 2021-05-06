@@ -135,13 +135,13 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
 
 B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
  
-  Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
+  Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
   epoch NUMBER.
  
   For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
-  EPOCHPROBEMAP is an ndi.daq.metadata.epochprobemap_daqsystem object.
+  EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
  
-  See also: ndi.daq.reader, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
 
 
 ---
