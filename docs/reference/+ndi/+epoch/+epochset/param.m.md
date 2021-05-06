@@ -9,7 +9,7 @@
 
 | Property | Description |
 | --- | --- |
-| *epochprobemap_class* | The (sub)class of ndi.daq.metadata.epochprobemap_daqsystem to be used; NDI_EPOCHCONTS is the default; a string |
+| *epochprobemap_class* | The (sub)class of ndi.epoch.epochprobemap_daqsystem to be used; NDI_EPOCHCONTS is the default; a string |
 
 
 ## Methods 
@@ -26,7 +26,7 @@
 | *epochgraph* | graph of the mapping and cost of converting time among epochs |
 | *epochid* | Get the epoch identifier for a particular epoch |
 | *epochnodes* | return all epoch nodes from an ndi.epoch.epochset object |
-| *epochprobemapfilename* | return the filename for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch |
+| *epochprobemapfilename* | return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch |
 | *epochsetname* | the name of the ndi.epoch.epochset object, for EPOCHNODES |
 | *epochtable* | Return an epoch table that relates the current object's epochs to underlying epochs |
 | *epochtableentry* | return the entry of the EPOCHTABLE that corresonds to an EPOCHID |
@@ -245,7 +245,7 @@ Help for ndi.epoch.epochset.param/epochnodes is inherited from superclass NDI.EP
 
 ---
 
-**epochprobemapfilename** - *return the filename for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch*
+**epochprobemapfilename** - *return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
 ECFNAME = EPOCHPROBEMAPFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
  
@@ -408,7 +408,7 @@ NDI_EPOCHSET_PARAM_OBJ = ndi.epoch.epochset.param(EPOCHPROBEMAP_CLASS)
  
   Create a new ndi.epoch.epochset.param object. It has one optional input argument,
   EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
-  of ndi.daq.metadata.epochprobemap_daqsystem to be used.
+  of ndi.epoch.epochprobemap_daqsystem to be used.
 
 
 ---
@@ -448,11 +448,11 @@ Help for ndi.epoch.epochset.param/resetepochtable is inherited from superclass N
 
 SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
-  Sets or replaces the ndi.daq.metadata.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
+  Sets or replaces the ndi.epoch.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
   numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
   Otherwise, an error is given if there is an existing epoch record.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 
 ---
@@ -505,15 +505,15 @@ Help for ndi.epoch.epochset.param/underlyingepochnodes is inherited from supercl
 
 [B,MSG] = VERIFYEPOCHPROBEMAP(ndi.epoch.epochset.param, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
  
-  Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
+  Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
   epoch number or epoch id EPOCH_NUMBER_OR_ID.
  
   For the abstract class EPOCHPROBEMAP is always valid as long as EPOCHPROBEMAP is an
-  ndi.daq.metadata.epochprobemap_daqsystem object.
+  ndi.epoch.epochprobemap_daqsystem object.
  
   If B is 0, then the error message is returned in MSG.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 
 ---

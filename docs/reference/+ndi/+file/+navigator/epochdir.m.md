@@ -30,15 +30,15 @@
 | *buildepochtable* | Return an epoch table for ndi.file.navigator |
 | *cached_epochgraph* | return the cached epoch graph of an ndi.epoch.epochset object |
 | *cached_epochtable* | return the cached epochtable of an ndi.epoch.epochset object |
-| *defaultepochprobemapfilename* | return the default file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch |
+| *defaultepochprobemapfilename* | return the default file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch |
 | *epoch2str* | convert an epoch number or id to a string |
 | *epochclock* | return the ndi.time.clocktype objects for an epoch |
 | *epochdir* | Create a new ndi.file.navigator.epochdir object that is associated with an session and device |
 | *epochgraph* | graph of the mapping and cost of converting time among epochs |
 | *epochid* | EPOCHID = Get the epoch identifier for a particular epoch |
-| *epochidfilename* | return the file path for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch |
+| *epochidfilename* | return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch |
 | *epochnodes* | return all epoch nodes from an ndi.epoch.epochset object |
-| *epochprobemapfilename* | return the file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch |
+| *epochprobemapfilename* | return the file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch |
 | *epochsetname* | the name of the ndi.epoch.epochset object, for EPOCHNODES |
 | *epochtable* | Return an epoch table that relates the current object's epochs to underlying epochs |
 | *epochtableentry* | return the entry of the EPOCHTABLE that corresonds to an EPOCHID |
@@ -173,16 +173,16 @@ Help for ndi.file.navigator.epochdir/cached_epochtable is inherited from supercl
 
 ---
 
-**defaultepochprobemapfilename** - *return the default file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch*
+**defaultepochprobemapfilename** - *return the default file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
 ECFNAME = DEFAULTEPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
  
   Returns the default EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
   If there are no files in epoch NUMBER, an error is generated. NUMBER cannot be an epoch id.
  
-  In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+  In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
   as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-  the default ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
+  the default ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochprobemap.ndi.'.
   This may be overridden if there is an EPOCHPROBEMAP_FILEPARAMETERS set.
  
   See also: ndi.file.navigator.epochdir/SETEPOCHPROBEMAPFILEPARAMETERS
@@ -233,7 +233,7 @@ OBJ = ndi.file.navigator.epochdir(EXP, [FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPO
   Inputs: EXP - an ndi.session ; FILEPARAMETERS - the files that are recorded in each epoch
        FILEPARAMETERS: the files that are recorded in each epoch of DEVICE in this
            data tree style (see ndi.file.navigator/SETFILEPARAMETERS for description)
-       EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.daq.metadata.epochprobemap_daqsystem' is used by default
+       EPOCHPROBEMAP_CLASS: the class of epoch_record to be used; 'ndi.epoch.epochprobemap_daqsystem' is used by default
        EPOCHPROBEMAP_FILEPARAMETERS: the file parameters to search for the epoch record file among the files
            present in each epoch (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS). By default, the file location
            specified in ndi.file.navigator/EPOCHPROBEMAPFILENAME is used
@@ -282,16 +282,16 @@ ID = EPOCHID(NDI_FILENAVIGATOR_EPOCHDIR_OBJ, EPOCH_NUMBER, [EPOCHFILES])
 
 ---
 
-**epochidfilename** - *return the file path for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch*
+**epochidfilename** - *return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
 ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
  
   Returns the EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
   If there are no files in epoch NUMBER, an error is generated.
  
-  In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+  In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
   as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-  the ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
+  the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.
 
 Help for ndi.file.navigator.epochdir/epochidfilename is inherited from superclass NDI.FILE.NAVIGATOR
 
@@ -332,7 +332,7 @@ Help for ndi.file.navigator.epochdir/epochnodes is inherited from superclass NDI
 
 ---
 
-**epochprobemapfilename** - *return the file name for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch*
+**epochprobemapfilename** - *return the file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
 ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
  
@@ -416,9 +416,9 @@ ETFNAME = EPOCHTAGFILENAME(NDI_FILENAVIGATOR_OBJ, EPOCH_NUMBER_OR_ID)
   EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
   an error is generated.
  
-  In the base class, ndi.daq.metadata.epochprobemap_daqsystem data is stored as a hidden file in the same directory
+  In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
   as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-  the ndi.daq.metadata.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
+  the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.
 
 Help for ndi.file.navigator.epochdir/epochtagfilename is inherited from superclass NDI.FILE.NAVIGATOR
 
@@ -704,11 +704,11 @@ EPOCHFILES = SELECTFILEGROUPS(NDI_FILENAVIGATOR_EPOCHDIR_OBJ)
 
 SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
-  Sets or replaces the ndi.daq.metadata.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
+  Sets or replaces the ndi.epoch.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
   numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
   Otherwise, an error is given if there is an existing epoch record.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 Help for ndi.file.navigator.epochdir/setepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
 
@@ -823,15 +823,15 @@ Help for ndi.file.navigator.epochdir/underlyingepochnodes is inherited from supe
 
 [B,MSG] = VERIFYEPOCHPROBEMAP(ndi.epoch.epochset.param, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
  
-  Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
+  Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
   epoch number or epoch id EPOCH_NUMBER_OR_ID.
  
   For the abstract class EPOCHPROBEMAP is always valid as long as EPOCHPROBEMAP is an
-  ndi.daq.metadata.epochprobemap_daqsystem object.
+  ndi.epoch.epochprobemap_daqsystem object.
  
   If B is 0, then the error message is returned in MSG.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 Help for ndi.file.navigator.epochdir/verifyepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
 

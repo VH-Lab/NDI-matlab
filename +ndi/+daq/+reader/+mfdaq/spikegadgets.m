@@ -252,7 +252,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 					devicestringobject = ndi.daq.daqsystemstring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
 					devicestringstring = devicestringobject.devicestring();
 					% FIX: we need some way of specifying the subject, which is not in the file to my knowledge (although maybe it is)
-					obj = ndi.daq.metadata.epochprobemap_daqsystem(name,reference,type,devicestringstring,'anteater52@nosuchlab.org');
+					obj = ndi.epoch.epochprobemap_daqsystem(name,reference,type,devicestringstring,'anteater52@nosuchlab.org');
 					%Append each newly made object to end of list
 					epochprobemap = [epochprobemap obj];
 				end

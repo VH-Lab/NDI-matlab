@@ -37,7 +37,7 @@
 | *epochgraph* | graph of the mapping and cost of converting time among epochs |
 | *epochid* | return the epoch id string for an epoch |
 | *epochnodes* | return all epoch nodes from an ndi.epoch.epochset object |
-| *epochprobemapfilename* | return the filename for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch |
+| *epochprobemapfilename* | return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch |
 | *epochsetname* | the name of the ndi.epoch.epochset object, for EPOCHNODES |
 | *epochtable* | Return an epoch table that relates the current object's epochs to underlying epochs |
 | *epochtableentry* | return the entry of the EPOCHTABLE that corresonds to an EPOCHID |
@@ -159,13 +159,13 @@ Help for ndi.daq.system/cached_epochtable is inherited from superclass NDI.EPOCH
 
 DELETEEPOCH(NDI_DAQSYSTEM_OBJ, NUMBER ... [REMOVEDATA])
  
-  Deletes the data and ndi.daq.metadata.epochprobemap_daqsystem and epoch data for epoch NUMBER.
+  Deletes the data and ndi.epoch.epochprobemap_daqsystem and epoch data for epoch NUMBER.
   If REMOVEDATA is present and is 1, the data and record are physically deleted.
   If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
  
   In the abstract class, this command takes no action.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 
 ---
@@ -260,7 +260,7 @@ Help for ndi.daq.system/epochnodes is inherited from superclass NDI.EPOCH.EPOCHS
 
 ---
 
-**epochprobemapfilename** - *return the filename for the ndi.daq.metadata.epochprobemap_daqsystem file for an epoch*
+**epochprobemapfilename** - *return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
 ECFNAME = EPOCHPROBEMAPFILENAME(NDI_DAQSYSTEM_OBJ, EPOCH_NUMBER_OR_ID)
  
@@ -574,11 +574,11 @@ NDI_DAQSYSTEM_OBJ = SET_DAQMETADATAREADER(NDI_DAQSYSTEM_OBJ, NEWDAQMETADATAREADE
 
 SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
-  Sets or replaces the ndi.daq.metadata.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
+  Sets or replaces the ndi.epoch.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
   numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
   Otherwise, an error is given if there is an existing epoch record.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 Help for ndi.daq.system/setepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
 
@@ -657,13 +657,13 @@ Help for ndi.daq.system/underlyingepochnodes is inherited from superclass NDI.EP
 
 B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_OBJ, EPOCHPROBEMAP, EPOCH)
  
-  Examines the ndi.daq.metadata.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
+  Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
   epoch EPOCH.
  
   For the abstract class ndi.daq.system, EPOCHPROBEMAP is always valid as long as
-  EPOCHPROBEMAP is an ndi.daq.metadata.epochprobemap_daqsystem object.
+  EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
  
-  See also: ndi.daq.system, ndi.daq.metadata.epochprobemap_daqsystem
+  See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 
 ---

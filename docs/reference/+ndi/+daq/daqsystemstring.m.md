@@ -4,12 +4,12 @@
  
    ndi.daq.daqsystemstring
  
-   A 'devicestring' is a part of an ndi.daq.metadata.epochprobemap_daqsystem that indicates the channel types and
+   A 'devicestring' is a part of an ndi.epoch.epochprobemap_daqsystem that indicates the channel types and
    channel numbers that correspond to a particular record.
  
    For example, one may specify that a 4-channel extracellular recording with name
    'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-   on channels 27-28 and 45 and 88 with the following ndi.daq.metadata.epochprobemap_daqsystem entry:
+   on channels 27-28 and 45 and 88 with the following ndi.epoch.epochprobemap_daqsystem entry:
             name: 'ctx'
        reference: 1
             type: 'extracellular_electrode-4'
@@ -57,7 +57,7 @@
 DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
      or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)
  
-  Creates a device string suitable for a ndi.daq.metadata.epochprobemap_daqsystem from a DEVICENAME,
+  Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from a DEVICENAME,
   a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.
  
   Inputs:
@@ -90,7 +90,7 @@ DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
 
 DEVSTR = DEVICESTRING(SELF)
  
-  Creates a device string suitable for a ndi.daq.metadata.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.
+  Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.
  
   Inputs:
      SELF - an ndi.daq.daqsystemstring object

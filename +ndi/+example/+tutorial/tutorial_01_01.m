@@ -39,7 +39,7 @@ S.getprobes()
  % Code block 1.1.4.3
 
 ced_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt'}, ...
-    'ndi.daq.metadata.epochprobemap_daqsystem','probemap.txt');
+    'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 ced_rdr = ndi.daq.reader.mfdaq.cedspike2();
 ced_system = ndi.daq.system.mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
  % if you haven't already added the daq system, you can add it here:
@@ -54,7 +54,7 @@ f = ced_system.filenavigator.getepochfiles(1) % you should see the files from ep
  % Code block 1.1.4.5
 
 vis_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt', 'stims.tsv'},...
-     'ndi.daq.metadata.epochprobemap_daqsystem','probemap.txt');
+     'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 vis_rdr = ndi.daq.reader.mfdaq.cedspike2();
 vis_mdrdr = ndi.daq.metadatareader('stims.tsv');
 vis_system = ndi.daq.system.mfdaq('vis_daqsystem', vis_filenav, vis_rdr, {vis_mdrdr});

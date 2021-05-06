@@ -10,7 +10,7 @@ function test_ndi_daqreader_documents
 %   3) ndi.daq.reader.mfdaq.cedspike2
 %   4) ndi.daq.reader.mfdaq.intan
 %   5) ndi.daq.reader.mfdaq.spikegadgets
-%   6) ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2
+%   6) ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2
 %
 %   Then, the following tests actions are conducted for each document type:
 %   a) Create a new database document
@@ -33,7 +33,7 @@ function test_ndi_daqreader_documents
 			'ndi.daq.reader.mfdaq.cedspike2', ...
 			'ndi.daq.reader.mfdaq.intan', ...
 			'ndi.daq.reader.mfdaq.spikegadgets', ...
-			'ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2' ...
+			'ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2' ...
 			};
 
 	dr = {};
