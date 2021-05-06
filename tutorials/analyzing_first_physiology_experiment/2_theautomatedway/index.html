@@ -5012,7 +5012,7 @@ as a set of event channels. We define 5 fixed channels for our daq system: </p>
 <li><code>e2</code>: an event channel that indicates the vertical refresh times of the stimulus monitor</li>
 <li><code>e3</code>: an event channel that indicates the pre-stimulus trigger (indicates stimulus is upcoming, usually 0.5s away)</li>
 </ul>
-<p>Rather than copying the entire code here, we will include a link to the file: <a href="link_here">link_here</a> . It should be relatively
+<p>Rather than copying the entire code here, we will include a link to the file: <a href="https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m">ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.m</a> . It should be relatively
 self-explanitory for someone with a coding background to read and mimic this file.</p>
 <h3 id="226-creating-a-custom-epochprobemap-class">2.2.6 Creating a custom epochprobemap class<a class="headerlink" href="#226-creating-a-custom-epochprobemap-class" title="Permanent link">&para;</a></h3>
 <p>In <a href="../1_example_dataset/">Tutorial 2.1</a>, we saw that each epoch of data had an associated epochprobemap that contained the 
@@ -5076,7 +5076,7 @@ stimulator:</p>
 </tr>
 </tbody>
 </table>
-<p>We will not reproduce the code here but refer the reader to the <a href="link">link for the source code</a> of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap_daqsystem</a>.</p>
+<p>We will not reproduce the code here but refer the reader to the <a href="https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bepoch/epochprobemap_daqsystem_vhlab.m">link for the source code</a> of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap_daqsystem</a>.</p>
 <h3 id="227-putting-it-all-together">2.2.7 Putting it all together<a class="headerlink" href="#227-putting-it-all-together" title="Permanent link">&para;</a></h3>
 <p>Now that we have these pieces together, we can read our example data that we call <code>ts_exper2</code>. We will pull up the same plots that we pulled up in <a href="../1_example_dataset/">Tutorial 2.1</a>.</p>
 <h4 id="code-block-2271-type-this-into-matlab">Code block 2.2.7.1 Type this into Matlab<a class="headerlink" href="#code-block-2271-type-this-into-matlab" title="Permanent link">&para;</a></h4>
