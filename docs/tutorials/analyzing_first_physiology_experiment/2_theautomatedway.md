@@ -230,7 +230,7 @@ as a set of event channels. We define 5 fixed channels for our daq system:
 - `e2`: an event channel that indicates the vertical refresh times of the stimulus monitor
 - `e3`: an event channel that indicates the pre-stimulus trigger (indicates stimulus is upcoming, usually 0.5s away)
 
-Rather than copying the entire code here, we will include a link to the file: [link_here](link_here) . It should be relatively
+Rather than copying the entire code here, we will include a link to the file: [ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.m](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m) . It should be relatively
 self-explanitory for someone with a coding background to read and mimic this file.
 
 ### 2.2.6 Creating a custom epochprobemap class
@@ -264,7 +264,7 @@ stimulator:
 | ---- | --------- | ---- | ------------ | ------------- |
 | vis_stim | 1 | stimulator | vhvis_spike2:mk1-3;e1-3;md1 | treeshrew_12345@mylab.org |
 
-We will not reproduce the code here but refer the reader to the [link for the source code](link) of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/).
+We will not reproduce the code here but refer the reader to the [link for the source code](https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bepoch/epochprobemap_daqsystem_vhlab.m) of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/).
 
 ### 2.2.7 Putting it all together
 
