@@ -3,7 +3,7 @@
 ## 2.1: Reading an example dataset
 
 We will start with learning to read an example dataset into NDI. We assume you have already
-[installed NDI](https://vh-lab.github.io/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/tutorial/ndimodel/1_intro/). These data are available in a
+[installed NDI](https://vh-lab.github.io/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/tutorials/ndimodel/1_intro/). These data are available in a
 compressed folder
 [here](https://drive.google.com/file/d/1j7IAeMSrH64-qIDLB5EJYUofJSdinwuU/view?usp=sharing). 
 You can put the folder anywhere, but
