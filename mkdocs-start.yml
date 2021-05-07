@@ -5,8 +5,16 @@ docs_dir: 'docs'
 theme:
   name: 'material'
   palette:
-    primary: 'deep-purple'
-    accent: 'deep-purple'
+    primary: 'teal'
+    accent: 'teal'
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
   features:
     - navigation
 nav:
