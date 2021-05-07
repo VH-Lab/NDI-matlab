@@ -88,8 +88,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.cache/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/addlistener
+    Documentation for ndi.cache/addlistener
+       doc handle.addlistener
 
 
 ---
@@ -133,17 +133,15 @@ NDI_CACHE_OBJ = CLEAR(NDI_CACHE_OBJ)
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.CACHE, NDI.CACHE/ISVALID, CLEAR
 
 Help for ndi.cache/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/delete
+    Documentation for ndi.cache/delete
+       doc handle.delete
 
 
 ---
@@ -167,8 +165,8 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.cache/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/eq
+    Documentation for ndi.cache/eq
+       doc handle.eq
 
 
 ---
@@ -188,8 +186,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.cache/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/findobj
+    Documentation for ndi.cache/findobj
+       doc handle.findobj
 
 
 ---
@@ -209,8 +207,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.cache/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/findprop
+    Documentation for ndi.cache/findprop
+       doc handle.findprop
 
 
 ---
@@ -244,8 +242,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/ge
+    Documentation for ndi.cache/ge
+       doc handle.ge
 
 
 ---
@@ -267,8 +265,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/gt
+    Documentation for ndi.cache/gt
+       doc handle.gt
 
 
 ---
@@ -287,8 +285,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.cache/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/isvalid
+    Documentation for ndi.cache/isvalid
+       doc handle.isvalid
 
 
 ---
@@ -318,8 +316,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.cache/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/le
+    Documentation for ndi.cache/le
+       doc handle.le
 
 
 ---
@@ -363,8 +361,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.cache/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/listener
+    Documentation for ndi.cache/listener
+       doc handle.listener
 
 
 ---
@@ -405,8 +403,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/lt
+    Documentation for ndi.cache/lt
+       doc handle.lt
 
 
 ---
@@ -431,8 +429,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.cache/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/ne
+    Documentation for ndi.cache/ne
+       doc handle.ne
 
 
 ---
@@ -453,8 +451,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.cache/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/notify
+    Documentation for ndi.cache/notify
+       doc handle.notify
 
 
 ---

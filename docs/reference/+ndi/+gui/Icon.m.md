@@ -88,25 +88,23 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Icon/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/addlistener
+    Documentation for ndi.gui.Icon/addlistener
+       doc handle.addlistener
 
 
 ---
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/ISVALID, CLEAR
 
 Help for ndi.gui.Icon/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/delete
+    Documentation for ndi.gui.Icon/delete
+       doc handle.delete
 
 
 ---
@@ -130,8 +128,8 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.gui.Icon/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/eq
+    Documentation for ndi.gui.Icon/eq
+       doc handle.eq
 
 
 ---
@@ -151,8 +149,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.gui.Icon/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/findobj
+    Documentation for ndi.gui.Icon/findobj
+       doc handle.findobj
 
 
 ---
@@ -172,8 +170,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.gui.Icon/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/findprop
+    Documentation for ndi.gui.Icon/findprop
+       doc handle.findprop
 
 
 ---
@@ -195,8 +193,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Icon/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/ge
+    Documentation for ndi.gui.Icon/ge
+       doc handle.ge
 
 
 ---
@@ -218,8 +216,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Icon/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/gt
+    Documentation for ndi.gui.Icon/gt
+       doc handle.gt
 
 
 ---
@@ -238,8 +236,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.gui.Icon/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/isvalid
+    Documentation for ndi.gui.Icon/isvalid
+       doc handle.isvalid
 
 
 ---
@@ -269,8 +267,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.gui.Icon/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/le
+    Documentation for ndi.gui.Icon/le
+       doc handle.le
 
 
 ---
@@ -314,8 +312,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Icon/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/listener
+    Documentation for ndi.gui.Icon/listener
+       doc handle.listener
 
 
 ---
@@ -337,8 +335,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Icon/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/lt
+    Documentation for ndi.gui.Icon/lt
+       doc handle.lt
 
 
 ---
@@ -363,8 +361,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.gui.Icon/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/ne
+    Documentation for ndi.gui.Icon/ne
+       doc handle.ne
 
 
 ---
@@ -385,8 +383,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.gui.Icon/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/notify
+    Documentation for ndi.gui.Icon/notify
+       doc handle.notify
 
 
 ---
