@@ -5,9 +5,9 @@ docs_dir: 'docs'
 theme:
   name: 'material'
   palette:
-    primary: 'teal'
-    accent: 'teal'
     - scheme: default
+      primary: 'teal'
+      secondary: 'teal'
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to dark mode
