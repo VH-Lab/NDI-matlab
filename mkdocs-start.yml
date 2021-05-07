@@ -6,8 +6,8 @@ theme:
   name: 'material'
   palette:
     - scheme: default
-      primary: 'teal'
-      secondary: 'teal'
+      primary: 'indigo'
+      secondary: 'indigo'
       toggle:
         icon: material/toggle-switch-off-outline
         name: Switch to dark mode
