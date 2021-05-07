@@ -7,8 +7,8 @@ theme:
   palette:
     primary: 'deep-purple'
     accent: 'deep-purple'
-  features:
-    - navigation.expand
+#  features:
+#    - navigation.expand
 nav:
   - Home: index.md
   - Installation: 'installation.md'
@@ -19,12 +19,11 @@ nav:
     - 2 Analzying your first electrophysiology experiment with NDI:
       - 2.1 Reading an example dataset: 'tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
       - 2.2 Automating data reading with NDI: 'tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
-    - Planned soon:
-      - Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
-      - Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'
-      - Making your own data pipeline in NDI: 'tutorials/data_pipeline.md'
-      - Making your own analysis app that uses NDI: 'tutorials/analysis_app.md'
-    - Planned later:
-      - Submitting your data to an archive: 'tutorials/archive.md'
-      - Search and analyze NDI databases on the web: 'tutorials/search_ndi_databases.md'
+    - Planned:
+      - 3. Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
+      - 4. Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'
+      - 5. Making your own data pipeline in NDI: 'tutorials/data_pipeline.md'
+      - 6. Making your own analysis app that uses NDI: 'tutorials/analysis_app.md'
+      - 7. Submitting your data to an archive: 'tutorials/archive.md'
+      - 8. Search and analyze NDI databases on the web: 'tutorials/search_ndi_databases.md'
   - Document reference:
