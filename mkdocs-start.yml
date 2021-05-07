@@ -7,8 +7,8 @@ theme:
   palette:
     primary: 'deep-purple'
     accent: 'deep-purple'
-#  features:
-#    - navigation.expand
+  features:
+    - navigation
 nav:
   - Home: index.md
   - Installation: 'installation.md'
