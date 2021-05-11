@@ -2,21 +2,19 @@
 
 ## About
 
-[NDI](http://ndi.vhlab.org) (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses. Its goals include:
+[NDI](http://ndi.vhlab.org) (Neuroscience Data Interface) is a cross-platform interface standard for reading neuroscience data and storing the results of analyses. Who inspires NDI?
 
-- Providing a means for specifying and accessing neuroscience data regardless of the format of the files or the organization of the files and data on disk or in the cloud.
+- As an **analyst**, I want to quickly open my colleagues' data, regardless of its format and organization, so we can make discoveries.
 
-- Allowing the creation of analysis code that is invariant to data format and organization, so the analysis process can be independent of the raw format.
+- As a **researcher**, I want my data records and analysis steps to be annotated and both human and machine readable, so I can review my teammates' work and share these annotated results with the world. I want these annotations to occur *in situ*, not as a separate step that I do later.
 
-- Providing a database for storing human- and machine-readable documents that describe analyses, analyses of analyses, etc, that is searchable with or without knowing the formal schema of the documents of interest.
+- As a **physiologist/imager**, I want my analysis routines to have access to my data the instant it is recorded, so I can make choices about how to proceed during my experiment. 
 
-- Allowing the creation of an application ecosystem where individual applications can read raw data and read from the database, and write results back to the database to participate in analysis pipelines.
+- As an **analyst**, I want to write one set of analysis routines that do not need to be revised to work with new data formats or new data organizations.
 
-- Eliminating the need for different procedures between online and offline analyses.
+- As a **scientist**, I want to search for data or analyses from other researchers.
 
-- Maintaining a ready-to-share version of the analysis pipeline at all times, so data can be shared with other groups or archives without additional work.
-
-Analysts can use NDI to quickly gain access to a collaborator's dataset (by specifying the organization and format of the data in a few parameters) and labs can share their data and results with others in a well-described format.
+- As an **amateur**, I want to be able to access scientists' raw data to perform my own analyses.
 
 ## Availability
 

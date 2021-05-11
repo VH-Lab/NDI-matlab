@@ -2,6 +2,9 @@ site_name: NDI-matlab
 repo_url: https://github.com/VH-Lab/NDI-matlab
 site_author: Steve Van Hooser
 docs_dir: 'docs'
+google_analytics:
+  - UA-91714905-5
+  - auto
 theme:
   name: 'material'
   palette:
@@ -9,11 +12,11 @@ theme:
       primary: 'indigo'
       secondary: 'indigo'
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/weather-sunny
         name: Switch to dark mode
     - scheme: slate
       toggle:
-        icon: material/toggle-switch
+        icon: material/weather-night
         name: Switch to light mode
   features:
     - navigation
