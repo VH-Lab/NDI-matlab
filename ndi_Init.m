@@ -21,6 +21,8 @@ matches=(~contains(pathstoadd_cell,'.git'))&(~contains(pathstoadd_cell,'.ndi'));
 pathstoadd = char(strjoin(pathstoadd_cell(matches),pathsep));
 addpath(pathstoadd);
 
+initializing_NDI = 1;
+
 ndi.globals;
 
  % paths

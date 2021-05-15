@@ -34,3 +34,7 @@
 
 global ndi_globals
 
+if ~exist('initializing_NDI','var'),
+	ndi.globals.assert(ndi_globals);
+end;
+
