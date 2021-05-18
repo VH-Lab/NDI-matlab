@@ -12,11 +12,11 @@ theme:
       primary: 'indigo'
       secondary: 'indigo'
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/weather-sunny
         name: Switch to dark mode
     - scheme: slate
       toggle:
-        icon: material/toggle-switch
+        icon: material/weather-night
         name: Switch to light mode
   features:
     - navigation

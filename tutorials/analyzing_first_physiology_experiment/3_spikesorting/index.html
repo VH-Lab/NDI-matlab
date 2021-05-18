@@ -16,7 +16,7 @@
     
     
       
-        <title>Analyzing your first electrophysiology experiment with NDI - NDI-matlab</title>
+        <title>Tutorial 2: Analyzing your first electrophysiology experiment with NDI - NDI-matlab</title>
       
     
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
+        <a href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Analyzing your first electrophysiology experiment with NDI
+              Tutorial 2: Analyzing your first electrophysiology experiment with NDI
             
           </span>
         </div>
@@ -4540,6 +4540,95 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-23-using-apps-to-analyze-data-spike-sorting" class="md-nav__link">
+    Tutorial 2.3: Using apps to analyze data (spike sorting)
+  </a>
+  
+    <nav class="md-nav" aria-label="Tutorial 2.3: Using apps to analyze data (spike sorting)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tutorial-231-what-is-an-app-in-ndi-ndiapp-objects" class="md-nav__link">
+    Tutorial 2.3.1: What is an 'app' in NDI? ndi.app objects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tutorial-232-extracting-spikes-using-ndiappspikeextractor" class="md-nav__link">
+    Tutorial 2.3.2: Extracting spikes using ndi.app.spikeextractor
+  </a>
+  
+    <nav class="md-nav" aria-label="Tutorial 2.3.2: Extracting spikes using ndi.app.spikeextractor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2321-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.2.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2322-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.2.2 Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#233-spike-sorting-using-ndiappspikesorter" class="md-nav__link">
+    2.3.3 Spike sorting using ndi.app.spikesorter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#234-manually-curating-the-clusters" class="md-nav__link">
+    2.3.4 Manually curating the clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#235-how-can-we-learn-about-the-functionality-of-ndiapp-objects" class="md-nav__link">
+    2.3.5 How can we learn about the functionality of ndi.app objects?
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.5 How can we learn about the functionality of ndi.app objects?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2351-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.5.1. Type this into Matlab
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -4555,15 +4644,175 @@
                   </a>
                 
                 
-                <h1 id="analyzing-your-first-electrophysiology-experiment-with-ndi">Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
-<p>This is planned tutorial that will cover</p>
+                <h1 id="tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi">Tutorial 2: Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
+<h2 id="tutorial-23-using-apps-to-analyze-data-spike-sorting">Tutorial 2.3: Using apps to analyze data (spike sorting)<a class="headerlink" href="#tutorial-23-using-apps-to-analyze-data-spike-sorting" title="Permanent link">&para;</a></h2>
+<p>(We're building this tutorial now. Only partially finished! Stay tuned.)</p>
+<p>You've seen how to read data from probes in NDI. Now suppose we want to do some analysis of this data? How would we do it?</p>
+<p>Clearly, one could write functions in Matlab that read the data and perform some sort of analysis. But it would be
+great to share (or borrow) those functions across the open source community, and to develop "apps" that excel at performing
+specific tasks. NDI allows both approaches.</p>
+<h3 id="tutorial-231-what-is-an-app-in-ndi-ndiapp-objects">Tutorial 2.3.1: What is an 'app' in NDI? <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/">ndi.app</a> objects<a class="headerlink" href="#tutorial-231-what-is-an-app-in-ndi-ndiapp-objects" title="Permanent link">&para;</a></h3>
+<p>An app for our purposes is any application program that can read data from NDI and perform some analysis or
+computation on this data. Some apps exist outside of NDI, and know how to read data from NDI experiments and
+write results back to NDI experimental sessions. One example of such an app is the spike sorting program
+JRClust. </p>
+<p>There is another set of apps that are developed specifically for NDI that are members of a special parent class
+called ndi.app. This parent class performs some services to help app developers maintain a consistant approach to
+make it easier for users and programmers that want to use the app to easily figure out what it does and how to 
+use it. </p>
+<p>Here, we will examine one of these apps that we made for spike extraction. Just like Windows computers come with
+NotePad and Mac computers come with TextEdit, our <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/">ndi.app.spikeextractor</a> is a plain-but-usable program for
+extracting spike waveforms from voltage records. It is suitable for spike extraction situations where the channel count for each electrode is low, such as single electrodes or tetrodes. It is not suitable for dense, multichannel electrodes like NeuroPixels or dense NeuroNexus probes.</p>
+<p>We will use the program first as though we knew how to use it by magic, and then we will go through how one could
+figure out how to use the program if one didn't know.</p>
+<h3 id="tutorial-232-extracting-spikes-using-ndiappspikeextractor">Tutorial 2.3.2: Extracting spikes using <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/">ndi.app.spikeextractor</a><a class="headerlink" href="#tutorial-232-extracting-spikes-using-ndiappspikeextractor" title="Permanent link">&para;</a></h3>
+<h4 id="code-block-2321-type-this-into-matlab">Code block 2.3.2.1. Type this into Matlab.<a class="headerlink" href="#code-block-2321-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">dirname</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="nb">userpath</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;Documents&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;NDI&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">];</span><span class="w"> </span><span class="c">% change this if you put the example somewhere else</span><span class="w"></span>
+<span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">dir</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span><span class="n">dirname</span><span class="p">);</span><span class="w">  </span>
+
+<span class="c">% let&#39;s find our probes that correspond to extracellular electrodes</span><span class="w"></span>
+
+<span class="n">p</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;n-trode&#39;</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% make a new app instance</span><span class="w"></span>
+<span class="n">se</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">spikeextractor</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% find out what the spike extraction parameters are</span><span class="w"></span>
+<span class="n">extraction_param_struct</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">defaultstruct_appdoc</span><span class="p">(</span><span class="s">&#39;extraction_parameters&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="c">% if we wanted to modify these parameters, we could</span><span class="w"></span>
+<span class="c">% for now, let&#39;s proceed with the defaults</span><span class="w"></span>
+
+<span class="c">% we will add a parameter document to our database that our extractor will use</span><span class="w"></span>
+
+<span class="n">my_extraction_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;my_extraction_params&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">extraction_param_doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">add_appdoc</span><span class="p">(</span><span class="s">&#39;extraction_parameters&#39;</span><span class="p">,</span><span class="n">extraction_param_struct</span><span class="p">,</span><span class="s">&#39;Replace&#39;</span><span class="p">,</span><span class="n">my_extraction_name</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% now let&#39;s perform the extraction over all epochs</span><span class="w"></span>
+
+<span class="n">redo</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="c">% redo it if we already did it</span><span class="w"></span>
+<span class="w"> </span><span class="c">% we know there are two probes, so do it for both</span><span class="w"></span>
+<span class="n">se</span><span class="p">.</span><span class="n">extract</span><span class="p">(</span><span class="n">p</span><span class="p">{</span><span class="mi">1</span><span class="p">},[],</span><span class="n">my_extraction_name</span><span class="p">,</span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+<span class="n">se</span><span class="p">.</span><span class="n">extract</span><span class="p">(</span><span class="n">p</span><span class="p">{</span><span class="mi">2</span><span class="p">},[],</span><span class="n">my_extraction_name</span><span class="p">,</span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>Now, let's take a look at what we extracted:</p>
+<h4 id="code-block-2322-type-this-into-matlab">Code block 2.3.2.2 Type this into Matlab.<a class="headerlink" href="#code-block-2322-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="c">% now let&#39;s take a look at what we got for the first probe, first epoch</span><span class="w"></span>
+<span class="n">epoch_id</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;t00001&#39;</span><span class="p">;</span><span class="w"></span>
+
+<span class="p">[</span><span class="n">spikes</span><span class="p">,</span><span class="n">waveparameters</span><span class="p">,</span><span class="n">spikewaves_doc</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">loaddata_appdoc</span><span class="p">(</span><span class="s">&#39;spikewaves&#39;</span><span class="p">,</span><span class="n">p</span><span class="p">{</span><span class="mi">1</span><span class="p">},</span><span class="n">epoch_id</span><span class="p">,</span><span class="n">my_extraction_name</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% let&#39;s plot these waveforms</span><span class="w"></span>
+
+<span class="n">t_spike</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="n">waveparameters</span><span class="p">.</span><span class="n">S0</span><span class="p">:</span><span class="n">waveparameters</span><span class="p">.</span><span class="n">S1</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1</span><span class="o">/</span><span class="n">waveparameters</span><span class="p">.</span><span class="n">samplerate</span><span class="p">;</span><span class="w"> </span><span class="c">% create a time vector</span><span class="w"></span>
+
+<span class="c">% spikes is a 3-d matrix.</span><span class="w"></span>
+<span class="c">% The first dimension has the number of samples per spike.</span><span class="w"></span>
+<span class="c">% The second dimension has data from each channel. Because this is a single electrode, there is only one channel. If it were a tetrode, this would be 4.</span><span class="w"></span>
+<span class="c">% The third dimension is the number of spikes detected.</span><span class="w"></span>
+<span class="nb">size</span><span class="p">(</span><span class="n">spikes</span><span class="p">)</span><span class="w"></span>
+
+<span class="nb">figure</span><span class="p">(</span><span class="mi">101</span><span class="p">);</span><span class="w"></span>
+<span class="nb">plot</span><span class="p">(</span><span class="n">t_spike</span><span class="p">,</span><span class="nb">squeeze</span><span class="p">(</span><span class="n">spikes</span><span class="p">));</span><span class="w"></span>
+<span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Time (s)&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Voltage&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">box</span><span class="w"> </span><span class="s">off</span><span class="p">;</span><span class="w"></span>
+
+<span class="c">% We can see how we did by plotting the spike times back with the raw data:</span><span class="w"></span>
+
+<span class="p">[</span><span class="n">spiketimes</span><span class="p">,</span><span class="n">spiketimes_doc</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">se</span><span class="p">.</span><span class="n">loaddata_appdoc</span><span class="p">(</span><span class="s">&#39;spiketimes&#39;</span><span class="p">,</span><span class="n">p</span><span class="p">{</span><span class="mi">1</span><span class="p">},</span><span class="n">epoch_id</span><span class="p">,</span><span class="n">my_extraction_name</span><span class="p">);</span><span class="w"></span>
+
+<span class="p">[</span><span class="n">d</span><span class="p">,</span><span class="n">t</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">readtimeseries</span><span class="p">(</span><span class="n">p</span><span class="p">{</span><span class="mi">1</span><span class="p">},</span><span class="n">epoch_id</span><span class="p">,</span><span class="o">-</span><span class="nb">Inf</span><span class="p">,</span><span class="nb">Inf</span><span class="p">);</span><span class="w"></span>
+<span class="nb">figure</span><span class="p">(</span><span class="mi">102</span><span class="p">);</span><span class="w"></span>
+<span class="nb">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">d</span><span class="p">);</span><span class="w"></span>
+<span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"></span>
+<span class="n">samples</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nb">round</span><span class="p">(</span><span class="n">vlt</span><span class="p">.</span><span class="n">signal</span><span class="p">.</span><span class="n">value2sample</span><span class="p">(</span><span class="n">spiketimes</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">-</span><span class="n">t</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span><span class="w"> </span><span class="mi">0</span><span class="p">));</span><span class="w"></span>
+<span class="nb">plot</span><span class="p">(</span><span class="n">t</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span><span class="n">d</span><span class="p">(</span><span class="n">samples</span><span class="p">),</span><span class="s">&#39;ko&#39;</span><span class="p">);</span><span class="w"> </span><span class="c">% mark each spike peak location with a circle </span><span class="w"></span>
+</code></pre></div>
+
+<h3 id="233-spike-sorting-using-ndiappspikesorter">2.3.3 Spike sorting using <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikesorter.m/">ndi.app.spikesorter</a><a class="headerlink" href="#233-spike-sorting-using-ndiappspikesorter" title="Permanent link">&para;</a></h3>
+<p>Now we will feed our results to our plain spikesorting application, which relies on the KlustaKwik clustering tool (Harris KD, <em>J. Neurophys.</em>, 2000).</p>
+<p><em>more here</em></p>
+<h3 id="234-manually-curating-the-clusters">2.3.4 Manually curating the clusters<a class="headerlink" href="#234-manually-curating-the-clusters" title="Permanent link">&para;</a></h3>
+<p><em>more here</em></p>
+<h3 id="235-how-can-we-learn-about-the-functionality-of-ndiapp-objects">2.3.5 How can we learn about the functionality of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m">ndi.app</a> objects?<a class="headerlink" href="#235-how-can-we-learn-about-the-functionality-of-ndiapp-objects" title="Permanent link">&para;</a></h3>
+<p>In section 2.2, we used <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/">ndi.app.spikeextractor</a> as though we were born knowning what to do. How could we learn how to use a new app if there isn't a tutorial available?</p>
+<p>There are three great ways to learn about what apps do and how to use them. </p>
 <ol>
-<li>reading and plotting raw data (provided);</li>
-<li>using a spike-sorting app to identify neurons from raw voltage recordings;</li>
-<li>analyzing stimulus-responses using built-in tuning curve apps; </li>
-<li>plotting the responses in documents in the database.</li>
+<li>
+<p>Read the main documentation for the app by typing <code>help *appclass*</code> or <code>doc *appclass*</code> into the Matlab command line. For example, try <code>help ndi.app.spikeextractor</code>.</p>
+</li>
+<li>
+<p>Many apps follow what we call the <code>appdoc</code> convention for creating the documents that they create and loading the documents and data that they have generated. This is a convention that have developed relatively recently, and we are in the process of converting all of our included ndi.app objects to use this form. If an app follows <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/">ndi.app.appdoc</a> (which means it is a member of the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/">ndi.app.appdoc</a> class), then they will have a set of methods called:</p>
+</li>
 </ol>
-<p>This is targeted to be written in the first 6 months of application R01MH126791 (if funded).</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>appdoc_description</em></td>
+<td>The help information should have a full description of all database documents that are produced by the application. Type <code>help *appname*/appdoc_description</code>. For example, <code>help ndi.app.spikeextractor/appdoc_description</code></td>
+</tr>
+<tr>
+<td><em>add_appdoc</em></td>
+<td>Add a new document of a given type to the database, using the app</td>
+</tr>
+<tr>
+<td><em>clear_appdoc</em></td>
+<td>Delete a document of a given type from the database, using the app</td>
+</tr>
+<tr>
+<td><em>find_appdoc</em></td>
+<td>Find the NDI document for a given type, using the app</td>
+</tr>
+<tr>
+<td><em>loaddata_appdoc</em></td>
+<td>Load binary data associated with an NDI document, using the app</td>
+</tr>
+</tbody>
+</table>
+<p>Let's look at the document types that are written and needed by <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/">ndi.app.spikeextractor</a>: </p>
+<h4 id="code-block-2351-type-this-into-matlab">Code block 2.3.5.1. Type this into Matlab<a class="headerlink" href="#code-block-2351-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="nb">help</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">spikeextractor</span><span class="o">/</span><span class="n">appdoc_description</span><span class="w"></span>
+</code></pre></div>
+
+<p>You see a long bit of text that describes all of the document types that are generated and calculated by <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/">ndi.app.spikeextractor</a>.</p>
+<p>Here's a table of the document types and their "about" info for ndi.app.spikeextractor:</p>
+<table>
+<thead>
+<tr>
+<th>Appdoc Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EXTRACTION_PARAMETERS</td>
+<td>EXTRACTION_PARAMETERS documents hold the parameters that are to be used to guide the extraction of spikewaves</td>
+</tr>
+<tr>
+<td>EXTRACTION_PARAMETERS_MODIFICATION</td>
+<td>EXTRACTION_PARAMETERS_MODIFICATION documents allow the user to modify the spike extraction parameters for a specific epoch</td>
+</tr>
+<tr>
+<td>SPIKEWAVES</td>
+<td>SPIKEWAVES documents store the spike waveforms that are read during a spike extraction. It DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the EXTRACTION_PARAMETERS that descibed the extraction</td>
+</tr>
+<tr>
+<td>SPIKETIMES</td>
+<td>SPIKETIMES documents store the times spike waveforms that are read during a spike extraction. It DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the EXTRACTION_PARAMETERS that descibed the extraction. The times are in the local epoch time units.</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>If the app writer really loves his/her/their users, then he/she/they will create a tutorial. Look for a tutorial, that should be referenced in the Matlab help.</li>
+</ol>
                 
               
               
