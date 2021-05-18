@@ -67,12 +67,13 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 		function extract(ndi_app_spikeextractor_obj, ndi_timeseries_obj, epoch, extraction_name, redo, t0_t1)
 			% EXTRACT - method that extracts spikes from epochs of an NDI_ELEMENT_TIMESERIES_OBJ 
 			%
-			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
+			% EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME, [REDO], [T0 T1])
 			% TYPE is the type of probe if any
 			% combination of NAME and TYPE must return at least one probe from session
 			% EPOCH is an index number or id to select epoch to extract, or can be a cell array of epoch number/ids
 			% EXTRACTION_NAME name given to find ndi_doc in database
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
+			% [T0 T1] - if given, then restricts the extraction to be between times t0 and t1; default is [-Inf Inf]
 
 				ndi.globals;
 
@@ -141,6 +142,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 					refractory_samples = round(extraction_doc.document_properties.spike_extraction_parameters.refractory_time * sample_rate);
 					spike_sample_start = floor(extraction_doc.document_properties.spike_extraction_parameters.spike_start_time * sample_rate);
 					spike_sample_end = ceil(extraction_doc.document_properties.spike_extraction_parameters.spike_end_time * sample_rate);
+					spike_sample_selection = spike_sample_start:spike_sample_end;
 
 					filterstruct = ndi_app_spikeextractor_obj.makefilterstruct(extraction_doc, sample_rate);
 
@@ -243,7 +245,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 						% Apply refractory period to all events
 						locs = vlt.signal.refractory(locs, refractory_samples);
 
-						sample_offsets = repmat([spike_sample_start:spike_sample_end]',1,size(data,2));
+						sample_offsets = repmat([spike_sample_selection]',1,size(data,2));
 						channel_offsets = repmat([0:size(data,2)-1], spike_sample_end - spike_sample_start + 1,1);
 						single_spike_selection = sample_offsets + channel_offsets*size(data,1);
 						spike_selections = repmat(single_spike_selection(:)', length(locs), 1) + repmat(locs(:), 1, prod(size(sample_offsets)));
@@ -253,8 +255,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 						waveforms = permute(waveforms,[3 1 2]); % Nspikes X Nsamples X Nchannels
 
 						%Center spikes; if threshold is low-to-high, flip sign (assume positive-spikes)
-						waveforms = (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*vlt.neuro.spikesorting.centerspikes_neg( ...
+						[waveforms,sampleshifts] = vlt.neuro.spikesorting.centerspikes_neg( ...
 							(-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*waveforms,center_range_samples);
+ 						waveforms = waveforms * (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign);
 
 						% Permute waveforms for vlt.file.custom_file_formats.addvhlspikewaveformfile to Nsamples X Nchannels X Nspikes
 						waveforms = permute(waveforms, [2 3 1]);
@@ -263,7 +266,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 						vlt.file.custom_file_formats.addvhlspikewaveformfile(spikewaves_binarydoc, waveforms);
 					  
 						% Store epoch spike times in file
-						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs),'float32');
+						center_time_in_samples = spike_sample_selection(round(numel(spike_sample_selection)/2));
+						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs(:)-sampleshifts(:)+center_time_in_samples),'float32');
 						read_start_sample = round(read_start_sample + ...
 								extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
 								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate);
@@ -373,6 +377,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 			%
         			switch(lower(appdoc_type)),
 					case 'extraction_parameters',
+						if numel(varargin)<1,
+							error(['extraction_parameters documents need a name. Please pass a name. See help ndi.app.spikeextractor/appdoc_description']);
+						end;
 						extraction_parameters_name = varargin{1};
 		
 						extract_searchq = ndi.query('ndi_document.name','exact_string',extraction_parameters_name,'') & ...
@@ -416,6 +423,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 			%
 			% See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
 			%
+				if ~ischar(appdoc_type),
+					error(['appdoc_type must be a character string indicating the document type to use. Got a ' class(appdoc_type) '.']);
+				end;
 				switch(lower(appdoc_type)),
 					case {'extraction_parameters','extraction_parameters_modification'},
 						varargout{1} = ndi_app_spikeextractor_obj.find_appdoc(appdoc_type,varargin{:});
