@@ -30,6 +30,7 @@ nav:
     - 2 Analzying your first electrophysiology experiment with NDI:
       - 2.1 Reading an example dataset: 'tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
       - 2.2 Automating data reading with NDI: 'tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
+      - 2.3 Using apps to analyze data (example: spike sorting): 'tutorials/analyzing_first_physiology_experiment/3_spikesorting.md'
     - Planned:
       - 3. Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
       - 4. Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'

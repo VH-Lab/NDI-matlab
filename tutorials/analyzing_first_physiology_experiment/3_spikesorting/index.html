@@ -16,7 +16,7 @@
     
     
       
-        <title>Tutorial 2: Analyzing your first electrophysiology experiment with NDI - NDI-matlab</title>
+        <title>2.3 Using apps to analyze data (example -- spike sorting) - NDI-matlab</title>
       
     
     
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tutorial 2: Analyzing your first electrophysiology experiment with NDI
+              2.3 Using apps to analyze data (example -- spike sorting)
             
           </span>
         </div>
@@ -255,12 +255,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       <label class="md-nav__link" for="__nav_3">
         Tutorials
@@ -327,12 +329,14 @@
             
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" checked>
       
       <label class="md-nav__link" for="__nav_3_2">
         2 Analzying your first electrophysiology experiment with NDI
@@ -365,6 +369,132 @@
       <a href="../2_theautomatedway/" class="md-nav__link">
         2.2 Automating data reading with NDI
       </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          2.3 Using apps to analyze data (example -- spike sorting)
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        2.3 Using apps to analyze data (example -- spike sorting)
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tutorial-23-using-apps-to-analyze-data-spike-sorting" class="md-nav__link">
+    Tutorial 2.3: Using apps to analyze data (spike sorting)
+  </a>
+  
+    <nav class="md-nav" aria-label="Tutorial 2.3: Using apps to analyze data (spike sorting)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tutorial-231-what-is-an-app-in-ndi-ndiapp-objects" class="md-nav__link">
+    Tutorial 2.3.1: What is an 'app' in NDI? ndi.app objects
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tutorial-232-extracting-spikes-using-ndiappspikeextractor" class="md-nav__link">
+    Tutorial 2.3.2: Extracting spikes using ndi.app.spikeextractor
+  </a>
+  
+    <nav class="md-nav" aria-label="Tutorial 2.3.2: Extracting spikes using ndi.app.spikeextractor">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2321-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.2.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2322-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.2.2 Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#233-spike-sorting-using-ndiappspikesorter" class="md-nav__link">
+    2.3.3 Spike sorting using ndi.app.spikesorter
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#234-manually-curating-the-clusters" class="md-nav__link">
+    2.3.4 Manually curating the clusters
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#235-how-can-we-learn-about-the-functionality-of-ndiapp-objects" class="md-nav__link">
+    2.3.5 How can we learn about the functionality of ndi.app objects?
+  </a>
+  
+    <nav class="md-nav" aria-label="2.3.5 How can we learn about the functionality of ndi.app objects?">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2351-type-this-into-matlab" class="md-nav__link">
+    Code block 2.3.5.1. Type this into Matlab
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -4828,6 +4958,39 @@ figure out how to use the program if one didn't know.</p>
       
         
 <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../2_theautomatedway/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              2.2 Automating data reading with NDI
+            </div>
+          </div>
+        </a>
+      
+      
+        <a href="../../reading_own_data_ndi/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              3. Reading your own data in NDI
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
