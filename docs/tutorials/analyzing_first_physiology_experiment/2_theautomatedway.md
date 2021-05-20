@@ -28,11 +28,11 @@ settings for various labs or users. The `setup` package also has a subpackage st
 of `ndi`. In Matlab, packages are denoted by putting a `+` in the folder name:
 
 - `+ndi/+setup/`
-  - `+daq/`
-    - `+metadata/`
-    - `+metadatareader/`
-    - `+reader/`
-    - `+system/`  
+    - `+daq/`
+        - `+metadata/`
+        - `+metadatareader/`
+        - `+reader/`
+        - `+system/`  
 
 ### 2.2.1 Download an experiment with all vhlab metadata left intact 
 
@@ -40,17 +40,17 @@ Please download an example data directory called [ts_exper2](https://drive.googl
 time of acquisition on Steve's rig in the Fitzpatrick lab at Duke, which is nearly identical to the format that we use in the
 vhlab now. You'll see that these directories have a few more files. It's not necessary to follow the identities of the files in detail, but let's look at what is in t00001 as an example:
 
-- `t00001`
-  - `filetime.txt` - The time of the acquisition beginning in seconds from midnight
-  - `reference.txt` = A file describing the probes that are present in this directory
-  - `spike2data.S2R` - This is an irrelevant file! But it's there every time.
-  - `spike2data.smr` - The raw data file acquired by CED's program Spike2 (data acquired via Micro1401)
-  - `spike2datalog.txt` - A text log file (not relevant)
-  - `stims.mat` - The record of stimulation as produced by the stimulus computer. It uses [NewStim](http://github.com/VH-Lab/vhlab-NewStim-matlab) stimuli and is written by VH lab's [RunExperiment](http://github.com/VH-Lab/vhlab-RunExperiment-matlab) program.
-  - `stimtimes.txt` - A text file where each line contains a) the stimulus onset trigger, b) the stimulus ID number between 1-255, and c) an array of video frame trigger times (when the video frame was changed)
-  - `twophotontimes.txt` - A record of triggers of all 2-photon frames. None in this experiment.
-  - `verticalblanking.txt` - A record of each refresh of the monitor. This was not yet used in these experiments but is now part of the VH lab's suite.
-  - `vhspike2_channelgrouping.txt` - A text file that indicates which acquisition channels of our vhspike2 DAQ system are connected to each probe.
+- `t00001/`
+    - `filetime.txt` - The time of the acquisition beginning in seconds from midnight
+    - `reference.txt` = A file describing the probes that are present in this directory
+    - `spike2data.S2R` - This is an irrelevant file! But it's there every time.
+    - `spike2data.smr` - The raw data file acquired by CED's program Spike2 (data acquired via Micro1401)
+    - `spike2datalog.txt` - A text log file (not relevant)
+    - `stims.mat` - The record of stimulation as produced by the stimulus computer. It uses [NewStim](http://github.com/VH-Lab/vhlab-NewStim-matlab) stimuli and is written by VH lab's [RunExperiment](http://github.com/VH-Lab/vhlab-RunExperiment-matlab) program.
+    - `stimtimes.txt` - A text file where each line contains a) the stimulus onset trigger, b) the stimulus ID number between 1-255, and c) an array of video frame trigger times (when the video frame was changed)
+    - `twophotontimes.txt` - A record of triggers of all 2-photon frames. None in this experiment.
+    - `verticalblanking.txt` - A record of each refresh of the monitor. This was not yet used in these experiments but is now part of the VH lab's suite.
+    - `vhspike2_channelgrouping.txt` - A text file that indicates which acquisition channels of our vhspike2 DAQ system are connected to each probe.
 
 
 ### 2.2.2 Example NDI-matlab files for vhlab
