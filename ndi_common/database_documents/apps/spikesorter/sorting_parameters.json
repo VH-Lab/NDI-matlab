@@ -16,7 +16,11 @@
 	        }
 	],
 	"sorting_parameters": {
+		"graphical_mode": 0,
 		"num_pca_features": 10,
-		"interpolation": 3
+		"interpolation": 3,
+		"min_clusters": 1,
+		"max_clusters": 10,
+		"num_start": 5
 	}
 }
