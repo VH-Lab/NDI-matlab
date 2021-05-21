@@ -26,68 +26,72 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				{'apps/spikesorter/sorting_parameters','apps/spikesorter/spike_clusters'},...
 				session);
 		end % ndi.app.spikesorter() creator
-        
-		function spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, epoch, extraction_name, sort_name, redo)
+
+		function 
+
+		function spike_cluster_doc = spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, extraction_name, sorting_parameters_name, redo)
 			% SPIKE_SORT - method that sorts spikes from specific probes in session to ndi_doc
 			%
-			% SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
+			% SPIKE_CLUSTER_DOC = SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
 			%%%%%%%%%%%%%%
 			% SORT_NAME name given to save sort to ndi_doc
         
+
+				%%% Step 1: Get our documents, see if we have any work to do or if it is all done, and generally set up
 				if exist('redo','var') == 0
 					redo = 0
 				end
 
-				% epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
+				% Step 1a: get our sorting_parameters document, bail out if we can't get it
 
-			% sorter_searchq = cat(2,ndi_app_spikesorter_obj.searchquery(), ...
-			% 			{'epochid', epoch_string, 'spikewaves.sort_name', extraction_name});
-			% 		old_sort_doc = ndi_app_spikesorter_obj.session.database_search(spikewaves_searchq);
-					
-			% if ~isempty(old_sort_doc) & ~redo
-			% 	% we already have this epoch
-			% 	continue % skip to next epoch
-			% end
-
-				% Clear sort within probe with sort_name
-					% replace with appdoc
-				ndi_app_spikesorter_obj.clear_sort(ndi_timeseries_obj, epoch, sort_name);
-
-				sorting_parameters_doc = ndi_app_spikesorter_obj.find_appdoc('sorting_parameters', sort_name);
-                    
-				if isempty(sorting_parameters_doc),
-					error(['No sorting_parameters document named ' sort_name ' found.']);
-				elseif numel(sorting_parameters_doc)>1,
-					error(['More than one sorting_parameters document with same name. Should not happen but needs to be fixed.']);
-				else,
-					sorting_parameters_doc = sorting_parameters_doc{1};
+				sorting_parameters_doc = ndi_app_spikesorter_obj.find_appdoc('sorting_parameters', sorting_parameters_name);
+				if numel(sorting_parameters_doc)==0,
+					error(['No spike sorting parameters document document with name ' sorting_parameters_name ' was found.']);
+				elseif numel(sorting_parameter_doc)>1,
+					error(['Too many spike sorting parameters document document with name ' sorting_parameters_name ' were found. Don''t know what to do. Bailing out.']);
+				else, % we have the number we need
+					sorting_parameter_doc = sorting_parameters_doc{1};
 				end;
 
-			% Read spikewaves here
-			ndi_app_spikeextractor_obj = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session);
+				% Step 1b: do we already have a cluster document? If so, are we re-doing it or just returning it and being done?
 
-			% need to loop over epochs here
-            
-				[waveforms, ~, spikewaves_doc] = ndi_app_spikeextractor_obj.loaddata_appdoc('spikewaves', ...
-					ndi_timeseries_obj, epoch, extraction_name);
+				spike_cluster_doc = ndi_app_spikesorter_obj.find_appdoc('spike_clusters', ndi_timeseries_obj, extraction_name,...
+					sorting_parameters_name);
 
-				% Interpolation
-				interpolation = sorting_parameters_doc.document_properties.sorting_parameters.interpolation;
-				waveforms_out = zeros(interpolation*size(waveforms,1), size(waveforms,2), size(waveforms,3));
-				x = 1:length(waveforms(:,1,1));
-				xq = 1/interpolation:1/interpolation:length(waveforms(:,1,1));
-			
-				for i=1:size(waveforms, 3)
-					waveforms_out(:,:,i) = interp1(x, waveforms(:,:,i), xq, 'spline');
-				end
+				if numel(spike_cluster_doc)==1 & ~redo,
+					% we are done
+					spike_cluster_doc = spike_cluster_doc{1};
+					return;
+				elseif redo, % if we are re-doing, destroy the old docs
+					ndi_app_spikesorter_obj.session.database_rm(spike_cluster_doc);
+					spike_cluster_doc = {};
+				end;
 
-				spikesamples = size(waveforms_out,1);
-				nchannels = size(waveforms_out,2);
-				nspikes = size(waveforms_out,3);
+				% Step 1c: Now that we know we are continuing, we need to gather our waveforms. 
+
+				[waveforms, waveformparams, epochinfo] = ndi_app_spikesorter_obj.loadwaveforms(ndi_timeseries_obj);
+				
+				%%% Step 2: do the sorting according to instructions
+
+				% what interpolation is requested?
+				interpolation = 1;
+				if isfield(sorting_parameters_doc.document_properties.sorting_parameters,'interpolation'),
+					interpolation = max(1,round(sorting_parameters_doc.document_properties.sorting_parameters.interpolation));
+					interpolation = min(interpolation,10); % no interpolation bigger than 10; that's crazy
+				end;
+
+				if interpolation > 1,
+					waveforms = permute(waveforms,[3 1 2]);
+					waveforms = vlt.neuro.spikesorting.oversamplespikes(waveforms, interpolation);
+					waveforms = permute([3 2 1]);
+				end;
+
+				spikesamples = size(waveforms,1);
+				nchannels = size(waveforms,2);
+				nspikes = size(waveforms,3);
 
 				% Concatenate waves for PCA
-				concatenated_waves = reshape(waveforms_out,[spikesamples * nchannels,nspikes]);
-				concatenated_waves = concatenated_waves';
+				concatenated_waves = reshape(waveforms,[spikesamples * nchannels,nspikes])';
 				%% Spike Features (PCA)
 
 				% get covariance matrix of the TRANSPOSE of spike array (waveforms need
@@ -107,7 +111,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				projected_waveforms = concatenated_waves * [eigenvectors];
 
 				% Features used in klustakwik_cluster
-				pca_coefficients = projected_waveforms(:, 1:sorting_parameters_doc.document_properties.sorting_parameters.num_pca_features);
+
+				if isfield(sorting_paramters_doc.document_properties.sorting_parameters,'num_pca_features'),
+					num_pca_features = sorting_parameters_doc.document_properties.sorting_parameters.num_pca_features;
+				
+				end;
+
+				pca_coefficients = projected_waveforms(:, 1:num_pca_features);
+				
 
 				disp('KlustarinKwikly...');
 				[clusterids,numclusters] = klustakwik_cluster(pca_coefficients, 3, 25, 5, 0);
