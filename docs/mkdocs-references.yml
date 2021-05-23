@@ -83,7 +83,8 @@
       - example PACKAGE:
         - tutorial PACKAGE:
           - ndi.example.tutorial.plottreeshrewdata: 'reference/+ndi/+example/+tutorial/plottreeshrewdata.m.md'
-          - ndi.example.tutorial.tutorial_01_01: 'reference/+ndi/+example/+tutorial/tutorial_01_01.m.md'
+          - ndi.example.tutorial.tutorial_02_01: 'reference/+ndi/+example/+tutorial/tutorial_02_01.m.md'
+          - ndi.example.tutorial.tutorial_02_03: 'reference/+ndi/+example/+tutorial/tutorial_02_03.m.md'
       - file PACKAGE:
         - ndi.file.navigator: 'reference/+ndi/+file/navigator.m.md'
         - navigator PACKAGE:
@@ -91,6 +92,8 @@
       - fun PACKAGE:
         - ndi.fun.convertoldnsd2ndi: 'reference/+ndi/+fun/convertoldnsd2ndi.m.md'
         - ndi.fun.stimulustemporalfrequency: 'reference/+ndi/+fun/stimulustemporalfrequency.m.md'
+      - globals PACKAGE:
+        - ndi.globals.assert: 'reference/+ndi/+globals/assert.m.md'
       - gui PACKAGE:
         - ndi.gui.Data: 'reference/+ndi/+gui/Data.m.md'
         - ndi.gui.Icon: 'reference/+ndi/+gui/Icon.m.md'
