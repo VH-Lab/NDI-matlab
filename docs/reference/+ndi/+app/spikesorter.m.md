@@ -26,22 +26,22 @@
 | Method | Description |
 | --- | --- |
 | *add_appdoc* | Load data from an application document |
-| *add_sorting_doc* | add sorting parameters document |
 | *appdoc_description* | a function that prints a description of all appdoc types |
+| *check_sorting_parameters* | check sorting parameters for validity |
 | *clear_appdoc* | remove an ndi.app.appdoc document from a session database |
-| *clear_sort* | clear all 'sorted spikes' records for an NDI_PROBE_OBJ from session database |
+| *clusters2neurons* | create ndi.neuron objects from spike clusterings |
 | *defaultstruct_appdoc* | return a default appdoc structure for a given APPDOC type |
 | *doc2struct* | create an ndi.document from an input structure and input parameters |
 | *find_appdoc* | find an ndi_app_appdoc document in the session database |
 | *isequal_appdoc_struct* | are two APPDOC data structures the same (equal)? |
 | *isvalid_appdoc_struct* | is an input structure a valid descriptor for an APPDOC? |
-| *load_spike_clusters_doc* | ndi.app.spikesorter/load_spike_clusters_doc is a function. |
 | *loaddata_appdoc* | load data from an application document |
+| *loadspiketimes* | load extracted spike times for an ndi_timeseries_obj |
+| *loadwaveforms* | load extracted spike waveforms for an ndi_timeseries_obj |
 | *newdocument* | return a new database document of type ndi.document based on an app |
 | *searchquery* | return a search query for an ndi.document related to this app |
 | *spike_sort* | method that sorts spikes from specific probes in session to ndi_doc |
 | *spikesorter* | an app to sort spikewaves found in sessions |
-| *spikesorter_gui* | load spike waves |
 | *struct2doc* | create an ndi.document from an input structure and input parameters |
 | *varappname* | return the name of the application for use in variable creation |
 | *version_url* | return the app version and url |
@@ -83,27 +83,131 @@ Help for ndi.app.spikesorter/add_appdoc is inherited from superclass NDI.APP.APP
 
 ---
 
-**add_sorting_doc** - *add sorting parameters document*
+**appdoc_description** - *a function that prints a description of all appdoc types*
 
-SORTING_DOC = ADD_SORTING_DOC(NDI_APP_SPIKESORTER_OBJ, SORT_NAME, SORT_PARAMS)
+For ndi_app_spikeextractor, there are the following types:
+  APPDOC_TYPE                 | Description
+  ----------------------------------------------------------------------------------------------
+  'sorting_parameters'        | A document that describes the parameters to be used for sorting
+  'spike_clusters'            | A document that contains the assignment of a set of spikes to clusters
+  ----------------------------------------------------------------------------------------------
  
-  Given SORT_PARAMS as either a structure or a filename, this function returns
-  SORTING_DOC parameters as an ndi.document and checks its fields. If SORT_PARAMS is empty,
-  then the default parameters are returned. If SORT_NAME is already the name of an existing
-  ndi.document then an error is returned.
+  ----------------------------------------------------------------------------------------------
+  APPDOC 1: SORTING_PARAMETERS
+  ----------------------------------------------------------------------------------------------
  
-  SORT_PARAMS should contain the following fields:
-  Fieldname              | Description
-  -------------------------------------------------------------------------
-  num_pca_features (10)     | Number of PCA features to use in klustakwik k-means clustering
-  interpolation (3)       | Interpolation factor
+    ----------------------------------
+    | SORTING_PARAMETERS -- ABOUT | 
+    ----------------------------------
+ 
+    SORTING_PARAMETERS documents hold the parameters that are to be used to guide the extraction of
+    spikewaves.
+ 
+    Definition: apps/spikesorter/sorting_parameters.json
+ 
+    -------------------------------------
+    | SORTING_PARAMETERS -- CREATION | 
+    -------------------------------------
+ 
+    DOC = STRUCT2DOC(NDI_APP_SPIKESORTER_OBJ, 'sorting_parameters', SORTING_PARAMS, SORTING_PARAMETERS_NAME)
+ 
+    SORTING_NAME is a string containing the name of the extraction document.
+ 
+    SORTING_PARAMS should contain the following fields:
+    Fieldname                 | Description
+    -------------------------------------------------------------------------
+    graphical_mode (1)        | Should we use graphical mode (1) or automatic mode (0)?
+    num_pca_features (10)     | Number of pca-driven features to use in the clustering calculation in automatic mode
+    interpolation (3)         | By how many times should we oversample the spikes, interpolating by splines?
+    min_clusters (3)          | Minimum clusters parameter for KlustaKwik in automatic mode
+    max_clusters (10)         | Maximum clusters parameter for KlustaKwik in automatic mode
+    num_start (5)             | Number of random starting positions in automatic mode
+    
+ 
+    ------------------------------------
+    | SORTING_PARAMETERS -- FINDING |
+    ------------------------------------
+ 
+    [SORTING_PARAMETERS_DOC] = FIND_APPDOC(NDI_APP_SPIKESORTER_OBJ, ...
+         'sorting_parameters', SORTING_PARAMETERS_NAME)
+ 
+    INPUTS: 
+      SORTING_PARAMETERS_NAME - the name of the sorting parameter document
+    OUPUT: 
+      Returns the sorting parameters ndi.document with the name SORTING_PARAMETERS_NAME.
+ 
+    ------------------------------------
+    | SORTING_PARAMETERS -- LOADING |
+    ------------------------------------
+ 
+    [SORTING_PARAMETERS_DOC] = LOADDATA_APPDOC(NDI_APP_SPIKESORTER_OBJ, ...
+         'sorting_parameters', SORTING_PARAMETERS_NAME)
+  
+    INPUTS: 
+      SORTING_PARAMETERS_NAME - the name of the sorting parameter document
+    OUPUT: 
+      Returns the sorting parameters ndi.document with the name SORTING_PARAMETERS_NAME.
+ 
+  ----------------------------------------------------------------------------------------------
+  APPDOC 2: SPIKE_CLUSTERS
+  ----------------------------------------------------------------------------------------------
+ 
+    ---------------------------
+    | SPIKE_CLUSTERS -- ABOUT | 
+    ---------------------------
+ 
+    SPIKEWAVES documents store the spike waveforms that are read during a spike extraction. It
+    DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the SORTING_PARAMETERS
+    that descibed the extraction.
+ 
+    Definition: apps/spikesorter/spike_clusters
+ 
+    ------------------------------
+    | SPIKE_CLUSTERS -- CREATION | 
+    ------------------------------
+ 
+    Spike cluster documents are created internally by the SORT function
+ 
+    ----------------------------
+    | SPIKE_CLUSTERS - FINDING |
+    ----------------------------
+ 
+    [SPIKE_CLUSTERS_DOC] = FIND_APPDOC(NDI_APP_SPIKESORTER_OBJ, 'spike_clusters', ...
+                                NDI_TIMESERIES_OBJ, SORTING_PARAMETERS_NAME)
+ 
+    INPUTS:
+       NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
+       SORTING_PARAMETERS_NAME - the name of the sorting parameters document used in the sorting
+    OUTPUT:
+       SPIKECLUSTERS_DOC - the ndi.document of the cluster information
+ 
+    ----------------------------
+    | SPIKE_CLUSTERS - LOADING |
+    ----------------------------
+ 
+    [CLUSTERIDS, SPIKE_CLUSTERS_DOC] = LOADDATA_APPDOC(NDI_APP_SPIKESORTER_OBJ, 'spike_clusters', ...
+                                NDI_TIMESERIES_OBJ, SORTING_PARAMETERS_NAME, EXTRACTION_PARAMETERS_NAME)
+ 
+    INPUTS:
+       NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
+       SORTING_PARAMETERS_NAME - the name of the sorting parameters document used in the sorting
+       EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
+    
+    OUTPUTS:
+       CLUSTERIDS: the cluster id number of each spike
+       SPIKE_CLUSTERS_DOC - the ndi.document of the clusters, which includes detailed cluster information.
 
 
 ---
 
-**appdoc_description** - *a function that prints a description of all appdoc types*
+**check_sorting_parameters** - *check sorting parameters for validity*
 
-
+SORTING_PARAMETERS_STRUCT = CHECK_SORTING_PARAMETERS(NDI_APP_SPIKESORTER_OBJ, SORTING_PARAMETERS_STRUCT)
+ 
+  Given a sorting parameters structure (see help ndi.app.spikesorter/appdoc_description), check that the
+  parameters are provided and are in appropriate ranges. 
+ 
+  interpolation
 
 
 ---
@@ -124,13 +228,11 @@ Help for ndi.app.spikesorter/clear_appdoc is inherited from superclass NDI.APP.A
 
 ---
 
-**clear_sort** - *clear all 'sorted spikes' records for an NDI_PROBE_OBJ from session database*
+**clusters2neurons** - *create ndi.neuron objects from spike clusterings*
 
-B = CLEAR_SORT(NDI_APP_SPIKESORTER_OBJ, NDI_EPOCHSET_OBJ)
+CLUSTERS2NEURONS(NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ, SORTING_PARAMETER_NAME, EXTRACTION_PARAMETERS_NAME, REDO)
  
-  Clears all sorting entries from the session database for object NDI_PROBE_OBJ.
- 
-  Returns 1 on success, 0 otherwise.
+  Generates ndi.neuron objects for each spike cluster represented in the
 
 
 ---
@@ -199,16 +301,44 @@ Help for ndi.app.spikesorter/isequal_appdoc_struct is inherited from superclass 
 
 ---
 
-**load_spike_clusters_doc** - *ndi.app.spikesorter/load_spike_clusters_doc is a function.*
+**loaddata_appdoc** - *load data from an application document*
 
-doc = load_spike_clusters_doc(ndi_app_spikesorter_obj, ndi_probe_obj, epoch, sort_name)
+See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
 
 
 ---
 
-**loaddata_appdoc** - *load data from an application document*
+**loadspiketimes** - *load extracted spike times for an ndi_timeseries_obj*
 
-See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
+[SPIKETIMES, EPOCHINFO, EXTRACTION_PARAMS_DOC, SPIKETIMES_DOCS] = LOADSPIKETIMES(...
+          NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
+ 
+  Loads extracted SPIKETIMES from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.
+ 
+  SPIKTIMES is a vector description of each spike waveform.
+  EPOCHINFO - a structure with fields EpochStartSamples that indicates the spiketime number that begins each new
+     epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
+  EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
+  SPIKETIMES_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
+
+
+---
+
+**loadwaveforms** - *load extracted spike waveforms for an ndi_timeseries_obj*
+
+[WAVEFORMS, WAVEFORMPARAMS, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
+          NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
+ 
+  Loads extracted spike WAVEFORMS from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.
+ 
+  WAVEFORMS is a NumSamples x NumChannels x NumSpikes representation of each spike waveform.
+  WAVEFORMPARAMS is the set of waveform parameters from ndi.app.spikeextractor that includes information
+     such as the sample dimensions and the sampling rate of the underlying data.
+     See help ndi.app.spikeextractor.appdoc_description.
+  EPOCHINFO - a structure with fields EpochStartSamples that indicates the waveform sample that begins each new
+     epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
+  EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
+  WAVEFORM_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
 
 
 ---
@@ -240,7 +370,7 @@ Help for ndi.app.spikesorter/searchquery is inherited from superclass NDI.APP
 
 **spike_sort** - *method that sorts spikes from specific probes in session to ndi_doc*
 
-SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
+SPIKE_CLUSTER_DOC = SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
  %%%%%%%%%%%%
   SORT_NAME name given to save sort to ndi_doc
 
@@ -257,22 +387,14 @@ NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)
 
 ---
 
-**spikesorter_gui** - *load spike waves*
-
-
-
-
----
-
 **struct2doc** - *create an ndi.document from an input structure and input parameters*
 
-DOC = STRUCT2DOC(ndi.app.spikeextractor_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
+DOC = STRUCT2DOC(NDI_APP_SPIKESORTER_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
  
-  For ndi.app.spikeextractor, one can use an APPDOC_TYPE of the following:
+  For ndi.app.spikesorter, one can use an APPDOC_TYPE of the following:
   APPDOC_TYPE                 | Description
   ----------------------------------------------------------------------------------------------
-  'sorting_parameters'  | A document that 
-  'spike_clusters'      | A document that  
+  'sorting_parameters'  | A document that describes the parameters to be used for sorting
   
  
   See APPDOC_DESCRIPTION for a list of the parameters.

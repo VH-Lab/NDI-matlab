@@ -4,7 +4,7 @@
 
 **Class name**: [ndi_document_apps_spikesorter_spikesorter_spike_clusters](spike_clusters.md)<br>
 **Short name**: [spike_clusters](spike_clusters.md)<br>
-**Superclasses**: [ndi_document](../../ndi_document.md), [ndi_document_app](../../ndi_document_app.md), [ndi_document_epochid](../../ndi_document_epochid.md)
+**Superclasses**: [ndi_document](../../ndi_document.md), [ndi_document_app](../../ndi_document_app.md)
 
 **Definition**: [$NDIDOCUMENTPATH/apps/spikesorter/spike_clusters.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/apps/spikesorter/spike_clusters.json)<br>
 **Schema for validation**: [$NDISCHEMAPATH/apps/spikesorter/spike_clusters_schema.json](https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/apps/spikesorter/spike_clusters_schema.json)<br>
@@ -51,14 +51,5 @@ Accessed by `app.field` where *field* is one of the field names below
 | **os_version** |  | character array (ASCII) | The operating system version |
 | **interpreter** |  | character array (ASCII) | If applicable, the name of the interpreter (Matlab, python3, etc) |
 | **interpreter_version** |  | character array (ASCII) | If applicable, the version of the interpreter |
-
-
-## [ndi_document_epochid](../../ndi_document_epochid.md) fields
-
-Accessed by `epochid_fix.field` where *field* is one of the field names below
-
-| field | default_value | data type | description |
-| --- | --- | --- | --- |
-| **epochid** |  | character array (ASCII) | The epoch id that is referred to |
 
 

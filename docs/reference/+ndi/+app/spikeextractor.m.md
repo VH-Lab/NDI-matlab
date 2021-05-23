@@ -397,12 +397,13 @@ Help for ndi.app.spikeextractor/doc2struct is inherited from superclass NDI.APP.
 
 **extract** - *method that extracts spikes from epochs of an NDI_ELEMENT_TIMESERIES_OBJ*
 
-EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_PARAMS, EXTRACTION_NAME, [REDO], [T0 T1])
+EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME, [REDO], [T0 T1])
   TYPE is the type of probe if any
   combination of NAME and TYPE must return at least one probe from session
   EPOCH is an index number or id to select epoch to extract, or can be a cell array of epoch number/ids
   EXTRACTION_NAME name given to find ndi_doc in database
   REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
+  [T0 T1] - if given, then restricts the extraction to be between times t0 and t1; default is [-Inf Inf]
 
 
 ---
