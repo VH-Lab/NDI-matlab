@@ -18,7 +18,7 @@ write results back to NDI experimental sessions. One example of such an app is t
 JRClust. 
 
 There is another set of apps that are developed specifically for NDI that are members of a special parent class
-called ndi.app. This parent class performs some services to help app developers maintain a consistant approach to
+called [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/). This parent class performs some services to help app developers maintain a consistant approach to
 make it easier for users and programmers that want to use the app to easily figure out what it does and how to 
 use it. 
 
@@ -48,20 +48,24 @@ se = ndi.app.spikeextractor(S);
 % find out what the spike extraction parameters are
 extraction_param_struct = se.defaultstruct_appdoc('extraction_parameters');
 % if we wanted to modify these parameters, we could
-% for now, let's proceed with the defaults
+extraction_param_struct.threshold_parameter = 4;
+extraction_param_struct.threshold_sign = 1;
+my_extraction_name{1} = 'my_positive_extraction_params';
+extraction_param_doc = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name{1});
+my_extraction_name{2} = 'my_negative_extraction_params';
+extraction_param_struct.threshold_parameter = -4;
+extraction_param_struct.threshold_sign = -1;
+extraction_param_doc_2 = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name{2});
 
 % we will add a parameter document to our database that our extractor will use
 
-my_extraction_name = 'my_extraction_params';
-extraction_param_doc = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name);
 
 % now let's perform the extraction over all epochs
 
 redo = 1; % redo it if we already did it
  % we know there are two probes, so do it for both
-se.extract(p{1},[],my_extraction_name,redo);
-se.extract(p{2},[],my_extraction_name,redo);
-
+se.extract(p{1},[],my_extraction_name{1},redo);
+se.extract(p{2},[],my_extraction_name{2},redo);
 ```
 
 Now, let's take a look at what we extracted:
@@ -72,7 +76,7 @@ Now, let's take a look at what we extracted:
 % now let's take a look at what we got for the first probe, first epoch
 epoch_id = 't00001';
 
-[spikes,waveparameters,spikewaves_doc] = se.loaddata_appdoc('spikewaves',p{1},epoch_id,my_extraction_name);
+[spikes,waveparameters,spikewaves_doc] = se.loaddata_appdoc('spikewaves',p{1},epoch_id,my_extraction_name{1});
 
 % let's plot these waveforms
 
@@ -92,7 +96,7 @@ box off;
 
 % We can see how we did by plotting the spike times back with the raw data:
 
-[spiketimes,spiketimes_doc] = se.loaddata_appdoc('spiketimes',p{1},epoch_id,my_extraction_name);
+[spiketimes,spiketimes_doc] = se.loaddata_appdoc('spiketimes',p{1},epoch_id,my_extraction_name{1});
 
 [d,t] = readtimeseries(p{1},epoch_id,-Inf,Inf);
 figure(102);
@@ -102,18 +106,47 @@ samples = round(vlt.signal.value2sample(spiketimes, 1/(t(2)-t(1)), 0));
 plot(t(samples),d(samples),'ko'); % mark each spike peak location with a circle 
 ```
 
-
 ### 2.3.3 Spike sorting using [ndi.app.spikesorter](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikesorter.m/)
 
-Now we will feed our results to our plain spikesorting application, which relies on the KlustaKwik clustering tool (Harris KD, *J. Neurophys.*, 2000).
+Now we will feed our results to our plain spikesorting application, which relies on either Kmeans clustering the KlustaKwik clustering tool (Harris KD, *J. Neurophys.*, 2000).
 
-*more here*
+As a first step, we will create a sorting parameters document to specify how we will perform the sorting. This program includes a small graphical user interface to help in choosing the clusters (called in the line that has `ssa.spike_sort`). For a quick video demo of how to use this graphical user interface in the context of this tutorial, [click here](https://photos.app.goo.gl/4Brjrd459QU5fPYa7).
 
-### 2.3.4 Manually curating the clusters
+#### Code block 2.3.3.1 Type this into Matlab.
 
-*more here*
+```matlab
+ssa = ndi.app.spikesorter;
 
-### 2.3.5 How can we learn about the functionality of [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m) objects?
+sorting_params_struct = ssa.defaultstruct_appdoc('sorting_parameters');
+my_sorting_name = 'my_sorting_params';
+sorting_param_doc = ssa.add_appdoc('sorting_parameters',sorting_params_struct,'Replace',my_sorting_name);
+
+spike_cluster_doc = ssa.spike_sort(p{1},my_extraction_name{1},my_sorting_name,redo)
+ssa.clusters2neurons(p{1},my_sorting_name,my_extraction_name{1},redo)
+
+spike_cluster_doc = ssa.spike_sort(p{2},my_extraction_name{2},my_sorting_name,redo)
+ssa.clusters2neurons(p{2},my_sorting_name,my_extraction_name{2})
+```
+
+Now let's check the spike times of the the first neuron
+
+#### Code block 2.3.3.2 Type this into Matlab.
+
+```matlab
+e = S.getelements('element.type','spikes','element.name','ctx_1')
+[D,T] = e{1}.readtimeseries('t00001',-Inf,Inf);
+
+figure(102);
+hold on;
+samples2 = round(vlt.signal.value2sample(T, 1/(t(2)-t(1)), 0));
+plot(T,d(samples2), 'gs');
+
+% now spike times from neuron 1 are plotted as green squares
+```
+
+You can observe that most of the spiketimes that were detected on the first probe are part of neuron 1, but there are some lower amplitude peaks that are not.
+
+### 2.3.4 How can we learn about the functionality of [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m) objects?
 
 In section 2.2, we used [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/) as though we were born knowning what to do. How could we learn how to use a new app if there isn't a tutorial available?
 
@@ -133,7 +166,7 @@ There are three great ways to learn about what apps do and how to use them.
 
 Let's look at the document types that are written and needed by [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/): 
 
-#### Code block 2.3.5.1. Type this into Matlab
+#### Code block 2.3.4.1. Type this into Matlab
 
 ```matlab
 help ndi.app.spikeextractor/appdoc_description
@@ -151,6 +184,6 @@ Here's a table of the document types and their "about" info for ndi.app.spikeext
 | SPIKETIMES | SPIKETIMES documents store the times spike waveforms that are read during a spike extraction. It DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the EXTRACTION_PARAMETERS that descibed the extraction. The times are in the local epoch time units. |
 
 
-3. If the app writer really loves his/her/their users, then he/she/they will create a tutorial. Look for a tutorial, that should be referenced in the Matlab help.
+3. If the app writer really loves his/her/their users, then he/she/they will create a tutorial. Look for a tutorial, that should be referenced in the Matlab help. We are working on adding tutorials for all of our included applications, but we are not there yet.
 
 

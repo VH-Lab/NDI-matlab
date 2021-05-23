@@ -10,16 +10,11 @@
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
-	"depends_on": [
-	        {   "name": "element_id",
-	            "value": ""
-	        }
-	],
 	"sorting_parameters": {
-		"graphical_mode": 0,
+		"graphical_mode": 1,
 		"num_pca_features": 10,
 		"interpolation": 3,
-		"min_clusters": 1,
+		"min_clusters": 3,
 		"max_clusters": 10,
 		"num_start": 5
 	}

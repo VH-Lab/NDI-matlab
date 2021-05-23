@@ -7,8 +7,7 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_epochid.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
 	"depends_on":[
@@ -21,11 +20,13 @@
 			"value": ""
 		}, 
 		{
-			"name": "spikewaves_doc_id",
+			"name": "extraction_parameters_id",
 			"value": ""
 		}
 	],
 	"spike_clusters": {
-		"sort_name": ""
+		"epoch_info": "",
+		"clusterinfo": [],
+		"waveform_sample_times": []
 	}
 }
