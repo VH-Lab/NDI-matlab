@@ -2,8 +2,6 @@
 
 ## Tutorial 2.3: Using apps to analyze data (spike sorting)
 
-(We're building this tutorial now. Only partially finished! Stay tuned.)
-
 You've seen how to read data from probes in NDI. Now suppose we want to do some analysis of this data? How would we do it?
 
 Clearly, one could write functions in Matlab that read the data and perform some sort of analysis. But it would be
