@@ -16,7 +16,7 @@
     
     
       
-        <title>Analyzing your first electrophysiology experiment with NDI - NDI-matlab</title>
+        <title>2.4 Analyzing spiking responses and tuning curve properties - NDI-matlab</title>
       
     
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
+        <a href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Analyzing your first electrophysiology experiment with NDI
+              2.4 Analyzing spiking responses and tuning curve properties
             
           </span>
         </div>
@@ -255,12 +255,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       <label class="md-nav__link" for="__nav_3">
         Tutorials
@@ -327,12 +329,14 @@
             
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" checked>
       
       <label class="md-nav__link" for="__nav_3_2">
         2 Analzying your first electrophysiology experiment with NDI
@@ -377,6 +381,192 @@
       <a href="../3_spikesorting/" class="md-nav__link">
         2.3 Using apps to analyze data (example - spike sorting)
       </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          2.4 Analyzing spiking responses and tuning curve properties
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        2.4 Analyzing spiking responses and tuning curve properties
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#24-analyzing-stimulus-responses" class="md-nav__link">
+    2.4 Analyzing stimulus responses
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4 Analyzing stimulus responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#241-sinusoidal-gratings-to-assess-direction-and-orientation-preferences-and-spatial-frequency-preferences" class="md-nav__link">
+    2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2411-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.1.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#242-gathering-stimulus-information" class="md-nav__link">
+    2.4.2 Gathering stimulus information
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.2 Gathering stimulus information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2421-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.2.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2422-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.2.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#243-labeling-control-stimuli" class="md-nav__link">
+    2.4.3 Labeling control stimuli
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.3 Labeling control stimuli">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2431-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.3.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2432-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.3.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#244-calculating-stimulus-responses" class="md-nav__link">
+    2.4.4 Calculating stimulus responses
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.4 Calculating stimulus responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2441-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.4.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2442-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.4.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#245-computing-an-orientationdirection-tuning-curve-and-calculating-orientationdirection-index-values" class="md-nav__link">
+    2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2451-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.5.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2452-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.5.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -4603,6 +4793,155 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#24-analyzing-stimulus-responses" class="md-nav__link">
+    2.4 Analyzing stimulus responses
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4 Analyzing stimulus responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#241-sinusoidal-gratings-to-assess-direction-and-orientation-preferences-and-spatial-frequency-preferences" class="md-nav__link">
+    2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2411-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.1.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#242-gathering-stimulus-information" class="md-nav__link">
+    2.4.2 Gathering stimulus information
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.2 Gathering stimulus information">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2421-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.2.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2422-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.2.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#243-labeling-control-stimuli" class="md-nav__link">
+    2.4.3 Labeling control stimuli
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.3 Labeling control stimuli">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2431-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.3.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2432-type-this-into-matlab" class="md-nav__link">
+    Code Block 2.4.3.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#244-calculating-stimulus-responses" class="md-nav__link">
+    2.4.4 Calculating stimulus responses
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.4 Calculating stimulus responses">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2441-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.4.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2442-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.4.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#245-computing-an-orientationdirection-tuning-curve-and-calculating-orientationdirection-index-values" class="md-nav__link">
+    2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2451-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.5.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2452-type-this-into-matlab" class="md-nav__link">
+    Code block 2.4.5.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -4613,20 +4952,148 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/analyzing_first_physiology_experiment/4_analyzing_spiketrains.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/analyzing_first_physiology_experiment/4_analyzing_tuning_curves.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                <h1 id="analyzing-your-first-electrophysiology-experiment-with-ndi">Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
-<p>This is planned tutorial that will cover</p>
-<ol>
-<li>reading and plotting raw data (provided);</li>
-<li>using a spike-sorting app to identify neurons from raw voltage recordings;</li>
-<li>analyzing stimulus-responses using built-in tuning curve apps; </li>
-<li>plotting the responses in documents in the database.</li>
-</ol>
-<p>This is targeted to be written in the first 6 months of application R01MH126791 (if funded).</p>
+                <h1 id="tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi">Tutorial 2: Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
+<p>(This tutorial is being built. Right now. Feel free to look around but it is under construction.)</p>
+<h2 id="24-analyzing-stimulus-responses">2.4 Analyzing stimulus responses<a class="headerlink" href="#24-analyzing-stimulus-responses" title="Permanent link">&para;</a></h2>
+<p>In the last tutorial, we saw how to use applications to identify spikes from electrophysiology recordings. Now we will employ another plain app 
+for calculating responses to stimulation.</p>
+<h3 id="241-sinusoidal-gratings-to-assess-direction-and-orientation-preferences-and-spatial-frequency-preferences">2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences<a class="headerlink" href="#241-sinusoidal-gratings-to-assess-direction-and-orientation-preferences-and-spatial-frequency-preferences" title="Permanent link">&para;</a></h3>
+<p>In this experiment (<a href="https://pubmed.ncbi.nlm.nih.gov/23843520/">Van Hooser et al. 2013</a>), we assessed tuning for stimulus direction and 
+spatial frequency with sinusoidal gratings. A series of sinusoidal gratings drifting in different directions are shown <a href="https://photos.app.goo.gl/AsSpsd9cGK1MWygC8">here</a>.  In the actual
+experiments, we assessed orientation/direction preferences coarsely, and then found the optimal spatial and temporal frequency for the cell before
+assessing orientation/direction in a fine manner at the optimal spatial and temporal frequency for the cell. The fine orientation/direction
+assessment is what is included in this demo.</p>
+<p>So let's open our demo experiment and get started! We are also going to identify our stimulator (visual stimulus system) so that we can tell NDI to
+analyze stimuli from this device.</p>
+<h4 id="code-block-2411-type-this-into-matlab">Code Block 2.4.1.1. Type this into Matlab.<a class="headerlink" href="#code-block-2411-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">dirname</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="nb">userpath</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;Documents&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;NDI&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">];</span><span class="w"> </span><span class="c">% change this if you put the example somewhere else</span><span class="w"></span>
+<span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">dir</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span><span class="n">dirname</span><span class="p">);</span><span class="w"></span>
+
+<span class="c">% find out stimulus probe</span><span class="w"></span>
+<span class="n">stimprobe</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;stimulator&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="n">stimprobe</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">stimprobe</span><span class="p">{</span><span class="mi">1</span><span class="p">};</span><span class="w"> </span><span class="c">% grab the first one, should be our stimulus monitor</span><span class="w"></span>
+</code></pre></div>
+
+<h3 id="242-gathering-stimulus-information">2.4.2 Gathering stimulus information<a class="headerlink" href="#242-gathering-stimulus-information" title="Permanent link">&para;</a></h3>
+<p>The first step in analyzing stimuli is to gather information about the stimulus presentations that were performed in the experiment. We use a 
+small dedicated app for this purpose called <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/decoder.m/">ndi.app.stimulus.decoder</a>.</p>
+<h4 id="code-block-2421-type-this-into-matlab">Code Block 2.4.2.1. Type this into Matlab.<a class="headerlink" href="#code-block-2421-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">sapp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">stimulus</span><span class="p">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"></span>
+<span class="n">redo</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="p">[</span><span class="n">stim_pres_docs</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">sapp</span><span class="p">.</span><span class="n">parse_stimuli</span><span class="p">(</span><span class="n">stimprobe</span><span class="p">,</span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>Now let's take a look at what has been decoded:</p>
+<h4 id="code-block-2422-type-this-into-matlab">Code Block 2.4.2.2. Type this into Matlab.<a class="headerlink" href="#code-block-2422-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">stim_pres_docs</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_presentation</span><span class="w"></span>
+
+<span class="c">% these are the fields that were decoded by ndi.app.stimulus.decoder</span><span class="w"></span>
+<span class="c">% let&#39;s take a look</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% here is information about the presentation time of the first stimulus</span><span class="w"></span>
+<span class="n">stim_pres_docs</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_presentation</span><span class="p">.</span><span class="n">presentation_time</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% here is information about the presentation order of the first 10 stimuli shown:</span><span class="w"></span>
+
+<span class="n">stim_pres_docs</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_presentation</span><span class="p">.</span><span class="n">presentation_order</span><span class="p">(</span><span class="mi">1</span><span class="p">:</span><span class="mi">10</span><span class="p">)</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% We see that the first stimulus that was presented was stimulus number 4. Let&#39;s take a look at its properties:</span><span class="w"></span>
+
+<span class="n">stim_pres_docs</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_presentation</span><span class="p">.</span><span class="n">stimuli</span><span class="p">(</span><span class="mi">4</span><span class="p">).</span><span class="n">parameters</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% We can also take a look at the control or blank stimulus properties:</span><span class="w"></span>
+
+<span class="n">stim_pres_docs</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_presentation</span><span class="p">.</span><span class="n">stimuli</span><span class="p">(</span><span class="mi">17</span><span class="p">).</span><span class="n">parameters</span><span class="w"></span>
+
+<span class="c">% you can see that there are 4 such documents, one for each stimulus presentation in the experiment</span><span class="w"></span>
+
+<span class="n">stim_pres_docs</span><span class="p">,</span><span class="w"></span>
+</code></pre></div>
+
+<h3 id="243-labeling-control-stimuli">2.4.3 Labeling control stimuli<a class="headerlink" href="#243-labeling-control-stimuli" title="Permanent link">&para;</a></h3>
+<p>For most turning curve data, we want to compare the response during the time of stimulation to the response of the system during some background time, or some "control" stimulus. For visual stimuli, this is often a period where a gray screen is shown that has the same duration as the visual stimuli that may be shown. For an auditory stimulus, it may be a period of time when no specific auditory stimulus is playing and the animal hears the noise of the background environment. Often, stimuli have in their parameters a field that declares that a stimulus is a control or blank stimulus. Our stimuli have such a code as shown above (stimulus 17).</p>
+<h4 id="code-block-2431-type-this-into-matlab">Code Block 2.4.3.1. Type this into Matlab.<a class="headerlink" href="#code-block-2431-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">rapp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">stimulus</span><span class="p">.</span><span class="n">tuning_response</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"></span>
+<span class="n">cs_doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">rapp</span><span class="p">.</span><span class="n">label_control_stimuli</span><span class="p">(</span><span class="n">stimprobe</span><span class="p">,</span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>Let's examine what it did. We see that the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/">ndi.app.stimuli.tuning_response</a> app each of the 85 stimuli with the "blank" stimulus that was presented closest in time:</p>
+<h4 id="code-block-2432-type-this-into-matlab">Code Block 2.4.3.2. Type this into Matlab.<a class="headerlink" href="#code-block-2432-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="w"> </span><span class="c">% see the control stimulus identifier for all the stimuli</span><span class="w"></span>
+<span class="n">cs_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">control_stimulus_ids</span><span class="p">.</span><span class="n">control_stimulus_ids</span><span class="w"></span>
+<span class="w"> </span><span class="c">% see the method used to identify the control stimulus for each stimulus:</span><span class="w"></span>
+<span class="n">cs_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">control_stimulus_ids</span><span class="p">.</span><span class="n">control_stimulus_id_method</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% see the help for the label_control_stimuli function:</span><span class="w"></span>
+<span class="nb">help</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">stimulus</span><span class="p">.</span><span class="n">tuning_response</span><span class="p">.</span><span class="n">label_control_stimuli</span><span class="w"></span>
+</code></pre></div>
+
+<h3 id="244-calculating-stimulus-responses">2.4.4 Calculating stimulus responses<a class="headerlink" href="#244-calculating-stimulus-responses" title="Permanent link">&para;</a></h3>
+<p>Once the control stimuli have been labeled (if desired; it is optional), then one can proceed to calcuate the stimulus responses. To do this, we 
+can employ the [ndi.app.stimuli.tuning_response]((https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/) app. This program will calculate the mean response to each stimulus. Because gratings are a periodic stimulus, this function will also calculate the response at the fundamental stimulus temporal frequency (F1 component) and at twice this temporal frequency (F2 component).</p>
+<h4 id="code-block-2441-type-this-into-matlab">Code block 2.4.4.1. Type this into Matlab.<a class="headerlink" href="#code-block-2441-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">e</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getelements</span><span class="p">(</span><span class="s">&#39;element.type&#39;</span><span class="p">,</span><span class="s">&#39;spikes&#39;</span><span class="p">);</span><span class="w"></span>
+
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">rapp</span><span class="p">.</span><span class="n">stimulus_responses</span><span class="p">(</span><span class="n">stimprobe</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">{</span><span class="mi">1</span><span class="p">},</span><span class="w"> </span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">2</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">rapp</span><span class="p">.</span><span class="n">stimulus_responses</span><span class="p">(</span><span class="n">stimprobe</span><span class="p">,</span><span class="w"> </span><span class="n">e</span><span class="p">{</span><span class="mi">2</span><span class="p">},</span><span class="w"> </span><span class="n">redo</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>Now we can examine the sets of documents that are produced. We see that there are two sets of 3 documents each:</p>
+<h4 id="code-block-2442-type-this-into-matlab">Code block 2.4.4.2. Type this into Matlab.<a class="headerlink" href="#code-block-2442-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="w"> </span><span class="c">% look at rdocs{1}:</span><span class="w"></span>
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"></span>
+<span class="w"> </span><span class="c">% it is a 1x2 cell array, and each of these cell entries is in turn a 1x3 cell array</span><span class="w"></span>
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}</span><span class="w"></span>
+<span class="w"> </span><span class="c">% this reflects the two epochs (&#39;t00001&#39; and &#39;t00002&#39;), and, for each epoch, the analysis of the mean response, the F1 component, and the F2 component</span><span class="w"></span>
+
+<span class="w"> </span><span class="c">% to see this, let&#39;s look at the first document</span><span class="w"></span>
+
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="w"></span>
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_response</span><span class="w"></span>
+
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_response_scalar</span><span class="w"></span>
+<span class="w"> </span><span class="c">% we see that this is the &#39;mean&#39; response. We can see the responses contained within:</span><span class="w"></span>
+
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_response_scalar</span><span class="p">.</span><span class="n">responses</span><span class="w"></span>
+<span class="w"> </span><span class="c">% we can see that each of the 85 presentations includes a response that can possibly have a real and imaginary component, as well as a control response</span><span class="w"></span>
+
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_response_scalar</span><span class="p">.</span><span class="n">responses</span><span class="p">.</span><span class="n">response_real</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"></span>
+<span class="n">rdocs</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">stimulus_response_scalar</span><span class="p">.</span><span class="n">responses</span><span class="p">.</span><span class="n">control_response_real</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"></span>
+</code></pre></div>
+
+<h3 id="245-computing-an-orientationdirection-tuning-curve-and-calculating-orientationdirection-index-values">2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values<a class="headerlink" href="#245-computing-an-orientationdirection-tuning-curve-and-calculating-orientationdirection-index-values" title="Permanent link">&para;</a></h3>
+<p>Now that we have all of the responses to the individual stimuli, we can create a tuning curve, which examines how the response of the neuron depends on a particular stimulus parameter. In this case, the stimulus is 'angle', which corresponds to the direction of the sinusoidal grating stimulus. We have built a specific application <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/oridirtuning.m/">ndi.app.oridirtuning</a> to process tuning curves in response to oriented stimuli, or stimuli moving in particular directions. </p>
+<p>After generating the tuning curve, we can calculate many, many index values that characterize the tuning of each cell. The function that calculates the orientation and direction index values pulls up a plot. If you look at the plot that examines the mean response for <code>ctx_1</code>, you can see that the cell responds strongly to gratings drifting at 120 degrees and 300 degrees (0 degrees is up; 90 degrees is to the right).</p>
+<h4 id="code-block-2451-type-this-into-matlab">Code block 2.4.5.1. Type this into Matlab.<a class="headerlink" href="#code-block-2451-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">oapp</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">oridirtuning</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="w"></span>
+<span class="w">    </span><span class="n">tdoc</span><span class="p">{</span><span class="nb">i</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">oapp</span><span class="p">.</span><span class="n">calculate_tuning_curve</span><span class="p">(</span><span class="n">e</span><span class="p">{</span><span class="nb">i</span><span class="p">});</span><span class="w"></span>
+<span class="w">    </span><span class="n">oriprops</span><span class="p">{</span><span class="nb">i</span><span class="p">}</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">oapp</span><span class="p">.</span><span class="n">calculate_all_oridir_indexes</span><span class="p">(</span><span class="n">e</span><span class="p">{</span><span class="nb">i</span><span class="p">});</span><span class="w"> </span><span class="c">% this takes a few minutes</span><span class="w"></span>
+<span class="k">end</span><span class="p">;</span><span class="w"></span>
+</code></pre></div>
+
+<p>Now let's take a look at these index values for the first cell. These index values are described in <a href="https://pubmed.ncbi.nlm.nih.gov/25147504/">Mazurek et al. (2014)</a>.</p>
+<h4 id="code-block-2452-type-this-into-matlab">Code block 2.4.5.2. Type this into Matlab.<a class="headerlink" href="#code-block-2452-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="c">% see all the categories</span><span class="w"></span>
+<span class="n">oriprops</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">orientation_direction_tuning</span><span class="w"></span>
+<span class="w">  </span><span class="c">% see the property information</span><span class="w"></span>
+<span class="n">oriprops</span><span class="p">{</span><span class="mi">1</span><span class="p">}{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">orientation_direction_tuning</span><span class="p">.</span><span class="n">properties</span><span class="w"></span>
+<span class="w">  </span><span class="c">% see significance. Responses across orientation are very significant:</span><span class="w"></span>
+<span class="n">oriprops</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">orientation_direction_tuning</span><span class="p">.</span><span class="n">significance</span><span class="w"></span>
+<span class="w">  </span><span class="c">% fit parameters:</span><span class="w"></span>
+<span class="n">oriprops</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">orientation_direction_tuning</span><span class="p">.</span><span class="n">fit</span><span class="w"></span>
+<span class="w">  </span><span class="c">% vector tuning parameters:</span><span class="w"></span>
+<span class="n">oriprops</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">orientation_direction_tuning</span><span class="p">.</span><span class="n">vector</span><span class="w"></span>
+</code></pre></div>
+
+<p>Now we have seen how we can analyze stimulus responses and use applications to calculate tuning curves and index values. If you had your own stimulus responses of a different type, you could write functions or apps that analyze the results and calculate the appropriate index values.</p>
                 
               
               
@@ -4642,6 +5109,39 @@
       
         
 <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../3_spikesorting/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              2.3 Using apps to analyze data (example - spike sorting)
+            </div>
+          </div>
+        </a>
+      
+      
+        <a href="../../reading_own_data_ndi/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              3. Reading your own data in NDI
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
