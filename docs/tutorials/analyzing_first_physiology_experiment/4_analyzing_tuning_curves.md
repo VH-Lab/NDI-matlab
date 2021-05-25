@@ -1,6 +1,6 @@
 # Tutorial 2: Analyzing your first electrophysiology experiment with NDI
 
-(This tutorial is being built. Right now. Feel free to look around but it is under construction.)
+(This tutorial is a draft. Feel free to look around but it is under construction.)
 
 ## 2.4 Analyzing stimulus responses
 
