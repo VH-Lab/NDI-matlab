@@ -32,6 +32,7 @@ nav:
       - 2.2 Automating data reading with NDI: 'tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
       - 2.3 Using apps to analyze data (example - spike sorting): 'tutorials/analyzing_first_physiology_experiment/3_spikesorting.md'
       - 2.4 Analyzing spiking responses and tuning curve properties: 'tutorials/analyzing_first_physiology_experiment/4_analyzing_tuning_curves.md'
+      - 2.5 Searching NDI databases: 'tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md'
     - Planned:
       - 3. Reading your own data in NDI: 'tutorials/reading_own_data_ndi.md'
       - 4. Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'

@@ -27,26 +27,26 @@ We find documents by searching for them with the [ndi.session](https://vh-lab.gi
 stim_pres_doc = S.database_search(ndi.query('','isa','stimulus_presentation',''))
   % should see:
   %   stim_pres_doc =
-  %   1×4 cell array
-  %    {1×1 ndi.document}    {1×1 ndi.document}    {1×1 ndi.document}    {1×1 ndi.document}
+  %   1x4 cell array
+  %    {1x1 ndi.document}    {1x1 ndi.document}    {1x1 ndi.document}    {1x1 ndi.document}
 
 stim_pres_doc{1}
   % should see:
   %   ans = 
   %     document with properties:
-  %       document_properties: [1×1 struct]
+  %       document_properties: [1x1 struct]
 
 stim_pres_doc{1}.document_properties
   % should see:
   %   ans = 
   %   struct with fields:
-  %                        app: [1×1 struct]
-  %                 depends_on: [1×1 struct]
-  %             document_class: [1×1 struct]
+  %                        app: [1x1 struct]
+  %                 depends_on: [1x1 struct]
+  %             document_class: [1x1 struct]
   %                    epochid: 't00001'
-  %                epochid_fix: [1×1 struct]
-  %               ndi_document: [1×1 struct]
-  %      stimulus_presentation: [1×1 struct]
+  %                epochid_fix: [1x1 struct]
+  %               ndi_document: [1x1 struct]
+  %      stimulus_presentation: [1x1 struct]
 ```
 
 We have used an [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) object to conduct our search, and we will describe those objects a little later.
@@ -71,7 +71,7 @@ stim_pres_doc{1}.document_properties.document_class
 %            class_name: 'ndi_document_stimulus_stimulus_presentation'
 %    property_list_name: 'stimulus_presentation'
 %         class_version: 1
-%          superclasses: [3×1 struct]
+%          superclasses: [3x1 struct]
 
 stim_pres_doc{1}.document_properties.document_class.superclasses(1)
 % ans = 
