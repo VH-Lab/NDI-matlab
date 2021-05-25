@@ -1,4 +1,4 @@
-function ndi_plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
+function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
 %
 % ndi.database.fun.plotinteractivedocgraph(DOCS, G, MDIGRAPH, NODES, LAYOUT,INTERACTIVE)
 %
@@ -91,10 +91,12 @@ end;
 h=plot(mdigraph,'layout',layout);
 set(h,'interpreter','none');
 DTT = get(h,'DataTipTemplate');
-DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
-DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
-DTT.DataTipRows(end+1) = dataTipTextRow('ndi_document:', doc_properties_ndi_doc);
+try, % requires Matlab > 2019a
+	DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
+	DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
+	DTT.DataTipRows(end+1) = dataTipTextRow('ndi_document:', doc_properties_ndi_doc);
 set(DTT,'interpreter','none');
+end;
 box off;
 set(gca,'ydir','reverse')
 
