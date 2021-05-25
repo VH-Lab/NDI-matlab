@@ -11,19 +11,19 @@
         <meta name="author" content="Steve Van Hooser">
       
       
-      <link rel="icon" href="../../assets/images/favicon.png">
+      <link rel="icon" href="../../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
     
     
       
-        <title>5. Making your own data pipeline in NDI - NDI-matlab</title>
+        <title>2.5 Searching NDI databases - NDI-matlab</title>
       
     
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.bde7dde4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.bde7dde4.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ef6f36e2.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ef6f36e2.min.css">
         
       
     
@@ -59,7 +59,7 @@
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="">
   
     
-    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    <script>function __prefix(e){return new URL("../../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
     
       <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#creating-a-data-pipeline-in-ndi" class="md-skip">
+        <a href="#2-analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
           Skip to content
         </a>
       
@@ -80,7 +80,7 @@
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="NDI-matlab" class="md-header__button md-logo" aria-label="NDI-matlab" data-md-component="logo">
+    <a href="../../.." title="NDI-matlab" class="md-header__button md-logo" aria-label="NDI-matlab" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              5. Making your own data pipeline in NDI
+              2.5 Searching NDI databases
             
           </span>
         </div>
@@ -195,7 +195,7 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab" data-md-component="logo">
+    <a href="../../.." title="NDI-matlab" class="md-nav__button md-logo" aria-label="NDI-matlab" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
@@ -227,7 +227,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         Home
       </a>
     </li>
@@ -242,7 +242,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../installation/" class="md-nav__link">
+      <a href="../../../installation/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -301,7 +301,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../ndimodel/1_intro/" class="md-nav__link">
+      <a href="../../ndimodel/1_intro/" class="md-nav__link">
         1.1 Introduction
       </a>
     </li>
@@ -313,95 +313,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
+      <a href="../../ndimodel/2_ndimodel_vocabulary/" class="md-nav__link">
         1.2 Real world vocabulary
-      </a>
-    </li>
-  
-
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" >
-      
-      <label class="md-nav__link" for="__nav_3_2">
-        2 Analzying your first electrophysiology experiment with NDI
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="2 Analzying your first electrophysiology experiment with NDI" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_2">
-          <span class="md-nav__icon md-icon"></span>
-          2 Analzying your first electrophysiology experiment with NDI
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analyzing_first_physiology_experiment/1_example_dataset/" class="md-nav__link">
-        2.1 Reading an example dataset
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analyzing_first_physiology_experiment/2_theautomatedway/" class="md-nav__link">
-        2.2 Automating data reading with NDI
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analyzing_first_physiology_experiment/3_spikesorting/" class="md-nav__link">
-        2.3 Using apps to analyze data (example - spike sorting)
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analyzing_first_physiology_experiment/4_analyzing_tuning_curves/" class="md-nav__link">
-        2.4 Analyzing spiking responses and tuning curve properties
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../analyzing_first_physiology_experiment/5_searching_ndi_databases/" class="md-nav__link">
-        2.5 Searching NDI databases
       </a>
     </li>
   
@@ -423,16 +336,16 @@
     <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_2" type="checkbox" id="__nav_3_2" checked>
       
-      <label class="md-nav__link" for="__nav_3_3">
-        Planned
+      <label class="md-nav__link" for="__nav_3_2">
+        2 Analzying your first electrophysiology experiment with NDI
         <span class="md-nav__icon md-icon"></span>
       </label>
-      <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_3">
+      <nav class="md-nav" aria-label="2 Analzying your first electrophysiology experiment with NDI" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_2">
           <span class="md-nav__icon md-icon"></span>
-          Planned
+          2 Analzying your first electrophysiology experiment with NDI
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -441,8 +354,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../reading_own_data_ndi/" class="md-nav__link">
-        3. Reading your own data in NDI
+      <a href="../1_example_dataset/" class="md-nav__link">
+        2.1 Reading an example dataset
       </a>
     </li>
   
@@ -453,8 +366,32 @@
   
   
     <li class="md-nav__item">
-      <a href="../case_studies_reading_data/" class="md-nav__link">
-        4. Case studies in reading data in NDI
+      <a href="../2_theautomatedway/" class="md-nav__link">
+        2.2 Automating data reading with NDI
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../3_spikesorting/" class="md-nav__link">
+        2.3 Using apps to analyze data (example - spike sorting)
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../4_analyzing_tuning_curves/" class="md-nav__link">
+        2.4 Analyzing spiking responses and tuning curve properties
       </a>
     </li>
   
@@ -474,10 +411,153 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          2.5 Searching NDI databases
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
-        5. Making your own data pipeline in NDI
+        2.5 Searching NDI databases
       </a>
       
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#25-understanding-and-searching-the-ndi-database" class="md-nav__link">
+    2.5 Understanding and searching the NDI database
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Understanding and searching the NDI database">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#251-the-ndidatabase-and-ndidocument-objects" class="md-nav__link">
+    2.5.1 The ndi.database and ndi.document objects
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.1 The ndi.database and ndi.document objects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2511-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2512-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#252-all-ndidocument-objects-have-the-fields-document_class-and-ndi_document" class="md-nav__link">
+    2.5.2 All ndi.document objects have the fields document_class and ndi_document.
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.2 All ndi.document objects have the fields document_class and ndi_document.">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2513-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.3. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#253-the-depends_on-field" class="md-nav__link">
+    2.5.3 The depends_on field:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#254-searching-for-ndi_documents-with-ndiquery" class="md-nav__link">
+    2.5.4 Searching for ndi_documents with ndi.query
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#255-structure-of-an-ndidatabase" class="md-nav__link">
+    2.5.5 Structure of an ndi.database
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
+      
+      <label class="md-nav__link" for="__nav_3_3">
+        Planned
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_3">
+          <span class="md-nav__icon md-icon"></span>
+          Planned
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../reading_own_data_ndi/" class="md-nav__link">
+        3. Reading your own data in NDI
+      </a>
     </li>
   
 
@@ -487,7 +567,31 @@
   
   
     <li class="md-nav__item">
-      <a href="../analysis_app/" class="md-nav__link">
+      <a href="../../case_studies_reading_data/" class="md-nav__link">
+        4. Case studies in reading data in NDI
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../data_pipeline/" class="md-nav__link">
+        5. Making your own data pipeline in NDI
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../analysis_app/" class="md-nav__link">
         6. Making your own analysis app that uses NDI
       </a>
     </li>
@@ -499,7 +603,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../archive/" class="md-nav__link">
+      <a href="../../archive/" class="md-nav__link">
         7. Submitting your data to an archive
       </a>
     </li>
@@ -511,7 +615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../search_ndi_databases/" class="md-nav__link">
+      <a href="../../search_ndi_databases/" class="md-nav__link">
         8. Search and analyze NDI databases on the web
       </a>
     </li>
@@ -559,7 +663,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document/" class="md-nav__link">
+      <a href="../../../documents/ndi_document/" class="md-nav__link">
         ndi_document
       </a>
     </li>
@@ -571,7 +675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_animalsubject/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_animalsubject/" class="md-nav__link">
         ndi_document_animalsubject
       </a>
     </li>
@@ -583,7 +687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_app/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_app/" class="md-nav__link">
         ndi_document_app
       </a>
     </li>
@@ -595,7 +699,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_element/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_element/" class="md-nav__link">
         ndi_document_element
       </a>
     </li>
@@ -607,7 +711,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_element_epoch/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_element_epoch/" class="md-nav__link">
         ndi_document_element_epoch
       </a>
     </li>
@@ -619,7 +723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_epochid/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_epochid/" class="md-nav__link">
         ndi_document_epochid
       </a>
     </li>
@@ -631,7 +735,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_projectvar/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_projectvar/" class="md-nav__link">
         ndi_document_projectvar
       </a>
     </li>
@@ -643,7 +747,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_subject/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_subject/" class="md-nav__link">
         ndi_document_subject
       </a>
     </li>
@@ -655,7 +759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/ndi_document_subjectmeasurement/" class="md-nav__link">
+      <a href="../../../documents/ndi_document_subjectmeasurement/" class="md-nav__link">
         ndi_document_subjectmeasurement
       </a>
     </li>
@@ -709,7 +813,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/jrclust/jrclust_clusters/" class="md-nav__link">
+      <a href="../../../documents/apps/jrclust/jrclust_clusters/" class="md-nav__link">
         jrclust_clusters
       </a>
     </li>
@@ -748,7 +852,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/markgarbage/valid_interval/" class="md-nav__link">
+      <a href="../../../documents/apps/markgarbage/valid_interval/" class="md-nav__link">
         valid_interval
       </a>
     </li>
@@ -787,7 +891,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikeextractor/spike_extraction_parameters/" class="md-nav__link">
+      <a href="../../../documents/apps/spikeextractor/spike_extraction_parameters/" class="md-nav__link">
         spike_extraction_parameters
       </a>
     </li>
@@ -799,7 +903,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikeextractor/spike_extraction_parameters_modification/" class="md-nav__link">
+      <a href="../../../documents/apps/spikeextractor/spike_extraction_parameters_modification/" class="md-nav__link">
         spike_extraction_parameters_modification
       </a>
     </li>
@@ -811,7 +915,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikeextractor/spiketimes/" class="md-nav__link">
+      <a href="../../../documents/apps/spikeextractor/spiketimes/" class="md-nav__link">
         spiketimes
       </a>
     </li>
@@ -823,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikeextractor/spikewaves/" class="md-nav__link">
+      <a href="../../../documents/apps/spikeextractor/spikewaves/" class="md-nav__link">
         spikewaves
       </a>
     </li>
@@ -862,7 +966,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter/sorting_parameters/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter/sorting_parameters/" class="md-nav__link">
         sorting_parameters
       </a>
     </li>
@@ -874,7 +978,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter/spike_clusters/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter/spike_clusters/" class="md-nav__link">
         spike_clusters
       </a>
     </li>
@@ -913,7 +1017,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter_hengen/extraction_parameters/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter_hengen/extraction_parameters/" class="md-nav__link">
         extraction_parameters
       </a>
     </li>
@@ -925,7 +1029,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter_hengen/mountainsort_parameters/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter_hengen/mountainsort_parameters/" class="md-nav__link">
         mountainsort_parameters
       </a>
     </li>
@@ -937,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter_hengen/neuron_hengen/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter_hengen/neuron_hengen/" class="md-nav__link">
         neuron_hengen
       </a>
     </li>
@@ -949,7 +1053,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/spikesorter_hengen/probe_geometry/" class="md-nav__link">
+      <a href="../../../documents/apps/spikesorter_hengen/probe_geometry/" class="md-nav__link">
         probe_geometry
       </a>
     </li>
@@ -988,7 +1092,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/vhlab_voltage2firingrate/binnedspikeratevm/" class="md-nav__link">
+      <a href="../../../documents/apps/vhlab_voltage2firingrate/binnedspikeratevm/" class="md-nav__link">
         binnedspikeratevm
       </a>
     </li>
@@ -1000,7 +1104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/vhlab_voltage2firingrate/vmneuralresponseresiduals/" class="md-nav__link">
+      <a href="../../../documents/apps/vhlab_voltage2firingrate/vmneuralresponseresiduals/" class="md-nav__link">
         vmneuralresponseresiduals
       </a>
     </li>
@@ -1012,7 +1116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/vhlab_voltage2firingrate/vmspikefilteringparameters/" class="md-nav__link">
+      <a href="../../../documents/apps/vhlab_voltage2firingrate/vmspikefilteringparameters/" class="md-nav__link">
         vmspikefilteringparameters
       </a>
     </li>
@@ -1024,7 +1128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/vhlab_voltage2firingrate/vmspikefit/" class="md-nav__link">
+      <a href="../../../documents/apps/vhlab_voltage2firingrate/vmspikefit/" class="md-nav__link">
         vmspikefit
       </a>
     </li>
@@ -1036,7 +1140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/apps/vhlab_voltage2firingrate/vmspikesummary/" class="md-nav__link">
+      <a href="../../../documents/apps/vhlab_voltage2firingrate/vmspikesummary/" class="md-nav__link">
         vmspikesummary
       </a>
     </li>
@@ -1081,7 +1185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_daqmetadatareader/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_daqmetadatareader/" class="md-nav__link">
         ndi_document_daqmetadatareader
       </a>
     </li>
@@ -1093,7 +1197,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_daqreader/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_daqreader/" class="md-nav__link">
         ndi_document_daqreader
       </a>
     </li>
@@ -1105,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_daqsystem/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_daqsystem/" class="md-nav__link">
         ndi_document_daqsystem
       </a>
     </li>
@@ -1117,7 +1221,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_filenavigator/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_filenavigator/" class="md-nav__link">
         ndi_document_filenavigator
       </a>
     </li>
@@ -1129,7 +1233,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_syncgraph/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_syncgraph/" class="md-nav__link">
         ndi_document_syncgraph
       </a>
     </li>
@@ -1141,7 +1245,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/daq/ndi_document_syncrule/" class="md-nav__link">
+      <a href="../../../documents/daq/ndi_document_syncrule/" class="md-nav__link">
         ndi_document_syncrule
       </a>
     </li>
@@ -1180,7 +1284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/data/fitcurve/" class="md-nav__link">
+      <a href="../../../documents/data/fitcurve/" class="md-nav__link">
         fitcurve
       </a>
     </li>
@@ -1192,7 +1296,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/data/ndi_document_binaryseries/" class="md-nav__link">
+      <a href="../../../documents/data/ndi_document_binaryseries/" class="md-nav__link">
         ndi_document_binaryseries
       </a>
     </li>
@@ -1231,7 +1335,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/neuron/neuron_extracellular/" class="md-nav__link">
+      <a href="../../../documents/neuron/neuron_extracellular/" class="md-nav__link">
         neuron_extracellular
       </a>
     </li>
@@ -1270,7 +1374,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/newdoctemplate/ndi_document_newdoctemplate/" class="md-nav__link">
+      <a href="../../../documents/newdoctemplate/ndi_document_newdoctemplate/" class="md-nav__link">
         ndi_document_newdoctemplate
       </a>
     </li>
@@ -1309,7 +1413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/control_stimulus_ids/" class="md-nav__link">
+      <a href="../../../documents/stimulus/control_stimulus_ids/" class="md-nav__link">
         control_stimulus_ids
       </a>
     </li>
@@ -1321,7 +1425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_presentation/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_presentation/" class="md-nav__link">
         stimulus_presentation
       </a>
     </li>
@@ -1333,7 +1437,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_response/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_response/" class="md-nav__link">
         stimulus_response
       </a>
     </li>
@@ -1345,7 +1449,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_response_scalar/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_response_scalar/" class="md-nav__link">
         stimulus_response_scalar
       </a>
     </li>
@@ -1357,7 +1461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_response_scalar_parameters/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_response_scalar_parameters/" class="md-nav__link">
         stimulus_response_scalar_parameters
       </a>
     </li>
@@ -1369,7 +1473,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_response_scalar_parameters_basic/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_response_scalar_parameters_basic/" class="md-nav__link">
         stimulus_response_scalar_parameters_basic
       </a>
     </li>
@@ -1381,7 +1485,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/stimulus_tuningcurve/" class="md-nav__link">
+      <a href="../../../documents/stimulus/stimulus_tuningcurve/" class="md-nav__link">
         stimulus_tuningcurve
       </a>
     </li>
@@ -1435,7 +1539,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../documents/stimulus/vision/oridir/orientation_direction_tuning/" class="md-nav__link">
+      <a href="../../../documents/stimulus/vision/oridir/orientation_direction_tuning/" class="md-nav__link">
         orientation_direction_tuning
       </a>
     </li>
@@ -1495,7 +1599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/ndi_Init.m/" class="md-nav__link">
+      <a href="../../../reference/ndi_Init.m/" class="md-nav__link">
         ndi_Init
       </a>
     </li>
@@ -1507,7 +1611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/ndi_install.m/" class="md-nav__link">
+      <a href="../../../reference/ndi_install.m/" class="md-nav__link">
         ndi_install
       </a>
     </li>
@@ -1540,7 +1644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/app.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/app.m/" class="md-nav__link">
         ndi.app
       </a>
     </li>
@@ -1552,7 +1656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/cache.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/cache.m/" class="md-nav__link">
         ndi.cache
       </a>
     </li>
@@ -1564,7 +1668,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/database.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/database.m/" class="md-nav__link">
         ndi.database
       </a>
     </li>
@@ -1576,7 +1680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/document.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/document.m/" class="md-nav__link">
         ndi.document
       </a>
     </li>
@@ -1588,7 +1692,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/documentservice.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/documentservice.m/" class="md-nav__link">
         ndi.documentservice
       </a>
     </li>
@@ -1600,7 +1704,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/element.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/element.m/" class="md-nav__link">
         ndi.element
       </a>
     </li>
@@ -1612,7 +1716,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/filesep.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/filesep.m/" class="md-nav__link">
         ndi.filesep
       </a>
     </li>
@@ -1624,7 +1728,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/globals.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/globals.m/" class="md-nav__link">
         ndi.globals
       </a>
     </li>
@@ -1636,7 +1740,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/ido.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/ido.m/" class="md-nav__link">
         ndi.ido
       </a>
     </li>
@@ -1648,7 +1752,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/neuron.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/neuron.m/" class="md-nav__link">
         ndi.neuron
       </a>
     </li>
@@ -1660,7 +1764,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/probe.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/probe.m/" class="md-nav__link">
         ndi.probe
       </a>
     </li>
@@ -1672,7 +1776,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/query.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/query.m/" class="md-nav__link">
         ndi.query
       </a>
     </li>
@@ -1684,7 +1788,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/session.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/session.m/" class="md-nav__link">
         ndi.session
       </a>
     </li>
@@ -1696,7 +1800,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/subject.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/subject.m/" class="md-nav__link">
         ndi.subject
       </a>
     </li>
@@ -1708,7 +1812,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/validate.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/validate.m/" class="md-nav__link">
         ndi.validate
       </a>
     </li>
@@ -1720,7 +1824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/version.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/version.m/" class="md-nav__link">
         ndi.version
       </a>
     </li>
@@ -1753,7 +1857,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/appdoc.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/appdoc.m/" class="md-nav__link">
         ndi.app.appdoc
       </a>
     </li>
@@ -1765,7 +1869,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/markgarbage.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/markgarbage.m/" class="md-nav__link">
         ndi.app.markgarbage
       </a>
     </li>
@@ -1777,7 +1881,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/oridirtuning.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/oridirtuning.m/" class="md-nav__link">
         ndi.app.oridirtuning
       </a>
     </li>
@@ -1789,7 +1893,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/spikeextractor.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/spikeextractor.m/" class="md-nav__link">
         ndi.app.spikeextractor
       </a>
     </li>
@@ -1801,7 +1905,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/spikesorter.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/spikesorter.m/" class="md-nav__link">
         ndi.app.spikesorter
       </a>
     </li>
@@ -1813,7 +1917,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/spikesorter_hengen.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/spikesorter_hengen.m/" class="md-nav__link">
         ndi.app.spikesorter_hengen
       </a>
     </li>
@@ -1846,7 +1950,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/%2Bstimulus/decoder.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/%2Bstimulus/decoder.m/" class="md-nav__link">
         ndi.app.stimulus.decoder
       </a>
     </li>
@@ -1858,7 +1962,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/" class="md-nav__link">
         ndi.app.stimulus.tuning_response
       </a>
     </li>
@@ -1903,7 +2007,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/daqsystemstring.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/daqsystemstring.m/" class="md-nav__link">
         ndi.daq.daqsystemstring
       </a>
     </li>
@@ -1915,7 +2019,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/metadatareader.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/metadatareader.m/" class="md-nav__link">
         ndi.daq.metadatareader
       </a>
     </li>
@@ -1927,7 +2031,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/reader.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/reader.m/" class="md-nav__link">
         ndi.daq.reader
       </a>
     </li>
@@ -1939,7 +2043,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/system.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/system.m/" class="md-nav__link">
         ndi.daq.system
       </a>
     </li>
@@ -1972,7 +2076,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Bmetadatareader/NewStimStims.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Bmetadatareader/NewStimStims.m/" class="md-nav__link">
         ndi.daq.metadatareader.NewStimStims
       </a>
     </li>
@@ -2011,7 +2115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Breader/mfdaq.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Breader/mfdaq.m/" class="md-nav__link">
         ndi.daq.reader.mfdaq
       </a>
     </li>
@@ -2044,7 +2148,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/blackrock.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/blackrock.m/" class="md-nav__link">
         ndi.daq.reader.mfdaq.blackrock
       </a>
     </li>
@@ -2056,7 +2160,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/cedspike2.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/cedspike2.m/" class="md-nav__link">
         ndi.daq.reader.mfdaq.cedspike2
       </a>
     </li>
@@ -2068,7 +2172,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/intan.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/intan.m/" class="md-nav__link">
         ndi.daq.reader.mfdaq.intan
       </a>
     </li>
@@ -2080,7 +2184,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/spikegadgets.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Breader/%2Bmfdaq/spikegadgets.m/" class="md-nav__link">
         ndi.daq.reader.mfdaq.spikegadgets
       </a>
     </li>
@@ -2125,7 +2229,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/" class="md-nav__link">
         ndi.daq.system.mfdaq
       </a>
     </li>
@@ -2170,7 +2274,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdata/evaluate_fitcurve.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdata/evaluate_fitcurve.m/" class="md-nav__link">
         ndi.data.evaluate_fitcurve
       </a>
     </li>
@@ -2209,7 +2313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/binarydoc.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/binarydoc.m/" class="md-nav__link">
         ndi.database.binarydoc
       </a>
     </li>
@@ -2242,7 +2346,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/createGenBankControlledVocabulary.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/createGenBankControlledVocabulary.m/" class="md-nav__link">
         ndi.database.fun.createGenBankControlledVocabulary
       </a>
     </li>
@@ -2254,7 +2358,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/createNIFbrainareas.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/createNIFbrainareas.m/" class="md-nav__link">
         ndi.database.fun.createNIFbrainareas
       </a>
     </li>
@@ -2266,7 +2370,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/databasehierarchyinit.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/databasehierarchyinit.m/" class="md-nav__link">
         ndi.database.fun.databasehierarchyinit
       </a>
     </li>
@@ -2278,7 +2382,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/docs2graph.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/docs2graph.m/" class="md-nav__link">
         ndi.database.fun.docs2graph
       </a>
     </li>
@@ -2290,7 +2394,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/findalldependencies.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/findalldependencies.m/" class="md-nav__link">
         ndi.database.fun.findalldependencies
       </a>
     </li>
@@ -2302,7 +2406,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/finddocs_missing_dependencies.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/finddocs_missing_dependencies.m/" class="md-nav__link">
         ndi.database.fun.finddocs_missing_dependencies
       </a>
     </li>
@@ -2314,7 +2418,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/ndi_document2ndi_object.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/ndi_document2ndi_object.m/" class="md-nav__link">
         ndi.database.fun.ndi_document2ndi_object
       </a>
     </li>
@@ -2326,7 +2430,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/opendatabase.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/opendatabase.m/" class="md-nav__link">
         ndi.database.fun.opendatabase
       </a>
     </li>
@@ -2338,7 +2442,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/plotinteractivedocgraph.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/plotinteractivedocgraph.m/" class="md-nav__link">
         ndi.database.fun.plotinteractivedocgraph
       </a>
     </li>
@@ -2350,7 +2454,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/projectvardef.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/projectvardef.m/" class="md-nav__link">
         ndi.database.fun.projectvardef
       </a>
     </li>
@@ -2362,7 +2466,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/readGenBankNames.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/readGenBankNames.m/" class="md-nav__link">
         ndi.database.fun.readGenBankNames
       </a>
     </li>
@@ -2374,7 +2478,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bfun/readGenBankNodes.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bfun/readGenBankNodes.m/" class="md-nav__link">
         ndi.database.fun.readGenBankNodes
       </a>
     </li>
@@ -2434,7 +2538,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bbinarydoc/matfid.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bbinarydoc/matfid.m/" class="md-nav__link">
         ndi.database.implementations.binarydoc.matfid
       </a>
     </li>
@@ -2473,7 +2577,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bdatabase/matlabdumbjsondb.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bdatabase/matlabdumbjsondb.m/" class="md-nav__link">
         ndi.database.implementations.database.matlabdumbjsondb
       </a>
     </li>
@@ -2485,7 +2589,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bdatabase/postgresdb.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdatabase/%2Bimplementations/%2Bdatabase/postgresdb.m/" class="md-nav__link">
         ndi.database.implementations.database.postgresdb
       </a>
     </li>
@@ -2536,7 +2640,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdocs/all_documents2markdown.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdocs/all_documents2markdown.m/" class="md-nav__link">
         ndi.docs.all_documents2markdown
       </a>
     </li>
@@ -2548,7 +2652,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdocs/build.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdocs/build.m/" class="md-nav__link">
         ndi.docs.build
       </a>
     </li>
@@ -2560,7 +2664,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdocs/document2markdown.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdocs/document2markdown.m/" class="md-nav__link">
         ndi.docs.document2markdown
       </a>
     </li>
@@ -2572,7 +2676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bdocs/schemastructure2docstructure.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bdocs/schemastructure2docstructure.m/" class="md-nav__link">
         ndi.docs.schemastructure2docstructure
       </a>
     </li>
@@ -2611,7 +2715,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Belement/timeseries.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Belement/timeseries.m/" class="md-nav__link">
         ndi.element.timeseries
       </a>
     </li>
@@ -2650,7 +2754,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bepoch/epochprobemap.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bepoch/epochprobemap.m/" class="md-nav__link">
         ndi.epoch.epochprobemap
       </a>
     </li>
@@ -2662,7 +2766,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bepoch/epochprobemap_daqsystem.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bepoch/epochprobemap_daqsystem.m/" class="md-nav__link">
         ndi.epoch.epochprobemap_daqsystem
       </a>
     </li>
@@ -2674,7 +2778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bepoch/epochset.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bepoch/epochset.m/" class="md-nav__link">
         ndi.epoch.epochset
       </a>
     </li>
@@ -2686,7 +2790,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bepoch/findepochnode.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bepoch/findepochnode.m/" class="md-nav__link">
         ndi.epoch.findepochnode
       </a>
     </li>
@@ -2719,7 +2823,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bepoch/%2Bepochset/param.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bepoch/%2Bepochset/param.m/" class="md-nav__link">
         ndi.epoch.epochset.param
       </a>
     </li>
@@ -2785,7 +2889,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bexample/%2Btutorial/plottreeshrewdata.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bexample/%2Btutorial/plottreeshrewdata.m/" class="md-nav__link">
         ndi.example.tutorial.plottreeshrewdata
       </a>
     </li>
@@ -2797,7 +2901,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bexample/%2Btutorial/tutorial_02_01.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bexample/%2Btutorial/tutorial_02_01.m/" class="md-nav__link">
         ndi.example.tutorial.tutorial_02_01
       </a>
     </li>
@@ -2809,7 +2913,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bexample/%2Btutorial/tutorial_02_03.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bexample/%2Btutorial/tutorial_02_03.m/" class="md-nav__link">
         ndi.example.tutorial.tutorial_02_03
       </a>
     </li>
@@ -2854,7 +2958,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bfile/navigator.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bfile/navigator.m/" class="md-nav__link">
         ndi.file.navigator
       </a>
     </li>
@@ -2887,7 +2991,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bfile/%2Bnavigator/epochdir.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bfile/%2Bnavigator/epochdir.m/" class="md-nav__link">
         ndi.file.navigator.epochdir
       </a>
     </li>
@@ -2932,7 +3036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bfun/convertoldnsd2ndi.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bfun/convertoldnsd2ndi.m/" class="md-nav__link">
         ndi.fun.convertoldnsd2ndi
       </a>
     </li>
@@ -2944,7 +3048,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bfun/stimulustemporalfrequency.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bfun/stimulustemporalfrequency.m/" class="md-nav__link">
         ndi.fun.stimulustemporalfrequency
       </a>
     </li>
@@ -2983,7 +3087,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bglobals/assert.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bglobals/assert.m/" class="md-nav__link">
         ndi.globals.assert
       </a>
     </li>
@@ -3022,7 +3126,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bgui/Data.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bgui/Data.m/" class="md-nav__link">
         ndi.gui.Data
       </a>
     </li>
@@ -3034,7 +3138,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bgui/Icon.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bgui/Icon.m/" class="md-nav__link">
         ndi.gui.Icon
       </a>
     </li>
@@ -3046,7 +3150,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bgui/Lab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bgui/Lab.m/" class="md-nav__link">
         ndi.gui.Lab
       </a>
     </li>
@@ -3058,7 +3162,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bgui/gui.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bgui/gui.m/" class="md-nav__link">
         ndi.gui.gui
       </a>
     </li>
@@ -3070,7 +3174,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bgui/gui_v2.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bgui/gui_v2.m/" class="md-nav__link">
         ndi.gui.gui_v2
       </a>
     </li>
@@ -3109,7 +3213,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bneuron/hengen.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bneuron/hengen.m/" class="md-nav__link">
         ndi.neuron.hengen
       </a>
     </li>
@@ -3148,7 +3252,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bprobe/timeseries.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bprobe/timeseries.m/" class="md-nav__link">
         ndi.probe.timeseries
       </a>
     </li>
@@ -3181,7 +3285,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bprobe/%2Bfun/probestruct2probe.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bprobe/%2Bfun/probestruct2probe.m/" class="md-nav__link">
         ndi.probe.fun.probestruct2probe
       </a>
     </li>
@@ -3193,7 +3297,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bprobe/%2Bfun/probetype2objectinit.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bprobe/%2Bfun/probetype2objectinit.m/" class="md-nav__link">
         ndi.probe.fun.probetype2objectinit
       </a>
     </li>
@@ -3232,7 +3336,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/" class="md-nav__link">
         ndi.probe.timeseries.mfdaq
       </a>
     </li>
@@ -3244,7 +3348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/" class="md-nav__link">
         ndi.probe.timeseries.stimulator
       </a>
     </li>
@@ -3289,7 +3393,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsession/dir.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsession/dir.m/" class="md-nav__link">
         ndi.session.dir
       </a>
     </li>
@@ -3301,7 +3405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsession/sessiontable.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsession/sessiontable.m/" class="md-nav__link">
         ndi.session.sessiontable
       </a>
     </li>
@@ -3340,7 +3444,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/angeluccilab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/angeluccilab.m/" class="md-nav__link">
         ndi.setup.angeluccilab
       </a>
     </li>
@@ -3352,7 +3456,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/dbkatzlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/dbkatzlab.m/" class="md-nav__link">
         ndi.setup.dbkatzlab
       </a>
     </li>
@@ -3364,7 +3468,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/marderlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/marderlab.m/" class="md-nav__link">
         ndi.setup.marderlab
       </a>
     </li>
@@ -3376,7 +3480,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/vhlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/vhlab.m/" class="md-nav__link">
         ndi.setup.vhlab
       </a>
     </li>
@@ -3430,7 +3534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bmetadatareader/AngelucciStims.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bmetadatareader/AngelucciStims.m/" class="md-nav__link">
         ndi.setup.daq.metadatareader.AngelucciStims
       </a>
     </li>
@@ -3511,7 +3615,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/angelucci_visstim.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/angelucci_visstim.m/" class="md-nav__link">
         ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim
       </a>
     </li>
@@ -3523,7 +3627,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m/" class="md-nav__link">
         ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2
       </a>
     </li>
@@ -3574,7 +3678,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/angeluccilab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/angeluccilab.m/" class="md-nav__link">
         ndi.setup.daq.system.angeluccilab
       </a>
     </li>
@@ -3586,7 +3690,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/dbkatzlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/dbkatzlab.m/" class="md-nav__link">
         ndi.setup.daq.system.dbkatzlab
       </a>
     </li>
@@ -3598,7 +3702,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/marderlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/marderlab.m/" class="md-nav__link">
         ndi.setup.daq.system.marderlab
       </a>
     </li>
@@ -3610,7 +3714,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/vhlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bdaq/%2Bsystem/vhlab.m/" class="md-nav__link">
         ndi.setup.daq.system.vhlab
       </a>
     </li>
@@ -3655,7 +3759,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Bsetup/%2Bepoch/epochprobemap_daqsystem_vhlab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Bsetup/%2Bepoch/epochprobemap_daqsystem_vhlab.m/" class="md-nav__link">
         ndi.setup.epoch.epochprobemap_daqsystem_vhlab
       </a>
     </li>
@@ -3700,7 +3804,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/cache.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/cache.m/" class="md-nav__link">
         ndi.test.cache
       </a>
     </li>
@@ -3733,7 +3837,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bapp/markgarbage.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bapp/markgarbage.m/" class="md-nav__link">
         ndi.test.app.markgarbage
       </a>
     </li>
@@ -3745,7 +3849,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bapp/spikeextractor.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bapp/spikeextractor.m/" class="md-nav__link">
         ndi.test.app.spikeextractor
       </a>
     </li>
@@ -3784,7 +3888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/blackrock.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/blackrock.m/" class="md-nav__link">
         ndi.test.daq.blackrock
       </a>
     </li>
@@ -3796,7 +3900,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/build_intan_flat_exp.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/build_intan_flat_exp.m/" class="md-nav__link">
         ndi.test.daq.build_intan_flat_exp
       </a>
     </li>
@@ -3808,7 +3912,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat.m/" class="md-nav__link">
         ndi.test.daq.intan_flat
       </a>
     </li>
@@ -3820,7 +3924,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat_metadata.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat_metadata.m/" class="md-nav__link">
         ndi.test.daq.intan_flat_metadata
       </a>
     </li>
@@ -3832,7 +3936,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat_saved.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/intan_flat_saved.m/" class="md-nav__link">
         ndi.test.daq.intan_flat_saved
       </a>
     </li>
@@ -3844,7 +3948,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/sg_flat.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/sg_flat.m/" class="md-nav__link">
         ndi.test.daq.sg_flat
       </a>
     </li>
@@ -3856,7 +3960,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/test_ndi_device_image_tiffstack.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/test_ndi_device_image_tiffstack.m/" class="md-nav__link">
         ndi.test.daq.test_ndi_device_image_tiffstack
       </a>
     </li>
@@ -3868,7 +3972,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdaq/test_ndi_image_tiffstack_multipleepoch.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdaq/test_ndi_image_tiffstack_multipleepoch.m/" class="md-nav__link">
         ndi.test.daq.test_ndi_image_tiffstack_multipleepoch
       </a>
     </li>
@@ -3907,7 +4011,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_document.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_document.m/" class="md-nav__link">
         ndi.test.database.test_ndi_document
       </a>
     </li>
@@ -3919,7 +4023,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_document_jsons.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_document_jsons.m/" class="md-nav__link">
         ndi.test.database.test_ndi_document_jsons
       </a>
     </li>
@@ -3931,7 +4035,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_validate.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/test_ndi_validate.m/" class="md-nav__link">
         ndi.test.database.test_ndi_validate
       </a>
     </li>
@@ -3943,7 +4047,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdb.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdb.m/" class="md-nav__link">
         ndi.test.database.testpostgresdb
       </a>
     </li>
@@ -3955,7 +4059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdb2.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdb2.m/" class="md-nav__link">
         ndi.test.database.testpostgresdb2
       </a>
     </li>
@@ -3967,7 +4071,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdbsearch.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/testpostgresdbsearch.m/" class="md-nav__link">
         ndi.test.database.testpostgresdbsearch
       </a>
     </li>
@@ -4000,7 +4104,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daq_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daq_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_daq_documents
       </a>
     </li>
@@ -4012,7 +4116,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daqreader_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daqreader_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_daqreader_documents
       </a>
     </li>
@@ -4024,7 +4128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daqsystem_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_daqsystem_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_daqsystem_documents
       </a>
     </li>
@@ -4036,7 +4140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_filenavigator_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_filenavigator_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_filenavigator_documents
       </a>
     </li>
@@ -4048,7 +4152,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_syncgraph_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_syncgraph_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_syncgraph_documents
       </a>
     </li>
@@ -4060,7 +4164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_syncrule_documents.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdatabase/%2Bcore/test_ndi_syncrule_documents.m/" class="md-nav__link">
         ndi.test.database.core.test_ndi_syncrule_documents
       </a>
     </li>
@@ -4105,7 +4209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bdebug/ndi_debug_database_stats.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bdebug/ndi_debug_database_stats.m/" class="md-nav__link">
         ndi.test.debug.ndi_debug_database_stats
       </a>
     </li>
@@ -4144,7 +4248,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Belement/test_ndi_element.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Belement/test_ndi_element.m/" class="md-nav__link">
         ndi.test.element.test_ndi_element
       </a>
     </li>
@@ -4183,7 +4287,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bfilenavigator/test_ndi_filenavigator.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bfilenavigator/test_ndi_filenavigator.m/" class="md-nav__link">
         ndi.test.filenavigator.test_ndi_filenavigator
       </a>
     </li>
@@ -4195,7 +4299,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bfilenavigator/test_ndi_filenavigator_fileIDfunction.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bfilenavigator/test_ndi_filenavigator_fileIDfunction.m/" class="md-nav__link">
         ndi.test.filenavigator.test_ndi_filenavigator_fileIDfunction
       </a>
     </li>
@@ -4234,7 +4338,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bprobe/test_ndi_probe.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bprobe/test_ndi_probe.m/" class="md-nav__link">
         ndi.test.probe.test_ndi_probe
       </a>
     </li>
@@ -4273,7 +4377,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bsession/ndi_test_sessiontable.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bsession/ndi_test_sessiontable.m/" class="md-nav__link">
         ndi.test.session.ndi_test_sessiontable
       </a>
     </li>
@@ -4312,7 +4416,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bsetup/angeluccilab.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bsetup/angeluccilab.m/" class="md-nav__link">
         ndi.test.setup.angeluccilab
       </a>
     </li>
@@ -4324,7 +4428,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bsetup/dbkatzlab_narendra.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bsetup/dbkatzlab_narendra.m/" class="md-nav__link">
         ndi.test.setup.dbkatzlab_narendra
       </a>
     </li>
@@ -4336,7 +4440,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Bsetup/marderlab_hamood.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Bsetup/marderlab_hamood.m/" class="md-nav__link">
         ndi.test.setup.marderlab_hamood
       </a>
     </li>
@@ -4375,7 +4479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Btestsuite/ndi_testsuite.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Btestsuite/ndi_testsuite.m/" class="md-nav__link">
         ndi.test.testsuite.ndi_testsuite
       </a>
     </li>
@@ -4414,7 +4518,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btest/%2Btime/filefind.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btest/%2Btime/filefind.m/" class="md-nav__link">
         ndi.test.time.filefind
       </a>
     </li>
@@ -4459,7 +4563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/clocktype.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/clocktype.m/" class="md-nav__link">
         ndi.time.clocktype
       </a>
     </li>
@@ -4471,7 +4575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/syncgraph.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/syncgraph.m/" class="md-nav__link">
         ndi.time.syncgraph
       </a>
     </li>
@@ -4483,7 +4587,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/syncrule.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/syncrule.m/" class="md-nav__link">
         ndi.time.syncrule
       </a>
     </li>
@@ -4495,7 +4599,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/timemapping.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/timemapping.m/" class="md-nav__link">
         ndi.time.timemapping
       </a>
     </li>
@@ -4507,7 +4611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/timereference.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/timereference.m/" class="md-nav__link">
         ndi.time.timereference
       </a>
     </li>
@@ -4519,7 +4623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/timeseries.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/timeseries.m/" class="md-nav__link">
         ndi.time.timeseries
       </a>
     </li>
@@ -4552,7 +4656,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/%2Bsyncrule/commontriggers.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/%2Bsyncrule/commontriggers.m/" class="md-nav__link">
         ndi.time.syncrule.commontriggers
       </a>
     </li>
@@ -4564,7 +4668,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/%2Bsyncrule/filefind.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/%2Bsyncrule/filefind.m/" class="md-nav__link">
         ndi.time.syncrule.filefind
       </a>
     </li>
@@ -4576,7 +4680,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/%2Bndi/%2Btime/%2Bsyncrule/filematch.m/" class="md-nav__link">
+      <a href="../../../reference/%2Bndi/%2Btime/%2Bsyncrule/filematch.m/" class="md-nav__link">
         ndi.time.syncrule.filematch
       </a>
     </li>
@@ -4615,7 +4719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq/" class="md-nav__link">
+      <a href="../../../faq/" class="md-nav__link">
         FAQ
       </a>
     </li>
@@ -4641,6 +4745,95 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#25-understanding-and-searching-the-ndi-database" class="md-nav__link">
+    2.5 Understanding and searching the NDI database
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5 Understanding and searching the NDI database">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#251-the-ndidatabase-and-ndidocument-objects" class="md-nav__link">
+    2.5.1 The ndi.database and ndi.document objects
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.1 The ndi.database and ndi.document objects">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2511-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2512-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.2. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#252-all-ndidocument-objects-have-the-fields-document_class-and-ndi_document" class="md-nav__link">
+    2.5.2 All ndi.document objects have the fields document_class and ndi_document.
+  </a>
+  
+    <nav class="md-nav" aria-label="2.5.2 All ndi.document objects have the fields document_class and ndi_document.">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-2513-type-this-into-matlab" class="md-nav__link">
+    Code block 2.5.1.3. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#253-the-depends_on-field" class="md-nav__link">
+    2.5.3 The depends_on field:
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#254-searching-for-ndi_documents-with-ndiquery" class="md-nav__link">
+    2.5.4 Searching for ndi_documents with ndi.query
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#255-structure-of-an-ndidatabase" class="md-nav__link">
+    2.5.5 Structure of an ndi.database
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -4651,14 +4844,143 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/data_pipeline.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                <h1 id="creating-a-data-pipeline-in-ndi">Creating a data pipeline in NDI<a class="headerlink" href="#creating-a-data-pipeline-in-ndi" title="Permanent link">&para;</a></h1>
-<p>This is planned tutorial that will cover an example of making a data pipeline in NDI; we will show how to analyze several aspects of visual responses and to calculate place-cell locations in recordings of hippocampus.</p>
-<p>This is targeted to be written in the first 6 months of application R01MH126791 (if funded) or earlier if time permits.</p>
+                <h1 id="2-analyzing-your-first-electrophysiology-experiment-with-ndi">2 Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
+<p>(This tutorial is being built. Right now. Feel free to look around but it is under construction.)</p>
+<h2 id="25-understanding-and-searching-the-ndi-database">2.5 Understanding and searching the NDI database<a class="headerlink" href="#25-understanding-and-searching-the-ndi-database" title="Permanent link">&para;</a></h2>
+<h3 id="251-the-ndidatabase-and-ndidocument-objects">2.5.1 The <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a> and <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects<a class="headerlink" href="#251-the-ndidatabase-and-ndidocument-objects" title="Permanent link">&para;</a></h3>
+<p>Each <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> object has an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a> object as one of its properties. This database holds the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects 
+that contain the metadata and data results of calculations that apps and programs have performed on the original data.</p>
+<p>First, let's open the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> that we've been working with.</p>
+<h4 id="code-block-2511-type-this-into-matlab">Code block 2.5.1.1. Type this into Matlab.<a class="headerlink" href="#code-block-2511-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">dirname</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="nb">userpath</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;Documents&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;NDI&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">];</span><span class="w"> </span><span class="c">% change this if you put the example somewhere else</span><span class="w"></span>
+<span class="n">ref</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">;</span><span class="w"></span>
+<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">dir</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span><span class="n">dirname</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>We find documents by searching for them with the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> method <code>database_search()</code>. For example, we can examine all documents that contain stimulus presentation data:</p>
+<h4 id="code-block-2512-type-this-into-matlab">Code block 2.5.1.2. Type this into Matlab.<a class="headerlink" href="#code-block-2512-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">stim_pres_doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">database_search</span><span class="p">(</span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="s">&#39;isa&#39;</span><span class="p">,</span><span class="s">&#39;stimulus_presentation&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">))</span><span class="w"></span>
+<span class="w">  </span><span class="c">% should see:</span><span class="w"></span>
+<span class="w">  </span><span class="c">%   stim_pres_doc =</span><span class="w"></span>
+<span class="w">  </span><span class="c">%   1x4 cell array</span><span class="w"></span>
+<span class="w">  </span><span class="c">%    {1x1 ndi.document}    {1x1 ndi.document}    {1x1 ndi.document}    {1x1 ndi.document}</span><span class="w"></span>
+
+<span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="c">% should see:</span><span class="w"></span>
+<span class="w">  </span><span class="c">%   ans = </span><span class="w"></span>
+<span class="w">  </span><span class="c">%     document with properties:</span><span class="w"></span>
+<span class="w">  </span><span class="c">%       document_properties: [1x1 struct]</span><span class="w"></span>
+
+<span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="w"></span>
+<span class="w">  </span><span class="c">% should see:</span><span class="w"></span>
+<span class="w">  </span><span class="c">%   ans = </span><span class="w"></span>
+<span class="w">  </span><span class="c">%   struct with fields:</span><span class="w"></span>
+<span class="w">  </span><span class="c">%                        app: [1x1 struct]</span><span class="w"></span>
+<span class="w">  </span><span class="c">%                 depends_on: [1x1 struct]</span><span class="w"></span>
+<span class="w">  </span><span class="c">%             document_class: [1x1 struct]</span><span class="w"></span>
+<span class="w">  </span><span class="c">%                    epochid: &#39;t00001&#39;</span><span class="w"></span>
+<span class="w">  </span><span class="c">%                epochid_fix: [1x1 struct]</span><span class="w"></span>
+<span class="w">  </span><span class="c">%               ndi_document: [1x1 struct]</span><span class="w"></span>
+<span class="w">  </span><span class="c">%      stimulus_presentation: [1x1 struct]</span><span class="w"></span>
+</code></pre></div>
+
+<p>We have used an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/">ndi.query</a> object to conduct our search, and we will describe those objects a little later.</p>
+<p>Here we see that <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects have a property called <code>document_properties</code> that contains all of the text information that is stored in the document. We will look through all of these properties here, and we also direct you to the documentation page for the ndi.document class <a href="https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/">stimulus_presentation</a>.</p>
+<h2 id="252-all-ndidocument-objects-have-the-fields-document_class-and-ndi_document">2.5.2 All <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects have the fields <code>document_class</code> and <code>ndi_document</code>.<a class="headerlink" href="#252-all-ndidocument-objects-have-the-fields-document_class-and-ndi_document" title="Permanent link">&para;</a></h2>
+<p>The <code>document_class</code> fields contain critical information about the class, such as the file that contains its definition, its full class name and its short class name. In addition, document types can be composed of multiple document types. The [stimulus presentation]((https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi.document</a> and <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document_epochid/">ndi.document_epochid</a>. This means that a <a href="https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/">stimulus_presentation</a> document has its own fields, plus all of the fields from <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi.document</a> documents and and <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document_epochid/">ndi.document_epochid</a> documents. </p>
+<p>Let's look at the data that specifies the superclasses:</p>
+<h4 id="code-block-2513-type-this-into-matlab">Code block 2.5.1.3. Type this into Matlab.<a class="headerlink" href="#code-block-2513-type-this-into-matlab" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">document_class</span><span class="w"></span>
+<span class="c">% </span><span class="w"></span>
+<span class="c">% ans = </span><span class="w"></span>
+<span class="c">%  struct with fields:</span><span class="w"></span>
+<span class="c">%            definition: &#39;$NDIDOCUMENTPATH/stimulus/stimulus_presentation.json&#39;</span><span class="w"></span>
+<span class="c">%            validation: &#39;$NDISCHEMAPATH/stimulus/stimulus_presentation_schema.json&#39;</span><span class="w"></span>
+<span class="c">%            class_name: &#39;ndi_document_stimulus_stimulus_presentation&#39;</span><span class="w"></span>
+<span class="c">%    property_list_name: &#39;stimulus_presentation&#39;</span><span class="w"></span>
+<span class="c">%         class_version: 1</span><span class="w"></span>
+<span class="c">%          superclasses: [3x1 struct]</span><span class="w"></span>
+
+<span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">document_class</span><span class="p">.</span><span class="n">superclasses</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"></span>
+<span class="c">% ans = </span><span class="w"></span>
+<span class="c">%   struct with fields:</span><span class="w"></span>
+<span class="c">%    definition: &#39;$NDIDOCUMENTPATH/ndi_document.json&#39;</span><span class="w"></span>
+
+<span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">document_class</span><span class="p">.</span><span class="n">superclasses</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="w"></span>
+<span class="c">% ans = </span><span class="w"></span>
+<span class="c">%  struct with fields:</span><span class="w"></span>
+<span class="c">%    definition: &#39;$NDIDOCUMENTPATH/ndi_document_epochid.json&#39;</span><span class="w"></span>
+
+<span class="n">stim_pres_doc</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">document_class</span><span class="p">.</span><span class="n">superclasses</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w"></span>
+<span class="c">%ans = </span><span class="w"></span>
+<span class="c">%  struct with fields:</span><span class="w"></span>
+<span class="c">%    definition: &#39;$NDIDOCUMENTPATH/ndi_document.json&#39;</span><span class="w"></span>
+</code></pre></div>
+
+<p>All documents have <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi_document</a> as a superclass. Note that <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> is the name of the software object in Matlab (and Python), whereas <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi_document</a> is the name of the database object type that has the following fields:</p>
+<table>
+<thead>
+<tr>
+<th>field</th>
+<th>default_value</th>
+<th>data type</th>
+<th>description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>session_id</strong></td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of any data session that produced this document</td>
+</tr>
+<tr>
+<td><strong>id</strong></td>
+<td>-</td>
+<td>NDI ID string</td>
+<td>The globally unique identifier of this document</td>
+</tr>
+<tr>
+<td><strong>name</strong></td>
+<td></td>
+<td>character array (ASCII)</td>
+<td>A user-specified name, free for users/developers to use as they like</td>
+</tr>
+<tr>
+<td><strong>type</strong></td>
+<td></td>
+<td>character array (ASCII)</td>
+<td>A user-specified type, free for users/developers to use as they like (deprecated, will be removed)</td>
+</tr>
+<tr>
+<td><strong>datestamp</strong></td>
+<td>(current time)</td>
+<td>ISO-8601 date string, time zone must be UTC leap seconds</td>
+<td>Time of document creation</td>
+</tr>
+<tr>
+<td><strong>database_version</strong></td>
+<td>-</td>
+<td>character array (ASCII)</td>
+<td>Version of this document in the database</td>
+</tr>
+</tbody>
+</table>
+<p>The most useful item in each <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> is its unique identifier <code>id</code>. This is a globally unique identifier, which means that no other <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> or corresponding <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi_document</a> anywhere in the universe has the same identifier. It is constructed of two hexidecimal strings: the first is based on the time of creation in Universal Controlled Time (UTC), and the second is created by a random number generator. This constructions means that <code>ndi.document</code> ids are not only unique, but also that sorting them alphabetically will give you the creation order of the documents. This can come in handy from time to time.</p>
+<h2 id="253-the-depends_on-field">2.5.3 The <code>depends_on</code> field:<a class="headerlink" href="#253-the-depends_on-field" title="Permanent link">&para;</a></h2>
+<h2 id="254-searching-for-ndi_documents-with-ndiquery">2.5.4 Searching for <a href="https://vh-lab.github.io/NDI-matlab/documents/ndi_document/">ndi_documents</a> with <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/">ndi.query</a><a class="headerlink" href="#254-searching-for-ndi_documents-with-ndiquery" title="Permanent link">&para;</a></h2>
+<h2 id="255-structure-of-an-ndidatabase">2.5.5 Structure of an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a><a class="headerlink" href="#255-structure-of-an-ndidatabase" title="Permanent link">&para;</a></h2>
+<div class="codehilite"><pre><span></span><code><span class="n">docs</span><span class="p">=</span><span class="n">S</span><span class="p">.</span><span class="n">database_search</span><span class="p">(</span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="s">&#39;ndi_document.id&#39;</span><span class="p">,</span><span class="s">&#39;regexp&#39;</span><span class="p">,</span><span class="s">&#39;(.*)&#39;</span><span class="p">,</span><span class="s">&#39;&#39;</span><span class="p">));</span><span class="w"> </span><span class="c">% this finds ALL documents</span><span class="w"></span>
+<span class="p">[</span><span class="n">g</span><span class="p">,</span><span class="n">nodes</span><span class="p">,</span><span class="n">mdigraph</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">fun</span><span class="p">.</span><span class="n">docs2graph</span><span class="p">(</span><span class="n">docs</span><span class="p">);</span><span class="w"></span>
+<span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">fun</span><span class="p">.</span><span class="n">plotinteractivedocgraph</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span><span class="n">g</span><span class="p">,</span><span class="n">mdigraph</span><span class="p">,</span><span class="n">nodes</span><span class="p">,</span><span class="s">&#39;layered&#39;</span><span class="p">);</span><span class="w"></span>
+</code></pre></div>
+
+<p>You may find it odd that we haven't told you how to add items to the database here in this tutorial. Instead, we've only told you how to inspect the database. The process of creating and testing a document schema and adding and removing documents are described in a Planned Tutorial. The link will be here when it is created.</p>
                 
               
               
@@ -4677,7 +4999,7 @@
   
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
-        <a href="../case_studies_reading_data/" class="md-footer__link md-footer__link--prev" rel="prev">
+        <a href="../4_analyzing_tuning_curves/" class="md-footer__link md-footer__link--prev" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -4686,19 +5008,19 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              4. Case studies in reading data in NDI
+              2.4 Analyzing spiking responses and tuning curve properties
             </div>
           </div>
         </a>
       
       
-        <a href="../analysis_app/" class="md-footer__link md-footer__link--next" rel="next">
+        <a href="../../reading_own_data_ndi/" class="md-footer__link md-footer__link--next" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              6. Making your own analysis app that uses NDI
+              3. Reading your own data in NDI
             </div>
           </div>
           <div class="md-footer__button md-icon">
@@ -4727,10 +5049,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
       
     
   </body>
