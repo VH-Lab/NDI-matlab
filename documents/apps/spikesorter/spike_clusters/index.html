@@ -4785,10 +4785,28 @@
 <td></td>
 </tr>
 <tr>
-<td><strong>sort_name</strong></td>
+<td><strong>depends_on</strong>: extraction_parameters_id</td>
 <td></td>
 <td></td>
 <td></td>
+</tr>
+<tr>
+<td><strong>epoch_info</strong></td>
+<td>-</td>
+<td>Structure with fields 'EpochStartSamples' and 'EpochNames'</td>
+<td>EpochStartSamples is a vector that contains the sample number of the clusterid that begins each epoch. For example, if the second epoch begins with spike wave number 123, then EpochStartSamples(2) is 123.</td>
+</tr>
+<tr>
+<td><strong>clusterinfo</strong></td>
+<td>-</td>
+<td>Structure with fields 'number', 'qualitylabel', 'number_of_spikes', 'meanshape', 'EpochStart', 'EpochStop'</td>
+<td>The 'number' field is the cluster number (an integer in 1...N); the 'qualitylabel' field is a character string that is one of 'Unselected', 'Not useable', 'Multi-unit', 'Good', 'Excellent'; the 'number_of_spikes' field is the number of spikes assigned to this cluster; the 'meanshape' field is the mean of all waveforms assigned to this cluster -- this is a 2-dimensional matrix with size NumSamples x NumChannels; the 'EpochStart' field is the epoch ID / name where the cluster first appears; the 'EpochStop' field is the epoch ID / name where the cluster last appears</td>
+</tr>
+<tr>
+<td><strong>waveform_sample_times</strong></td>
+<td></td>
+<td>Array of numbers</td>
+<td>The sample times of each spike waveforms, after oversampling (interpolation)</td>
 </tr>
 </tbody>
 </table>

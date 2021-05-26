@@ -4779,16 +4779,40 @@
 <td></td>
 </tr>
 <tr>
+<td><strong>graphical_mode</strong></td>
+<td>1</td>
+<td>Integer</td>
+<td>0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes)</td>
+</tr>
+<tr>
 <td><strong>num_pca_features</strong></td>
-<td></td>
-<td></td>
-<td></td>
+<td>10</td>
+<td>Integer</td>
+<td>Number of principle component analysis features to use for sorting in automatic mode</td>
 </tr>
 <tr>
 <td><strong>interpolation</strong></td>
-<td></td>
-<td></td>
-<td></td>
+<td>3</td>
+<td>Integer</td>
+<td>The number of times to oversample each spike waveform with cubic splines (minimum 1, maximum 10; must be an integer)</td>
+</tr>
+<tr>
+<td><strong>min_clusters</strong></td>
+<td>3</td>
+<td>Integer</td>
+<td>Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik)</td>
+</tr>
+<tr>
+<td><strong>max_clusters</strong></td>
+<td>10</td>
+<td>Integer</td>
+<td>Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik)</td>
+</tr>
+<tr>
+<td><strong>num_start</strong></td>
+<td>5</td>
+<td>Integer</td>
+<td>Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik)</td>
 </tr>
 </tbody>
 </table>
