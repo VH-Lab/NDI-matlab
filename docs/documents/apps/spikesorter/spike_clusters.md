@@ -21,7 +21,10 @@ Accessed by `spike_clusters.field` where *field* is one of the field names below
 | **depends_on** | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
 | **depends_on**: sorting_parameters_id |  |  |  |
 | **depends_on**: element_id |  |  |  |
-| **sort_name** |  |  |  |
+| **depends_on**: extraction_parameters_id |  |  |  |
+| **epoch_info** | - | Structure with fields 'EpochStartSamples' and 'EpochNames' | EpochStartSamples is a vector that contains the sample number of the clusterid that begins each epoch. For example, if the second epoch begins with spike wave number 123, then EpochStartSamples(2) is 123. |
+| **clusterinfo** | - | Structure with fields 'number', 'qualitylabel', 'number_of_spikes', 'meanshape', 'EpochStart', 'EpochStop' | The 'number' field is the cluster number (an integer in 1...N); the 'qualitylabel' field is a character string that is one of 'Unselected', 'Not useable', 'Multi-unit', 'Good', 'Excellent'; the 'number_of_spikes' field is the number of spikes assigned to this cluster; the 'meanshape' field is the mean of all waveforms assigned to this cluster -- this is a 2-dimensional matrix with size NumSamples x NumChannels; the 'EpochStart' field is the epoch ID / name where the cluster first appears; the 'EpochStop' field is the epoch ID / name where the cluster last appears |
+| **waveform_sample_times** |  | Array of numbers | The sample times of each spike waveforms, after oversampling (interpolation) |
 
 
 ## [ndi_document](../../ndi_document.md) fields

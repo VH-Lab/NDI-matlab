@@ -4,8 +4,23 @@
 	"title": "ndi_document_apps_spikesorter_spikesorter_spike_clusters",
 	"type": "object",
 	"properties": {
-		"sort_name": {
-			"type": "string"
+		"epoch_info": {
+			"type": "object",
+			"doc_default_value": "-",
+			"doc_data_type": "Structure with fields 'EpochStartSamples' and 'EpochNames'",
+			"doc_description": "EpochStartSamples is a vector that contains the sample number of the clusterid that begins each epoch. For example, if the second epoch begins with spike wave number 123, then EpochStartSamples(2) is 123."
+		},
+		"clusterinfo": {
+			"type": "object",
+			"doc_default_value": "-",
+			"doc_data_type": "Structure with fields 'number', 'qualitylabel', 'number_of_spikes', 'meanshape', 'EpochStart', 'EpochStop'",
+			"doc_description": "The 'number' field is the cluster number (an integer in 1...N); the 'qualitylabel' field is a character string that is one of 'Unselected', 'Not useable', 'Multi-unit', 'Good', 'Excellent'; the 'number_of_spikes' field is the number of spikes assigned to this cluster; the 'meanshape' field is the mean of all waveforms assigned to this cluster -- this is a 2-dimensional matrix with size NumSamples x NumChannels; the 'EpochStart' field is the epoch ID / name where the cluster first appears; the 'EpochStop' field is the epoch ID / name where the cluster last appears"
+		},
+		"waveform_sample_times":  {
+			"type": "number",
+			"doc_default_value": [],
+			"doc_data_type": "Array of numbers",
+			"doc_description": "The sample times of each spike waveforms, after oversampling (interpolation)"
 		},
 		"depends_on" : {
 			"type" : "array",
@@ -31,8 +46,19 @@
 							"type" : "string"
 						}
 					}
-				}											
+				},
+				{
+					"type": "object",
+					"properties" : {
+						"name" : {
+							"const" : "extraction_parameters_id"
+						},
+						"value": {
+							"type": "string"
+						}
+					}
+				}
 			]
-		}		
+		}
 	}
 }

@@ -4,12 +4,48 @@
 	"title": "ndi_document_apps_spikesorter_sorting_parameters",
 	"type": "object",
 	"properties": {
+		"graphical_mode": {
+			"description": "0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes)",
+			"type": "number",
+			"doc_default_value": "1",
+			"doc_data_type": "Integer",
+			"doc_description": "0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes)"
+		},
 		"num_pca_features": {
-			"type": "number"
+			"description": "Number of principle component analysis features to use for sorting in automatic mode",
+			"type": "number",
+			"doc_default_value": "10",
+			"doc_data_type": "Integer",
+			"doc_description": "Number of principle component analysis features to use for sorting in automatic mode"
 		},
 		"interpolation": {
-			"type": "number"
-		},		
+			"description": "The number of times to oversample the spike with cubic splines (minimum 1, maximum 10, must be an integer)",
+			"type": "number",
+			"doc_default_value": "3",
+			"doc_data_type": "Integer",
+			"doc_description": "The number of times to oversample each spike waveform with cubic splines (minimum 1, maximum 10; must be an integer)"
+		},
+		"min_clusters": {
+			"description": "Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik)",
+			"type": "Integer",
+			"doc_default_value": "3",
+			"doc_data_type": "Integer",
+			"doc_description": "Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik)"
+		},
+		"max_clusters": {
+			"description": "Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik)",
+			"type": "Integer",
+			"doc_default_value": "10",
+			"doc_data_type": "Integer",
+			"doc_description": "Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik)"
+		},
+		"num_start": {
+			"description": "Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik)",
+			"type": "Integer",
+			"doc_default_value": "5",
+			"doc_data_type": "Integer",
+			"doc_description": "Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik)"
+		},
 		"depends_on" : {
 			"type" : "array",
 			"items" : [

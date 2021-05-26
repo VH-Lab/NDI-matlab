@@ -20,8 +20,12 @@ Accessed by `sorting_parameters.field` where *field* is one of the field names b
 | --- | --- | --- | --- |
 | **depends_on** | - | structure | Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`. |
 | **depends_on**: element_id |  |  |  |
-| **num_pca_features** |  |  |  |
-| **interpolation** |  |  |  |
+| **graphical_mode** | 1 | Integer | 0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes) |
+| **num_pca_features** | 10 | Integer | Number of principle component analysis features to use for sorting in automatic mode |
+| **interpolation** | 3 | Integer | The number of times to oversample each spike waveform with cubic splines (minimum 1, maximum 10; must be an integer) |
+| **min_clusters** | 3 | Integer | Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik) |
+| **max_clusters** | 10 | Integer | Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik) |
+| **num_start** | 5 | Integer | Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik) |
 
 
 ## [ndi_document](../../ndi_document.md) fields
