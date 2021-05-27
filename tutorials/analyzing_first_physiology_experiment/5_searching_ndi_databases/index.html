@@ -523,12 +523,7 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#255-structure-of-an-ndidatabase" class="md-nav__link">
     2.5.5 Structure of an ndi.database
   </a>
@@ -539,6 +534,18 @@
           <li class="md-nav__item">
   <a href="#code-block-2551-type-this-into-matlab" class="md-nav__link">
     Code block 2.5.5.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#256-discussionfeedback" class="md-nav__link">
+    2.5.6 Discussion/Feedback
   </a>
   
 </li>
@@ -4873,12 +4880,7 @@
   
 </li>
         
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
+          <li class="md-nav__item">
   <a href="#255-structure-of-an-ndidatabase" class="md-nav__link">
     2.5.5 Structure of an ndi.database
   </a>
@@ -4889,6 +4891,18 @@
           <li class="md-nav__item">
   <a href="#code-block-2551-type-this-into-matlab" class="md-nav__link">
     Code block 2.5.5.1. Type this into Matlab.
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#256-discussionfeedback" class="md-nav__link">
+    2.5.6 Discussion/Feedback
   </a>
   
 </li>
@@ -4916,7 +4930,6 @@
                 
                 
                 <h1 id="2-analyzing-your-first-electrophysiology-experiment-with-ndi">2 Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
-<p><em>This tutorial is a draft. Please give us feedback in the <a href="https://github.com/VH-Lab/NDI-matlab/issues">Issues</a> area.</em></p>
 <h2 id="25-understanding-and-searching-the-ndi-database">2.5 Understanding and searching the NDI database<a class="headerlink" href="#25-understanding-and-searching-the-ndi-database" title="Permanent link">&para;</a></h2>
 <h3 id="251-the-ndidatabase-and-ndidocument-objects">2.5.1 The <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a> and <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects<a class="headerlink" href="#251-the-ndidatabase-and-ndidocument-objects" title="Permanent link">&para;</a></h3>
 <p>Each <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> object has an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a> object as one of its properties. This database holds the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/">ndi.document</a> objects 
@@ -5216,7 +5229,7 @@ results back to the database. The object <a href="https://vh-lab.github.io/NDI-m
 <span class="c">%   Depends on spike_clusters_id: 412687f62d1057b8_40c28348e09e5e9b</span><span class="w"></span>
 </code></pre></div>
 
-<h2 id="255-structure-of-an-ndidatabase">2.5.5 Structure of an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a><a class="headerlink" href="#255-structure-of-an-ndidatabase" title="Permanent link">&para;</a></h2>
+<h3 id="255-structure-of-an-ndidatabase">2.5.5 Structure of an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/">ndi.database</a><a class="headerlink" href="#255-structure-of-an-ndidatabase" title="Permanent link">&para;</a></h3>
 <p>NDI databases (and any analysis project) has a beautiful underlying structure that one can visualize, to get a sense of how the calculations and inferred objects (like neurons that spike) are derived from one another.</p>
 <h4 id="code-block-2551-type-this-into-matlab">Code block 2.5.5.1. Type this into Matlab.<a class="headerlink" href="#code-block-2551-type-this-into-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">interactive</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"> </span><span class="c">% set it to zero if you have Matlab 2020a or later for DataTip navigation! Try it!</span><span class="w"></span>
@@ -5228,6 +5241,8 @@ results back to the database. The object <a href="https://vh-lab.github.io/NDI-m
 <p>For this session, the graph should look something like this:</p>
 <p><img alt="Image of a graph of NDI documents in an NDI database" src="../tutorial_02_05_databasestructure.png" /></p>
 <p>You can explore the nodes by clicking next to them. On the command line, a summary of the document will appear. Here is a <a href="https://photos.app.goo.gl/Qmb3W6hyYBjFVS818">short video demonstration</a>.</p>
+<h3 id="256-discussionfeedback">2.5.6 Discussion/Feedback<a class="headerlink" href="#256-discussionfeedback" title="Permanent link">&para;</a></h3>
+<p>Post <a href="https://github.com/VH-Lab/NDI-matlab/issues/180">comments, bugs, questions, or discuss</a>.</p>
 <p>You may find it odd that we haven't told you how to add items to the database here in this tutorial. Instead, we've only told you how to inspect the database. The process of creating and testing a document schema and adding and removing documents are described in a Planned Tutorial. The link will be here when it is created.</p>
                 
               
