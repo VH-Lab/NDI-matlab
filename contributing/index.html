@@ -4625,9 +4625,86 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Contributing
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Contributing
       </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    Tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-file-formats" class="md-nav__link">
+    New file formats
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apps" class="md-nav__link">
+    Apps
+  </a>
+  
+    <nav class="md-nav" aria-label="Apps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ndiapp-applications" class="md-nav__link">
+    ndi.app applications
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-applications" class="md-nav__link">
+    Other applications
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-contribute" class="md-nav__link">
+    How to contribute
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -4652,6 +4729,68 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tasks" class="md-nav__link">
+    Tasks
+  </a>
+  
+    <nav class="md-nav" aria-label="Tasks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-file-formats" class="md-nav__link">
+    New file formats
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#apps" class="md-nav__link">
+    Apps
+  </a>
+  
+    <nav class="md-nav" aria-label="Apps">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ndiapp-applications" class="md-nav__link">
+    ndi.app applications
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#other-applications" class="md-nav__link">
+    Other applications
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-contribute" class="md-nav__link">
+    How to contribute
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -4669,17 +4808,17 @@
                 
                 <h1 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h1>
 <p>Anyone with a GitHub account can contribute. Please see the guidelines below!</p>
-<h1 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h1>
-<h2 id="new-file-formats">New file formats<a class="headerlink" href="#new-file-formats" title="Permanent link">&para;</a></h2>
+<h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link">&para;</a></h2>
+<h3 id="new-file-formats">New file formats<a class="headerlink" href="#new-file-formats" title="Permanent link">&para;</a></h3>
 <p>If you want to contribute an ndi.daq.reader for a new file format, please see our new project Neuroscience Data Readers <a href="http://ndr.vhlab.org">NDR-matlab</a>. We have spun off the job of reading raw neuroscience data files into this project to make it easier to contribute file readers and because some users may want to just use the file reading code without installing all of NDI.</p>
 <p>At the moment, NDI still uses its native <code>ndi.daq.reader</code> objects but soon it will be able to use any <code>ndr.reader</code> object, which will streamline the addition of new file formats.</p>
-<h2 id="apps">Apps<a class="headerlink" href="#apps" title="Permanent link">&para;</a></h2>
+<h3 id="apps">Apps<a class="headerlink" href="#apps" title="Permanent link">&para;</a></h3>
 <p>There are 2 ways to contribute applications. </p>
-<h3 id="ndiapp-applications">ndi.app applications<a class="headerlink" href="#ndiapp-applications" title="Permanent link">&para;</a></h3>
+<h4 id="ndiapp-applications">ndi.app applications<a class="headerlink" href="#ndiapp-applications" title="Permanent link">&para;</a></h4>
 <p>We have plans to shortly create a developer's guide to creating ndi.app applications that are tightly integrated with NDI's core features. Stay tuned! </p>
-<h3 id="other-applications">Other applications<a class="headerlink" href="#other-applications" title="Permanent link">&para;</a></h3>
+<h4 id="other-applications">Other applications<a class="headerlink" href="#other-applications" title="Permanent link">&para;</a></h4>
 <p>External applications can use NDI right now. For an example, see our changes to JRClust to make it support NDI: <a href="https://github.com/VH-Lab/JRCLUST">https://github.com/VH-Lab/JRCLUST</a>. Feel free to <a href="https://github.com/VH-Lab/NDI-matlab/issues">post an issue</a> to ask questions.</p>
-<h1 id="how-to-contribute">How to contribute<a class="headerlink" href="#how-to-contribute" title="Permanent link">&para;</a></h1>
+<h2 id="how-to-contribute">How to contribute<a class="headerlink" href="#how-to-contribute" title="Permanent link">&para;</a></h2>
 <p>If you have code that you would like to write, do the following.</p>
 <ol>
 <li>
