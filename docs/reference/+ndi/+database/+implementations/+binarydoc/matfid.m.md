@@ -94,8 +94,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.implementations.binarydoc.matfid/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/addlistener
+    Documentation for ndi.database.implementations.binarydoc.matfid/addlistener
+       doc handle.addlistener
 
 
 ---
@@ -130,8 +130,8 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.database.implementations.binarydoc.matfid/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/eq
+    Documentation for ndi.database.implementations.binarydoc.matfid/eq
+       doc handle.eq
 
 
 ---
@@ -222,8 +222,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.database.implementations.binarydoc.matfid/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findobj
+    Documentation for ndi.database.implementations.binarydoc.matfid/findobj
+       doc handle.findobj
 
 
 ---
@@ -243,8 +243,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.database.implementations.binarydoc.matfid/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findprop
+    Documentation for ndi.database.implementations.binarydoc.matfid/findprop
+       doc handle.findprop
 
 
 ---
@@ -392,8 +392,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ge
+    Documentation for ndi.database.implementations.binarydoc.matfid/ge
+       doc handle.ge
 
 
 ---
@@ -415,8 +415,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/gt
+    Documentation for ndi.database.implementations.binarydoc.matfid/gt
+       doc handle.gt
 
 
 ---
@@ -435,8 +435,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.database.implementations.binarydoc.matfid/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/isvalid
+    Documentation for ndi.database.implementations.binarydoc.matfid/isvalid
+       doc handle.isvalid
 
 
 ---
@@ -466,8 +466,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.database.implementations.binarydoc.matfid/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/le
+    Documentation for ndi.database.implementations.binarydoc.matfid/le
+       doc handle.le
 
 
 ---
@@ -511,8 +511,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.implementations.binarydoc.matfid/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/listener
+    Documentation for ndi.database.implementations.binarydoc.matfid/listener
+       doc handle.listener
 
 
 ---
@@ -534,8 +534,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/lt
+    Documentation for ndi.database.implementations.binarydoc.matfid/lt
+       doc handle.lt
 
 
 ---
@@ -571,8 +571,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.database.implementations.binarydoc.matfid/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ne
+    Documentation for ndi.database.implementations.binarydoc.matfid/ne
+       doc handle.ne
 
 
 ---
@@ -593,8 +593,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.database.implementations.binarydoc.matfid/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/notify
+    Documentation for ndi.database.implementations.binarydoc.matfid/notify
+       doc handle.notify
 
 
 ---

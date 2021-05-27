@@ -87,4 +87,5 @@ ndi_globals.log = vlt.app.log(...
 	'log_name', 'ndi',...
 	'log_error_behavior','warning');
 
-
+ % see if the user has all the needed toolboxes, and warn them if they do not
+ndi.fun.check_Matlab_toolboxes

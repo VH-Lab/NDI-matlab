@@ -1,7 +1,5 @@
 # Tutorial 2: Analyzing your first electrophysiology experiment with NDI
 
-(This tutorial is a draft. Feel free to look around but it is under construction.)
-
 ## 2.4 Analyzing stimulus responses
 
 In the last tutorial, we saw how to use applications to identify spikes from electrophysiology recordings. Now we will employ another plain app 
@@ -176,4 +174,7 @@ oriprops{1}.document_properties.orientation_direction_tuning.vector
 Now we have seen how we can analyze stimulus responses and use applications to calculate tuning curves and index values. If you had your own stimulus responses of a different type, you could write functions or apps that analyze the results and calculate the appropriate index values.
 
 
+### 2.4.5 Discussion/Feedback
+
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/179).
 

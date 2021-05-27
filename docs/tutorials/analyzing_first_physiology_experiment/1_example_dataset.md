@@ -301,10 +301,10 @@ keep track of when our stimulus turned off. (For later analysis, we will need to
 You can also see that `data` has some metadata about the stimuli. It has the ID number of each stimulus that was shown (`data.stimid(1)` is the stimulus that turned on at `t.stimon(1)`), and
 it has the parameters of each stimulus. `data.parameters{1}` is the parameters of the stimulus with ID number 1.
 
-## 2.1.6 Conclusion
+### 2.1.6 Discussion/Feedback
 
 This concludes our tutorial on the fully manual way of reading data through NDI. 
 
 In the next tutorial, we'll explore how to create a couple of code objects that read our data directly from a lab's internal structure.
 
-
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/176).

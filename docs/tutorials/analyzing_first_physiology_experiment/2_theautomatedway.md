@@ -298,7 +298,7 @@ vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimoff,'stimid',data.s
 
 If you are paying close attention, you'll notice we got a little more information out of the `readtimeseries` command here. `t.stimoff` exists (it's extracted from our stimulus metadata), so we don't have to know the stimulus duration from elsewhere. That information is not directly accessible in the event record of the smr file, so there is an advantage to reading all the metadata that is available from all sources with a custom object.
 
-### 2.2.8 Conclusion
+### 2.2.8 Discussion/Feedback
 
 This concludes our tutorial on setting up code files to read one's own data and metadata into NDI.
 
@@ -308,4 +308,5 @@ To help make this process clearer, we also include 3 other case studies in readi
 -  Don Katz lab (reads [Mukherjee et al., 2019](https://pubmed.ncbi.nlm.nih.gov/31232693/)) 
 -  Eve Marder lab (reads [Hamood et al., 2015](https://pubmed.ncbi.nlm.nih.gov/25914899/))
 
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/177).
 

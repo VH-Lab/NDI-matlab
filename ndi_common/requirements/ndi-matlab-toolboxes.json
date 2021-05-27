@@ -1,0 +1,18 @@
+{
+	"toolboxes": {
+		"required": [
+			"Control System Toolbox",
+			"Curve Fitting Toolbox",
+			"Image Processing Toolbox",
+			"MATLAB",
+			"Optimization Toolbox",
+			"Signal Processing Toolbox",
+			"Simscape",
+			"Simulink",
+			"Statistics and Machine Learning Toolbox"
+		],
+		"recommended": [
+			"Database Toolbox"
+		]
+	}
+}

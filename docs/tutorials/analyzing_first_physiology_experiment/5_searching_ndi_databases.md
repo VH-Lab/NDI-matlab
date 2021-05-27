@@ -1,7 +1,5 @@
 # 2 Analyzing your first electrophysiology experiment with NDI
 
-(This tutorial is being built. Right now. Feel free to look around but it is under construction.)
-
 ## 2.5 Understanding and searching the NDI database
 
 ### 2.5.1 The [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/) and [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects
@@ -137,13 +135,13 @@ q_stim_and_stim_decoder_docs = S.database_search(q_and)  % produces the same as 
 q_stim_and_stim_decoder_docs{1}.document_properties
  % ans = 
  %   struct with fields:
- %                       app: [1×1 struct]
- %                depends_on: [1×1 struct]
- %            document_class: [1×1 struct]
+ %                       app: [1x1 struct]
+ %                depends_on: [1x1 struct]
+ %            document_class: [1x1 struct]
  %                   epochid: 't00001'
- %               epochid_fix: [1×1 struct]
- %              ndi_document: [1×1 struct]
- %     stimulus_presentation: [1×1 struct]
+ %               epochid_fix: [1x1 struct]
+ %              ndi_document: [1x1 struct]
+ %     stimulus_presentation: [1x1 struct]
 
 q_stim_and_stim_decoder_docs{1}.document_properties.app
  % for me:
@@ -160,9 +158,9 @@ q_stim_and_stim_decoder_docs{1}.document_properties.app
 q_stim_and_stim_decoder_docs{1}.document_properties.stimulus_presentation
  % ans = 
  %   struct with fields:
- %     presentation_order: [85×1 double]
- %      presentation_time: [85×1 struct]
- %                stimuli: [17×1 struct]
+ %     presentation_order: [85x1 double]
+ %      presentation_time: [85x1 struct]
+ %                stimuli: [17x1 struct]
 
 ```
 
@@ -213,10 +211,10 @@ mydoc = S.database_search(ndi.query('ndi_document.id','exact_string', ...
 mydoc{1}.document_properties
 % ans = 
 %    struct with fields:
-%           depends_on: [2×1 struct]
-%       document_class: [1×1 struct]
-%              element: [1×1 struct]
-%         ndi_document: [1×1 struct]
+%           depends_on: [2x1 struct]
+%       document_class: [1x1 struct]
+%              element: [1x1 struct]
+%         ndi_document: [1x1 struct]
 
 mydoc{1}.document_properties.element
 % ans = 
@@ -249,7 +247,7 @@ end;
 %   Depends on spike_clusters_id: 412687f62d1057b8_40c28348e09e5e9b
 ```
 
-## 2.5.5 Structure of an [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/)
+### 2.5.5 Structure of an [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/)
 
 NDI databases (and any analysis project) has a beautiful underlying structure that one can visualize, to get a sense of how the calculations and inferred objects (like neurons that spike) are derived from one another.
 
@@ -269,8 +267,10 @@ For this session, the graph should look something like this:
 You can explore the nodes by clicking next to them. On the command line, a summary of the document will appear. Here is a [short video demonstration](https://photos.app.goo.gl/Qmb3W6hyYBjFVS818).
 
 
+### 2.5.6 Discussion/Feedback
 
-
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/180).
 
 You may find it odd that we haven't told you how to add items to the database here in this tutorial. Instead, we've only told you how to inspect the database. The process of creating and testing a document schema and adding and removing documents are described in a Planned Tutorial. The link will be here when it is created.
+
 

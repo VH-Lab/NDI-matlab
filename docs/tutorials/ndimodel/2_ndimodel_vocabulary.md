@@ -34,4 +34,6 @@ In NDI, a wide variety of experiment items are called *elements*, of which *prob
 
 DAQ systems digitally record *probe* measurements or histories of stimulator activity. In NDI, DAQ systems are logical entities, which could correspond physically to a single DAQ device made by a particular company (top), or a collection of home-brewed devices that operate together to have the behavior of a single DAQ device (bottom). In the bottom example, information from an electrode *probe* and digital triggers from a visual stimulation *probe* are acquired on a single DAQ device, but digital information from both systems (in separate files) is needed to fully describe the activity in each epoch.
 
+### Discussion/Feedback
 
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/175).

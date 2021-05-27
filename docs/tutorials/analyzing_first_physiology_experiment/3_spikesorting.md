@@ -184,4 +184,7 @@ Here's a table of the document types and their "about" info for ndi.app.spikeext
 
 3. If the app writer really loves his/her/their users, then he/she/they will create a tutorial. Look for a tutorial, that should be referenced in the Matlab help. We are working on adding tutorials for all of our included applications, but we are not there yet.
 
+### Discussion/Feedback 2.3.5
+
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/178).
 

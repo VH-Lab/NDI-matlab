@@ -14,36 +14,7 @@
 
 To use all of the NDI tools, the following Matlab toolboxes are required:
 
-MATLAB
-
-Simulink
-
-Bioinformatics Toolbox
-
-Control System Toolbox
-
-Curve Fitting Toolbox
-
-Image Processing Toolbox
-
-Instrument Control Toolbox
-
-Optimization Toolbox
-
-Parallel Computing Toolbox
-
-Signal Processing Toolbox
-
-Simscape
-
-Simscape Multibody
-
-Simulink Control Design
-
-Stateflow
-
-Statistics and Machine Learning Toolbox
-
-Symbolic Math Toolbox
-
+| MATLAB | Simulink | Control System Toolbox |
+| Curve Fitting Toolbox | Image Processing Toolbox | Optimization Toolbox |
+| Signal Processing Toolbox | Simscape | Statistics and Machine Learning Toolbox |
 
