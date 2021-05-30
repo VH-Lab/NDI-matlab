@@ -66,7 +66,7 @@ First, we need to tell NDI what **probes** we have in our experiment. A **probe*
 is connected to a **subject**, and the other end of a probe is connected to a data acquisition device. We tell NDI how the probe is connected by
 creating an [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Usually, we do this with a little
 code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example we will use the
-generic [ndi.daq.metadata.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file.
+generic [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file.
 
 Let's print the `probemap.txt` file for directory `t00001`:
 
@@ -142,7 +142,7 @@ read the electrode data from our CED SMR files.
 
 ```matlab
 ced_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt'}, ...
-    'ndi.daq.metadata.epochprobemap_daqsystem','probemap.txt');
+    'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 ced_rdr = ndi.daq.reader.mfdaq.cedspike2();
 ced_system = ndi.daq.system.mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
  % if you haven't already added the daq system, you can add it here:
@@ -167,7 +167,7 @@ Second, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-mat
 
 ```matlab
 vis_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt', 'stims.tsv'},...
-     'ndi.daq.metadata.epochprobemap_daqsystem','probemap.txt');
+     'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 vis_rdr = ndi.daq.reader.mfdaq.cedspike2();
 vis_mdrdr = ndi.daq.metadatareader('stims.tsv');
 vis_system = ndi.daq.system.mfdaq('vis_daqsystem', vis_filenav, vis_rdr, {vis_mdrdr});
