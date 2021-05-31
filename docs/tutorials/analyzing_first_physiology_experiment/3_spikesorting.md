@@ -34,7 +34,7 @@ figure out how to use the program if one didn't know.
 ```matlab
 dirname = [userpath filesep 'Documents' filesep 'NDI' filesep 'ts_exper2']; % change this if you put the example somewhere else
 ref = 'ts_exper2';
-S = ndi.session.dir(ref,dirname);  
+S = ndi.setup.vhlab(ref,dirname);  
 
 % let's find our probes that correspond to extracellular electrodes
 
