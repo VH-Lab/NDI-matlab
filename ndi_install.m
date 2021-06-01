@@ -94,7 +94,7 @@ if updating,
 	currpwd = pwd();
 
 	% copy 'ndi_install.m' file to userpath directory
-	thisfile = which('ndi.globals'); % ndi.globals is in same directory as ndi_install; ndi_install can have multiple copies
+	thisfile = which('ndi_Init'); % ndi.globals is in same directory as ndi_install; ndi_install can have multiple copies
 	[thisparent,thisfilename,thisextension] = fileparts(thisfile);
 	copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
 
@@ -157,8 +157,11 @@ function b = git_embedded_assert
 
 [status, result] = system('git');
 
-b = (status==0 | status==1) & ~isempty(result);
+clone = strfind(lower(result), 'clone');
+branch = strfind(lower(result), 'branch');
+pull = strfind(lower(result), 'pull');
 
+b = (status==0 | status==1) & ~isempty(result) & ~isempty(clone) & ~isempty(branch) & ~isempty(pull);
 
 function b = git_embedded_install(dirname, repository)
 % GIT_EMBEDDED_PULL - pull changes to a git repository

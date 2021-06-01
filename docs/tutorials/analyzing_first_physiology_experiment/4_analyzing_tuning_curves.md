@@ -3,7 +3,7 @@
 ## 2.4 Analyzing stimulus responses
 
 In the last tutorial, we saw how to use applications to identify spikes from electrophysiology recordings. Now we will employ another plain app 
-for calculating responses to stimulation.
+for calculating responses to stimulation. Note that this tutorial requires that you have completed [Tutorial 2.3](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/) (the analysis here depends on the spike sorted results of Tutorial 2.3).
 
 ### 2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences
 
