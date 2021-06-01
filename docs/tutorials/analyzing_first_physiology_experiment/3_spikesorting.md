@@ -113,7 +113,7 @@ As a first step, we will create a sorting parameters document to specify how we 
 #### Code block 2.3.3.1 Type this into Matlab.
 
 ```matlab
-ssa = ndi.app.spikesorter;
+ssa = ndi.app.spikesorter(S);
 
 sorting_params_struct = ssa.defaultstruct_appdoc('sorting_parameters');
 my_sorting_name = 'my_sorting_params';
