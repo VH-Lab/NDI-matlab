@@ -90,6 +90,7 @@
         - navigator PACKAGE:
           - ndi.file.navigator.epochdir: 'reference/+ndi/+file/+navigator/epochdir.m.md'
       - fun PACKAGE:
+        - ndi.fun.check_Matlab_toolboxes: 'reference/+ndi/+fun/check_Matlab_toolboxes.m.md'
         - ndi.fun.convertoldnsd2ndi: 'reference/+ndi/+fun/convertoldnsd2ndi.m.md'
         - ndi.fun.stimulustemporalfrequency: 'reference/+ndi/+fun/stimulustemporalfrequency.m.md'
       - globals PACKAGE:
