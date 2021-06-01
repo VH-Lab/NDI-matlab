@@ -12,7 +12,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
     
     
       
@@ -20,7 +20,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.bde7dde4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.e35208c4.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ef6f36e2.min.css">
@@ -4746,21 +4746,6 @@
   
 
     
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../contributing/" class="md-nav__link">
-        Contributing
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -4999,7 +4984,7 @@ figure out how to use the program if one didn't know.</p>
 <p>Now we will feed our results to our plain spikesorting application, which relies on either Kmeans clustering the KlustaKwik clustering tool (Harris KD, <em>J. Neurophys.</em>, 2000).</p>
 <p>As a first step, we will create a sorting parameters document to specify how we will perform the sorting. This program includes a small graphical user interface to help in choosing the clusters (called in the line that has <code>ssa.spike_sort</code>). For a quick video demo of how to use this graphical user interface in the context of this tutorial, <a href="https://photos.app.goo.gl/4Brjrd459QU5fPYa7">click here</a>.</p>
 <h4 id="code-block-2331-type-this-into-matlab">Code block 2.3.3.1 Type this into Matlab.<a class="headerlink" href="#code-block-2331-type-this-into-matlab" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span><code><span class="n">ssa</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">spikesorter</span><span class="p">;</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="n">ssa</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">spikesorter</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"></span>
 
 <span class="n">sorting_params_struct</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ssa</span><span class="p">.</span><span class="n">defaultstruct_appdoc</span><span class="p">(</span><span class="s">&#39;sorting_parameters&#39;</span><span class="p">);</span><span class="w"></span>
 <span class="n">my_sorting_name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;my_sorting_params&#39;</span><span class="p">;</span><span class="w"></span>
@@ -5173,10 +5158,10 @@ figure out how to use the program if one didn't know.</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
       
     
   </body>
