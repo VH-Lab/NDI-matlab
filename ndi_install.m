@@ -164,20 +164,21 @@ pull = strfind(lower(result), 'pull');
 b = (status==0 | status==1) & ~isempty(result) & ~isempty(clone) & ~isempty(branch) & ~isempty(pull);
 
 function b = git_embedded_install(dirname, repository)
-% GIT_EMBEDDED_PULL - pull changes to a git repository
+% GIT_INSTALL - install a git repository
 %
-% B = GIT_EMBEDDED_PULL(DIRNAME, REPOSITORY)
+% B = GIT_INSTALL(DIRNAME, REPOSITORY)
 %
 % 'Install' is our term for forcing the local directory DIRNAME to match the
 % remote REPOSITORY, either by cloning or pulling the latest changes. Any files
 % in the local directory DIRNAME that don't match the remote REPOSITORY are deleted.
-% 
-% If DIRNAME does not exist, then the repository is cloned.
-% If DIRNAME exists and has local changes, the directory is deleted and cloned fresh.
-% If the DIRNAME exists and has no local changes, the directory is updated by
-% pulling.
 %
-% Note: if you have any local changes, GIT_INSTALL will totally remove them.
+% If DIRNAME does not exist, then the repository is cloned.
+% If DIRNAME exists and has local changes, the changes are stashed and the
+%    directory is updated by pulling
+% If the DIRNAME exists and has no local changes, the directory is updated by
+%    pulling.
+%
+% Note: if you have any local changes, GIT_INSTALL will stash them and warn the user.
 %
 % B is 1 if the operation is successful.
 %
@@ -192,20 +193,20 @@ end;
 
 status_good = 0;
 if ~must_clone,
-	try,
+        try,
 		[uptodate,changes,untrackedfiles] = git_embedded_status(dirname);
-		status_good = ~changes & ~untrackedfiles;
-	end;
-end;
+		status_good = ~changes; %  & ~untrackedfiles;  % untracked files okay
+        end;
 
-if status_good, % we can pull without difficulty
-	b=git_embedded_pull(dirname);
+        if status_good, % we can pull without difficulty
+		b=git_embedded_pull(dirname);
+        else, % stash first, then pull
+		warning(['STASHING changes in ' dirname '...']);
+		git_embedded_stash(dirname);
+		b=git_embedded_pull(dirname);
+        end;
 else,
-	must_clone = 1;
-end;
-
-if must_clone, 
-	if exist(dirname,'dir'), 
+	if exist(dirname,'dir'),
 		rmdir(dirname,'s');
 	end;
 	b=git_embedded_clone(repository,localparentdir);
@@ -287,11 +288,37 @@ untracked_present = 0;
 
 if status==0,
 	uptodate = ~isempty(strfind(results,'Your branch is up to date with'));
-	changes = ~isempty(strfind(results,'Changes to be committed:'));
+	changes = ~isempty(strfind(results,'Changes'));
 	untracked_present = ~isempty(strfind(results,'untracked files present'));
 else,
 	error(['Error running git status: ' results]);
 end;
+
+function b = git_embedded_stash(dirname)
+% GIT_EMBEDDED_STASH - stash changes to a git repository
+%
+% B = GIT_EMBEDDED_STASH(DIRNAME)
+%
+% Stash the local changes to a GIT repository in DIRNAME.
+%
+
+localparentdir = fileparts(dirname);
+
+ % see if stash succeeds
+
+stash_success = 1; % assume success, and update to failure if need be
+
+if ~exist(dirname,'dir'),
+	stash_success = 0;
+end;
+
+if stash_success, % if we are still going, try to
+	[status,results]=system(['git -C "' dirname '" stash']);
+
+	stash_success=(status==0);
+end;
+
+b = stash_success;
 
 
 function b = git_embedded_clone(repository, localparentdir)
