@@ -164,11 +164,11 @@ oriprops{1}{1}.document_properties.orientation_direction_tuning
   % see the property information
 oriprops{1}{1}.document_properties.orientation_direction_tuning.properties
   % see significance. Responses across orientation are very significant:
-oriprops{1}.document_properties.orientation_direction_tuning.significance
+oriprops{1}{1}.document_properties.orientation_direction_tuning.significance
   % fit parameters:
-oriprops{1}.document_properties.orientation_direction_tuning.fit
+oriprops{1}{1}.document_properties.orientation_direction_tuning.fit
   % vector tuning parameters:
-oriprops{1}.document_properties.orientation_direction_tuning.vector
+oriprops{1}{1}.document_properties.orientation_direction_tuning.vector
 ```
 
 Now we have seen how we can analyze stimulus responses and use applications to calculate tuning curves and index values. If you had your own stimulus responses of a different type, you could write functions or apps that analyze the results and calculate the appropriate index values.
