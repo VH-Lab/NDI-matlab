@@ -154,6 +154,12 @@ for i=1:2,
 end;
 ```
 
+The program should pop up 6 figures that look like this when they are adjusted to have the same axes:
+
+![Orientation / direction tuning curves for Ctx 1 and LGN 1](tutorial_02_04_orientation_curves.png)
+
+The tuning curves show that cell Ctx 1 has a strong orientation-tuned mean response to bars drifting at an angle of about 90 degrees (vertical bars moving rightward) or 270 degrees (vertical bars moving leftward). The cell LGN 1 does not exhibit strong tuning for orientation or direction, but instead exhibits a strong modulated response (F1) to most directions.
+
 Now let's take a look at these index values for the first cell. These index values are described in [Mazurek et al. (2014)](https://pubmed.ncbi.nlm.nih.gov/25147504/).
 
 #### Code block 2.4.5.2. Type this into Matlab.
