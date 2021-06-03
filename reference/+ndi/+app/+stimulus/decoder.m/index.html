@@ -4853,14 +4853,15 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>decoder</strong> - <em>an app to decode stimulus information from NDI_PROBE_STIMULUS objects</em></p>
-<p>```NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)</p>
-<p>Creates a new ndi_app_stimulus.decoder object that can operate on
-  NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
 
-<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">of</span> <span class="nv">type</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">an</span> <span class="nv">app</span><span class="o">*</span>
+  Creates a new ndi_app_stimulus.decoder object that can operate on
+  NDI_SESSIONS. The app is named &#39;ndi.app.stimulus_decoder&#39;.
+</code></pre></div>
 
-```<span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">of</span> <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">ndi_document_app</span><span class="s1">&#39;</span>. <span class="nv">The</span> <span class="s1">&#39;</span><span class="s">app.name</span><span class="s1">&#39;</span> <span class="nv">field</span>
   <span class="nv">is</span> <span class="nv">filled</span> <span class="nv">out</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">NDI_APP_OBJ</span>.<span class="nv">VARAPPNAME</span><span class="ss">()</span>.
@@ -4870,20 +4871,24 @@
 
 <hr />
 <p><strong>parse_stimuli</strong> - <em>write stimulus records for all stimulus epochs of an ndi.element stimulus probe</em></p>
-<p>```[NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])</p>
-<p>Examines a the ndi.session associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
-  probe NDI_STIM_PROBE, and creates documents of type NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE
-  for all stimulus epochs.</p>
-<p>If NDI_DOCUMENT_STIMULUS and NDI_DOCUMENT_STIMULUS_TUNINGCURVE documents already exist for a given
-  stimulus run, then they are returned in EXISTINGDOCS. Any new documents are returned in NEWDOCS.</p>
-<p>If the input argument RESET is given and is 1, then all existing documents for this probe are
-  removed and all documents are recalculated. The default for RESET is 0 (if it is not provided).</p>
-<p>Note that this function DOES add the new documents to the database.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">NEWDOCS, EXISITINGDOCS</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">PARSE_STIMULI</span><span class="p">(</span><span class="n">NDI_APP_STIMULUS_DECODER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_ELEMENT_STIM</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">RESET</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="nv">searchquery</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">related</span> <span class="nv">to</span> <span class="nv">this</span> <span class="nv">app</span><span class="o">*</span>
+<span class="w">  </span><span class="n">Examines</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">session</span><span class="w"> </span><span class="n">associated</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">NDI_APP_STIMULUS_DECODER_OBJ</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">stimulus</span><span class="w"></span>
+<span class="w">  </span><span class="n">probe</span><span class="w"> </span><span class="n">NDI_STIM_PROBE</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">creates</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">NDI_DOCUMENT_STIMULUS</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">NDI_DOCUMENT_STIMULUS_TUNINGCURVE</span><span class="w"></span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">stimulus</span><span class="w"> </span><span class="n">epochs</span><span class="p">.</span><span class="w"></span>
 
-```<span class="nv">C</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">NDI_DOCUMENT_STIMULUS</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">NDI_DOCUMENT_STIMULUS_TUNINGCURVE</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">already</span><span class="w"> </span><span class="n">exist</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">given</span><span class="w"></span>
+<span class="w">  </span><span class="n">stimulus</span><span class="w"> </span><span class="n">run</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">they</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">returned</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">EXISTINGDOCS</span><span class="p">.</span><span class="w"> </span><span class="ow">Any</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">returned</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">NEWDOCS</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="n">RESET</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">probe</span><span class="w"> </span><span class="k">are</span><span class="w"></span>
+<span class="w">  </span><span class="n">removed</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">recalculated</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">RESET</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="p">(</span><span class="k">if</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">provided</span><span class="p">).</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Note</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">DOES</span><span class="w"> </span><span class="k">add</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="p">.</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">C</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span> <span class="nv">that</span> <span class="nv">allow</span> <span class="nv">the</span> <span class="nv">creation</span> <span class="nv">or</span> <span class="nv">searching</span> <span class="nv">of</span> <span class="nv">an</span>
   <span class="nv">ndi</span>.<span class="nv">database</span> <span class="nv">document</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">app</span> <span class="nv">with</span> <span class="nv">field</span> <span class="s1">&#39;</span><span class="s">app</span><span class="s1">&#39;</span> <span class="nv">that</span> <span class="nv">has</span> <span class="nv">subfield</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">equal</span>
@@ -4894,15 +4899,17 @@
 
 <hr />
 <p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
-<p>```AN = VARAPPNAME(NDI_APP_OBJ)</p>
-<p>Returns the name of the app modified for use as a variable name, either as
-  a Matlab variable or a name in a document.</p>
-<p>Help for ndi.app.stimulus.decoder/varappname is inherited from superclass NDI.APP</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">AN</span> <span class="o">=</span> <span class="n">VARAPPNAME</span><span class="p">(</span><span class="n">NDI_APP_OBJ</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">version_url</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">app</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span><span class="o">*</span>
+  <span class="n">Returns</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">app</span> <span class="n">modified</span> <span class="k">for</span> <span class="n">use</span> <span class="k">as</span> <span class="n">a</span> <span class="n">variable</span> <span class="n">name</span><span class="p">,</span> <span class="n">either</span> <span class="k">as</span>
+  <span class="n">a</span> <span class="n">Matlab</span> <span class="n">variable</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">document</span><span class="o">.</span>
 
-```[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">stimulus</span><span class="o">.</span><span class="n">decoder</span><span class="o">/</span><span class="n">varappname</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="o">.</span><span class="n">APP</span>
+</code></pre></div>
+
+<hr />
+<p><strong>version_url</strong> - <em>return the app version and url</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">app</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>,
   <span class="nv">it</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">that</span> <span class="nv">GIT</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">available</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">command</span> <span class="nv">line</span>

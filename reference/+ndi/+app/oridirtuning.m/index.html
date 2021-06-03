@@ -4867,27 +4867,27 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>calculate_all_oridir_indexes</strong> - <em>ndi.app.oridirtuning/calculate_all_oridir_indexes is a function.</em></p>
-<p>```oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj)</p>
-<div class="codehilite"><pre><span></span><code>---
-
-**calculate_oridir_indexes** - *CALCULATE_ORIDIR_INDEXES*
+<div class="codehilite"><pre><span></span><code>oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj)
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code>---
+<hr />
+<p><strong>calculate_oridir_indexes</strong> - <em>CALCULATE_ORIDIR_INDEXES</em></p>
+<div class="codehilite"><pre><span></span><code>
+</code></pre></div>
 
-**calculate_tuning_curve** - *calculate an orientation/direction tuning curve from stimulus responses*
-
-```TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
+<hr />
+<p><strong>calculate_tuning_curve</strong> - <em>calculate an orientation/direction tuning curve from stimulus responses</em></p>
+<div class="codehilite"><pre><span></span><code>TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
 </code></pre></div>
 
 <hr />
 <p><strong>is_oridir_stimulus_response</strong> - <em>ndi.app.oridirtuning/is_oridir_stimulus_response is a function.</em></p>
-<p>```b = is_oridir_stimulus_response(ndi_app_oridirtuning_obj, response_doc)</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>b = is_oridir_stimulus_response(ndi_app_oridirtuning_obj, response_doc)
+</code></pre></div>
 
-<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">of</span> <span class="nv">type</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">an</span> <span class="nv">app</span><span class="o">*</span>
-
-```<span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">of</span> <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">ndi_document_app</span><span class="s1">&#39;</span>. <span class="nv">The</span> <span class="s1">&#39;</span><span class="s">app.name</span><span class="s1">&#39;</span> <span class="nv">field</span>
   <span class="nv">is</span> <span class="nv">filled</span> <span class="nv">out</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">NDI_APP_OBJ</span>.<span class="nv">VARAPPNAME</span><span class="ss">()</span>.
@@ -4897,28 +4897,31 @@
 
 <hr />
 <p><strong>oridirtuning</strong> - <em>an app to calculate and analyze orientation/direction tuning curves</em></p>
-<p>```NDI_APP_ORIDIRTUNING_OBJ = ndi.app.oridirtuning(SESSION)</p>
-<p>Creates a new ndi.app.oridirtuning object that can operate on
-  NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>NDI_APP_ORIDIRTUNING_OBJ = ndi.app.oridirtuning(SESSION)
 
-**plot_oridir_response** - *ndi.app.oridirtuning/plot_oridir_response is a function.*
+  Creates a new ndi.app.oridirtuning object that can operate on
+  NDI_SESSIONS. The app is named &#39;ndi.app.oridirtuning&#39;.
+</code></pre></div>
 
-```plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
+<hr />
+<p><strong>plot_oridir_response</strong> - <em>ndi.app.oridirtuning/plot_oridir_response is a function.</em></p>
+<div class="codehilite"><pre><span></span><code>plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
 </code></pre></div>
 
 <hr />
 <p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
-<p>```C = SEARCHQUERY(NDI_APP_OBJ)</p>
-<p>Returns a cell array of strings that allow the creation or searching of an
-  ndi.database document for this app with field 'app' that has subfield 'name' equal
-  to the app's VARAPPNAME.</p>
-<p>Help for ndi.app.oridirtuning/searchquery is inherited from superclass NDI.APP</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">C</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">varappname</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">application</span> <span class="k">for</span> <span class="n">use</span> <span class="ow">in</span> <span class="n">variable</span> <span class="n">creation</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span> <span class="nv">that</span> <span class="nv">allow</span> <span class="nv">the</span> <span class="nv">creation</span> <span class="nv">or</span> <span class="nv">searching</span> <span class="nv">of</span> <span class="nv">an</span>
+  <span class="nv">ndi</span>.<span class="nv">database</span> <span class="nv">document</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">app</span> <span class="nv">with</span> <span class="nv">field</span> <span class="s1">&#39;</span><span class="s">app</span><span class="s1">&#39;</span> <span class="nv">that</span> <span class="nv">has</span> <span class="nv">subfield</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">equal</span>
+  <span class="nv">to</span> <span class="nv">the</span> <span class="nv">app</span><span class="s1">&#39;</span><span class="s">s VARAPPNAME.</span>
 
-<span class="err">```</span><span class="n">AN</span> <span class="o">=</span> <span class="n">VARAPPNAME</span><span class="p">(</span><span class="n">NDI_APP_OBJ</span><span class="p">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">oridirtuning</span><span class="o">/</span><span class="nv">searchquery</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>
+</code></pre></div>
+
+<hr />
+<p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">AN</span> <span class="o">=</span> <span class="n">VARAPPNAME</span><span class="p">(</span><span class="n">NDI_APP_OBJ</span><span class="p">)</span>
 
   <span class="n">Returns</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">app</span> <span class="n">modified</span> <span class="k">for</span> <span class="n">use</span> <span class="k">as</span> <span class="n">a</span> <span class="n">variable</span> <span class="n">name</span><span class="p">,</span> <span class="n">either</span> <span class="k">as</span>
   <span class="n">a</span> <span class="n">Matlab</span> <span class="n">variable</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">document</span><span class="o">.</span>
@@ -4928,14 +4931,18 @@
 
 <hr />
 <p><strong>version_url</strong> - <em>return the app version and url</em></p>
-<p>```[V, URL] = VERSION_URL(NDI_APP_OBJ)</p>
-<p>Return the version and url for the current app. In the base class,
-  it is assumed that GIT is used and is available from the command line
-  and the version and url are read from the git directory.</p>
-<p>Developers should override this method in their own class if they use a 
-  different version control system.</p>
-<p>Help for ndi.app.oridirtuning/version_url is inherited from superclass NDI.APP
-```</p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">app</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>,
+  <span class="nv">it</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">that</span> <span class="nv">GIT</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">available</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">command</span> <span class="nv">line</span>
+  <span class="nv">and</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="nv">are</span> <span class="nv">read</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">git</span> <span class="nv">directory</span>.
+
+  <span class="nv">Developers</span> <span class="nv">should</span> <span class="nv">override</span> <span class="nv">this</span> <span class="nv">method</span> <span class="nv">in</span> <span class="nv">their</span> <span class="nv">own</span> <span class="nv">class</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">use</span> <span class="nv">a</span> 
+  <span class="nv">different</span> <span class="nv">version</span> <span class="nv">control</span> <span class="nv">system</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">oridirtuning</span><span class="o">/</span><span class="nv">version_url</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>
+</code></pre></div>
+
 <hr />
                 
               

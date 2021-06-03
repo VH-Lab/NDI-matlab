@@ -4865,36 +4865,39 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>daqsystemstring</strong> - <em>Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list</em></p>
-<p>```DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
-     or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)</p>
-<p>Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from a DEVICENAME,
-  a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.</p>
-<p>Inputs:
-     In the first form:
-       DEVICENAME should be the name of an ndi.daq.system
-       CHANNEL_PREFIX should be the prefix for a particular type of channel. These channel type will vary from
-           device to device. For example, a NDI_DAQSYSTEM_MULTICHANNELDAQ might use:
-             'ai' - analog input
-             'ao' - analog output (it is an 'o' like 'oh', not 0)
-             'di' - digital input
-             'do' - digital output
-       CHANNELLIST should be an array of channel numbers, which must start from 1 (that is,
-             the first channel is 1).
-     In the second form:
-       DEVSTRING should be in the form: 'devicename:ct#,#-#,#,#'
-         where devicename is the name of the device, ct is a string that corresponds to the channel type, and
-         the numbers and separators specify the channel numbers to be accessed.</p>
-<p>Examples:</p>
-<div class="codehilite"><pre><span></span><code>   <span class="nt">myndi_daqsystemstring1</span> <span class="o">=</span> <span class="nt">ndi_devicestring</span><span class="o">(</span><span class="s1">&#39;mydevice&#39;</span><span class="o">,</span><span class="s1">&#39;ai&#39;</span><span class="o">,</span><span class="cp">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span> <span class="mi">7</span> <span class="mi">23</span><span class="cp">]</span><span class="o">)</span>
-   <span class="nt">myndi_daqsystemstring2</span> <span class="o">=</span> <span class="nt">ndi_devicestring</span><span class="o">(</span><span class="s1">&#39;mydevice:ai1-5,7,23&#39;</span><span class="o">);</span>
+<div class="codehilite"><pre><span></span><code><span class="n">DEVSTR</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">daqsystemstring</span><span class="p">(</span><span class="n">DEVICENAME</span><span class="p">,</span> <span class="n">CHANNELTYPE</span><span class="p">,</span> <span class="n">CHANNELLIST</span><span class="p">)</span>
+     <span class="ow">or</span> <span class="n">DEVSTR</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">daqsystemstring</span><span class="p">(</span><span class="n">DEVSTRING</span><span class="p">)</span>
+
+  <span class="n">Creates</span> <span class="n">a</span> <span class="n">device</span> <span class="n">string</span> <span class="n">suitable</span> <span class="k">for</span> <span class="n">a</span> <span class="n">ndi</span><span class="o">.</span><span class="n">epoch</span><span class="o">.</span><span class="n">epochprobemap_daqsystem</span> <span class="n">from</span> <span class="n">a</span> <span class="n">DEVICENAME</span><span class="p">,</span>
+  <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">strings</span> <span class="n">CHANNELTYPE</span> <span class="p">(</span><span class="n">such</span> <span class="k">as</span> <span class="s1">&#39;ai&#39;</span><span class="p">,</span> <span class="s1">&#39;di&#39;</span><span class="p">,</span> <span class="s1">&#39;ao&#39;</span><span class="p">),</span> <span class="ow">and</span> <span class="n">a</span> <span class="n">CHANNELLIST</span><span class="o">.</span>
+
+  <span class="n">Inputs</span><span class="p">:</span>
+     <span class="n">In</span> <span class="n">the</span> <span class="n">first</span> <span class="n">form</span><span class="p">:</span>
+       <span class="n">DEVICENAME</span> <span class="n">should</span> <span class="n">be</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">system</span>
+       <span class="n">CHANNEL_PREFIX</span> <span class="n">should</span> <span class="n">be</span> <span class="n">the</span> <span class="n">prefix</span> <span class="k">for</span> <span class="n">a</span> <span class="n">particular</span> <span class="n">type</span> <span class="n">of</span> <span class="n">channel</span><span class="o">.</span> <span class="n">These</span> <span class="n">channel</span> <span class="n">type</span> <span class="n">will</span> <span class="n">vary</span> <span class="n">from</span>
+           <span class="n">device</span> <span class="n">to</span> <span class="n">device</span><span class="o">.</span> <span class="n">For</span> <span class="n">example</span><span class="p">,</span> <span class="n">a</span> <span class="n">NDI_DAQSYSTEM_MULTICHANNELDAQ</span> <span class="n">might</span> <span class="n">use</span><span class="p">:</span>
+             <span class="s1">&#39;ai&#39;</span> <span class="o">-</span> <span class="n">analog</span> <span class="n">input</span>
+             <span class="s1">&#39;ao&#39;</span> <span class="o">-</span> <span class="n">analog</span> <span class="n">output</span> <span class="p">(</span><span class="n">it</span> <span class="k">is</span> <span class="n">an</span> <span class="s1">&#39;o&#39;</span> <span class="n">like</span> <span class="s1">&#39;oh&#39;</span><span class="p">,</span> <span class="ow">not</span> <span class="mi">0</span><span class="p">)</span>
+             <span class="s1">&#39;di&#39;</span> <span class="o">-</span> <span class="n">digital</span> <span class="n">input</span>
+             <span class="s1">&#39;do&#39;</span> <span class="o">-</span> <span class="n">digital</span> <span class="n">output</span>
+       <span class="n">CHANNELLIST</span> <span class="n">should</span> <span class="n">be</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">channel</span> <span class="n">numbers</span><span class="p">,</span> <span class="n">which</span> <span class="n">must</span> <span class="n">start</span> <span class="n">from</span> <span class="mi">1</span> <span class="p">(</span><span class="n">that</span> <span class="k">is</span><span class="p">,</span>
+             <span class="n">the</span> <span class="n">first</span> <span class="n">channel</span> <span class="k">is</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span>
+     <span class="n">In</span> <span class="n">the</span> <span class="n">second</span> <span class="n">form</span><span class="p">:</span>
+       <span class="n">DEVSTRING</span> <span class="n">should</span> <span class="n">be</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">form</span><span class="p">:</span> <span class="s1">&#39;devicename:ct#,#-#,#,#&#39;</span>
+         <span class="n">where</span> <span class="n">devicename</span> <span class="k">is</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">device</span><span class="p">,</span> <span class="n">ct</span> <span class="k">is</span> <span class="n">a</span> <span class="n">string</span> <span class="n">that</span> <span class="n">corresponds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">channel</span> <span class="n">type</span><span class="p">,</span> <span class="ow">and</span>
+         <span class="n">the</span> <span class="n">numbers</span> <span class="ow">and</span> <span class="n">separators</span> <span class="n">specify</span> <span class="n">the</span> <span class="n">channel</span> <span class="n">numbers</span> <span class="n">to</span> <span class="n">be</span> <span class="n">accessed</span><span class="o">.</span>
+
+  <span class="n">Examples</span><span class="p">:</span>
+
+       <span class="n">myndi_daqsystemstring1</span> <span class="o">=</span> <span class="n">ndi_devicestring</span><span class="p">(</span><span class="s1">&#39;mydevice&#39;</span><span class="p">,</span><span class="s1">&#39;ai&#39;</span><span class="p">,[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span> <span class="mi">7</span> <span class="mi">23</span><span class="p">])</span>
+       <span class="n">myndi_daqsystemstring2</span> <span class="o">=</span> <span class="n">ndi_devicestring</span><span class="p">(</span><span class="s1">&#39;mydevice:ai1-5,7,23&#39;</span><span class="p">);</span>
+
+  <span class="n">See</span> <span class="n">also</span><span class="p">:</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">daqsystemstring</span>
 </code></pre></div>
 
-<p>See also: ndi.daq.daqsystemstring</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
-
-<span class="o">**</span><span class="nt">devicestring</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">Produce</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span> <span class="nt">character</span> <span class="nt">string</span><span class="o">*</span>
-
-<span class="err">```</span><span class="nt">DEVSTR</span> <span class="o">=</span> <span class="nt">DEVICESTRING</span><span class="o">(</span><span class="nt">SELF</span><span class="o">)</span>
+<hr />
+<p><strong>devicestring</strong> - <em>Produce an ndi.daq.daqsystemstring character string</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nt">DEVSTR</span> <span class="o">=</span> <span class="nt">DEVICESTRING</span><span class="o">(</span><span class="nt">SELF</span><span class="o">)</span>
 
   <span class="nt">Creates</span> <span class="nt">a</span> <span class="nt">device</span> <span class="nt">string</span> <span class="nt">suitable</span> <span class="nt">for</span> <span class="nt">a</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">epoch</span><span class="p">.</span><span class="nc">epochprobemap_daqsystem</span> <span class="nt">from</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span> <span class="nt">object</span><span class="o">.</span>
 
@@ -4909,21 +4912,26 @@
 
 <hr />
 <p><strong>ndi_daqsystemstring2channel</strong> - <em>Convert an ndi.daq.daqsystemstring to device, channel type, channel list</em></p>
-<p>```[DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)</p>
-<p>Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
-  (CHANNEL) of a device string.</p>
-<p>Inputs:
-     DEVSTR should be an NDI devicestring in the form: devicename:ct#,#-#,#,#
-  Outputs:
-     DEVICENAME is the string corresponding to the device name
-     CHANNELTYPE is a cell array of strings with channel types
-     CHANNELLIST is an array of the channel numbers</p>
-<p>Example:
-     devstr = ndi.daq.daqsystemstring('mydevice:ai1-5,13,18');
-     [devicename, channeltype, channel] = ndi_daqsystemstring2channel(devstr);
-     % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]</p>
-<p>See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING
-```</p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">DEVICENAME</span><span class="p">,</span><span class="w"> </span><span class="n">CHANNELTYPE</span><span class="p">,</span><span class="w"> </span><span class="n">CHANNELLIST</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">NDI_DAQSYSTEMSTRING2CHANNEL</span><span class="p">(</span><span class="n">SELF</span><span class="p">,</span><span class="w"> </span><span class="n">DEVSTR</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">(</span><span class="n">DEVICENAME</span><span class="p">),</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="nb">type</span><span class="w"> </span><span class="p">(</span><span class="n">CHANNELTYPE</span><span class="p">),</span><span class="w"> </span><span class="n">and</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="n">list</span><span class="w"></span>
+<span class="w">  </span><span class="p">(</span><span class="n">CHANNEL</span><span class="p">)</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="nb">string</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Inputs</span><span class="p">:</span><span class="w"></span>
+<span class="w">     </span><span class="n">DEVSTR</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">NDI</span><span class="w"> </span><span class="n">devicestring</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">form</span><span class="p">:</span><span class="w"> </span><span class="n">devicename</span><span class="p">:</span><span class="n">ct</span>#<span class="p">,</span>#<span class="o">-</span>#<span class="p">,</span>#<span class="p">,</span>#<span class="w"></span>
+<span class="w">  </span><span class="n">Outputs</span><span class="p">:</span><span class="w"></span>
+<span class="w">     </span><span class="n">DEVICENAME</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nb">string</span><span class="w"> </span><span class="n">corresponding</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="n">name</span><span class="w"></span>
+<span class="w">     </span><span class="n">CHANNELTYPE</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="nb">cell</span><span class="w"> </span><span class="n">array</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="nb">strings</span><span class="w"> </span><span class="n">with</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="n">types</span><span class="w"></span>
+<span class="w">     </span><span class="n">CHANNELLIST</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">array</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">channel</span><span class="w"> </span><span class="n">numbers</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Example</span><span class="p">:</span><span class="w"></span>
+<span class="w">     </span><span class="n">devstr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">daqsystemstring</span><span class="p">(</span><span class="s">&#39;mydevice:ai1-5,13,18&#39;</span><span class="p">);</span><span class="w"></span>
+<span class="w">     </span><span class="p">[</span><span class="n">devicename</span><span class="p">,</span><span class="w"> </span><span class="n">channeltype</span><span class="p">,</span><span class="w"> </span><span class="n">channel</span><span class="p">]</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi_daqsystemstring2channel</span><span class="p">(</span><span class="n">devstr</span><span class="p">);</span><span class="w"></span>
+<span class="w">     </span><span class="c">% devicename == &#39;mydevice&#39;, channelype = &#39;ai&#39;, channel == [1 2 3 4 5 13 18]</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">See</span><span class="w"> </span><span class="n">also</span><span class="p">:</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">daqsystemstring</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_DEVICESTRING</span><span class="o">/</span><span class="n">DEVICESTRING</span><span class="w"></span>
+</code></pre></div>
+
 <hr />
                 
               

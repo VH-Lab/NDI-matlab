@@ -4884,33 +4884,37 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>add_appdoc</strong> - <em>Load data from an application document</em></p>
-<p>```[...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
-      APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])</p>
-<p>Creates a new ndi.document that is based on the type APPDOC_TYPE with creation data
-  specified by APPDOC_STRUCT.  [additional inputs] are used to find or specify the
-  NDI_document in the database. They are passed to the function FIND_APPDOC,
-  so see help FIND_APPDOC for the documentation for each app.</p>
-<p>The DOC is returned as a cell array of NDI_DOCUMENTs (should have 1 entry but could have more than
-  1 if the document already exists).</p>
-<p>If APPDOC_STRUCT is empty, then default values are used. If it is a character array, then it is
-  assumed to be a filename of a tab-separated-value text file. If it is an ndi.document, then it
-  is assumed to be an ndi.document and it will be converted to the parameters using DOC2STRUCT.</p>
-<p>This function also takes a string DOCEXISTSACTION that describes what it should do
-  in the event that the document fitting the [additional inputs] already exists:
-  DOCEXISTACTION value      | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="p">[...]</span> <span class="o">=</span> <span class="n">ADD_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">...</span>
+      <span class="n">APPDOC_STRUCT</span><span class="p">,</span> <span class="n">DOCEXISTSACTION</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">arguments</span><span class="p">])</span>
+
+  <span class="n">Creates</span> <span class="n">a</span> <span class="n">new</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">that</span> <span class="n">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">type</span> <span class="n">APPDOC_TYPE</span> <span class="n">with</span> <span class="n">creation</span> <span class="n">data</span>
+  <span class="n">specified</span> <span class="n">by</span> <span class="n">APPDOC_STRUCT</span><span class="p">.</span>  <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">or</span> <span class="n">specify</span> <span class="n">the</span>
+  <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span> <span class="n">They</span> <span class="n">are</span> <span class="n">passed</span> <span class="n">to</span> <span class="n">the</span> <span class="n">function</span> <span class="n">FIND_APPDOC</span><span class="p">,</span>
+  <span class="n">so</span> <span class="n">see</span> <span class="n">help</span> <span class="n">FIND_APPDOC</span> <span class="k">for</span> <span class="n">the</span> <span class="n">documentation</span> <span class="k">for</span> <span class="n">each</span> <span class="n">app</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">DOC</span> <span class="n">is</span> <span class="n">returned</span> <span class="n">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">NDI_DOCUMENTs</span> <span class="p">(</span><span class="n">should</span> <span class="n">have</span> <span class="mi">1</span> <span class="n">entry</span> <span class="n">but</span> <span class="n">could</span> <span class="n">have</span> <span class="n">more</span> <span class="n">than</span>
+  <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">document</span> <span class="n">already</span> <span class="n">exists</span><span class="p">).</span>
+
+  <span class="n">If</span> <span class="n">APPDOC_STRUCT</span> <span class="n">is</span> <span class="n">empty</span><span class="p">,</span> <span class="n">then</span> <span class="k">default</span> <span class="n">values</span> <span class="n">are</span> <span class="n">used</span><span class="p">.</span> <span class="n">If</span> <span class="n">it</span> <span class="n">is</span> <span class="n">a</span> <span class="n">character</span> <span class="n">array</span><span class="p">,</span> <span class="n">then</span> <span class="n">it</span> <span class="n">is</span>
+  <span class="n">assumed</span> <span class="n">to</span> <span class="n">be</span> <span class="n">a</span> <span class="n">filename</span> <span class="n">of</span> <span class="n">a</span> <span class="n">tab</span><span class="o">-</span><span class="n">separated</span><span class="o">-</span><span class="n">value</span> <span class="n">text</span> <span class="n">file</span><span class="p">.</span> <span class="n">If</span> <span class="n">it</span> <span class="n">is</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="p">,</span> <span class="n">then</span> <span class="n">it</span>
+  <span class="n">is</span> <span class="n">assumed</span> <span class="n">to</span> <span class="n">be</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">and</span> <span class="n">it</span> <span class="n">will</span> <span class="n">be</span> <span class="n">converted</span> <span class="n">to</span> <span class="n">the</span> <span class="n">parameters</span> <span class="n">using</span> <span class="n">DOC2STRUCT</span><span class="p">.</span>
+
+  <span class="n">This</span> <span class="n">function</span> <span class="n">also</span> <span class="n">takes</span> <span class="n">a</span> <span class="n">string</span> <span class="n">DOCEXISTSACTION</span> <span class="n">that</span> <span class="n">describes</span> <span class="n">what</span> <span class="n">it</span> <span class="n">should</span> <span class="k">do</span>
+  <span class="k">in</span> <span class="n">the</span> <span class="n">event</span> <span class="n">that</span> <span class="n">the</span> <span class="n">document</span> <span class="n">fitting</span> <span class="n">the</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">already</span> <span class="nl">exists</span><span class="p">:</span>
+  <span class="n">DOCEXISTACTION</span> <span class="n">value</span>      <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">----------------------------------------------------------------------------------</span>
+  <span class="err">&#39;</span><span class="n">Error</span><span class="err">&#39;</span>                   <span class="o">|</span> <span class="n">An</span> <span class="n">error</span> <span class="n">is</span> <span class="n">generating</span> <span class="n">indicating</span> <span class="n">the</span> <span class="n">document</span> <span class="n">exists</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">NoAction</span><span class="err">&#39;</span>                <span class="o">|</span> <span class="n">The</span> <span class="n">existing</span> <span class="n">document</span> <span class="n">is</span> <span class="n">left</span> <span class="n">alone</span><span class="p">.</span> <span class="n">The</span> <span class="n">existing</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span>
+                            <span class="o">|</span>    <span class="n">is</span> <span class="n">returned</span> <span class="k">in</span> <span class="n">DOC</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">Replace</span><span class="err">&#39;</span>                 <span class="o">|</span> <span class="n">Replace</span> <span class="n">the</span> <span class="n">document</span><span class="p">;</span> <span class="n">note</span> <span class="n">that</span> <span class="n">this</span> <span class="n">deletes</span> <span class="n">all</span> <span class="n">NDI_DOCUMENTS</span>
+                            <span class="o">|</span>    <span class="n">that</span> <span class="n">depend</span> <span class="n">on</span> <span class="n">the</span> <span class="n">original</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">ReplaceIfDifferent</span><span class="err">&#39;</span>      <span class="o">|</span> <span class="n">Conditionally</span> <span class="n">replace</span> <span class="n">the</span> <span class="n">document</span><span class="p">,</span> <span class="n">but</span> <span class="n">only</span> <span class="k">if</span> <span class="n">the</span> 
+                            <span class="o">|</span>    <span class="n">the</span> <span class="n">data</span> <span class="n">structures</span> <span class="n">that</span> <span class="n">define</span> <span class="n">the</span> <span class="n">document</span> <span class="n">are</span> <span class="n">not</span> <span class="n">equal</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
-<p>'Error'                   | An error is generating indicating the document exists.
-  'NoAction'                | The existing document is left alone. The existing ndi.document
-                            |    is returned in DOC.
-  'Replace'                 | Replace the document; note that this deletes all NDI_DOCUMENTS
-                            |    that depend on the original.
-  'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
-                            |    the data structures that define the document are not equal.</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
-
-<span class="o">**</span><span class="nt">appdoc</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">create</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">document</span><span class="o">*</span>
-
-<span class="err">```</span><span class="nt">NDI_APPDOC_OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="nt">DOC_TYPES</span><span class="o">,</span> <span class="nt">DOC_DOCUMENT_TYPES</span><span class="o">,</span> <span class="nt">DOC_SESSION</span><span class="o">)</span>
+<p><strong>appdoc</strong> - <em>create a new ndi.app.appdoc document</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nt">NDI_APPDOC_OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="nt">DOC_TYPES</span><span class="o">,</span> <span class="nt">DOC_DOCUMENT_TYPES</span><span class="o">,</span> <span class="nt">DOC_SESSION</span><span class="o">)</span>
 
   <span class="nt">Creates</span> <span class="nt">and</span> <span class="nt">initializes</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">object</span><span class="o">.</span>
 
@@ -4927,71 +4931,75 @@
 
 <hr />
 <p><strong>appdoc_description</strong> - <em>a function that prints a description of all appdoc types</em></p>
-<p>```Every subclass should override this function to describe the APPDOC types available
-  to the subclass. It should follow the following form.</p>
-<hr />
-<p>The APPDOCs available to this class are the following:</p>
-<p>APPDOC_TYPE               | Description</p>
-<hr />
-<p>'doctype1'                | The first app document type.
-  (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
-  (here, 'doctype1' is a dummy example.)</p>
-<hr />
-<p>APPDOC 1: DOCTYPE1</p>
-<hr />
-<div class="codehilite"><pre><span></span><code><span class="o">---------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">---------------------</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="k">Every</span><span class="w"> </span><span class="n">subclass</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">override</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">describe</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">APPDOC</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="n">available</span><span class="w"></span>
+<span class="w">  </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">subclass</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">follow</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="n">form</span><span class="p">.</span><span class="w"></span>
 
-<span class="n">DOCTYPE</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="n">X</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">DEPENDS</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">Y</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">Z</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="o">--------------------</span><span class="w"></span>
 
-<span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">app</span><span class="o">/</span><span class="n">myapp</span><span class="o">/</span><span class="n">doctype1</span><span class="w"></span>
+<span class="w">  </span><span class="n">The</span><span class="w"> </span><span class="n">APPDOCs</span><span class="w"> </span><span class="n">available</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nl">following</span><span class="p">:</span><span class="w"></span>
 
-<span class="o">--------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">--------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="n">APPDOC_TYPE</span><span class="w">               </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;doctype1&#39;</span><span class="w">                </span><span class="o">|</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">app</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">type</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="p">(</span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">base</span><span class="w"> </span><span class="k">class</span><span class="p">,</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">no</span><span class="w"> </span><span class="n">APPDOCS</span><span class="p">;</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">subclasses</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">types</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">appear</span><span class="w"> </span><span class="n">here</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="p">(</span><span class="n">here</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;doctype1&#39;</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">dummy</span><span class="w"> </span><span class="n">example</span><span class="p">.)</span><span class="w"></span>
 
-<span class="n">DOC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">DOCTYPE1PARAMS</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="n">APPDOC</span><span class="w"> </span><span class="mi">1</span><span class="err">:</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
 
-<span class="n">DOCTYPE1PARAMS</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">contain</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="nl">fields</span><span class="p">:</span><span class="w"></span>
-<span class="n">Fieldname</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
-<span class="o">-------------------------------------------------------------------------</span><span class="w"></span>
-<span class="n">field1</span><span class="w">                    </span><span class="o">|</span><span class="w"> </span><span class="n">field1</span><span class="w"> </span><span class="n">description</span><span class="w"></span>
-<span class="n">overlap</span><span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">field2</span><span class="w"> </span><span class="n">description</span><span class="w"></span>
+<span class="w">    </span><span class="o">---------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">---------------------</span><span class="w"></span>
 
-<span class="o">------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="n">DOCTYPE</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="n">X</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">DEPENDS</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">Y</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">Z</span><span class="p">.</span><span class="w"> </span>
 
-<span class="o">[</span><span class="n">DOCTYPE1_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT1</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
+<span class="w">    </span><span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">app</span><span class="o">/</span><span class="n">myapp</span><span class="o">/</span><span class="n">doctype1</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">INPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
-<span class="w">   </span><span class="n">INPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
-<span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">DOCTYPE1_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">application</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"></span>
+<span class="w">    </span><span class="o">--------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">--------------------------</span><span class="w"></span>
 
-<span class="o">------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="n">DOC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">DOCTYPE1PARAMS</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
 
-<span class="o">[</span><span class="n">OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDOC_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
-<span class="w">    </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT1</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT2</span><span class="p">,...);</span><span class="w"></span>
+<span class="w">    </span><span class="n">DOCTYPE1PARAMS</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">contain</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="nl">fields</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">Fieldname</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
+<span class="w">    </span><span class="o">-------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="n">field1</span><span class="w">                    </span><span class="o">|</span><span class="w"> </span><span class="n">field1</span><span class="w"> </span><span class="n">description</span><span class="w"></span>
+<span class="w">    </span><span class="n">overlap</span><span class="w">                   </span><span class="o">|</span><span class="w"> </span><span class="n">field2</span><span class="w"> </span><span class="n">description</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">INPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
-<span class="w">   </span><span class="n">INPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
-<span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">OUTPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">contained</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
-<span class="w">   </span><span class="n">OUTPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">contained</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">[</span><span class="n">DOCTYPE1_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT1</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT2</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"> </span>
+
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">INPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">       </span><span class="n">INPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">    </span><span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">DOCTYPE1_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">application</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">[</span><span class="n">OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDOC_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="w">        </span><span class="s1">&#39;doctype1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT1</span><span class="p">,</span><span class="w"> </span><span class="n">INPUT2</span><span class="p">,...);</span><span class="w"></span>
+
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">INPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">       </span><span class="n">INPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">find</span><span class="w"> </span><span class="n">doctype1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">    </span><span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">OUTPUT1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">contained</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+<span class="w">       </span><span class="n">OUTPUT2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">second</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">loaded</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="n">contained</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">DOCTYPE1</span><span class="w"> </span><span class="n">documents</span><span class="w"></span>
+
+<span class="w">  </span><span class="p">(</span><span class="k">If</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="n">were</span><span class="w"> </span><span class="n">more</span><span class="w"> </span><span class="n">appdoc</span><span class="w"> </span><span class="n">types</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="n">them</span><span class="w"> </span><span class="n">here</span><span class="p">...)</span><span class="w"></span>
 </code></pre></div>
 
-<p>(If there were more appdoc types, list them here...)</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="n">clear_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">remove</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">appdoc</span> <span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">session</span> <span class="n">database</span><span class="o">*</span>
-
-<span class="err">```</span><span class="n">B</span> <span class="o">=</span> <span class="n">CLEAR_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">])</span>
+<hr />
+<p><strong>clear_appdoc</strong> - <em>remove an ndi.app.appdoc document from a session database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">B</span> <span class="o">=</span> <span class="n">CLEAR_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">])</span>
 
   <span class="n">Deletes</span> <span class="n">the</span> <span class="n">app</span> <span class="n">document</span> <span class="n">of</span> <span class="n">style</span> <span class="n">DOC_NAME</span> <span class="n">from</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
   <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">the</span> <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
@@ -5003,15 +5011,17 @@
 
 <hr />
 <p><strong>defaultstruct_appdoc</strong> - <em>return a default appdoc structure for a given APPDOC type</em></p>
-<p>```APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)</p>
-<p>Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.</p>
-<p>In the base class, the blank version of the ndi.document is read in and the
-  default structure is built from the ndi.document's class property list.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">APPDOC_STRUCT</span> <span class="o">=</span> <span class="nv">DEFAULTSTRUCT_APPDOC</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">doc2struct</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">create</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">an</span> <span class="n">input</span> <span class="n">structure</span> <span class="n">and</span> <span class="n">input</span> <span class="n">parameters</span><span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">default</span> <span class="nv">data</span> <span class="nv">structure</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">APPDOC_TYPE</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">appdoc</span> <span class="nv">object</span>.
 
-<span class="err">```</span><span class="n">DOC</span> <span class="o">=</span> <span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">SESSION</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="n">APPDOC_STRUCT</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">parameters</span><span class="p">]</span>
+  <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">the</span> <span class="nv">blank</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">is</span> <span class="nv">read</span> <span class="nv">in</span> <span class="nv">and</span> <span class="nv">the</span>
+  <span class="nv">default</span> <span class="nv">structure</span> <span class="nv">is</span> <span class="nv">built</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span><span class="s1">&#39;</span><span class="s">s class property list.</span>
+</code></pre></div>
+
+<hr />
+<p><strong>doc2struct</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">DOC</span> <span class="o">=</span> <span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">SESSION</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="n">APPDOC_STRUCT</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">parameters</span><span class="p">]</span>
 
   <span class="n">Create</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">data</span> <span class="n">structure</span> <span class="n">APPDOC_STRUCT</span><span class="p">.</span> <span class="n">The</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">is</span> <span class="n">created</span>
   <span class="n">according</span> <span class="n">to</span> <span class="n">the</span> <span class="n">APPDOC_TYPE</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NDI_APPDOC_OBJ</span><span class="p">.</span>
@@ -5021,20 +5031,24 @@
 
 <hr />
 <p><strong>find_appdoc</strong> - <em>find an ndi.app.appdoc document in the session database</em></p>
-<p>```DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])</p>
-<p>Using search criteria that is supported by [additional inputs], FIND_APPDOC
-  searches the database for the ndi.document object DOC that is
-  described by APPDOC_TYPE.</p>
-<p>DOC is always a cell array of all matching NDI_DOCUMENTs.</p>
-<p>In this superclass, empty is always returned. Subclasses should override
-  this function to search for each document type.</p>
-<p>The documentation for subclasses should be in the overriden function
-  APPDOC_DESCRIPTION.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">DOC</span> <span class="o">=</span> <span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">])</span>
 
-<span class="o">**</span><span class="nv">isequal_appdoc_struct</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">are</span> <span class="nv">two</span> <span class="nv">APPDOC</span> <span class="nv">data</span> <span class="nv">structures</span> <span class="nv">the</span> <span class="nv">same</span> <span class="ss">(</span><span class="nv">equal</span><span class="ss">)</span>?<span class="o">*</span>
+  <span class="n">Using</span> <span class="n">search</span> <span class="n">criteria</span> <span class="n">that</span> <span class="n">is</span> <span class="n">supported</span> <span class="n">by</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">],</span> <span class="n">FIND_APPDOC</span>
+  <span class="n">searches</span> <span class="n">the</span> <span class="n">database</span> <span class="k">for</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">object</span> <span class="n">DOC</span> <span class="n">that</span> <span class="n">is</span>
+  <span class="n">described</span> <span class="n">by</span> <span class="n">APPDOC_TYPE</span><span class="p">.</span>
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">ISEQUAL_APPDOC_STRUCT</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT1</span>, <span class="nv">APPDOC_STRUCT2</span><span class="ss">)</span>
+  <span class="n">DOC</span> <span class="n">is</span> <span class="n">always</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">all</span> <span class="n">matching</span> <span class="n">NDI_DOCUMENTs</span><span class="p">.</span>
+
+  <span class="n">In</span> <span class="n">this</span> <span class="n">superclass</span><span class="p">,</span> <span class="n">empty</span> <span class="n">is</span> <span class="n">always</span> <span class="n">returned</span><span class="p">.</span> <span class="n">Subclasses</span> <span class="n">should</span> <span class="n">override</span>
+  <span class="n">this</span> <span class="n">function</span> <span class="n">to</span> <span class="n">search</span> <span class="k">for</span> <span class="n">each</span> <span class="n">document</span> <span class="n">type</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">documentation</span> <span class="k">for</span> <span class="n">subclasses</span> <span class="n">should</span> <span class="n">be</span> <span class="k">in</span> <span class="n">the</span> <span class="n">overriden</span> <span class="n">function</span>
+  <span class="n">APPDOC_DESCRIPTION</span><span class="p">.</span>
+</code></pre></div>
+
+<hr />
+<p><strong>isequal_appdoc_struct</strong> - <em>are two APPDOC data structures the same (equal)?</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">ISEQUAL_APPDOC_STRUCT</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT1</span>, <span class="nv">APPDOC_STRUCT2</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">structures</span> <span class="nv">APPDOC_STRUCT1</span> <span class="nv">and</span> <span class="nv">APPDOC_STRUCT2</span> <span class="nv">are</span> <span class="nv">valid</span> <span class="nv">and</span> <span class="nv">equal</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">this</span> <span class="nv">is</span>
   <span class="nv">true</span> <span class="k">if</span> <span class="nv">APPDOC_STRUCT1</span> <span class="nv">and</span> <span class="nv">APPDOC_STRUCT2</span> <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">field</span> <span class="nv">names</span> <span class="nv">and</span> <span class="nv">same</span> <span class="nv">values</span> <span class="nv">and</span> <span class="nv">same</span> <span class="nv">sizes</span>. <span class="nv">That</span> <span class="nv">is</span>,
@@ -5043,15 +5057,17 @@
 
 <hr />
 <p><strong>isvalid_appdoc_struct</strong> - <em>is an input structure a valid descriptor for an APPDOC?</em></p>
-<p>```[B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT)</p>
-<p>Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
-  ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.</p>
-<p>In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">B</span>,<span class="nv">ERRORMSG</span>] <span class="o">=</span> <span class="nv">ISVALID_APPDOC_STRUCT</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">loaddata_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Load</span> <span class="n">data</span> <span class="n">from</span> <span class="n">an</span> <span class="n">application</span> <span class="n">document</span><span class="o">*</span>
+  <span class="nv">Examines</span> <span class="nv">APPDOC_STRUCT</span> <span class="nv">and</span> <span class="nv">determines</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">valid</span> <span class="nv">input</span> <span class="k">for</span> <span class="nv">creating</span> <span class="nv">an</span>
+  <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">described</span> <span class="nv">by</span> <span class="nv">APPDOC_TYPE</span>. <span class="nv">B</span> <span class="nv">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">valid</span> <span class="nv">and</span> <span class="mi">0</span> <span class="nv">otherwise</span>.
 
-<span class="err">```</span><span class="p">[...]</span> <span class="o">=</span> <span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">arguments</span><span class="p">])</span>
+  <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">B</span> <span class="nv">is</span> <span class="nv">always</span> <span class="mi">0</span> <span class="nv">with</span> <span class="nv">ERRORMSG</span> <span class="s1">&#39;</span><span class="s">Base class always returns invalid.</span><span class="s1">&#39;</span>
+</code></pre></div>
+
+<hr />
+<p><strong>loaddata_appdoc</strong> - <em>Load data from an application document</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[...]</span> <span class="o">=</span> <span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">arguments</span><span class="p">])</span>
 
   <span class="n">Loads</span> <span class="n">the</span> <span class="n">data</span> <span class="n">from</span> <span class="n">app</span> <span class="n">document</span> <span class="n">of</span> <span class="n">style</span> <span class="n">DOC_NAME</span> <span class="n">from</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
   <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">the</span> <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
@@ -5066,12 +5082,15 @@
 
 <hr />
 <p><strong>struct2doc</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
-<p>```DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
-<p>Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
-  according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.</p>
-<p>In the base class, this always returns empty. It must be overridden in subclasses.
-  The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
-```</p>
+<div class="codehilite"><pre><span></span><code><span class="n">DOC</span> <span class="o">=</span> <span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="n">APPDOC_STRUCT</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">parameters</span><span class="p">]</span>
+
+  <span class="n">Create</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">data</span> <span class="n">structure</span> <span class="n">APPDOC_STRUCT</span><span class="p">.</span> <span class="n">The</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">is</span> <span class="n">created</span>
+  <span class="n">according</span> <span class="n">to</span> <span class="n">the</span> <span class="n">APPDOC_TYPE</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NDI_APPDOC_OBJ</span><span class="p">.</span>
+
+  <span class="n">In</span> <span class="n">the</span> <span class="n">base</span> <span class="k">class</span><span class="p">,</span> <span class="n">this</span> <span class="n">always</span> <span class="n">returns</span> <span class="n">empty</span><span class="p">.</span> <span class="n">It</span> <span class="n">must</span> <span class="n">be</span> <span class="n">overridden</span> <span class="k">in</span> <span class="n">subclasses</span><span class="p">.</span>
+  <span class="n">The</span> <span class="n">documentation</span> <span class="k">for</span> <span class="n">overriden</span> <span class="n">functions</span> <span class="n">should</span> <span class="n">be</span> <span class="k">in</span> <span class="n">the</span> <span class="n">function</span> <span class="n">APPDOC_DESCRIPTION</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
                 
               

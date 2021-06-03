@@ -4849,14 +4849,15 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addtableentry</strong> - <em>add an entry to an ndi.session.sessiontable</em></p>
-<p>```ADDTABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID, PATH)</p>
-<p>Adds SESSION_ID and PATH as an entry to the session table.
-  If SESSION_ID is already in the table, then the entry is replaced.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ADDTABLEENTRY</span><span class="ss">(</span><span class="nv">NDI_SESSIONTABLE_OBJ</span>, <span class="nv">SESSION_ID</span>, <span class="nv">PATH</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">backupfilelist</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">backup</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">present</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="k">disk</span><span class="o">*</span><span class="w"></span>
+  <span class="nv">Adds</span> <span class="nv">SESSION_ID</span> <span class="nv">and</span> <span class="nv">PATH</span> <span class="nv">as</span> <span class="nv">an</span> <span class="nv">entry</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">session</span> <span class="nv">table</span>.
+  <span class="k">If</span> <span class="nv">SESSION_ID</span> <span class="nv">is</span> <span class="nv">already</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">table</span>, <span class="k">then</span> <span class="nv">the</span> <span class="nv">entry</span> <span class="nv">is</span> <span class="nv">replaced</span>.
+</code></pre></div>
 
-<span class="err">```</span><span class="n">F</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BACKUPFILELIST</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">)</span><span class="w"></span>
+<hr />
+<p><strong>backupfilelist</strong> - <em>a list of backup files that are present on disk</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">F</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BACKUPFILELIST</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="k">Returns</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">backup</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">available</span><span class="p">.</span><span class="w"> </span><span class="k">Backup</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">have</span><span class="w"> </span>
 <span class="w">  </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">[</span><span class="n">USERPATH</span><span class="o">]/</span><span class="n">Preferences</span><span class="o">/</span><span class="n">NDI</span><span class="o">/</span><span class="n">local_sessiontable_bkupNNN</span><span class="p">.</span><span class="n">txt</span><span class="p">.</span><span class="w"></span>
@@ -4864,15 +4865,16 @@
 
 <hr />
 <p><strong>backupsessiontable</strong> - <em>create a backup file for an ndi.session.sessiontable</em></p>
-<p>```BACKUP_SESSION_TABLE(NDI_SESSIONTABLE_OBJ)</p>
-<p>Perform a backup of the sesion table file.
-  The session table file is backed up in the [USERPATH]/Preferences/NDI directory
-  and be named 'local_sessiontableNNN.txt', where NNN is a number.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">BACKUP_SESSION_TABLE</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="nv">checktable</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">check</span> <span class="nv">the</span> <span class="nv">session</span> <span class="nv">table</span> <span class="k">for</span> <span class="nv">proper</span> <span class="nv">form</span>, <span class="nv">accessibility</span><span class="o">*</span>
+<span class="w">  </span><span class="n">Perform</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">backup</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sesion</span><span class="w"> </span><span class="nc">table</span><span class="w"> </span><span class="k">file</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="n">The</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="nc">table</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">backed</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="o">[</span><span class="n">USERPATH</span><span class="o">]/</span><span class="n">Preferences</span><span class="o">/</span><span class="n">NDI</span><span class="w"> </span><span class="n">directory</span><span class="w"></span>
+<span class="w">  </span><span class="ow">and</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">named</span><span class="w"> </span><span class="s1">&#39;local_sessiontableNNN.txt&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="n">NNN</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">number</span><span class="p">.</span><span class="w"></span>
+</code></pre></div>
 
-```[<span class="nv">B</span>, <span class="nv">RESULTS</span>] <span class="o">=</span> <span class="nv">CHECKTABLE</span><span class="ss">(</span><span class="nv">NDI_SESSIONTABLE_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>checktable</strong> - <em>check the session table for proper form, accessibility</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">B</span>, <span class="nv">RESULTS</span>] <span class="o">=</span> <span class="nv">CHECKTABLE</span><span class="ss">(</span><span class="nv">NDI_SESSIONTABLE_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Check</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">sessiontable</span> <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s session table to see if it has the right</span>
   <span class="nv">form</span> <span class="ss">(</span><span class="nv">B</span> <span class="nv">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">does</span>, <span class="nv">B</span> <span class="nv">is</span> <span class="mi">0</span> <span class="nv">otherwise</span><span class="ss">)</span>. <span class="ss">(</span><span class="nv">It</span> <span class="nv">has</span> <span class="nv">the</span> <span class="nv">right</span> <span class="nv">form</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">structure</span> <span class="nv">with</span> <span class="nv">fieldnames</span>
@@ -4885,15 +4887,16 @@
 
 <hr />
 <p><strong>clearsessiontable</strong> - <em>clear an ndi.session.sessiontable object's data</em></p>
-<p>```CLEARSESSIONTABLE(NDI_SESSIONTABLE_OBJ, [MAKEBACKUP])</p>
-<p>Removes all entries from the ndi.session.sessiontable's file.
-  If MAKEBACKUP is present and is 1, then the session table file
-  is backed up first (in the Preferences/NDI directory).</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">CLEARSESSIONTABLE</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">MAKEBACKUP</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="nv">getsessionpath</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">look</span> <span class="nv">up</span> <span class="nv">the</span> <span class="nv">path</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">by</span> <span class="nv">its</span> <span class="nv">ID</span><span class="o">*</span>
+<span class="w">  </span><span class="n">Removes</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">entries</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">session</span><span class="p">.</span><span class="n">sessiontable</span><span class="err">&#39;</span><span class="n">s</span><span class="w"> </span><span class="k">file</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">MAKEBACKUP</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">present</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="nc">table</span><span class="w"> </span><span class="k">file</span><span class="w"></span>
+<span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">backed</span><span class="w"> </span><span class="n">up</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="p">(</span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">Preferences</span><span class="o">/</span><span class="n">NDI</span><span class="w"> </span><span class="n">directory</span><span class="p">).</span><span class="w"></span>
+</code></pre></div>
 
-```<span class="nv">THEPATH</span> <span class="o">=</span> <span class="nv">GETSESIONPATH</span><span class="ss">(</span><span class="nv">SESSION_ID</span><span class="ss">)</span>
+<hr />
+<p><strong>getsessionpath</strong> - <em>look up the path of an ndi.session by its ID</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">THEPATH</span> <span class="o">=</span> <span class="nv">GETSESIONPATH</span><span class="ss">(</span><span class="nv">SESSION_ID</span><span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">sessiontable</span> <span class="nv">object</span> <span class="nv">to</span> <span class="nv">see</span> <span class="k">if</span> <span class="nv">a</span> <span class="nv">path</span> <span class="nv">is</span> <span class="nv">known</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">session</span>
   <span class="nv">with</span> <span class="nv">an</span> <span class="nv">ID</span> <span class="nv">of</span> <span class="nv">SESSION_ID</span>. <span class="nv">Otherwise</span>, <span class="nv">empty</span> <span class="ss">(</span>[]<span class="ss">)</span> <span class="nv">is</span> <span class="nv">returned</span><span class="c1">;</span>
@@ -4901,14 +4904,15 @@
 
 <hr />
 <p><strong>getsessiontable</strong> - <em>return the session table</em></p>
-<p>```T = GETSESSIONTABLE(NDI_SESSIONTABLE_OBJ)</p>
-<p>Returns the session table, a structure with fields 'SESSION_ID' and 'PATH'. Each entry
-  in the table corresponds to a recently-opened or added path of ndi.session.dir.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code>T = GETSESSIONTABLE(NDI_SESSIONTABLE_OBJ)
 
-<span class="o">**</span><span class="n">isvalidtable</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">Does</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="nc">table</span><span class="w"> </span><span class="n">have</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">correct</span><span class="w"> </span><span class="n">fields</span><span class="vm">?</span><span class="o">*</span><span class="w"></span>
+  Returns the session table, a structure with fields &#39;SESSION_ID&#39; and &#39;PATH&#39;. Each entry
+  in the table corresponds to a recently-opened or added path of ndi.session.dir.
+</code></pre></div>
 
-<span class="err">```</span><span class="o">[</span><span class="n">B,MSG</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ISVALIDTABLE</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">T</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
+<hr />
+<p><strong>isvalidtable</strong> - <em>Does the session table have the correct fields?</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">B,MSG</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ISVALIDTABLE</span><span class="p">(</span><span class="n">NDI_SESSIONTABLE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">T</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="n">B</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">NDI</span><span class="w"> </span><span class="k">SESSION</span><span class="w"> </span><span class="nc">TABLE</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">structure</span><span class="w"> </span><span class="k">array</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">fields</span><span class="w"></span>
 <span class="w">  </span><span class="s1">&#39;path&#39;</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="s1">&#39;session_id&#39;</span><span class="p">,</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="nc">text</span><span class="w"> </span><span class="n">fields</span><span class="p">.</span><span class="w"> </span><span class="n">B</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="n">otherwise</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">T</span><span class="w"></span>
@@ -4919,12 +4923,12 @@
 
 <hr />
 <p><strong>localtablefilename</strong> - <em>return the session table filename</em></p>
-<p>```F = LOCALTABLEFILENAME()</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>F = LOCALTABLEFILENAME()
+</code></pre></div>
 
-**removetableentry** - *remove an entry of an ndi.session.sessiontable*
-
-```REMOVETABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID)
+<hr />
+<p><strong>removetableentry</strong> - <em>remove an entry of an ndi.session.sessiontable</em></p>
+<div class="codehilite"><pre><span></span><code>REMOVETABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID)
 
   Removes the entry of an ndi.session.sessiontable with the given SESSION_ID.
 </code></pre></div>

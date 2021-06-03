@@ -4826,21 +4826,23 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>epochprobemap</strong> - <em>Create a new ndi.epoch.epochprobemap object</em></p>
-<p>```MYNDI_EPOCHPROBEMAP = ndi.epoch.epochprobemap()</p>
-<p>Creates a new ndi.epoch.epochprobemap object. This is an abstract
-  base class so it has no inputs.</p>
-<p>The function has an alternative form:</p>
-<div class="codehilite"><pre><span></span><code>MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
+<div class="codehilite"><pre><span></span><code>MYNDI_EPOCHPROBEMAP = ndi.epoch.epochprobemap()
+
+  Creates a new ndi.epoch.epochprobemap object. This is an abstract
+  base class so it has no inputs.
+
+  The function has an alternative form:
+
+    MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
+
+  Here, FILENAME is assumed to be a tab-delimitted text file with a header row
+  that has entries &#39;name&lt;tab&gt;reference&lt;tab&gt;type&lt;tab&gt;devicestring&lt;tab&gt;&#39;, with
+  one line per ndi.epoch.epochprobemap_daqsystem entry.
 </code></pre></div>
 
-<p>Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-  that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-  one line per ndi.epoch.epochprobemap_daqsystem entry.</p>
-<div class="codehilite"><pre><span></span><code>---
-
-**savetofile** - *Write ndi.epoch.epochprobemap object array to disk*
-
-```SAVETOFILE(NDI_EPOCHCONENTS_OBJ, FILENAME)
+<hr />
+<p><strong>savetofile</strong> - <em>Write ndi.epoch.epochprobemap object array to disk</em></p>
+<div class="codehilite"><pre><span></span><code>SAVETOFILE(NDI_EPOCHCONENTS_OBJ, FILENAME)
 
    Writes the ndi.epoch.epochprobemap object to disk in filename FILENAME (full path).
 

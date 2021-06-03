@@ -4864,29 +4864,32 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>epochprobemap_daqsystem</strong> - <em>Create a new ndi.epoch.epochprobemap_daqsystem object</em></p>
-<p>```MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)</p>
-<p>Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
-  and devicestring DEVICESTRING.</p>
-<p>NAME can be any string that begins with a letter and contains no whitespace. It
+<div class="codehilite"><pre><span></span><code>MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
+
+  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+  and devicestring DEVICESTRING.
+
+  NAME can be any string that begins with a letter and contains no whitespace. It
   is CASE SENSITIVE.
   REFERENCE must be a non-negative scalar integer.
   TYPE is the type of recording.
   DEVICESTRING is a string that indicates the channels that were used to acquire
   this record.
   SUBJECTSTRING describes the subject of the probe, either using the unique local identifier
-    or the document unique identifier (ID) of the ndi.document that describes the subject.</p>
-<p>The function has an alternative form:</p>
-<div class="codehilite"><pre><span></span><code>MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
+    or the document unique identifier (ID) of the ndi.document that describes the subject.
+
+  The function has an alternative form:
+
+    MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
+
+  Here, FILENAME is assumed to be a tab-delimitted text file with a header row
+  that has entries &#39;name&lt;tab&gt;reference&lt;tab&gt;type&lt;tab&gt;devicestring&lt;tab&gt;&lt;subjectstring&gt;&#39;, with
+  one line per ndi.epoch.epochprobemap_daqsystem entry.
 </code></pre></div>
 
-<p>Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-  that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
-  one line per ndi.epoch.epochprobemap_daqsystem entry.</p>
-<div class="codehilite"><pre><span></span><code>---
-
-**savetofile** - *Write ndi.epoch.epochprobemap_daqsystem object array to disk*
-
-```SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
+<hr />
+<p><strong>savetofile</strong> - <em>Write ndi.epoch.epochprobemap_daqsystem object array to disk</em></p>
+<div class="codehilite"><pre><span></span><code>SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
 
    Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
 </code></pre></div>

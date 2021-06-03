@@ -4837,14 +4837,16 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>map</strong> - <em>perform a mapping from one time base to another</em></p>
-<p>```T_OUT = MAP(NDI_TIMEMAPPING_OBJ, T_IN)</p>
-<p>Perform the mapping described by NDI_TIMEMAPPING_OBJ from one time base to another.</p>
-<p>In the base class ndi.time.timemapping, the mapping is a polynomial.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>T_OUT = MAP(NDI_TIMEMAPPING_OBJ, T_IN)
 
-<span class="o">**</span><span class="n">timemapping</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="o">*</span>
+  Perform the mapping described by NDI_TIMEMAPPING_OBJ from one time base to another.
 
-<span class="err">```</span><span class="n">NDI_TIMEMAPPING_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">()</span>
+  In the base class ndi.time.timemapping, the mapping is a polynomial.
+</code></pre></div>
+
+<hr />
+<p><strong>timemapping</strong> - <em>ndi.time.timemapping</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">NDI_TIMEMAPPING_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">()</span>
      <span class="n">or</span>
   <span class="n">NDI_TIMEMAPPING_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">(</span><span class="n">MAPPING</span><span class="p">)</span>
 

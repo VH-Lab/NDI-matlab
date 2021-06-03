@@ -4842,21 +4842,22 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>ndi_timereference_struct</strong> - <em>return a structure that describes an ndi.time.timereference object that lacks Matlab objects</em></p>
-<p>```A = NDI_TIMEREFERENCE_STRUCT(NDI_TIMEREF_OBJ)</p>
-<p>Returns a structure with the following fields:
-  Fieldname                      | Description</p>
-<hr />
-<p>referent_epochsetname          | The epochsetname() of the referent
+<div class="codehilite"><pre><span></span><code>A = NDI_TIMEREFERENCE_STRUCT(NDI_TIMEREF_OBJ)
+
+  Returns a structure with the following fields:
+  Fieldname                      | Description
+  --------------------------------------------------------------------------------
+  referent_epochsetname          | The epochsetname() of the referent
   referent_classname             | The classname of the referent
   clocktypestring                | The value of the clocktype
   epoch                          | The epoch (either a string or a number)
   session_ID                     | The session ID of the session that contains the epoch
-  time                           | The time</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+  time                           | The time
+</code></pre></div>
 
-<span class="o">**</span><span class="nv">timereference</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">creates</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">time</span> <span class="nv">reference</span> <span class="nv">object</span><span class="o">*</span>
-
-```<span class="nv">OBJ</span> <span class="o">=</span> <span class="nv">NDI</span>.<span class="nv">TIME</span>.<span class="nv">TIMEREFERENCE</span><span class="ss">(</span><span class="nv">REFERENT</span>, <span class="nv">CLOCKTYPE</span>, <span class="nv">EPOCH</span>, <span class="nv">TIME</span><span class="ss">)</span>
+<hr />
+<p><strong>timereference</strong> - <em>creates a new time reference object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">OBJ</span> <span class="o">=</span> <span class="nv">NDI</span>.<span class="nv">TIME</span>.<span class="nv">TIMEREFERENCE</span><span class="ss">(</span><span class="nv">REFERENT</span>, <span class="nv">CLOCKTYPE</span>, <span class="nv">EPOCH</span>, <span class="nv">TIME</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span>. <span class="nv">The</span> <span class="nv">REFERENT</span>, <span class="nv">EPOCH</span>, <span class="nv">and</span> <span class="nv">TIME</span> <span class="nv">must</span>
   <span class="nv">specify</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">time</span>. 

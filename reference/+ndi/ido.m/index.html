@@ -4836,13 +4836,14 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
-<p>```IDENTIFIER = ID(NDI_ID_OBJ)</p>
-<p>Returns the unique identifier of an ndi.ido object.</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>IDENTIFIER = ID(NDI_ID_OBJ)
 
-**ido** - *create a new ndi.ido object*
+  Returns the unique identifier of an ndi.ido object.
+</code></pre></div>
 
-```NDI_ID_OBJ = ndi.ido()
+<hr />
+<p><strong>ido</strong> - <em>create a new ndi.ido object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_ID_OBJ = ndi.ido()
 
   Creates a new ndi.ido object and generates a unique id
   that is stored in the property &#39;identifier&#39;.
@@ -4850,15 +4851,19 @@
 
 <hr />
 <p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>```ID = NDI_UNIQUE_ID</p>
-<p>Generates a unique ID character array based on the current time and a random
-  number. It is a hexidecimal representation of the serial date number in
-  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
-  The integer portion of the date is the whole number of days and the fractional part of the date number
-  is the fraction of days.</p>
-<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND
-```</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
+
+  <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
+  <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
+  <span class="nv">UTC</span> <span class="nv">Leap</span> <span class="nv">Seconds</span> <span class="nv">time</span>. <span class="nv">The</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">since</span> <span class="nv">January</span> <span class="mi">0</span>, <span class="mi">0000</span> <span class="nv">at</span> <span class="mi">0</span>:<span class="mi">00</span>:<span class="mi">00</span>.
+  <span class="nv">The</span> <span class="nv">integer</span> <span class="nv">portion</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">whole</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">fractional</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">number</span>
+  <span class="nv">is</span> <span class="nv">the</span> <span class="nv">fraction</span> <span class="nv">of</span> <span class="nv">days</span>.
+
+  <span class="nv">ID</span> <span class="o">=</span> [<span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">SERIAL_DATE_NUMBER</span><span class="ss">)</span> <span class="s1">&#39;</span><span class="s">_</span><span class="s1">&#39;</span> <span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">RAND</span><span class="ss">)</span>]
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
+</code></pre></div>
+
 <hr />
                 
               

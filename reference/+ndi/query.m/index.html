@@ -4888,65 +4888,74 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>and</strong> - <em>add ndi.query objects</em></p>
-<p>```C = AND(A,B) or C = A &amp; B</p>
-<p>Combines the searches from A and B into a search C. The searchstructure field of
-  C will be a concatenated version of those from A and B. The query C will only pass if
-  all of the characteristics of A and B are satisfied.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">C</span> <span class="o">=</span> <span class="nv">AND</span><span class="ss">(</span><span class="nv">A</span>,<span class="nv">B</span><span class="ss">)</span> <span class="nv">or</span> <span class="nv">C</span> <span class="o">=</span> <span class="nv">A</span> <span class="o">&amp;</span> <span class="nv">B</span>
 
-<span class="o">**</span><span class="nv">or</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">search</span> <span class="k">for</span> <span class="nv">_this_</span> <span class="nv">ndi</span>.<span class="nv">query</span> <span class="nv">object</span> <span class="nv">or</span> <span class="nv">_that_</span> <span class="nv">ndi</span>.<span class="nv">query</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">Combines</span> <span class="nv">the</span> <span class="nv">searches</span> <span class="nv">from</span> <span class="nv">A</span> <span class="nv">and</span> <span class="nv">B</span> <span class="nv">into</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">C</span>. <span class="nv">The</span> <span class="nv">searchstructure</span> <span class="nv">field</span> <span class="nv">of</span>
+  <span class="nv">C</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">concatenated</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">those</span> <span class="nv">from</span> <span class="nv">A</span> <span class="nv">and</span> <span class="nv">B</span>. <span class="nv">The</span> <span class="nv">query</span> <span class="nv">C</span> <span class="nv">will</span> <span class="nv">only</span> <span class="nv">pass</span> <span class="k">if</span>
+  <span class="nv">all</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">characteristics</span> <span class="nv">of</span> <span class="nv">A</span> <span class="nv">and</span> <span class="nv">B</span> <span class="nv">are</span> <span class="nv">satisfied</span>.
+</code></pre></div>
 
-```<span class="nv">C</span> <span class="o">=</span> <span class="nv">OR</span><span class="ss">(</span><span class="nv">A</span>,<span class="nv">B</span><span class="ss">)</span>
+<hr />
+<p><strong>or</strong> - <em>search for <em>this</em> ndi.query object or <em>that</em> ndi.query object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">C</span> <span class="o">=</span> <span class="nv">OR</span><span class="ss">(</span><span class="nv">A</span>,<span class="nv">B</span><span class="ss">)</span>
 
   <span class="nv">Produces</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">query</span> <span class="nv">object</span> <span class="nv">C</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">true</span> <span class="k">if</span> <span class="nv">either</span> <span class="nv">ndi</span>.<span class="nv">query</span> <span class="nv">A</span> <span class="nv">or</span> <span class="nv">ndi</span>.<span class="nv">query</span> <span class="nv">B</span> <span class="nv">is</span> <span class="nv">true</span>.
 </code></pre></div>
 
 <hr />
 <p><strong>query</strong> - <em>create a query object for searching the database</em></p>
-<p>```Creates an ndi.query object, which has a single property
-  SEARCH that is a structure array of search structures
-  appropriate for use with vlt.data.fieldsearch.</p>
-<p>Tha is, SEARCH has the fields:
-  Field:                   | Description</p>
-<hr />
-<p>field                      | A character string of the field of A to examine
-  operation                  | The operation to perform. This operation determines 
-                             |   values of fields 'param1' and 'param2'.
-      |----------------------|
-      |   'regexp'             - are there any regular expression matches between 
-      |                          the field value and 'param1'?
-      |   'exact_string'       - is the field value an exact string match for 'param1'?
-      |   'contains_string'    - is the field value a char array that contains 'param1'?
-      |   'exact_number'       - is the field value exactly 'param1' (same size and values)?
-      |   'lessthan'           - is the field value less than 'param1' (and comparable size)
-      |   'lessthaneq'         - is the field value less than or equal to 'param1' (and comparable size)
-      |   'greaterthan'        - is the field value greater than 'param1' (and comparable size)
-      |   'greaterthaneq'      - is the field value greater than or equal to 'param1' (and comparable size)
-      |   'hasfield'           - is the field present? (no role for 'param1' or 'param2')
-      |   'hasanysubfield_contains_string' - Is the field value an array of structs or cell array of structs
-      |                        such that any has a field named 'param1' with a string that contains the string
-      |                        in 'param2'?
-      |   'or'                 - are any of the searchstruct elements specified in 'param1' true?
-      |   'isa'                - is 'param1' either a superclass or the document class itself of the ndi.document?
-      |   'depends_on'         - does the document depend on an item with name 'param1' and value 'param2'?
-      |----------------------|
-  param1                     | Search parameter 1. Meaning depends on 'operation' (see above).
-  param2                     | Search parameter 2. Meaning depends on 'operation' (see above).</p>
-<hr />
-<p>See vlt.data.fieldsearch for full documentation of the search structure.</p>
-<p>There are a few creator options:</p>
-<p>NDI_QUERY_OBJ = ndi.query(SEARCHSTRUCT)</p>
-<p>Accepts a SEARCHSTRUCT with the fields above</p>
-<p>NDI_QUERY_OBJ = ndi.query(SEARCHCELLARRAY)</p>
-<p>Accepts a cell array with SEARCHCELLARRAY = {'property1',value1,'property2',value2, ...}
-  This query is converted into a SEARCHSTRUCT with the 'regexp' operator.</p>
-<p>NDI_QUERY_OBJ = ndi.query(FIELD, OPERATION, PARAM1, PARAM2)</p>
-<p>creates a SEARCHSTRUCT with the fields of the appropriate names.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Creates</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">query</span> <span class="n">object</span><span class="p">,</span> <span class="n">which</span> <span class="n">has</span> <span class="n">a</span> <span class="n">single</span> <span class="n">property</span>
+  <span class="n">SEARCH</span> <span class="n">that</span> <span class="n">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">of</span> <span class="n">search</span> <span class="n">structures</span>
+  <span class="n">appropriate</span> <span class="k">for</span> <span class="n">use</span> <span class="n">with</span> <span class="n">vlt</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">fieldsearch</span><span class="p">.</span>
 
-<span class="o">**</span><span class="n">searchcellarray2searchstructure</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">convert</span> <span class="n">a</span> <span class="n">search</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">to</span> <span class="n">a</span> <span class="n">search</span> <span class="n">structure</span><span class="o">*</span>
+  <span class="n">Tha</span> <span class="n">is</span><span class="p">,</span> <span class="n">SEARCH</span> <span class="n">has</span> <span class="n">the</span> <span class="nl">fields:</span>
+  <span class="nl">Field:</span>                   <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">---------------------------------------------------------------------------</span>
+  <span class="n">field</span>                      <span class="o">|</span> <span class="n">A</span> <span class="n">character</span> <span class="k">string</span> <span class="n">of</span> <span class="n">the</span> <span class="n">field</span> <span class="n">of</span> <span class="n">A</span> <span class="n">to</span> <span class="n">examine</span>
+  <span class="n">operation</span>                  <span class="o">|</span> <span class="n">The</span> <span class="n">operation</span> <span class="n">to</span> <span class="n">perform</span><span class="p">.</span> <span class="n">This</span> <span class="n">operation</span> <span class="n">determines</span> 
+                             <span class="o">|</span>   <span class="n">values</span> <span class="n">of</span> <span class="n">fields</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="k">and</span> <span class="p">&#39;</span><span class="n">param2</span><span class="p">&#39;.</span>
+      <span class="o">|----------------------|</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">regexp</span><span class="p">&#39;</span>             <span class="o">-</span> <span class="n">are</span> <span class="n">there</span> <span class="n">any</span> <span class="n">regular</span> <span class="n">expression</span> <span class="n">matches</span> <span class="n">between</span> 
+      <span class="o">|</span>                          <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="k">and</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">exact_string</span><span class="p">&#39;</span>       <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">an</span> <span class="n">exact</span> <span class="k">string</span> <span class="n">match</span> <span class="k">for</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">contains_string</span><span class="p">&#39;</span>    <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">a</span> <span class="n">char</span> <span class="n">array</span> <span class="n">that</span> <span class="n">contains</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">exact_number</span><span class="p">&#39;</span>       <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">exactly</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="p">(</span><span class="n">same</span> <span class="n">size</span> <span class="k">and</span> <span class="n">values</span><span class="p">)</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">lessthan</span><span class="p">&#39;</span>           <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">less</span> <span class="n">than</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="p">(</span><span class="k">and</span> <span class="n">comparable</span> <span class="n">size</span><span class="p">)</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">lessthaneq</span><span class="p">&#39;</span>         <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">less</span> <span class="n">than</span> <span class="k">or</span> <span class="n">equal</span> <span class="n">to</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="p">(</span><span class="k">and</span> <span class="n">comparable</span> <span class="n">size</span><span class="p">)</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">greaterthan</span><span class="p">&#39;</span>        <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">greater</span> <span class="n">than</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="p">(</span><span class="k">and</span> <span class="n">comparable</span> <span class="n">size</span><span class="p">)</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">greaterthaneq</span><span class="p">&#39;</span>      <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">greater</span> <span class="n">than</span> <span class="k">or</span> <span class="n">equal</span> <span class="n">to</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="p">(</span><span class="k">and</span> <span class="n">comparable</span> <span class="n">size</span><span class="p">)</span>
+      <span class="o">|</span>   <span class="mh">&#39;ha</span><span class="n">sfield</span><span class="p">&#39;</span>           <span class="o">-</span> <span class="n">is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">present</span><span class="o">?</span> <span class="p">(</span><span class="n">no</span> <span class="n">role</span> <span class="k">for</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="k">or</span> <span class="p">&#39;</span><span class="n">param2</span><span class="p">&#39;)</span>
+      <span class="o">|</span>   <span class="mh">&#39;ha</span><span class="n">sanysubfield_contains_string</span><span class="p">&#39;</span> <span class="o">-</span> <span class="n">Is</span> <span class="n">the</span> <span class="n">field</span> <span class="n">value</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">structs</span> <span class="k">or</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">structs</span>
+      <span class="o">|</span>                        <span class="n">such</span> <span class="n">that</span> <span class="n">any</span> <span class="n">has</span> <span class="n">a</span> <span class="n">field</span> <span class="n">named</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="n">with</span> <span class="n">a</span> <span class="k">string</span> <span class="n">that</span> <span class="n">contains</span> <span class="n">the</span> <span class="k">string</span>
+      <span class="o">|</span>                        <span class="n">in</span> <span class="p">&#39;</span><span class="n">param2</span><span class="p">&#39;</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="k">or</span><span class="p">&#39;</span>                 <span class="o">-</span> <span class="n">are</span> <span class="n">any</span> <span class="n">of</span> <span class="n">the</span> <span class="n">searchstruct</span> <span class="n">elements</span> <span class="n">specified</span> <span class="n">in</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="n">true</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">isa</span><span class="p">&#39;</span>                <span class="o">-</span> <span class="n">is</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="n">either</span> <span class="n">a</span> <span class="n">superclass</span> <span class="k">or</span> <span class="n">the</span> <span class="n">document</span> <span class="n">class</span> <span class="n">itself</span> <span class="n">of</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="o">?</span>
+      <span class="o">|</span>   <span class="p">&#39;</span><span class="n">depends_on</span><span class="p">&#39;</span>         <span class="o">-</span> <span class="n">does</span> <span class="n">the</span> <span class="n">document</span> <span class="n">depend</span> <span class="n">on</span> <span class="n">an</span> <span class="n">item</span> <span class="n">with</span> <span class="n">name</span> <span class="p">&#39;</span><span class="n">param1</span><span class="p">&#39;</span> <span class="k">and</span> <span class="n">value</span> <span class="p">&#39;</span><span class="n">param2</span><span class="p">&#39;</span><span class="o">?</span>
+      <span class="o">|----------------------|</span>
+  <span class="n">param1</span>                     <span class="o">|</span> <span class="n">Search</span> <span class="k">parameter</span> <span class="mf">1.</span> <span class="n">Meaning</span> <span class="n">depends</span> <span class="n">on</span> <span class="p">&#39;</span><span class="n">operation</span><span class="p">&#39;</span> <span class="p">(</span><span class="n">see</span> <span class="n">above</span><span class="p">).</span>
+  <span class="n">param2</span>                     <span class="o">|</span> <span class="n">Search</span> <span class="k">parameter</span> <span class="mf">2.</span> <span class="n">Meaning</span> <span class="n">depends</span> <span class="n">on</span> <span class="p">&#39;</span><span class="n">operation</span><span class="p">&#39;</span> <span class="p">(</span><span class="n">see</span> <span class="n">above</span><span class="p">).</span>
+  <span class="o">---------------------------------------------------------------------------</span>
+  <span class="n">See</span> <span class="n">vlt</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">fieldsearch</span> <span class="k">for</span> <span class="n">full</span> <span class="n">documentation</span> <span class="n">of</span> <span class="n">the</span> <span class="n">search</span> <span class="n">structure</span><span class="p">.</span>
 
-<span class="err">``</span><span class="no">`SEARCHSTRUCT</span> <span class="o">=</span> <span class="n">SEARCHCELLARRAY2SEARCHSTRUCTURE</span><span class="p">(</span><span class="n">SEACHCELLARRAY</span><span class="p">)</span>
+  <span class="n">There</span> <span class="n">are</span> <span class="n">a</span> <span class="n">few</span> <span class="n">creator</span> <span class="nl">options:</span>
+
+  <span class="n">NDI_QUERY_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="n">SEARCHSTRUCT</span><span class="p">)</span>
+
+  <span class="n">Accepts</span> <span class="n">a</span> <span class="n">SEARCHSTRUCT</span> <span class="n">with</span> <span class="n">the</span> <span class="n">fields</span> <span class="n">above</span>
+
+  <span class="n">NDI_QUERY_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="n">SEARCHCELLARRAY</span><span class="p">)</span>
+
+  <span class="n">Accepts</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">with</span> <span class="n">SEARCHCELLARRAY</span> <span class="o">=</span> <span class="p">{&#39;</span><span class="n">property1</span><span class="p">&#39;,</span><span class="n">value1</span><span class="p">,&#39;</span><span class="n">property2</span><span class="p">&#39;,</span><span class="n">value2</span><span class="p">,</span> <span class="p">...}</span>
+  <span class="n">This</span> <span class="n">query</span> <span class="n">is</span> <span class="n">converted</span> <span class="n">into</span> <span class="n">a</span> <span class="n">SEARCHSTRUCT</span> <span class="n">with</span> <span class="n">the</span> <span class="p">&#39;</span><span class="n">regexp</span><span class="p">&#39;</span> <span class="n">operator</span><span class="p">.</span>
+
+  <span class="n">NDI_QUERY_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">(</span><span class="n">FIELD</span><span class="p">,</span> <span class="n">OPERATION</span><span class="p">,</span> <span class="n">PARAM1</span><span class="p">,</span> <span class="n">PARAM2</span><span class="p">)</span>
+
+   <span class="n">creates</span> <span class="n">a</span> <span class="n">SEARCHSTRUCT</span> <span class="n">with</span> <span class="n">the</span> <span class="n">fields</span> <span class="n">of</span> <span class="n">the</span> <span class="n">appropriate</span> <span class="n">names</span><span class="p">.</span>
+</code></pre></div>
+
+<hr />
+<p><strong>searchcellarray2searchstructure</strong> - <em>convert a search cell array to a search structure</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">SEARCHSTRUCT</span> <span class="o">=</span> <span class="n">SEARCHCELLARRAY2SEARCHSTRUCTURE</span><span class="p">(</span><span class="n">SEACHCELLARRAY</span><span class="p">)</span>
 
   <span class="n">Converts</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">with</span> <span class="n">SEARCHCELLARRAY</span> <span class="o">=</span> <span class="p">{&#39;</span><span class="n">property1</span><span class="p">&#39;,</span><span class="n">value1</span><span class="p">,&#39;</span><span class="n">property2</span><span class="p">&#39;,</span><span class="n">value2</span><span class="p">,</span> <span class="p">...}</span>
   <span class="n">into</span> <span class="n">a</span> <span class="n">SEARCHSTRUCT</span> <span class="n">with</span> <span class="n">the</span> <span class="p">&#39;</span><span class="n">regexp</span><span class="p">&#39;</span> <span class="n">operator</span> <span class="n">in</span> <span class="n">the</span> <span class="k">case</span> <span class="n">of</span> <span class="n">a</span> <span class="n">character</span> <span class="p">&#39;</span><span class="n">value</span><span class="p">&#39;</span> <span class="k">or</span> <span class="n">the</span> <span class="p">&#39;</span><span class="n">exact_number</span><span class="p">&#39;</span>
@@ -4957,14 +4966,16 @@
 
 <hr />
 <p><strong>searchstruct</strong> - <em>make a search structure from field, operation, param1, param2 inputs</em></p>
-<p>```SEARCHSTRUCT_OUT = SEARCHSTRUCT(FIELD, OPERATION, PARAM1, PARAM2)</p>
-<p>Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.</p>
-<p>See also: vlt.data.fieldsearch, ndi.query/ndi.query</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>SEARCHSTRUCT_OUT = SEARCHSTRUCT(FIELD, OPERATION, PARAM1, PARAM2)
 
-**to_searchstructure** - *convert an ndi.query object to a set of search structures*
+  Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.
 
-```SEARCHSTRUCTURE = TO_SEARCHSTRUCTURE(NDI_QUERY_OBJ)
+  See also: vlt.data.fieldsearch, ndi.query/ndi.query
+</code></pre></div>
+
+<hr />
+<p><strong>to_searchstructure</strong> - <em>convert an ndi.query object to a set of search structures</em></p>
+<div class="codehilite"><pre><span></span><code>SEARCHSTRUCTURE = TO_SEARCHSTRUCTURE(NDI_QUERY_OBJ)
 
   Converts an NDI_QUERY_OBJECT to a set of search structures without any
   ndi.query dependencies (see vlt.data.fieldsearch).

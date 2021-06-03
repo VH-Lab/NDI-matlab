@@ -5010,18 +5010,20 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addepochtag</strong> - <em>Add tag(s) for an epoch</em></p>
-<p>```ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)</p>
-<p>Tags are name/value pairs returned in the form of a structure
-  array with fields 'name' and 'value'. These tags will be added to any
-  tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
-  already exist, they will be overwritten. If there is no epoch 
-  EPOCHNUMBER, then an error is returned.</p>
-<p>Help for ndi.file.navigator/addepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ADDEPOCHTAG</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_PARAM_OBJ</span>, <span class="nv">EPOCHNUMBER</span>, <span class="nv">TAG</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">buildepochgraph</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">compute</span> <span class="n">the</span> <span class="n">epochgraph</span> <span class="n">among</span> <span class="n">epochs</span> <span class="n">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span><span class="o">*</span>
+  <span class="nv">Tags</span> <span class="nv">are</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">structure</span>
+  <span class="nv">array</span> <span class="nv">with</span> <span class="nv">fields</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">value</span><span class="s1">&#39;</span>. <span class="nv">These</span> <span class="nv">tags</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">added</span> <span class="nv">to</span> <span class="nv">any</span>
+  <span class="nv">tags</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">EPOCHNUMBER</span>. <span class="k">If</span> <span class="nv">tags</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">names</span> <span class="nv">as</span> <span class="nv">those</span> <span class="nv">in</span> <span class="nv">TAG</span>
+  <span class="nv">already</span> <span class="nv">exist</span>, <span class="nv">they</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">overwritten</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">epoch</span> 
+  <span class="nv">EPOCHNUMBER</span>, <span class="k">then</span> <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">returned</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">COST</span><span class="p">,</span><span class="n">MAPPING</span><span class="p">]</span> <span class="o">=</span> <span class="n">BUILDEPOCHGRAPH</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">addepochtag</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>.<span class="nv">PARAM</span>
+</code></pre></div>
+
+<hr />
+<p><strong>buildepochgraph</strong> - <em>compute the epochgraph among epochs for an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">COST</span><span class="p">,</span><span class="n">MAPPING</span><span class="p">]</span> <span class="o">=</span> <span class="n">BUILDEPOCHGRAPH</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
 
   <span class="n">Compute</span> <span class="n">the</span> <span class="n">cost</span> <span class="kr">and</span> <span class="n">the</span> <span class="n">mapping</span> <span class="n">among</span> <span class="n">epochs</span> <span class="kr">in</span> <span class="n">the</span> <span class="n">EPOCHTABLE</span> <span class="n">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span>
 
@@ -5049,27 +5051,28 @@
 
 <hr />
 <p><strong>buildepochtable</strong> - <em>Return an epoch table for ndi.file.navigator</em></p>
-<p>```ET = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)</p>
-<p>ET is a structure array with the following fields:
-  Fieldname:                | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="n">ET</span> <span class="o">=</span> <span class="n">BUILDEPOCHTABLE</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+
+  <span class="n">ET</span> <span class="n">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">with</span> <span class="n">the</span> <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
+  <span class="nl">Fieldname</span><span class="p">:</span>                <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">------------------------------------------------------------------------</span>
+  <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span>            <span class="o">|</span> <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="p">(</span><span class="n">may</span> <span class="n">change</span><span class="p">)</span>
+  <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span>                <span class="o">|</span> <span class="n">The</span> <span class="n">epoch</span> <span class="n">ID</span> <span class="n">code</span> <span class="p">(</span><span class="n">will</span> <span class="n">never</span> <span class="n">change</span> <span class="n">once</span> <span class="n">established</span><span class="p">)</span>
+                            <span class="o">|</span>   <span class="n">This</span> <span class="n">uniquely</span> <span class="n">specifies</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">within</span> <span class="n">the</span> <span class="n">session</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">epoch_session_id</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">The</span> <span class="n">ID</span> <span class="n">of</span> <span class="n">the</span> <span class="n">session</span> <span class="n">that</span> <span class="n">contains</span> <span class="n">this</span> <span class="n">epoch</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">epochprobemap</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">The</span> <span class="n">epochprobemap</span> <span class="n">object</span> <span class="n">from</span> <span class="n">each</span> <span class="n">epoch</span>
+  <span class="err">&#39;</span><span class="n">epoch_clock</span><span class="err">&#39;</span>             <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">describe</span> <span class="n">the</span> <span class="n">type</span> <span class="n">of</span> <span class="n">clocks</span> <span class="n">available</span>
+  <span class="err">&#39;</span><span class="n">t0_t1</span><span class="err">&#39;</span>                   <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ordered</span> <span class="n">pairs</span> <span class="p">[</span><span class="n">t0</span> <span class="n">t1</span><span class="p">]</span> <span class="n">that</span> <span class="n">indicates</span><span class="p">,</span> <span class="k">for</span> <span class="n">each</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">the</span> <span class="n">start</span> <span class="n">and</span> <span class="n">stop</span>
+                            <span class="o">|</span>   <span class="n">time</span> <span class="n">of</span> <span class="n">this</span> <span class="n">epoch</span><span class="p">.</span> <span class="n">The</span> <span class="n">time</span> <span class="n">units</span> <span class="n">of</span> <span class="n">t0_t1</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="n">match</span> <span class="n">epoch_clock</span><span class="p">{</span><span class="n">i</span><span class="p">}.</span>
+  <span class="err">&#39;</span><span class="n">underlying_epochs</span><span class="err">&#39;</span>       <span class="o">|</span> <span class="n">A</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">of</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">comprise</span> <span class="n">these</span> <span class="n">epochs</span><span class="p">.</span>
+                            <span class="o">|</span>   <span class="n">It</span> <span class="n">contains</span> <span class="n">fields</span> <span class="err">&#39;</span><span class="n">underlying</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">and</span> <span class="err">&#39;</span><span class="n">epochprobemap</span><span class="err">&#39;</span>
+                            <span class="o">|</span>   <span class="err">&#39;</span><span class="n">underlying</span><span class="err">&#39;</span> <span class="n">contains</span> <span class="n">the</span> <span class="n">file</span> <span class="n">list</span> <span class="k">for</span> <span class="n">each</span> <span class="n">epoch</span><span class="p">;</span> <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span> <span class="n">and</span> <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span>
+                            <span class="o">|</span>   <span class="n">match</span> <span class="n">those</span> <span class="n">of</span> <span class="n">NDI_FILENAVIGATOR_OBJ</span>
+</code></pre></div>
+
 <hr />
-<p>'epoch_number'            | The number of the epoch (may change)
-  'epoch_id'                | The epoch ID code (will never change once established)
-                            |   This uniquely specifies the epoch within the session.
-  'epoch_session_id'           | The ID of the session that contains this epoch.
-  'epochprobemap'           | The epochprobemap object from each epoch
-  'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
-  't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
-                            |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
-  'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
-                            |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochprobemap'
-                            |   'underlying' contains the file list for each epoch; 'epoch_id' and 'epoch_number'
-                            |   match those of NDI_FILENAVIGATOR_OBJ</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">cached_epochgraph</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">epoch</span> <span class="nv">graph</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span><span class="o">*</span>
-
-```[<span class="nv">COST</span>,<span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+<p><strong>cached_epochgraph</strong> - <em>return the cached epoch graph of an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">COST</span>,<span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">graph</span>, <span class="k">if</span> <span class="nv">it</span> <span class="nv">exists</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">up</span><span class="o">-</span><span class="nv">to</span><span class="o">-</span><span class="nv">date</span>
   <span class="ss">(</span><span class="nv">that</span> <span class="nv">is</span>, <span class="nv">the</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="nv">of</span> <span class="nv">NDI_EPOCHSET_OBJ</span> 
@@ -5084,16 +5087,18 @@
 
 <hr />
 <p><strong>cached_epochtable</strong> - <em>return the cached epochtable of an ndi.epoch.epochset object</em></p>
-<p>```[ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)</p>
-<p>Return the cached version of the epochtable, if it exists, along with its HASHVALUE
-  (a hash number generated from the table). If there is no cached version,
-  ET and HASHVALUE will be empty.</p>
-<p>Help for ndi.file.navigator/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">ET</span>, <span class="nv">HASHVALUE</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">defaultepochprobemapfilename</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">default</span> <span class="nv">file</span> <span class="nv">name</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">file</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">epoch</span><span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epochtable</span>, <span class="k">if</span> <span class="nv">it</span> <span class="nv">exists</span>, <span class="nv">along</span> <span class="nv">with</span> <span class="nv">its</span> <span class="nv">HASHVALUE</span>
+  <span class="ss">(</span><span class="nv">a</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">generated</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">table</span><span class="ss">)</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">cached</span> <span class="nv">version</span>,
+  <span class="nv">ET</span> <span class="nv">and</span> <span class="nv">HASHVALUE</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">empty</span>.
 
-```<span class="nv">ECFNAME</span> <span class="o">=</span> <span class="nv">DEFAULTEPOCHPROBEMAPFILENAME</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">cached_epochtable</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>defaultepochprobemapfilename</strong> - <em>return the default file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ECFNAME</span> <span class="o">=</span> <span class="nv">DEFAULTEPOCHPROBEMAPFILENAME</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">default</span> <span class="nv">EPOCHPROBEMAPFILENAME</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span> <span class="nv">NDI_DEVICE_OBJ</span> <span class="k">for</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>.
   <span class="k">If</span> <span class="nv">there</span> <span class="nv">are</span> <span class="nv">no</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>, <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">generated</span>. <span class="nv">NUMBER</span> <span class="nv">cannot</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="nv">id</span>.
@@ -5108,16 +5113,18 @@
 
 <hr />
 <p><strong>epoch2str</strong> - <em>convert an epoch number or id to a string</em></p>
-<p>```S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)</p>
-<p>Returns the epoch NUMBER in the form of a string. If it is a simple
-  integer, then INT2STR is used to produce a string. If it is an epoch
-  identifier string, then it is returned.</p>
-<p>Help for ndi.file.navigator/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">S</span> <span class="o">=</span> <span class="nv">EPOCH2STR</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">epochclock</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span> <span class="nv">objects</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">epoch</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">string</span>. <span class="k">If</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">simple</span>
+  <span class="nv">integer</span>, <span class="k">then</span> <span class="k">INT2STR</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">to</span> <span class="nv">produce</span> <span class="nv">a</span> <span class="nv">string</span>. <span class="k">If</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">epoch</span>
+  <span class="nv">identifier</span> <span class="nv">string</span>, <span class="k">then</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">returned</span>.
 
-```<span class="nv">EC</span> <span class="o">=</span> <span class="nv">EPOCHCLOCK</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">epoch2str</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochclock</strong> - <em>return the ndi.time.clocktype objects for an epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">EC</span> <span class="o">=</span> <span class="nv">EPOCHCLOCK</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">clock</span> <span class="nv">types</span> <span class="nv">available</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">epoch</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span>
   <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span> <span class="nv">objects</span> <span class="ss">(</span><span class="nv">or</span> <span class="nv">sub</span><span class="o">-</span><span class="nv">class</span> <span class="nv">members</span><span class="ss">)</span>.
@@ -5131,19 +5138,22 @@
 
 <hr />
 <p><strong>epochgraph</strong> - <em>graph of the mapping and cost of converting time among epochs</em></p>
-<p>```[COST, MAPPING] = EPOCHGRAPH(NDI_EPOCHSET_OBJ)</p>
-<p>Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object</p>
-<p>COST is an MxM matrix where M is the number of ordered pairs of (epochs, clocktypes).
-  For example, if there is one epoch with clock types 'dev_local_time' and 'utc', then M is 2.
-  Each entry COST(i,j) indicates whether there is a mapping between (epoch, clocktype) i to j.
-  The cost of each transformation is normally 1 operation. 
-  MAPPING is the ndi.time.timemapping object that describes the mapping.</p>
-<p>Help for ndi.file.navigator/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">COST</span>, <span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">epochid</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Get</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">identifier</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">particular</span> <span class="nv">epoch</span><span class="o">*</span>
+  <span class="nv">Compute</span> <span class="nv">the</span> <span class="nv">cost</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">mapping</span> <span class="nv">among</span> <span class="nv">epochs</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span>
 
-```<span class="nv">ID</span> <span class="o">=</span> <span class="nv">EPOCHID</span> <span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
+  <span class="nv">COST</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">MxM</span> <span class="nv">matrix</span> <span class="nv">where</span> <span class="nv">M</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">ordered</span> <span class="nv">pairs</span> <span class="nv">of</span> <span class="ss">(</span><span class="nv">epochs</span>, <span class="nv">clocktypes</span><span class="ss">)</span>.
+  <span class="k">For</span> <span class="nv">example</span>, <span class="k">if</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">one</span> <span class="nv">epoch</span> <span class="nv">with</span> <span class="nv">clock</span> <span class="nv">types</span> <span class="s1">&#39;</span><span class="s">dev_local_time</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">utc</span><span class="s1">&#39;</span>, <span class="k">then</span> <span class="nv">M</span> <span class="nv">is</span> <span class="mi">2</span>.
+  <span class="nv">Each</span> <span class="nv">entry</span> <span class="nv">COST</span><span class="ss">(</span><span class="nv">i</span>,<span class="nv">j</span><span class="ss">)</span> <span class="nv">indicates</span> <span class="nv">whether</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">mapping</span> <span class="nv">between</span> <span class="ss">(</span><span class="nv">epoch</span>, <span class="nv">clocktype</span><span class="ss">)</span> <span class="nv">i</span> <span class="nv">to</span> <span class="nv">j</span>.
+  <span class="nv">The</span> <span class="nv">cost</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">transformation</span> <span class="nv">is</span> <span class="nv">normally</span> <span class="mi">1</span> <span class="nv">operation</span>. 
+  <span class="nv">MAPPING</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timemapping</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">mapping</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">epochgraph</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochid</strong> - <em>Get the epoch identifier for a particular epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">EPOCHID</span> <span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">identifier</span> <span class="nv">string</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">EPOCH_NUMBER</span>.
   <span class="k">If</span> <span class="nv">it</span> <span class="nv">doesn</span><span class="s1">&#39;</span><span class="s">t exist, it is created.</span>
@@ -5151,17 +5161,19 @@
 
 <hr />
 <p><strong>epochidfilename</strong> - <em>return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch</em></p>
-<p>```ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)</p>
-<p>Returns the EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
-  If there are no files in epoch NUMBER, an error is generated.</p>
-<p>In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
-  as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-  the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.epochid.ndi.'.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ECFNAME</span> <span class="o">=</span> <span class="nv">EPOCHPROBEMAPFILENAME</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">epochnodes</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="n">all</span> <span class="n">epoch</span> <span class="n">nodes</span> <span class="n">from</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">EPOCHPROBEMAPFILENAME</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span> <span class="nv">NDI_DEVICE_OBJ</span> <span class="k">for</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>.
+  <span class="k">If</span> <span class="nv">there</span> <span class="nv">are</span> <span class="nv">no</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>, <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">generated</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">NODES</span><span class="p">,</span><span class="n">UNDERLYINGNODES</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHNODES</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+  <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">data</span> <span class="nv">is</span> <span class="nv">stored</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">hidden</span> <span class="nv">file</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">directory</span>
+  <span class="nv">as</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">epoch</span> <span class="nv">file</span>. <span class="k">If</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">file</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">file</span> <span class="nv">list</span> <span class="nv">is</span> <span class="s1">&#39;</span><span class="s">PATH/MYFILENAME.ext</span><span class="s1">&#39;</span>, <span class="k">then</span>
+  <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">data</span> <span class="nv">is</span> <span class="nv">stored</span> <span class="nv">as</span> <span class="s1">&#39;</span><span class="s">PATH/.MYFILENAME.ext.epochid.ndi.</span><span class="s1">&#39;</span>.
+</code></pre></div>
+
+<hr />
+<p><strong>epochnodes</strong> - <em>return all epoch nodes from an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">NODES</span><span class="p">,</span><span class="n">UNDERLYINGNODES</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHNODES</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
 
   <span class="n">Return</span> <span class="n">all</span> <span class="n">EPOCHNODES</span> <span class="k">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span><span class="p">.</span> <span class="n">EPOCHNODES</span> <span class="n">consist</span> <span class="n">of</span> <span class="n">the</span>
   <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
@@ -5193,19 +5205,23 @@
 
 <hr />
 <p><strong>epochprobemapfilename</strong> - <em>return the file name for the ndi.epoch.epochprobemap_daqsystem file for an epoch</em></p>
-<p>```ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)</p>
-<p>Returns the EPOCHPROBEMAPFILENAME for the ndi.file.navigator NDI_FILENAVIGATOR_OBJ for epoch NUMBER.
-  If there are no files in epoch NUMBER, an error is generated. The file name is returned with
-  a full path. NUMBER cannot be an epoch_id.</p>
-<p>The file name is determined by examining if the user has specified any
-  EPOCHPROBEMAP_FILEPARAMETERS; if not, then the DEFAULTEPOCHPROBEMAPFILENAME is used.</p>
-<p>See also: ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS, ndi.file.navigator/DEFAULTEPOCHPROBEMAPFILENAME</p>
-<p>default</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ECFNAME</span> <span class="o">=</span> <span class="nv">EPOCHPROBEMAPFILENAME</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">epochsetname</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span>, <span class="k">for</span> <span class="nv">EPOCHNODES</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">EPOCHPROBEMAPFILENAME</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">NDI_FILENAVIGATOR_OBJ</span> <span class="k">for</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>.
+  <span class="k">If</span> <span class="nv">there</span> <span class="nv">are</span> <span class="nv">no</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span>, <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">generated</span>. <span class="nv">The</span> <span class="nv">file</span> <span class="nv">name</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">with</span>
+  <span class="nv">a</span> <span class="nv">full</span> <span class="nv">path</span>. <span class="nv">NUMBER</span> <span class="nv">cannot</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">epoch_id</span>.
 
-```<span class="nv">NAME</span> <span class="o">=</span> <span class="nv">EPOCHSETNAME</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+  <span class="nv">The</span> <span class="nv">file</span> <span class="nv">name</span> <span class="nv">is</span> <span class="nv">determined</span> <span class="nv">by</span> <span class="nv">examining</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">user</span> <span class="nv">has</span> <span class="nv">specified</span> <span class="nv">any</span>
+  <span class="nv">EPOCHPROBEMAP_FILEPARAMETERS</span><span class="c1">; if not, then the DEFAULTEPOCHPROBEMAPFILENAME is used.</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">SETEPOCHPROBEMAPFILEPARAMETERS</span>, <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">DEFAULTEPOCHPROBEMAPFILENAME</span>
+
+  <span class="nv">default</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochsetname</strong> - <em>the name of the ndi.epoch.epochset object, for EPOCHNODES</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NAME</span> <span class="o">=</span> <span class="nv">EPOCHSETNAME</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">object</span> <span class="nv">name</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">when</span> <span class="nv">creating</span> <span class="nv">epoch</span> <span class="nv">nodes</span>.
 
@@ -5217,30 +5233,34 @@
 
 <hr />
 <p><strong>epochtable</strong> - <em>Return an epoch table that relates the current object's epochs to underlying epochs</em></p>
-<p>```[ET,HASHVALUE] = EPOCHTABLE(NDI_EPOCHSET_OBJ)</p>
-<p>ET is a structure array with the following fields:
-  Fieldname:                | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">ET</span><span class="p">,</span><span class="n">HASHVALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHTABLE</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+
+  <span class="n">ET</span> <span class="n">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">with</span> <span class="n">the</span> <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
+  <span class="nl">Fieldname</span><span class="p">:</span>                <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">------------------------------------------------------------------------</span>
+  <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span>            <span class="o">|</span> <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span><span class="p">.</span> <span class="n">The</span> <span class="n">number</span> <span class="n">may</span> <span class="n">change</span> <span class="n">as</span> <span class="n">epochs</span> <span class="n">are</span> <span class="n">added</span> <span class="n">and</span> <span class="n">subtracted</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span>                <span class="o">|</span> <span class="n">The</span> <span class="n">epoch</span> <span class="n">ID</span> <span class="n">code</span> <span class="p">(</span><span class="n">will</span> <span class="n">never</span> <span class="n">change</span> <span class="n">once</span> <span class="n">established</span><span class="p">,</span> <span class="n">though</span> <span class="n">it</span> <span class="n">may</span> <span class="n">be</span> <span class="n">deleted</span><span class="p">.)</span>
+                            <span class="o">|</span>   <span class="n">This</span> <span class="n">epoch</span> <span class="n">ID</span> <span class="n">uniquely</span> <span class="n">specifies</span> <span class="n">the</span> <span class="n">epoch</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">epoch_session_id</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">The</span> <span class="n">session</span> <span class="n">ID</span> <span class="n">that</span> <span class="n">contains</span> <span class="n">this</span> <span class="n">epoch</span>
+  <span class="err">&#39;</span><span class="n">epochprobemap</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">Any</span> <span class="n">contents</span> <span class="n">information</span> <span class="k">for</span> <span class="n">each</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">usually</span> <span class="n">of</span> <span class="n">type</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochprobemap</span> <span class="n">or</span> <span class="n">empty</span><span class="p">.</span>
+  <span class="err">&#39;</span><span class="n">epoch_clock</span><span class="err">&#39;</span>             <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">describe</span> <span class="n">the</span> <span class="n">type</span> <span class="n">of</span> <span class="n">clocks</span> <span class="n">available</span>
+  <span class="err">&#39;</span><span class="n">t0_t1</span><span class="err">&#39;</span>                   <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ordered</span> <span class="n">pairs</span> <span class="p">[</span><span class="n">t0</span> <span class="n">t1</span><span class="p">]</span> <span class="n">that</span> <span class="n">indicates</span><span class="p">,</span> <span class="k">for</span> <span class="n">each</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">the</span> <span class="n">start</span> <span class="n">and</span> <span class="n">stop</span>
+                            <span class="o">|</span>   <span class="n">time</span> <span class="n">of</span> <span class="n">this</span> <span class="n">epoch</span><span class="p">.</span> <span class="n">The</span> <span class="n">time</span> <span class="n">units</span> <span class="n">of</span> <span class="n">t0_t1</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="n">match</span> <span class="n">epoch_clock</span><span class="p">{</span><span class="n">i</span><span class="p">}.</span>
+  <span class="err">&#39;</span><span class="n">underlying_epochs</span><span class="err">&#39;</span>       <span class="o">|</span> <span class="n">A</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">of</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">comprise</span> <span class="n">these</span> <span class="n">epochs</span><span class="p">.</span>
+                            <span class="o">|</span>   <span class="n">It</span> <span class="n">contains</span> <span class="n">fields</span> <span class="err">&#39;</span><span class="n">underlying</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">and</span> <span class="err">&#39;</span><span class="n">epochprobemap</span><span class="err">&#39;</span>
+
+  <span class="n">HASHVALUE</span> <span class="n">is</span> <span class="n">the</span> <span class="n">hashed</span> <span class="n">value</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epochtable</span><span class="p">.</span> <span class="n">One</span> <span class="n">can</span> <span class="n">check</span> <span class="n">to</span> <span class="n">see</span> <span class="k">if</span> <span class="n">the</span> <span class="n">epochtable</span>
+  <span class="n">has</span> <span class="n">changed</span> <span class="n">with</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span><span class="o">/</span><span class="n">MATCHEDEPOCHTABLE</span><span class="p">.</span>
+
+  <span class="n">After</span> <span class="n">it</span> <span class="n">is</span> <span class="n">read</span> <span class="n">from</span> <span class="n">disk</span> <span class="n">once</span><span class="p">,</span> <span class="n">the</span> <span class="n">ET</span> <span class="n">is</span> <span class="n">stored</span> <span class="k">in</span> <span class="n">memory</span> <span class="n">and</span> <span class="n">is</span> <span class="n">not</span> <span class="n">re</span><span class="o">-</span><span class="n">read</span> <span class="n">from</span> <span class="n">disk</span>
+  <span class="n">unless</span> <span class="n">the</span> <span class="n">user</span> <span class="n">calls</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span><span class="o">/</span><span class="n">RESETEPOCHTABLE</span><span class="p">.</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">file</span><span class="p">.</span><span class="n">navigator</span><span class="o">/</span><span class="n">epochtable</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">EPOCH</span><span class="p">.</span><span class="n">EPOCHSET</span>
+</code></pre></div>
+
 <hr />
-<p>'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
-  'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
-                            |   This epoch ID uniquely specifies the epoch.
-  'epoch_session_id'           | The session ID that contains this epoch
-  'epochprobemap'           | Any contents information for each epoch, usually of type ndi.epoch.epochprobemap or empty.
-  'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
-  't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
-                            |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
-  'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
-                            |   It contains fields 'underlying', 'epoch_number', 'epoch_id', and 'epochprobemap'</p>
-<p>HASHVALUE is the hashed value of the epochtable. One can check to see if the epochtable
-  has changed with ndi.epoch.epochset/MATCHEDEPOCHTABLE.</p>
-<p>After it is read from disk once, the ET is stored in memory and is not re-read from disk
-  unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.</p>
-<p>Help for ndi.file.navigator/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">epochtableentry</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">entry</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="nv">that</span> <span class="nv">corresonds</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">EPOCHID</span><span class="o">*</span>
-
-```<span class="nv">ET_ENTRY</span> <span class="o">=</span> <span class="nv">EPOCHTABLEENTRY</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER_OR_ID</span><span class="ss">)</span>
+<p><strong>epochtableentry</strong> - <em>return the entry of the EPOCHTABLE that corresonds to an EPOCHID</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ET_ENTRY</span> <span class="o">=</span> <span class="nv">EPOCHTABLEENTRY</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER_OR_ID</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="nv">entry</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span>
   <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">EPOCH_NUMBER_OR_ID</span>, <span class="nv">which</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">the</span>
@@ -5251,18 +5271,20 @@
 
 <hr />
 <p><strong>epochtagfilename</strong> - <em>return the file path for the tag file for an epoch</em></p>
-<p>```ETFNAME = EPOCHTAGFILENAME(NDI_FILENAVIGATOR_OBJ, EPOCH_NUMBER_OR_ID)</p>
-<p>Returns the tag file name for the ndi.file.navigator NDI_FILENAVIGATOR_OBJ for epoch EPOCH_NUMBER_OR_ID.
-  EPOCH_NUMBER_OR_ID can be an epoch number or an epoch id. If there are no files in epoch EPOCH_NUMBER_OR_ID,
-  an error is generated.</p>
-<p>In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
-  as the first epoch file. If the first file in the epoch file list is 'PATH/MYFILENAME.ext', then
-  the ndi.epoch.epochprobemap_daqsystem data is stored as 'PATH/.MYFILENAME.ext.[code].epochid.ndi.'.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">ETFNAME</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EPOCHTAGFILENAME</span><span class="p">(</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">EPOCH_NUMBER_OR_ID</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">determines</span> <span class="nv">whether</span> <span class="nv">two</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equivalent</span><span class="o">*</span>
+<span class="w">  </span><span class="k">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">tag</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="w"> </span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">EPOCH_NUMBER_OR_ID</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="n">EPOCH_NUMBER_OR_ID</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">id</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">no</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">EPOCH_NUMBER_OR_ID</span><span class="p">,</span><span class="w"></span>
+<span class="w">  </span><span class="n">an</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">generated</span><span class="p">.</span><span class="w"></span>
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ_A</span>, <span class="nv">NDI_FILENAVIGATOR_OBJ_B</span><span class="ss">)</span>
+<span class="w">  </span><span class="ow">In</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">base</span><span class="w"> </span><span class="k">class</span><span class="p">,</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochprobemap_daqsystem</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">hidden</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">same</span><span class="w"> </span><span class="n">directory</span><span class="w"></span>
+<span class="w">  </span><span class="k">as</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="k">file</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">first</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="s1">&#39;PATH/MYFILENAME.ext&#39;</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"></span>
+<span class="w">  </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochprobemap_daqsystem</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">stored</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="s1">&#39;PATH/.MYFILENAME.ext.[code].epochid.ndi.&#39;</span><span class="p">.</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<p><strong>eq</strong> - <em>determines whether two ndi.file.navigator objects are equivalent</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ_A</span>, <span class="nv">NDI_FILENAVIGATOR_OBJ_B</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equivalent</span>, <span class="nv">and</span> <span class="mi">0</span> <span class="nv">otherwise</span>.
   <span class="nv">This</span> <span class="nv">equivalency</span> <span class="nv">does</span> <span class="nv">not</span> <span class="nv">depend</span> <span class="nv">on</span> <span class="nv">NDI_FILENAVIGATOR_OBJ_A</span> <span class="nv">and</span> <span class="nv">NDI_FILENAVIGATOR_OBJ_B</span> <span class="nv">are</span> 
@@ -5271,15 +5293,17 @@
 
 <hr />
 <p><strong>filematch_hashstring</strong> - <em>a computation to produce a (likely to be) unique string based on filematch</em></p>
-<p>```FMSTR = FILEMATCH_HASHSTRING(NDI_FILENAVIGATOR_OBJ)</p>
-<p>Returns a string that is based on a hash function that is computed on 
-  the concatenated text of the 'filematch' field of the 'fileparameters' property.</p>
-<p>Note: the function used is 'crc' (see PM_HASH)</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>FMSTR = FILEMATCH_HASHSTRING(NDI_FILENAVIGATOR_OBJ)
 
-<span class="o">**</span><span class="nv">getcache</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">NDI_CACHE</span> <span class="nv">and</span> <span class="nv">key</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">*</span>
+  Returns a string that is based on a hash function that is computed on 
+  the concatenated text of the &#39;filematch&#39; field of the &#39;fileparameters&#39; property.
 
-```[<span class="nv">CACHE</span>,<span class="nv">KEY</span>] <span class="o">=</span> <span class="nv">GETCACHE</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
+  Note: the function used is &#39;crc&#39; (see PM_HASH)
+</code></pre></div>
+
+<hr />
+<p><strong>getcache</strong> - <em>return the NDI_CACHE and key for ndi.file.navigator</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">CACHE</span>,<span class="nv">KEY</span>] <span class="o">=</span> <span class="nv">GETCACHE</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">CACHE</span> <span class="nv">and</span> <span class="nv">KEY</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">object</span>.
 
@@ -5291,23 +5315,28 @@
 
 <hr />
 <p><strong>getepochfiles</strong> - <em>Return the file paths for one recording epoch</em></p>
-<p>```[FULLPATHFILENAMES, EPOCHID] = GETEPOCHFILES(NDI_FILENAVIGATOR_OBJ, EPOCH_NUMBER_OR_ID)</p>
-<p>Return the file names or file paths associated with one recording epoch of
-   of an NDI_FILENAVIGATOR_OBJ.</p>
-<p>EPOCH_NUMBER_OR_ID  can either be a number of an epoch to return, or an epoch identifier (epoch id).</p>
-<p>Requesting multiple epochs simultaneously:
-   EPOCH_NUMBER_OR_ID can also be an array of numbers, in which case a cell array of cell arrays is 
-   returned in FULLPATHFILENAMES, one entry per number in EPOCH_NUMBER_OR_ID.  Further, EPOCH_NUMBER_OR_ID
-   can be a cell array of strings of multiple epoch identifiers; in this case, a cell array of cell
-   arrays is returned in FULLPATHFILENAMES.</p>
-<p>Uses the FILEPARAMETERS (see ndi.file.navigator/SETFILEPARAMETERS) to identify recording
-   epochs under the SESSION path.</p>
-<p>See also: EPOCHID</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="cp">[</span><span class="nx">FULLPATHFILENAMES</span><span class="p">,</span> <span class="nx">EPOCHID</span><span class="cp">]</span> <span class="o">=</span> <span class="nt">GETEPOCHFILES</span><span class="o">(</span><span class="nt">NDI_FILENAVIGATOR_OBJ</span><span class="o">,</span> <span class="nt">EPOCH_NUMBER_OR_ID</span><span class="o">)</span>
 
-<span class="o">**</span><span class="n">getepochfiles_number</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">Return</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="n">paths</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">recording</span><span class="w"> </span><span class="n">epoch</span><span class="o">*</span><span class="w"></span>
+   <span class="nt">Return</span> <span class="nt">the</span> <span class="nt">file</span> <span class="nt">names</span> <span class="nt">or</span> <span class="nt">file</span> <span class="nt">paths</span> <span class="nt">associated</span> <span class="nt">with</span> <span class="nt">one</span> <span class="nt">recording</span> <span class="nt">epoch</span> <span class="nt">of</span>
+   <span class="nt">of</span> <span class="nt">an</span> <span class="nt">NDI_FILENAVIGATOR_OBJ</span><span class="o">.</span>
 
-<span class="err">```</span><span class="o">[</span><span class="n">FULLPATHFILENAMES</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GETEPOCHFILES_NUMBER</span><span class="p">(</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">EPOCH_NUMBER</span><span class="p">)</span><span class="w"></span>
+   <span class="nt">EPOCH_NUMBER_OR_ID</span>  <span class="nt">can</span> <span class="nt">either</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">number</span> <span class="nt">of</span> <span class="nt">an</span> <span class="nt">epoch</span> <span class="nt">to</span> <span class="nt">return</span><span class="o">,</span> <span class="nt">or</span> <span class="nt">an</span> <span class="nt">epoch</span> <span class="nt">identifier</span> <span class="o">(</span><span class="nt">epoch</span> <span class="nt">id</span><span class="o">).</span>
+
+   <span class="nt">Requesting</span> <span class="nt">multiple</span> <span class="nt">epochs</span> <span class="nt">simultaneously</span><span class="o">:</span>
+   <span class="nt">EPOCH_NUMBER_OR_ID</span> <span class="nt">can</span> <span class="nt">also</span> <span class="nt">be</span> <span class="nt">an</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">numbers</span><span class="o">,</span> <span class="nt">in</span> <span class="nt">which</span> <span class="nt">case</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">cell</span> <span class="nt">arrays</span> <span class="nt">is</span> 
+   <span class="nt">returned</span> <span class="nt">in</span> <span class="nt">FULLPATHFILENAMES</span><span class="o">,</span> <span class="nt">one</span> <span class="nt">entry</span> <span class="nt">per</span> <span class="nt">number</span> <span class="nt">in</span> <span class="nt">EPOCH_NUMBER_OR_ID</span><span class="o">.</span>  <span class="nt">Further</span><span class="o">,</span> <span class="nt">EPOCH_NUMBER_OR_ID</span>
+   <span class="nt">can</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">strings</span> <span class="nt">of</span> <span class="nt">multiple</span> <span class="nt">epoch</span> <span class="nt">identifiers</span><span class="o">;</span> <span class="nt">in</span> <span class="nt">this</span> <span class="nt">case</span><span class="o">,</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">cell</span>
+   <span class="nt">arrays</span> <span class="nt">is</span> <span class="nt">returned</span> <span class="nt">in</span> <span class="nt">FULLPATHFILENAMES</span><span class="o">.</span>
+
+   <span class="nt">Uses</span> <span class="nt">the</span> <span class="nt">FILEPARAMETERS</span> <span class="o">(</span><span class="nt">see</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">file</span><span class="p">.</span><span class="nc">navigator</span><span class="o">/</span><span class="nt">SETFILEPARAMETERS</span><span class="o">)</span> <span class="nt">to</span> <span class="nt">identify</span> <span class="nt">recording</span>
+   <span class="nt">epochs</span> <span class="nt">under</span> <span class="nt">the</span> <span class="nt">SESSION</span> <span class="nt">path</span><span class="o">.</span>
+
+   <span class="nt">See</span> <span class="nt">also</span><span class="o">:</span> <span class="nt">EPOCHID</span>
+</code></pre></div>
+
+<hr />
+<p><strong>getepochfiles_number</strong> - <em>Return the file paths for one recording epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">FULLPATHFILENAMES</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">GETEPOCHFILES_NUMBER</span><span class="p">(</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">EPOCH_NUMBER</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">   </span><span class="k">Return</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="k">names</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="n">paths</span><span class="w"> </span><span class="n">associated</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">one</span><span class="w"> </span><span class="n">recording</span><span class="w"> </span><span class="n">epoch</span><span class="p">.</span><span class="w"></span>
 
@@ -5327,18 +5356,21 @@
 
 <hr />
 <p><strong>getepochprobemap</strong> - <em>Return the epoch record for a given ndi.epoch.epochset.param epoch number</em></p>
-<p>```EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)</p>
-<p>Inputs:
-      NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset.param object
-      N - the epoch number or identifier</p>
-<p>Output:
-      EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME</p>
-<p>Help for ndi.file.navigator/getepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">EPOCHPROBEMAP</span> <span class="o">=</span> <span class="nv">GETEPOCHPROBEMAP</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_PARAM_OBJ</span>, <span class="nv">N</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">getepochtag</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Get</span> <span class="nv">tag</span><span class="ss">(</span><span class="nv">s</span><span class="ss">)</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">epoch</span><span class="o">*</span>
+  <span class="nv">Inputs</span>:
+      <span class="nv">NDI_EPOCHSET_PARAM_OBJ</span> <span class="o">-</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span>.<span class="nv">param</span> <span class="nv">object</span>
+      <span class="nv">N</span> <span class="o">-</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">number</span> <span class="nv">or</span> <span class="nv">identifier</span>
 
-```<span class="nv">TAG</span> <span class="o">=</span> <span class="nv">GETEPOCHTAG</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_PARAM_OBJ</span>, <span class="nv">EPOCHNUMBER</span><span class="ss">)</span>
+  <span class="nv">Output</span>:
+      <span class="nv">EPOCHPROBEMAP</span> <span class="o">-</span> <span class="nv">The</span> <span class="nv">epoch</span> <span class="nv">record</span> <span class="nv">information</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">epoch</span> <span class="nv">N</span> <span class="k">for</span> <span class="nv">device</span> <span class="nv">with</span> <span class="nv">name</span> <span class="nv">DEVICENAME</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">getepochprobemap</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>.<span class="nv">PARAM</span>
+</code></pre></div>
+
+<hr />
+<p><strong>getepochtag</strong> - <em>Get tag(s) from an epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">TAG</span> <span class="o">=</span> <span class="nv">GETEPOCHTAG</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_PARAM_OBJ</span>, <span class="nv">EPOCHNUMBER</span><span class="ss">)</span>
 
   <span class="nv">Tags</span> <span class="nv">are</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">structure</span>
   <span class="nv">array</span> <span class="nv">with</span> <span class="nv">fields</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">value</span><span class="s1">&#39;</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">are</span> <span class="nv">no</span> <span class="nv">files</span> <span class="nv">in</span>
@@ -5349,14 +5381,16 @@
 
 <hr />
 <p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
-<p>```IDENTIFIER = ID(NDI_ID_OBJ)</p>
-<p>Returns the unique identifier of an ndi.ido object.</p>
-<p>Help for ndi.file.navigator/id is inherited from superclass NDI.IDO</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">issyncgraphroot</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">should</span> <span class="nv">this</span> <span class="nv">object</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">root</span> <span class="nv">in</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">epoch</span> <span class="nv">graph</span>?<span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span>.
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">ISSYNCGRAPHROOT</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+</code></pre></div>
+
+<hr />
+<p><strong>issyncgraphroot</strong> - <em>should this object be a root in an ndi.time.syncgraph epoch graph?</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">ISSYNCGRAPHROOT</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">This</span> <span class="nv">function</span> <span class="nv">tells</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">should</span> <span class="k">continue</span> 
   <span class="nv">adding</span> <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">underlying</span><span class="s1">&#39;</span> <span class="nv">epochs</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">graph</span>, <span class="nv">or</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">should</span> <span class="nv">stop</span> <span class="nv">at</span> <span class="nv">this</span> <span class="nv">level</span>.
@@ -5369,15 +5403,17 @@
 
 <hr />
 <p><strong>matchedepochtable</strong> - <em>compare a hash number from an epochtable to the current version</em></p>
-<p>```B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)</p>
-<p>Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
-  Otherwise, it returns 0.</p>
-<p>Help for ndi.file.navigator/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">MATCHEDEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">HASHVALUE</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nt">navigator</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">Create</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">file</span><span class="p">.</span><span class="nc">navigator</span> <span class="nt">object</span> <span class="nt">that</span> <span class="nt">is</span> <span class="nt">associated</span> <span class="nt">with</span> <span class="nt">an</span> <span class="nt">session</span> <span class="nt">and</span> <span class="nt">daqsystem</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">hashed</span> <span class="nv">value</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">epochtable</span> <span class="nv">is</span> <span class="nv">identical</span> <span class="nv">to</span> <span class="nv">HASHVALUE</span>.
+  <span class="nv">Otherwise</span>, <span class="nv">it</span> <span class="nv">returns</span> <span class="mi">0</span>.
 
-<span class="err">```</span><span class="nt">OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">file</span><span class="p">.</span><span class="nc">navigator</span><span class="o">(</span><span class="nt">SESSION</span><span class="o">,</span> <span class="cp">[</span> <span class="nx">FILEPARAMETERS</span><span class="p">,</span> <span class="nx">EPOCHPROBEMAP_CLASS</span><span class="p">,</span> <span class="nx">EPOCHPROBEMAP_FILEPARAMETERS</span><span class="cp">]</span><span class="o">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">matchedepochtable</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>navigator</strong> - <em>Create a new ndi.file.navigator object that is associated with an session and daqsystem</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nt">OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">file</span><span class="p">.</span><span class="nc">navigator</span><span class="o">(</span><span class="nt">SESSION</span><span class="o">,</span> <span class="cp">[</span> <span class="nx">FILEPARAMETERS</span><span class="p">,</span> <span class="nx">EPOCHPROBEMAP_CLASS</span><span class="p">,</span> <span class="nx">EPOCHPROBEMAP_FILEPARAMETERS</span><span class="cp">]</span><span class="o">)</span>
                   <span class="nt">or</span>
     <span class="nt">OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">file</span><span class="p">.</span><span class="nc">navigator</span><span class="o">(</span><span class="nt">SESSION</span><span class="o">,</span> <span class="nt">NDI_FILENAVIGATOR_DOC_OBJ</span><span class="o">)</span>
 
@@ -5401,57 +5437,67 @@
 
 <hr />
 <p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>```ID = NDI_UNIQUE_ID</p>
-<p>Generates a unique ID character array based on the current time and a random
-  number. It is a hexidecimal representation of the serial date number in
-  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
-  The integer portion of the date is the whole number of days and the fractional part of the date number
-  is the fraction of days.</p>
-<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND</p>
-<p>Help for ndi.file.navigator.ndi_unique_id is inherited from superclass NDI.IDO</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
 
-**newdocument** - *create an ndi.document that is based on an ndi.file.navigator object*
+  <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
+  <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
+  <span class="nv">UTC</span> <span class="nv">Leap</span> <span class="nv">Seconds</span> <span class="nv">time</span>. <span class="nv">The</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">since</span> <span class="nv">January</span> <span class="mi">0</span>, <span class="mi">0000</span> <span class="nv">at</span> <span class="mi">0</span>:<span class="mi">00</span>:<span class="mi">00</span>.
+  <span class="nv">The</span> <span class="nv">integer</span> <span class="nv">portion</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">whole</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">fractional</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">number</span>
+  <span class="nv">is</span> <span class="nv">the</span> <span class="nv">fraction</span> <span class="nv">of</span> <span class="nv">days</span>.
 
-```NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
+  <span class="nv">ID</span> <span class="o">=</span> [<span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">SERIAL_DATE_NUMBER</span><span class="ss">)</span> <span class="s1">&#39;</span><span class="s">_</span><span class="s1">&#39;</span> <span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">RAND</span><span class="ss">)</span>]
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+</code></pre></div>
+
+<hr />
+<p><strong>newdocument</strong> - <em>create an ndi.document that is based on an ndi.file.navigator object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
 
   Creates an ndi.document of type &#39;ndi_document_filenavigator.json&#39;
 </code></pre></div>
 
 <hr />
 <p><strong>numepochs</strong> - <em>Number of epochs of ndi.epoch.epochset</em></p>
-<p>```N = NUMEPOCHS(NDI_EPOCHSET_OBJ)</p>
-<p>Returns the number of epochs in the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.</p>
-<p>See also: EPOCHTABLE</p>
-<p>Help for ndi.file.navigator/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">N</span> <span class="o">=</span> <span class="nv">NUMEPOCHS</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">path</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">Return</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">path</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">epochs</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span> <span class="nv">NDI_EPOCHSET_OBJ</span>.
 
-```<span class="nv">THEPATH</span> <span class="o">=</span> <span class="nv">PATH</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">EPOCHTABLE</span>
 
-  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">path</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">object</span>
-  <span class="nv">NDI_FILENAVIGATOR_OBJ</span>.
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">numepochs</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>path</strong> - <em>Return the file path for the ndi.file.navigator object</em></p>
+<div class="codehilite"><pre><span></span><code>THEPATH = PATH(NDI_FILENAVIGATOR_OBJ)
+
+  Returns the path of the ndi.session associated with the ndi.file.navigator object
+  NDI_FILENAVIGATOR_OBJ.
 </code></pre></div>
 
 <hr />
 <p><strong>removeepochtag</strong> - <em>Remove tag(s) for an epoch</em></p>
-<p>```REMOVEEPOCHTAG(NDI_EPOCH_PARAM_OBJ, EPOCHNUMBER, NAME)</p>
-<p>Tags are name/value pairs returned in the form of a structure
-  array with fields 'name' and 'value'. Any tags with name 'NAME' will
-  be removed from the tags in the epoch EPOCHNUMBER.
-  tags in the epoch directory. If tags with the same names as those in TAG
-  already exist, they will be overwritten. If there is no epoch
-  EPOCHNUMBER, then an error is returned.</p>
-<p>NAME can be a single string, or it can be a cell array of strings
-  (which will result in the removal of multiple tags).</p>
-<p>Help for ndi.file.navigator/removeepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">REMOVEEPOCHTAG</span><span class="ss">(</span><span class="nv">NDI_EPOCH_PARAM_OBJ</span>, <span class="nv">EPOCHNUMBER</span>, <span class="nv">NAME</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">resetepochtable</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">clear</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">epochtable</span> <span class="nv">in</span> <span class="nv">memory</span> <span class="nv">and</span> <span class="nv">force</span> <span class="nv">it</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">re</span><span class="o">-</span><span class="nv">read</span> <span class="nv">from</span> <span class="nv">disk</span><span class="o">*</span>
+  <span class="nv">Tags</span> <span class="nv">are</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">structure</span>
+  <span class="nv">array</span> <span class="nv">with</span> <span class="nv">fields</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">value</span><span class="s1">&#39;</span>. <span class="nv">Any</span> <span class="nv">tags</span> <span class="nv">with</span> <span class="nv">name</span> <span class="s1">&#39;</span><span class="s">NAME</span><span class="s1">&#39;</span> <span class="nv">will</span>
+  <span class="nv">be</span> <span class="nv">removed</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">tags</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">EPOCHNUMBER</span>.
+  <span class="nv">tags</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">directory</span>. <span class="k">If</span> <span class="nv">tags</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">names</span> <span class="nv">as</span> <span class="nv">those</span> <span class="nv">in</span> <span class="nv">TAG</span>
+  <span class="nv">already</span> <span class="nv">exist</span>, <span class="nv">they</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">overwritten</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">epoch</span>
+  <span class="nv">EPOCHNUMBER</span>, <span class="k">then</span> <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">returned</span>.
 
-```<span class="nv">NDI_EPOCHSET_OBJ</span> <span class="o">=</span> <span class="nv">RESETEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+  <span class="nv">NAME</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">string</span>, <span class="nv">or</span> <span class="nv">it</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>
+  <span class="ss">(</span><span class="nv">which</span> <span class="nv">will</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">removal</span> <span class="nv">of</span> <span class="nv">multiple</span> <span class="nv">tags</span><span class="ss">)</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">removeepochtag</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>.<span class="nv">PARAM</span>
+</code></pre></div>
+
+<hr />
+<p><strong>resetepochtable</strong> - <em>clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_EPOCHSET_OBJ</span> <span class="o">=</span> <span class="nv">RESETEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">This</span> <span class="nv">function</span> <span class="nv">clears</span> <span class="nv">the</span> <span class="nv">internal</span> <span class="nv">cached</span> <span class="nv">memory</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epochtable</span>, <span class="nv">forcing</span> <span class="nv">it</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">re</span><span class="o">-</span><span class="nv">read</span> <span class="nv">from</span>
   <span class="nv">disk</span> <span class="nv">at</span> <span class="nv">the</span> <span class="k">next</span> <span class="nv">request</span>.
@@ -5463,13 +5509,14 @@
 
 <hr />
 <p><strong>searchquery</strong> - <em>create a search query that will search for this object</em></p>
-<p>```SQ = SEARCHQUERY(NDI_FILENAVIGATOR_OBJ)</p>
-<p>Returns a database search query for this ndi.file.navigator object.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">selectfilegroups</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">Return</span> <span class="nv">groups</span> <span class="nv">of</span> <span class="nv">files</span> <span class="nv">that</span> <span class="nv">will</span> <span class="nv">comprise</span> <span class="nv">epochs</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">a</span> <span class="nv">database</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span> <span class="nv">object</span>.
+</code></pre></div>
 
-```<span class="nv">EPOCHFILES</span> <span class="o">=</span> <span class="nv">SELECTFILEGROUPS</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>selectfilegroups</strong> - <em>Return groups of files that will comprise epochs</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">EPOCHFILES</span> <span class="o">=</span> <span class="nv">SELECTFILEGROUPS</span><span class="ss">(</span><span class="nv">NDI_FILENAVIGATOR_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">files</span> <span class="nv">that</span> <span class="nv">comprise</span> <span class="nv">epochs</span>.
 
@@ -5482,17 +5529,20 @@
 
 <hr />
 <p><strong>setepochprobemap</strong> - <em>Sets the epoch record of a particular epoch</em></p>
-<p>```SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])</p>
-<p>Sets or replaces the ndi.epoch.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
-  numbered NUMBER.  If OVERWRITE is present and is 1, then any existing epoch record is overwritten.
-  Otherwise, an error is given if there is an existing epoch record.</p>
-<p>See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem</p>
-<p>Help for ndi.file.navigator/setepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="n">SETEPOCHPROBEMAP</span><span class="p">(</span><span class="n">NDI_EPOCHSET_PARAM_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">EPOCHPROBEMAP</span><span class="p">,</span><span class="w"> </span><span class="n">NUMBER</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">OVERWRITE</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="n">setepochprobemapfileparameters</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">Set</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">record</span><span class="w"> </span><span class="n">fileparameters</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="w"> </span><span class="k">object</span><span class="o">*</span><span class="w"></span>
+<span class="w">  </span><span class="k">Sets</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">replaces</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochprobemap_daqsystem</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">NDI_EPOCHSET_PARAM_OBJ</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">EPOCHPROBEMAP</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">epoch</span><span class="w"></span>
+<span class="w">  </span><span class="n">numbered</span><span class="w"> </span><span class="n">NUMBER</span><span class="p">.</span><span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">OVERWRITE</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">present</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="ow">any</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">record</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">overwritten</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="n">Otherwise</span><span class="p">,</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">error</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">existing</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">record</span><span class="p">.</span><span class="w"></span>
 
-<span class="err">```</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SETEPOCHPROBEMAPFILEPARAMETERS</span><span class="p">(</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">THEEPOCHPROBEMAPFILEPARAMETERS</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="n">See</span><span class="w"> </span><span class="nl">also</span><span class="p">:</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="k">system</span><span class="p">,</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochprobemap_daqsystem</span><span class="w"></span>
+
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="o">/</span><span class="n">setepochprobemap</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="n">EPOCH</span><span class="p">.</span><span class="n">EPOCHSET</span><span class="p">.</span><span class="n">PARAM</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<p><strong>setepochprobemapfileparameters</strong> - <em>Set the epoch record fileparameters field of a ndi.file.navigator object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SETEPOCHPROBEMAPFILEPARAMETERS</span><span class="p">(</span><span class="n">NDI_FILENAVIGATOR_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">THEEPOCHPROBEMAPFILEPARAMETERS</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">   </span><span class="n">THEEPOCHPROBEMAPFILEPARAMETERS</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">string</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">cell</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">strings</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">specifies</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">record</span><span class="w"></span>
 <span class="w">   </span><span class="k">file</span><span class="p">.</span><span class="w"> </span><span class="k">By</span><span class="w"> </span><span class="k">default</span><span class="p">,</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="k">no</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">specified</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="n">record</span><span class="w"> </span><span class="k">file</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">located</span><span class="w"> </span><span class="k">at</span><span class="err">:</span><span class="w"></span>
@@ -5509,17 +5559,19 @@
 
 <hr />
 <p><strong>setepochtag</strong> - <em>Set tag(s) for an epoch</em></p>
-<p>```SETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)</p>
-<p>Tags are name/value pairs returned in the form of a structure
-  array with fields 'name' and 'value'. These tags will replace any
-  tags in the epoch directory. If there is no epoch EPOCHNUMBER, then 
-  an error is returned.</p>
-<p>Help for ndi.file.navigator/setepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">SETEPOCHTAG</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_PARAM_OBJ</span>, <span class="nv">EPOCHNUMBER</span>, <span class="nv">TAG</span><span class="ss">)</span>
 
-**setfileparameters** - *Set the fileparameters field of a ndi.file.navigator object*
+  <span class="nv">Tags</span> <span class="nv">are</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">structure</span>
+  <span class="nv">array</span> <span class="nv">with</span> <span class="nv">fields</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">value</span><span class="s1">&#39;</span>. <span class="nv">These</span> <span class="nv">tags</span> <span class="nv">will</span> <span class="nv">replace</span> <span class="nv">any</span>
+  <span class="nv">tags</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">directory</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">epoch</span> <span class="nv">EPOCHNUMBER</span>, <span class="k">then</span> 
+  <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">returned</span>.
 
-```NDI_FILENAVIGATOR_OBJ = SETFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEFILEPARAMETERS)
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">setepochtag</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>.<span class="nv">PARAM</span>
+</code></pre></div>
+
+<hr />
+<p><strong>setfileparameters</strong> - <em>Set the fileparameters field of a ndi.file.navigator object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_FILENAVIGATOR_OBJ = SETFILEPARAMETERS(NDI_FILENAVIGATOR_OBJ, THEFILEPARAMETERS)
 
    THEFILEPARAMETERS is a string or cell list of strings that specifies the files
    that comprise an epoch.
@@ -5541,13 +5593,14 @@
 
 <hr />
 <p><strong>setsession</strong> - <em>set the SESSION for an ndi.file.navigator object</em></p>
-<p>```NDI_FILENAVIGATOR_OBJ = SETSESSION(NDI_FILENAVIGATOR_OBJ, SESSION)</p>
-<p>Set the SESSION property of an ndi.file.navigator object</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NDI_FILENAVIGATOR_OBJ = SETSESSION(NDI_FILENAVIGATOR_OBJ, SESSION)
 
-<span class="o">**</span><span class="n">t0_t1</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="n">the</span> <span class="n">t0_t1</span> <span class="p">(</span><span class="n">beginning</span> <span class="n">and</span> <span class="n">end</span><span class="p">)</span> <span class="n">epoch</span> <span class="n">times</span> <span class="k">for</span> <span class="n">an</span> <span class="n">epoch</span><span class="o">*</span>
+  Set the SESSION property of an ndi.file.navigator object
+</code></pre></div>
 
-<span class="err">```</span><span class="n">T0T1</span> <span class="o">=</span> <span class="n">T0_T1</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">,</span> <span class="n">EPOCH_NUMBER</span><span class="p">)</span>
+<hr />
+<p><strong>t0_t1</strong> - <em>return the t0_t1 (beginning and end) epoch times for an epoch</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">T0T1</span> <span class="o">=</span> <span class="n">T0_T1</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">,</span> <span class="n">EPOCH_NUMBER</span><span class="p">)</span>
 
   <span class="n">Return</span> <span class="n">the</span> <span class="n">beginning</span> <span class="p">(</span><span class="n">t0</span><span class="p">)</span> <span class="n">and</span> <span class="n">end</span> <span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="n">times</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">EPOCH_NUMBER</span>
   <span class="k">in</span> <span class="n">the</span> <span class="n">same</span> <span class="n">units</span> <span class="n">as</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">EPOCHCLOCK</span><span class="p">.</span>
@@ -5561,17 +5614,21 @@
 
 <hr />
 <p><strong>underlyingepochnodes</strong> - <em>find all the underlying epochnodes of a given epochnode</em></p>
-<p>```[UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)</p>
-<p>Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
-  (an ndi.epoch.epochset object with ISSYNGRAPHROOT that returns 1).</p>
-<p>Note that the EPOCHNODE itself is returned as the first 'underlying' node.</p>
-<p>See also: ISSYNCGRAPHROOT</p>
-<p>Help for ndi.file.navigator/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">UNODES</span>, <span class="nv">COST</span>, <span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">UNDERLYINGEPOCHNODES</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCHNODE</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">verifyepochprobemap</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Verifies</span> <span class="nv">that</span> <span class="nv">an</span> <span class="nv">EPOCHPROBEMAP</span> <span class="nv">is</span> <span class="nv">appropriate</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span>.<span class="nv">param</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">Traverse</span> <span class="nv">the</span> <span class="nv">underlying</span> <span class="nv">nodes</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">EPOCHNODE</span> <span class="k">until</span> <span class="nv">we</span> <span class="nv">get</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">roots</span>
+  <span class="ss">(</span><span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span> <span class="nv">with</span> <span class="nv">ISSYNGRAPHROOT</span> <span class="nv">that</span> <span class="nv">returns</span> <span class="mi">1</span><span class="ss">)</span>.
 
-```[<span class="nv">B</span>,<span class="nv">MSG</span>] <span class="o">=</span> <span class="nv">VERIFYEPOCHPROBEMAP</span><span class="ss">(</span><span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span>.<span class="nv">param</span>, <span class="nv">EPOCHPROBEMAP</span>, <span class="nv">EPOCH_NUMBER_OR_ID</span><span class="ss">)</span>
+  <span class="nv">Note</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">EPOCHNODE</span> <span class="nv">itself</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">as</span> <span class="nv">the</span> <span class="nv">first</span> <span class="s1">&#39;</span><span class="s">underlying</span><span class="s1">&#39;</span> <span class="nv">node</span>.
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ISSYNCGRAPHROOT</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span><span class="o">/</span><span class="nv">underlyingepochnodes</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>verifyepochprobemap</strong> - <em>Verifies that an EPOCHPROBEMAP is appropriate for the ndi.epoch.epochset.param object</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">B</span>,<span class="nv">MSG</span>] <span class="o">=</span> <span class="nv">VERIFYEPOCHPROBEMAP</span><span class="ss">(</span><span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span>.<span class="nv">param</span>, <span class="nv">EPOCHPROBEMAP</span>, <span class="nv">EPOCH_NUMBER_OR_ID</span><span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">EPOCHPROBEMAP</span> <span class="nv">and</span> <span class="nv">determines</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">valid</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">given</span> 
   <span class="nv">epoch</span> <span class="nv">number</span> <span class="nv">or</span> <span class="nv">epoch</span> <span class="nv">id</span> <span class="nv">EPOCH_NUMBER_OR_ID</span>.

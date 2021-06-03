@@ -4907,15 +4907,18 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addepoch</strong> - <em>add an ndi.epoch.epochset to the graph</em></p>
-<p>```NEW_GINFO = ADDEPOCH(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)</p>
-<p>Adds an ndi.epoch.epochset to the ndi.time.syncgraph</p>
-<p>Note: this does not update the cache</p>
-<p>Step 1: make sure we have the right kind of input object</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NEW_GINFO = ADDEPOCH(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 
-<span class="o">**</span><span class="nv">addrule</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">add</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span><span class="o">*</span>
+  Adds an ndi.epoch.epochset to the ndi.time.syncgraph
 
-```<span class="nv">NDI_SYNCGRAPH_OBJ</span> <span class="o">=</span> <span class="nv">ADDRULE</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span>, <span class="nv">NDI_SYNCRULE_OBJ</span><span class="ss">)</span>
+  Note: this does not update the cache
+
+  Step 1: make sure we have the right kind of input object
+</code></pre></div>
+
+<hr />
+<p><strong>addrule</strong> - <em>add an ndi.time.syncrule to an ndi.time.syncgraph object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_SYNCGRAPH_OBJ</span> <span class="o">=</span> <span class="nv">ADDRULE</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span>, <span class="nv">NDI_SYNCRULE_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Adds</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">object</span> <span class="nv">indicated</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">rule</span> <span class="k">for</span>
   <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">NDI_SYNCGRAPH_OBJ</span>. <span class="k">If</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">is</span> <span class="nv">already</span>
@@ -4926,15 +4929,18 @@
 
 <hr />
 <p><strong>addunderlyingepochs</strong> - <em>add an ndi.epoch.epochset to the graph</em></p>
-<p>```NEW_GINFO = ADDUNDERLYINGEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_EPOCHSET_OBJ, GINFO)</p>
-<p>Adds an ndi.epoch.epochset to the ndi.time.syncgraph</p>
-<p>Note: this DOES update the cache</p>
-<p>Step 1: make sure we have the right kind of input object</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code>NEW_GINFO = ADDUNDERLYINGEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_EPOCHSET_OBJ, GINFO)
 
-<span class="o">**</span><span class="n">buildgraphinfo</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">build</span><span class="w"> </span><span class="n">graph</span><span class="w"> </span><span class="n">info</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">syncgraph</span><span class="w"> </span><span class="k">object</span><span class="o">*</span><span class="w"></span>
+  Adds an ndi.epoch.epochset to the ndi.time.syncgraph
 
-<span class="err">```</span><span class="o">[</span><span class="n">GINFO</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BUILDGRAPHINFO</span><span class="p">(</span><span class="n">NDI_SYNCGRAPH_OBJ</span><span class="p">)</span><span class="w"></span>
+  Note: this DOES update the cache
+
+  Step 1: make sure we have the right kind of input object
+</code></pre></div>
+
+<hr />
+<p><strong>buildgraphinfo</strong> - <em>build graph info for an ndi.time.syncgraph object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">GINFO</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">BUILDGRAPHINFO</span><span class="p">(</span><span class="n">NDI_SYNCGRAPH_OBJ</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="n">Builds</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">scratch</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">syncgraph</span><span class="w"> </span><span class="k">structure</span><span class="w"> </span><span class="n">GINFO</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">devices</span><span class="w"></span>
 <span class="w">  </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">NDI_SYNCGRAPH_OBJ</span><span class="s1">&#39;s associated &#39;</span><span class="k">session</span><span class="s1">&#39; property.</span>
@@ -4952,15 +4958,16 @@
 
 <hr />
 <p><strong>cached_graphinfo</strong> - <em>return the cached graph info of an ndi.time.syncgraph object</em></p>
-<p>```[GINFO, HASHVALUE] = CACHED_EPOCHTABLE(NDI_SYNCGRAPH_OBJ)</p>
-<p>Return the cached version of the graph info, if it exists, along with its HASHVALUE
-  (a hash number generated from the graph info). If there is no cached version,
-  GINFO and HASHVALUE will be empty.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">GINFO</span>, <span class="nv">HASHVALUE</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">are</span> <span class="mi">2</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">objects</span> <span class="nv">equal</span>?<span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">graph</span> <span class="nv">info</span>, <span class="k">if</span> <span class="nv">it</span> <span class="nv">exists</span>, <span class="nv">along</span> <span class="nv">with</span> <span class="nv">its</span> <span class="nv">HASHVALUE</span>
+  <span class="ss">(</span><span class="nv">a</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">generated</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">graph</span> <span class="nv">info</span><span class="ss">)</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">cached</span> <span class="nv">version</span>,
+  <span class="nv">GINFO</span> <span class="nv">and</span> <span class="nv">HASHVALUE</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">empty</span>.
+</code></pre></div>
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ1</span>, <span class="nv">NDI_SYNCHGRAPH_OBJ2</span><span class="ss">)</span>
+<hr />
+<p><strong>eq</strong> - <em>are 2 ndi.time.syncgraph objects equal?</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ1</span>, <span class="nv">NDI_SYNCHGRAPH_OBJ2</span><span class="ss">)</span>
 
   <span class="nv">B</span> <span class="nv">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">objects</span> <span class="nv">have</span> <span class="nv">equal</span> <span class="nv">sessions</span> <span class="nv">and</span> <span class="k">if</span> 
   <span class="nv">all</span> <span class="nv">syncrules</span> <span class="nv">are</span> <span class="nv">equal</span>.
@@ -4968,35 +4975,40 @@
 
 <hr />
 <p><strong>getcache</strong> - <em>return the NDI_CACHE and key for ndi.time.syncgraph</em></p>
-<p>```[CACHE,KEY] = GETCACHE(NDI_SYNCGRAPH_OBJ)</p>
-<p>Returns the CACHE and KEY for the ndi.time.syncgraph object.</p>
-<p>The CACHE is returned from the associated session.
-  The KEY is the string 'syncgraph_' followed by the object's id.</p>
-<p>See also: ndi.time.syncgraph, NDI_BASE</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">CACHE</span>,<span class="nv">KEY</span>] <span class="o">=</span> <span class="nv">GETCACHE</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">graphinfo</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">graph</span> <span class="nv">information</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">CACHE</span> <span class="nv">and</span> <span class="nv">KEY</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span>.
 
-```<span class="nv">The</span> <span class="nv">graph</span> <span class="nv">information</span> <span class="nv">GINFO</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">structure</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">following</span> <span class="nv">fields</span>:
-  <span class="nv">Fieldname</span>              <span class="o">|</span> <span class="nv">Description</span>
-  <span class="o">---------------------------------------------------------------------</span>
-  <span class="nv">nodes</span>                  <span class="o">|</span> <span class="nv">The</span> <span class="nv">epochnodes</span> <span class="ss">(</span><span class="nv">see</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span><span class="o">/</span><span class="nv">EPOCHNODE</span><span class="ss">)</span>
-  <span class="nv">G</span>                      <span class="o">|</span> <span class="nv">The</span> <span class="nv">epoch</span> <span class="nv">node</span> <span class="nv">graph</span> <span class="nv">adjacency</span> <span class="nv">matrix</span>. <span class="nv">G</span><span class="ss">(</span><span class="nv">i</span>,<span class="nv">j</span><span class="ss">)</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">cost</span> <span class="nv">of</span>
-                         <span class="o">|</span>   <span class="nv">converting</span> <span class="nv">between</span> <span class="nv">node</span> <span class="nv">i</span> <span class="nv">and</span> <span class="nv">j</span>.
-  <span class="nv">mapping</span>                <span class="o">|</span> <span class="nv">A</span> <span class="nv">cell</span> <span class="nv">matrix</span> <span class="nv">with</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timemapping</span> <span class="nv">objects</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span>
-                         <span class="o">|</span>   <span class="nv">time</span> <span class="nv">mapping</span> <span class="nv">among</span> <span class="nv">nodes</span>. <span class="nv">mapping</span>{<span class="nv">i</span>,<span class="nv">j</span>} <span class="nv">is</span> <span class="nv">the</span> <span class="nv">mapping</span> <span class="nv">between</span> <span class="nv">node</span> <span class="nv">i</span> <span class="nv">and</span> <span class="nv">j</span>.
+  <span class="nv">The</span> <span class="nv">CACHE</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">associated</span> <span class="nv">session</span>.
+  <span class="nv">The</span> <span class="nv">KEY</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">string</span> <span class="s1">&#39;</span><span class="s">syncgraph_</span><span class="s1">&#39;</span> <span class="nv">followed</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s id.</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span>, <span class="nv">NDI_BASE</span>
+</code></pre></div>
+
+<hr />
+<p><strong>graphinfo</strong> - <em>return the graph information</em></p>
+<div class="codehilite"><pre><span></span><code>The graph information GINFO is a structure with the following fields:
+  Fieldname              | Description
+  ---------------------------------------------------------------------
+  nodes                  | The epochnodes (see ndi.epoch.epochset/EPOCHNODE)
+  G                      | The epoch node graph adjacency matrix. G(i,j) is the cost of
+                         |   converting between node i and j.
+  mapping                | A cell matrix with ndi.time.timemapping objects that describes the
+                         |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 </code></pre></div>
 
 <hr />
 <p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
-<p>```IDENTIFIER = ID(NDI_ID_OBJ)</p>
-<p>Returns the unique identifier of an ndi.ido object.</p>
-<p>Help for ndi.time.syncgraph/id is inherited from superclass NDI.IDO</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">load_all_syncgraph_docs</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nb">load</span> <span class="n">a</span> <span class="n">syncgraph</span> <span class="n">document</span> <span class="ow">and</span> <span class="n">all</span> <span class="n">of</span> <span class="n">its</span> <span class="n">syncrules</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">SYNCGRAPH_DOC</span><span class="p">,</span> <span class="n">SYNCRULE_DOCS</span><span class="p">]</span> <span class="o">=</span> <span class="n">LOAD_ALL_SYNCGRAPH_DOCS</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span><span class="o">...</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span><span class="o">/</span><span class="nv">id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+</code></pre></div>
+
+<hr />
+<p><strong>load_all_syncgraph_docs</strong> - <em>load a syncgraph document and all of its syncrules</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">SYNCGRAPH_DOC</span><span class="p">,</span> <span class="n">SYNCRULE_DOCS</span><span class="p">]</span> <span class="o">=</span> <span class="n">LOAD_ALL_SYNCGRAPH_DOCS</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span><span class="o">...</span>
                     <span class="n">SYNCGRAPH_DOC_ID</span><span class="p">)</span>
 
   <span class="n">Given</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span> <span class="n">object</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">document</span> <span class="n">identifier</span> <span class="n">of</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">syncgraph</span> <span class="n">object</span><span class="p">,</span>
@@ -5006,48 +5018,55 @@
 
 <hr />
 <p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>```ID = NDI_UNIQUE_ID</p>
-<p>Generates a unique ID character array based on the current time and a random
-  number. It is a hexidecimal representation of the serial date number in
-  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
-  The integer portion of the date is the whole number of days and the fractional part of the date number
-  is the fraction of days.</p>
-<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND</p>
-<p>Help for ndi.time.syncgraph.ndi_unique_id is inherited from superclass NDI.IDO</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
 
-<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">create</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
+  <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
+  <span class="nv">UTC</span> <span class="nv">Leap</span> <span class="nv">Seconds</span> <span class="nv">time</span>. <span class="nv">The</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">since</span> <span class="nv">January</span> <span class="mi">0</span>, <span class="mi">0000</span> <span class="nv">at</span> <span class="mi">0</span>:<span class="mi">00</span>:<span class="mi">00</span>.
+  <span class="nv">The</span> <span class="nv">integer</span> <span class="nv">portion</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">whole</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">fractional</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">number</span>
+  <span class="nv">is</span> <span class="nv">the</span> <span class="nv">fraction</span> <span class="nv">of</span> <span class="nv">days</span>.
 
-```<span class="nv">NDI_DOCUMENT_OBJ_SET</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span><span class="ss">)</span>
+  <span class="nv">ID</span> <span class="o">=</span> [<span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">SERIAL_DATE_NUMBER</span><span class="ss">)</span> <span class="s1">&#39;</span><span class="s">_</span><span class="s1">&#39;</span> <span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">RAND</span><span class="ss">)</span>]
 
-  <span class="nv">Creates</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">DOC</span> <span class="nv">that</span> <span class="nv">represents</span> <span class="nv">the</span>
-     <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">object</span>.
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+</code></pre></div>
+
+<hr />
+<p><strong>newdocument</strong> - <em>create a new ndi.document for an ndi.time.syncgraph object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_DOCUMENT_OBJ_SET = NEWDOCUMENT(NDI_SYNCGRAPH_OBJ)
+
+  Creates an ndi.document object DOC that represents the
+     ndi.time.syncrule object.
 </code></pre></div>
 
 <hr />
 <p><strong>removeepoch</strong> - <em>remove an ndi.epoch.epochset from the graph</em></p>
-<p>```GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)</p>
-<p>Remove all epoch nodes from the graph that are contributed by NDI_DAQSYSTEM_OBJ</p>
-<p>Note: this does not update the cache</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
 
-**removerule** - *remove a given ndi.time.syncrule from an ndi.time.syncgraph object*
+  Remove all epoch nodes from the graph that are contributed by NDI_DAQSYSTEM_OBJ
 
-```NDI_SYNCGRAPH_OBJ = REMOVERULE(NDI_SYNCGRAPH_OBJ, INDEX)
+  Note: this does not update the cache
+</code></pre></div>
+
+<hr />
+<p><strong>removerule</strong> - <em>remove a given ndi.time.syncrule from an ndi.time.syncgraph object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_SYNCGRAPH_OBJ = REMOVERULE(NDI_SYNCGRAPH_OBJ, INDEX)
 
   Removes the NDI_SYNCGRAPH_OBJ.rules entry at the INDEX (or indexes) indicated.
 </code></pre></div>
 
 <hr />
 <p><strong>searchquery</strong> - <em>create a search for this ndi.time.syncgraph object</em></p>
-<p>```SQ = SEARCHQUERY(NDI_SYNCGRAPH_OBJ)</p>
-<p>Creates a search query for the ndi.time.syncgraph object.</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span><span class="ss">)</span>
 
-**set_cached_graphinfo** - *SET_CACHED_GRAPHINFO*
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span>.
+</code></pre></div>
 
-```SET_CACHED_GRAPHINFO(NDI_SYNCGRAPH_OBJ, GINFO)
+<hr />
+<p><strong>set_cached_graphinfo</strong> - <em>SET_CACHED_GRAPHINFO</em></p>
+<div class="codehilite"><pre><span></span><code>SET_CACHED_GRAPHINFO(NDI_SYNCGRAPH_OBJ, GINFO)
 
   Set the cached graph info. Opposite of CACHE_GRAPHINFO.
 
@@ -5056,17 +5075,19 @@
 
 <hr />
 <p><strong>syncgraph</strong> - <em>create a new ndi.time.syncgraph object</em></p>
-<p>```NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION)</p>
-<p>Builds a new ndi.time.syncgraph object and sets its SESSION
-  property to SESSION, which should be an ndi.session object.</p>
-<p>This function can be called in another form:
+<div class="codehilite"><pre><span></span><code>NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION)
+
+  Builds a new ndi.time.syncgraph object and sets its SESSION
+  property to SESSION, which should be an ndi.session object.
+
+  This function can be called in another form:
   NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
-  where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+  where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.
+</code></pre></div>
 
-<span class="o">**</span><span class="nv">time_convert</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">time</span> <span class="nv">from</span> <span class="nv">one</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">to</span> <span class="nv">another</span><span class="o">*</span>
-
-```[<span class="nv">T_OUT</span>, <span class="nv">TIMEREF_OUT</span>, <span class="nv">MSG</span>] <span class="o">=</span> <span class="nv">TIME_CONVERT</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span>, <span class="nv">TIMEREF_IN</span>, <span class="nv">T_IN</span>, <span class="nv">REFERENT_OUT</span>, <span class="nv">CLOCKTYPE_OUT</span><span class="ss">)</span>
+<hr />
+<p><strong>time_convert</strong> - <em>convert time from one ndi.time.timereference to another</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">T_OUT</span>, <span class="nv">TIMEREF_OUT</span>, <span class="nv">MSG</span>] <span class="o">=</span> <span class="nv">TIME_CONVERT</span><span class="ss">(</span><span class="nv">NDI_SYNCGRAPH_OBJ</span>, <span class="nv">TIMEREF_IN</span>, <span class="nv">T_IN</span>, <span class="nv">REFERENT_OUT</span>, <span class="nv">CLOCKTYPE_OUT</span><span class="ss">)</span>
 
   <span class="nv">Attempts</span> <span class="nv">to</span> <span class="nv">convert</span> <span class="nv">a</span> <span class="nv">time</span> <span class="nv">T_IN</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">referred</span> <span class="nv">to</span> <span class="nv">by</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span> <span class="nv">TIMEREF_IN</span> 
   <span class="nv">to</span> <span class="nv">T_OUT</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">referred</span> <span class="nv">to</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">requested</span> <span class="nv">REFERENT_OUT</span> <span class="nv">object</span> <span class="ss">(</span><span class="nv">must</span> <span class="nv">be</span> <span class="nv">type</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">and</span> <span class="nv">NDI_BASE</span><span class="ss">)</span>

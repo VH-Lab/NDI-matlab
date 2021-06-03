@@ -4964,46 +4964,45 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addlistener</strong> - <em>ADDLISTENER  Add listener for event.</em></p>
-<p>```el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
-    for the event named Eventname.  The source of the event is the handle 
-    object hSource.  If hSource is an array of source handles, the listener
-    responds to the named event on any handle in the array.  callbackFcn
-    is a function handle that is invoked when the event is triggered.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
-<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>
-<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span>
-<span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> 
-<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> <span class="n">a</span> 
-<span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
-<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="ow">or</span> <span class="n">more</span> 
-<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span>  <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
-<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
-<span class="n">properties</span><span class="o">.</span>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callbackFcn</span><span class="p">)</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">listener</span>
+    <span class="k">for</span> <span class="n">the</span> <span class="n">event</span> <span class="n">named</span> <span class="n">Eventname</span><span class="o">.</span>  <span class="n">The</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">the</span> <span class="n">handle</span> 
+    <span class="n">object</span> <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">source</span> <span class="n">handles</span><span class="p">,</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">responds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">named</span> <span class="n">event</span> <span class="n">on</span> <span class="n">any</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">array</span><span class="o">.</span>  <span class="n">callbackFcn</span>
+    <span class="k">is</span> <span class="n">a</span> <span class="n">function</span> <span class="n">handle</span> <span class="n">that</span> <span class="k">is</span> <span class="n">invoked</span> <span class="n">when</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">triggered</span><span class="o">.</span>
 
-<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">addlistener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
-<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">addlistener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>
+    <span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+    <span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>
+    <span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span>
+    <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> 
+    <span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> <span class="n">a</span> 
+    <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+    <span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="ow">or</span> <span class="n">more</span> 
+    <span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span>  <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+    <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+    <span class="n">properties</span><span class="o">.</span>
 
-<span class="n">ADDLISTENER</span> <span class="n">binds</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is the </span>
-<span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Unless</span> <span class="n">you</span> <span class="n">explicitly</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span>
-<span class="n">destroyed</span> <span class="n">only</span> <span class="n">when</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="k">is</span> <span class="n">destroyed</span><span class="o">.</span>  <span class="n">To</span> <span class="n">control</span> <span class="n">the</span>
-<span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">independently</span> <span class="n">from</span> <span class="n">the</span> <span class="n">event</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> 
-<span class="n">use</span> <span class="n">listener</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span> <span class="n">constructor</span> <span class="n">to</span> <span class="n">create</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span>
+    <span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">addlistener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+    <span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">addlistener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+    <span class="n">ADDLISTENER</span> <span class="n">binds</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is the </span>
+    <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Unless</span> <span class="n">you</span> <span class="n">explicitly</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span>
+    <span class="n">destroyed</span> <span class="n">only</span> <span class="n">when</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="k">is</span> <span class="n">destroyed</span><span class="o">.</span>  <span class="n">To</span> <span class="n">control</span> <span class="n">the</span>
+    <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">independently</span> <span class="n">from</span> <span class="n">the</span> <span class="n">event</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> 
+    <span class="n">use</span> <span class="n">listener</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span> <span class="n">constructor</span> <span class="n">to</span> <span class="n">create</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">/</span><span class="n">addlistener</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">/</span><span class="n">addlistener</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="o">.</span><span class="n">addlistener</span>
 </code></pre></div>
 
-<p>Help for ndi.session/addlistener is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">addlistener</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">addlistener</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code>---
-
-**daqsystem_add** - *Add a sampling device to a ndi.session object*
-
-```NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
+<hr />
+<p><strong>daqsystem_add</strong> - <em>Add a sampling device to a ndi.session object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
 
   Adds the device DEV to the ndi.session NDI_SESSION_OBJ
 
@@ -5014,37 +5013,41 @@
 
 <hr />
 <p><strong>daqsystem_clear</strong> - <em>remove all DAQSYSTEM objects from an ndi.session</em></p>
-<p>```NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)</p>
-<p>Permanently removes all ndi.daq.system objects from an ndi.session.</p>
-<p>Be sure you mean it!</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)
 
-<span class="o">**</span><span class="n">daqsystem_load</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Load</span> <span class="n">daqsystem</span> <span class="n">objects</span> <span class="n">from</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">*</span>
+  Permanently removes all ndi.daq.system objects from an ndi.session.
 
-<span class="err">```</span><span class="n">DEV</span> <span class="o">=</span> <span class="n">DAQSYSTEM_LOAD</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span> <span class="n">PARAM1</span><span class="p">,</span> <span class="n">VALUE1</span><span class="p">,</span> <span class="n">PARAM2</span><span class="p">,</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
-          <span class="ow">or</span>
-  <span class="n">DEV</span> <span class="o">=</span> <span class="n">DAQSYSTEM_LOAD</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">)</span>
+  Be sure you mean it!
+</code></pre></div>
 
-  <span class="n">Returns</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">system</span> <span class="n">objects</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span> <span class="n">with</span> <span class="n">metadata</span> <span class="n">parameters</span> <span class="n">PARAMS1</span> <span class="n">that</span> <span class="n">matches</span>
-  <span class="n">VALUE1</span><span class="p">,</span> <span class="n">PARAMS2</span> <span class="n">that</span> <span class="n">matches</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="n">etc</span><span class="o">.</span>
+<hr />
+<p><strong>daqsystem_load</strong> - <em>Load daqsystem objects from an ndi.session</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">DEV</span> <span class="o">=</span> <span class="nv">DAQSYSTEM_LOAD</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nb">PARAM1</span>, <span class="nv">VALUE1</span>, <span class="nb">PARAM2</span>, <span class="nv">VALUE2</span>, ...<span class="ss">)</span>
+          <span class="nv">or</span>
+  <span class="nv">DEV</span> <span class="o">=</span> <span class="nv">DAQSYSTEM_LOAD</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span><span class="ss">)</span>
 
-  <span class="n">One</span> <span class="n">can</span> <span class="n">also</span> <span class="n">search</span> <span class="k">for</span> <span class="s1">&#39;name&#39;</span> <span class="k">as</span> <span class="n">a</span> <span class="n">parameter</span><span class="p">;</span> <span class="n">this</span> <span class="n">will</span> <span class="n">be</span> <span class="n">automatically</span> <span class="n">changed</span> <span class="n">to</span> <span class="n">search</span>
-  <span class="k">for</span> <span class="n">database</span> <span class="n">documents</span> <span class="n">with</span> <span class="n">fields</span> <span class="s1">&#39;ndi_document.name&#39;</span> <span class="n">equal</span> <span class="n">to</span> <span class="n">the</span> <span class="n">corresponding</span> <span class="n">value</span><span class="o">.</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span> <span class="nv">objects</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">with</span> <span class="nv">metadata</span> <span class="nv">parameters</span> <span class="nv">PARAMS1</span> <span class="nv">that</span> <span class="nv">matches</span>
+  <span class="nv">VALUE1</span>, <span class="nv">PARAMS2</span> <span class="nv">that</span> <span class="nv">matches</span> <span class="nv">VALUE2</span>, <span class="nv">etc</span>.
 
-  <span class="n">If</span> <span class="n">more</span> <span class="n">than</span> <span class="n">one</span> <span class="n">object</span> <span class="k">is</span> <span class="n">requested</span><span class="p">,</span> <span class="n">then</span> <span class="n">DEV</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">list</span> <span class="n">of</span> <span class="n">matching</span> <span class="n">objects</span><span class="o">.</span>
-  <span class="n">Otherwise</span><span class="p">,</span> <span class="n">the</span> <span class="n">object</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> <span class="n">element</span><span class="o">.</span> <span class="n">If</span> <span class="n">there</span> <span class="n">are</span> <span class="n">no</span> <span class="n">matches</span><span class="p">,</span> <span class="n">empty</span> <span class="p">([])</span> <span class="k">is</span> <span class="n">returned</span><span class="o">.</span>
+  <span class="nv">One</span> <span class="nv">can</span> <span class="nv">also</span> <span class="nv">search</span> <span class="k">for</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">parameter</span><span class="c1">; this will be automatically changed to search</span>
+  <span class="k">for</span> <span class="nv">database</span> <span class="nv">documents</span> <span class="nv">with</span> <span class="nv">fields</span> <span class="s1">&#39;</span><span class="s">ndi_document.name</span><span class="s1">&#39;</span> <span class="nv">equal</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">corresponding</span> <span class="nv">value</span>.
+
+  <span class="k">If</span> <span class="nv">more</span> <span class="nv">than</span> <span class="nv">one</span> <span class="nv">object</span> <span class="nv">is</span> <span class="nv">requested</span>, <span class="k">then</span> <span class="nv">DEV</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">matching</span> <span class="nv">objects</span>.
+  <span class="nv">Otherwise</span>, <span class="nv">the</span> <span class="nv">object</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">element</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">are</span> <span class="nv">no</span> <span class="nv">matches</span>, <span class="nv">empty</span> <span class="ss">(</span>[]<span class="ss">)</span> <span class="nv">is</span> <span class="nv">returned</span>.
 </code></pre></div>
 
 <hr />
 <p><strong>daqsystem_rm</strong> - <em>Remove a sampling device from an ndi.session object</em></p>
-<p>```NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)</p>
-<p>Removes the device DEV from the device list.</p>
-<p>See also: DAQSYSTEM_ADD, ndi.session</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)
 
-**database_add** - *Add an ndi.document to an ndi.session object*
+  Removes the device DEV from the device list.
 
-```NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+  See also: DAQSYSTEM_ADD, ndi.session
+</code></pre></div>
+
+<hr />
+<p><strong>database_add</strong> - <em>Add an ndi.document to an ndi.session object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
 
   Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session NDI_SESSION_OBJ.
   NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will all be added
@@ -5057,17 +5060,17 @@
 
 <hr />
 <p><strong>database_clear</strong> - <em>deletes/removes all entries from the database associated with an session</em></p>
-<p>```DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)</p>
-<div class="codehilite"><pre><span></span><code>Removes all documents from the NDI_SESSION_OBJ object.
+<div class="codehilite"><pre><span></span><code><span class="nv">DATABASE_CLEAR</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">AREYOUSURE</span><span class="ss">)</span>
+
+    <span class="nv">Removes</span> <span class="nv">all</span> <span class="nv">documents</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">NDI_SESSION_OBJ</span> <span class="nv">object</span>.
+
+  <span class="nv">Use</span> <span class="nv">with</span> <span class="nv">care</span>. <span class="k">If</span> <span class="nv">AREYOUSURE</span> <span class="nv">is</span> <span class="s1">&#39;</span><span class="s">yes</span><span class="s1">&#39;</span> <span class="k">then</span> <span class="nv">the</span>
+  <span class="nv">function</span> <span class="nv">will</span> <span class="nv">proceed</span>. <span class="nv">Otherwise</span>, <span class="nv">it</span> <span class="nv">will</span> <span class="nv">not</span>.
 </code></pre></div>
 
-<p>Use with care. If AREYOUSURE is 'yes' then the
-  function will proceed. Otherwise, it will not.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
-
-<span class="o">**</span><span class="n">database_closebinarydoc</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">unlock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">binarydoc</span><span class="o">*</span><span class="w"></span>
-
-<span class="err">```</span><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DATABASE_CLOSEBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">)</span><span class="w"></span>
+<hr />
+<p><strong>database_closebinarydoc</strong> - <em>close and unlock an ndi.database.binarydoc</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DATABASE_CLOSEBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="k">Close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="w"> </span><span class="n">must</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">unlocked</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
 <span class="w">  </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">necessary</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">call</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="k">object</span><span class="p">.</span><span class="w"></span>
@@ -5075,19 +5078,19 @@
 
 <hr />
 <p><strong>database_openbinarydoc</strong> - <em>open the ndi.database.binarydoc channel of an ndi.document</em></p>
-<p>```NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)</p>
-<div class="codehilite"><pre><span></span><code><span class="k">Return</span> <span class="nv">the</span> <span class="nv">open</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">and</span>
-<span class="nv">NDI_DOCUMENT_OR_ID</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">either</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">id</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">or</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">itsef</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_BINARYDOC_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_OPENBINARYDOC</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">NDI_DOCUMENT_OR_ID</span><span class="ss">)</span>
+
+    <span class="k">Return</span> <span class="nv">the</span> <span class="nv">open</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">and</span>
+    <span class="nv">NDI_DOCUMENT_OR_ID</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">either</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">id</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">or</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">itsef</span>.
+
+   <span class="nv">Note</span> <span class="nv">that</span> <span class="nv">this</span> <span class="nv">NDI_BINARYDOC_OBJ</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">closed</span> <span class="nv">and</span> <span class="nv">unlocked</span> <span class="nv">with</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">CLOSEBINARYDOC</span>.
+   <span class="nv">The</span> <span class="nv">locked</span> <span class="nv">nature</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">binary</span> <span class="nv">doc</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">property</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">database</span>, <span class="nv">not</span> <span class="nv">the</span> <span class="nv">document</span>, <span class="nv">which</span> <span class="nv">is</span> <span class="nv">why</span>
+   <span class="nv">the</span> <span class="nv">database</span> <span class="nv">is</span> <span class="nv">needed</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">method</span>.
 </code></pre></div>
 
-<p>Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.session/CLOSEBINARYDOC.
-   The locked nature of the binary doc is a property of the database, not the document, which is why
-   the database is needed in the method.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">database_rm</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Remove</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">document</span> <span class="nv">ID</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span><span class="o">*</span>
-
-```<span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_RM</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DOC_UNIQUE_ID</span><span class="ss">)</span>
+<hr />
+<p><strong>database_rm</strong> - <em>Remove an ndi.document with a given document ID from an ndi.session object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_RM</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DOC_UNIQUE_ID</span><span class="ss">)</span>
     <span class="nv">or</span>
   <span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_RM</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DOC</span><span class="ss">)</span>
 
@@ -5106,15 +5109,17 @@
 
 <hr />
 <p><strong>database_search</strong> - <em>Search for an ndi.document in a database of an ndi.session object</em></p>
-<p>```NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)</p>
-<p>Given search parameters, which are a cell list {'PARAM1', VALUE1, 'PARAM2, VALUE2, ...},
-  the database associated with the ndi.session object is searched.</p>
-<p>Matches are returned in a cell list NDI_DOCUMENT_OBJ.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
 
-<span class="o">**</span><span class="nv">delete</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">DELETE</span>   <span class="nv">Delete</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">object</span>.<span class="o">*</span>
+  Given search parameters, which are a cell list {&#39;PARAM1&#39;, VALUE1, &#39;PARAM2, VALUE2, ...},
+  the database associated with the ndi.session object is searched.
 
-```<span class="nv">DELETE</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">deletes</span> <span class="nv">all</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">in</span> <span class="nv">array</span> <span class="nv">H</span>. <span class="nv">After</span> <span class="nv">the</span> <span class="nv">delete</span> 
+  Matches are returned in a cell list NDI_DOCUMENT_OBJ.
+</code></pre></div>
+
+<hr />
+<p><strong>delete</strong> - <em>DELETE   Delete a handle object.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">DELETE</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">deletes</span> <span class="nv">all</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">in</span> <span class="nv">array</span> <span class="nv">H</span>. <span class="nv">After</span> <span class="nv">the</span> <span class="nv">delete</span> 
     <span class="nv">function</span> <span class="nv">call</span>, <span class="nv">H</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">invalid</span> <span class="nv">objects</span>.
 
     <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">ISVALID</span>, <span class="nv">CLEAR</span>
@@ -5127,13 +5132,14 @@
 
 <hr />
 <p><strong>eq</strong> - <em>are 2 NDI_SESSIONS equal?</em></p>
-<p>```B = EQ(E1, E2)</p>
-<p>Returns 1 if and only if the sessions have the same unique reference number.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">E1</span>, <span class="nv">E2</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">findexpobj</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">search</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">specific</span> <span class="nv">object</span> <span class="nv">given</span> <span class="nv">name</span> <span class="nv">and</span> <span class="nv">classname</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">and</span> <span class="nv">only</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">sessions</span> <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="nv">number</span>.
+</code></pre></div>
 
-```<span class="nv">OBJ</span> <span class="o">=</span> <span class="nv">FINDEXPOBJ</span><span class="ss">(</span><span class="nv">NDI_EXPERIMNENT_OBJ</span>, <span class="nv">OBJ_NAME</span>, <span class="nv">OBJ_CLASSNAME</span><span class="ss">)</span>
+<hr />
+<p><strong>findexpobj</strong> - <em>search an ndi.session for a specific object given name and classname</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">OBJ</span> <span class="o">=</span> <span class="nv">FINDEXPOBJ</span><span class="ss">(</span><span class="nv">NDI_EXPERIMNENT_OBJ</span>, <span class="nv">OBJ_NAME</span>, <span class="nv">OBJ_CLASSNAME</span><span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">the</span> <span class="nv">DAQSYSTEM</span> <span class="nv">list</span>, <span class="nv">DATABASE</span>, <span class="nv">and</span> <span class="nv">PROBELIST</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">object</span> <span class="nv">with</span> <span class="nv">name</span> <span class="nv">OBJ_NAME</span> 
   <span class="nv">and</span> <span class="nv">classname</span> <span class="nv">OBJ_CLASSNAME</span>. <span class="k">If</span> <span class="nv">no</span> <span class="nv">object</span> <span class="nv">is</span> <span class="nv">found</span>, <span class="nv">OBJ</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">empty</span> <span class="ss">(</span>[]<span class="ss">)</span>.
@@ -5141,27 +5147,26 @@
 
 <hr />
 <p><strong>findobj</strong> - <em>FINDOBJ   Find objects matching specified conditions.</em></p>
-<p>```The FINDOBJ method of the HANDLE class follows the same syntax as the 
-    MATLAB FINDOBJ command, except that the first argument must be an array
-    of handles to objects.</p>
-<div class="codehilite"><pre><span></span><code>HM = FINDOBJ(H, &lt;conditions&gt;) searches the handle object array H and 
-returns an array of handle objects matching the specified conditions.
-Only the public members of the objects of H are considered when 
-evaluating the conditions.
+<div class="codehilite"><pre><span></span><code><span class="nv">The</span> <span class="nv">FINDOBJ</span> <span class="nv">method</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">HANDLE</span> <span class="nv">class</span> <span class="nv">follows</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">syntax</span> <span class="nv">as</span> <span class="nv">the</span> 
+    <span class="nv">MATLAB</span> <span class="nv">FINDOBJ</span> <span class="nv">command</span>, <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">argument</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span>
+    <span class="nv">of</span> <span class="nv">handles</span> <span class="nv">to</span> <span class="nv">objects</span>.
 
-See also FINDOBJ, NDI.SESSION
+    <span class="nv">HM</span> <span class="o">=</span> <span class="nv">FINDOBJ</span><span class="ss">(</span><span class="nv">H</span>, <span class="o">&lt;</span><span class="nv">conditions</span><span class="o">&gt;</span><span class="ss">)</span> <span class="nv">searches</span> <span class="nv">the</span> <span class="nv">handle</span> <span class="nv">object</span> <span class="nv">array</span> <span class="nv">H</span> <span class="nv">and</span> 
+    <span class="nv">returns</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">conditions</span>.
+    <span class="nv">Only</span> <span class="nv">the</span> <span class="nv">public</span> <span class="nv">members</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">objects</span> <span class="nv">of</span> <span class="nv">H</span> <span class="nv">are</span> <span class="nv">considered</span> <span class="nv">when</span> 
+    <span class="nv">evaluating</span> <span class="nv">the</span> <span class="nv">conditions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">FINDOBJ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">findobj</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">findobj</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
 </code></pre></div>
 
-<p>Help for ndi.session/findobj is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">findobj</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">findprop</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FINDPROP</span>   <span class="nv">Find</span> <span class="nv">property</span> <span class="nv">of</span> <span class="nv">MATLAB</span> <span class="nv">handle</span> <span class="nv">object</span>.<span class="o">*</span>
-
-```<span class="nv">p</span> <span class="o">=</span> <span class="nv">FINDPROP</span><span class="ss">(</span><span class="nv">H</span>,<span class="nv">PROPNAME</span><span class="ss">)</span> <span class="nv">finds</span> <span class="nv">and</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">META</span>.<span class="nv">PROPERTY</span> <span class="nv">object</span>
+<hr />
+<p><strong>findprop</strong> - <em>FINDPROP   Find property of MATLAB handle object.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">p</span> <span class="o">=</span> <span class="nv">FINDPROP</span><span class="ss">(</span><span class="nv">H</span>,<span class="nv">PROPNAME</span><span class="ss">)</span> <span class="nv">finds</span> <span class="nv">and</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">META</span>.<span class="nv">PROPERTY</span> <span class="nv">object</span>
     <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">property</span> <span class="nv">name</span> <span class="nv">PROPNAME</span> <span class="nv">of</span> <span class="nv">scalar</span> <span class="nv">handle</span> <span class="nv">object</span> <span class="nv">H</span>.
     <span class="nv">PROPNAME</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">scalar</span> <span class="nv">or</span> <span class="nv">character</span> <span class="nv">vector</span>.  <span class="nv">It</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">the</span> 
     <span class="nv">name</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">property</span> <span class="nv">defined</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">class</span> <span class="nv">of</span> <span class="nv">H</span> <span class="nv">or</span> <span class="nv">a</span> <span class="nv">dynamic</span> <span class="nv">property</span> 
@@ -5180,29 +5185,28 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>ge</strong> - <em>&gt;= (GE)   Greater than or equal relation for handles.</em></p>
-<p>```H1 &gt;= H2 performs element-wise comparisons between handle arrays H1 and
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt;= result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&gt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">NE</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ge</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ge</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
 </code></pre></div>
 
-<p>Help for ndi.session/ge is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ge</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">getelements</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">Return</span> <span class="nv">all</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">objects</span> <span class="nv">that</span> <span class="nv">are</span> <span class="nv">found</span> <span class="nv">in</span> <span class="nv">session</span> <span class="nv">database</span><span class="o">*</span>
-
-```<span class="nv">ELEMENTS</span> <span class="o">=</span> <span class="nv">GETELEMENTS</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, ...<span class="ss">)</span>
+<hr />
+<p><strong>getelements</strong> - <em>Return all ndi.element objects that are found in session database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ELEMENTS</span> <span class="o">=</span> <span class="nv">GETELEMENTS</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, ...<span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">all</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">of</span> <span class="nv">NDI_SESSION_OBJ</span> <span class="nv">and</span> <span class="nv">returns</span> <span class="nv">all</span> <span class="nv">ndi</span>.<span class="nv">element</span>
   <span class="nv">entries</span>.
@@ -5218,18 +5222,22 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>getpath</strong> - <em>Return the path of the session</em></p>
-<p>```P = GETPATH(NDI_SESSION_OBJ)</p>
-<p>Returns the path of an ndi.session object.</p>
-<p>The path is some sort of reference to the storage location of 
+<div class="codehilite"><pre><span></span><code>P = GETPATH(NDI_SESSION_OBJ)
+
+  Returns the path of an ndi.session object.
+
+  The path is some sort of reference to the storage location of 
   the session. This might be a URL, or a file directory, depending upon
-  the subclass.</p>
-<p>In the ndi.session class, this returns empty.</p>
-<p>See also: ndi.session</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+  the subclass.
 
-<span class="o">**</span><span class="n">getprobes</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Return</span> <span class="n">all</span> <span class="n">NDI_PROBES</span> <span class="n">that</span> <span class="n">are</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">system</span> <span class="n">epoch</span> <span class="n">contents</span> <span class="n">entries</span><span class="o">*</span>
+  In the ndi.session class, this returns empty.
 
-<span class="err">```</span><span class="n">PROBES</span> <span class="o">=</span> <span class="n">GETPROBES</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+  See also: ndi.session
+</code></pre></div>
+
+<hr />
+<p><strong>getprobes</strong> - <em>Return all NDI_PROBES that are found in ndi.daq.system epoch contents entries</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">PROBES</span> <span class="o">=</span> <span class="n">GETPROBES</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 
   <span class="n">Examines</span> <span class="n">all</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">system</span> <span class="n">entries</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">NDI_SESSION_OBJ</span><span class="s1">&#39;s device array</span>
   <span class="ow">and</span> <span class="n">returns</span> <span class="n">all</span> <span class="n">ndi</span><span class="o">.</span><span class="n">probe</span><span class="o">.*</span> <span class="n">entries</span> <span class="n">that</span> <span class="n">can</span> <span class="n">be</span> <span class="n">constructed</span> <span class="n">from</span> <span class="n">each</span> <span class="n">device</span><span class="s1">&#39;s</span>
@@ -5253,55 +5261,53 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>gt</strong> - <em>&gt; (GT)   Greater than relation for handles.</em></p>
-<p>```H1 &gt; H2 performs element-wise comparisons between handle arrays H1 and 
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.<br />
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt; result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&gt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span> 
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.  
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">NE</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">gt</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">gt</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
 </code></pre></div>
 
-<p>Help for ndi.session/gt is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">gt</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
-</code></pre></div>
+<hr />
+<p><strong>id</strong> - <em>return the identifier of an ndi.session object</em></p>
+<div class="codehilite"><pre><span></span><code>IDENTIFIER = ID(NDI_SESSION_OBJ)
 
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span><span class="o">*</span>
-
-```<span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span><span class="ss">)</span>
-
-  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span>.
+  Returns the unique identifier of an ndi.session object.
 </code></pre></div>
 
 <hr />
 <p><strong>isvalid</strong> - <em>ISVALID   Test handle validity.</em></p>
-<p>```TF = ISVALID(H) performs an element-wise check for validity on the 
-    handle elements of H.  The result is a logical array of the same 
-    dimensions as H, where each element is the element-wise validity 
-    result.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
-<span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">TF</span> <span class="o">=</span> <span class="nv">ISVALID</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">performs</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">check</span> <span class="k">for</span> <span class="nv">validity</span> <span class="nv">on</span> <span class="nv">the</span> 
+    <span class="nv">handle</span> <span class="nv">elements</span> <span class="nv">of</span> <span class="nv">H</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span> <span class="nv">as</span> <span class="nv">H</span>, <span class="nv">where</span> <span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">validity</span> 
+    <span class="nb">result</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">DELETE</span>
+    <span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
+    <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">DELETE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">isvalid</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">isvalid</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
 </code></pre></div>
 
-<p>Help for ndi.session/isvalid is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">isvalid</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">le</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;=</span> <span class="ss">(</span><span class="nv">LE</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">or</span> <span class="nv">equal</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
-
-```<span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.  <span class="nv">All</span> 
+<hr />
+<p><strong>le</strong> - <em>&lt;= (LE)   Less than or equal relation for handles.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.  <span class="nv">All</span> 
     <span class="nv">comparisons</span> <span class="nv">use</span> <span class="nv">a</span> <span class="nv">number</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">each</span> <span class="nv">handle</span> <span class="nv">object</span>.  <span class="nv">Nothing</span>
     <span class="nv">can</span> <span class="nv">be</span> <span class="nv">assumed</span> <span class="nv">about</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">comparison</span> <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span>
     <span class="nv">repeated</span> <span class="nv">comparison</span> <span class="nv">of</span> <span class="nv">two</span> <span class="nv">handles</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">MATLAB</span> <span class="nv">session</span> <span class="nv">will</span> 
@@ -5330,51 +5336,50 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>listener</strong> - <em>LISTENER  Add listener for event without binding the listener to the source object.</em></p>
-<p>```el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
-    for the event named Eventname.  The source of the event is the handle<br />
-    object hSource.  If hSource is an array of source handles, the listener
-    responds to the named event on any handle in the array.  callbackFcn
-    is a function handle that is invoked when the event is triggered.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
-<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
-<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
-<span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
-<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
-<span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
-<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
-<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
-<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
-<span class="n">properties</span><span class="o">.</span>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callbackFcn</span><span class="p">)</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">listener</span>
+    <span class="k">for</span> <span class="n">the</span> <span class="n">event</span> <span class="n">named</span> <span class="n">Eventname</span><span class="o">.</span>  <span class="n">The</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">the</span> <span class="n">handle</span>  
+    <span class="n">object</span> <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">source</span> <span class="n">handles</span><span class="p">,</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">responds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">named</span> <span class="n">event</span> <span class="n">on</span> <span class="n">any</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">array</span><span class="o">.</span>  <span class="n">callbackFcn</span>
+    <span class="k">is</span> <span class="n">a</span> <span class="n">function</span> <span class="n">handle</span> <span class="n">that</span> <span class="k">is</span> <span class="n">invoked</span> <span class="n">when</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">triggered</span><span class="o">.</span>
 
-<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
-<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
-<span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span>
+    <span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+    <span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
+    <span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
+    <span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
+    <span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
+    <span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+    <span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
+    <span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+    <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+    <span class="n">properties</span><span class="o">.</span>
 
-<span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
-<span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
-<span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
-<span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
-<span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+    <span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+    <span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
+    <span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span> 
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+    <span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
+    <span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
+    <span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
+    <span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
+    <span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">/</span><span class="n">listener</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">/</span><span class="n">listener</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="o">.</span><span class="n">listener</span>
 </code></pre></div>
 
-<p>Help for ndi.session/listener is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">listener</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">listener</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">lt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;</span> <span class="ss">(</span><span class="nv">LT</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
-
-```<span class="nv">H1</span> <span class="o">&lt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+<hr />
+<p><strong>lt</strong> - <em>&lt; (LT)   Less than relation for handles.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&lt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
     <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
     <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
     <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&lt;</span> <span class="nb">result</span>.
@@ -5395,32 +5400,31 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>ne</strong> - <em>~= (NE)   Not equal relation for handles.</em></p>
-<p>```Handles are equal if they are handles for the same object and are 
-    unequal otherwise.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
-<span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
-<span class="nv">scalar</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> 
-<span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">are</span> 
+    <span class="nv">unequal</span> <span class="nv">otherwise</span>.
 
-<span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+    <span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
+    <span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
+    <span class="nv">scalar</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> 
+    <span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">NE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span>
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">NE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span>
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span><span class="o">/</span><span class="nv">LT</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ne</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ne</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
 </code></pre></div>
 
-<p>Help for ndi.session/ne is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">ne</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
-
-<span class="o">**</span><span class="n">newdocument</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">create</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="o">*</span><span class="w"></span>
-
-<span class="err">```</span><span class="n">NDI_DOCUMENT_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NEWDOCUMENT</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">DOCUMENT_TYPE</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;PROPERTY1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">VALUE1</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
+<hr />
+<p><strong>newdocument</strong> - <em>create a new ndi.database document of type ndi.document</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">NDI_DOCUMENT_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NEWDOCUMENT</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">DOCUMENT_TYPE</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;PROPERTY1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">VALUE1</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
 
 <span class="w">  </span><span class="n">Creates</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">empty</span><span class="w"> </span><span class="k">database</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">NDI_DOCUMENT_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">DOCUMENT_TYPE</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
 <span class="w">  </span><span class="n">an</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="ow">any</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">confirms</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="p">.</span><span class="n">json</span><span class="w"></span>
@@ -5435,28 +5439,27 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>notify</strong> - <em>NOTIFY   Notify listeners of event.</em></p>
-<p>```NOTIFY(H, eventname) notifies listeners added to the event named 
-    eventname for handle object array H that the event is taking place. 
-    eventname can be a string scalar or character vector.<br />
-    H is the array of handles to the event source objects, and 'eventname'
-    must be a character vector.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">eventname</span><span class="p">,</span><span class="n">ed</span><span class="p">)</span> <span class="n">provides</span> <span class="n">a</span> <span class="n">way</span> <span class="n">of</span> <span class="n">encapsulating</span> <span class="n">information</span> 
-<span class="n">about</span> <span class="n">an</span> <span class="k">event</span> <span class="n">which</span> <span class="n">can</span> <span class="n">then</span> <span class="n">be</span> <span class="n">accessed</span> <span class="n">by</span> <span class="n">each</span> <span class="n">registered</span> <span class="n">listener</span><span class="p">.</span>
-<span class="n">ed</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span> <span class="n">class</span><span class="p">.</span>
+<div class="codehilite"><pre><span></span><code><span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">eventname</span><span class="p">)</span> <span class="n">notifies</span> <span class="n">listeners</span> <span class="n">added</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">named</span> 
+    <span class="n">eventname</span> <span class="k">for</span> <span class="n">handle</span> <span class="n">object</span> <span class="n">array</span> <span class="n">H</span> <span class="n">that</span> <span class="n">the</span> <span class="k">event</span> <span class="n">is</span> <span class="n">taking</span> <span class="n">place</span><span class="p">.</span> 
+    <span class="n">eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> <span class="k">string</span> <span class="n">scalar</span> <span class="k">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">.</span>  
+    <span class="n">H</span> <span class="n">is</span> <span class="n">the</span> <span class="n">array</span> <span class="n">of</span> <span class="n">handles</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">source</span> <span class="n">objects</span><span class="p">,</span> <span class="k">and</span> <span class="p">&#39;</span><span class="n">eventname</span><span class="p">&#39;</span>
+    <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">character</span> <span class="n">vector</span><span class="p">.</span>
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="o">/</span><span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="o">/</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span><span class="p">,</span> <span class="n">EVENTS</span>
+    <span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">eventname</span><span class="p">,</span><span class="n">ed</span><span class="p">)</span> <span class="n">provides</span> <span class="n">a</span> <span class="n">way</span> <span class="n">of</span> <span class="n">encapsulating</span> <span class="n">information</span> 
+    <span class="n">about</span> <span class="n">an</span> <span class="k">event</span> <span class="n">which</span> <span class="n">can</span> <span class="n">then</span> <span class="n">be</span> <span class="n">accessed</span> <span class="n">by</span> <span class="n">each</span> <span class="n">registered</span> <span class="n">listener</span><span class="p">.</span>
+    <span class="n">ed</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span> <span class="n">class</span><span class="p">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="o">/</span><span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">SESSION</span><span class="o">/</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="o">/</span><span class="n">notify</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="o">/</span><span class="n">notify</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="p">.</span><span class="n">notify</span>
 </code></pre></div>
 
-<p>Help for ndi.session/notify is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">notify</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">notify</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
-
-<span class="o">**</span><span class="nt">searchquery</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">return</span> <span class="nt">a</span> <span class="nt">search</span> <span class="nt">query</span> <span class="nt">for</span> <span class="nt">database</span> <span class="nt">objects</span> <span class="nt">in</span> <span class="nt">this</span> <span class="nt">session</span><span class="o">*</span>
-
-<span class="err">```</span><span class="nt">SQ</span> <span class="o">=</span> <span class="nt">SEARCHQUERY</span><span class="o">(</span><span class="nt">NDI_SESSION_OBJ</span><span class="o">)</span>
+<hr />
+<p><strong>searchquery</strong> - <em>return a search query for database objects in this session</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nt">SQ</span> <span class="o">=</span> <span class="nt">SEARCHQUERY</span><span class="o">(</span><span class="nt">NDI_SESSION_OBJ</span><span class="o">)</span>
 
   <span class="nt">Returns</span> <span class="nt">a</span> <span class="nt">search</span> <span class="nt">query</span> <span class="nt">that</span> <span class="nt">will</span> <span class="nt">match</span> <span class="nt">all</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">document</span> <span class="nt">objects</span> <span class="nt">that</span> <span class="nt">were</span> <span class="nt">generated</span>
   <span class="nt">by</span> <span class="nt">this</span> <span class="nt">session</span><span class="o">.</span>
@@ -5468,18 +5471,21 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>session</strong> - <em>Create a new ndi.session object</em></p>
-<p>```NDI_SESSION_OBJ=ndi.session(REFERENCE)</p>
-<p>Creates a new ndi.session object. The session has a unique
-  reference REFERENCE. This class is an abstract class and typically
-  an end user will open a specific subclass such as ndi.session.dir.</p>
-<p>ndi.session objects can access 0 or more ndi.daq.system objects.</p>
-<p>See also: ndi.session/DAQSYSTEM_ADD, ndi.session/DAQSYSTEM_RM, 
-    ndi.session/GETPATH, ndi.session/GETREFERENCE</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_SESSION_OBJ</span><span class="o">=</span><span class="nv">ndi</span>.<span class="nv">session</span><span class="ss">(</span><span class="nv">REFERENCE</span><span class="ss">)</span>
 
-**syncgraph_addrule** - *add an ndi.time.syncrule to the syncgraph*
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span>. <span class="nv">The</span> <span class="nv">session</span> <span class="nv">has</span> <span class="nv">a</span> <span class="nv">unique</span>
+  <span class="nv">reference</span> <span class="nv">REFERENCE</span>. <span class="nv">This</span> <span class="nv">class</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">abstract</span> <span class="nv">class</span> <span class="nv">and</span> <span class="nv">typically</span>
+  <span class="nv">an</span> <span class="k">end</span> <span class="nv">user</span> <span class="nv">will</span> <span class="nv">open</span> <span class="nv">a</span> <span class="nv">specific</span> <span class="nv">subclass</span> <span class="nv">such</span> <span class="nv">as</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span>.
 
-```NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
+  <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">objects</span> <span class="nv">can</span> <span class="nv">access</span> <span class="mi">0</span> <span class="nv">or</span> <span class="nv">more</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span> <span class="nv">objects</span>.
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">DAQSYSTEM_ADD</span>, <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">DAQSYSTEM_RM</span>, 
+    <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">GETPATH</span>, <span class="nv">ndi</span>.<span class="nv">session</span><span class="o">/</span><span class="nv">GETREFERENCE</span>
+</code></pre></div>
+
+<hr />
+<p><strong>syncgraph_addrule</strong> - <em>add an ndi.time.syncrule to the syncgraph</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
 
   Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
@@ -5487,14 +5493,15 @@ See also FINDOBJ, NDI.SESSION
 
 <hr />
 <p><strong>syncgraph_rmrule</strong> - <em>remove an ndi.time.syncrule from the syncgraph</em></p>
-<p>```NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)</p>
-<p>Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
-  object NDI_SESSION_OBJ.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)
 
-<span class="o">**</span><span class="nv">unique_reference_string</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="nv">string</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">session</span><span class="o">*</span>
+  Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
+  object NDI_SESSION_OBJ.
+</code></pre></div>
 
-```<span class="nv">REFSTR</span> <span class="o">=</span> <span class="nv">UNIQUE_REFERENCE_STRING</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>unique_reference_string</strong> - <em>return the unique reference string for this session</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">REFSTR</span> <span class="o">=</span> <span class="nv">UNIQUE_REFERENCE_STRING</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="nv">string</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>.
   <span class="nv">REFSTR</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">combination</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">REFERENCE</span> <span class="nv">property</span> <span class="nv">of</span> <span class="nv">NDI_SESSION_OBJ</span>

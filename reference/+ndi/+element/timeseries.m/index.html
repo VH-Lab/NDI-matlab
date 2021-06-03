@@ -4986,27 +4986,29 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addepoch</strong> - <em>add an epoch to the ndi.element</em></p>
-<p>```[NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)</p>
-<p>Registers the data for an epoch with the NDI_ELEMENT_OBJ.</p>
-<p>Inputs:
-    NDI_ELEMENT_OBJ: The ndi.element object to modify
-    EPOCHID:       The name of the epoch to add; should match the name of an epoch from the probe
-    EPOCHCLOCK:    The epoch clock; must be a single clock type that matches one of the clock types
-                      of the probe
-    T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
-                      the probe, in units of the epock clock
-    TIMEPOINTS:    the time points to be added to this epoch; can also be the string 'probe' which means the
-                      points are read directly from the probe (must be Tx1). Timepoints must be in the units
-                      of the EPOCHCLOCK.
-    DATAPOINTS:    the data points that accompany each timepoint (must be TxXxY...), or can be 'probe' to
-                      read from the probe
-  Outputs:
-     If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="cp">[</span><span class="nx">NDI_ELEMENT_OBJ</span><span class="p">,</span> <span class="nx">EPOCHDOC</span><span class="cp">]</span> <span class="o">=</span> <span class="nt">ADDEPOCH</span><span class="o">(</span><span class="nt">NDI_ELEMENT_TIMESERIES_OBJ</span><span class="o">,</span> <span class="nt">EPOCHID</span><span class="o">,</span> <span class="nt">EPOCHCLOCK</span><span class="o">,</span> <span class="nt">T0_T1</span><span class="o">,</span> <span class="nt">TIMEPOINTS</span><span class="o">,</span> <span class="nt">DATAPOINTS</span><span class="o">)</span>
 
-<span class="o">**</span><span class="n">buildepochgraph</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">compute</span> <span class="n">the</span> <span class="n">epochgraph</span> <span class="n">among</span> <span class="n">epochs</span> <span class="n">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span><span class="o">*</span>
+  <span class="nt">Registers</span> <span class="nt">the</span> <span class="nt">data</span> <span class="nt">for</span> <span class="nt">an</span> <span class="nt">epoch</span> <span class="nt">with</span> <span class="nt">the</span> <span class="nt">NDI_ELEMENT_OBJ</span><span class="o">.</span>
 
-<span class="err">```</span><span class="p">[</span><span class="n">COST</span><span class="p">,</span><span class="n">MAPPING</span><span class="p">]</span> <span class="o">=</span> <span class="n">BUILDEPOCHGRAPH</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+  <span class="nt">Inputs</span><span class="o">:</span>
+    <span class="nt">NDI_ELEMENT_OBJ</span><span class="o">:</span> <span class="nt">The</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">element</span> <span class="nt">object</span> <span class="nt">to</span> <span class="nt">modify</span>
+    <span class="nt">EPOCHID</span><span class="o">:</span>       <span class="nt">The</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">epoch</span> <span class="nt">to</span> <span class="nt">add</span><span class="o">;</span> <span class="nt">should</span> <span class="nt">match</span> <span class="nt">the</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">an</span> <span class="nt">epoch</span> <span class="nt">from</span> <span class="nt">the</span> <span class="nt">probe</span>
+    <span class="nt">EPOCHCLOCK</span><span class="o">:</span>    <span class="nt">The</span> <span class="nt">epoch</span> <span class="nt">clock</span><span class="o">;</span> <span class="nt">must</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">single</span> <span class="nt">clock</span> <span class="nt">type</span> <span class="nt">that</span> <span class="nt">matches</span> <span class="nt">one</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">clock</span> <span class="nt">types</span>
+                      <span class="nt">of</span> <span class="nt">the</span> <span class="nt">probe</span>
+    <span class="nt">T0_T1</span><span class="o">:</span>         <span class="nt">The</span> <span class="nt">starting</span> <span class="nt">time</span> <span class="nt">and</span> <span class="nt">ending</span> <span class="nt">time</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">existence</span> <span class="nt">of</span> <span class="nt">information</span> <span class="nt">about</span> <span class="nt">the</span> <span class="nt">ELEMENT</span> <span class="nt">on</span>
+                      <span class="nt">the</span> <span class="nt">probe</span><span class="o">,</span> <span class="nt">in</span> <span class="nt">units</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">epock</span> <span class="nt">clock</span>
+    <span class="nt">TIMEPOINTS</span><span class="o">:</span>    <span class="nt">the</span> <span class="nt">time</span> <span class="nt">points</span> <span class="nt">to</span> <span class="nt">be</span> <span class="nt">added</span> <span class="nt">to</span> <span class="nt">this</span> <span class="nt">epoch</span><span class="o">;</span> <span class="nt">can</span> <span class="nt">also</span> <span class="nt">be</span> <span class="nt">the</span> <span class="nt">string</span> <span class="s1">&#39;probe&#39;</span> <span class="nt">which</span> <span class="nt">means</span> <span class="nt">the</span>
+                      <span class="nt">points</span> <span class="nt">are</span> <span class="nt">read</span> <span class="nt">directly</span> <span class="nt">from</span> <span class="nt">the</span> <span class="nt">probe</span> <span class="o">(</span><span class="nt">must</span> <span class="nt">be</span> <span class="nt">Tx1</span><span class="o">).</span> <span class="nt">Timepoints</span> <span class="nt">must</span> <span class="nt">be</span> <span class="nt">in</span> <span class="nt">the</span> <span class="nt">units</span>
+                      <span class="nt">of</span> <span class="nt">the</span> <span class="nt">EPOCHCLOCK</span><span class="o">.</span>
+    <span class="nt">DATAPOINTS</span><span class="o">:</span>    <span class="nt">the</span> <span class="nt">data</span> <span class="nt">points</span> <span class="nt">that</span> <span class="nt">accompany</span> <span class="nt">each</span> <span class="nt">timepoint</span> <span class="o">(</span><span class="nt">must</span> <span class="nt">be</span> <span class="nt">TxXxY</span><span class="o">...),</span> <span class="nt">or</span> <span class="nt">can</span> <span class="nt">be</span> <span class="s1">&#39;probe&#39;</span> <span class="nt">to</span>
+                      <span class="nt">read</span> <span class="nt">from</span> <span class="nt">the</span> <span class="nt">probe</span>
+  <span class="nt">Outputs</span><span class="o">:</span>
+     <span class="nt">If</span> <span class="nt">a</span> <span class="nt">second</span> <span class="nt">output</span> <span class="nt">is</span> <span class="nt">requested</span> <span class="nt">in</span> <span class="nt">EPOCHDOC</span><span class="o">,</span> <span class="nt">then</span> <span class="nt">the</span> <span class="nt">DOC</span> <span class="nt">is</span> <span class="nt">NOT</span> <span class="nt">added</span> <span class="nt">to</span> <span class="nt">the</span> <span class="nt">database</span>
+</code></pre></div>
+
+<hr />
+<p><strong>buildepochgraph</strong> - <em>compute the epochgraph among epochs for an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">COST</span><span class="p">,</span><span class="n">MAPPING</span><span class="p">]</span> <span class="o">=</span> <span class="n">BUILDEPOCHGRAPH</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
 
   <span class="n">Compute</span> <span class="n">the</span> <span class="n">cost</span> <span class="kr">and</span> <span class="n">the</span> <span class="n">mapping</span> <span class="n">among</span> <span class="n">epochs</span> <span class="kr">in</span> <span class="n">the</span> <span class="n">EPOCHTABLE</span> <span class="n">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span>
 
@@ -5034,26 +5036,28 @@
 
 <hr />
 <p><strong>buildepochtable</strong> - <em>build the epoch table for an ndi.element</em></p>
-<p>```ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)</p>
-<p>ET is a structure array with the following fields:
-  Fieldname:                | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="n">ET</span> <span class="o">=</span> <span class="n">BUILDEPOCHTABLE</span><span class="p">(</span><span class="n">NDI_ELEMENT_OBJ</span><span class="p">)</span>
+
+  <span class="n">ET</span> <span class="n">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">with</span> <span class="n">the</span> <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
+  <span class="nl">Fieldname</span><span class="p">:</span>                <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">------------------------------------------------------------------------</span>
+  <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span>            <span class="o">|</span> <span class="n">The</span> <span class="n">number</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="p">(</span><span class="n">may</span> <span class="n">change</span><span class="p">)</span>
+  <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span>                <span class="o">|</span> <span class="n">The</span> <span class="n">epoch</span> <span class="n">ID</span> <span class="n">code</span> <span class="p">(</span><span class="n">will</span> <span class="n">never</span> <span class="n">change</span> <span class="n">once</span> <span class="n">established</span><span class="p">)</span>
+                            <span class="o">|</span>   <span class="n">This</span> <span class="n">uniquely</span> <span class="n">specifies</span> <span class="n">the</span> <span class="n">epoch</span> <span class="p">(</span><span class="n">with</span> <span class="n">the</span> <span class="n">session</span> <span class="kt">id</span><span class="p">).</span>
+  <span class="err">&#39;</span><span class="n">epoch_session_id</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">Session</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span>
+  <span class="err">&#39;</span><span class="n">epochprobemap</span><span class="err">&#39;</span>           <span class="o">|</span> <span class="n">The</span> <span class="n">epochprobemap</span> <span class="n">object</span> <span class="n">from</span> <span class="n">each</span> <span class="n">epoch</span>
+  <span class="err">&#39;</span><span class="n">epoch_clock</span><span class="err">&#39;</span>             <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">describe</span> <span class="n">the</span> <span class="n">type</span> <span class="n">of</span> <span class="n">clocks</span> <span class="n">available</span>
+  <span class="err">&#39;</span><span class="n">t0_t1</span><span class="err">&#39;</span>                   <span class="o">|</span> <span class="n">A</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ordered</span> <span class="n">pairs</span> <span class="p">[</span><span class="n">t0</span> <span class="n">t1</span><span class="p">]</span> <span class="n">that</span> <span class="n">indicates</span><span class="p">,</span> <span class="k">for</span> <span class="n">each</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">the</span> <span class="n">start</span> <span class="n">and</span> <span class="n">stop</span>
+                            <span class="o">|</span>   <span class="n">time</span> <span class="n">of</span> <span class="n">this</span> <span class="n">epoch</span><span class="p">.</span> <span class="n">The</span> <span class="n">time</span> <span class="n">units</span> <span class="n">of</span> <span class="n">t0_t1</span><span class="p">{</span><span class="n">i</span><span class="p">}</span> <span class="n">match</span> <span class="n">epoch_clock</span><span class="p">{</span><span class="n">i</span><span class="p">}.</span>
+  <span class="err">&#39;</span><span class="n">underlying_epochs</span><span class="err">&#39;</span>       <span class="o">|</span> <span class="n">A</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">of</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">objects</span> <span class="n">that</span> <span class="n">comprise</span> <span class="n">these</span> <span class="n">epochs</span><span class="p">.</span>
+                            <span class="o">|</span>   <span class="n">It</span> <span class="n">contains</span> <span class="n">fields</span> <span class="err">&#39;</span><span class="n">underlying</span><span class="err">&#39;</span><span class="p">,</span> <span class="err">&#39;</span><span class="n">epoch_number</span><span class="err">&#39;</span><span class="p">,</span> <span class="n">and</span> <span class="err">&#39;</span><span class="n">epoch_id</span><span class="err">&#39;</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">element</span><span class="p">.</span><span class="n">timeseries</span><span class="o">/</span><span class="n">buildepochtable</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">ELEMENT</span>
+</code></pre></div>
+
 <hr />
-<p>'epoch_number'            | The number of the epoch (may change)
-  'epoch_id'                | The epoch ID code (will never change once established)
-                            |   This uniquely specifies the epoch (with the session id).
-  'epoch_session_id'           | Session of the epoch
-  'epochprobemap'           | The epochprobemap object from each epoch
-  'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
-  't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
-                            |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
-  'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
-                            |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'</p>
-<p>Help for ndi.element.timeseries/buildepochtable is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">cached_epochgraph</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">epoch</span> <span class="nv">graph</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span><span class="o">*</span>
-
-```[<span class="nv">COST</span>,<span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+<p><strong>cached_epochgraph</strong> - <em>return the cached epoch graph of an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">COST</span>,<span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">graph</span>, <span class="k">if</span> <span class="nv">it</span> <span class="nv">exists</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">up</span><span class="o">-</span><span class="nv">to</span><span class="o">-</span><span class="nv">date</span>
   <span class="ss">(</span><span class="nv">that</span> <span class="nv">is</span>, <span class="nv">the</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="nv">of</span> <span class="nv">NDI_EPOCHSET_OBJ</span> 
@@ -5068,16 +5072,18 @@
 
 <hr />
 <p><strong>cached_epochtable</strong> - <em>return the cached epochtable of an ndi.epoch.epochset object</em></p>
-<p>```[ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)</p>
-<p>Return the cached version of the epochtable, if it exists, along with its HASHVALUE
-  (a hash number generated from the table). If there is no cached version,
-  ET and HASHVALUE will be empty.</p>
-<p>Help for ndi.element.timeseries/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">ET</span>, <span class="nv">HASHVALUE</span>] <span class="o">=</span> <span class="nv">CACHED_EPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">doc_unique_id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epochtable</span>, <span class="k">if</span> <span class="nv">it</span> <span class="nv">exists</span>, <span class="nv">along</span> <span class="nv">with</span> <span class="nv">its</span> <span class="nv">HASHVALUE</span>
+  <span class="ss">(</span><span class="nv">a</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">generated</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">table</span><span class="ss">)</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">cached</span> <span class="nv">version</span>,
+  <span class="nv">ET</span> <span class="nv">and</span> <span class="nv">HASHVALUE</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">empty</span>.
 
-```<span class="nv">UNIQUE_REF</span> <span class="o">=</span> <span class="nv">DOC_UNIQUE_REF</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">cached_epochtable</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>doc_unique_id</strong> - <em>return the document unique reference for an ndi.element object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">UNIQUE_REF</span> <span class="o">=</span> <span class="nv">DOC_UNIQUE_REF</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="k">for</span> <span class="nv">NDI_ELEMENT_OBJ</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">associated</span>
   <span class="nv">document</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">element</span>, <span class="k">then</span> <span class="nv">empty</span> <span class="nv">is</span> <span class="nv">returned</span>.
@@ -5087,15 +5093,18 @@
 
 <hr />
 <p><strong>elementstring</strong> - <em>Produce a human-readable element string</em></p>
-<p>```ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)</p>
-<p>Returns the name as a human-readable string.</p>
-<p>For ndi.element objects, this is the string 'element: ' followed by its name</p>
-<p>Help for ndi.element.timeseries/elementstring is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ELEMENTSTR</span> <span class="o">=</span> <span class="nv">ELEMENTSTRING</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">epoch2str</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="nv">number</span> <span class="nv">or</span> <span class="nv">id</span> <span class="nv">to</span> <span class="nv">a</span> <span class="nv">string</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">human</span><span class="o">-</span><span class="nv">readable</span> <span class="nv">string</span>.
 
-```<span class="nv">S</span> <span class="o">=</span> <span class="nv">EPOCH2STR</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
+  <span class="k">For</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">objects</span>, <span class="nv">this</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">string</span> <span class="s1">&#39;</span><span class="s">element: </span><span class="s1">&#39;</span> <span class="nv">followed</span> <span class="nv">by</span> <span class="nv">its</span> <span class="nv">name</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">elementstring</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epoch2str</strong> - <em>convert an epoch number or id to a string</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">S</span> <span class="o">=</span> <span class="nv">EPOCH2STR</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">NUMBER</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">string</span>. <span class="k">If</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">simple</span>
   <span class="nv">integer</span>, <span class="k">then</span> <span class="k">INT2STR</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">to</span> <span class="nv">produce</span> <span class="nv">a</span> <span class="nv">string</span>. <span class="k">If</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">epoch</span>
@@ -5106,15 +5115,18 @@
 
 <hr />
 <p><strong>epochclock</strong> - <em>return the ndi.time.clocktype objects for an epoch</em></p>
-<p>```EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)</p>
-<p>Return the clock types available for this epoch.</p>
-<p>The ndi.element class always returns the clock type(s) of the element it is based on</p>
-<p>Help for ndi.element.timeseries/epochclock is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">EC</span> <span class="o">=</span> <span class="nv">EPOCHCLOCK</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">epochgraph</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">graph</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">mapping</span> <span class="nv">and</span> <span class="nv">cost</span> <span class="nv">of</span> <span class="nv">converting</span> <span class="nv">time</span> <span class="nv">among</span> <span class="nv">epochs</span><span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">clock</span> <span class="nv">types</span> <span class="nv">available</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">epoch</span>.
 
-```[<span class="nv">COST</span>, <span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+  <span class="nv">The</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">class</span> <span class="nv">always</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">clock</span> <span class="nv">type</span><span class="ss">(</span><span class="nv">s</span><span class="ss">)</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">element</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">based</span> <span class="nv">on</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">epochclock</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochgraph</strong> - <em>graph of the mapping and cost of converting time among epochs</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">COST</span>, <span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">EPOCHGRAPH</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Compute</span> <span class="nv">the</span> <span class="nv">cost</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">mapping</span> <span class="nv">among</span> <span class="nv">epochs</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span>
 
@@ -5129,19 +5141,22 @@
 
 <hr />
 <p><strong>epochid</strong> - <em>Get the epoch identifier for a particular epoch</em></p>
-<p>```ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)</p>
-<p>Returns the epoch identifier string for the epoch EPOCH_NUMBER.
-  If it doesn't exist, it should be created. EPOCH_NUMBER can be
-  a number of an EPOCH ID string.</p>
-<p>The abstract class just queries the EPOCHTABLE.
-  Most classes that manage epochs themselves (ndi.file.navigator,
-  ndi.daq.system) will override this method.</p>
-<p>Help for ndi.element.timeseries/epochid is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">EPOCHID</span> <span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">epochnodes</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="n">all</span> <span class="n">epoch</span> <span class="n">nodes</span> <span class="n">from</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span> <span class="n">object</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">identifier</span> <span class="nv">string</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">EPOCH_NUMBER</span>.
+  <span class="k">If</span> <span class="nv">it</span> <span class="nv">doesn</span><span class="s1">&#39;</span><span class="s">t exist, it should be created. EPOCH_NUMBER can be</span>
+  <span class="nv">a</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">EPOCH</span> <span class="nv">ID</span> <span class="nv">string</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">NODES</span><span class="p">,</span><span class="n">UNDERLYINGNODES</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHNODES</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+  <span class="nv">The</span> <span class="nv">abstract</span> <span class="nv">class</span> <span class="nv">just</span> <span class="nv">queries</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span>.
+  <span class="nv">Most</span> <span class="nv">classes</span> <span class="nv">that</span> <span class="nv">manage</span> <span class="nv">epochs</span> <span class="nv">themselves</span> <span class="ss">(</span><span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>,
+  <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span><span class="ss">)</span> <span class="nv">will</span> <span class="nv">override</span> <span class="nv">this</span> <span class="nv">method</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">epochid</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochnodes</strong> - <em>return all epoch nodes from an ndi.epoch.epochset object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">NODES</span><span class="p">,</span><span class="n">UNDERLYINGNODES</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHNODES</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
 
   <span class="n">Return</span> <span class="n">all</span> <span class="n">EPOCHNODES</span> <span class="k">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">epoch</span><span class="p">.</span><span class="n">epochset</span><span class="p">.</span> <span class="n">EPOCHNODES</span> <span class="n">consist</span> <span class="n">of</span> <span class="n">the</span>
   <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
@@ -5173,15 +5188,18 @@
 
 <hr />
 <p><strong>epochsetname</strong> - <em>the name of the ndi.element object, for EPOCHNODES</em></p>
-<p>```NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)</p>
-<p>Returns the object name that is used when creating epoch nodes.</p>
-<p>For ndi.element objects, this is ndi.element/ELEMENTSTRING.</p>
-<p>Help for ndi.element.timeseries/epochsetname is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">NAME</span> <span class="o">=</span> <span class="nv">EPOCHSETNAME</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">epochtable</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Return</span> <span class="n">an</span> <span class="n">epoch</span> <span class="n">table</span> <span class="n">that</span> <span class="n">relates</span> <span class="n">the</span> <span class="n">current</span> <span class="n">object</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">epochs</span> <span class="n">to</span> <span class="n">underlying</span> <span class="n">epochs</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">object</span> <span class="nv">name</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">when</span> <span class="nv">creating</span> <span class="nv">epoch</span> <span class="nv">nodes</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">ET</span><span class="p">,</span><span class="n">HASHVALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHTABLE</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
+  <span class="k">For</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">objects</span>, <span class="nv">this</span> <span class="nv">is</span> <span class="nv">ndi</span>.<span class="nv">element</span><span class="o">/</span><span class="nv">ELEMENTSTRING</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">epochsetname</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>epochtable</strong> - <em>Return an epoch table that relates the current object's epochs to underlying epochs</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">ET</span><span class="p">,</span><span class="n">HASHVALUE</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHTABLE</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">)</span>
 
   <span class="n">ET</span> <span class="n">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">array</span> <span class="n">with</span> <span class="n">the</span> <span class="n">following</span> <span class="nl">fields</span><span class="p">:</span>
   <span class="nl">Fieldname</span><span class="p">:</span>                <span class="o">|</span> <span class="n">Description</span>
@@ -5208,16 +5226,18 @@
 
 <hr />
 <p><strong>epochtableentry</strong> - <em>return the entry of the EPOCHTABLE that corresonds to an EPOCHID</em></p>
-<p>```ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)</p>
-<p>Returns the EPOCHTABLE entry associated with the ndi.epoch.epochset object
-  that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
-  epoch or the EPOCHID of the epoch.</p>
-<p>Help for ndi.element.timeseries/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">ET_ENTRY</span> <span class="o">=</span> <span class="nv">EPOCHTABLEENTRY</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCH_NUMBER_OR_ID</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">getcache</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">NDI_CACHE</span> <span class="nv">and</span> <span class="nv">key</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span><span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">EPOCHTABLE</span> <span class="nv">entry</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span>
+  <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">EPOCH_NUMBER_OR_ID</span>, <span class="nv">which</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">the</span>
+  <span class="nv">epoch</span> <span class="nv">or</span> <span class="nv">the</span> <span class="nv">EPOCHID</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epoch</span>.
 
-```[<span class="nv">CACHE</span>,<span class="nv">KEY</span>] <span class="o">=</span> <span class="nv">GETCACHE</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">epochtableentry</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
+<hr />
+<p><strong>getcache</strong> - <em>return the NDI_CACHE and key for ndi.element</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">CACHE</span>,<span class="nv">KEY</span>] <span class="o">=</span> <span class="nv">GETCACHE</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">CACHE</span> <span class="nv">and</span> <span class="nv">KEY</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">element</span> <span class="nv">object</span>.
 
@@ -5231,15 +5251,17 @@
 
 <hr />
 <p><strong>id</strong> - <em>return the document unique identifier for an ndi.element object</em></p>
-<p>```UNIQUE_REF = ID(NDI_ELEMENT_OBJ)</p>
-<p>Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
-  document for the element, then an error is returned.</p>
-<p>Help for ndi.element.timeseries/id is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">UNIQUE_REF</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">issyncgraphroot</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">should</span> <span class="nv">this</span> <span class="nv">object</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">root</span> <span class="nv">in</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">epoch</span> <span class="nv">graph</span>?<span class="o">*</span>
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="k">for</span> <span class="nv">NDI_ELEMENT_OBJ</span>. <span class="k">If</span> <span class="nv">there</span> <span class="nv">is</span> <span class="nv">no</span> <span class="nv">associated</span>
+  <span class="nv">document</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">element</span>, <span class="k">then</span> <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> <span class="nv">returned</span>.
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">ISSYNCGRAPHROOT</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>issyncgraphroot</strong> - <em>should this object be a root in an ndi.time.syncgraph epoch graph?</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">ISSYNCGRAPHROOT</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_OBJ</span><span class="ss">)</span>
 
   <span class="nv">This</span> <span class="nv">function</span> <span class="nv">tells</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">object</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">should</span> <span class="k">continue</span>
   <span class="nv">adding</span> <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">underlying</span><span class="s1">&#39;</span> <span class="nv">epochs</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">graph</span>, <span class="nv">or</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">should</span> <span class="nv">stop</span> <span class="nv">at</span> <span class="nv">this</span> <span class="nv">level</span>.
@@ -5251,15 +5273,17 @@
 
 <hr />
 <p><strong>load_all_element_docs</strong> - <em>load all of the ndi.element objects from an session database</em></p>
-<p>```ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)</p>
-<p>Loads the ndi.document that is based on the ndi.element object and any associated
-  epoch documents.</p>
-<p>Help for ndi.element.timeseries/load_all_element_docs is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">ELEMENT_DOCS</span> <span class="o">=</span> <span class="n">LOAD_ALL_ELEMENT_DOCS</span><span class="p">(</span><span class="n">NDI_ELEMENT_OBJ</span><span class="p">)</span>
 
-<span class="o">**</span><span class="n">load_element_doc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nb">load</span> <span class="n">a</span> <span class="n">element</span> <span class="n">doc</span> <span class="n">from</span> <span class="n">the</span> <span class="n">session</span> <span class="n">database</span><span class="o">*</span>
+  <span class="n">Loads</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">that</span> <span class="k">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">element</span> <span class="n">object</span> <span class="ow">and</span> <span class="n">any</span> <span class="n">associated</span>
+  <span class="n">epoch</span> <span class="n">documents</span><span class="o">.</span>
 
-<span class="err">```</span><span class="n">ELEMENT_DOC</span> <span class="o">=</span> <span class="n">LOAD_ELEMENT_DOC</span><span class="p">(</span><span class="n">NDI_ELEMENT_OBJ</span><span class="p">)</span>
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">timeseries</span><span class="o">/</span><span class="n">load_all_element_docs</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="o">.</span><span class="n">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>load_element_doc</strong> - <em>load a element doc from the session database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">ELEMENT_DOC</span> <span class="o">=</span> <span class="n">LOAD_ELEMENT_DOC</span><span class="p">(</span><span class="n">NDI_ELEMENT_OBJ</span><span class="p">)</span>
 
   <span class="n">Load</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">that</span> <span class="k">is</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">element</span> <span class="n">object</span><span class="o">.</span>
 
@@ -5270,15 +5294,17 @@
 
 <hr />
 <p><strong>loadaddedepochs</strong> - <em>load the added epochs from an ndi.element</em></p>
-<p>```[ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_ELEMENT_OBJ)</p>
-<p>Load the EPOCHTABLE that consists of added/registered epochs that provide information
-  about the ndi.element.</p>
-<p>Help for ndi.element.timeseries/loadaddedepochs is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">ET_ADDED</span><span class="p">,</span> <span class="n">EPOCHDOCS</span><span class="p">]</span> <span class="o">=</span> <span class="n">LOADADDEDEOPCHS</span><span class="p">(</span><span class="n">NDI_ELEMENT_OBJ</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">matchedepochtable</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">compare</span> <span class="nv">a</span> <span class="nv">hash</span> <span class="nv">number</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">epochtable</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">version</span><span class="o">*</span>
+  <span class="n">Load</span> <span class="n">the</span> <span class="n">EPOCHTABLE</span> <span class="n">that</span> <span class="n">consists</span> <span class="n">of</span> <span class="n">added</span><span class="o">/</span><span class="n">registered</span> <span class="n">epochs</span> <span class="n">that</span> <span class="n">provide</span> <span class="n">information</span>
+  <span class="n">about</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">element</span><span class="o">.</span>
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">MATCHEDEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">HASHVALUE</span><span class="ss">)</span>
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">element</span><span class="o">.</span><span class="n">timeseries</span><span class="o">/</span><span class="n">loadaddedepochs</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="o">.</span><span class="n">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>matchedepochtable</strong> - <em>compare a hash number from an epochtable to the current version</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">MATCHEDEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">HASHVALUE</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">hashed</span> <span class="nv">value</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">cached</span> <span class="nv">epochtable</span> <span class="nv">is</span> <span class="nv">identical</span> <span class="nv">to</span> <span class="nv">HASHVALUE</span>.
   <span class="nv">Otherwise</span>, <span class="nv">it</span> <span class="nv">returns</span> <span class="mi">0</span>.
@@ -5288,25 +5314,29 @@
 
 <hr />
 <p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>```ID = NDI_UNIQUE_ID</p>
-<p>Generates a unique ID character array based on the current time and a random
-  number. It is a hexidecimal representation of the serial date number in
-  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
-  The integer portion of the date is the whole number of days and the fractional part of the date number
-  is the fraction of days.</p>
-<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND</p>
-<p>Help for ndi.element.timeseries.ndi_unique_id is inherited from superclass NDI.IDO</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
 
-**newdocument** - *need docs here*
+  <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
+  <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
+  <span class="nv">UTC</span> <span class="nv">Leap</span> <span class="nv">Seconds</span> <span class="nv">time</span>. <span class="nv">The</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">since</span> <span class="nv">January</span> <span class="mi">0</span>, <span class="mi">0000</span> <span class="nv">at</span> <span class="mi">0</span>:<span class="mi">00</span>:<span class="mi">00</span>.
+  <span class="nv">The</span> <span class="nv">integer</span> <span class="nv">portion</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">whole</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">fractional</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">number</span>
+  <span class="nv">is</span> <span class="nv">the</span> <span class="nv">fraction</span> <span class="nv">of</span> <span class="nv">days</span>.
+
+  <span class="nv">ID</span> <span class="o">=</span> [<span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">SERIAL_DATE_NUMBER</span><span class="ss">)</span> <span class="s1">&#39;</span><span class="s">_</span><span class="s1">&#39;</span> <span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">RAND</span><span class="ss">)</span>]
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<hr />
+<p><strong>newdocument</strong> - <em>need docs here</em></p>
+<div class="codehilite"><pre><span></span><code>
+</code></pre></div>
 
-<span class="o">**</span><span class="nv">numepochs</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Number</span> <span class="nv">of</span> <span class="nv">epochs</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span><span class="o">*</span>
-
-```<span class="nv">N</span> <span class="o">=</span> <span class="nv">NUMEPOCHS</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>numepochs</strong> - <em>Number of epochs of ndi.epoch.epochset</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">N</span> <span class="o">=</span> <span class="nv">NUMEPOCHS</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">epochs</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span> <span class="nv">NDI_EPOCHSET_OBJ</span>.
 
@@ -5317,20 +5347,23 @@
 
 <hr />
 <p><strong>readtimeseries</strong> - <em>read the ndi.element.timeseries data from a probe based on specified time relative to an NDI_TIMEFERENCE or epoch</em></p>
-<p>```[DATA, T, TIMEREF] = READTIMESERIES(NDI_ELEMENT_TIMESERIES_OBJ, TIMEREF_OR_EPOCH, T0, T1)</p>
-<p>Reads timeseries data from an ndi.element.timeseries object. The DATA and time information T that are
-   returned depend on the the specific subclass of ndi.element.timeseries that is called (see READTIMESERIESEPOCH).</p>
-<p>In the base class, this function merely calls the element's probe's READTIMESERIES function. 
-   TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the time reference for
-   T0, T1, or it can be a single number, which will indicate the data are to be read from that
-   epoch.</p>
-<p>DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
-   ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">DATA</span>, <span class="nv">T</span>, <span class="nv">TIMEREF</span>] <span class="o">=</span> <span class="nv">READTIMESERIES</span><span class="ss">(</span><span class="nv">NDI_ELEMENT_TIMESERIES_OBJ</span>, <span class="nv">TIMEREF_OR_EPOCH</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">resetepochtable</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">clear</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">epochtable</span> <span class="nv">in</span> <span class="nv">memory</span> <span class="nv">and</span> <span class="nv">force</span> <span class="nv">it</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">re</span><span class="o">-</span><span class="nv">read</span> <span class="nv">from</span> <span class="nv">disk</span><span class="o">*</span>
+   <span class="nv">Reads</span> <span class="nv">timeseries</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span> <span class="nv">object</span>. <span class="nv">The</span> <span class="nv">DATA</span> <span class="nv">and</span> <span class="nv">time</span> <span class="nv">information</span> <span class="nv">T</span> <span class="nv">that</span> <span class="nv">are</span>
+   <span class="nv">returned</span> <span class="nv">depend</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">the</span> <span class="nv">specific</span> <span class="nv">subclass</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">called</span> <span class="ss">(</span><span class="nv">see</span> <span class="nv">READTIMESERIESEPOCH</span><span class="ss">)</span>.
 
-```<span class="nv">NDI_EPOCHSET_OBJ</span> <span class="o">=</span> <span class="nv">RESETEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
+   <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">this</span> <span class="nv">function</span> <span class="nv">merely</span> <span class="nv">calls</span> <span class="nv">the</span> <span class="nv">element</span><span class="s1">&#39;</span><span class="s">s probe</span><span class="s1">&#39;</span><span class="nv">s</span> <span class="nv">READTIMESERIES</span> <span class="nv">function</span>. 
+   <span class="nv">TIMEREF_OR_EPOCH</span> <span class="nv">is</span> <span class="nv">either</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span> <span class="nv">indicating</span> <span class="nv">the</span> <span class="nv">time</span> <span class="nv">reference</span> <span class="k">for</span>
+   <span class="nv">T0</span>, <span class="nv">T1</span>, <span class="nv">or</span> <span class="nv">it</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">number</span>, <span class="nv">which</span> <span class="nv">will</span> <span class="nv">indicate</span> <span class="nv">the</span> <span class="nv">data</span> <span class="nv">are</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">read</span> <span class="nv">from</span> <span class="nv">that</span>
+   <span class="nv">epoch</span>.
+
+   <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">data</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">probe</span>.  <span class="nv">T</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">time</span> <span class="nv">structure</span>, <span class="nv">in</span> <span class="nv">units</span> <span class="nv">of</span> <span class="nv">TIMEREF</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span>
+   <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span> <span class="nv">or</span> <span class="nv">in</span> <span class="nv">units</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="k">if</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="nv">passed</span>.  <span class="nv">The</span> <span class="nv">TIMEREF</span> <span class="nv">is</span> <span class="nv">returned</span>.
+</code></pre></div>
+
+<hr />
+<p><strong>resetepochtable</strong> - <em>clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_EPOCHSET_OBJ</span> <span class="o">=</span> <span class="nv">RESETEPOCHTABLE</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span><span class="ss">)</span>
 
   <span class="nv">This</span> <span class="nv">function</span> <span class="nv">clears</span> <span class="nv">the</span> <span class="nv">internal</span> <span class="nv">cached</span> <span class="nv">memory</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epochtable</span>, <span class="nv">forcing</span> <span class="nv">it</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">re</span><span class="o">-</span><span class="nv">read</span> <span class="nv">from</span>
   <span class="nv">disk</span> <span class="nv">at</span> <span class="nv">the</span> <span class="k">next</span> <span class="nv">request</span>.
@@ -5342,16 +5375,19 @@
 
 <hr />
 <p><strong>samplerate</strong> - <em>return the sample rate of an ndi.time.timeseries object</em></p>
-<p>```SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)</p>
-<p>Returns the sampling rate of a given ndi.time.timeseries object for the epoch
-  EPOCH. EPOCH can be specified as an index or EPOCH_ID.</p>
-<p>If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.</p>
-<p>Help for ndi.element.timeseries/samplerate is inherited from superclass NDI.TIME.TIMESERIES</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">SR</span> <span class="o">=</span> <span class="n">SAMPLE_RATE</span><span class="p">(</span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span> <span class="n">EPOCH</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">samples2times</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">timeseries</span> <span class="nv">time</span> <span class="nv">to</span> <span class="nv">sample</span> <span class="nv">numbers</span><span class="o">*</span>
+  <span class="n">Returns</span> <span class="n">the</span> <span class="n">sampling</span> <span class="n">rate</span> <span class="n">of</span> <span class="n">a</span> <span class="n">given</span> <span class="n">ndi</span><span class="p">.</span><span class="kt">time</span><span class="p">.</span><span class="n">timeseries</span> <span class="n">object</span> <span class="k">for</span> <span class="n">the</span> <span class="n">epoch</span>
+  <span class="n">EPOCH</span><span class="p">.</span> <span class="n">EPOCH</span> <span class="n">can</span> <span class="n">be</span> <span class="n">specified</span> <span class="n">as</span> <span class="n">an</span> <span class="n">index</span> <span class="k">or</span> <span class="n">EPOCH_ID</span><span class="p">.</span>
 
-```<span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIME2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
+  <span class="n">If</span> <span class="n">NDI_TIMESERIES_OBJ</span> <span class="n">is</span> <span class="k">not</span> <span class="n">regularly</span> <span class="n">sampled</span><span class="p">,</span> <span class="n">then</span> <span class="o">-</span><span class="mh">1</span> <span class="n">is</span> <span class="n">returned</span><span class="p">.</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">element</span><span class="p">.</span><span class="n">timeseries</span><span class="o">/</span><span class="n">samplerate</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">TIME</span><span class="p">.</span><span class="n">TIMESERIES</span>
+</code></pre></div>
+
+<hr />
+<p><strong>samples2times</strong> - <em>convert from the timeseries time to sample numbers</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIME2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
 
   <span class="k">For</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">a</span> <span class="nv">recording</span> <span class="nv">epoch</span> <span class="nv">EPOCH</span>,
   <span class="k">return</span> <span class="nv">the</span> <span class="nv">sample</span> <span class="nv">index</span> <span class="nv">numbers</span> <span class="nv">SAMPLE</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">times</span> <span class="nv">TIMES</span>.
@@ -5370,19 +5406,25 @@
 
 <hr />
 <p><strong>t0_t1</strong> - **</p>
-<p>```T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch</p>
-<p>T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)</p>
-<p>Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-  in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.</p>
-<p>The abstract class always returns {[NaN NaN]}.</p>
-<p>See also: ndi.time.clocktype, EPOCHCLOCK</p>
-<p>TODO: this must be a bug, it's just self-referential</p>
-<p>Help for ndi.element.timeseries/t0_t1 is inherited from superclass NDI.ELEMENT</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">T0_T1</span> <span class="o">-</span> <span class="k">return</span> <span class="n">the</span> <span class="n">t0_t1</span> <span class="p">(</span><span class="n">beginning</span> <span class="n">and</span> <span class="n">end</span><span class="p">)</span> <span class="n">epoch</span> <span class="n">times</span> <span class="k">for</span> <span class="n">an</span> <span class="n">epoch</span>
 
-<span class="o">**</span><span class="nv">times2samples</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">timeseries</span> <span class="nv">time</span> <span class="nv">to</span> <span class="nv">sample</span> <span class="nv">numbers</span><span class="o">*</span>
+  <span class="n">T0T1</span> <span class="o">=</span> <span class="n">T0_T1</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">,</span> <span class="n">EPOCH_NUMBER</span><span class="p">)</span>
 
-```<span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIMES2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
+  <span class="n">Return</span> <span class="n">the</span> <span class="n">beginning</span> <span class="p">(</span><span class="n">t0</span><span class="p">)</span> <span class="n">and</span> <span class="n">end</span> <span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="n">times</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">EPOCH_NUMBER</span>
+  <span class="k">in</span> <span class="n">the</span> <span class="n">same</span> <span class="n">units</span> <span class="n">as</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">EPOCHCLOCK</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">abstract</span> <span class="k">class</span> <span class="n">always</span> <span class="n">returns</span> <span class="p">{[</span><span class="n">NaN</span> <span class="n">NaN</span><span class="p">]}.</span>
+
+  <span class="n">See</span> <span class="nl">also</span><span class="p">:</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">EPOCHCLOCK</span>
+
+  <span class="nl">TODO</span><span class="p">:</span> <span class="n">this</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">bug</span><span class="p">,</span> <span class="n">it</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">just</span> <span class="nb">self</span><span class="o">-</span><span class="n">referential</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">element</span><span class="p">.</span><span class="n">timeseries</span><span class="o">/</span><span class="n">t0_t1</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">ELEMENT</span>
+</code></pre></div>
+
+<hr />
+<p><strong>times2samples</strong> - <em>convert from the timeseries time to sample numbers</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIMES2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
 
   <span class="k">For</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">a</span> <span class="nv">recording</span> <span class="nv">epoch</span> <span class="nv">EPOCH</span>,
   <span class="k">return</span> <span class="nv">the</span> <span class="nv">sample</span> <span class="nv">index</span> <span class="nv">numbers</span> <span class="nv">SAMPLE</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">times</span> <span class="nv">TIMES</span>.
@@ -5399,13 +5441,18 @@
 
 <hr />
 <p><strong>underlyingepochnodes</strong> - <em>find all the underlying epochnodes of a given epochnode</em></p>
-<p>```[UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)</p>
-<p>Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
-  (an ndi.epoch.epochset object with ISSYNGRAPHROOT that returns 1).</p>
-<p>Note that the EPOCHNODE itself is returned as the first 'underlying' node.</p>
-<p>See also: ISSYNCGRAPHROOT</p>
-<p>Help for ndi.element.timeseries/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-```</p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">UNODES</span>, <span class="nv">COST</span>, <span class="nv">MAPPING</span>] <span class="o">=</span> <span class="nv">UNDERLYINGEPOCHNODES</span><span class="ss">(</span><span class="nv">NDI_EPOCHSET_OBJ</span>, <span class="nv">EPOCHNODE</span><span class="ss">)</span>
+
+  <span class="nv">Traverse</span> <span class="nv">the</span> <span class="nv">underlying</span> <span class="nv">nodes</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">EPOCHNODE</span> <span class="k">until</span> <span class="nv">we</span> <span class="nv">get</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">roots</span>
+  <span class="ss">(</span><span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span> <span class="nv">object</span> <span class="nv">with</span> <span class="nv">ISSYNGRAPHROOT</span> <span class="nv">that</span> <span class="nv">returns</span> <span class="mi">1</span><span class="ss">)</span>.
+
+  <span class="nv">Note</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">EPOCHNODE</span> <span class="nv">itself</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">as</span> <span class="nv">the</span> <span class="nv">first</span> <span class="s1">&#39;</span><span class="s">underlying</span><span class="s1">&#39;</span> <span class="nv">node</span>.
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ISSYNCGRAPHROOT</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">element</span>.<span class="nv">timeseries</span><span class="o">/</span><span class="nv">underlyingepochnodes</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">EPOCH</span>.<span class="nv">EPOCHSET</span>
+</code></pre></div>
+
 <hr />
                 
               

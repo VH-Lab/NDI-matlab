@@ -4880,20 +4880,24 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>add</strong> - <em>add an ndi.document to the database at a given path</em></p>
-<p>```NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)</p>
-<p>Adds the document NDI_DOCUMENT_OBJ to the database NDI_DATABASE_OBJ.</p>
-<p>This function also accepts name/value pairs that modify its behavior:
-  Parameter (default)      | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DATABASE_OBJ</span> <span class="o">=</span> <span class="nv">ADD</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span>, <span class="nv">NDI_DOCUMENT_OBJ</span>, <span class="nv">DBPATH</span>, ...<span class="ss">)</span>
+
+  <span class="nv">Adds</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">NDI_DOCUMENT_OBJ</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">NDI_DATABASE_OBJ</span>.
+
+  <span class="nv">This</span> <span class="nv">function</span> <span class="nv">also</span> <span class="nv">accepts</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">that</span> <span class="nv">modify</span> <span class="nv">its</span> <span class="nv">behavior</span>:
+  <span class="nv">Parameter</span> <span class="ss">(</span><span class="nv">default</span><span class="ss">)</span>      <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">-------------------------------------------------------------------------</span>
+  <span class="s1">&#39;</span><span class="s">Update</span><span class="s1">&#39;</span>  <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span>            <span class="o">|</span> <span class="k">If</span> <span class="nv">document</span> <span class="nv">exists</span>, <span class="nv">update</span> <span class="nv">it</span>. <span class="k">If</span> <span class="mi">0</span>, <span class="nv">an</span> <span class="nv">error</span> <span class="nv">is</span> 
+                           <span class="o">|</span>   <span class="nv">generated</span> <span class="k">if</span> <span class="nv">a</span> <span class="nv">document</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">ID</span> <span class="nv">exists</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">vlt</span>.<span class="nv">data</span>.<span class="nv">namevaluepair</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">matlabdumbjsondb</span><span class="o">/</span><span class="nv">add</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>
+</code></pre></div>
+
 <hr />
-<p>'Update'  (1)            | If document exists, update it. If 0, an error is 
-                           |   generated if a document with the same ID exists</p>
-<p>See also: vlt.data.namevaluepair</p>
-<p>Help for ndi.database.implementations.database.matlabdumbjsondb/add is inherited from superclass NDI.DATABASE</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">alldocids</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">all</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="nv">numbers</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">database</span><span class="o">*</span>
-
-```<span class="nv">DOCIDS</span> <span class="o">=</span> <span class="nv">ALLDOCIDS</span><span class="ss">(</span><span class="nv">NDI_MATLABDUMBJSONDB_OBJ</span><span class="ss">)</span>
+<p><strong>alldocids</strong> - <em>return all document unique reference numbers for the database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">DOCIDS</span> <span class="o">=</span> <span class="nv">ALLDOCIDS</span><span class="ss">(</span><span class="nv">NDI_MATLABDUMBJSONDB_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">all</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">reference</span> <span class="nv">strings</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>. <span class="k">If</span> <span class="nv">there</span>
   <span class="nv">are</span> <span class="nv">no</span> <span class="nv">documents</span>, <span class="nv">empty</span> <span class="nv">is</span> <span class="nv">returned</span>.
@@ -4901,17 +4905,21 @@
 
 <hr />
 <p><strong>clear</strong> - <em>remove/delete all records from an ndi.database</em></p>
-<p>```CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])</p>
-<p>Removes all documents from the vlt.file.dumbjsondb object.</p>
-<p>Use with care. If AREYOUSURE is 'yes' then the
-  function will proceed. Otherwise, it will not.</p>
-<p>See also: ndi.database.implementations.database.matlabdumbjsondb/REMOVE</p>
-<p>Help for ndi.database.implementations.database.matlabdumbjsondb/clear is inherited from superclass NDI.DATABASE</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="n">CLEAR</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">AREYOUSURE</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="n">closebinarydoc</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">unlock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">binarydoc</span><span class="o">*</span><span class="w"></span>
+<span class="w">  </span><span class="n">Removes</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">vlt</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">dumbjsondb</span><span class="w"> </span><span class="k">object</span><span class="p">.</span><span class="w"></span>
 
-<span class="err">```</span><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CLOSEBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="k">Use</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">care</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">AREYOUSURE</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="s1">&#39;yes&#39;</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
+<span class="w">  </span><span class="k">function</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="n">proceed</span><span class="p">.</span><span class="w"> </span><span class="n">Otherwise</span><span class="p">,</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">will</span><span class="w"> </span><span class="ow">not</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">See</span><span class="w"> </span><span class="nl">also</span><span class="p">:</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">matlabdumbjsondb</span><span class="o">/</span><span class="n">REMOVE</span><span class="w"></span>
+
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">matlabdumbjsondb</span><span class="o">/</span><span class="n">clear</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<p><strong>closebinarydoc</strong> - <em>close and unlock an ndi.database.binarydoc</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CLOSEBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="k">Close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="w"> </span><span class="n">must</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">unlocked</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
 <span class="w">  </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">necessary</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">call</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="p">.</span><span class="w"></span>
@@ -4921,17 +4929,20 @@
 
 <hr />
 <p><strong>matlabdumbjsondb</strong> - <em>ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object</em></p>
-<p>```NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)</p>
-<p>Creates a new ndi.database.implementations.database.matlabdumbjsondb object.</p>
-<p>COMMAND can either be 'Load' or 'New'. The second argument
+<div class="codehilite"><pre><span></span><code>NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
+
+  Creates a new ndi.database.implementations.database.matlabdumbjsondb object.
+
+  COMMAND can either be &#39;Load&#39; or &#39;New&#39;. The second argument
   should be the full pathname of the location where the files
-  should be stored on disk.</p>
-<p>See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+  should be stored on disk.
 
-<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">obtain</span> <span class="nv">a</span> <span class="nv">new</span><span class="o">/</span><span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">used</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">ndi</span>.<span class="nv">database</span><span class="o">*</span>
+  See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
+</code></pre></div>
 
-```<span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span> [, <span class="nv">DOCUMENT_TYPE</span>]<span class="ss">)</span>
+<hr />
+<p><strong>newdocument</strong> - <em>obtain a new/blank ndi.document object that can be used with a ndi.database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span> [, <span class="nv">DOCUMENT_TYPE</span>]<span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span><span class="o">/</span><span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">document</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">used</span> <span class="nv">with</span> <span class="nv">this</span>
   <span class="nv">ndi</span>.<span class="nv">database</span>.
@@ -4941,19 +4952,22 @@
 
 <hr />
 <p><strong>openbinarydoc</strong> - <em>open and lock an ndi.database.binarydoc that corresponds to a document id</em></p>
-<p>```[NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])</p>
-<p>Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
-  the requested version (the latest version is used if the argument is omitted).
-  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.</p>
-<p>Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.database/CLOSEBINARYDOC.
-  The locked nature of the binary doc is a property of the database, not the document, which is why
-  the database is needed.</p>
-<p>Help for ndi.database.implementations.database.matlabdumbjsondb/openbinarydoc is inherited from superclass NDI.DATABASE</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ, VERSION</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">OPENBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_DOCUMENT_OR_ID</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">VERSION</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">**</span><span class="k">read</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">read</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"> </span><span class="k">at</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="n">db</span><span class="w"> </span><span class="k">path</span><span class="o">*</span><span class="w"></span>
+<span class="w">  </span><span class="k">Return</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">open</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">binarydoc</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">VERSION</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">corresponds</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="ow">and</span><span class="w"></span>
+<span class="w">  </span><span class="n">the</span><span class="w"> </span><span class="n">requested</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="p">(</span><span class="n">the</span><span class="w"> </span><span class="n">latest</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">omitted</span><span class="p">).</span><span class="w"></span>
+<span class="w">  </span><span class="n">NDI_DOCUMENT_OR_ID</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">either</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="n">itsef</span><span class="p">.</span><span class="w"></span>
 
-<span class="err">```</span><span class="n">NDI_DOCUMENT_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">READ</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_DOCUMENT_ID</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">VERSION</span><span class="o">]</span><span class="p">)</span><span class="w"> </span>
+<span class="w">  </span><span class="n">Note</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="w"> </span><span class="n">must</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">closed</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">unlocked</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="o">/</span><span class="n">CLOSEBINARYDOC</span><span class="p">.</span><span class="w"></span>
+<span class="w">  </span><span class="n">The</span><span class="w"> </span><span class="n">locked</span><span class="w"> </span><span class="n">nature</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nc">binary</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">property</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"></span>
+<span class="w">  </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">needed</span><span class="p">.</span><span class="w"></span>
+
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">matlabdumbjsondb</span><span class="o">/</span><span class="n">openbinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+</code></pre></div>
+
+<hr />
+<p><strong>read</strong> - <em>read an ndi.document from an ndi.database at a given db path</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">NDI_DOCUMENT_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">READ</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_DOCUMENT_ID</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">VERSION</span><span class="o">]</span><span class="p">)</span><span class="w"> </span>
 
 <span class="w">  </span><span class="k">Read</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">ID</span><span class="w"> </span><span class="n">specified</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">NDI_DOCUMENT_ID</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">VERSION</span><span class="w"></span>
 <span class="w">  </span><span class="k">is</span><span class="w"> </span><span class="n">provided</span><span class="w"> </span><span class="p">(</span><span class="n">an</span><span class="w"> </span><span class="k">integer</span><span class="p">)</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="k">only</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">version</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">equal</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">VERSION</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">returned</span><span class="p">.</span><span class="w"></span>
@@ -4966,23 +4980,26 @@
 
 <hr />
 <p><strong>remove</strong> - <em>remove a document from an ndi.database</em></p>
-<p>```NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID) 
-      or
-  NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, VERSIONS)
-      or 
-  NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT) </p>
-<p>Removes the ndi.document object with the 'document unique reference' equal
-  to NDI_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
-  the entries in VERSIONS are removed.</p>
-<p>If an ndi.document is passed, then the NDI_DOCUMENT_ID is extracted using
-  ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
-  all of the documents are removed.</p>
-<p>Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inherited from superclass NDI.DATABASE</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DATABASE_OBJ</span> <span class="o">=</span> <span class="nv">REMOVE</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span>, <span class="nv">NDI_DOCUMENT_ID</span><span class="ss">)</span> 
+      <span class="nv">or</span>
+  <span class="nv">NDI_DATABASE_OBJ</span> <span class="o">=</span> <span class="nv">REMOVE</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span>, <span class="nv">NDI_DOCUMENT_ID</span>, <span class="nv">VERSIONS</span><span class="ss">)</span>
+      <span class="nv">or</span> 
+  <span class="nv">NDI_DATABASE_OBJ</span> <span class="o">=</span> <span class="nv">REMOVE</span><span class="ss">(</span><span class="nv">NDI_DATABASE_OBJ</span>, <span class="nv">NDI_DOCUMENT</span><span class="ss">)</span> 
 
-<span class="o">**</span><span class="n">search</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">search</span> <span class="k">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="o">*</span>
+  <span class="nv">Removes</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">with</span> <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">document unique reference</span><span class="s1">&#39;</span> <span class="nv">equal</span>
+  <span class="nv">to</span> <span class="nv">NDI_DOCUMENT_OBJ_ID</span>.  <span class="k">If</span> <span class="nv">VERSIONS</span> <span class="nv">is</span> <span class="nv">specified</span>, <span class="k">then</span> <span class="nv">only</span> <span class="nv">the</span> <span class="nv">versions</span> <span class="nv">that</span> <span class="nv">match</span>
+  <span class="nv">the</span> <span class="nv">entries</span> <span class="nv">in</span> <span class="nv">VERSIONS</span> <span class="nv">are</span> <span class="nv">removed</span>.
 
-<span class="err">```</span><span class="p">[</span><span class="n">DOCUMENT_OBJS</span><span class="p">,</span><span class="n">VERSIONS</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEARCH</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span> <span class="p">{&#39;</span><span class="n">PARAM1</span><span class="p">&#39;,</span> <span class="n">VALUE1</span><span class="p">,</span> <span class="p">&#39;</span><span class="n">PARAM2</span><span class="p">&#39;,</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="p">...</span> <span class="p">})</span>
+  <span class="k">If</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">is</span> <span class="nv">passed</span>, <span class="k">then</span> <span class="nv">the</span> <span class="nv">NDI_DOCUMENT_ID</span> <span class="nv">is</span> <span class="nv">extracted</span> <span class="nv">using</span>
+  <span class="nv">ndi</span>.<span class="nv">document</span><span class="o">/</span><span class="nv">DOC_UNIQUE_ID</span>. <span class="k">If</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">is</span> <span class="nv">passed</span> <span class="nv">instead</span>, <span class="k">then</span>
+  <span class="nv">all</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">documents</span> <span class="nv">are</span> <span class="nv">removed</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">matlabdumbjsondb</span><span class="o">/</span><span class="nv">remove</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>
+</code></pre></div>
+
+<hr />
+<p><strong>search</strong> - <em>search for an ndi.document from an ndi.database</em></p>
+<div class="codehilite"><pre><span></span><code><span class="p">[</span><span class="n">DOCUMENT_OBJS</span><span class="p">,</span><span class="n">VERSIONS</span><span class="p">]</span> <span class="o">=</span> <span class="n">SEARCH</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span> <span class="p">{&#39;</span><span class="n">PARAM1</span><span class="p">&#39;,</span> <span class="n">VALUE1</span><span class="p">,</span> <span class="p">&#39;</span><span class="n">PARAM2</span><span class="p">&#39;,</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="p">...</span> <span class="p">})</span>
 
   <span class="n">Searches</span> <span class="n">metadata</span> <span class="n">parameters</span> <span class="n">PARAM1</span><span class="p">,</span> <span class="n">PARAM2</span><span class="p">,</span> <span class="n">etc</span> <span class="n">of</span> <span class="n">NDS_DOCUMENT</span> <span class="n">entries</span> <span class="n">within</span> <span class="n">an</span> <span class="n">NDI_DATABASE_OBJ</span><span class="p">.</span>
   <span class="n">If</span> <span class="n">VALUEN</span> <span class="n">is</span> <span class="n">a</span> <span class="k">string</span><span class="p">,</span> <span class="n">then</span> <span class="n">a</span> <span class="n">regular</span> <span class="n">expression</span> <span class="n">is</span> <span class="n">evaluated</span> <span class="n">to</span> <span class="n">determine</span> <span class="n">the</span> <span class="n">match</span><span class="p">.</span> <span class="n">If</span> <span class="n">VALUEN</span> <span class="n">is</span> <span class="k">not</span>

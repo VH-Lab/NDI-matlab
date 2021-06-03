@@ -4881,35 +4881,38 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>compute_stimulus_response_scalar</strong> - <em>compute responses to a stimulus set</em></p>
-<p>```RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)</p>
-<p>Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'ndi_document_stimulus_presentation'), and a
-  CONTROL_DOC (an ndi.document of class 'ndi_document_control_stimulus_ids'), this
-  function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
-  ndi.document of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
-  fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses,
-  F1, F2).</p>
-<p>Note that we recommend making a new app subclass if one wants to write additional classes of analysis procedures.</p>
-<p>This function also takes name/value pairs that alter the behavior:
-  Parameter (default)                  | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="n">RESPONSE_DOC</span> <span class="o">=</span> <span class="n">COMPUTE_STIMULUS_RESPONSE_SCALAR</span><span class="p">(</span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="p">,</span> <span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span> <span class="n">STIM_DOC</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+  <span class="n">Given</span> <span class="n">an</span> <span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span> <span class="n">a</span> <span class="n">STIM_DOC</span> <span class="p">(</span><span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">of</span> <span class="k">class</span> <span class="s1">&#39;ndi_document_stimulus_presentation&#39;</span><span class="p">),</span> <span class="ow">and</span> <span class="n">a</span>
+  <span class="n">CONTROL_DOC</span> <span class="p">(</span><span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">of</span> <span class="k">class</span> <span class="s1">&#39;ndi_document_control_stimulus_ids&#39;</span><span class="p">),</span> <span class="n">this</span>
+  <span class="n">function</span> <span class="n">computes</span> <span class="n">the</span> <span class="n">stimulus</span> <span class="n">responses</span> <span class="n">of</span> <span class="n">NDI_TIMESERIES_OBJ</span> <span class="ow">and</span> <span class="n">stores</span> <span class="n">the</span> <span class="n">results</span> <span class="k">as</span> <span class="n">an</span>
+  <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">of</span> <span class="k">class</span> <span class="s1">&#39;ndi_stimulus_response_scalar&#39;</span><span class="o">.</span> <span class="n">In</span> <span class="n">this</span> <span class="n">app</span><span class="p">,</span> <span class="n">by</span> <span class="n">default</span><span class="p">,</span> <span class="n">mean</span> <span class="n">responses</span> <span class="ow">and</span> <span class="n">responses</span> <span class="n">at</span> <span class="n">the</span>
+  <span class="n">fundamental</span> <span class="n">stimulus</span> <span class="n">frequency</span> <span class="n">are</span> <span class="n">calculated</span><span class="o">.</span> <span class="n">Note</span> <span class="n">that</span> <span class="n">this</span> <span class="n">function</span> <span class="n">may</span> <span class="n">generate</span> <span class="n">multiple</span> <span class="n">documents</span> <span class="p">(</span><span class="k">for</span> <span class="n">mean</span> <span class="n">responses</span><span class="p">,</span>
+  <span class="n">F1</span><span class="p">,</span> <span class="n">F2</span><span class="p">)</span><span class="o">.</span>
+
+  <span class="n">Note</span> <span class="n">that</span> <span class="n">we</span> <span class="n">recommend</span> <span class="n">making</span> <span class="n">a</span> <span class="n">new</span> <span class="n">app</span> <span class="n">subclass</span> <span class="k">if</span> <span class="n">one</span> <span class="n">wants</span> <span class="n">to</span> <span class="n">write</span> <span class="n">additional</span> <span class="n">classes</span> <span class="n">of</span> <span class="n">analysis</span> <span class="n">procedures</span><span class="o">.</span>
+
+  <span class="n">This</span> <span class="n">function</span> <span class="n">also</span> <span class="n">takes</span> <span class="n">name</span><span class="o">/</span><span class="n">value</span> <span class="n">pairs</span> <span class="n">that</span> <span class="n">alter</span> <span class="n">the</span> <span class="n">behavior</span><span class="p">:</span>
+  <span class="n">Parameter</span> <span class="p">(</span><span class="n">default</span><span class="p">)</span>                  <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">---------------------------------------------------------------------------------</span>
+  <span class="n">temporalfreqfunc</span>                     <span class="o">|</span>
+    <span class="p">(</span><span class="s1">&#39;ndi.fun.stimulustemporalfrequency&#39;</span><span class="p">)</span>  <span class="o">|</span>
+  <span class="n">freq_response</span> <span class="p">([])</span>                   <span class="o">|</span> <span class="n">Frequency</span> <span class="n">response</span> <span class="n">to</span> <span class="n">measure</span><span class="o">.</span> <span class="n">If</span> <span class="n">empty</span><span class="p">,</span> <span class="n">then</span> <span class="n">the</span> <span class="n">function</span> <span class="k">is</span> 
+                                       <span class="o">|</span>   <span class="n">called</span> <span class="mi">3</span> <span class="n">times</span> <span class="n">with</span> <span class="n">values</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="ow">and</span> <span class="mi">2</span> <span class="n">times</span> <span class="n">the</span> <span class="n">fundamental</span> <span class="n">frequency</span><span class="o">.</span>
+  <span class="n">prestimulus_time</span> <span class="p">([])</span>                <span class="o">|</span> <span class="n">Calculate</span> <span class="n">a</span> <span class="n">baseline</span> <span class="n">using</span> <span class="n">a</span> <span class="n">certain</span> <span class="n">amount</span> <span class="n">of</span> <span class="n">TIMESERIES</span> <span class="k">signal</span> <span class="n">during</span>
+                                       <span class="o">|</span>     <span class="n">the</span> <span class="n">pre</span><span class="o">-</span><span class="n">stimulus</span> <span class="n">time</span> <span class="n">given</span> <span class="n">here</span>
+  <span class="n">prestimulus_normalization</span> <span class="p">([])</span>       <span class="o">|</span> <span class="n">Normalize</span> <span class="n">the</span> <span class="n">stimulus</span> <span class="n">response</span> <span class="n">based</span> <span class="n">on</span> <span class="n">the</span> <span class="n">prestimulus</span> <span class="n">measurement</span><span class="o">.</span>
+                                       <span class="o">|</span> <span class="p">[]</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="n">No</span> <span class="n">normalization</span>
+                                       <span class="o">|</span>       <span class="mi">1</span><span class="p">)</span> <span class="n">Subtract</span><span class="p">:</span> <span class="n">Response</span> <span class="p">:</span><span class="o">=</span> <span class="n">Response</span> <span class="o">-</span> <span class="n">PrestimResponse</span>
+                                       <span class="o">|</span>       <span class="mi">2</span><span class="p">)</span> <span class="n">Fractional</span> <span class="n">change</span> <span class="n">Response</span><span class="p">:</span><span class="o">=</span> <span class="p">((</span><span class="n">Response</span><span class="o">-</span><span class="n">PrestimResponse</span><span class="p">)</span><span class="o">/</span><span class="n">PrestimResponse</span><span class="p">)</span>
+                                       <span class="o">|</span>       <span class="mi">3</span><span class="p">)</span> <span class="n">Divide</span><span class="p">:</span> <span class="n">Response</span><span class="p">:</span><span class="o">=</span> <span class="n">Response</span> <span class="o">./</span> <span class="n">PreStimResponse</span>
+  <span class="n">isspike</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>                          <span class="o">|</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span> <span class="n">Is</span> <span class="n">the</span> <span class="k">signal</span> <span class="n">a</span> <span class="n">spike</span> <span class="n">process</span><span class="err">?</span> <span class="n">If</span> <span class="n">so</span><span class="p">,</span> <span class="n">timestamps</span> <span class="n">correspond</span> <span class="n">to</span> <span class="n">spike</span> <span class="n">events</span><span class="o">.</span>
+  <span class="n">spiketrain_dt</span> <span class="p">(</span><span class="mf">0.001</span><span class="p">)</span>                <span class="o">|</span> <span class="n">Resolution</span> <span class="n">to</span> <span class="n">use</span> <span class="k">for</span> <span class="n">spike</span> <span class="n">train</span> <span class="n">reconstruction</span> <span class="k">if</span> <span class="n">computing</span> <span class="n">Fourier</span> <span class="n">transform</span>
+</code></pre></div>
+
 <hr />
-<p>temporalfreqfunc                     |
-    ('ndi.fun.stimulustemporalfrequency')  |
-  freq_response ([])                   | Frequency response to measure. If empty, then the function is 
-                                       |   called 3 times with values 0, 1, and 2 times the fundamental frequency.
-  prestimulus_time ([])                | Calculate a baseline using a certain amount of TIMESERIES signal during
-                                       |     the pre-stimulus time given here
-  prestimulus_normalization ([])       | Normalize the stimulus response based on the prestimulus measurement.
-                                       | [] or 0) No normalization
-                                       |       1) Subtract: Response := Response - PrestimResponse
-                                       |       2) Fractional change Response:= ((Response-PrestimResponse)/PrestimResponse)
-                                       |       3) Divide: Response:= Response ./ PreStimResponse
-  isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
-  spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">control_stimulus</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">determine</span> <span class="nv">the</span> <span class="nv">control</span> <span class="nv">stimulus</span> <span class="nv">ID</span> <span class="k">for</span> <span class="nv">each</span> <span class="nv">stimulus</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">stimulus</span> <span class="nv">set</span><span class="o">*</span>
-
-```[<span class="nv">CS_IDS</span>, <span class="nv">CS_DOC</span>] <span class="o">=</span> <span class="nv">CONTROL_STIMULUS</span><span class="ss">(</span><span class="nv">NDI_APP_TUNING_RESPONSE_OBJ</span>, <span class="nv">STIM_DOC</span>, ...<span class="ss">)</span>
+<p><strong>control_stimulus</strong> - <em>determine the control stimulus ID for each stimulus in a stimulus set</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">CS_IDS</span>, <span class="nv">CS_DOC</span>] <span class="o">=</span> <span class="nv">CONTROL_STIMULUS</span><span class="ss">(</span><span class="nv">NDI_APP_TUNING_RESPONSE_OBJ</span>, <span class="nv">STIM_DOC</span>, ...<span class="ss">)</span>
 
   <span class="k">For</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">set</span> <span class="nv">of</span> <span class="nv">stimuli</span> <span class="nv">described</span> <span class="nv">in</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">of</span> <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">ndi_document_stimulus</span><span class="s1">&#39;</span>,
   <span class="nv">this</span> <span class="nv">function</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">control</span> <span class="nv">stimulus</span> <span class="nv">ID</span> <span class="k">for</span> <span class="nv">each</span> <span class="nv">stimulus</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">vector</span> <span class="nv">CS_IDS</span> 
@@ -4938,12 +4941,12 @@
 
 <hr />
 <p><strong>find_tuningcurve_document</strong> - <em>find a tuning curve document of a particular element, epochid, etc...</em></p>
-<p>```[TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, ELEMENT_OBJ, EPOCHID, RESPONSE_TYPE)</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, ELEMENT_OBJ, EPOCHID, RESPONSE_TYPE)
+</code></pre></div>
 
-<span class="o">**</span><span class="nv">label_control_stimuli</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">label</span> <span class="nv">control</span> <span class="nv">stimuli</span> <span class="k">for</span> <span class="nv">all</span> <span class="nv">stimulus</span> <span class="nv">presentation</span> <span class="nv">documents</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">stimulator</span><span class="o">*</span>
-
-```<span class="nv">CS_DOC</span> <span class="o">=</span> <span class="nv">LABEL_CONTROL_STIMULI</span><span class="ss">(</span><span class="nv">NDI_APP_TUNING_RESPONSE_OBJ</span>, <span class="nv">STIMULUS_ELEMENT_OBJ</span>, <span class="nv">RESET</span>, ...<span class="ss">)</span>
+<hr />
+<p><strong>label_control_stimuli</strong> - <em>label control stimuli for all stimulus presentation documents for a given stimulator</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">CS_DOC</span> <span class="o">=</span> <span class="nv">LABEL_CONTROL_STIMULI</span><span class="ss">(</span><span class="nv">NDI_APP_TUNING_RESPONSE_OBJ</span>, <span class="nv">STIMULUS_ELEMENT_OBJ</span>, <span class="nv">RESET</span>, ...<span class="ss">)</span>
 
   <span class="nv">Thus</span> <span class="nv">function</span> <span class="nv">will</span> <span class="nv">look</span> <span class="k">for</span> <span class="nv">all</span> <span class="s1">&#39;</span><span class="s">ndi_document_stimulus_presentation</span><span class="s1">&#39;</span> <span class="nv">documents</span> <span class="k">for</span> <span class="nv">STIMULUS_PROBE_OBJ</span>,
   <span class="nv">compute</span> <span class="nv">the</span> <span class="nv">corresponding</span> <span class="nv">control</span> <span class="nv">stimuli</span>, <span class="nv">and</span> <span class="nv">save</span> <span class="nv">them</span> <span class="nv">as</span> <span class="nv">an</span> <span class="s1">&#39;</span><span class="s">control_stimulus_ids</span><span class="s1">&#39;</span> 
@@ -4958,16 +4961,17 @@
 
 <hr />
 <p><strong>make_1d_tuning</strong> - <em>create 1d tuning documents out of stimulus responses that covary in 2 parameters</em></p>
-<p>```TUNING_DOCS = MAKE_1D_TUNING(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESPONSE_DOC, PARAM_TO_VARY, PARAM_TO_VARY_LABEL, 
-    PARAM_TO_FIX)</p>
-<p>This function examines a stimulus response doc that covaries in 2 parameters, and "deals" the responses into several tuning
-  curves where the parameter with name PARAM_TO_VARY varies across stimuli and the stimulus parameter with name
-  PARAM_TO_FIX is fixed for each tuning doc.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">TUNING_DOCS</span> <span class="o">=</span> <span class="n">MAKE_1D_TUNING</span><span class="p">(</span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="p">,</span> <span class="n">STIM_RESPONSE_DOC</span><span class="p">,</span> <span class="n">PARAM_TO_VARY</span><span class="p">,</span> <span class="n">PARAM_TO_VARY_LABEL</span><span class="p">,</span> 
+    <span class="n">PARAM_TO_FIX</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">of</span> <span class="nv">type</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">an</span> <span class="nv">app</span><span class="o">*</span>
+  <span class="n">This</span> <span class="n">function</span> <span class="n">examines</span> <span class="n">a</span> <span class="n">stimulus</span> <span class="n">response</span> <span class="n">doc</span> <span class="n">that</span> <span class="n">covaries</span> <span class="ow">in</span> <span class="mi">2</span> <span class="n">parameters</span><span class="p">,</span> <span class="ow">and</span> <span class="s2">&quot;deals&quot;</span> <span class="n">the</span> <span class="n">responses</span> <span class="n">into</span> <span class="n">several</span> <span class="n">tuning</span>
+  <span class="n">curves</span> <span class="n">where</span> <span class="n">the</span> <span class="n">parameter</span> <span class="n">with</span> <span class="n">name</span> <span class="n">PARAM_TO_VARY</span> <span class="n">varies</span> <span class="n">across</span> <span class="n">stimuli</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">stimulus</span> <span class="n">parameter</span> <span class="n">with</span> <span class="n">name</span>
+  <span class="n">PARAM_TO_FIX</span> <span class="k">is</span> <span class="n">fixed</span> <span class="k">for</span> <span class="n">each</span> <span class="n">tuning</span> <span class="n">doc</span><span class="o">.</span>
+</code></pre></div>
 
-```<span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">of</span> <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">ndi_document_app</span><span class="s1">&#39;</span>. <span class="nv">The</span> <span class="s1">&#39;</span><span class="s">app.name</span><span class="s1">&#39;</span> <span class="nv">field</span>
   <span class="nv">is</span> <span class="nv">filled</span> <span class="nv">out</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">NDI_APP_OBJ</span>.<span class="nv">VARAPPNAME</span><span class="ss">()</span>.
@@ -4977,16 +4981,18 @@
 
 <hr />
 <p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
-<p>```C = SEARCHQUERY(NDI_APP_OBJ)</p>
-<p>Returns a cell array of strings that allow the creation or searching of an
-  ndi.database document for this app with field 'app' that has subfield 'name' equal
-  to the app's VARAPPNAME.</p>
-<p>Help for ndi.app.stimulus.tuning_response/searchquery is inherited from superclass NDI.APP</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="nv">C</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="n">stimulus_responses</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">write</span><span class="w"> </span><span class="n">stimulus</span><span class="w"> </span><span class="n">records</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">stimulus</span><span class="w"> </span><span class="n">epochs</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">element</span><span class="w"> </span><span class="n">stimulus</span><span class="w"> </span><span class="k">object</span><span class="o">*</span><span class="w"></span>
+  <span class="nv">Returns</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span> <span class="nv">that</span> <span class="nv">allow</span> <span class="nv">the</span> <span class="nv">creation</span> <span class="nv">or</span> <span class="nv">searching</span> <span class="nv">of</span> <span class="nv">an</span>
+  <span class="nv">ndi</span>.<span class="nv">database</span> <span class="nv">document</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">app</span> <span class="nv">with</span> <span class="nv">field</span> <span class="s1">&#39;</span><span class="s">app</span><span class="s1">&#39;</span> <span class="nv">that</span> <span class="nv">has</span> <span class="nv">subfield</span> <span class="s1">&#39;</span><span class="s">name</span><span class="s1">&#39;</span> <span class="nv">equal</span>
+  <span class="nv">to</span> <span class="nv">the</span> <span class="nv">app</span><span class="s1">&#39;</span><span class="s">s VARAPPNAME.</span>
 
-<span class="err">```</span><span class="o">[</span><span class="n">RDOCS</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STIMULUS_RESPONSES</span><span class="p">(</span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_ELEMENT_STIM</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">RESET</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">stimulus</span>.<span class="nv">tuning_response</span><span class="o">/</span><span class="nv">searchquery</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>
+</code></pre></div>
+
+<hr />
+<p><strong>stimulus_responses</strong> - <em>write stimulus records for all stimulus epochs of an ndi.element stimulus object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="o">[</span><span class="n">RDOCS</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STIMULUS_RESPONSES</span><span class="p">(</span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_ELEMENT_STIM</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">RESET</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
 
 <span class="w">  </span><span class="n">Examines</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">session</span><span class="w"> </span><span class="n">associated</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">stimulus</span><span class="w"></span>
 <span class="w">  </span><span class="n">probe</span><span class="w"> </span><span class="n">NDI_STIM_PROBE</span><span class="p">,</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">creates</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">STIMULUS</span><span class="o">/</span><span class="n">STIMULUS_RESPONSE_SCALAR</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">STIMULUS</span><span class="o">/</span><span class="n">STIMULUS_TUNINGCURVE</span><span class="w"></span>
@@ -5003,26 +5009,30 @@
 
 <hr />
 <p><strong>tuning_curve</strong> - <em>compute a tuning curve from stimulus responses</em></p>
-<p>```TUNING_DOC = TUNING_CURVE(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESOPNSE_DOC, ...)</p>
-<p>This function accepts name/value pairs that modifies its basic operation:</p>
-<p>Parameter (default)         | Description</p>
+<div class="codehilite"><pre><span></span><code><span class="n">TUNING_DOC</span> <span class="o">=</span> <span class="n">TUNING_CURVE</span><span class="p">(</span><span class="n">NDI_APP_TUNING_RESPONSE_OBJ</span><span class="p">,</span> <span class="n">STIM_RESOPNSE_DOC</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+
+  <span class="n">This</span> <span class="n">function</span> <span class="n">accepts</span> <span class="n">name</span><span class="o">/</span><span class="n">value</span> <span class="n">pairs</span> <span class="n">that</span> <span class="n">modifies</span> <span class="n">its</span> <span class="n">basic</span> <span class="n">operation</span><span class="p">:</span>
+
+  <span class="n">Parameter</span> <span class="p">(</span><span class="n">default</span><span class="p">)</span>         <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">-----------------------------------------------------------------------</span>
+  <span class="n">response_units</span> <span class="p">(</span><span class="s1">&#39;Spikes/s&#39;</span><span class="p">)</span> <span class="o">|</span> <span class="n">Response</span> <span class="n">units</span> <span class="n">to</span> <span class="k">pass</span> <span class="n">along</span>
+  <span class="n">independent_label</span> <span class="p">{</span><span class="s1">&#39;label1&#39;</span><span class="p">}</span><span class="o">|</span> <span class="n">Independent</span> <span class="n">parameter</span> <span class="n">axis</span> <span class="n">label</span>
+  <span class="n">independent_parameter</span> <span class="p">{}</span>    <span class="o">|</span> <span class="n">Independent</span> <span class="n">parameters</span> <span class="n">to</span> <span class="n">search</span> <span class="k">for</span> <span class="ow">in</span> <span class="n">stimuli</span><span class="o">.</span>
+                              <span class="o">|</span>   <span class="n">Can</span> <span class="n">be</span> <span class="n">multi</span><span class="o">-</span><span class="n">dimensional</span> <span class="n">to</span> <span class="n">create</span> <span class="n">multi</span><span class="o">-</span><span class="n">variate</span> 
+                              <span class="o">|</span>   <span class="n">tuning</span> <span class="n">curves</span><span class="o">.</span> <span class="n">Only</span> <span class="n">stimuli</span> <span class="n">that</span> <span class="n">contain</span> <span class="n">these</span> <span class="n">fields</span>
+                              <span class="o">|</span>   <span class="n">will</span> <span class="n">be</span> <span class="n">included</span><span class="o">.</span>
+                              <span class="o">|</span>   <span class="n">Examples</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;angle&#39;</span><span class="p">}</span>  <span class="p">{</span><span class="s1">&#39;angle&#39;</span><span class="p">,</span><span class="s1">&#39;sFrequency&#39;</span><span class="p">}</span>
+  <span class="n">constraint</span> <span class="p">([])</span>             <span class="o">|</span> <span class="n">Constraints</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">form</span> <span class="n">of</span> <span class="n">a</span> <span class="n">vlt</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fieldsearch</span> <span class="n">structure</span><span class="o">.</span>
+                              <span class="o">|</span>   <span class="n">Example</span><span class="p">:</span> <span class="n">struct</span><span class="p">(</span><span class="s1">&#39;field&#39;</span><span class="p">,</span><span class="s1">&#39;sFrequency&#39;</span><span class="p">,</span><span class="s1">&#39;operation&#39;</span><span class="p">,</span><span class="o">...</span>
+                              <span class="o">|</span>              <span class="s1">&#39;exact_number&#39;</span><span class="p">,</span><span class="s1">&#39;param1&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="s1">&#39;param2&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+  <span class="n">See</span> <span class="n">also</span><span class="p">:</span> <span class="n">vlt</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fieldsearch</span>
+</code></pre></div>
+
 <hr />
-<p>response_units ('Spikes/s') | Response units to pass along
-  independent_label {'label1'}| Independent parameter axis label
-  independent_parameter {}    | Independent parameters to search for in stimuli.
-                              |   Can be multi-dimensional to create multi-variate 
-                              |   tuning curves. Only stimuli that contain these fields
-                              |   will be included.
-                              |   Examples: {'angle'}  {'angle','sFrequency'}
-  constraint ([])             | Constraints in the form of a vlt.data.fieldsearch structure.
-                              |   Example: struct('field','sFrequency','operation',...
-                              |              'exact_number','param1',1,'param2','')</p>
-<p>See also: vlt.data.fieldsearch</p>
-<div class="codehilite"><pre><span></span><code>---
-
-**tuning_response** - *an app to decode stimulus information from NDI_PROBE_STIMULUS objects*
-
-```NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
+<p><strong>tuning_response</strong> - <em>an app to decode stimulus information from NDI_PROBE_STIMULUS objects</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
 
   Creates a new ndi.app.stimulus.tuning_response object that can operate on
   NDI_SESSIONS. The app is named &#39;ndi_app_stimulus_response&#39;.
@@ -5035,15 +5045,17 @@
 
 <hr />
 <p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
-<p>```AN = VARAPPNAME(NDI_APP_OBJ)</p>
-<p>Returns the name of the app modified for use as a variable name, either as
-  a Matlab variable or a name in a document.</p>
-<p>Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclass NDI.APP</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">AN</span> <span class="o">=</span> <span class="n">VARAPPNAME</span><span class="p">(</span><span class="n">NDI_APP_OBJ</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">version_url</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">app</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span><span class="o">*</span>
+  <span class="n">Returns</span> <span class="n">the</span> <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">app</span> <span class="n">modified</span> <span class="k">for</span> <span class="n">use</span> <span class="k">as</span> <span class="n">a</span> <span class="n">variable</span> <span class="n">name</span><span class="p">,</span> <span class="n">either</span> <span class="k">as</span>
+  <span class="n">a</span> <span class="n">Matlab</span> <span class="n">variable</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">document</span><span class="o">.</span>
 
-```[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">stimulus</span><span class="o">.</span><span class="n">tuning_response</span><span class="o">/</span><span class="n">varappname</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="o">.</span><span class="n">APP</span>
+</code></pre></div>
+
+<hr />
+<p><strong>version_url</strong> - <em>return the app version and url</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
 
   <span class="k">Return</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">app</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>,
   <span class="nv">it</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">that</span> <span class="nv">GIT</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">available</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">command</span> <span class="nv">line</span>

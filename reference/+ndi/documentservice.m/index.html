@@ -4815,12 +4815,12 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>documentservice</strong> - <em>create an ndi.documentservice object, which is just an abstract class</em></p>
-<p>```NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code>NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();
+</code></pre></div>
 
-**newdocument** - *create a new ndi.document based on information in this object*
-
-```NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)
+<hr />
+<p><strong>newdocument</strong> - <em>create a new ndi.document based on information in this object</em></p>
+<div class="codehilite"><pre><span></span><code>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)
 
   Create a new ndi.document based on information in this class.
 
@@ -4829,11 +4829,14 @@
 
 <hr />
 <p><strong>searchquery</strong> - <em>create a search query to find this object as an ndi.document</em></p>
-<p>```SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)</p>
-<p>Return a search query that can be used to find this object's representation as an
-  ndi.document.</p>
-<p>The base class ndi.documentservice just returns empty.
-```</p>
+<div class="codehilite"><pre><span></span><code><span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DOCUMENTSERVICE_OBJ</span><span class="ss">)</span>
+
+  <span class="k">Return</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="nv">that</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">used</span> <span class="nv">to</span> <span class="nv">find</span> <span class="nv">this</span> <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s representation as an</span>
+  <span class="nv">ndi</span>.<span class="nv">document</span>.
+
+  <span class="nv">The</span> <span class="nv">base</span> <span class="nv">class</span> <span class="nv">ndi</span>.<span class="nv">documentservice</span> <span class="nv">just</span> <span class="nv">returns</span> <span class="nv">empty</span>.
+</code></pre></div>
+
 <hr />
                 
               

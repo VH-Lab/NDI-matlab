@@ -4854,14 +4854,15 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>eq</strong> - <em>are 2 ndi.daq.metadatareader objects equal?</em></p>
-<p>```TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)</p>
-<p>TF is 1 if the two objects are of the same class and have the same properties.
-  TF is 0 otherwise.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">TF</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_DAQMETADATAREADER_OBJ_A</span>, <span class="nv">NDI_DAQMETADATAREADER_OBJ_B</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">TF</span> <span class="nv">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">two</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">class</span> <span class="nv">and</span> <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">properties</span>.
+  <span class="nv">TF</span> <span class="nv">is</span> <span class="mi">0</span> <span class="nv">otherwise</span>.
+</code></pre></div>
 
-```<span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span>.
 
@@ -4870,17 +4871,18 @@
 
 <hr />
 <p><strong>metadatareader</strong> - <em>Create a new multifunction DAQ object</em></p>
-<p>```D = ndi.daq.metadatareader()
-   or
-   D = ndi.daq.metadatareader(TSVFILE_REGEXPRESSION)</p>
-<p>Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
-   is given, it indicates a regular expression to use to search EPOCHFILES
-   for a tab-separated-value text file that describes stimulus parameters.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">D</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">metadatareader</span><span class="p">()</span>
+   <span class="k">or</span>
+   <span class="n">D</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">metadatareader</span><span class="p">(</span><span class="n">TSVFILE_REGEXPRESSION</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">ndi_unique_id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Generate</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">number</span> <span class="k">for</span> <span class="nv">NDI</span> <span class="nv">projects</span><span class="o">*</span>
+   <span class="n">Creates</span> <span class="n">a</span> <span class="n">new</span> <span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">metadatareader</span> <span class="n">object</span><span class="p">.</span> <span class="n">If</span> <span class="n">TSVFILE_REGEXPRESSION</span>
+   <span class="n">is</span> <span class="n">given</span><span class="p">,</span> <span class="n">it</span> <span class="n">indicates</span> <span class="n">a</span> <span class="n">regular</span> <span class="n">expression</span> <span class="n">to</span> <span class="n">use</span> <span class="n">to</span> <span class="n">search</span> <span class="n">EPOCHFILES</span>
+   <span class="k">for</span> <span class="n">a</span> <span class="n">tab</span><span class="o">-</span><span class="n">separated</span><span class="o">-</span><span class="n">value</span> <span class="n">text</span> <span class="n">file</span> <span class="n">that</span> <span class="n">describes</span> <span class="n">stimulus</span> <span class="n">parameters</span><span class="p">.</span>
+</code></pre></div>
 
-```<span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
+<hr />
+<p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
 
   <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
   <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
@@ -4897,14 +4899,15 @@
 
 <hr />
 <p><strong>newdocument</strong> - <em>create a new ndi.document for an ndi.daq.metadatareader object</em></p>
-<p>```DOC = NEWDOCUMENT(ndi.daq.metadatareader OBJ)</p>
-<p>Creates an ndi.document object DOC that represents the
-     ndi.daq.reader object.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>DOC = NEWDOCUMENT(ndi.daq.metadatareader OBJ)
 
-<span class="o">**</span><span class="n">readmetadata</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">PARAMETERS</span> <span class="o">=</span> <span class="n">READMETADATA</span><span class="p">(</span><span class="n">NDI_DAQSYSTEM_STIMULUS_OBJ</span><span class="p">,</span> <span class="n">EPOCHFILES</span><span class="p">)</span><span class="o">*</span>
+  Creates an ndi.document object DOC that represents the
+     ndi.daq.reader object.
+</code></pre></div>
 
-<span class="err">``</span><span class="no">`Returns</span> <span class="n">the</span> <span class="n">parameters</span> <span class="p">(</span><span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">structures</span><span class="p">)</span> <span class="n">associated</span> <span class="n">with</span> <span class="n">the</span>
+<hr />
+<p><strong>readmetadata</strong> - <em>PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">Returns</span> <span class="n">the</span> <span class="n">parameters</span> <span class="p">(</span><span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">structures</span><span class="p">)</span> <span class="n">associated</span> <span class="n">with</span> <span class="n">the</span>
   <span class="n">stimulus</span> <span class="k">or</span> <span class="n">stimuli</span> <span class="n">that</span> <span class="n">were</span> <span class="n">prepared</span> <span class="n">to</span> <span class="n">be</span> <span class="n">presented</span> <span class="n">in</span> <span class="n">epoch</span> <span class="n">with</span> <span class="n">file</span> <span class="n">list</span> <span class="n">EPOCHFILES</span><span class="p">.</span>
 
   <span class="n">If</span> <span class="n">the</span> <span class="n">property</span> <span class="p">&#39;</span><span class="n">tab_separated_file_parameter</span><span class="p">&#39;</span> <span class="n">is</span> <span class="k">not</span> <span class="n">empty</span><span class="p">,</span> <span class="n">then</span> <span class="n">EPOCHFILES</span> <span class="n">will</span> <span class="n">be</span> <span class="n">searched</span> <span class="k">for</span>
@@ -4928,14 +4931,15 @@
 
 <hr />
 <p><strong>readmetadatafromfile</strong> - <em>read in metadata from the file that is identified</em></p>
-<p>```PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)</p>
-<p>Given a file that matches the metadata search criteria for an ndi.daq.metadatareader
-  document, this function loads in the metadata.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">PARAMETERS</span> <span class="o">=</span> <span class="n">READMETADATAFROMFILE</span><span class="p">(</span><span class="n">NDI_DAQMETADATAREADER_OBJ</span><span class="p">,</span> <span class="n">FILE</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">searchquery</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">create</span> <span class="nv">a</span> <span class="nv">search</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="n">Given</span> <span class="n">a</span> <span class="n">file</span> <span class="n">that</span> <span class="n">matches</span> <span class="n">the</span> <span class="n">metadata</span> <span class="n">search</span> <span class="n">criteria</span> <span class="k">for</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">metadatareader</span>
+  <span class="n">document</span><span class="p">,</span> <span class="n">this</span> <span class="n">function</span> <span class="n">loads</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">metadata</span><span class="o">.</span>
+</code></pre></div>
 
-```<span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DAQMETADATAREADER_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>searchquery</strong> - <em>create a search for this ndi.daq.reader object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DAQMETADATAREADER_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">metadatareader</span> <span class="nv">object</span>.
 </code></pre></div>

@@ -4889,82 +4889,80 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addlistener</strong> - <em>ADDLISTENER  Add listener for event.</em></p>
-<p>```el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
-    for the event named Eventname.  The source of the event is the handle 
-    object hSource.  If hSource is an array of source handles, the listener
-    responds to the named event on any handle in the array.  callbackFcn
-    is a function handle that is invoked when the event is triggered.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
-<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>
-<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span>
-<span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> 
-<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> <span class="n">a</span> 
-<span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
-<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="ow">or</span> <span class="n">more</span> 
-<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span>  <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
-<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
-<span class="n">properties</span><span class="o">.</span>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callbackFcn</span><span class="p">)</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">listener</span>
+    <span class="k">for</span> <span class="n">the</span> <span class="n">event</span> <span class="n">named</span> <span class="n">Eventname</span><span class="o">.</span>  <span class="n">The</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">the</span> <span class="n">handle</span> 
+    <span class="n">object</span> <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">source</span> <span class="n">handles</span><span class="p">,</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">responds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">named</span> <span class="n">event</span> <span class="n">on</span> <span class="n">any</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">array</span><span class="o">.</span>  <span class="n">callbackFcn</span>
+    <span class="k">is</span> <span class="n">a</span> <span class="n">function</span> <span class="n">handle</span> <span class="n">that</span> <span class="k">is</span> <span class="n">invoked</span> <span class="n">when</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">triggered</span><span class="o">.</span>
 
-<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">addlistener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
-<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">addlistener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>
+    <span class="n">el</span> <span class="o">=</span> <span class="n">ADDLISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">Callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+    <span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>
+    <span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span>
+    <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> 
+    <span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> <span class="n">a</span> 
+    <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+    <span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="ow">or</span> <span class="n">more</span> 
+    <span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span>  <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+    <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+    <span class="n">properties</span><span class="o">.</span>
 
-<span class="n">ADDLISTENER</span> <span class="n">binds</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is the </span>
-<span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Unless</span> <span class="n">you</span> <span class="n">explicitly</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span>
-<span class="n">destroyed</span> <span class="n">only</span> <span class="n">when</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="k">is</span> <span class="n">destroyed</span><span class="o">.</span>  <span class="n">To</span> <span class="n">control</span> <span class="n">the</span>
-<span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">independently</span> <span class="n">from</span> <span class="n">the</span> <span class="n">event</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> 
-<span class="n">use</span> <span class="n">listener</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span> <span class="n">constructor</span> <span class="n">to</span> <span class="n">create</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span>
+    <span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">addlistener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+    <span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">addlistener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+    <span class="n">ADDLISTENER</span> <span class="n">binds</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is the </span>
+    <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Unless</span> <span class="n">you</span> <span class="n">explicitly</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">it</span> <span class="k">is</span>
+    <span class="n">destroyed</span> <span class="n">only</span> <span class="n">when</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="k">is</span> <span class="n">destroyed</span><span class="o">.</span>  <span class="n">To</span> <span class="n">control</span> <span class="n">the</span>
+    <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">independently</span> <span class="n">from</span> <span class="n">the</span> <span class="n">event</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> 
+    <span class="n">use</span> <span class="n">listener</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span> <span class="n">constructor</span> <span class="n">to</span> <span class="n">create</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">binarydoc</span><span class="o">/</span><span class="n">addlistener</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">binarydoc</span><span class="o">/</span><span class="n">addlistener</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="o">.</span><span class="n">addlistener</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/addlistener is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">addlistener</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">addlistener</span>
+<hr />
+<p><strong>binarydoc</strong> - <em>a binary file class that handles reading/writing</em></p>
+<div class="codehilite"><pre><span></span><code>
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code>---
-
-**binarydoc** - *a binary file class that handles reading/writing*
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">delete</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">close</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span> <span class="nv">and</span> <span class="nv">delete</span> <span class="nv">its</span> <span class="nv">handle</span><span class="o">*</span>
-
-```<span class="nv">DELETE</span><span class="ss">(</span><span class="nv">NDI_BINARYDOC_OBJ</span><span class="ss">)</span>
+<hr />
+<p><strong>delete</strong> - <em>close an ndi.database.binarydoc and delete its handle</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">DELETE</span><span class="ss">(</span><span class="nv">NDI_BINARYDOC_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Closes</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span> <span class="ss">(</span><span class="k">if</span> <span class="nv">necessary</span><span class="ss">)</span> <span class="nv">and</span> <span class="k">then</span> <span class="nv">deletes</span> <span class="nv">the</span> <span class="nv">handle</span>.
 </code></pre></div>
 
 <hr />
 <p><strong>eq</strong> - <em>== (EQ)   Test handle equality.</em></p>
-<p>```Handles are equal if they are handles for the same object.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">==</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
-<span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
-<span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
-<span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.
 
-<span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+    <span class="nv">H1</span> <span class="o">==</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">NE</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">eq</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">eq</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">eq</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/eq is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">eq</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">eq</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">fclose</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FCLOSE</span> <span class="nv">Close</span> <span class="nv">file</span>.<span class="o">*</span>
-
-```<span class="nv">ST</span> <span class="o">=</span> <span class="nv">FCLOSE</span><span class="ss">(</span><span class="nv">FID</span><span class="ss">)</span> <span class="nv">closes</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">file</span> <span class="nv">identifier</span> <span class="nv">FID</span>,
+<hr />
+<p><strong>fclose</strong> - <em>FCLOSE Close file.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ST</span> <span class="o">=</span> <span class="nv">FCLOSE</span><span class="ss">(</span><span class="nv">FID</span><span class="ss">)</span> <span class="nv">closes</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">file</span> <span class="nv">identifier</span> <span class="nv">FID</span>,
     <span class="nv">which</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">integer</span> <span class="nv">value</span> <span class="nv">obtained</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">earlier</span> <span class="k">call</span> <span class="nl">to</span> <span class="nv">FOPEN</span>.  
     <span class="nv">FCLOSE</span> <span class="nv">returns</span> <span class="mi">0</span> <span class="k">if</span> <span class="nv">successful</span> <span class="nv">or</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="nv">not</span>.  <span class="k">If</span> <span class="nv">FID</span> <span class="nv">does</span> <span class="nv">not</span> <span class="nv">represent</span>
     <span class="nv">an</span> <span class="nv">open</span> <span class="nv">file</span>, <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">equal</span> <span class="nv">to</span> <span class="mi">0</span> <span class="ss">(</span><span class="nv">standard</span> <span class="nv">input</span><span class="ss">)</span>, <span class="mi">1</span> <span class="ss">(</span><span class="nv">standard</span>
@@ -4977,18 +4975,17 @@
 
 <hr />
 <p><strong>feof</strong> - <em>of-file.</em></p>
-<p>```ST = FEOF(FID) returns 1 if the end-of-file indicator for the
-    file with file identifier FID has been set, and 0 otherwise.
-    The end-of-file indicator is set when a read operation on the file
-    associated with the FID attempts to read past the end of the file.</p>
-<div class="codehilite"><pre><span></span><code>See also FERROR, FGETL, FGETS, FREAD, FSCANF, FOPEN.
+<div class="codehilite"><pre><span></span><code><span class="nv">ST</span> <span class="o">=</span> <span class="nv">FEOF</span><span class="ss">(</span><span class="nv">FID</span><span class="ss">)</span> <span class="nv">returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="k">end</span><span class="o">-</span><span class="nv">of</span><span class="o">-</span><span class="nv">file</span> <span class="nv">indicator</span> <span class="k">for</span> <span class="nv">the</span>
+    <span class="nv">file</span> <span class="nv">with</span> <span class="nv">file</span> <span class="nv">identifier</span> <span class="nv">FID</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">set</span>, <span class="nv">and</span> <span class="mi">0</span> <span class="nv">otherwise</span>.
+    <span class="nv">The</span> <span class="k">end</span><span class="o">-</span><span class="nv">of</span><span class="o">-</span><span class="nv">file</span> <span class="nv">indicator</span> <span class="nv">is</span> <span class="nv">set</span> <span class="nv">when</span> <span class="nv">a</span> <span class="nv">read</span> <span class="nv">operation</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">file</span>
+    <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">FID</span> <span class="nv">attempts</span> <span class="nv">to</span> <span class="nv">read</span> <span class="nv">past</span> <span class="nv">the</span> <span class="k">end</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">file</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">FERROR</span>, <span class="nv">FGETL</span>, <span class="nv">FGETS</span>, <span class="nv">FREAD</span>, <span class="nv">FSCANF</span>, <span class="nv">FOPEN</span>.
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">findobj</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FINDOBJ</span>   <span class="nv">Find</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">specified</span> <span class="nv">conditions</span>.<span class="o">*</span>
-
-```<span class="nv">The</span> <span class="nv">FINDOBJ</span> <span class="nv">method</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">HANDLE</span> <span class="nv">class</span> <span class="nv">follows</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">syntax</span> <span class="nv">as</span> <span class="nv">the</span> 
+<hr />
+<p><strong>findobj</strong> - <em>FINDOBJ   Find objects matching specified conditions.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">The</span> <span class="nv">FINDOBJ</span> <span class="nv">method</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">HANDLE</span> <span class="nv">class</span> <span class="nv">follows</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">syntax</span> <span class="nv">as</span> <span class="nv">the</span> 
     <span class="nv">MATLAB</span> <span class="nv">FINDOBJ</span> <span class="nv">command</span>, <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">argument</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span>
     <span class="nv">of</span> <span class="nv">handles</span> <span class="nv">to</span> <span class="nv">objects</span>.
 
@@ -5007,27 +5004,26 @@
 
 <hr />
 <p><strong>findprop</strong> - <em>FINDPROP   Find property of MATLAB handle object.</em></p>
-<p>```p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
-    associated with property name PROPNAME of scalar handle object H.
-    PROPNAME can be a string scalar or character vector.  It can be the 
-    name of a property defined by the class of H or a dynamic property 
-    added to scalar object H.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">no</span> <span class="nv">property</span> <span class="nv">named</span> <span class="nv">PROPNAME</span> <span class="nv">exists</span> <span class="k">for</span> <span class="nv">object</span> <span class="nv">H</span>, <span class="nv">an</span> <span class="nv">empty</span> 
-<span class="nv">META</span>.<span class="nv">PROPERTY</span> <span class="nv">array</span> <span class="nv">is</span> <span class="nv">returned</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">p</span> <span class="o">=</span> <span class="nv">FINDPROP</span><span class="ss">(</span><span class="nv">H</span>,<span class="nv">PROPNAME</span><span class="ss">)</span> <span class="nv">finds</span> <span class="nv">and</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">META</span>.<span class="nv">PROPERTY</span> <span class="nv">object</span>
+    <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">property</span> <span class="nv">name</span> <span class="nv">PROPNAME</span> <span class="nv">of</span> <span class="nv">scalar</span> <span class="nv">handle</span> <span class="nv">object</span> <span class="nv">H</span>.
+    <span class="nv">PROPNAME</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">scalar</span> <span class="nv">or</span> <span class="nv">character</span> <span class="nv">vector</span>.  <span class="nv">It</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">the</span> 
+    <span class="nv">name</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">property</span> <span class="nv">defined</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">class</span> <span class="nv">of</span> <span class="nv">H</span> <span class="nv">or</span> <span class="nv">a</span> <span class="nv">dynamic</span> <span class="nv">property</span> 
+    <span class="nv">added</span> <span class="nv">to</span> <span class="nv">scalar</span> <span class="nv">object</span> <span class="nv">H</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">FINDOBJ</span>, <span class="nv">DYNAMICPROPS</span>, <span class="nv">META</span>.<span class="nv">PROPERTY</span>
+    <span class="k">If</span> <span class="nv">no</span> <span class="nv">property</span> <span class="nv">named</span> <span class="nv">PROPNAME</span> <span class="nv">exists</span> <span class="k">for</span> <span class="nv">object</span> <span class="nv">H</span>, <span class="nv">an</span> <span class="nv">empty</span> 
+    <span class="nv">META</span>.<span class="nv">PROPERTY</span> <span class="nv">array</span> <span class="nv">is</span> <span class="nv">returned</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">FINDOBJ</span>, <span class="nv">DYNAMICPROPS</span>, <span class="nv">META</span>.<span class="nv">PROPERTY</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">findprop</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">findprop</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findprop</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/findprop is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">findprop</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findprop</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="n">fopen</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">FOPEN</span>  <span class="n">Open</span> <span class="n">file</span><span class="p">.</span><span class="o">*</span>
-
-<span class="err">``</span><span class="no">`FID</span> <span class="o">=</span> <span class="n">FOPEN</span><span class="p">(</span><span class="n">FILENAME</span><span class="p">)</span> <span class="n">opens</span> <span class="n">the</span> <span class="n">file</span> <span class="n">FILENAME</span> <span class="k">for</span> <span class="n">read</span> <span class="n">access</span><span class="p">.</span> <span class="n">FILENAME</span> <span class="n">is</span> <span class="n">the</span>
+<hr />
+<p><strong>fopen</strong> - <em>FOPEN  Open file.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">FID</span> <span class="o">=</span> <span class="n">FOPEN</span><span class="p">(</span><span class="n">FILENAME</span><span class="p">)</span> <span class="n">opens</span> <span class="n">the</span> <span class="n">file</span> <span class="n">FILENAME</span> <span class="k">for</span> <span class="n">read</span> <span class="n">access</span><span class="p">.</span> <span class="n">FILENAME</span> <span class="n">is</span> <span class="n">the</span>
     <span class="n">name</span> <span class="n">of</span> <span class="n">the</span> <span class="n">file</span> <span class="n">to</span> <span class="n">be</span> <span class="n">opened</span><span class="p">.</span>
 
     <span class="n">FILENAME</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> <span class="n">MATLABPATH</span> <span class="n">relative</span> <span class="n">partial</span> <span class="n">pathname</span><span class="p">.</span> <span class="n">If</span> <span class="n">the</span> <span class="n">file</span> <span class="n">is</span> <span class="k">not</span> <span class="n">found</span>
@@ -5121,157 +5117,156 @@
 
 <hr />
 <p><strong>fread</strong> - <em>FREAD  Read binary data from file.</em></p>
-<p>```A = FREAD(FID) reads binary data from the specified file and writes it into
-    matrix A.  FID is an integer file identifier obtained from FOPEN.  MATLAB reads
-    the entire file and positions the file pointer at the end of the file (see FEOF
-    for details).</p>
-<div class="codehilite"><pre><span></span><code><span class="nt">A</span> <span class="o">=</span> <span class="nt">FREAD</span><span class="o">(</span><span class="nt">FID</span><span class="o">,</span><span class="nt">SIZE</span><span class="o">)</span> <span class="nt">reads</span> <span class="nt">the</span> <span class="nt">number</span> <span class="nt">of</span> <span class="nt">elements</span> <span class="nt">specified</span> <span class="nt">by</span> <span class="nt">SIZE</span><span class="o">.</span>  <span class="nt">Valid</span>
-<span class="nt">entries</span> <span class="nt">for</span> <span class="nt">SIZE</span> <span class="nt">are</span><span class="o">:</span>
-    <span class="nt">N</span>      <span class="nt">read</span> <span class="nt">N</span> <span class="nt">elements</span> <span class="nt">into</span> <span class="nt">a</span> <span class="nt">column</span> <span class="nt">vector</span><span class="o">.</span> 
-    <span class="nt">inf</span>    <span class="nt">read</span> <span class="nt">to</span> <span class="nt">the</span> <span class="nt">end</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">file</span><span class="o">.</span>
-    <span class="cp">[</span><span class="nx">M</span><span class="p">,</span><span class="nx">N</span><span class="cp">]</span>  <span class="nt">read</span> <span class="nt">elements</span> <span class="nt">to</span> <span class="nt">fill</span> <span class="nt">an</span> <span class="nt">M-by-N</span> <span class="nt">matrix</span><span class="o">,</span> <span class="nt">in</span> <span class="nt">column</span> <span class="nt">order</span><span class="o">.</span>
-           <span class="nt">N</span> <span class="nt">can</span> <span class="nt">be</span> <span class="nt">inf</span><span class="o">,</span> <span class="nt">but</span> <span class="nt">M</span> <span class="nt">can</span><span class="s1">&#39;t.</span>
+<div class="codehilite"><pre><span></span><code><span class="nt">A</span> <span class="o">=</span> <span class="nt">FREAD</span><span class="o">(</span><span class="nt">FID</span><span class="o">)</span> <span class="nt">reads</span> <span class="nt">binary</span> <span class="nt">data</span> <span class="nt">from</span> <span class="nt">the</span> <span class="nt">specified</span> <span class="nt">file</span> <span class="nt">and</span> <span class="nt">writes</span> <span class="nt">it</span> <span class="nt">into</span>
+    <span class="nt">matrix</span> <span class="nt">A</span><span class="o">.</span>  <span class="nt">FID</span> <span class="nt">is</span> <span class="nt">an</span> <span class="nt">integer</span> <span class="nt">file</span> <span class="nt">identifier</span> <span class="nt">obtained</span> <span class="nt">from</span> <span class="nt">FOPEN</span><span class="o">.</span>  <span class="nt">MATLAB</span> <span class="nt">reads</span>
+    <span class="nt">the</span> <span class="nt">entire</span> <span class="nt">file</span> <span class="nt">and</span> <span class="nt">positions</span> <span class="nt">the</span> <span class="nt">file</span> <span class="nt">pointer</span> <span class="nt">at</span> <span class="nt">the</span> <span class="nt">end</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">file</span> <span class="o">(</span><span class="nt">see</span> <span class="nt">FEOF</span>
+    <span class="nt">for</span> <span class="nt">details</span><span class="o">).</span>
 
-<span class="s1">A = FREAD(FID,SIZE,PRECISION) reads the file according to the data format</span>
-<span class="s1">specified by PRECISION. The PRECISION input commonly contains a datatype</span>
-<span class="s1">specifier like &#39;</span><span class="nt">int</span><span class="s1">&#39; or &#39;</span><span class="nt">float</span><span class="s1">&#39;, followed by an integer giving the size in bits.</span>
-<span class="s1">The SIZE argument is optional when using this syntax.</span>
+    <span class="nt">A</span> <span class="o">=</span> <span class="nt">FREAD</span><span class="o">(</span><span class="nt">FID</span><span class="o">,</span><span class="nt">SIZE</span><span class="o">)</span> <span class="nt">reads</span> <span class="nt">the</span> <span class="nt">number</span> <span class="nt">of</span> <span class="nt">elements</span> <span class="nt">specified</span> <span class="nt">by</span> <span class="nt">SIZE</span><span class="o">.</span>  <span class="nt">Valid</span>
+    <span class="nt">entries</span> <span class="nt">for</span> <span class="nt">SIZE</span> <span class="nt">are</span><span class="o">:</span>
+        <span class="nt">N</span>      <span class="nt">read</span> <span class="nt">N</span> <span class="nt">elements</span> <span class="nt">into</span> <span class="nt">a</span> <span class="nt">column</span> <span class="nt">vector</span><span class="o">.</span> 
+        <span class="nt">inf</span>    <span class="nt">read</span> <span class="nt">to</span> <span class="nt">the</span> <span class="nt">end</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">file</span><span class="o">.</span>
+        <span class="cp">[</span><span class="nx">M</span><span class="p">,</span><span class="nx">N</span><span class="cp">]</span>  <span class="nt">read</span> <span class="nt">elements</span> <span class="nt">to</span> <span class="nt">fill</span> <span class="nt">an</span> <span class="nt">M-by-N</span> <span class="nt">matrix</span><span class="o">,</span> <span class="nt">in</span> <span class="nt">column</span> <span class="nt">order</span><span class="o">.</span>
+               <span class="nt">N</span> <span class="nt">can</span> <span class="nt">be</span> <span class="nt">inf</span><span class="o">,</span> <span class="nt">but</span> <span class="nt">M</span> <span class="nt">can</span><span class="s1">&#39;t.</span>
 
-<span class="s1">Any of the following values, either the MATLAB version, or their C or</span>
-<span class="s1">Fortran equivalent, may be used for PRECISION.  If not specified, the</span>
-<span class="s1">default PRECISION is &#39;</span><span class="nt">uint8</span><span class="s1">&#39;.</span>
-<span class="s1">    MATLAB    C or Fortran     Description</span>
-<span class="s1">    &#39;</span><span class="nt">uchar</span><span class="s1">&#39;   &#39;</span><span class="nt">unsigned</span> <span class="nt">char</span><span class="s1">&#39;  unsigned integer,  8 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">schar</span><span class="s1">&#39;   &#39;</span><span class="nt">signed</span> <span class="nt">char</span><span class="s1">&#39;    signed integer,  8 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">int8</span><span class="s1">&#39;    &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;      integer, 8 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">int16</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">2</span><span class="s1">&#39;      integer, 16 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">int32</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;      integer, 32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">int64</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;      integer, 64 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">uint8</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;      unsigned integer, 8 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">uint16</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">2</span><span class="s1">&#39;      unsigned integer, 16 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">uint32</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;      unsigned integer, 32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">uint64</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;      unsigned integer, 64 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">single</span><span class="s1">&#39;  &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;         floating point, 32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">float32</span><span class="s1">&#39; &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;         floating point, 32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">double</span><span class="s1">&#39;  &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;         floating point, 64 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">float64</span><span class="s1">&#39; &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;         floating point, 64 bits.</span>
+<span class="s1">    A = FREAD(FID,SIZE,PRECISION) reads the file according to the data format</span>
+<span class="s1">    specified by PRECISION. The PRECISION input commonly contains a datatype</span>
+<span class="s1">    specifier like &#39;</span><span class="nt">int</span><span class="s1">&#39; or &#39;</span><span class="nt">float</span><span class="s1">&#39;, followed by an integer giving the size in bits.</span>
+<span class="s1">    The SIZE argument is optional when using this syntax.</span>
 
-<span class="s1">The following platform dependent formats are also supported but they are not</span>
-<span class="s1">guaranteed to be the same size on all platforms.</span>
+<span class="s1">    Any of the following values, either the MATLAB version, or their C or</span>
+<span class="s1">    Fortran equivalent, may be used for PRECISION.  If not specified, the</span>
+<span class="s1">    default PRECISION is &#39;</span><span class="nt">uint8</span><span class="s1">&#39;.</span>
+<span class="s1">        MATLAB    C or Fortran     Description</span>
+<span class="s1">        &#39;</span><span class="nt">uchar</span><span class="s1">&#39;   &#39;</span><span class="nt">unsigned</span> <span class="nt">char</span><span class="s1">&#39;  unsigned integer,  8 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">schar</span><span class="s1">&#39;   &#39;</span><span class="nt">signed</span> <span class="nt">char</span><span class="s1">&#39;    signed integer,  8 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">int8</span><span class="s1">&#39;    &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;      integer, 8 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">int16</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">2</span><span class="s1">&#39;      integer, 16 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">int32</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;      integer, 32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">int64</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;      integer, 64 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">uint8</span><span class="s1">&#39;   &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;      unsigned integer, 8 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">uint16</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">2</span><span class="s1">&#39;      unsigned integer, 16 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">uint32</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;      unsigned integer, 32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">uint64</span><span class="s1">&#39;  &#39;</span><span class="nt">integer</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;      unsigned integer, 64 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">single</span><span class="s1">&#39;  &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;         floating point, 32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">float32</span><span class="s1">&#39; &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">4</span><span class="s1">&#39;         floating point, 32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">double</span><span class="s1">&#39;  &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;         floating point, 64 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">float64</span><span class="s1">&#39; &#39;</span><span class="nt">real</span><span class="o">*</span><span class="nt">8</span><span class="s1">&#39;         floating point, 64 bits.</span>
 
-<span class="s1">    MATLAB    C or Fortran     Description</span>
-<span class="s1">    &#39;</span><span class="nt">char</span><span class="s1">&#39;    &#39;</span><span class="nt">char</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;         character.</span>
-<span class="s1">    &#39;</span><span class="nt">short</span><span class="s1">&#39;   &#39;</span><span class="nt">short</span><span class="s1">&#39;          integer,  16 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">int</span><span class="s1">&#39;     &#39;</span><span class="nt">int</span><span class="s1">&#39;            integer,  32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">long</span><span class="s1">&#39;    &#39;</span><span class="nt">long</span><span class="s1">&#39;           integer,  32 or 64 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">ushort</span><span class="s1">&#39;  &#39;</span><span class="nt">unsigned</span> <span class="nt">short</span><span class="s1">&#39; unsigned integer,  16 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">uint</span><span class="s1">&#39;    &#39;</span><span class="nt">unsigned</span> <span class="nt">int</span><span class="s1">&#39;   unsigned integer,  32 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">ulong</span><span class="s1">&#39;   &#39;</span><span class="nt">unsigned</span> <span class="nt">long</span><span class="s1">&#39;  unsigned integer,  32 bits or 64 bits.</span>
-<span class="s1">    &#39;</span><span class="nt">float</span><span class="s1">&#39;   &#39;</span><span class="nt">float</span><span class="s1">&#39;          floating point, 32 bits.</span>
+<span class="s1">    The following platform dependent formats are also supported but they are not</span>
+<span class="s1">    guaranteed to be the same size on all platforms.</span>
 
-<span class="s1">If the precision is &#39;</span><span class="nt">char</span><span class="s1">&#39; or &#39;</span><span class="nt">char</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;, MATLAB reads characters using the</span>
-<span class="s1">encoding scheme associated with the file. See FOPEN for more information.</span>
+<span class="s1">        MATLAB    C or Fortran     Description</span>
+<span class="s1">        &#39;</span><span class="nt">char</span><span class="s1">&#39;    &#39;</span><span class="nt">char</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;         character.</span>
+<span class="s1">        &#39;</span><span class="nt">short</span><span class="s1">&#39;   &#39;</span><span class="nt">short</span><span class="s1">&#39;          integer,  16 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">int</span><span class="s1">&#39;     &#39;</span><span class="nt">int</span><span class="s1">&#39;            integer,  32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">long</span><span class="s1">&#39;    &#39;</span><span class="nt">long</span><span class="s1">&#39;           integer,  32 or 64 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">ushort</span><span class="s1">&#39;  &#39;</span><span class="nt">unsigned</span> <span class="nt">short</span><span class="s1">&#39; unsigned integer,  16 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">uint</span><span class="s1">&#39;    &#39;</span><span class="nt">unsigned</span> <span class="nt">int</span><span class="s1">&#39;   unsigned integer,  32 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">ulong</span><span class="s1">&#39;   &#39;</span><span class="nt">unsigned</span> <span class="nt">long</span><span class="s1">&#39;  unsigned integer,  32 bits or 64 bits.</span>
+<span class="s1">        &#39;</span><span class="nt">float</span><span class="s1">&#39;   &#39;</span><span class="nt">float</span><span class="s1">&#39;          floating point, 32 bits.</span>
 
-<span class="s1">The following formats map to an input stream of bits rather than bytes.</span>
+<span class="s1">    If the precision is &#39;</span><span class="nt">char</span><span class="s1">&#39; or &#39;</span><span class="nt">char</span><span class="o">*</span><span class="nt">1</span><span class="s1">&#39;, MATLAB reads characters using the</span>
+<span class="s1">    encoding scheme associated with the file. See FOPEN for more information.</span>
 
-<span class="s1">    &#39;</span><span class="nt">bitN</span><span class="s1">&#39;                     signed integer, N bits  (1&lt;=N&lt;=64).</span>
-<span class="s1">    &#39;</span><span class="nt">ubitN</span><span class="s1">&#39;                    unsigned integer, N bits (1&lt;=N&lt;=64).</span>
+<span class="s1">    The following formats map to an input stream of bits rather than bytes.</span>
 
-<span class="s1">If the input stream is bytes and FREAD reaches the end of file (see FEOF) in the</span>
-<span class="s1">middle of reading the number of bytes required for an element, the partial result</span>
-<span class="s1">is ignored. However, if the input stream is bits, then the partial result is</span>
-<span class="s1">returned as the last value.  If an error occurs before reaching the end of file,</span>
-<span class="s1">only full elements read up to that point are used.</span>
+<span class="s1">        &#39;</span><span class="nt">bitN</span><span class="s1">&#39;                     signed integer, N bits  (1&lt;=N&lt;=64).</span>
+<span class="s1">        &#39;</span><span class="nt">ubitN</span><span class="s1">&#39;                    unsigned integer, N bits (1&lt;=N&lt;=64).</span>
 
-<span class="s1">By default, numeric and character values are returned in class &#39;</span><span class="nt">double</span><span class="s1">&#39; arrays.</span>
-<span class="s1">To return these values stored in classes other than double, create your PRECISION</span>
-<span class="s1">argument by first specifying your source format, then following it by &#39;</span><span class="o">=&gt;</span><span class="s1">&#39;, and</span>
-<span class="s1">finally specifying your destination format. If the source and destination formats</span>
-<span class="s1">are the same then the following shorthand notation may be used:</span>
+<span class="s1">    If the input stream is bytes and FREAD reaches the end of file (see FEOF) in the</span>
+<span class="s1">    middle of reading the number of bytes required for an element, the partial result</span>
+<span class="s1">    is ignored. However, if the input stream is bits, then the partial result is</span>
+<span class="s1">    returned as the last value.  If an error occurs before reaching the end of file,</span>
+<span class="s1">    only full elements read up to that point are used.</span>
 
-<span class="s1">    *source</span>
+<span class="s1">    By default, numeric and character values are returned in class &#39;</span><span class="nt">double</span><span class="s1">&#39; arrays.</span>
+<span class="s1">    To return these values stored in classes other than double, create your PRECISION</span>
+<span class="s1">    argument by first specifying your source format, then following it by &#39;</span><span class="o">=&gt;</span><span class="s1">&#39;, and</span>
+<span class="s1">    finally specifying your destination format. If the source and destination formats</span>
+<span class="s1">    are the same then the following shorthand notation may be used:</span>
 
-<span class="s1">which means:</span>
+<span class="s1">        *source</span>
 
-<span class="s1">    source=&gt;source</span>
+<span class="s1">    which means:</span>
 
-<span class="s1">For example,</span>
+<span class="s1">        source=&gt;source</span>
 
-<span class="s1">    uint8=&gt;uint8               read in unsigned 8-bit integers and</span>
-<span class="s1">                               save them in an unsigned 8-bit integer array</span>
+<span class="s1">    For example,</span>
 
-<span class="s1">    *uint8                     shorthand version of previous example</span>
+<span class="s1">        uint8=&gt;uint8               read in unsigned 8-bit integers and</span>
+<span class="s1">                                   save them in an unsigned 8-bit integer array</span>
 
-<span class="s1">    bit4=&gt;int8                 read in signed 4-bit integers packed</span>
-<span class="s1">                               in bytes and save them in a signed 8-bit integer</span>
-<span class="s1">                               array (each 4-bit integer becomes one 8-bit</span>
-<span class="s1">                               integer)</span>
+<span class="s1">        *uint8                     shorthand version of previous example</span>
 
-<span class="s1">    double=&gt;real*4             read in doubles, convert and save</span>
-<span class="s1">                               as a 32-bit floating point array</span>
+<span class="s1">        bit4=&gt;int8                 read in signed 4-bit integers packed</span>
+<span class="s1">                                   in bytes and save them in a signed 8-bit integer</span>
+<span class="s1">                                   array (each 4-bit integer becomes one 8-bit</span>
+<span class="s1">                                   integer)</span>
 
-<span class="s1">A = FREAD(FID,SIZE,PRECISION,SKIP) includes a SKIP argument that specifies the</span>
-<span class="s1">number of bytes to skip after each PRECISION value is read. If PRECISION</span>
-<span class="s1">specifies a bit source format, like &#39;</span><span class="nt">bitN</span><span class="s1">&#39; or &#39;</span><span class="nt">ubitN</span><span class="s1">&#39;, the SKIP argument is</span>
-<span class="s1">interpreted as the number of bits to skip.  The SIZE argument is optional when</span>
-<span class="s1">using this syntax.</span>
+<span class="s1">        double=&gt;real*4             read in doubles, convert and save</span>
+<span class="s1">                                   as a 32-bit floating point array</span>
 
-<span class="s1">When SKIP is used, the PRECISION specifier may contain a positive integer repetition factor</span>
-<span class="s1">of the form &#39;</span><span class="nt">N</span><span class="o">*</span><span class="s1">&#39; which prepends the source format of the PRECISION argument, like</span>
-<span class="s1">&#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="s1">&#39;.  Note that 40*uchar for the PRECISION alone is equivalent to</span>
-<span class="s1">&#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">double</span><span class="s1">&#39;, not &#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">uchar</span><span class="s1">&#39;.  With SKIP specified, FREAD reads in,</span>
-<span class="s1">at most, a repetition factor number of values (default of 1), does a skip of</span>
-<span class="s1">input specified by the SKIP argument, reads in another block of values and does a</span>
-<span class="s1">skip of input, etc. until SIZE number of values have been read.  If a SKIP</span>
-<span class="s1">argument is not specified, the repetition factor is ignored.  Repetition with</span>
-<span class="s1">skip is useful for extracting data in noncontiguous fields from fixed length</span>
-<span class="s1">records.</span>
+<span class="s1">    A = FREAD(FID,SIZE,PRECISION,SKIP) includes a SKIP argument that specifies the</span>
+<span class="s1">    number of bytes to skip after each PRECISION value is read. If PRECISION</span>
+<span class="s1">    specifies a bit source format, like &#39;</span><span class="nt">bitN</span><span class="s1">&#39; or &#39;</span><span class="nt">ubitN</span><span class="s1">&#39;, the SKIP argument is</span>
+<span class="s1">    interpreted as the number of bits to skip.  The SIZE argument is optional when</span>
+<span class="s1">    using this syntax.</span>
 
-<span class="s1">For example,</span>
+<span class="s1">    When SKIP is used, the PRECISION specifier may contain a positive integer repetition factor</span>
+<span class="s1">    of the form &#39;</span><span class="nt">N</span><span class="o">*</span><span class="s1">&#39; which prepends the source format of the PRECISION argument, like</span>
+<span class="s1">    &#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="s1">&#39;.  Note that 40*uchar for the PRECISION alone is equivalent to</span>
+<span class="s1">    &#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">double</span><span class="s1">&#39;, not &#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">uchar</span><span class="s1">&#39;.  With SKIP specified, FREAD reads in,</span>
+<span class="s1">    at most, a repetition factor number of values (default of 1), does a skip of</span>
+<span class="s1">    input specified by the SKIP argument, reads in another block of values and does a</span>
+<span class="s1">    skip of input, etc. until SIZE number of values have been read.  If a SKIP</span>
+<span class="s1">    argument is not specified, the repetition factor is ignored.  Repetition with</span>
+<span class="s1">    skip is useful for extracting data in noncontiguous fields from fixed length</span>
+<span class="s1">    records.</span>
 
-<span class="s1">    s = fread(fid,120,&#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">uchar</span><span class="s1">&#39;,8);</span>
+<span class="s1">    For example,</span>
 
-<span class="s1">reads in 120 characters in blocks of 40 each separated by 8 characters.</span>
+<span class="s1">        s = fread(fid,120,&#39;</span><span class="nt">40</span><span class="o">*</span><span class="nt">uchar</span><span class="o">=&gt;</span><span class="nt">uchar</span><span class="s1">&#39;,8);</span>
 
-<span class="s1">A = FREAD(FID,SIZE,PRECISION,SKIP,MACHINEFORMAT) treats the data read as having a</span>
-<span class="s1">format given by the MACHINEFORMAT. You can obtain the MACHINEFORMAT argument from</span>
-<span class="s1">the output of the FOPEN function. See FOPEN for possible values for</span>
-<span class="s1">MACHINEFORMAT. The SIZE and SKIP arguments are optional when using this syntax.</span>
+<span class="s1">    reads in 120 characters in blocks of 40 each separated by 8 characters.</span>
 
-<span class="cp">[</span><span class="nx">A</span><span class="p">,</span> <span class="nx">COUNT</span><span class="cp">]</span><span class="s1"> = FREAD(...) Optional output argument COUNT returns the number of</span>
-<span class="s1">elements successfully read.</span>
+<span class="s1">    A = FREAD(FID,SIZE,PRECISION,SKIP,MACHINEFORMAT) treats the data read as having a</span>
+<span class="s1">    format given by the MACHINEFORMAT. You can obtain the MACHINEFORMAT argument from</span>
+<span class="s1">    the output of the FOPEN function. See FOPEN for possible values for</span>
+<span class="s1">    MACHINEFORMAT. The SIZE and SKIP arguments are optional when using this syntax.</span>
 
-<span class="s1">Examples:</span>
+<span class="s1">    </span><span class="cp">[</span><span class="nx">A</span><span class="p">,</span> <span class="nx">COUNT</span><span class="cp">]</span><span class="s1"> = FREAD(...) Optional output argument COUNT returns the number of</span>
+<span class="s1">    elements successfully read.</span>
 
-<span class="s1">The file alphabet.txt contains the 26 letters of the English alphabet, all</span>
-<span class="s1">capitalized. Open the file for read access with fopen, and read the first five</span>
-<span class="s1">elements into output c. Because a precision has not been specified, MATLAB uses</span>
-<span class="s1">the default precision of uchar, and the output is numeric:</span>
+<span class="s1">    Examples:</span>
 
-<span class="s1">fid = fopen(&#39;</span><span class="nt">alphabet</span><span class="p">.</span><span class="nc">txt</span><span class="s1">&#39;, &#39;</span><span class="nt">r</span><span class="s1">&#39;);</span>
-<span class="s1">c = fread(fid, 5)&#39;</span>
-<span class="nt">c</span> <span class="o">=</span>
-    <span class="nt">65</span>    <span class="nt">66</span>    <span class="nt">67</span>    <span class="nt">68</span>    <span class="nt">69</span>
-<span class="nt">fclose</span><span class="o">(</span><span class="nt">fid</span><span class="o">);</span>
+<span class="s1">    The file alphabet.txt contains the 26 letters of the English alphabet, all</span>
+<span class="s1">    capitalized. Open the file for read access with fopen, and read the first five</span>
+<span class="s1">    elements into output c. Because a precision has not been specified, MATLAB uses</span>
+<span class="s1">    the default precision of uchar, and the output is numeric:</span>
 
-<span class="nt">This</span> <span class="nt">time</span><span class="o">,</span> <span class="nt">specify</span> <span class="nt">that</span> <span class="nt">you</span> <span class="nt">want</span> <span class="nt">each</span> <span class="nt">element</span> <span class="nt">read</span> <span class="nt">as</span> <span class="nt">an</span> <span class="nt">unsigned</span> <span class="nt">8-bit</span> <span class="nt">integer</span>
-<span class="nt">and</span> <span class="nt">output</span> <span class="nt">as</span> <span class="nt">a</span> <span class="nt">character</span><span class="o">.</span> <span class="o">(</span><span class="nt">Using</span> <span class="nt">a</span> <span class="nt">precision</span> <span class="nt">of</span> <span class="s1">&#39;char=&gt;char&#39;</span> <span class="nt">or</span> <span class="s1">&#39;*char&#39;</span> <span class="nt">will</span>
-<span class="nt">produce</span> <span class="nt">the</span> <span class="nt">same</span> <span class="nt">result</span><span class="o">):</span>
+<span class="s1">    fid = fopen(&#39;</span><span class="nt">alphabet</span><span class="p">.</span><span class="nc">txt</span><span class="s1">&#39;, &#39;</span><span class="nt">r</span><span class="s1">&#39;);</span>
+<span class="s1">    c = fread(fid, 5)&#39;</span>
+    <span class="nt">c</span> <span class="o">=</span>
+        <span class="nt">65</span>    <span class="nt">66</span>    <span class="nt">67</span>    <span class="nt">68</span>    <span class="nt">69</span>
+    <span class="nt">fclose</span><span class="o">(</span><span class="nt">fid</span><span class="o">);</span>
 
-<span class="nt">fid</span> <span class="o">=</span> <span class="nt">fopen</span><span class="o">(</span><span class="s1">&#39;alphabet.txt&#39;</span><span class="o">,</span> <span class="s1">&#39;r&#39;</span><span class="o">);</span>
-<span class="nt">c</span> <span class="o">=</span> <span class="nt">fread</span><span class="o">(</span><span class="nt">fid</span><span class="o">,</span> <span class="nt">5</span><span class="o">,</span> <span class="s1">&#39;uint8=&gt;char&#39;</span><span class="o">)</span><span class="err">&#39;</span>
-<span class="nt">c</span> <span class="o">=</span>
-    <span class="nt">ABCDE</span>
-<span class="nt">fclose</span><span class="o">(</span><span class="nt">fid</span><span class="o">);</span>
+    <span class="nt">This</span> <span class="nt">time</span><span class="o">,</span> <span class="nt">specify</span> <span class="nt">that</span> <span class="nt">you</span> <span class="nt">want</span> <span class="nt">each</span> <span class="nt">element</span> <span class="nt">read</span> <span class="nt">as</span> <span class="nt">an</span> <span class="nt">unsigned</span> <span class="nt">8-bit</span> <span class="nt">integer</span>
+    <span class="nt">and</span> <span class="nt">output</span> <span class="nt">as</span> <span class="nt">a</span> <span class="nt">character</span><span class="o">.</span> <span class="o">(</span><span class="nt">Using</span> <span class="nt">a</span> <span class="nt">precision</span> <span class="nt">of</span> <span class="s1">&#39;char=&gt;char&#39;</span> <span class="nt">or</span> <span class="s1">&#39;*char&#39;</span> <span class="nt">will</span>
+    <span class="nt">produce</span> <span class="nt">the</span> <span class="nt">same</span> <span class="nt">result</span><span class="o">):</span>
 
-<span class="nt">See</span> <span class="nt">also</span> <span class="nt">FWRITE</span><span class="o">,</span> <span class="nt">FSEEK</span><span class="o">,</span> <span class="nt">FSCANF</span><span class="o">,</span> <span class="nt">FGETL</span><span class="o">,</span> <span class="nt">FGETS</span><span class="o">,</span> <span class="nt">LOAD</span><span class="o">,</span> <span class="nt">FOPEN</span><span class="o">,</span> <span class="nt">FEOF</span><span class="o">.</span>
+    <span class="nt">fid</span> <span class="o">=</span> <span class="nt">fopen</span><span class="o">(</span><span class="s1">&#39;alphabet.txt&#39;</span><span class="o">,</span> <span class="s1">&#39;r&#39;</span><span class="o">);</span>
+    <span class="nt">c</span> <span class="o">=</span> <span class="nt">fread</span><span class="o">(</span><span class="nt">fid</span><span class="o">,</span> <span class="nt">5</span><span class="o">,</span> <span class="s1">&#39;uint8=&gt;char&#39;</span><span class="o">)</span><span class="err">&#39;</span>
+    <span class="nt">c</span> <span class="o">=</span>
+        <span class="nt">ABCDE</span>
+    <span class="nt">fclose</span><span class="o">(</span><span class="nt">fid</span><span class="o">);</span>
+
+    <span class="nt">See</span> <span class="nt">also</span> <span class="nt">FWRITE</span><span class="o">,</span> <span class="nt">FSEEK</span><span class="o">,</span> <span class="nt">FSCANF</span><span class="o">,</span> <span class="nt">FGETL</span><span class="o">,</span> <span class="nt">FGETS</span><span class="o">,</span> <span class="nt">LOAD</span><span class="o">,</span> <span class="nt">FOPEN</span><span class="o">,</span> <span class="nt">FEOF</span><span class="o">.</span>
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">fseek</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FSEEK</span> <span class="nv">Set</span> <span class="nv">file</span> <span class="nv">position</span> <span class="nv">indicator</span>.<span class="o">*</span>
-
-```<span class="nv">STATUS</span> <span class="o">=</span> <span class="nv">FSEEK</span><span class="ss">(</span><span class="nv">FID</span>, <span class="nv">OFFSET</span>, <span class="nv">ORIGIN</span><span class="ss">)</span> <span class="nv">repositions</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">position</span>
+<hr />
+<p><strong>fseek</strong> - <em>FSEEK Set file position indicator.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">STATUS</span> <span class="o">=</span> <span class="nv">FSEEK</span><span class="ss">(</span><span class="nv">FID</span>, <span class="nv">OFFSET</span>, <span class="nv">ORIGIN</span><span class="ss">)</span> <span class="nv">repositions</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">position</span>
     <span class="nv">indicator</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">given</span> <span class="nv">FID</span>.  <span class="nv">FSEEK</span> <span class="nv">sets</span> <span class="nv">the</span> 
     <span class="nv">position</span> <span class="nv">indicator</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">byte</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">OFFSET</span> <span class="nv">relative</span> <span class="nv">to</span> 
     <span class="nv">ORIGIN</span>.
@@ -5302,21 +5297,20 @@
 
 <hr />
 <p><strong>ftell</strong> - <em>FTELL Get file position indicator.</em></p>
-<p>```POSITION = FTELL(FID) returns the location of the file position
-    indicator in the specified file.  Position is indicated in bytes
-    from the beginning of the file.  If -1 is returned, it indicates
-    that the query was unsuccessful. Use FERROR to determine the nature
-    of the error.</p>
-<div class="codehilite"><pre><span></span><code>FID is an integer file identifier obtained from FOPEN.
+<div class="codehilite"><pre><span></span><code><span class="nv">POSITION</span> <span class="o">=</span> <span class="nv">FTELL</span><span class="ss">(</span><span class="nv">FID</span><span class="ss">)</span> <span class="nv">returns</span> <span class="nv">the</span> <span class="nv">location</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">position</span>
+    <span class="nv">indicator</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">file</span>.  <span class="nv">Position</span> <span class="nv">is</span> <span class="nv">indicated</span> <span class="nv">in</span> <span class="nv">bytes</span>
+    <span class="nv">from</span> <span class="nv">the</span> <span class="nv">beginning</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">file</span>.  <span class="k">If</span> <span class="o">-</span><span class="mi">1</span> <span class="nv">is</span> <span class="nv">returned</span>, <span class="nv">it</span> <span class="nv">indicates</span>
+    <span class="nv">that</span> <span class="nv">the</span> <span class="nv">query</span> <span class="nv">was</span> <span class="nv">unsuccessful</span>. <span class="nv">Use</span> <span class="nv">FERROR</span> <span class="nv">to</span> <span class="nv">determine</span> <span class="nv">the</span> <span class="nv">nature</span>
+    <span class="nv">of</span> <span class="nv">the</span> <span class="nv">error</span>.
 
-See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
+    <span class="nv">FID</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">integer</span> <span class="nv">file</span> <span class="nv">identifier</span> <span class="nv">obtained</span> <span class="nv">from</span> <span class="nv">FOPEN</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">FERROR</span>, <span class="nv">FOPEN</span>, <span class="nv">FPRINTF</span>, <span class="nv">FREAD</span>, <span class="nv">FREWIND</span>, <span class="nv">FSCANF</span>, <span class="nv">FSEEK</span>, <span class="nv">FWRITE</span>.
 </code></pre></div>
 
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">fwrite</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FWRITE</span> <span class="nv">Write</span> <span class="nv">binary</span> <span class="nv">data</span> <span class="nv">to</span> <span class="nv">file</span>.<span class="o">*</span>
-
-```<span class="nv">COUNT</span> <span class="o">=</span> <span class="nv">FWRITE</span><span class="ss">(</span><span class="nv">FID</span>,<span class="nv">A</span><span class="ss">)</span> <span class="nv">writes</span> <span class="nv">the</span> <span class="nv">elements</span> <span class="nv">of</span> <span class="nv">matrix</span> <span class="nv">A</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">file</span>. <span class="nv">The</span>
+<hr />
+<p><strong>fwrite</strong> - <em>FWRITE Write binary data to file.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">COUNT</span> <span class="o">=</span> <span class="nv">FWRITE</span><span class="ss">(</span><span class="nv">FID</span>,<span class="nv">A</span><span class="ss">)</span> <span class="nv">writes</span> <span class="nv">the</span> <span class="nv">elements</span> <span class="nv">of</span> <span class="nv">matrix</span> <span class="nv">A</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">file</span>. <span class="nv">The</span>
     <span class="nv">data</span> <span class="nv">are</span> <span class="nv">written</span> <span class="nv">in</span> <span class="nv">column</span> <span class="nv">order</span>. <span class="nv">COUNT</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">elements</span> <span class="nv">successfully</span>
     <span class="nv">written</span>.
 
@@ -5358,29 +5352,28 @@ See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
 
 <hr />
 <p><strong>ge</strong> - <em>&gt;= (GE)   Greater than or equal relation for handles.</em></p>
-<p>```H1 &gt;= H2 performs element-wise comparisons between handle arrays H1 and
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt;= result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&gt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">NE</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ge</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ge</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/ge is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ge</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">gt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&gt;</span> <span class="ss">(</span><span class="nv">GT</span><span class="ss">)</span>   <span class="nv">Greater</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
-
-```<span class="nv">H1</span> <span class="o">&gt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span> 
+<hr />
+<p><strong>gt</strong> - <em>&gt; (GT)   Greater than relation for handles.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&gt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span> 
     <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.  
     <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
     <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;</span> <span class="nb">result</span>.
@@ -5401,26 +5394,25 @@ See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
 
 <hr />
 <p><strong>isvalid</strong> - <em>ISVALID   Test handle validity.</em></p>
-<p>```TF = ISVALID(H) performs an element-wise check for validity on the 
-    handle elements of H.  The result is a logical array of the same 
-    dimensions as H, where each element is the element-wise validity 
-    result.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
-<span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">TF</span> <span class="o">=</span> <span class="nv">ISVALID</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">performs</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">check</span> <span class="k">for</span> <span class="nv">validity</span> <span class="nv">on</span> <span class="nv">the</span> 
+    <span class="nv">handle</span> <span class="nv">elements</span> <span class="nv">of</span> <span class="nv">H</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span> <span class="nv">as</span> <span class="nv">H</span>, <span class="nv">where</span> <span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">validity</span> 
+    <span class="nb">result</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">DELETE</span>
+    <span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
+    <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">DELETE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">isvalid</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">isvalid</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/isvalid is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">isvalid</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">le</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;=</span> <span class="ss">(</span><span class="nv">LE</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">or</span> <span class="nv">equal</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
-
-```<span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.  <span class="nv">All</span> 
+<hr />
+<p><strong>le</strong> - <em>&lt;= (LE)   Less than or equal relation for handles.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.  <span class="nv">All</span> 
     <span class="nv">comparisons</span> <span class="nv">use</span> <span class="nv">a</span> <span class="nv">number</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">each</span> <span class="nv">handle</span> <span class="nv">object</span>.  <span class="nv">Nothing</span>
     <span class="nv">can</span> <span class="nv">be</span> <span class="nv">assumed</span> <span class="nv">about</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">comparison</span> <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span>
     <span class="nv">repeated</span> <span class="nv">comparison</span> <span class="nv">of</span> <span class="nv">two</span> <span class="nv">handles</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">MATLAB</span> <span class="nv">session</span> <span class="nv">will</span> 
@@ -5449,51 +5441,50 @@ See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
 
 <hr />
 <p><strong>listener</strong> - <em>LISTENER  Add listener for event without binding the listener to the source object.</em></p>
-<p>```el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
-    for the event named Eventname.  The source of the event is the handle<br />
-    object hSource.  If hSource is an array of source handles, the listener
-    responds to the named event on any handle in the array.  callbackFcn
-    is a function handle that is invoked when the event is triggered.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
-<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
-<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
-<span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
-<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
-<span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
-<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
-<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
-<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
-<span class="n">properties</span><span class="o">.</span>
+<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callbackFcn</span><span class="p">)</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">listener</span>
+    <span class="k">for</span> <span class="n">the</span> <span class="n">event</span> <span class="n">named</span> <span class="n">Eventname</span><span class="o">.</span>  <span class="n">The</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">the</span> <span class="n">handle</span>  
+    <span class="n">object</span> <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">source</span> <span class="n">handles</span><span class="p">,</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">responds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">named</span> <span class="n">event</span> <span class="n">on</span> <span class="n">any</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">array</span><span class="o">.</span>  <span class="n">callbackFcn</span>
+    <span class="k">is</span> <span class="n">a</span> <span class="n">function</span> <span class="n">handle</span> <span class="n">that</span> <span class="k">is</span> <span class="n">invoked</span> <span class="n">when</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">triggered</span><span class="o">.</span>
 
-<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
-<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
-<span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span>
+    <span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+    <span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
+    <span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
+    <span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
+    <span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
+    <span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+    <span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
+    <span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+    <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+    <span class="n">properties</span><span class="o">.</span>
 
-<span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
-<span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
-<span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
-<span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
-<span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+    <span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+    <span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
+    <span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span> 
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+    <span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
+    <span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
+    <span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
+    <span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
+    <span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">DATABASE</span><span class="o">.</span><span class="n">BINARYDOC</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">binarydoc</span><span class="o">/</span><span class="n">listener</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">binarydoc</span><span class="o">/</span><span class="n">listener</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="o">.</span><span class="n">listener</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/listener is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">listener</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">listener</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">lt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;</span> <span class="ss">(</span><span class="nv">LT</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
-
-```<span class="nv">H1</span> <span class="o">&lt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+<hr />
+<p><strong>lt</strong> - <em>&lt; (LT)   Less than relation for handles.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&lt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
     <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
     <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
     <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&lt;</span> <span class="nb">result</span>.
@@ -5514,32 +5505,31 @@ See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
 
 <hr />
 <p><strong>ne</strong> - <em>~= (NE)   Not equal relation for handles.</em></p>
-<p>```Handles are equal if they are handles for the same object and are 
-    unequal otherwise.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
-<span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
-<span class="nv">scalar</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> 
-<span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
+<div class="codehilite"><pre><span></span><code><span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">are</span> 
+    <span class="nv">unequal</span> <span class="nv">otherwise</span>.
 
-<span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+    <span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
+    <span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
+    <span class="nv">scalar</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> 
+    <span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">NE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span>
-<span class="nv">dimensions</span>.
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">NE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span>
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">DATABASE</span>.<span class="nv">BINARYDOC</span><span class="o">/</span><span class="nv">LT</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ne</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ne</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
 </code></pre></div>
 
-<p>Help for ndi.database.binarydoc/ne is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span><span class="o">/</span><span class="nv">ne</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
-</code></pre></div>
-
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="n">notify</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">NOTIFY</span>   <span class="n">Notify</span> <span class="n">listeners</span> <span class="n">of</span> <span class="k">event</span><span class="p">.</span><span class="o">*</span>
-
-<span class="err">``</span><span class="no">`NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">eventname</span><span class="p">)</span> <span class="n">notifies</span> <span class="n">listeners</span> <span class="n">added</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">named</span> 
+<hr />
+<p><strong>notify</strong> - <em>NOTIFY   Notify listeners of event.</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">eventname</span><span class="p">)</span> <span class="n">notifies</span> <span class="n">listeners</span> <span class="n">added</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">named</span> 
     <span class="n">eventname</span> <span class="k">for</span> <span class="n">handle</span> <span class="n">object</span> <span class="n">array</span> <span class="n">H</span> <span class="n">that</span> <span class="n">the</span> <span class="k">event</span> <span class="n">is</span> <span class="n">taking</span> <span class="n">place</span><span class="p">.</span> 
     <span class="n">eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> <span class="k">string</span> <span class="n">scalar</span> <span class="k">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">.</span>  
     <span class="n">H</span> <span class="n">is</span> <span class="n">the</span> <span class="n">array</span> <span class="n">of</span> <span class="n">handles</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">source</span> <span class="n">objects</span><span class="p">,</span> <span class="k">and</span> <span class="p">&#39;</span><span class="n">eventname</span><span class="p">&#39;</span>

@@ -4896,17 +4896,20 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>epochclock</strong> - <em>return the ndi.time.clocktype objects for an epoch</em></p>
-<p>```EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)</p>
-<p>Return the clock types available for this epoch as a cell array
-  of ndi.time.clocktype objects (or sub-class members).</p>
-<p>For the generic ndi.daq.reader.mfdaq, this returns a single clock
-  type 'dev_local'time';</p>
-<p>See also: ndi.time.clocktype</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">EC</span> <span class="o">=</span> <span class="nv">EPOCHCLOCK</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_MFDAQ_OBJ</span>, <span class="nv">EPOCH_NUMBER</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">tests</span> <span class="nv">whether</span> <span class="mi">2</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equal</span><span class="o">*</span>
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">clock</span> <span class="nv">types</span> <span class="nv">available</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">epoch</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span>
+  <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span> <span class="nv">objects</span> <span class="ss">(</span><span class="nv">or</span> <span class="nv">sub</span><span class="o">-</span><span class="nv">class</span> <span class="nv">members</span><span class="ss">)</span>.
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ1</span>, <span class="nv">NDI_DAQREADER_OBJ2</span><span class="ss">)</span>
+  <span class="k">For</span> <span class="nv">the</span> <span class="nv">generic</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>, <span class="nv">this</span> <span class="nv">returns</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">clock</span>
+  <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">dev_local</span><span class="s1">&#39;</span><span class="nv">time</span><span class="s1">&#39;</span><span class="s">;</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span>
+</code></pre></div>
+
+<hr />
+<p><strong>eq</strong> - <em>tests whether 2 ndi.daq.reader objects are equal</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ1</span>, <span class="nv">NDI_DAQREADER_OBJ2</span><span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">whether</span> <span class="nv">or</span> <span class="nv">not</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equal</span>.
 
@@ -4915,26 +4918,29 @@
 
 <hr />
 <p><strong>getchannelsepoch</strong> - <em>List the channels that were sampled for this epoch</em></p>
-<p>```CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)</p>
-<p>Returns the channel list of acquired channels in these EPOCHFILES</p>
-<p>The channels are of different types. In the below, 
-   'n' is replaced with the channel number.
-   Type       | Description</p>
-<hr />
-<p>ain        | Analog input (e.g., ai1 is the first input channel)
+<div class="codehilite"><pre><span></span><code>CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
+
+   Returns the channel list of acquired channels in these EPOCHFILES
+
+   The channels are of different types. In the below, 
+   &#39;n&#39; is replaced with the channel number.
+   Type       | Description
+   ------------------------------------------------------
+   ain        | Analog input (e.g., ai1 is the first input channel)
    din        | Digital input (e.g., di1 is the first input channel)
    t          | Time - a time channel
-   axn        | Auxillary inputs</p>
-<p>CHANNELS is a structure list of all channels with fields:</p>
+   axn        | Auxillary inputs
+
+  CHANNELS is a structure list of all channels with fields:
+  -------------------------------------------------------
+  &#39;name&#39;             | The name of the channel (e.g., &#39;ai1&#39;)
+  &#39;type&#39;             | The type of data stored in the channel
+                     |    (e.g., &#39;analog_input&#39;, &#39;digital_input&#39;, &#39;image&#39;, &#39;timestamp&#39;)
+</code></pre></div>
+
 <hr />
-<p>'name'             | The name of the channel (e.g., 'ai1')
-  'type'             | The type of data stored in the channel
-                     |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
-
-<span class="o">**</span><span class="nv">id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span><span class="o">*</span>
-
-```<span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
+<p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">IDENTIFIER</span> <span class="o">=</span> <span class="nv">ID</span><span class="ss">(</span><span class="nv">NDI_ID_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span>.
 
@@ -4943,14 +4949,15 @@
 
 <hr />
 <p><strong>mfdaq</strong> - <em>Create a new multifunction DAQ object</em></p>
-<p>```D = ndi.daq.reader.mfdaq()</p>
-<p>Creates a new ndi.daq.reader.mfdaq object.
-   This is an abstract class that is overridden by specific devices.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>D = ndi.daq.reader.mfdaq()
 
-<span class="o">**</span><span class="nv">ndi_unique_id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Generate</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">number</span> <span class="k">for</span> <span class="nv">NDI</span> <span class="nv">projects</span><span class="o">*</span>
+   Creates a new ndi.daq.reader.mfdaq object.
+   This is an abstract class that is overridden by specific devices.
+</code></pre></div>
 
-```<span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
+<hr />
+<p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
 
   <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
   <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
@@ -4967,15 +4974,17 @@
 
 <hr />
 <p><strong>newdocument</strong> - <em>create a new ndi.document for an ndi.daq.reader object</em></p>
-<p>```DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)</p>
-<p>Creates an ndi.document object DOC that represents the
-     ndi.daq.reader object.</p>
-<p>Help for ndi.daq.reader.mfdaq/newdocument is inherited from superclass NDI.DAQ.READER</p>
-<div class="codehilite"><pre><span></span><code>---
+<div class="codehilite"><pre><span></span><code><span class="nv">DOC</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span><span class="ss">)</span>
 
-**readchannels_epochsamples** - *read the data based on specified channels*
+  <span class="nv">Creates</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">DOC</span> <span class="nv">that</span> <span class="nv">represents</span> <span class="nv">the</span>
+     <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span>.
 
-```DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+</code></pre></div>
+
+<hr />
+<p><strong>readchannels_epochsamples</strong> - <em>read the data based on specified channels</em></p>
+<div class="codehilite"><pre><span></span><code>DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
 
    CHANNELTYPE is the type of channel to read
 
@@ -4988,32 +4997,36 @@
 
 <hr />
 <p><strong>readevents_epochsamples</strong> - <em>read events, markers, and digital events of specified channels for a specified epoch</em></p>
-<p>```[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHSTREAMS, EPOCH_SELECT, T0, T1)</p>
-<p>Returns TIMESTAMPS and DATA corresponding to event or marker channels. If the number of CHANNEL entries is 1, then TIMESTAMPS
-   is a column vector of type double, and DATA is also a column of a type that depends on the type of event that is read.
-   If the number of CHANNEL entries is more than 1, then TIMESTAMPS and DATA are both columns of cell arrays, with 1 column
-   per channel.</p>
-<p>CHANNELTYPE is a cell array of strings, describing the type of each channel to read, such as
-       'event'  - TIMESTAMPS mark the occurrence of each event; DATA is a logical 1 for each timestamp
-       'marker' - TIMESTAMPS mark the occurence of each event; each row of DATA is the data associated with the marker (type double)
-       'text' - TIMESTAMPS mark the occurence of each event; DATA is a cell array of character arrays, 1 per event
-       'dep' - Create events from a digital channel with positive transitions. TIMESTAMPS mark the occurence of each event and
-               DATA entries will be a 1
-       'dimp' - Create events from a digital channel by finding impulses that exhibit positive then negative transitions. TIMESTAMPS
-                mark the occurrence of each event, and DATA indicates whether the event is a positive transition (1) or negative (-1)
-                transition.
-       'den' - Create events from a digital channel with negative transitions. TIMESTAMPS mark the occurrence of each event and
-               DATA entries will be a -1.
-       'dimn' - Create events from a digital channel by finding impulses that exhibit negative then positive transitions. TIMESTAMPS
-                mark the occurence of each event, and DATA indicates whether the event is a negative transition (1) or a positive
-                transition (-1).</p>
-<p>CHANNEL is a vector with the identity(ies) of the channel(s) to be read.</p>
-<p>EPOCHSFILES is a cell array of full path file names</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">TIMESTAMPS</span>, <span class="nv">DATA</span>] <span class="o">=</span> <span class="nv">READEVENTS_EPOCHSAMPLES</span><span class="ss">(</span><span class="nv">NDR_READER_OBJ</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span>, <span class="nv">EPOCHSTREAMS</span>, <span class="nv">EPOCH_SELECT</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">readevents_epochsamples_native</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">read</span> <span class="nv">events</span> <span class="nv">or</span> <span class="nv">markers</span> <span class="nv">of</span> <span class="nv">specified</span> <span class="nv">channels</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">specified</span> <span class="nv">epoch</span><span class="o">*</span>
+   <span class="nv">Returns</span> <span class="nv">TIMESTAMPS</span> <span class="nv">and</span> <span class="nv">DATA</span> <span class="nv">corresponding</span> <span class="nv">to</span> <span class="nv">event</span> <span class="nv">or</span> <span class="nv">marker</span> <span class="nv">channels</span>. <span class="k">If</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">CHANNEL</span> <span class="nv">entries</span> <span class="nv">is</span> <span class="mi">1</span>, <span class="k">then</span> <span class="nv">TIMESTAMPS</span>
+   <span class="nv">is</span> <span class="nv">a</span> <span class="nv">column</span> <span class="nv">vector</span> <span class="nv">of</span> <span class="nv">type</span> <span class="nv">double</span>, <span class="nv">and</span> <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">also</span> <span class="nv">a</span> <span class="nv">column</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">type</span> <span class="nv">that</span> <span class="nv">depends</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">event</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">read</span>.
+   <span class="k">If</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">CHANNEL</span> <span class="nv">entries</span> <span class="nv">is</span> <span class="nv">more</span> <span class="nv">than</span> <span class="mi">1</span>, <span class="k">then</span> <span class="nv">TIMESTAMPS</span> <span class="nv">and</span> <span class="nv">DATA</span> <span class="nv">are</span> <span class="nv">both</span> <span class="nv">columns</span> <span class="nv">of</span> <span class="nv">cell</span> <span class="nv">arrays</span>, <span class="nv">with</span> <span class="mi">1</span> <span class="nv">column</span>
+   <span class="nv">per</span> <span class="nv">channel</span>.
 
-```[<span class="nv">TIMESTAMPS</span>, <span class="nv">DATA</span>] <span class="o">=</span> <span class="nv">READEVENTS_EPOCHSAMPLES_NATIVE</span><span class="ss">(</span><span class="nv">MYDEV</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span>, <span class="nv">EPOCHFILES</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
+   <span class="nv">CHANNELTYPE</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="nv">describing</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">channel</span> <span class="nv">to</span> <span class="nv">read</span>, <span class="nv">such</span> <span class="nv">as</span>
+       <span class="s1">&#39;</span><span class="s">event</span><span class="s1">&#39;</span>  <span class="o">-</span> <span class="nv">TIMESTAMPS</span> <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurrence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span><span class="c1">; DATA is a logical 1 for each timestamp</span>
+       <span class="s1">&#39;</span><span class="s">marker</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">TIMESTAMPS</span> <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span><span class="c1">; each row of DATA is the data associated with the marker (type double)</span>
+       <span class="s1">&#39;</span><span class="s">text</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">TIMESTAMPS</span> <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span><span class="c1">; DATA is a cell array of character arrays, 1 per event</span>
+       <span class="s1">&#39;</span><span class="s">dep</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">Create</span> <span class="nv">events</span> <span class="nv">from</span> <span class="nv">a</span> <span class="nv">digital</span> <span class="nv">channel</span> <span class="nv">with</span> <span class="nv">positive</span> <span class="nv">transitions</span>. <span class="nv">TIMESTAMPS</span> <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span> <span class="nv">and</span>
+               <span class="nv">DATA</span> <span class="nv">entries</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">a</span> <span class="mi">1</span>
+       <span class="s1">&#39;</span><span class="s">dimp</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">Create</span> <span class="nv">events</span> <span class="nv">from</span> <span class="nv">a</span> <span class="nv">digital</span> <span class="nv">channel</span> <span class="nv">by</span> <span class="nv">finding</span> <span class="nv">impulses</span> <span class="nv">that</span> <span class="nv">exhibit</span> <span class="nv">positive</span> <span class="k">then</span> <span class="nv">negative</span> <span class="nv">transitions</span>. <span class="nv">TIMESTAMPS</span>
+                <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurrence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span>, <span class="nv">and</span> <span class="nv">DATA</span> <span class="nv">indicates</span> <span class="nv">whether</span> <span class="nv">the</span> <span class="nv">event</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">positive</span> <span class="nv">transition</span> <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span> <span class="nv">or</span> <span class="nv">negative</span> <span class="ss">(</span><span class="o">-</span><span class="mi">1</span><span class="ss">)</span>
+                <span class="nv">transition</span>.
+       <span class="s1">&#39;</span><span class="s">den</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">Create</span> <span class="nv">events</span> <span class="nv">from</span> <span class="nv">a</span> <span class="nv">digital</span> <span class="nv">channel</span> <span class="nv">with</span> <span class="nv">negative</span> <span class="nv">transitions</span>. <span class="nv">TIMESTAMPS</span> <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurrence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span> <span class="nv">and</span>
+               <span class="nv">DATA</span> <span class="nv">entries</span> <span class="nv">will</span> <span class="nv">be</span> <span class="nv">a</span> <span class="o">-</span><span class="mi">1</span>.
+       <span class="s1">&#39;</span><span class="s">dimn</span><span class="s1">&#39;</span> <span class="o">-</span> <span class="nv">Create</span> <span class="nv">events</span> <span class="nv">from</span> <span class="nv">a</span> <span class="nv">digital</span> <span class="nv">channel</span> <span class="nv">by</span> <span class="nv">finding</span> <span class="nv">impulses</span> <span class="nv">that</span> <span class="nv">exhibit</span> <span class="nv">negative</span> <span class="k">then</span> <span class="nv">positive</span> <span class="nv">transitions</span>. <span class="nv">TIMESTAMPS</span>
+                <span class="nv">mark</span> <span class="nv">the</span> <span class="nv">occurence</span> <span class="nv">of</span> <span class="nv">each</span> <span class="nv">event</span>, <span class="nv">and</span> <span class="nv">DATA</span> <span class="nv">indicates</span> <span class="nv">whether</span> <span class="nv">the</span> <span class="nv">event</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">negative</span> <span class="nv">transition</span> <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span> <span class="nv">or</span> <span class="nv">a</span> <span class="nv">positive</span>
+                <span class="nv">transition</span> <span class="ss">(</span><span class="o">-</span><span class="mi">1</span><span class="ss">)</span>.
+
+   <span class="nv">CHANNEL</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">vector</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">identity</span><span class="ss">(</span><span class="nv">ies</span><span class="ss">)</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">channel</span><span class="ss">(</span><span class="nv">s</span><span class="ss">)</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">read</span>.
+
+   <span class="nv">EPOCHSFILES</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">full</span> <span class="nv">path</span> <span class="nv">file</span> <span class="nv">names</span>
+</code></pre></div>
+
+<hr />
+<p><strong>readevents_epochsamples_native</strong> - <em>read events or markers of specified channels for a specified epoch</em></p>
+<div class="codehilite"><pre><span></span><code>[<span class="nv">TIMESTAMPS</span>, <span class="nv">DATA</span>] <span class="o">=</span> <span class="nv">READEVENTS_EPOCHSAMPLES_NATIVE</span><span class="ss">(</span><span class="nv">MYDEV</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span>, <span class="nv">EPOCHFILES</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
 
    <span class="nv">CHANNELTYPE</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">channel</span> <span class="nv">to</span> <span class="nv">read</span>
    <span class="ss">(</span><span class="s1">&#39;</span><span class="s">event</span><span class="s1">&#39;</span>,<span class="s1">&#39;</span><span class="s">marker</span><span class="s1">&#39;</span>, <span class="nv">etc</span><span class="ss">)</span>. <span class="nv">It</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">string</span> <span class="ss">(</span><span class="nv">not</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span><span class="ss">)</span>.
@@ -5031,17 +5044,19 @@
 
 <hr />
 <p><strong>samplerate</strong> - <em>GET THE SAMPLE RATE FOR SPECIFIC CHANNEL</em></p>
-<p>```SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)</p>
-<p>SR is an array of sample rates from the specified channels</p>
-<p>CHANNELTYPE can be either a string or a cell array of
-  strings the same length as the vector CHANNEL.
-  If CHANNELTYPE is a single string, then it is assumed that
-  that CHANNELTYPE applies to every entry of CHANNEL.</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="nv">SR</span> <span class="o">=</span> <span class="nv">SAMPLERATE</span><span class="ss">(</span><span class="nv">DEV</span>, <span class="nv">EPOCHFILES</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span><span class="ss">)</span>
 
-<span class="o">**</span><span class="nv">searchquery</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">create</span> <span class="nv">a</span> <span class="nv">search</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span><span class="o">*</span>
+  <span class="nv">SR</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">sample</span> <span class="nv">rates</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">channels</span>
 
-```<span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span><span class="ss">)</span>
+  <span class="nv">CHANNELTYPE</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">either</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">or</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span>
+  <span class="nv">strings</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">length</span> <span class="nv">as</span> <span class="nv">the</span> <span class="nv">vector</span> <span class="nv">CHANNEL</span>.
+  <span class="k">If</span> <span class="nv">CHANNELTYPE</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">string</span>, <span class="k">then</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">that</span>
+  <span class="nv">that</span> <span class="nv">CHANNELTYPE</span> <span class="nv">applies</span> <span class="nv">to</span> <span class="nv">every</span> <span class="nv">entry</span> <span class="nv">of</span> <span class="nv">CHANNEL</span>.
+</code></pre></div>
+
+<hr />
+<p><strong>searchquery</strong> - <em>create a search for this ndi.daq.reader object</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span><span class="ss">)</span>
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span>.
 
@@ -5050,15 +5065,18 @@
 
 <hr />
 <p><strong>t0_t1</strong> - <em>return the t0_t1 (beginning and end) epoch times for an epoch</em></p>
-<p>```T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)</p>
-<p>Return the beginning (t0) and end (t1) times of the epoch defined by EPOCHFILES.</p>
-<p>The abstract class always returns {[NaN NaN]}.</p>
-<p>See also: ndi.time.clocktype, EPOCHCLOCK</p>
-<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+<div class="codehilite"><pre><span></span><code><span class="n">T0T1</span> <span class="o">=</span> <span class="n">T0_T1</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">,</span> <span class="n">EPOCHFILES</span><span class="p">)</span>
 
-<span class="o">**</span><span class="nv">verifyepochprobemap</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Verifies</span> <span class="nv">that</span> <span class="nv">an</span> <span class="nv">EPOCHPROBEMAP</span> <span class="nv">is</span> <span class="nv">compatible</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">device</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">data</span> <span class="nv">on</span> <span class="nv">disk</span><span class="o">*</span>
+  <span class="n">Return</span> <span class="n">the</span> <span class="n">beginning</span> <span class="p">(</span><span class="n">t0</span><span class="p">)</span> <span class="n">and</span> <span class="n">end</span> <span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="n">times</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">defined</span> <span class="n">by</span> <span class="n">EPOCHFILES</span><span class="p">.</span>
 
-```<span class="nv">B</span> <span class="o">=</span> <span class="nv">VERIFYEPOCHPROBEMAP</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span>, <span class="nv">EPOCHPROBEMAP</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
+  <span class="n">The</span> <span class="n">abstract</span> <span class="k">class</span> <span class="n">always</span> <span class="n">returns</span> <span class="p">{[</span><span class="n">NaN</span> <span class="n">NaN</span><span class="p">]}.</span>
+
+  <span class="n">See</span> <span class="nl">also</span><span class="p">:</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">EPOCHCLOCK</span>
+</code></pre></div>
+
+<hr />
+<p><strong>verifyepochprobemap</strong> - <em>Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk</em></p>
+<div class="codehilite"><pre><span></span><code><span class="nv">B</span> <span class="o">=</span> <span class="nv">VERIFYEPOCHPROBEMAP</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span>, <span class="nv">EPOCHPROBEMAP</span>, <span class="nv">NUMBER</span><span class="ss">)</span>
 
   <span class="nv">Examines</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">EPOCHPROBEMAP</span> <span class="nv">and</span> <span class="nv">determines</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">valid</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">given</span> <span class="nv">device</span>
   <span class="nv">epoch</span> <span class="nv">NUMBER</span>.
