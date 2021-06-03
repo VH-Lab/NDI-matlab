@@ -264,7 +264,7 @@ For this session, the graph should look something like this:
 
 ![Image of a graph of NDI documents in an NDI database](tutorial_02_05_databasestructure.png)
 
-You can explore the nodes by clicking next to them. On the command line, a summary of the document will appear. Here is a [short video demonstration](https://photos.app.goo.gl/Qmb3W6hyYBjFVS818).
+You can explore the nodes by clicking next to them. On the command line, a summary of the document will appear. Here is a [short video demonstration](https://photos.app.goo.gl/Qmb3W6hyYBjFVS818). If you turn on zooming (either by selecting it from the Tools menu in the figure, typing `zoom on` on the command line, or by hovering over the figure and then clicking on the magnifying glass that appears in the upper right), you can zoom around the graph. You'll need to turn zoom off to be able to get a summary by clicking near the nodes. You can turn zoom off either by selecting Zoom In again from the Tools menu in the figure to de-select the tool, or by typing `zoom off` on the command line, or by hovering over the figure and clicking the magnifying glass again.
 
 
 ### 2.5.6 Discussion/Feedback
