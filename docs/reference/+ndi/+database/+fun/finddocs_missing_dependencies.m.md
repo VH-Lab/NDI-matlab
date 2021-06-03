@@ -1,5 +1,6 @@
 # ndi.database.fun.finddocs_missing_dependencies
 
+```
   NDI_FINDDOCS_MISSING_DEPENDENCIES - find documents that have dependencies on documents that do not exist
  
   D = ndi.database.fun.finddocs_missing_dependencies(E)
@@ -14,3 +15,5 @@
    
   works similarly except that it only examines variables with depends_on
   fields with names NAME1, NAME2, etc.
+
+```

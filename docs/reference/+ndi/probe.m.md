@@ -1,5 +1,6 @@
 # CLASS ndi.probe
 
+```
   ndi.probe - the base class for PROBES -- measurement or stimulation devices
  
   In NDI, a PROBE is an instance of an instrument that can be used to MEASURE
@@ -25,6 +26,8 @@
   How to make a probe:
      (Talk about epochprobemap records of devices, probes are created from these elements.)
 
+
+```
 ## Superclasses
 **[ndi.element](element.m.md)**, **[ndi.ido](ido.m.md)**, **[ndi.epoch.epochset](+epoch/epochset.m.md)**, **[ndi.documentservice](documentservice.m.md)**
 
@@ -87,6 +90,7 @@
 
 **addepoch** - *add an epoch to the ndi.element*
 
+```
 [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
  
   Registers the data for an epoch with the NDI_ELEMENT_OBJ.
@@ -100,12 +104,13 @@
                       the probe, in units of the epock clock
 
 Help for ndi.probe/addepoch is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **buildepochgraph** - *compute the epochgraph among epochs for an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = BUILDEPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -130,12 +135,13 @@ Help for ndi.probe/addepoch is inherited from superclass NDI.ELEMENT
   ndi.probe/EPOCHNODES
 
 Help for ndi.probe/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **buildepochtable** - *build the epoch table for an ndi.probe.**
 
+```
 ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
  
   ET is a structure array with the following fields:
@@ -151,12 +157,13 @@ ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
                             |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
-
+```
 
 ---
 
 **cached_epochgraph** - *return the cached epoch graph of an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = CACHED_EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epoch graph, if it exists and is up-to-date
@@ -168,12 +175,13 @@ ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
 Help for ndi.probe/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **cached_epochtable** - *return the cached epochtable of an ndi.epoch.epochset object*
 
+```
 [ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epochtable, if it exists, along with its HASHVALUE
@@ -181,24 +189,26 @@ Help for ndi.probe/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOC
   ET and HASHVALUE will be empty.
 
 Help for ndi.probe/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **doc_unique_id** - *return the document unique reference for an ndi.element object*
 
+```
 UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
  
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
 
 Help for ndi.probe/doc_unique_id is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **elementstring** - *Produce a human-readable element string*
 
+```
 ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   Returns the name as a human-readable string.
@@ -206,12 +216,13 @@ ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
   For ndi.element objects, this is the string 'element: ' followed by its name
 
 Help for ndi.probe/elementstring is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **epoch2str** - *convert an epoch number or id to a string*
 
+```
 S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
  
   Returns the epoch NUMBER in the form of a string. If it is a simple
@@ -219,23 +230,25 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   identifier string, then it is returned.
 
 Help for ndi.probe/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_PROBE_OBJ, EPOCH_NUMBER)
  
   Return the clock types available for this epoch.
  
   The ndi.probe class always returns the clock type(s) of the device it is based on
-
+```
 
 ---
 
 **epochgraph** - *graph of the mapping and cost of converting time among epochs*
 
+```
 [COST, MAPPING] = EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -247,12 +260,13 @@ EC = EPOCHCLOCK(NDI_PROBE_OBJ, EPOCH_NUMBER)
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
 Help for ndi.probe/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochid** - *Get the epoch identifier for a particular epoch*
 
+```
 ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Returns the epoch identifier string for the epoch EPOCH_NUMBER.
@@ -264,12 +278,13 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   ndi.daq.system) will override this method.
 
 Help for ndi.probe/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochnodes** - *return all epoch nodes from an ndi.epoch.epochset object*
 
+```
 [NODES,UNDERLYINGNODES] = EPOCHNODES(NDI_EPOCHSET_OBJ)
  
   Return all EPOCHNODES for an ndi.epoch.epochset. EPOCHNODES consist of the
@@ -298,34 +313,37 @@ Help for ndi.probe/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
 Help for ndi.probe/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochprobemapmatch** - *does an epochprobemap record match our probe?*
 
+```
 B = EPOCHPROBEMAPMATCH(NDI_PROBE_OBJ, EPOCHPROBEMAP)
  
   Returns 1 if the ndi.epoch.epochprobemap object EPOCHPROBEMAP is a match for
   the NDI_PROBE_OBJ probe and 0 otherwise.
-
+```
 
 ---
 
 **epochsetname** - *the name of the ndi.probe.* object, for EPOCHNODES*
 
+```
 NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
  
   Returns the object name that is used when creating epoch nodes.
  
   For ndi.probe objects, this is the string 'probe: ' followed by
   PROBESTRING(NDI_PROBE_OBJ).
-
+```
 
 ---
 
 **epochtable** - *Return an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET,HASHVALUE] = EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -349,12 +367,13 @@ NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
 Help for ndi.probe/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochtableentry** - *return the entry of the EPOCHTABLE that corresonds to an EPOCHID*
 
+```
 ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
  
   Returns the EPOCHTABLE entry associated with the ndi.epoch.epochset object
@@ -362,19 +381,21 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   epoch or the EPOCHID of the epoch.
 
 Help for ndi.probe/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **eq** - *are 2 ndi.probe objects equal?*
 
+```
 Returns 1 if the objects share an object class, session, and probe string.
-
+```
 
 ---
 
 **getcache** - *return the NDI_CACHE and key for ndi.element*
 
+```
 [CACHE,KEY] = GETCACHE(NDI_ELEMENT_OBJ)
  
   Returns the CACHE and KEY for the ndi.element object.
@@ -385,12 +406,13 @@ Returns 1 if the objects share an object class, session, and probe string.
   See also: ndi.file.navigator
 
 Help for ndi.probe/getcache is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **getchanneldevinfo** - *GETCHANNELDEVINFO = Get the device, channeltype, and channellist for a given epoch for ndi.probe.**
 
+```
 [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = GETCHANNELDEVINFO(NDI_PROBE_OBJ, EPOCH_NUMBER_OR_ID)
  
   Given an ndi.probe.* object and an EPOCH number, this function returns the corresponding channel and device info.
@@ -400,48 +422,52 @@ Help for ndi.probe/getcache is inherited from superclass NDI.ELEMENT
     DEVEPOCH is a 1xC array with the epoch id of the probe's EPOCH on each device
     CHANNELTYPE is a cell array of the type of each channel
     CHANNELLIST is the channel number of each channel.
-
+```
 
 ---
 
 **id** - *return the document unique identifier for an ndi.element object*
 
+```
 UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
  
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
 
 Help for ndi.probe/id is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **issyncgraphroot** - *should this object be a root in an ndi.time.syncgraph epoch graph?*
 
+```
 B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
  
   This function tells an ndi.time.syncgraph object whether it should continue 
   adding the 'underlying' epochs to the graph, or whether it should stop at this level.
  
   For ndi.epoch.epochset and ndi.probe.* this returns 0 so that the underlying ndi.daq.system epochs are added.
-
+```
 
 ---
 
 **load_all_element_docs** - *load all of the ndi.element objects from an session database*
 
+```
 ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
  
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
 
 Help for ndi.probe/load_all_element_docs is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **load_element_doc** - *load a element doc from the session database*
 
+```
 ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Load an ndi.document that is based on the ndi.element object.
@@ -449,36 +475,39 @@ ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
   Returns empty if there is no such document.
 
 Help for ndi.probe/load_element_doc is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **loadaddedepochs** - *load the added epochs from an ndi.element*
 
+```
 [ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_ELEMENT_OBJ)
  
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
 
 Help for ndi.probe/loadaddedepochs is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **matchedepochtable** - *compare a hash number from an epochtable to the current version*
 
+```
 B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
  
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
 Help for ndi.probe/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -492,12 +521,13 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.probe.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on a element*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
  
   Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
@@ -509,12 +539,13 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
   When the document is created, it is automatically added to the session.
 
 Help for ndi.probe/newdocument is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **numepochs** - *Number of epochs of ndi.epoch.epochset*
 
+```
 N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   Returns the number of epochs in the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
@@ -522,12 +553,13 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
   See also: EPOCHTABLE
 
 Help for ndi.probe/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **probe** - *create a new ndi.probe object*
 
+```
 OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
           or
    OBJ = ndi.probe(SESSION, NDI_DOCUMENT_OBJ)
@@ -538,23 +570,25 @@ OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
    probe (a string that must start with a letter and contain no white space).
  
    ndi.probe is a essentially an abstract class, and a specific implementation must be called.
-
+```
 
 ---
 
 **probestring** - *Produce a human-readable probe string*
 
+```
 PROBESTR = PROBESTRING(NDI_PROBE_OBJ)
  
   Returns the name and reference of a probe as a human-readable string.
  
   This is simply PROBESTR = [NDI_PROBE_OBJ.name ' _ ' in2str(NDI_PROBE_OBJ.reference)]
-
+```
 
 ---
 
 **resetepochtable** - *clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk*
 
+```
 NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   This function clears the internal cached memory of the epochtable, forcing it to be re-read from
@@ -563,24 +597,26 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
   See also: ndi.probe/EPOCHTABLE
 
 Help for ndi.probe/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document based on this element*
 
+```
 SQ = SEARCHQUERY(NDI_ELEMENT_OBJ, [EPOCHID])
  
   Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
   with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 
 Help for ndi.probe/searchquery is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **t0_t1** - **
 
+```
 T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
@@ -595,12 +631,13 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
   TODO: this must be a bug, it's just self-referential
 
 Help for ndi.probe/t0_t1 is inherited from superclass NDI.ELEMENT
-
+```
 
 ---
 
 **underlyingepochnodes** - *find all the underlying epochnodes of a given epochnode*
 
+```
 [UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
  
   Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
@@ -611,7 +648,7 @@ Help for ndi.probe/t0_t1 is inherited from superclass NDI.ELEMENT
   See also: ISSYNCGRAPHROOT
 
 Help for ndi.probe/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 

@@ -1,5 +1,6 @@
 # CLASS ndi.time.timemapping
 
+```
   NDI.TIME.TIMEMAPPING - class for managing mapping of time across epochs and devices
  
   Describes mapping from one time base to another. The base class, ndi.time.timemapping, provides
@@ -13,6 +14,8 @@
  
   t_out = scale * t_in + shift
 
+
+```
 ## Superclasses
 *none*
 
@@ -35,17 +38,19 @@
 
 **map** - *perform a mapping from one time base to another*
 
+```
 T_OUT = MAP(NDI_TIMEMAPPING_OBJ, T_IN)
  
   Perform the mapping described by NDI_TIMEMAPPING_OBJ from one time base to another.
  
   In the base class ndi.time.timemapping, the mapping is a polynomial.
-
+```
 
 ---
 
 **timemapping** - *ndi.time.timemapping*
 
+```
 NDI_TIMEMAPPING_OBJ = ndi.time.timemapping()
      or
   NDI_TIMEMAPPING_OBJ = ndi.time.timemapping(MAPPING)
@@ -61,7 +66,7 @@ NDI_TIMEMAPPING_OBJ = ndi.time.timemapping()
   Typically, the mapping is linear, so that MAPPING = [scale shift].
  
   See also: POLYVAL
-
+```
 
 ---
 

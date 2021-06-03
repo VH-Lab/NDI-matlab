@@ -1,5 +1,6 @@
 # ndi.globals
 
+```
   NDI_GLOBALS - define global variables for NDI
  
   ndi.globals
@@ -32,3 +33,5 @@
                                    |
   ndi_globals.debug                | A structure with preferences for debugging
   ndi_globals.log                  | An object that manages writing system, error, debugging logs (vlt.app.log)
+
+```

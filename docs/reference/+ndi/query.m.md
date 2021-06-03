@@ -1,5 +1,6 @@
 # CLASS ndi.query
 
+```
   ndi.query - create a query object for searching the database
  
   Creates an ndi.query object, which has a single property
@@ -50,6 +51,8 @@
  
    creates a SEARCHSTRUCT with the fields of the appropriate names.
 
+
+```
 ## Superclasses
 *none*
 
@@ -76,26 +79,29 @@
 
 **and** - *add ndi.query objects*
 
+```
 C = AND(A,B) or C = A & B
  
   Combines the searches from A and B into a search C. The searchstructure field of
   C will be a concatenated version of those from A and B. The query C will only pass if
   all of the characteristics of A and B are satisfied.
-
+```
 
 ---
 
 **or** - *search for _this_ ndi.query object or _that_ ndi.query object*
 
+```
 C = OR(A,B)
  
   Produces a new ndi.query object C that is true if either ndi.query A or ndi.query B is true.
-
+```
 
 ---
 
 **query** - *create a query object for searching the database*
 
+```
 Creates an ndi.query object, which has a single property
   SEARCH that is a structure array of search structures
   appropriate for use with vlt.data.fieldsearch.
@@ -143,12 +149,13 @@ Creates an ndi.query object, which has a single property
   NDI_QUERY_OBJ = ndi.query(FIELD, OPERATION, PARAM1, PARAM2)
  
    creates a SEARCHSTRUCT with the fields of the appropriate names.
-
+```
 
 ---
 
 **searchcellarray2searchstructure** - *convert a search cell array to a search structure*
 
+```
 SEARCHSTRUCT = SEARCHCELLARRAY2SEARCHSTRUCTURE(SEACHCELLARRAY)
  
   Converts a cell array with SEARCHCELLARRAY = {'property1',value1,'property2',value2, ...}
@@ -156,30 +163,32 @@ SEARCHSTRUCT = SEARCHCELLARRAY2SEARCHSTRUCTURE(SEACHCELLARRAY)
   operator in the case of a non-character value.
   
   See also: vlt.data.fieldsearch, ndi.query/ndi.query
-
+```
 
 ---
 
 **searchstruct** - *make a search structure from field, operation, param1, param2 inputs*
 
+```
 SEARCHSTRUCT_OUT = SEARCHSTRUCT(FIELD, OPERATION, PARAM1, PARAM2)
  
   Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.
   
   See also: vlt.data.fieldsearch, ndi.query/ndi.query
-
+```
 
 ---
 
 **to_searchstructure** - *convert an ndi.query object to a set of search structures*
 
+```
 SEARCHSTRUCTURE = TO_SEARCHSTRUCTURE(NDI_QUERY_OBJ)
  
   Converts an NDI_QUERY_OBJECT to a set of search structures without any
   ndi.query dependencies (see vlt.data.fieldsearch).
  
   See also: vlt.data.fieldsearch
-
+```
 
 ---
 

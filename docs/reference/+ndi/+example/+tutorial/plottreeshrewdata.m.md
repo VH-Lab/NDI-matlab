@@ -1,5 +1,6 @@
 # ndi.example.tutorial.plottreeshrewdata
 
+```
   ndi.example.tutorial.plottreeshrewdata - plot tree shrew data from Van Hooser et al. 2014
  
   ndi.example.tutorial.plottreeshrewdata(filename)
@@ -26,3 +27,5 @@
   | plotstimsync (0)         | Plot a graph of the stimSync data                |
   | title_string ('')        | Plot title string                                |
   |-----------------------------------------------------------------------------|
+
+```

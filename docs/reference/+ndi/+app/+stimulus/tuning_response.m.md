@@ -1,5 +1,6 @@
 # CLASS ndi.app.stimulus.tuning_response
 
+```
   ndi.app.stimulus.tuning_response - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
  
   NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
@@ -7,6 +8,8 @@
   Creates a new ndi.app.stimulus.tuning_response object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 
+
+```
 ## Superclasses
 **[ndi.app](../../app.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
@@ -41,6 +44,7 @@
 
 **compute_stimulus_response_scalar** - *compute responses to a stimulus set*
 
+```
 RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
  
   Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'ndi_document_stimulus_presentation'), and a
@@ -68,12 +72,13 @@ RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI
                                        |       3) Divide: Response:= Response ./ PreStimResponse
   isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
   spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform
-
+```
 
 ---
 
 **control_stimulus** - *determine the control stimulus ID for each stimulus in a stimulus set*
 
+```
 [CS_IDS, CS_DOC] = CONTROL_STIMULUS(NDI_APP_TUNING_RESPONSE_OBJ, STIM_DOC, ...)
  
   For a given set of stimuli described in ndi.document of type 'ndi_document_stimulus',
@@ -99,19 +104,21 @@ RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI
                                    |    a stimulus is a 'control' stimulus or not.
   controlid_value (1)              | For some methods, the parameter value of 'controlid' that
                                    |    defines whether a stimulus is a control stimulus or not.
-
+```
 
 ---
 
 **find_tuningcurve_document** - *find a tuning curve document of a particular element, epochid, etc...*
 
+```
 [TC_DOC, SRS_DOC] = FIND_TUNINGCURVE_DOCUMENT(NDI_APP_TUNING_RESPONSE_OBJ, ELEMENT_OBJ, EPOCHID, RESPONSE_TYPE)
-
+```
 
 ---
 
 **label_control_stimuli** - *label control stimuli for all stimulus presentation documents for a given stimulator*
 
+```
 CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_ELEMENT_OBJ, RESET, ...)
  
   Thus function will look for all 'ndi_document_stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
@@ -123,36 +130,39 @@ CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_ELEMENT_OBJ
  
   The method of finding the control stimulus can be provided by providing extra name/value pairs.
   See ndi.app.stimulus.tuning_response/CONTROL_STIMULUS for parameters.
-
+```
 
 ---
 
 **make_1d_tuning** - *create 1d tuning documents out of stimulus responses that covary in 2 parameters*
 
+```
 TUNING_DOCS = MAKE_1D_TUNING(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESPONSE_DOC, PARAM_TO_VARY, PARAM_TO_VARY_LABEL, 
     PARAM_TO_FIX)
  
   This function examines a stimulus response doc that covaries in 2 parameters, and "deals" the responses into several tuning
   curves where the parameter with name PARAM_TO_VARY varies across stimuli and the stimulus parameter with name
   PARAM_TO_FIX is fixed for each tuning doc.
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on an app*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
  
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
 Help for ndi.app.stimulus.tuning_response/newdocument is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document related to this app*
 
+```
 C = SEARCHQUERY(NDI_APP_OBJ)
  
   Returns a cell array of strings that allow the creation or searching of an
@@ -160,12 +170,13 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   to the app's VARAPPNAME.
 
 Help for ndi.app.stimulus.tuning_response/searchquery is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **stimulus_responses** - *write stimulus records for all stimulus epochs of an ndi.element stimulus object*
 
+```
 [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
  
   Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
@@ -179,12 +190,13 @@ Help for ndi.app.stimulus.tuning_response/searchquery is inherited from supercla
   NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).
  
   Note that this function DOES add the new documents RDOCS to the database.
-
+```
 
 ---
 
 **tuning_curve** - *compute a tuning curve from stimulus responses*
 
+```
 TUNING_DOC = TUNING_CURVE(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESOPNSE_DOC, ...)
  
  
@@ -204,41 +216,45 @@ TUNING_DOC = TUNING_CURVE(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESOPNSE_DOC, ...)
                               |              'exact_number','param1',1,'param2','')
  
   See also: vlt.data.fieldsearch
-
+```
 
 ---
 
 **tuning_response** - *an app to decode stimulus information from NDI_PROBE_STIMULUS objects*
 
+```
 NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
  
   Creates a new ndi.app.stimulus.tuning_response object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
-
+```
 
 ---
 
 **tuningdoc_fixcellarrays** - *make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document*
 
+```
 
-
+```
 
 ---
 
 **varappname** - *return the name of the application for use in variable creation*
 
+```
 AN = VARAPPNAME(NDI_APP_OBJ)
  
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
 Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **version_url** - *return the app version and url*
 
+```
 [V, URL] = VERSION_URL(NDI_APP_OBJ)
  
   Return the version and url for the current app. In the base class,
@@ -249,7 +265,7 @@ Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclas
   different version control system.
 
 Help for ndi.app.stimulus.tuning_response/version_url is inherited from superclass NDI.APP
-
+```
 
 ---
 

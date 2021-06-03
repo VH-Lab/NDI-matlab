@@ -1,5 +1,6 @@
 # CLASS ndi.database.implementations.binarydoc.matfid
 
+```
   ndi.database.implementations.binarydoc.matfid - create a new ndi.database.implementations.binarydoc.matfid object
  
   NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,VALUE1, ...)
@@ -8,6 +9,8 @@
  
   See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
 
+
+```
 ## Superclasses
 **[ndi.database.binarydoc](../../binarydoc.m.md)**, **handle**, **vlt.file.fileobj**
 
@@ -62,6 +65,7 @@
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -94,25 +98,27 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.implementations.binarydoc.matfid/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/addlistener
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **delete** - *close an ndi.database.binarydoc and delete its handle*
 
+```
 DELETE(NDI_BINARYDOC_OBJ)
  
   Closes an ndi.database.binarydoc (if necessary) and then deletes the handle.
 
 Help for ndi.database.implementations.binarydoc.matfid/delete is inherited from superclass NDI.DATABASE.BINARYDOC
-
+```
 
 ---
 
 **eq** - *== (EQ)   Test handle equality.*
 
+```
 Handles are equal if they are handles for the same object.
  
     H1 == H2 performs element-wise comparisons between handle arrays H1 and
@@ -130,23 +136,25 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.database.implementations.binarydoc.matfid/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/eq
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/eq
+       doc handle.eq
+```
 
 ---
 
 **fclose** - *close an ndi.database.implementations.binarydoc.matfid object*
 
+```
 Closes the file, but also clears the fullpathfilename and other fields so the 
   user cannot re-use the object without checking out another binary document from
   the database.
-
+```
 
 ---
 
 **feof** - *test to see if a FILEOBJ is at END-OF-FILE*
 
+```
 B = FEOF(FILEOBJ_OBJ)
  
   Returns 1 if FILEOBJ_OBJ is at its end of file, 0 otherwise.
@@ -154,24 +162,26 @@ B = FEOF(FILEOBJ_OBJ)
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
 Help for ndi.database.implementations.binarydoc.matfid/feof is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **ferror** - *return the last file error message for FILEOBJ*
 
+```
 [MESSAGE, ERRORNUM] = FERROR(FILEOBJ_OBJ, COMMAND)
  
   Return the most recent file error MESSAGE and ERRORNUM for
   the file associated with FERROR.
 
 Help for ndi.database.implementations.binarydoc.matfid/ferror is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fgetl** - *get a line from a FILEOBJ*
 
+```
 TLINE = FGETL(FILEOBJ_OBJ)
  
   Returns the next line (not including NEWLINE character) just like FGETL.
@@ -179,12 +189,13 @@ TLINE = FGETL(FILEOBJ_OBJ)
   See also: FGETL
 
 Help for ndi.database.implementations.binarydoc.matfid/fgetl is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fgets** - *get a line from a FILEOBJ*
 
+```
 TLINE = FGETS(FILEOBJ_OBJ, [NCHAR])
  
   Returns the next line (including NEWLINE character) just like FGETS.
@@ -192,23 +203,25 @@ TLINE = FGETS(FILEOBJ_OBJ, [NCHAR])
   See also: FGETS
 
 Help for ndi.database.implementations.binarydoc.matfid/fgets is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fileparts** - *return filename parts for the file associated with FILEOBJ*
 
+```
 [PATHSTR,NAME,EXT] = FILEPARTS(FILEOBJ_OBJ)
  
   Returns FILEPARTS of the 'fullpathfilename' field of FILEOBJ.
 
 Help for ndi.database.implementations.binarydoc.matfid/fileparts is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -222,14 +235,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.database.implementations.binarydoc.matfid/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findobj
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -243,14 +257,15 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.database.implementations.binarydoc.matfid/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findprop
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/findprop
+       doc handle.findprop
+```
 
 ---
 
 **fopen** - *open a FILEOBJ*
 
+```
 FILEOBJ_OBJ = FOPEN(FILEOBJ_OBJ, [ , PERMISSION], [MACHINEFORMAT],[FILENAME])
  
   Opens the file associated with a FILEOBJ_OBJ object. If FILENAME, PERMISSION, 
@@ -267,24 +282,26 @@ FILEOBJ_OBJ = FOPEN(FILEOBJ_OBJ, [ , PERMISSION], [MACHINEFORMAT],[FILENAME])
   See also: FOPEN, FILEOBJ/FCLOSE, FCLOSE
 
 Help for ndi.database.implementations.binarydoc.matfid/fopen is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fprintf** - *print data to a FILEOBJ_OBJ*
 
+```
 [COUNT] = FPRINTF(FID,FORMAT,A, ...)
  
   Call FPRINTF (see FPRINTF for inputs) for the file associated with
   FILEOBJ_OBJ.
 
 Help for ndi.database.implementations.binarydoc.matfid/fprintf is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fread** - *read data from a FILEOBJ*
 
+```
 COUNT = FWRITE(FILEOBJ_OBJ, COUNT, [PRECISION], [SKIP], [MACHINEFORMAT])
  
   Attempts to read COUNT elements with resolution PRECISION. If PRECISION is not 
@@ -296,12 +313,13 @@ COUNT = FWRITE(FILEOBJ_OBJ, COUNT, [PRECISION], [SKIP], [MACHINEFORMAT])
   See also: FREAD
 
 Help for ndi.database.implementations.binarydoc.matfid/fread is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **frewind** - *'rewind' a FILEOBJ back to the beginning*
 
+```
 FREWIND(FILEOBJ_OBJ)
  
   Seeks to the beginning of the file.
@@ -309,24 +327,26 @@ FREWIND(FILEOBJ_OBJ)
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
 Help for ndi.database.implementations.binarydoc.matfid/frewind is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fscanf** - *scan data from a FILEOBJ_OBJ*
 
+```
 [A,COUNT] = FSCANF(FID,FORMAT,[SIZEA])
  
   Call FSCANF (see FSCANF for inputs) for the file associated with
   FILEOBJ_OBJ.
 
 Help for ndi.database.implementations.binarydoc.matfid/fscanf is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fseek** - *seek to a location within a FILEOBJ*
 
+```
 B = FSEEK(FILEOBJ_OBJ, OFFSET, REFERENCE)
  
   Seeks the file to the location OFFSET (in bytes) relative to
@@ -340,12 +360,13 @@ B = FSEEK(FILEOBJ_OBJ, OFFSET, REFERENCE)
   See also: FSEEK, FILEOBJ/FTELL
 
 Help for ndi.database.implementations.binarydoc.matfid/fseek is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **ftell** - *find current location within a FILEOBJ*
 
+```
 LOCATION = FTELL(FILEOBJ_OBJ)
  
   Returns the current location (in bytes) relative to the beginning of the
@@ -354,12 +375,13 @@ LOCATION = FTELL(FILEOBJ_OBJ)
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
 Help for ndi.database.implementations.binarydoc.matfid/ftell is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **fwrite** - *write data to a FILEOBJ*
 
+```
 COUNT = FWRITE(FILEOBJ_OBJ, DATA, [PRECISION], [SKIP], [MACHINEFORMAT])
  
   Attempts to write DATA elements with resolution PRECISION. If PRECISION is not 
@@ -371,12 +393,13 @@ COUNT = FWRITE(FILEOBJ_OBJ, DATA, [PRECISION], [SKIP], [MACHINEFORMAT])
   See also: FWRITE
 
 Help for ndi.database.implementations.binarydoc.matfid/fwrite is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -392,14 +415,15 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ge
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/ge
+       doc handle.ge
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -415,14 +439,15 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/gt
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/gt
+       doc handle.gt
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -435,14 +460,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.database.implementations.binarydoc.matfid/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/isvalid
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -466,14 +492,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.database.implementations.binarydoc.matfid/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/le
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -511,14 +538,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.implementations.binarydoc.matfid/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/listener
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/listener
+       doc handle.listener
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -534,25 +562,27 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.implementations.binarydoc.matfid/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/lt
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/lt
+       doc handle.lt
+```
 
 ---
 
 **matfid** - *create a new ndi.database.implementations.binarydoc.matfid object*
 
+```
 NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,VALUE1, ...)
  
   Follows same arguments as vlt.file.fileobj
  
   See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
-
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -571,14 +601,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.database.implementations.binarydoc.matfid/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ne
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/ne
+       doc handle.ne
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -593,14 +624,15 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.database.implementations.binarydoc.matfid/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/notify
-
+    Documentation for ndi.database.implementations.binarydoc.matfid/notify
+       doc handle.notify
+```
 
 ---
 
 **setproperties** - *set the properties of a FILEOBJ*
 
+```
 FILEOBJ_OBJ = SETPROPERTIES(FILEOBJ_OBJ, 'PROPERTY1',VALUE1, ...)
  
   Sets the properties of a FILEOBJ with name/value pairs.
@@ -612,7 +644,7 @@ FILEOBJ_OBJ = SETPROPERTIES(FILEOBJ_OBJ, 'PROPERTY1',VALUE1, ...)
     machineformat     % big-endian ('b'), little-endian ('l'), or native ('n')
 
 Help for ndi.database.implementations.binarydoc.matfid/setproperties is inherited from superclass VLT.FILE.FILEOBJ
-
+```
 
 ---
 

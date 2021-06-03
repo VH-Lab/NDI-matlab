@@ -1,5 +1,6 @@
 # ndi.test.daq.blackrock
 
+```
   ndi.test.daq.blackrock - Test the functionality of the Blackrock driver and a file tree with a flat organization
  
    ndi.test.daq.blackrock([DIRNAME])
@@ -10,3 +11,5 @@
  
    If DIRNAME is not provided, the default directory
    [NDIPATH]/example_sessions/exp_blackrock is used.
+
+```

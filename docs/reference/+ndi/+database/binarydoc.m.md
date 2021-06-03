@@ -1,7 +1,10 @@
 # CLASS ndi.database.binarydoc
 
+```
   NDI_BINARYDOC - a binary file class that handles reading/writing
 
+
+```
 ## Superclasses
 **handle**
 
@@ -41,6 +44,7 @@
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -73,30 +77,33 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.binarydoc/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/addlistener
-
+    Documentation for ndi.database.binarydoc/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **binarydoc** - *a binary file class that handles reading/writing*
 
+```
 
-
+```
 
 ---
 
 **delete** - *close an ndi.database.binarydoc and delete its handle*
 
+```
 DELETE(NDI_BINARYDOC_OBJ)
  
   Closes an ndi.database.binarydoc (if necessary) and then deletes the handle.
-
+```
 
 ---
 
 **eq** - *== (EQ)   Test handle equality.*
 
+```
 Handles are equal if they are handles for the same object.
  
     H1 == H2 performs element-wise comparisons between handle arrays H1 and
@@ -114,14 +121,15 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.database.binarydoc/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/eq
-
+    Documentation for ndi.database.binarydoc/eq
+       doc handle.eq
+```
 
 ---
 
 **fclose** - *FCLOSE Close file.*
 
+```
 ST = FCLOSE(FID) closes the file associated with file identifier FID,
     which is an integer value obtained from an earlier call to FOPEN.  
     FCLOSE returns 0 if successful or -1 if not.  If FID does not represent
@@ -131,24 +139,26 @@ ST = FCLOSE(FID) closes the file associated with file identifier FID,
     ST = FCLOSE('all') closes all open files, except 0, 1 and 2.
  
     See also FOPEN, FERROR, FPRINTF, FREAD, FREWIND, FSCANF, FTELL, FWRITE.
-
+```
 
 ---
 
 **feof** - *of-file.*
 
+```
 ST = FEOF(FID) returns 1 if the end-of-file indicator for the
     file with file identifier FID has been set, and 0 otherwise.
     The end-of-file indicator is set when a read operation on the file
     associated with the FID attempts to read past the end of the file.
  
     See also FERROR, FGETL, FGETS, FREAD, FSCANF, FOPEN.
-
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -162,14 +172,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.database.binarydoc/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/findobj
-
+    Documentation for ndi.database.binarydoc/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -183,14 +194,15 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.database.binarydoc/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/findprop
-
+    Documentation for ndi.database.binarydoc/findprop
+       doc handle.findprop
+```
 
 ---
 
 **fopen** - *FOPEN  Open file.*
 
+```
 FID = FOPEN(FILENAME) opens the file FILENAME for read access. FILENAME is the
     name of the file to be opened.
  
@@ -281,12 +293,13 @@ FID = FOPEN(FILENAME) opens the file FILENAME for read access. FILENAME is the
     
     See also FCLOSE, FERROR, FGETL, FGETS, FPRINTF, FREAD, FSCANF, FSEEK, 
              FTELL, FWRITE.
-
+```
 
 ---
 
 **fread** - *FREAD  Read binary data from file.*
 
+```
 A = FREAD(FID) reads binary data from the specified file and writes it into
     matrix A.  FID is an integer file identifier obtained from FOPEN.  MATLAB reads
     the entire file and positions the file pointer at the end of the file (see FEOF
@@ -432,12 +445,13 @@ A = FREAD(FID) reads binary data from the specified file and writes it into
     fclose(fid);
  
     See also FWRITE, FSEEK, FSCANF, FGETL, FGETS, LOAD, FOPEN, FEOF.
-
+```
 
 ---
 
 **fseek** - *FSEEK Set file position indicator.*
 
+```
 STATUS = FSEEK(FID, OFFSET, ORIGIN) repositions the file position
     indicator in the file associated with the given FID.  FSEEK sets the 
     position indicator to the byte with the specified OFFSET relative to 
@@ -465,12 +479,13 @@ STATUS = FSEEK(FID, OFFSET, ORIGIN) repositions the file position
  
     See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FTELL, 
              FWRITE.
-
+```
 
 ---
 
 **ftell** - *FTELL Get file position indicator.*
 
+```
 POSITION = FTELL(FID) returns the location of the file position
     indicator in the specified file.  Position is indicated in bytes
     from the beginning of the file.  If -1 is returned, it indicates
@@ -480,12 +495,13 @@ POSITION = FTELL(FID) returns the location of the file position
     FID is an integer file identifier obtained from FOPEN.
  
     See also FERROR, FOPEN, FPRINTF, FREAD, FREWIND, FSCANF, FSEEK, FWRITE.
-
+```
 
 ---
 
 **fwrite** - *FWRITE Write binary data to file.*
 
+```
 COUNT = FWRITE(FID,A) writes the elements of matrix A to the specified file. The
     data are written in column order. COUNT is the number of elements successfully
     written.
@@ -524,12 +540,13 @@ COUNT = FWRITE(FID,A) writes the elements of matrix A to the specified file. The
     square, stored as 4-byte integers.
  
     See also FOPEN, FREAD, FPRINTF, SAVE, DIARY.
-
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -545,14 +562,15 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/ge
-
+    Documentation for ndi.database.binarydoc/ge
+       doc handle.ge
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -568,14 +586,15 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/gt
-
+    Documentation for ndi.database.binarydoc/gt
+       doc handle.gt
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -588,14 +607,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.database.binarydoc/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/isvalid
-
+    Documentation for ndi.database.binarydoc/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -619,14 +639,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.database.binarydoc/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/le
-
+    Documentation for ndi.database.binarydoc/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -664,14 +685,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.database.binarydoc/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/listener
-
+    Documentation for ndi.database.binarydoc/listener
+       doc handle.listener
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -687,14 +709,15 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.database.binarydoc/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/lt
-
+    Documentation for ndi.database.binarydoc/lt
+       doc handle.lt
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -713,14 +736,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.database.binarydoc/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/ne
-
+    Documentation for ndi.database.binarydoc/ne
+       doc handle.ne
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -735,9 +759,9 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.database.binarydoc/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.database.binarydoc/notify
-
+    Documentation for ndi.database.binarydoc/notify
+       doc handle.notify
+```
 
 ---
 

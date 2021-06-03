@@ -1,5 +1,6 @@
 # ndi.database.fun.createGenBankControlledVocabulary
 
+```
   NDI_CREATEGENBANKCONTROLLEDVOCABULARY - create the controlled vocabulary dictionary for animals
   
   ndi.database.fun.createGenBankControlledVocabulary(DIRNAME, ...)
@@ -29,3 +30,5 @@
  
   This function usually takes a couple of hours to run and shows 3 progress bars
   (the first one is faster than the second).
+
+```

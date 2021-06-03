@@ -1,5 +1,6 @@
 # ndi.probe.fun.probetype2objectinit
 
+```
   ndi.probe.fun.PROBETYPE2OBJECTINIT - Initializes the NDI_PROBETYPE2OBJECT global variable in NDI package
  
   ndi.probe.fun.probetype2objectinit
@@ -9,3 +10,5 @@
   create an ndi.probe object for the given ndi.epoch.epochprobemap_daqsystem type.
   
   Use TYPE ndi.probe.fun.probetype2objectinit to see the structure
+
+```

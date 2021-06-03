@@ -1,5 +1,6 @@
 # CLASS ndi.database.implementations.database.matlabdumbjsondb
 
+```
   ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object
   
   NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
@@ -12,6 +13,8 @@
  
   See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
 
+
+```
 ## Superclasses
 **[ndi.database](../../../database.m.md)**
 
@@ -44,6 +47,7 @@
 
 **add** - *add an ndi.document to the database at a given path*
 
+```
 NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
  
   Adds the document NDI_DOCUMENT_OBJ to the database NDI_DATABASE_OBJ.
@@ -57,22 +61,24 @@ NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
   See also: vlt.data.namevaluepair
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/add is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **alldocids** - *return all document unique reference numbers for the database*
 
+```
 DOCIDS = ALLDOCIDS(NDI_MATLABDUMBJSONDB_OBJ)
  
   Return all document unique reference strings as a cell array of strings. If there
   are no documents, empty is returned.
-
+```
 
 ---
 
 **clear** - *remove/delete all records from an ndi.database*
 
+```
 CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
  
   Removes all documents from the vlt.file.dumbjsondb object.
@@ -83,24 +89,26 @@ CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
   See also: ndi.database.implementations.database.matlabdumbjsondb/REMOVE
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/clear is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **closebinarydoc** - *close and unlock an ndi.database.binarydoc*
 
+```
 [NDI_BINARYDOC_OBJ] = CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
  
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the database.
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/closebinarydoc is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **matlabdumbjsondb** - *ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object*
 
+```
 NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
  
   Creates a new ndi.database.implementations.database.matlabdumbjsondb object.
@@ -110,24 +118,26 @@ NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb
   should be stored on disk.
  
   See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
-
+```
 
 ---
 
 **newdocument** - *obtain a new/blank ndi.document object that can be used with a ndi.database*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
  
   Creates a new/blank ndi.document document object that can be used with this
   ndi.database.
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/newdocument is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **openbinarydoc** - *open and lock an ndi.database.binarydoc that corresponds to a document id*
 
+```
 [NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
  
   Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
@@ -139,12 +149,13 @@ Help for ndi.database.implementations.database.matlabdumbjsondb/newdocument is i
   the database is needed.
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/openbinarydoc is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **read** - *read an ndi.document from an ndi.database at a given db path*
 
+```
 NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION]) 
  
   Read the ndi.document object with the document ID specified by NDI_DOCUMENT_ID. If VERSION
@@ -154,12 +165,13 @@ NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION])
   If there is no ndi.document object with that ID, then empty is returned ([]).
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/read is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **remove** - *remove a document from an ndi.database*
 
+```
 NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID) 
       or
   NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, VERSIONS)
@@ -175,12 +187,13 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   all of the documents are removed.
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **search** - *search for an ndi.document from an ndi.database*
 
+```
 [DOCUMENT_OBJS,VERSIONS] = SEARCH(NDI_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
  
   Searches metadata parameters PARAM1, PARAM2, etc of NDS_DOCUMENT entries within an NDI_DATABASE_OBJ.
@@ -193,7 +206,7 @@ Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inheri
   of each ndi.document.
 
 Help for ndi.database.implementations.database.matlabdumbjsondb/search is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 

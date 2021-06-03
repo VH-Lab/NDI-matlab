@@ -1,7 +1,10 @@
 # CLASS ndi.session
 
+```
   NDI.SESSION - NDI.SESSION object class
 
+
+```
 ## Superclasses
 **handle**
 
@@ -59,6 +62,7 @@
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -91,14 +95,15 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/addlistener
-
+    Documentation for ndi.session/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **daqsystem_add** - *Add a sampling device to a ndi.session object*
 
+```
 NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
  
   Adds the device DEV to the ndi.session NDI_SESSION_OBJ
@@ -106,23 +111,25 @@ NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
   The devices can be accessed by referencing NDI_SESSION_OBJ.device
    
   See also: DAQSYSTEM_RM, ndi.session
-
+```
 
 ---
 
 **daqsystem_clear** - *remove all DAQSYSTEM objects from an ndi.session*
 
+```
 NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)
  
   Permanently removes all ndi.daq.system objects from an ndi.session.
  
   Be sure you mean it!
-
+```
 
 ---
 
 **daqsystem_load** - *Load daqsystem objects from an ndi.session*
 
+```
 DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
           or
   DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ)
@@ -135,23 +142,25 @@ DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
  
   If more than one object is requested, then DEV will be a cell list of matching objects.
   Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
-
+```
 
 ---
 
 **daqsystem_rm** - *Remove a sampling device from an ndi.session object*
 
+```
 NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)
  
   Removes the device DEV from the device list.
  
   See also: DAQSYSTEM_ADD, ndi.session
-
+```
 
 ---
 
 **database_add** - *Add an ndi.document to an ndi.session object*
 
+```
 NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
  
   Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session NDI_SESSION_OBJ.
@@ -161,34 +170,37 @@ NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
   The database can be queried by calling NDI_SESSION_OBJ/SEARCH
    
   See also: DATABASE_RM, ndi.session, ndi.database, ndi.session/SEARCH
-
+```
 
 ---
 
 **database_clear** - *deletes/removes all entries from the database associated with an session*
 
+```
 DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)
  
     Removes all documents from the NDI_SESSION_OBJ object.
   
   Use with care. If AREYOUSURE is 'yes' then the
   function will proceed. Otherwise, it will not.
-
+```
 
 ---
 
 **database_closebinarydoc** - *close and unlock an ndi.database.binarydoc*
 
+```
 [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
  
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the session object.
-
+```
 
 ---
 
 **database_openbinarydoc** - *open the ndi.database.binarydoc channel of an ndi.document*
 
+```
 NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
  
     Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
@@ -197,12 +209,13 @@ NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
    Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.session/CLOSEBINARYDOC.
    The locked nature of the binary doc is a property of the database, not the document, which is why
    the database is needed in the method.
-
+```
 
 ---
 
 **database_rm** - *Remove an ndi.document with a given document ID from an ndi.session object*
 
+```
 NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
     or
   NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC)
@@ -218,60 +231,63 @@ NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
   ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
  
   See also: DATABASE_ADD, ndi.session
-
+```
 
 ---
 
 **database_search** - *Search for an ndi.document in a database of an ndi.session object*
 
+```
 NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
  
   Given search parameters, which are a cell list {'PARAM1', VALUE1, 'PARAM2, VALUE2, ...},
   the database associated with the ndi.session object is searched.
  
   Matches are returned in a cell list NDI_DOCUMENT_OBJ.
-
+```
 
 ---
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+```
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.SESSION, NDI.SESSION/ISVALID, CLEAR
 
 Help for ndi.session/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/delete
-
+    Documentation for ndi.session/delete
+       doc handle.delete
+```
 
 ---
 
 **eq** - *are 2 NDI_SESSIONS equal?*
 
+```
 B = EQ(E1, E2)
  
   Returns 1 if and only if the sessions have the same unique reference number.
-
+```
 
 ---
 
 **findexpobj** - *search an ndi.session for a specific object given name and classname*
 
+```
 OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
  
   Examines the DAQSYSTEM list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
   and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).
-
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -285,14 +301,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.session/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/findobj
-
+    Documentation for ndi.session/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -306,14 +323,15 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.session/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/findprop
-
+    Documentation for ndi.session/findprop
+       doc handle.findprop
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -329,14 +347,15 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/ge
-
+    Documentation for ndi.session/ge
+       doc handle.ge
+```
 
 ---
 
 **getelements** - *Return all ndi.element objects that are found in session database*
 
+```
 ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)
  
   Examines all the database of NDI_SESSION_OBJ and returns all ndi.element
@@ -349,12 +368,13 @@ ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)
   returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
   has a value of VALUE2, etc. Properties of elements are 'element.name', 'element.type',
   'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
-
+```
 
 ---
 
 **getpath** - *Return the path of the session*
 
+```
 P = GETPATH(NDI_SESSION_OBJ)
  
   Returns the path of an ndi.session object.
@@ -366,12 +386,13 @@ P = GETPATH(NDI_SESSION_OBJ)
   In the ndi.session class, this returns empty.
  
   See also: ndi.session
-
+```
 
 ---
 
 **getprobes** - *Return all NDI_PROBES that are found in ndi.daq.system epoch contents entries*
 
+```
 PROBES = GETPROBES(NDI_SESSION_OBJ, ...)
  
   Examines all ndi.daq.system entries in the NDI_SESSION_OBJ's device array
@@ -392,12 +413,13 @@ PROBES = GETPROBES(NDI_SESSION_OBJ, ...)
  
   returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
   has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_ID'.
-
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -413,23 +435,25 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/gt
-
+    Documentation for ndi.session/gt
+       doc handle.gt
+```
 
 ---
 
 **id** - *return the identifier of an ndi.session object*
 
+```
 IDENTIFIER = ID(NDI_SESSION_OBJ)
  
   Returns the unique identifier of an ndi.session object.
-
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -442,14 +466,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.session/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/isvalid
-
+    Documentation for ndi.session/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -473,14 +498,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.session/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/le
-
+    Documentation for ndi.session/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -518,14 +544,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/listener
-
+    Documentation for ndi.session/listener
+       doc handle.listener
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -541,14 +568,15 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/lt
-
+    Documentation for ndi.session/lt
+       doc handle.lt
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -567,14 +595,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.session/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/ne
-
+    Documentation for ndi.session/ne
+       doc handle.ne
+```
 
 ---
 
 **newdocument** - *create a new ndi.database document of type ndi.document*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)
  
   Creates an empty database document NDI_DOCUMENT_OBJ. DOCUMENT_TYPE is
@@ -586,12 +615,13 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VA
   If additional PROPERTY values are specified, they are set to the VALUES indicated.
  
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
-
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -606,14 +636,15 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.session/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session/notify
-
+    Documentation for ndi.session/notify
+       doc handle.notify
+```
 
 ---
 
 **searchquery** - *return a search query for database objects in this session*
 
+```
 SQ = SEARCHQUERY(NDI_SESSION_OBJ)
  
   Returns a search query that will match all ndi.document objects that were generated
@@ -622,12 +653,13 @@ SQ = SEARCHQUERY(NDI_SESSION_OBJ)
   SQ = {'ndi_document.session_id', ndi_session_obj.id()};
   
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
-
+```
 
 ---
 
 **session** - *Create a new ndi.session object*
 
+```
 NDI_SESSION_OBJ=ndi.session(REFERENCE)
  
   Creates a new ndi.session object. The session has a unique
@@ -638,38 +670,41 @@ NDI_SESSION_OBJ=ndi.session(REFERENCE)
  
   See also: ndi.session/DAQSYSTEM_ADD, ndi.session/DAQSYSTEM_RM, 
     ndi.session/GETPATH, ndi.session/GETREFERENCE
-
+```
 
 ---
 
 **syncgraph_addrule** - *add an ndi.time.syncrule to the syncgraph*
 
+```
 NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
  
   Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
-
+```
 
 ---
 
 **syncgraph_rmrule** - *remove an ndi.time.syncrule from the syncgraph*
 
+```
 NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)
  
   Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
-
+```
 
 ---
 
 **unique_reference_string** - *return the unique reference string for this session*
 
+```
 REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)
  
   Returns the unique reference string for the ndi.session.
   REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
   and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
-
+```
 
 ---
 

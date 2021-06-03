@@ -1,5 +1,6 @@
 # ndi.docs.schemastructure2docstructure
 
+```
   schemastructure2docstructure - return documentation information from an ndi document schema
  
   DOCS = SCHEMASTRUCTURE2DOCSTRUCTURE(SCHEMA)
@@ -12,3 +13,5 @@
     - doc_default_value
     - doc_data_type
     - doc_description
+
+```

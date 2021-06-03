@@ -1,8 +1,11 @@
 # CLASS ndi.gui.Data
 
+```
 ndi.gui.Data is a class.
     obj = Data
 
+
+```
 ## Superclasses
 **handle**
 
@@ -50,20 +53,23 @@ ndi.gui.Data is a class.
 
 **Data** - *ndi.gui.Data/Data is a constructor.*
 
+```
 obj = Data
-
+```
 
 ---
 
 **addDoc** - *ndi.gui.Data/addDoc is a function.*
 
+```
 addDoc(obj, docs)
-
+```
 
 ---
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -96,31 +102,31 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Data/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/addlistener
-
+    Documentation for ndi.gui.Data/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+```
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/ISVALID, CLEAR
 
 Help for ndi.gui.Data/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/delete
-
+    Documentation for ndi.gui.Data/delete
+       doc handle.delete
+```
 
 ---
 
 **details** - *DETAILS Display array details*
 
+```
 DETAILS(X) displays X with a detailed description. 
  
     When X is a MATLAB object, details provides more information about the
@@ -128,12 +134,13 @@ DETAILS(X) displays X with a detailed description.
     package in which the class is defined.
  
     See also DISP, DISPLAY, CLASSDEF.
-
+```
 
 ---
 
 **eq** - *== (EQ)   Test handle equality.*
 
+```
 Handles are equal if they are handles for the same object.
  
     H1 == H2 performs element-wise comparisons between handle arrays H1 and
@@ -151,14 +158,15 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.gui.Data/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/eq
-
+    Documentation for ndi.gui.Data/eq
+       doc handle.eq
+```
 
 ---
 
 **filter** - *dimensional digital filter.*
 
+```
 Y = FILTER(B,A,X) filters the data in vector X with the
     filter described by vectors A and B to create the filtered
     data Y.  The filter is a "Direct Form II Transposed"
@@ -191,12 +199,13 @@ Y = FILTER(B,A,X) filters the data in vector X with the
  
     Note: FILTFILT, FILTIC and DESIGNFILT are in the Signal Processing
     Toolbox.
-
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -210,14 +219,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.gui.Data/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/findobj
-
+    Documentation for ndi.gui.Data/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -231,14 +241,15 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.gui.Data/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/findprop
-
+    Documentation for ndi.gui.Data/findprop
+       doc handle.findprop
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -254,21 +265,23 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Data/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/ge
-
+    Documentation for ndi.gui.Data/ge
+       doc handle.ge
+```
 
 ---
 
 **graph** - *ndi.gui.Data/graph is a function.*
 
+```
 graph(obj, ~, ~, ind)
-
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -284,14 +297,15 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Data/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/gt
-
+    Documentation for ndi.gui.Data/gt
+       doc handle.gt
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -304,14 +318,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.gui.Data/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/isvalid
-
+    Documentation for ndi.gui.Data/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -335,14 +350,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.gui.Data/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/le
-
+    Documentation for ndi.gui.Data/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -380,14 +396,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Data/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/listener
-
+    Documentation for ndi.gui.Data/listener
+       doc handle.listener
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -403,14 +420,15 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Data/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/lt
-
+    Documentation for ndi.gui.Data/lt
+       doc handle.lt
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -429,14 +447,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.gui.Data/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/ne
-
+    Documentation for ndi.gui.Data/ne
+       doc handle.ne
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -451,16 +470,17 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.gui.Data/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/notify
-
+    Documentation for ndi.gui.Data/notify
+       doc handle.notify
+```
 
 ---
 
 **subgraph** - *ndi.gui.Data/subgraph is a function.*
 
+```
 subgraph(obj, ~, ~, ind)
-
+```
 
 ---
 

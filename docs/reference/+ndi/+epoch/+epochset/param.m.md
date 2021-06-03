@@ -1,7 +1,10 @@
 # CLASS ndi.epoch.epochset.param
 
+```
   NDI_EPOCHSET_PARAM - special class of NDI_EPOCHSET that can read/write parameters about epochs
 
+
+```
 ## Superclasses
 **[ndi.epoch.epochset](../epochset.m.md)**
 
@@ -51,6 +54,7 @@
 
 **addepochtag** - *Add tag(s) for an epoch*
 
+```
 ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
  
   Tags are name/value pairs returned in the form of a structure
@@ -58,12 +62,13 @@ ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   tags in the epoch EPOCHNUMBER. If tags with the same names as those in TAG
   already exist, they will be overwritten. If there is no epoch 
   EPOCHNUMBER, then an error is returned.
-
+```
 
 ---
 
 **buildepochgraph** - *compute the epochgraph among epochs for an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = BUILDEPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -88,12 +93,13 @@ ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   ndi.epoch.epochset.param/EPOCHNODES
 
 Help for ndi.epoch.epochset.param/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **buildepochtable** - *Build and store an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET] = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -114,12 +120,13 @@ Help for ndi.epoch.epochset.param/buildepochgraph is inherited from superclass N
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
 Help for ndi.epoch.epochset.param/buildepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **cached_epochgraph** - *return the cached epoch graph of an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = CACHED_EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epoch graph, if it exists and is up-to-date
@@ -131,12 +138,13 @@ Help for ndi.epoch.epochset.param/buildepochtable is inherited from superclass N
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
 Help for ndi.epoch.epochset.param/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **cached_epochtable** - *return the cached epochtable of an ndi.epoch.epochset object*
 
+```
 [ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epochtable, if it exists, along with its HASHVALUE
@@ -144,12 +152,13 @@ Help for ndi.epoch.epochset.param/cached_epochgraph is inherited from superclass
   ET and HASHVALUE will be empty.
 
 Help for ndi.epoch.epochset.param/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epoch2str** - *convert an epoch number or id to a string*
 
+```
 S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
  
   Returns the epoch NUMBER in the form of a string. If it is a simple
@@ -157,12 +166,13 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   identifier string, then it is returned.
 
 Help for ndi.epoch.epochset.param/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Return the clock types available for this epoch as a cell array
@@ -173,12 +183,13 @@ EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   See also: ndi.time.clocktype, T0_T1
 
 Help for ndi.epoch.epochset.param/epochclock is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochgraph** - *graph of the mapping and cost of converting time among epochs*
 
+```
 [COST, MAPPING] = EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -190,12 +201,13 @@ Help for ndi.epoch.epochset.param/epochclock is inherited from superclass NDI.EP
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
 Help for ndi.epoch.epochset.param/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochid** - *Get the epoch identifier for a particular epoch*
 
+```
 ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Returns the epoch identifier string for the epoch EPOCH_NUMBER.
@@ -207,12 +219,13 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   ndi.daq.system) will override this method.
 
 Help for ndi.epoch.epochset.param/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochnodes** - *return all epoch nodes from an ndi.epoch.epochset object*
 
+```
 [NODES,UNDERLYINGNODES] = EPOCHNODES(NDI_EPOCHSET_OBJ)
  
   Return all EPOCHNODES for an ndi.epoch.epochset. EPOCHNODES consist of the
@@ -241,12 +254,13 @@ Help for ndi.epoch.epochset.param/epochid is inherited from superclass NDI.EPOCH
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
 Help for ndi.epoch.epochset.param/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochprobemapfilename** - *return the filename for the ndi.epoch.epochprobemap_daqsystem file for an epoch*
 
+```
 ECFNAME = EPOCHPROBEMAPFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
  
   Returns the EPOCHPROBEMAPFILENAME for the NDI_EPOCHSET_PARAM_OBJ epoch EPOCH_NUMBER_OR_ID.
@@ -254,12 +268,13 @@ ECFNAME = EPOCHPROBEMAPFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCH_NUMBER_OR_ID)
   a full path.
  
   In this abstract class, an error is always generated. It must be overridden by child classes.
-
+```
 
 ---
 
 **epochsetname** - *the name of the ndi.epoch.epochset object, for EPOCHNODES*
 
+```
 NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
  
   Returns the object name that is used when creating epoch nodes.
@@ -268,12 +283,13 @@ NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
   Otherwise, 'unknown' is used.
 
 Help for ndi.epoch.epochset.param/epochsetname is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochtable** - *Return an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET,HASHVALUE] = EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -297,12 +313,13 @@ Help for ndi.epoch.epochset.param/epochsetname is inherited from superclass NDI.
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
 Help for ndi.epoch.epochset.param/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochtableentry** - *return the entry of the EPOCHTABLE that corresonds to an EPOCHID*
 
+```
 ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
  
   Returns the EPOCHTABLE entry associated with the ndi.epoch.epochset object
@@ -310,21 +327,23 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   epoch or the EPOCHID of the epoch.
 
 Help for ndi.epoch.epochset.param/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochtagfilename** - *return the file path for the tag file for an epoch*
 
+```
 ETFNAME = EPOCHTAGFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
  
   In this base class, empty is returned because it is an abstract class.
-
+```
 
 ---
 
 **getcache** - *return the NDI_CACHE and key for an ndi.epoch.epochset object*
 
+```
 [CACHE, KEY] = GETCACHE(NDI_EPOCHSET_OBJ)
  
   Returns the NDI_CACHE object CACHE and the KEY used by the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
@@ -333,12 +352,13 @@ ETFNAME = EPOCHTAGFILENAME(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
   cache services of the class by returning an NDI_CACHE object and a unique key.
 
 Help for ndi.epoch.epochset.param/getcache is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **getepochprobemap** - *Return the epoch record for a given ndi.epoch.epochset.param epoch number*
 
+```
 EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)
  
   Inputs:
@@ -347,23 +367,25 @@ EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)
  
   Output:
       EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
-
+```
 
 ---
 
 **getepochtag** - *Get tag(s) from an epoch*
 
+```
 TAG = GETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
  
   Tags are name/value pairs returned in the form of a structure
   array with fields 'name' and 'value'. If there are no files in
   EPOCHNUMBER then an error is returned.
-
+```
 
 ---
 
 **issyncgraphroot** - *should this object be a root in an ndi.time.syncgraph epoch graph?*
 
+```
 B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
  
   This function tells an ndi.time.syncgraph object whether it should continue 
@@ -373,24 +395,26 @@ B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
   this will return 0 so that the underlying ndi.daq.system epochs are added.
 
 Help for ndi.epoch.epochset.param/issyncgraphroot is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **matchedepochtable** - *compare a hash number from an epochtable to the current version*
 
+```
 B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
  
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
 Help for ndi.epoch.epochset.param/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **numepochs** - *Number of epochs of ndi.epoch.epochset*
 
+```
 N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   Returns the number of epochs in the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
@@ -398,23 +422,25 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
   See also: EPOCHTABLE
 
 Help for ndi.epoch.epochset.param/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **param** - *Constructor for ndi.epoch.epochset.param objects*
 
+```
 NDI_EPOCHSET_PARAM_OBJ = ndi.epoch.epochset.param(EPOCHPROBEMAP_CLASS)
  
   Create a new ndi.epoch.epochset.param object. It has one optional input argument,
   EPOCHPROBEMAP_CLASS, a string, that specifies the name of the class or subclass
   of ndi.epoch.epochprobemap_daqsystem to be used.
-
+```
 
 ---
 
 **removeepochtag** - *Remove tag(s) for an epoch*
 
+```
 REMOVEEPOCHTAG(NDI_EPOCH_PARAM_OBJ, EPOCHNUMBER, NAME)
  
   Tags are name/value pairs returned in the form of a structure
@@ -426,12 +452,13 @@ REMOVEEPOCHTAG(NDI_EPOCH_PARAM_OBJ, EPOCHNUMBER, NAME)
  
   NAME can be a single string, or it can be a cell array of strings
   (which will result in the removal of multiple tags).
-
+```
 
 ---
 
 **resetepochtable** - *clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk*
 
+```
 NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   This function clears the internal cached memory of the epochtable, forcing it to be re-read from
@@ -440,12 +467,13 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
   See also: ndi.epoch.epochset.param/EPOCHTABLE
 
 Help for ndi.epoch.epochset.param/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **setepochprobemap** - *Sets the epoch record of a particular epoch*
 
+```
 SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
   Sets or replaces the ndi.epoch.epochprobemap_daqsystem for NDI_EPOCHSET_PARAM_OBJ with EPOCHPROBEMAP for the epoch
@@ -453,24 +481,26 @@ SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
   Otherwise, an error is given if there is an existing epoch record.
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
-
+```
 
 ---
 
 **setepochtag** - *Set tag(s) for an epoch*
 
+```
 SETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
  
   Tags are name/value pairs returned in the form of a structure
   array with fields 'name' and 'value'. These tags will replace any
   tags in the epoch directory. If there is no epoch EPOCHNUMBER, then 
   an error is returned.
-
+```
 
 ---
 
 **t0_t1** - *return the t0_t1 (beginning and end) epoch times for an epoch*
 
+```
 T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
@@ -481,12 +511,13 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   See also: ndi.time.clocktype, EPOCHCLOCK
 
 Help for ndi.epoch.epochset.param/t0_t1 is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **underlyingepochnodes** - *find all the underlying epochnodes of a given epochnode*
 
+```
 [UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
  
   Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
@@ -497,12 +528,13 @@ Help for ndi.epoch.epochset.param/t0_t1 is inherited from superclass NDI.EPOCH.E
   See also: ISSYNCGRAPHROOT
 
 Help for ndi.epoch.epochset.param/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **verifyepochprobemap** - *Verifies that an EPOCHPROBEMAP is appropriate for the ndi.epoch.epochset.param object*
 
+```
 [B,MSG] = VERIFYEPOCHPROBEMAP(ndi.epoch.epochset.param, EPOCHPROBEMAP, EPOCH_NUMBER_OR_ID)
  
   Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given 
@@ -514,7 +546,7 @@ Help for ndi.epoch.epochset.param/underlyingepochnodes is inherited from supercl
   If B is 0, then the error message is returned in MSG.
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
-
+```
 
 ---
 

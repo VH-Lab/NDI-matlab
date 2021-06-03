@@ -1,5 +1,6 @@
 # ndi.setup.daq.system.vhlab
 
+```
   ndi.setup.daq.system.vhlab - initialize daq systems used by VHLAB
  
   S = ndi.setup.daq.system.vhlab(S, DEVNAME)
@@ -28,3 +29,5 @@
   -----------------------------------------------------------------------
  
   See also: ndi.file.navigator.epochdir
+
+```

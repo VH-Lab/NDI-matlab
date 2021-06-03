@@ -1,7 +1,10 @@
 # CLASS ndi.cache
 
+```
   NDI.CACHE - Cache class for NDI
 
+
+```
 ## Superclasses
 **handle**
 
@@ -45,17 +48,19 @@
 
 **add** - *add data to an NDI.CACHE*
 
+```
 NDI_CACHE_OBJ = ADD(NDI_CACHE_OBJ, KEY, TYPE, DATA, [PRIORITY])
  
   Adds DATA to the NDI_CACHE_OBJ that is referenced by a KEY and TYPE.
   If desired, a PRIORITY can be added; items with greatest PRIORITY will be
   deleted last.
-
+```
 
 ---
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -88,23 +93,25 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.cache/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/addlistener
-
+    Documentation for ndi.cache/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **bytes** - *memory size of an NDI.CACHE object in bytes*
 
+```
 B = BYTES(NDI_CACHE_OBJ)
  
   Return the current memory that is occupied by the table of NDI_CACHE_OBJ.
-
+```
 
 ---
 
 **cache** - *create a new NDI cache handle*
 
+```
 NDI_CACHE_OBJ = NDI.CACHE(...)
  
   Creates a new NDI.CACHE object. Additional arguments can be specified as
@@ -118,38 +125,39 @@ NDI_CACHE_OBJ = NDI.CACHE(...)
   Note that the cache is not 'secure', any function can query the data added.
  
   See also: vlt.data.namevaluepair
-
+```
 
 ---
 
 **clear** - *clear data from an NDI.CACHE*
 
+```
 NDI_CACHE_OBJ = CLEAR(NDI_CACHE_OBJ)
  
   Clears all entries from the NDI.CACHE object NDI_CACHE_OBJ.
-
+```
 
 ---
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+```
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.CACHE, NDI.CACHE/ISVALID, CLEAR
 
 Help for ndi.cache/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/delete
-
+    Documentation for ndi.cache/delete
+       doc handle.delete
+```
 
 ---
 
 **eq** - *== (EQ)   Test handle equality.*
 
+```
 Handles are equal if they are handles for the same object.
  
     H1 == H2 performs element-wise comparisons between handle arrays H1 and
@@ -167,14 +175,15 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.cache/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/eq
-
+    Documentation for ndi.cache/eq
+       doc handle.eq
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -188,14 +197,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.cache/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/findobj
-
+    Documentation for ndi.cache/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -209,26 +219,28 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.cache/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/findprop
-
+    Documentation for ndi.cache/findprop
+       doc handle.findprop
+```
 
 ---
 
 **freebytes** - *remove the lowest priority entries from the cache to free a certain amount of memory*
 
+```
 NDI_CACHE_OBJ = FREEBYTES(NDI_CACHE_OBJ, FREEBYTES)
  
   Remove entries to free at least FREEBYTES memory. Entries will be removed, first by PRIORITY and then by
   the replacement_rule parameter.
  
   See also: NDI.CACHE/ADD, NDI.CACHE/SET_REPLACEMENT_RULE
-
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -244,14 +256,15 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/ge
-
+    Documentation for ndi.cache/ge
+       doc handle.ge
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -267,14 +280,15 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/gt
-
+    Documentation for ndi.cache/gt
+       doc handle.gt
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -287,14 +301,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.cache/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/isvalid
-
+    Documentation for ndi.cache/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -318,14 +333,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.cache/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/le
-
+    Documentation for ndi.cache/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -363,14 +379,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.cache/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/listener
-
+    Documentation for ndi.cache/listener
+       doc handle.listener
+```
 
 ---
 
 **lookup** - *retrieve the NDI.CACHE data table corresponding to KEY and TYPE*
 
+```
 TABLEENTRY = LOOKUP(NDI_CACHE_OBJ, KEY, TYPE)
  
   Performs a case-sensitive lookup of the NDI_CACHE entry whose key and type
@@ -384,12 +401,13 @@ TABLEENTRY = LOOKUP(NDI_CACHE_OBJ, KEY, TYPE)
   priority          | The priority of maintaining the data (higher is better)
   bytes             | The size of the data in this entry (bytes)
   data              | The data stored
-
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -405,14 +423,15 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.cache/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/lt
-
+    Documentation for ndi.cache/lt
+       doc handle.lt
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -431,14 +450,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.cache/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/ne
-
+    Documentation for ndi.cache/ne
+       doc handle.ne
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -453,14 +473,15 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.cache/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.cache/notify
-
+    Documentation for ndi.cache/notify
+       doc handle.notify
+```
 
 ---
 
 **remove** - *remove data from an NDI.CACHE*
 
+```
 NDI_CACHE_OBJ = REMOVE(NDI_CACHE_OBJ, KEY, TYPE, ...)
     or
   NDI_CACHE_OBJ = REMOVE(NDI_CACHE_OBJ, INDEX, [],  ...)
@@ -478,12 +499,13 @@ NDI_CACHE_OBJ = REMOVE(NDI_CACHE_OBJ, KEY, TYPE, ...)
                               |   leave it in memory.
  
   See also: vlt.data.namevaluepair
-
+```
 
 ---
 
 **set_replacement_rule** - *set the replacement rule for an NDI_CACHE object*
 
+```
 NDI_CACHE_OBJ = SET_REPLACEMENT_RULE(NDI_CACHE_OBJ, RULE)
  
   Sets the replacement rule for an NDI.CACHE to be used when a new entry
@@ -495,7 +517,7 @@ NDI_CACHE_OBJ = SET_REPLACEMENT_RULE(NDI_CACHE_OBJ, RULE)
   'fifo'          | First in, first out; discard oldest entries first.
   'lifo'          | Last in, first out; discard newest entries first.
   'error'         | Don't discard anything, just produce an error saying cache is full
-
+```
 
 ---
 

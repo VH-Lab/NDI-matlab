@@ -1,5 +1,6 @@
 # CLASS ndi.epoch.epochprobemap_daqsystem
 
+```
   ndi.epoch.epochprobemap_daqsystem - Create a new ndi.epoch.epochprobemap_daqsystem object
  
   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
@@ -24,6 +25,8 @@
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
   one line per ndi.epoch.epochprobemap_daqsystem entry.
 
+
+```
 ## Superclasses
 **[ndi.epoch.epochprobemap](epochprobemap.m.md)**
 
@@ -50,6 +53,7 @@
 
 **epochprobemap_daqsystem** - *Create a new ndi.epoch.epochprobemap_daqsystem object*
 
+```
 MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
   Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
@@ -71,16 +75,17 @@ MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, D
   Here, FILENAME is assumed to be a tab-delimitted text file with a header row
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab><subjectstring>', with
   one line per ndi.epoch.epochprobemap_daqsystem entry.
-
+```
 
 ---
 
 **savetofile** - *Write ndi.epoch.epochprobemap_daqsystem object array to disk*
 
+```
 SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
  
    Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
-
+```
 
 ---
 

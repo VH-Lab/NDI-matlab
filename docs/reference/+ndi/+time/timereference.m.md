@@ -1,7 +1,10 @@
 # CLASS ndi.time.timereference
 
+```
   NDI.TIME.TIMEREFERENCE - a class for specifying time relative to an NDI_CLOCK
 
+
+```
 ## Superclasses
 *none*
 
@@ -28,6 +31,7 @@
 
 **ndi_timereference_struct** - *return a structure that describes an ndi.time.timereference object that lacks Matlab objects*
 
+```
 A = NDI_TIMEREFERENCE_STRUCT(NDI_TIMEREF_OBJ)
  
   Returns a structure with the following fields:
@@ -39,12 +43,13 @@ A = NDI_TIMEREFERENCE_STRUCT(NDI_TIMEREF_OBJ)
   epoch                          | The epoch (either a string or a number)
   session_ID                     | The session ID of the session that contains the epoch
   time                           | The time
-
+```
 
 ---
 
 **timereference** - *creates a new time reference object*
 
+```
 OBJ = NDI.TIME.TIMEREFERENCE(REFERENT, CLOCKTYPE, EPOCH, TIME)
  
   Creates a new ndi.time.timereference object. The REFERENT, EPOCH, and TIME must
@@ -64,7 +69,7 @@ OBJ = NDI.TIME.TIMEREFERENCE(REFERENT, CLOCKTYPE, EPOCH, TIME)
   where NDI_SESSION_OBJ is an ndi.session and NDI_TIMEREF_STRUCT is a structure
   returned by ndi.time.timereference/NDI_TIMEREFERENCE_STRUCT. The NDI_SESSION_OBJ fields will
   be searched to find the live REFERENT to create OBJ.
-
+```
 
 ---
 

@@ -1,7 +1,10 @@
 # CLASS ndi.database
 
+```
   A (primarily abstract) database class for NDI that stores and manages virtual documents (NoSQL database)
 
+
+```
 ## Superclasses
 *none*
 
@@ -33,6 +36,7 @@
 
 **add** - *add an ndi.document to the database at a given path*
 
+```
 NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
  
   Adds the document NDI_DOCUMENT_OBJ to the database NDI_DATABASE_OBJ.
@@ -44,22 +48,24 @@ NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
                            |   generated if a document with the same ID exists
   
   See also: vlt.data.namevaluepair
-
+```
 
 ---
 
 **alldocids** - *return all document unique reference numbers for the database*
 
+```
 DOCIDS = ALLDOCIDS(NDI_DATABASE_OBJ)
  
   Return all document unique reference strings as a cell array of strings. If there
   are no documents, empty is returned.
-
+```
 
 ---
 
 **clear** - *remove/delete all records from an ndi.database*
 
+```
 CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
  
   Removes all documents from the vlt.file.dumbjsondb object.
@@ -68,42 +74,46 @@ CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
   function will proceed. Otherwise, it will not.
  
   See also: ndi.database/REMOVE
-
+```
 
 ---
 
 **closebinarydoc** - *close and unlock an ndi.database.binarydoc*
 
+```
 [NDI_BINARYDOC_OBJ] = CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
  
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the database.
-
+```
 
 ---
 
 **database** - *create a new ndi.database*
 
+```
 NDI_DATABASE_OBJ = ndi.database(PATH, REFERENCE)
  
   Creates a new ndi.database object with data path PATH
   and reference REFERENCE.
-
+```
 
 ---
 
 **newdocument** - *obtain a new/blank ndi.document object that can be used with a ndi.database*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
  
   Creates a new/blank ndi.document document object that can be used with this
   ndi.database.
-
+```
 
 ---
 
 **openbinarydoc** - *open and lock an ndi.database.binarydoc that corresponds to a document id*
 
+```
 [NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
  
   Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
@@ -113,12 +123,13 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
   Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.database/CLOSEBINARYDOC.
   The locked nature of the binary doc is a property of the database, not the document, which is why
   the database is needed.
-
+```
 
 ---
 
 **read** - *read an ndi.document from an ndi.database at a given db path*
 
+```
 NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION]) 
  
   Read the ndi.document object with the document ID specified by NDI_DOCUMENT_ID. If VERSION
@@ -126,12 +137,13 @@ NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION])
   Otherwise, the latest version is returned.
  
   If there is no ndi.document object with that ID, then empty is returned ([]).
-
+```
 
 ---
 
 **remove** - *remove a document from an ndi.database*
 
+```
 NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID) 
       or
   NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, VERSIONS)
@@ -145,12 +157,13 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   If an ndi.document is passed, then the NDI_DOCUMENT_ID is extracted using
   ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
   all of the documents are removed.
-
+```
 
 ---
 
 **search** - *search for an ndi.document from an ndi.database*
 
+```
 [DOCUMENT_OBJS,VERSIONS] = SEARCH(NDI_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
  
   Searches metadata parameters PARAM1, PARAM2, etc of NDS_DOCUMENT entries within an NDI_DATABASE_OBJ.
@@ -161,7 +174,7 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   This function returns a cell array of ndi.document objects. If no documents match the
   query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
   of each ndi.document.
-
+```
 
 ---
 

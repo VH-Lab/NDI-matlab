@@ -1,5 +1,6 @@
 # CLASS ndi.app.spikesorter
 
+```
   NDI.APP.spikesorter - an app to sort spikewaves found in sessions
  
   NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)
@@ -7,6 +8,8 @@
   Creates a new NDI_APP_spikesorter object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.
 
+
+```
 ## Superclasses
 **[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.app.appdoc](appdoc.m.md)**
 
@@ -51,6 +54,7 @@
 
 **add_appdoc** - *Load data from an application document*
 
+```
 [...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
       APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])
  
@@ -79,12 +83,13 @@
                             |    the data structures that define the document are not equal.
 
 Help for ndi.app.spikesorter/add_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **appdoc_description** - *a function that prints a description of all appdoc types*
 
+```
 For ndi_app_spikeextractor, there are the following types:
   APPDOC_TYPE                 | Description
   ----------------------------------------------------------------------------------------------
@@ -196,24 +201,26 @@ For ndi_app_spikeextractor, there are the following types:
     OUTPUTS:
        CLUSTERIDS: the cluster id number of each spike
        SPIKE_CLUSTERS_DOC - the ndi.document of the clusters, which includes detailed cluster information.
-
+```
 
 ---
 
 **check_sorting_parameters** - *check sorting parameters for validity*
 
+```
 SORTING_PARAMETERS_STRUCT = CHECK_SORTING_PARAMETERS(NDI_APP_SPIKESORTER_OBJ, SORTING_PARAMETERS_STRUCT)
  
   Given a sorting parameters structure (see help ndi.app.spikesorter/appdoc_description), check that the
   parameters are provided and are in appropriate ranges. 
  
   interpolation
-
+```
 
 ---
 
 **clear_appdoc** - *remove an ndi.app.appdoc document from a session database*
 
+```
 B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
  
   Deletes the app document of style DOC_NAME from the database.
@@ -224,21 +231,23 @@ B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
   B is 1 if the document is found, and 0 otherwise.
 
 Help for ndi.app.spikesorter/clear_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **clusters2neurons** - *create ndi.neuron objects from spike clusterings*
 
+```
 CLUSTERS2NEURONS(NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ, SORTING_PARAMETER_NAME, EXTRACTION_PARAMETERS_NAME, REDO)
  
   Generates ndi.neuron objects for each spike cluster represented in the
-
+```
 
 ---
 
 **defaultstruct_appdoc** - *return a default appdoc structure for a given APPDOC type*
 
+```
 APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
  
   Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.
@@ -247,12 +256,13 @@ APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
   default structure is built from the ndi.document's class property list.
 
 Help for ndi.app.spikesorter/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **doc2struct** - *create an ndi.document from an input structure and input parameters*
 
+```
 DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
  
   Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
@@ -261,19 +271,21 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additiona
   In the base class, this uses the property info in the ndi.document to load the data structure.
 
 Help for ndi.app.spikesorter/doc2struct is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **find_appdoc** - *find an ndi_app_appdoc document in the session database*
 
+```
 See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
-
+```
 
 ---
 
 **isequal_appdoc_struct** - *are two APPDOC data structures the same (equal)?*
 
+```
 B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)
  
   Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
@@ -281,12 +293,13 @@ B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_ST
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
 
 Help for ndi.app.spikesorter/isequal_appdoc_struct is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **isvalid_appdoc_struct** - *is an input structure a valid descriptor for an APPDOC?*
 
+```
 [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(ndi.app.spikeextractor_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
  
   Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
@@ -297,19 +310,21 @@ Help for ndi.app.spikesorter/isequal_appdoc_struct is inherited from superclass 
   ----------------------------------------------------------------------------------------------
   'sorting_parameters'   | A document that describes the parameters to be used for sorting
   'spike_clusters'       | A document that describes the
-
+```
 
 ---
 
 **loaddata_appdoc** - *load data from an application document*
 
+```
 See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
-
+```
 
 ---
 
 **loadspiketimes** - *load extracted spike times for an ndi_timeseries_obj*
 
+```
 [SPIKETIMES, EPOCHINFO, EXTRACTION_PARAMS_DOC, SPIKETIMES_DOCS] = LOADSPIKETIMES(...
           NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
  
@@ -320,12 +335,13 @@ See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
      epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
   EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
   SPIKETIMES_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
-
+```
 
 ---
 
 **loadwaveforms** - *load extracted spike waveforms for an ndi_timeseries_obj*
 
+```
 [WAVEFORMS, WAVEFORMPARAMS, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
           NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
  
@@ -339,24 +355,26 @@ See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.
      epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
   EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
   WAVEFORM_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on an app*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
  
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
 Help for ndi.app.spikesorter/newdocument is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document related to this app*
 
+```
 C = SEARCHQUERY(NDI_APP_OBJ)
  
   Returns a cell array of strings that allow the creation or searching of an
@@ -364,31 +382,34 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   to the app's VARAPPNAME.
 
 Help for ndi.app.spikesorter/searchquery is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **spike_sort** - *method that sorts spikes from specific probes in session to ndi_doc*
 
+```
 SPIKE_CLUSTER_DOC = SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
  %%%%%%%%%%%%
   SORT_NAME name given to save sort to ndi_doc
-
+```
 
 ---
 
 **spikesorter** - *an app to sort spikewaves found in sessions*
 
+```
 NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)
  
   Creates a new NDI_APP_spikesorter object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.
-
+```
 
 ---
 
 **struct2doc** - *create an ndi.document from an input structure and input parameters*
 
+```
 DOC = STRUCT2DOC(NDI_APP_SPIKESORTER_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
  
   For ndi.app.spikesorter, one can use an APPDOC_TYPE of the following:
@@ -398,24 +419,26 @@ DOC = STRUCT2DOC(NDI_APP_SPIKESORTER_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
   
  
   See APPDOC_DESCRIPTION for a list of the parameters.
-
+```
 
 ---
 
 **varappname** - *return the name of the application for use in variable creation*
 
+```
 AN = VARAPPNAME(NDI_APP_OBJ)
  
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
 Help for ndi.app.spikesorter/varappname is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **version_url** - *return the app version and url*
 
+```
 [V, URL] = VERSION_URL(NDI_APP_OBJ)
  
   Return the version and url for the current app. In the base class,
@@ -426,7 +449,7 @@ Help for ndi.app.spikesorter/varappname is inherited from superclass NDI.APP
   different version control system.
 
 Help for ndi.app.spikesorter/version_url is inherited from superclass NDI.APP
-
+```
 
 ---
 

@@ -1,7 +1,10 @@
 # CLASS ndi.gui.Lab
 
+```
  Create lab
 
+
+```
 ## Superclasses
 **handle**
 
@@ -69,34 +72,39 @@
 
 **Lab** - *Create lab*
 
+```
 
-
+```
 
 ---
 
 **addDAQ** - *ndi.gui.Lab/addDAQ is a function.*
 
+```
 addDAQ(obj, daq)
-
+```
 
 ---
 
 **addProbe** - *ndi.gui.Lab/addProbe is a function.*
 
+```
 addProbe(obj, prob)
-
+```
 
 ---
 
 **addSubject** - *ndi.gui.Lab/addSubject is a function.*
 
+```
 addSubject(obj, subj)
-
+```
 
 ---
 
 **addlistener** - *ADDLISTENER  Add listener for event.*
 
+```
 el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
@@ -129,21 +137,23 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Lab/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/addlistener
-
+    Documentation for ndi.gui.Lab/addlistener
+       doc handle.addlistener
+```
 
 ---
 
 **buttons** - *ndi.gui.Lab/buttons is a function.*
 
+```
 buttons(obj)
-
+```
 
 ---
 
 **connect** - *diagram interconnections of dynamic systems.*
 
+```
 CONNECT computes an aggregate model for a block diagram interconnection 
     of dynamic systems. You can specify the block diagram connectivity in 
     two ways:
@@ -227,36 +237,37 @@ CONNECT computes an aggregate model for a block diagram interconnection
  
     See also SUMBLK, connectOptions, APPEND, SERIES, PARALLEL, FEEDBACK, 
     LFT, DynamicSystem.
-
+```
 
 ---
 
 **cut** - *ndi.gui.Lab/cut is a function.*
 
+```
 cut(obj, src, ~)
-
+```
 
 ---
 
 **delete** - *DELETE   Delete a handle object.*
 
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+```
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/ISVALID, CLEAR
 
 Help for ndi.gui.Lab/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/delete
-
+    Documentation for ndi.gui.Lab/delete
+       doc handle.delete
+```
 
 ---
 
 **details** - *DETAILS Display array details*
 
+```
 DETAILS(X) displays X with a detailed description. 
  
     When X is a MATLAB object, details provides more information about the
@@ -264,19 +275,21 @@ DETAILS(X) displays X with a detailed description.
     package in which the class is defined.
  
     See also DISP, DISPLAY, CLASSDEF.
-
+```
 
 ---
 
 **editCallback** - *ndi.gui.Lab/editCallback is a function.*
 
+```
 editCallback(obj, ~, ~)
-
+```
 
 ---
 
 **eq** - *== (EQ)   Test handle equality.*
 
+```
 Handles are equal if they are handles for the same object.
  
     H1 == H2 performs element-wise comparisons between handle arrays H1 and
@@ -294,14 +307,15 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.gui.Lab/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/eq
-
+    Documentation for ndi.gui.Lab/eq
+       doc handle.eq
+```
 
 ---
 
 **findobj** - *FINDOBJ   Find objects matching specified conditions.*
 
+```
 The FINDOBJ method of the HANDLE class follows the same syntax as the 
     MATLAB FINDOBJ command, except that the first argument must be an array
     of handles to objects.
@@ -315,14 +329,15 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.gui.Lab/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/findobj
-
+    Documentation for ndi.gui.Lab/findobj
+       doc handle.findobj
+```
 
 ---
 
 **findprop** - *FINDPROP   Find property of MATLAB handle object.*
 
+```
 p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
@@ -336,14 +351,15 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.gui.Lab/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/findprop
-
+    Documentation for ndi.gui.Lab/findprop
+       doc handle.findprop
+```
 
 ---
 
 **ge** - *>= (GE)   Greater than or equal relation for handles.*
 
+```
 H1 >= H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -359,14 +375,15 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/ge
-
+    Documentation for ndi.gui.Lab/ge
+       doc handle.ge
+```
 
 ---
 
 **grid** - *GRID   Grid lines.*
 
+```
 GRID ON adds major grid lines to the current axes.
     GRID OFF removes major and minor grid lines from the current axes. 
     GRID MINOR toggles the minor grid lines of the current axes.
@@ -381,12 +398,13 @@ GRID ON adds major grid lines to the current axes.
     AX.XMinorGrid = 'on' turns on the minor grid.
  
     See also TITLE, XLABEL, YLABEL, ZLABEL, AXES, PLOT, BOX, POLARAXES.
-
+```
 
 ---
 
 **gt** - *> (GT)   Greater than relation for handles.*
 
+```
 H1 > H2 performs element-wise comparisons between handle arrays H1 and 
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.  
     The result is a logical array of the same dimensions, where each
@@ -402,21 +420,23 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/gt
-
+    Documentation for ndi.gui.Lab/gt
+       doc handle.gt
+```
 
 ---
 
 **iconCallback** - *ndi.gui.Lab/iconCallback is a function.*
 
+```
 iconCallback(obj, ~, ~, src)
-
+```
 
 ---
 
 **isvalid** - *ISVALID   Test handle validity.*
 
+```
 TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
@@ -429,14 +449,15 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.gui.Lab/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/isvalid
-
+    Documentation for ndi.gui.Lab/isvalid
+       doc handle.isvalid
+```
 
 ---
 
 **le** - *<= (LE)   Less than or equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
@@ -460,14 +481,15 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.gui.Lab/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/le
-
+    Documentation for ndi.gui.Lab/le
+       doc handle.le
+```
 
 ---
 
 **listener** - *LISTENER  Add listener for event without binding the listener to the source object.*
 
+```
 el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle  
     object hSource.  If hSource is an array of source handles, the listener
@@ -505,14 +527,15 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Lab/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/listener
-
+    Documentation for ndi.gui.Lab/listener
+       doc handle.listener
+```
 
 ---
 
 **lt** - *< (LT)   Less than relation for handles.*
 
+```
 H1 < H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
@@ -528,21 +551,23 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/lt
-
+    Documentation for ndi.gui.Lab/lt
+       doc handle.lt
+```
 
 ---
 
 **move** - *ndi.gui.Lab/move is a function.*
 
+```
 move(obj, ~, ~)
-
+```
 
 ---
 
 **ne** - *~= (NE)   Not equal relation for handles.*
 
+```
 Handles are equal if they are handles for the same object and are 
     unequal otherwise.
  
@@ -561,14 +586,15 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.gui.Lab/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/ne
-
+    Documentation for ndi.gui.Lab/ne
+       doc handle.ne
+```
 
 ---
 
 **notify** - *NOTIFY   Notify listeners of event.*
 
+```
 NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.  
@@ -583,30 +609,33 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.gui.Lab/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/notify
-
+    Documentation for ndi.gui.Lab/notify
+       doc handle.notify
+```
 
 ---
 
 **setZoom** - *ndi.gui.Lab/setZoom is a function.*
 
+```
 setZoom(obj, ~, ~, z)
-
+```
 
 ---
 
 **symbol** - *ndi.gui.Lab/symbol is a function.*
 
+```
 symbol(obj, src)
-
+```
 
 ---
 
 **updateConnections** - *ndi.gui.Lab/updateConnections is a function.*
 
+```
 updateConnections(obj)
-
+```
 
 ---
 

@@ -1,5 +1,6 @@
 # ndi_install
 
+```
   NDI_INSTALL - install the NDI distribution and its ancillary directories
  
       B = NDI_INSTALL
@@ -22,3 +23,5 @@
   B = NDI_INSTALL(PATHNAME, DEPENDENCIES)
  
   If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used.
+
+```

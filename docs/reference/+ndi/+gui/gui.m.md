@@ -1,5 +1,6 @@
 # ndi.gui.gui
 
+```
   GUI - A gui to display the contents of an NDI_SESSION
  
    ndi.gui.gui(NDI_SESSION_OBJ)
@@ -8,3 +9,5 @@
    NDI_SESSION_OBJ
  
    See also: ndi.session
+
+```

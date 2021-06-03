@@ -1,5 +1,6 @@
 # ndi.version
 
+```
   NDI_VERSION - return the version string for NDI
  
   [V, URL] = ndi.version()
@@ -9,3 +10,5 @@
  
   Example:
     v = ndi.version()
+
+```

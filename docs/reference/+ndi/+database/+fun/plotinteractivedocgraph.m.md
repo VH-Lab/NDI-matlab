@@ -1,5 +1,6 @@
 # ndi.database.fun.plotinteractivedocgraph
 
+```
  
   ndi.database.fun.plotinteractivedocgraph(DOCS, G, MDIGRAPH, NODES, LAYOUT,INTERACTIVE)
  
@@ -27,3 +28,5 @@
     docs = E.database_search({'document_class.class_name','(.*)'});
     [G,nodes,mdigraph] = ndi.database.fun.docs2graph(docs);
     ndi.database.fun.plotinteractivedocgraph(docs,G,mdigraph,nodes,'layered');
+
+```

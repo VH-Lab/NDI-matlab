@@ -1,5 +1,6 @@
 # ndi.fun.convertoldnsd2ndi
 
+```
   NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
  
   ndi.fun.convertoldnsd2ndi(PATHNAME)
@@ -15,3 +16,5 @@
   (4) All instances of 'NSD' in .m, .json, .txt or *object_* files are replaced with 'NDI'. 
  
   This function is depricated and should be irrelevant shortly as everyone uses 'NDI' instead of 'NSD'
+
+```

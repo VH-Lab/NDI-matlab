@@ -1,5 +1,6 @@
 # ndi.database.fun.createNIFbrainareas
 
+```
   NDI_CREATENIFBRAINAREAS - create a list of allowable brain areas from the NIF-Ontology
  
   BA = ndi.database.fun.createNIFbrainareas(...)
@@ -27,3 +28,5 @@
   outname (...            | Output filen name of the file written to disk
   ['NIFBrainAreaContr'... |
    'olledVocabulary.tsv'])|
+
+```

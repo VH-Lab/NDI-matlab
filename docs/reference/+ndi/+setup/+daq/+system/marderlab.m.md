@@ -1,5 +1,6 @@
 # ndi.setup.daq.system.marderlab
 
+```
   NDI_MARDERLAB_MAKEDEV - initialize devices used by MARDERLAB
  
   EXP = ndi.setups.marderlab.makedev(EXP, DEVNAME)
@@ -23,3 +24,5 @@
                      |    '[something].epochprobemap.txt'
  
   See also: ndi.file.navigator.epochdir
+
+```

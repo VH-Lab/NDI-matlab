@@ -1,5 +1,6 @@
 # CLASS ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2
 
+```
   NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2 - Device object for vhlab visual stimulus computer
  
   This device reads the 'stimtimes.txt', 'verticalblanking.txt', 'stims.mat', and 'spike2data.smr' files
@@ -17,6 +18,8 @@
   e2              | vertical refresh trigger
   e3              | pretime trigger
 
+
+```
 ## Superclasses
 **[ndi.daq.reader.mfdaq.cedspike2](../../../../../+daq/+reader/+mfdaq/cedspike2.m.md)**, **[ndi.daq.reader.mfdaq](../../../../../+daq/+reader/mfdaq.m.md)**, **[ndi.daq.reader](../../../../../+daq/reader.m.md)**, **[ndi.ido](../../../../../ido.m.md)**, **[ndi.documentservice](../../../../../documentservice.m.md)**
 
@@ -53,6 +56,7 @@
 
 **cedspike2filelist2smrfile** - *Identify the .SMR file out of a file list*
 
+```
 FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
  
   Given a cell array of strings FILELIST with full-path file names,
@@ -60,23 +64,25 @@ FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
   and returns the result in FILENAME (full-path file name).
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2filelist2smrfile is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
-
+```
 
 ---
 
 **cedspike2headertype2mfdaqchanneltype** - *Convert between Intan headers and the ndi.daq.system.mfdaq channel types*
 
+```
 CHANNELTYPE = CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE(CEDSPIKE2CHANNELTYPE)
   
   Given an Intan header file type, returns the standard ndi.daq.system.mfdaq channel type
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2headertype2mfdaqchanneltype is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCHFILES)
  
   Return the clock types available for this epoch as a cell array
@@ -85,23 +91,25 @@ EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_STIMULUS_VHLABVISSPIKE2_OBJ, EPOCHFILES)
   This returns a single clock type 'dev_local'time';
  
   See also: ndi.time.clocktype
-
+```
 
 ---
 
 **eq** - *tests whether 2 ndi.daq.reader objects are equal*
 
+```
 B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/eq is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **getchannelsepoch** - *List the channels that are available on this device*
 
+```
 CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)
  
   This device produces the following channels in each epoch:
@@ -113,23 +121,25 @@ CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)
   e1              | frame trigger
   e2              | vertical refresh trigger
   e3              | pretime trigger
-
+```
 
 ---
 
 **id** - *return the identifier of an ndi.ido object*
 
+```
 IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -143,24 +153,26 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *create a new ndi.document for an ndi.daq.reader object*
 
+```
 DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
  
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/newdocument is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **readchannels_epochsamples** - *read the data based on specified channels*
 
+```
 DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
  
    CHANNELTYPE is the type of channel to read
@@ -172,12 +184,13 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
    DATA is the channel data (each column contains data from an indvidual channel)
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
-
+```
 
 ---
 
 **readevents_epochsamples** - *read events or markers of specified channels for a specified epoch*
 
+```
 [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
@@ -192,12 +205,13 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsa
    DATA is a two-column vector; the first column has the time of the event. The second
    column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
    is requested, DATA is returned as a cell array, one entry per channel.
-
+```
 
 ---
 
 **readevents_epochsamples_native** - *read events or markers of specified channels for a specified epoch*
 
+```
 [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    CHANNELTYPE is the type of channel to read
@@ -214,12 +228,13 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsa
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
-
+```
 
 ---
 
 **samplerate** - **
 
+```
 SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
  
   SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
@@ -228,23 +243,25 @@ SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
  
  so, these are all events, and it doesn't much matter, so
   let's make a guess that should apply well in all cases
-
+```
 
 ---
 
 **searchquery** - *create a search for this ndi.daq.reader object*
 
+```
 SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/searchquery is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **t0_t1** - *return the t0_t1 (beginning and end) epoch times for an epoch*
 
+```
 T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
  
   Return the beginning (t0) and end (t1) times of the EPOCHFILES that define this
@@ -254,12 +271,13 @@ T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
   See also: ndi.time.clocktype, EPOCHCLOCK
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/t0_t1 is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
-
+```
 
 ---
 
 **verifyepochprobemap** - *Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk*
 
+```
 B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHFILES)
  
   Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
@@ -271,17 +289,18 @@ B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHF
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
 Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/verifyepochprobemap is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
-
+```
 
 ---
 
 **vhlabvisspike2** - *Create a new multifunction DAQ object*
 
+```
 D = ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2(NAME, THEFILENAVIGATOR, DAQREADER)
  
    Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
    This is an abstract class that is overridden by specific devices.
-
+```
 
 ---
 

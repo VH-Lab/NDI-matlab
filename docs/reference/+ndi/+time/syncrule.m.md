@@ -1,5 +1,6 @@
 # CLASS ndi.time.syncrule
 
+```
   NDI_SYNCRULE_OBJ - create a new NDI_SYNCRULE for managing synchronization
  
   NDI_SYNCRULE_OBJ = ndi.time.syncrule(...)
@@ -9,6 +10,8 @@
   Creates a new ndi.time.syncrule object with the given PARAMETERS (a structure).
   This is an abstract class, so PARAMETERS must be empty.
 
+
+```
 ## Superclasses
 **[ndi.ido](../ido.m.md)**, **[ndi.documentservice](../documentservice.m.md)**
 
@@ -43,6 +46,7 @@
 
 **apply** - *apply an ndi.time.syncrule to obtain a cost and ndi.time.timemapping between two ndi.epoch.epochset objects*
 
+```
 [COST, MAPPING] = APPLY(NDI_SYNCRULE_OBJ, EPOCHNODE_A, EPOCHNODE_B)
  
   Given an ndi.time.syncrule object and two epochnodes returned from ndi.epoch.epochset/EPOCHNODES
@@ -54,12 +58,13 @@
   In the abstract class, COST and MAPPING are always empty.
  
   See also: ndi.epoch.epochset/EPOCHNODES
-
+```
 
 ---
 
 **eligibleclocks** - *return a cell array of eligible NDI_CLOCKTYPEs that can be used with ndi.time.syncrule*
 
+```
 EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of ndi.time.clocktype objects with types that can be processed by the
@@ -71,12 +76,13 @@ EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
   In the abstract class, EC is empty ({}).
  
   See also: ndi.time.syncrule/INELIGIBLECLOCKS
-
+```
 
 ---
 
 **eligibleepochsets** - *return a cell array of eligible ndi.epoch.epochset class names for ndi.time.syncrule*
 
+```
 EES = ELIGIBLEEPOCHSETS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of valid ndi.epoch.epochset subclasses that the rule can process.
@@ -89,33 +95,36 @@ EES = ELIGIBLEEPOCHSETS(NDI_SYNCRULE_OBJ)
   The abstract class ndi.time.syncrule always returns empty.
  
   See also: ndi.time.syncrule/INELIGIBLEEPOCHSETS
-
+```
 
 ---
 
 **eq** - *are two ndi.time.syncrule objects equal?*
 
+```
 B = EQ(NDI_SYNCRULE_OBJ_A, NDI_SYNCRULE_OBJ_B)
  
   Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
   Otherwise, 0 is returned.
-
+```
 
 ---
 
 **id** - *return the identifier of an ndi.ido object*
 
+```
 IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
 Help for ndi.time.syncrule/id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **ineligibleclocks** - *return a cell array of ineligible NDI_CLOCKTYPEs that cannot be used with ndi.time.syncrule*
 
+```
 IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of ndi.time.clocktype objects with types that cannot be processed by the
@@ -128,12 +137,13 @@ IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
   In the abstract class, IC is {ndi.time.clocktype('no_time')} .
  
   See also: ndi.time.syncrule/ELIGIBLECLOCKS
-
+```
 
 ---
 
 **ineligibleepochsets** - *return a cell array of ineligible ndi.epoch.epochset class names for ndi.time.syncrule*
 
+```
 IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of ndi.epoch.epochset subclasses that the rule cannot process.
@@ -147,12 +157,13 @@ IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_OBJ)
   The abstract class ndi.time.syncrule always returns empty.
  
   See also: ndi.time.syncrule/ELIGIBLEEPOCHSETS
-
+```
 
 ---
 
 **isvalidparameters** - *determine if a parameter structure is valid for a given ndi.time.syncrule*
 
+```
 [B,MSG] = ISVALIDPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
  
   Returns 1 if PARAMETERS is a valid parameter structure for ndi.time.syncrule. Returns 0 otherwise.
@@ -160,12 +171,13 @@ IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_OBJ)
   If there is an error, MSG describes the error.
  
   See also: ndi.time.syncrule/SETPARAMETERS
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -179,50 +191,54 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.time.syncrule.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *create a new ndi.document for an ndi.time.syncrule object*
 
+```
 DOC = NEWDOCUMENT(NDI_SYNCRULE_OBJ)
  
   Creates an ndi.document object DOC that represents the
      ndi.time.syncrule object.
-
+```
 
 ---
 
 **searchquery** - *create a search for this ndi.time.syncrule object*
 
+```
 SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
  
   Creates a search query for the ndi.time.syncgraph object.
-
+```
 
 ---
 
 **setparameters** - *set the parameters for an ndi.time.syncrule object, checking for valid form*
 
+```
 NDI_SYNCRULE_OBJ = SETPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
  
   Sets the 'parameters' field of an ndi.time.syncrule object, while also checking that
   the struct PARAMETERS specifies a valid set of parameters using ISVALIDPARAMETERS.
  
   See also: ndi.time.syncrule/ISVALIDPARAMETERS
-
+```
 
 ---
 
 **syncrule** - *create a new NDI_SYNCRULE for managing synchronization*
 
+```
 NDI_SYNCRULE_OBJ = ndi.time.syncrule(...)
    or
   NDI_SYNCRULE_OBJ = ndi.time.syncrule(PARAMETERS)
  
   Creates a new ndi.time.syncrule object with the given PARAMETERS (a structure).
   This is an abstract class, so PARAMETERS must be empty.
-
+```
 
 ---
 

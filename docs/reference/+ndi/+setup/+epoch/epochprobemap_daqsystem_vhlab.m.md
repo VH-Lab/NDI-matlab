@@ -1,5 +1,6 @@
 # CLASS ndi.setup.epoch.epochprobemap_daqsystem_vhlab
 
+```
   ndi.epoch.epochprobemap_daqsystem_vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
  
   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
@@ -27,6 +28,8 @@
   acqusition code), 'vhspike2', or 'vhwillow'. The device name will be taken from the filename,
   following [VHDEVICENAME '_channelgrouping.txt']
 
+
+```
 ## Superclasses
 **[ndi.epoch.epochprobemap_daqsystem](../../+epoch/epochprobemap_daqsystem.m.md)**, **[ndi.epoch.epochprobemap](../../+epoch/epochprobemap.m.md)**
 
@@ -53,6 +56,7 @@
 
 **epochprobemap_daqsystem_vhlab** - *Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation*
 
+```
 MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
  
   Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
@@ -77,16 +81,17 @@ MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, D
   The NDI device name for this device must be 'vhintan' (VH Intan RHD device), 'vhlv' (VH Lab Labview custom
   acqusition code), 'vhspike2', or 'vhwillow'. The device name will be taken from the filename,
   following [VHDEVICENAME '_channelgrouping.txt']
-
+```
 
 ---
 
 **savetofile** - *Write ndi.epoch.epochprobemap_daqsystem object array to disk*
 
+```
 SAVETOFILE(OBJ, FILENAME)
   
    Writes the ndi.epoch.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
-
+```
 
 ---
 

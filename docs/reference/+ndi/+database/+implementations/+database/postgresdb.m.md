@@ -1,7 +1,10 @@
 # CLASS ndi.database.implementations.database.postgresdb
 
+```
 ndi.database.implementations.database.postgresdb is a class.
 
+
+```
 ## Superclasses
 **[ndi.database](../../../database.m.md)**
 
@@ -37,6 +40,7 @@ ndi.database.implementations.database.postgresdb is a class.
 
 **add** - *add an ndi.document to the database at a given path*
 
+```
 NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
  
   Adds the document NDI_DOCUMENT_OBJ to the database NDI_DATABASE_OBJ.
@@ -50,12 +54,13 @@ NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
   See also: vlt.data.namevaluepair
 
 Help for ndi.database.implementations.database.postgresdb/add is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **alldocids** - *return all document unique reference numbers for the database*
 
+```
 DOCIDS = ALLDOCIDS(NDI_POSTGRESDB_OBJ, DBNAME)
  
   Return all document unique reference strings as a cell array of strings. If there
@@ -64,12 +69,13 @@ DOCIDS = ALLDOCIDS(NDI_POSTGRESDB_OBJ, DBNAME)
   NOTE: Requires Database name as input and Assuming data is stored in public.documents
   docid_query = "SELECT id FROM " + ndi_postgresdb_obj.dbname + ".public.documents"
   data = select(ndi_postgresdb_obj.db,docid_query);
-
+```
 
 ---
 
 **clear** - *remove/delete all records from an ndi.database*
 
+```
 CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
  
   Removes all documents from the vlt.file.dumbjsondb object.
@@ -80,31 +86,34 @@ CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
   See also: ndi.database.implementations.database.postgresdb/REMOVE
 
 Help for ndi.database.implementations.database.postgresdb/clear is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **closebinarydoc** - *close and unlock an ndi.database.binarydoc*
 
+```
 [NDI_BINARYDOC_OBJ] = CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
  
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the database.
 
 Help for ndi.database.implementations.database.postgresdb/closebinarydoc is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **ndi.database.postgresdb** - **
 
+```
 
-
+```
 
 ---
 
 **ndiquery_to_sql** - *Translates an ndiquery into a SQL command*
 
+```
 Assumes input is a ndiquery converted to struct
   Assumes params are correct
  
@@ -116,24 +125,26 @@ Assumes input is a ndiquery converted to struct
   SELECT data ->> 'list' AS list                                                                  
   FROM dbname.public.documents                                                           
   WHERE data ->> 'list' LIKE ('%abc%')
-
+```
 
 ---
 
 **newdocument** - *obtain a new/blank ndi.document object that can be used with a ndi.database*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
  
   Creates a new/blank ndi.document document object that can be used with this
   ndi.database.
 
 Help for ndi.database.implementations.database.postgresdb/newdocument is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **openbinarydoc** - *open and lock an ndi.database.binarydoc that corresponds to a document id*
 
+```
 [NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
  
   Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
@@ -145,19 +156,21 @@ Help for ndi.database.implementations.database.postgresdb/newdocument is inherit
   the database is needed.
 
 Help for ndi.database.implementations.database.postgresdb/openbinarydoc is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **postgresdb** - *ndi.database.implementations.database.postgresdb/postgresdb is a constructor.*
 
+```
 
-
+```
 
 ---
 
 **read** - *read an ndi.document from an ndi.database at a given db path*
 
+```
 NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION]) 
  
   Read the ndi.document object with the document ID specified by NDI_DOCUMENT_ID. If VERSION
@@ -167,12 +180,13 @@ NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION])
   If there is no ndi.document object with that ID, then empty is returned ([]).
 
 Help for ndi.database.implementations.database.postgresdb/read is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **remove** - *remove a document from an ndi.database*
 
+```
 NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID) 
       or
   NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, VERSIONS)
@@ -188,12 +202,13 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   all of the documents are removed.
 
 Help for ndi.database.implementations.database.postgresdb/remove is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 
 **search** - *search for an ndi.document from an ndi.database*
 
+```
 [DOCUMENT_OBJS,VERSIONS] = SEARCH(NDI_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
  
   Searches metadata parameters PARAM1, PARAM2, etc of NDS_DOCUMENT entries within an NDI_DATABASE_OBJ.
@@ -206,7 +221,7 @@ Help for ndi.database.implementations.database.postgresdb/remove is inherited fr
   of each ndi.document.
 
 Help for ndi.database.implementations.database.postgresdb/search is inherited from superclass NDI.DATABASE
-
+```
 
 ---
 

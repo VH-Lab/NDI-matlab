@@ -1,5 +1,6 @@
 # ndi.fun.stimulustemporalfrequency
 
+```
   NDI_STIMULUSTEMPORALFREQUENCY - given a stimulus parameter set, return the temporal frequency
  
   [TF_VALUE, TF_NAME] = ndi.fun.stimulustemporalfrequency(STIMULUS_PARAMETERS)
@@ -10,3 +11,5 @@
   the parameter is returned in TF_NAME.
  
   If no temporal frequency can be determined, TF_VALUE and TF_NAME are blank.
+
+```

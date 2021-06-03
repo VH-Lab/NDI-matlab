@@ -1,5 +1,6 @@
 # CLASS ndi.daq.daqsystemstring
 
+```
   NDI_DAQSYSTEMSTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_DAQSYSTEM
  
    ndi.daq.daqsystemstring
@@ -29,6 +30,8 @@
   
    See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 
+
+```
 ## Superclasses
 *none*
 
@@ -54,6 +57,7 @@
 
 **daqsystemstring** - *Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list*
 
+```
 DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
      or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)
  
@@ -82,12 +86,13 @@ DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
        myndi_daqsystemstring2 = ndi_devicestring('mydevice:ai1-5,7,23');
  
   See also: ndi.daq.daqsystemstring
-
+```
 
 ---
 
 **devicestring** - *Produce an ndi.daq.daqsystemstring character string*
 
+```
 DEVSTR = DEVICESTRING(SELF)
  
   Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.
@@ -99,12 +104,13 @@ DEVSTR = DEVICESTRING(SELF)
  
  
   See also: ndi.daq.daqsystemstring
-
+```
 
 ---
 
 **ndi_daqsystemstring2channel** - *Convert an ndi.daq.daqsystemstring to device, channel type, channel list*
 
+```
 [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)
  
   Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
@@ -123,7 +129,7 @@ DEVSTR = DEVICESTRING(SELF)
      % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]
  
   See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING
-
+```
 
 ---
 

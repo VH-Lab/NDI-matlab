@@ -1,5 +1,6 @@
 # ndi.epoch.findepochnode
 
+```
   FINDEPOCHNODE - find an occurence of an epochnode in an array of epochnodes
  
   INDEX = ndi.epoch.findepochnode(EPOCHNODE, EPOCHNODEARRAY)
@@ -19,3 +20,5 @@
   Note: at present, the 'epochprobemap' field is not compared.
   
   See also: ndi.epoch.epochset/EPOCHNODES
+
+```

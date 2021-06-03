@@ -1,5 +1,6 @@
 # ndi.globals.assert
 
+```
   ndi.globals.assert - check that ndi_globals has been initialized properly
   
   [B,MSG] = ndi.globals.assert(ndi_global_variables, ...)
@@ -19,3 +20,5 @@
   |                              |        calling ndi_Init if globals are not  |
   |                              |        set up?                              |
   |----------------------------------------------------------------------------|
+
+```

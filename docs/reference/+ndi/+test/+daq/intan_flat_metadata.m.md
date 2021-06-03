@@ -1,5 +1,6 @@
 # ndi.test.daq.intan_flat_metadata
 
+```
   intan_flat_metadata - Test the functionality of the Intan driver and a file tree with a flat organization
  
    ndi.test.daq.test_intan_flat_metadata([DIRNAME])
@@ -10,3 +11,5 @@
  
    If DIRNAME is not provided, the default directory
    [NDIPATH]/example_sessions/exp1_eg is used.
+
+```

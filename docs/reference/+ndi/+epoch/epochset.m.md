@@ -1,7 +1,10 @@
 # CLASS ndi.epoch.epochset
 
+```
   NDI_EPOCHSET - routines for managing a set of epochs and their dependencies
 
+
+```
 ## Superclasses
 *none*
 
@@ -40,6 +43,7 @@
 
 **buildepochgraph** - *compute the epochgraph among epochs for an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = BUILDEPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -62,12 +66,13 @@
  
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.epoch.epochset/EPOCHNODES
-
+```
 
 ---
 
 **buildepochtable** - *Build and store an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET] = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -86,12 +91,13 @@
  
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
-
+```
 
 ---
 
 **cached_epochgraph** - *return the cached epoch graph of an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = CACHED_EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epoch graph, if it exists and is up-to-date
@@ -101,34 +107,37 @@
   it is deleted.
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
-
+```
 
 ---
 
 **cached_epochtable** - *return the cached epochtable of an ndi.epoch.epochset object*
 
+```
 [ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epochtable, if it exists, along with its HASHVALUE
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
-
+```
 
 ---
 
 **epoch2str** - *convert an epoch number or id to a string*
 
+```
 S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
  
   Returns the epoch NUMBER in the form of a string. If it is a simple
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Return the clock types available for this epoch as a cell array
@@ -137,12 +146,13 @@ EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   The abstract class always returns ndi.time.clocktype('no_time')
  
   See also: ndi.time.clocktype, T0_T1
-
+```
 
 ---
 
 **epochgraph** - *graph of the mapping and cost of converting time among epochs*
 
+```
 [COST, MAPPING] = EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -152,12 +162,13 @@ EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Each entry COST(i,j) indicates whether there is a mapping between (epoch, clocktype) i to j.
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
-
+```
 
 ---
 
 **epochid** - *Get the epoch identifier for a particular epoch*
 
+```
 ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Returns the epoch identifier string for the epoch EPOCH_NUMBER.
@@ -167,12 +178,13 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   The abstract class just queries the EPOCHTABLE.
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
-
+```
 
 ---
 
 **epochnodes** - *return all epoch nodes from an ndi.epoch.epochset object*
 
+```
 [NODES,UNDERLYINGNODES] = EPOCHNODES(NDI_EPOCHSET_OBJ)
  
   Return all EPOCHNODES for an ndi.epoch.epochset. EPOCHNODES consist of the
@@ -199,33 +211,36 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
         in identifying the epoch nodes across ndi.epoch.epochset objects. 
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
-
+```
 
 ---
 
 **epochset** - *constructor for ndi.epoch.epochset objects*
 
+```
 NDI_EPOCHSET_OBJ = ndi.epoch.epochset()
  
   This class has no parameters so the constructor is called with no input arguments.
-
+```
 
 ---
 
 **epochsetname** - *the name of the ndi.epoch.epochset object, for EPOCHNODES*
 
+```
 NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
  
   Returns the object name that is used when creating epoch nodes.
  
   If the class has a 'name' property, that property is used.
   Otherwise, 'unknown' is used.
-
+```
 
 ---
 
 **epochtable** - *Return an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET,HASHVALUE] = EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -247,35 +262,38 @@ NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
  
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
-
+```
 
 ---
 
 **epochtableentry** - *return the entry of the EPOCHTABLE that corresonds to an EPOCHID*
 
+```
 ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
  
   Returns the EPOCHTABLE entry associated with the ndi.epoch.epochset object
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
-
+```
 
 ---
 
 **getcache** - *return the NDI_CACHE and key for an ndi.epoch.epochset object*
 
+```
 [CACHE, KEY] = GETCACHE(NDI_EPOCHSET_OBJ)
  
   Returns the NDI_CACHE object CACHE and the KEY used by the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
  
   In this abstract class, no cache is available, so CACHE and KEY are empty. But subclasses can engage the
   cache services of the class by returning an NDI_CACHE object and a unique key.
-
+```
 
 ---
 
 **issyncgraphroot** - *should this object be a root in an ndi.time.syncgraph epoch graph?*
 
+```
 B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
  
   This function tells an ndi.time.syncgraph object whether it should continue 
@@ -283,45 +301,49 @@ B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
  
   For ndi.epoch.epochset objects, this returns 1. For some object types (ndi.probe.*, for example)
   this will return 0 so that the underlying ndi.daq.system epochs are added.
-
+```
 
 ---
 
 **matchedepochtable** - *compare a hash number from an epochtable to the current version*
 
+```
 B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
  
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
-
+```
 
 ---
 
 **numepochs** - *Number of epochs of ndi.epoch.epochset*
 
+```
 N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   Returns the number of epochs in the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
  
   See also: EPOCHTABLE
-
+```
 
 ---
 
 **resetepochtable** - *clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk*
 
+```
 NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   This function clears the internal cached memory of the epochtable, forcing it to be re-read from
   disk at the next request.
  
   See also: ndi.epoch.epochset/EPOCHTABLE
-
+```
 
 ---
 
 **t0_t1** - *return the t0_t1 (beginning and end) epoch times for an epoch*
 
+```
 T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
@@ -330,12 +352,13 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   The abstract class always returns {[NaN NaN]}.
  
   See also: ndi.time.clocktype, EPOCHCLOCK
-
+```
 
 ---
 
 **underlyingepochnodes** - *find all the underlying epochnodes of a given epochnode*
 
+```
 [UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
  
   Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
@@ -344,7 +367,7 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Note that the EPOCHNODE itself is returned as the first 'underlying' node.
  
   See also: ISSYNCGRAPHROOT
-
+```
 
 ---
 

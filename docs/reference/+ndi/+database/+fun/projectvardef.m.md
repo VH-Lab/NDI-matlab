@@ -1,5 +1,6 @@
 # ndi.database.fun.projectvardef
 
+```
   NDI_PROJECTVARDEF - shorthand function for building an 'ndi_document_projectvar' document
  
   PVD = ndi.database.fun.projectvardef(NAME, TYPE, DESCRIPTION, DATA)
@@ -13,3 +14,5 @@
   'ndi_document.type'     | TYPE
   'projectvar.description'| DESCRIPTION
   'projectvar.data'       | DATA
+
+```

@@ -1,7 +1,10 @@
 # CLASS ndi.time.clocktype
 
+```
   NDI_CLOCKTYPE - a class for specifying a clock type in the NDI framework
 
+
+```
 ## Superclasses
 *none*
 
@@ -29,6 +32,7 @@
 
 **clocktype** - *Creates a new ndi.time.clocktype object*
 
+```
 OBJ = ndi.time.clocktype(TYPE)
  
   Creates a new ndi.time.clocktype object. TYPE can be
@@ -47,12 +51,13 @@ OBJ = ndi.time.clocktype(TYPE)
   'dev_local_time'          | A device keeps its own local time only within epochs
   'no_time'                 | No timing information
   'inherited'               | The timing information is inherited from another device.
-
+```
 
 ---
 
 **epochgraph_edge** - *provide epochgraph edge based purely on clock type*
 
+```
 [COST, MAPPING] = EPOCHGRAPH_EDGE(NDI_CLOCKTYPE_A, NDI_CLOCKTYPE_B)
  
   Returns the COST and ndi.time.timemapping object MAPPING that describes the
@@ -69,52 +74,57 @@ OBJ = ndi.time.clocktype(TYPE)
     'dev_global_time' -> 'approx_dev_global_time'
  
   Otherwise, COST is Inf and MAPPING is empty.
-
+```
 
 ---
 
 **eq** - *are two ndi.time.clocktype objects equal?*
 
+```
 B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
  
   Compares two NDI_CLOCKTYPE_objects and returns 1 if they refer to the 
   same clock type.
-
+```
 
 ---
 
 **ndi_clocktype2char** - *produce the NDI_CLOCKTOP's type as a string*
 
+```
 STR = NDI_CLOCKTYPE2CHAR(NDI_CLOCKTYPE_OBJ)
  
   Return a string STR equal to the ndi.time.clocktype object's type parameter.
-
+```
 
 ---
 
 **ne** - *are two ndi.time.clocktype objects not equal?*
 
+```
 B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)
  
   Compares two NDI_CLOCKTYPE_objects and returns 0 if they refer to the 
   same clock type.
-
+```
 
 ---
 
 **needsepoch** - *does this clocktype need an epoch for full description?*
 
+```
 B = NEEDSEPOCH(NDI_CLOCKTYPE_OBJ)
  
   Does this ndi.time.clocktype object need an epoch in order to specify time?
  
   Returns 1 for 'dev_local_time', 0 otherwise.
-
+```
 
 ---
 
 **setclocktype** - *Set the type of an ndi.time.clocktype*
 
+```
 NDI_CLOCKTYPE_OBJ = SETCLOCKTYPE(NDI_CLOCKTYPE_OBJ, TYPE)
  
   Sets the TYPE property of an ndi.time.clocktype object NDI_CLOCKTYPE_OBJ.
@@ -133,7 +143,7 @@ NDI_CLOCKTYPE_OBJ = SETCLOCKTYPE(NDI_CLOCKTYPE_OBJ, TYPE)
   'dev_local_time'          | A device keeps its own local time only within epochs
   'no_time'                 | No timing information
   'inherited'               | The timing information is inherited from another device.
-
+```
 
 ---
 

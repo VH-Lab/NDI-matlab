@@ -1,5 +1,6 @@
 # ndi.setup.daq.system.angeluccilab
 
+```
   ANGELUCCILAB - initialize devices used by ANGELUCCILAB
  
   EXP = ndi.setup.daq.system.angeluccilab(EXP, DEVNAME)
@@ -24,3 +25,5 @@
                         |    files '#.nev', '#.ns4', and 'stimData.mat'
  
   See also: ndi.file.navigator.epochdir
+
+```

@@ -1,5 +1,6 @@
 # ndi.database.fun.opendatabase
 
+```
   NDI_OPENDATABASE - open the database associated with an session
  
   DB = ndi.database.fun.opendatabase(DATABASE_PATH, SESSION_UNIQUE_REFERENCE)
@@ -12,3 +13,5 @@
   the order in the hierarchy.
  
   Otherwise, DB is empty.
+
+```

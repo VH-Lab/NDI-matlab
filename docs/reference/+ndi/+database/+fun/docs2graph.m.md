@@ -1,5 +1,6 @@
 # ndi.database.fun.docs2graph
 
+```
   NDI_DOCS2GRAPH - create a directed graph from a cell array of NDI_DOCUMENT objects
   
   [G,NODES,MDIGRAPH] = ndi.database.fun.docs2graph(NDI_DOCUMENT_OBJ)
@@ -10,3 +11,5 @@
   all returned.
  
   See also: DIGRAPH
+
+```

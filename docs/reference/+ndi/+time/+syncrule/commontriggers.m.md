@@ -1,5 +1,6 @@
 # CLASS ndi.time.syncrule.commontriggers
 
+```
   NDI_SYNCRULE_COMMONTRIGGERS_OBJ - create a new ndi.time.syncrule.commontriggers for managing synchronization
  
   NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers()
@@ -18,6 +19,8 @@
   channel_daq2                 | The channel on the second daq system
   number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
 
+
+```
 ## Superclasses
 **[ndi.time.syncrule](../syncrule.m.md)**, **[ndi.ido](../../ido.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
@@ -52,6 +55,7 @@
 
 **apply** - *apply an ndi.time.syncrule.commontriggers to obtain a cost and ndi.time.timemapping between two ndi.epoch.epochset objects*
 
+```
 [COST, MAPPING] = APPLY(NDI_SYNCRULE_COMMONTRIGGERS_OBJ, EPOCHNODE_A, EPOCHNODE_B)
  
   Given an ndi.time.syncrule.commontriggers object and two EPOCHNODES (see ndi.epoch.epochset/EPOCHNODES),
@@ -59,12 +63,13 @@
   a cost COST and an ndi.time.timemapping object MAPPING is returned.
  
   Otherwise, COST and MAPPING are empty.
-
+```
 
 ---
 
 **commontriggers** - *create a new ndi.time.syncrule.commontriggers for managing synchronization*
 
+```
 NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers()
        or
   NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers(PARAMETERS)
@@ -80,12 +85,13 @@ NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers()
   daqsystem2                   | The name of the second daq system
   channel_daq2                 | The channel on the second daq system
   number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
-
+```
 
 ---
 
 **eligibleclocks** - *return a cell array of eligible NDI_CLOCKTYPEs that can be used with ndi.time.syncrule*
 
+```
 EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of ndi.time.clocktype objects with types that can be processed by the
@@ -99,12 +105,13 @@ EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
   See also: ndi.time.syncrule.commontriggers/INELIGIBLECLOCKS
 
 Help for ndi.time.syncrule.commontriggers/eligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 
 **eligibleepochsets** - *return a cell array of eligible ndi.epoch.epochset class names for ndi.time.syncrule.commontriggers*
 
+```
 EES = ELIGIBLEEPOCHSETS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ)
  
   Returns a cell array of valid ndi.epoch.epochset subclasses that the rule can process.
@@ -117,35 +124,38 @@ EES = ELIGIBLEEPOCHSETS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ)
   NDI_EPOCHSETS that use the rule must be members or descendents of the classes returned here.
  
   See also: ndi.time.syncrule.commontriggers/INELIGIBLEEPOCHSETS
-
+```
 
 ---
 
 **eq** - *are two ndi.time.syncrule objects equal?*
 
+```
 B = EQ(NDI_SYNCRULE_OBJ_A, NDI_SYNCRULE_OBJ_B)
  
   Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
   Otherwise, 0 is returned.
 
 Help for ndi.time.syncrule.commontriggers/eq is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 
 **id** - *return the identifier of an ndi.ido object*
 
+```
 IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
 Help for ndi.time.syncrule.commontriggers/id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **ineligibleclocks** - *return a cell array of ineligible NDI_CLOCKTYPEs that cannot be used with ndi.time.syncrule*
 
+```
 IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   Returns a cell array of ndi.time.clocktype objects with types that cannot be processed by the
@@ -160,12 +170,13 @@ IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
   See also: ndi.time.syncrule.commontriggers/ELIGIBLECLOCKS
 
 Help for ndi.time.syncrule.commontriggers/ineligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 
 **ineligibleepochsets** - *return a cell array of ineligible ndi.epoch.epochset class names for ndi.time.syncrule.commontriggers*
 
+```
 IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ)
  
   Returns a cell array of ndi.epoch.epochset subclasses that the rule cannot process.
@@ -179,12 +190,13 @@ IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ)
   classes.
  
   See also: ndi.time.syncrule.commontriggers/ELIGIBLEEPOCHSETS
-
+```
 
 ---
 
 **isvalidparameters** - *determine if a parameter structure is valid for a given ndi.time.syncrule.commontriggers*
 
+```
 [B,MSG] = ISVALIDPARAMETERS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ, PARAMETERS)
  
   Returns 1 if PARAMETERS is a valid parameter structure for ndi.time.syncrule.commontriggers.
@@ -199,12 +211,13 @@ IES = INELIGIBLEEPOCHSETS(NDI_SYNCRULE_COMMONTRIGGERS_OBJ)
                                |  filenames that must match in order for the epochs to match.
  
   See also: ndi.time.syncrule/SETPARAMETERS
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -218,35 +231,38 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.time.syncrule.commontriggers.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *create a new ndi.document for an ndi.time.syncrule object*
 
+```
 DOC = NEWDOCUMENT(NDI_SYNCRULE_OBJ)
  
   Creates an ndi.document object DOC that represents the
      ndi.time.syncrule object.
 
 Help for ndi.time.syncrule.commontriggers/newdocument is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 
 **searchquery** - *create a search for this ndi.time.syncrule object*
 
+```
 SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
  
   Creates a search query for the ndi.time.syncgraph object.
 
 Help for ndi.time.syncrule.commontriggers/searchquery is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 
 **setparameters** - *set the parameters for an ndi.time.syncrule object, checking for valid form*
 
+```
 NDI_SYNCRULE_OBJ = SETPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
  
   Sets the 'parameters' field of an ndi.time.syncrule object, while also checking that
@@ -255,7 +271,7 @@ NDI_SYNCRULE_OBJ = SETPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
   See also: ndi.time.syncrule.commontriggers/ISVALIDPARAMETERS
 
 Help for ndi.time.syncrule.commontriggers/setparameters is inherited from superclass NDI.TIME.SYNCRULE
-
+```
 
 ---
 

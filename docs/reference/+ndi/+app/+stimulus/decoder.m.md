@@ -1,5 +1,6 @@
 # CLASS ndi.app.stimulus.decoder
 
+```
   ndi.app.stimulus.decoder - an app to decode stimulus information from NDI_PROBE_STIMULUS objects
  
   NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
@@ -7,6 +8,8 @@
   Creates a new ndi_app_stimulus.decoder object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
 
+
+```
 ## Superclasses
 **[ndi.app](../../app.m.md)**, **[ndi.documentservice](../../documentservice.m.md)**
 
@@ -34,28 +37,31 @@
 
 **decoder** - *an app to decode stimulus information from NDI_PROBE_STIMULUS objects*
 
+```
 NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
  
   Creates a new ndi_app_stimulus.decoder object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on an app*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
  
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
 Help for ndi.app.stimulus.decoder/newdocument is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **parse_stimuli** - *write stimulus records for all stimulus epochs of an ndi.element stimulus probe*
 
+```
 [NEWDOCS, EXISITINGDOCS] = PARSE_STIMULI(NDI_APP_STIMULUS_DECODER_OBJ, NDI_ELEMENT_STIM, [RESET])
  
   Examines a the ndi.session associated with NDI_APP_STIMULUS_DECODER_OBJ and the stimulus
@@ -69,12 +75,13 @@ Help for ndi.app.stimulus.decoder/newdocument is inherited from superclass NDI.A
   removed and all documents are recalculated. The default for RESET is 0 (if it is not provided).
  
   Note that this function DOES add the new documents to the database.
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document related to this app*
 
+```
 C = SEARCHQUERY(NDI_APP_OBJ)
  
   Returns a cell array of strings that allow the creation or searching of an
@@ -82,24 +89,26 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   to the app's VARAPPNAME.
 
 Help for ndi.app.stimulus.decoder/searchquery is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **varappname** - *return the name of the application for use in variable creation*
 
+```
 AN = VARAPPNAME(NDI_APP_OBJ)
  
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
 Help for ndi.app.stimulus.decoder/varappname is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **version_url** - *return the app version and url*
 
+```
 [V, URL] = VERSION_URL(NDI_APP_OBJ)
  
   Return the version and url for the current app. In the base class,
@@ -110,7 +119,7 @@ Help for ndi.app.stimulus.decoder/varappname is inherited from superclass NDI.AP
   different version control system.
 
 Help for ndi.app.stimulus.decoder/version_url is inherited from superclass NDI.APP
-
+```
 
 ---
 

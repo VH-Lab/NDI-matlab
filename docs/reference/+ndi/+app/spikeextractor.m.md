@@ -1,5 +1,6 @@
 # CLASS ndi.app.spikeextractor
 
+```
   ndi.app.spikeextractor - an app to extract elements found in sessions
  
   NDI_APP_SPIKEEXTRACTOR_OBJ = ndi.app.spikeextractor(SESSION)
@@ -7,6 +8,8 @@
   Creates a new ndi_app_spikeextractor object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikeextractor'.
 
+
+```
 ## Superclasses
 **[ndi.app](../app.m.md)**, **[ndi.documentservice](../documentservice.m.md)**, **[ndi.app.appdoc](appdoc.m.md)**
 
@@ -49,6 +52,7 @@
 
 **add_appdoc** - *Load data from an application document*
 
+```
 [...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
       APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])
  
@@ -77,12 +81,13 @@
                             |    the data structures that define the document are not equal.
 
 Help for ndi.app.spikeextractor/add_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **appdoc_description** - *a function that prints a description of all appdoc types*
 
+```
 For ndi_app_spikeextractor, there are the following types:
   APPDOC_TYPE                 | Description
   ----------------------------------------------------------------------------------------------
@@ -347,12 +352,13 @@ For ndi_app_spikeextractor, there are the following types:
        SPIKETIMES_DOC - the ndi.document of the extracted spike times.
  
   ----------------------------------------------------------------------------------------------
-
+```
 
 ---
 
 **clear_appdoc** - *remove an ndi.app.appdoc document from a session database*
 
+```
 B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
  
   Deletes the app document of style DOC_NAME from the database.
@@ -363,12 +369,13 @@ B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
   B is 1 if the document is found, and 0 otherwise.
 
 Help for ndi.app.spikeextractor/clear_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **defaultstruct_appdoc** - *return a default appdoc structure for a given APPDOC type*
 
+```
 APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
  
   Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.
@@ -377,12 +384,13 @@ APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
   default structure is built from the ndi.document's class property list.
 
 Help for ndi.app.spikeextractor/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **doc2struct** - *create an ndi.document from an input structure and input parameters*
 
+```
 DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
  
   Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
@@ -391,12 +399,13 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additiona
   In the base class, this uses the property info in the ndi.document to load the data structure.
 
 Help for ndi.app.spikeextractor/doc2struct is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **extract** - *method that extracts spikes from epochs of an NDI_ELEMENT_TIMESERIES_OBJ*
 
+```
 EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME, [REDO], [T0 T1])
   TYPE is the type of probe if any
   combination of NAME and TYPE must return at least one probe from session
@@ -404,30 +413,33 @@ EXTRACT(NDI_APP_SPIKEEXTRACTOR_OBJ, NDI_TIMESERIES_OBJ, EPOCH, EXTRACTION_NAME, 
   EXTRACTION_NAME name given to find ndi_doc in database
   REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
   [T0 T1] - if given, then restricts the extraction to be between times t0 and t1; default is [-Inf Inf]
-
+```
 
 ---
 
 **filter** - *filter data based on a filter structure*
 
+```
 DATA_OUT = FILTER(NDI_APP_SPIKEEXTRACTOR_OBJ, DATA_IN, FILTERSTRUCT)
  
   Filters data based on FILTERSTRUCT (see ndi_app_spikeextractor/MAKEFILTERSTRUCT)
-
+```
 
 ---
 
 **find_appdoc** - *find an ndi_app_appdoc document in the session database*
 
+```
 See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
  
   See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
-
+```
 
 ---
 
 **isequal_appdoc_struct** - *are two APPDOC data structures the same (equal)?*
 
+```
 B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)
  
   Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
@@ -435,12 +447,13 @@ B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_ST
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
 
 Help for ndi.app.spikeextractor/isequal_appdoc_struct is inherited from superclass NDI.APP.APPDOC
-
+```
 
 ---
 
 **isvalid_appdoc_struct** - *is an input structure a valid descriptor for an APPDOC?*
 
+```
 [B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT)
  
   Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
@@ -450,43 +463,47 @@ Help for ndi.app.spikeextractor/isequal_appdoc_struct is inherited from supercla
   APPDOC_TYPE               | Description
   ----------------------------------------------------------------------------------------------
   'extraction_parameters'   | A document that describes the parameters to be used for extraction
-
+```
 
 ---
 
 **loaddata_appdoc** - *load data from an application document*
 
+```
 See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
  
   See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
-
+```
 
 ---
 
 **makefilterstruct** - *make a filter structure for a given sampling rate and extraction parameters*
 
+```
 FILTERSTRUCT = MAKEFILTERSTRUCT(NDI_APP_SPIKEEXTRACTOR_OBJ, EXTRACTION_DOC, SAMPLE_RATE)
  
   Given an EXTRACTION_DOC of parameters and a sampling rate SAMPLE_RATE, make a filter
   structure for passing to FILTERDATA.
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on an app*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
  
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
 Help for ndi.app.spikeextractor/newdocument is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document related to this app*
 
+```
 C = SEARCHQUERY(NDI_APP_OBJ)
  
   Returns a cell array of strings that allow the creation or searching of an
@@ -494,22 +511,24 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   to the app's VARAPPNAME.
 
 Help for ndi.app.spikeextractor/searchquery is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **spikeextractor** - *an app to extract elements found in sessions*
 
+```
 NDI_APP_SPIKEEXTRACTOR_OBJ = ndi.app.spikeextractor(SESSION)
  
   Creates a new ndi_app_spikeextractor object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikeextractor'.
-
+```
 
 ---
 
 **struct2doc** - *create an ndi.document from an input structure and input parameters*
 
+```
 DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
  
   For ndi_app_spikeextractor, one can use an APPDOC_TYPE of the following:
@@ -520,24 +539,26 @@ DOC = STRUCT2DOC(NDI_APP_SPIKEEXTRACTOR_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
     '_modification']          | 
  
   See APPDOC_DESCRIPTION for a list of the parameters.
-
+```
 
 ---
 
 **varappname** - *return the name of the application for use in variable creation*
 
+```
 AN = VARAPPNAME(NDI_APP_OBJ)
  
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
 Help for ndi.app.spikeextractor/varappname is inherited from superclass NDI.APP
-
+```
 
 ---
 
 **version_url** - *return the app version and url*
 
+```
 [V, URL] = VERSION_URL(NDI_APP_OBJ)
  
   Return the version and url for the current app. In the base class,
@@ -548,7 +569,7 @@ Help for ndi.app.spikeextractor/varappname is inherited from superclass NDI.APP
   different version control system.
 
 Help for ndi.app.spikeextractor/version_url is inherited from superclass NDI.APP
-
+```
 
 ---
 

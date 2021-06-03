@@ -1,5 +1,6 @@
 # ndi.database.fun.readGenBankNames
 
+```
   NDI_READGENBANKNAMES - read the GenBank names from the 'names.dmp' file
  
   GENBANK_NAMES = ndi.database.fun.readGenBankNames(FILENAME)
@@ -21,3 +22,5 @@
   other_commonname     | A cell array of strings with the other common names
                        |   (cell array of strings, potentially many entries per node)
                        |   other_commonname{i}{j} is the jth other common name for node i
+
+```

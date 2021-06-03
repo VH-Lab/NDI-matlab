@@ -1,7 +1,10 @@
 # CLASS ndi.element
 
+```
   ndi.element - define or examine a element in the session
 
+
+```
 ## Superclasses
 **[ndi.ido](ido.m.md)**, **[ndi.epoch.epochset](+epoch/epochset.m.md)**, **[ndi.documentservice](documentservice.m.md)**
 
@@ -60,6 +63,7 @@
 
 **addepoch** - *add an epoch to the ndi.element*
 
+```
 [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
  
   Registers the data for an epoch with the NDI_ELEMENT_OBJ.
@@ -71,12 +75,13 @@
                       of the probe
     T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
                       the probe, in units of the epock clock
-
+```
 
 ---
 
 **buildepochgraph** - *compute the epochgraph among epochs for an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = BUILDEPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -101,12 +106,13 @@
   ndi.element/EPOCHNODES
 
 Help for ndi.element/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **buildepochtable** - *build the epoch table for an ndi.element*
 
+```
 ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
  
   ET is a structure array with the following fields:
@@ -122,12 +128,13 @@ ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
                             |   time of this epoch. The time units of t0_t1{i} match epoch_clock{i}.
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
-
+```
 
 ---
 
 **cached_epochgraph** - *return the cached epoch graph of an ndi.epoch.epochset object*
 
+```
 [COST,MAPPING] = CACHED_EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epoch graph, if it exists and is up-to-date
@@ -139,12 +146,13 @@ ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
 Help for ndi.element/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **cached_epochtable** - *return the cached epochtable of an ndi.epoch.epochset object*
 
+```
 [ET, HASHVALUE] = CACHED_EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   Return the cached version of the epochtable, if it exists, along with its HASHVALUE
@@ -152,22 +160,24 @@ Help for ndi.element/cached_epochgraph is inherited from superclass NDI.EPOCH.EP
   ET and HASHVALUE will be empty.
 
 Help for ndi.element/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **doc_unique_id** - *return the document unique reference for an ndi.element object*
 
+```
 UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
  
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
-
+```
 
 ---
 
 **element** - *creator for ndi.element*
 
+```
 NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
          ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, [SUBJECT_ID], [DEPENDENCIES])
      or
@@ -178,23 +188,25 @@ NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, 
  
   If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
   element.
-
+```
 
 ---
 
 **elementstring** - *Produce a human-readable element string*
 
+```
 ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   Returns the name as a human-readable string.
  
   For ndi.element objects, this is the string 'element: ' followed by its name
-
+```
 
 ---
 
 **epoch2str** - *convert an epoch number or id to a string*
 
+```
 S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
  
   Returns the epoch NUMBER in the form of a string. If it is a simple
@@ -202,23 +214,25 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   identifier string, then it is returned.
 
 Help for ndi.element/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
  
   Return the clock types available for this epoch.
  
   The ndi.element class always returns the clock type(s) of the element it is based on
-
+```
 
 ---
 
 **epochgraph** - *graph of the mapping and cost of converting time among epochs*
 
+```
 [COST, MAPPING] = EPOCHGRAPH(NDI_EPOCHSET_OBJ)
  
   Compute the cost and the mapping among epochs in the EPOCHTABLE for an ndi.epoch.epochset object
@@ -230,12 +244,13 @@ EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
 Help for ndi.element/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochid** - *Get the epoch identifier for a particular epoch*
 
+```
 ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   Returns the epoch identifier string for the epoch EPOCH_NUMBER.
@@ -247,12 +262,13 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   ndi.daq.system) will override this method.
 
 Help for ndi.element/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochnodes** - *return all epoch nodes from an ndi.epoch.epochset object*
 
+```
 [NODES,UNDERLYINGNODES] = EPOCHNODES(NDI_EPOCHSET_OBJ)
  
   Return all EPOCHNODES for an ndi.epoch.epochset. EPOCHNODES consist of the
@@ -281,23 +297,25 @@ Help for ndi.element/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
 Help for ndi.element/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochsetname** - *the name of the ndi.element object, for EPOCHNODES*
 
+```
 NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
  
   Returns the object name that is used when creating epoch nodes.
  
   For ndi.element objects, this is ndi.element/ELEMENTSTRING.
-
+```
 
 ---
 
 **epochtable** - *Return an epoch table that relates the current object's epochs to underlying epochs*
 
+```
 [ET,HASHVALUE] = EPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   ET is a structure array with the following fields:
@@ -321,12 +339,13 @@ NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
 Help for ndi.element/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **epochtableentry** - *return the entry of the EPOCHTABLE that corresonds to an EPOCHID*
 
+```
 ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
  
   Returns the EPOCHTABLE entry associated with the ndi.epoch.epochset object
@@ -334,12 +353,13 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   epoch or the EPOCHID of the epoch.
 
 Help for ndi.element/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **getcache** - *return the NDI_CACHE and key for ndi.element*
 
+```
 [CACHE,KEY] = GETCACHE(NDI_ELEMENT_OBJ)
  
   Returns the CACHE and KEY for the ndi.element object.
@@ -348,77 +368,84 @@ Help for ndi.element/epochtableentry is inherited from superclass NDI.EPOCH.EPOC
   The KEY is the probe's ELEMENTSTRING plus the TYPE of the ELEMENT.
  
   See also: ndi.file.navigator
-
+```
 
 ---
 
 **id** - *return the document unique identifier for an ndi.element object*
 
+```
 UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
  
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
-
+```
 
 ---
 
 **issyncgraphroot** - *should this object be a root in an ndi.time.syncgraph epoch graph?*
 
+```
 B = ISSYNCGRAPHROOT(NDI_ELEMENT_OBJ)
  
   This function tells an ndi.time.syncgraph object whether it should continue
   adding the 'underlying' epochs to the graph, or whether it should stop at this level.
  
   For ndi.element objects, this returns 0 so that underlying ndi.probe epochs are added.
-
+```
 
 ---
 
 **load_all_element_docs** - *load all of the ndi.element objects from an session database*
 
+```
 ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
  
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
-
+```
 
 ---
 
 **load_element_doc** - *load a element doc from the session database*
 
+```
 ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Load an ndi.document that is based on the ndi.element object.
  
   Returns empty if there is no such document.
-
+```
 
 ---
 
 **loadaddedepochs** - *load the added epochs from an ndi.element*
 
+```
 [ET_ADDED, EPOCHDOCS] = LOADADDEDEOPCHS(NDI_ELEMENT_OBJ)
  
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
-
+```
 
 ---
 
 **matchedepochtable** - *compare a hash number from an epochtable to the current version*
 
+```
 B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
  
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
 Help for ndi.element/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -432,12 +459,13 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.element.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *return a new database document of type ndi.document based on a element*
 
+```
 NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
  
   Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
@@ -447,12 +475,13 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
   in accordance to 'ndi_document_epochid'.
  
   When the document is created, it is automatically added to the session.
-
+```
 
 ---
 
 **numepochs** - *Number of epochs of ndi.epoch.epochset*
 
+```
 N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   Returns the number of epochs in the ndi.epoch.epochset object NDI_EPOCHSET_OBJ.
@@ -460,12 +489,13 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
   See also: EPOCHTABLE
 
 Help for ndi.element/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **resetepochtable** - *clear an ndi.epoch.epochset epochtable in memory and force it to be re-read from disk*
 
+```
 NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   This function clears the internal cached memory of the epochtable, forcing it to be re-read from
@@ -474,22 +504,24 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
   See also: ndi.element/EPOCHTABLE
 
 Help for ndi.element/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 
 **searchquery** - *return a search query for an ndi.document based on this element*
 
+```
 SQ = SEARCHQUERY(NDI_ELEMENT_OBJ, [EPOCHID])
  
   Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
   with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
-
+```
 
 ---
 
 **t0_t1** - **
 
+```
 T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
@@ -502,12 +534,13 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
   See also: ndi.time.clocktype, EPOCHCLOCK
  
   TODO: this must be a bug, it's just self-referential
-
+```
 
 ---
 
 **underlyingepochnodes** - *find all the underlying epochnodes of a given epochnode*
 
+```
 [UNODES, COST, MAPPING] = UNDERLYINGEPOCHNODES(NDI_EPOCHSET_OBJ, EPOCHNODE)
  
   Traverse the underlying nodes of a given EPOCHNODE until we get to the roots
@@ -518,7 +551,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
   See also: ISSYNCGRAPHROOT
 
 Help for ndi.element/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
-
+```
 
 ---
 

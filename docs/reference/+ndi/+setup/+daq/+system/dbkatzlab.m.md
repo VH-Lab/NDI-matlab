@@ -1,5 +1,6 @@
 # ndi.setup.daq.system.dbkatzlab
 
+```
   KATZLAB_MAKEDEV - initialize devices used by KATZLAB
  
   EXP = ndi.setups.katzlab_makedev(EXP, DEVNAME)
@@ -22,3 +23,5 @@
                      |    files 'time.dat, 'info.rhd', and 'epochprobemap.txt'
  
   See also: ndi.file.navigator.epochdir
+
+```

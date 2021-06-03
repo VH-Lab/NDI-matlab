@@ -1,5 +1,6 @@
 # ndi.test.database.test_ndi_document_jsons
 
+```
   TEST_NDI_DOCUMNET_JSONS - test validity of all NDI_DOCUMENT json definitions
  
   [B, SUCCESSES, FAILURES]  = ndi.test.document_jsons(GENERATE_ERROR)
@@ -10,3 +11,5 @@
   FAILURES. B is 1 if all ndi documents were created successfully.
   
   If GENERATE_ERROR is present and is 1, then an error is generated if B is 0.
+
+```

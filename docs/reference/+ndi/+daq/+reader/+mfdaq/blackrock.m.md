@@ -1,11 +1,14 @@
 # CLASS ndi.daq.reader.mfdaq.blackrock
 
+```
   NDI_DAQREADER_MFDAQ_BLACKROCK - Device driver for Blackrock Microsystems NSx/NEV file format
  
   This class reads data from Blackrock Microsystems NSx/NEV file format.
  
   Blackrock Microsystems: https://www.blackrockmicro.com/
 
+
+```
 ## Superclasses
 **[ndi.daq.reader.mfdaq](../mfdaq.m.md)**, **[ndi.daq.reader](../../reader.m.md)**, **[ndi.ido](../../../ido.m.md)**, **[ndi.documentservice](../../../documentservice.m.md)**
 
@@ -42,15 +45,17 @@
 
 **blackrock** - *Create a new NDI_DEVICE_MFDAQ_BLACKROCK object*
 
+```
 D = ndi.daq.reader.mfdaq.blackrock()
  
    Creates a new ndi.daq.reader.mfdaq.blackrock object
-
+```
 
 ---
 
 **epochclock** - *return the ndi.time.clocktype objects for an epoch*
 
+```
 EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
  
   Return the clock types available for this epoch as a cell array
@@ -62,34 +67,37 @@ EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
   See also: ndi.time.clocktype
 
 Help for ndi.daq.reader.mfdaq.blackrock/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ
-
+```
 
 ---
 
 **eq** - *tests whether 2 ndi.daq.reader objects are equal*
 
+```
 B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
 Help for ndi.daq.reader.mfdaq.blackrock/eq is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **filenamefromepochfiles** - *return the file name that corresponds to the NEV/NSV files*
 
+```
 [NEVFILES, NSVFILES] = FILENAMEFROMEPOCHFILES(FILENAME_ARRAY)
  
   Examines the list of filenames in FILENAME_ARRAY (cell array of full path file strings) and determines which
   ones have the extension '.nev' (neuro event file) and which have the extension '.ns#', where # is a number, or the source
   data files.
-
+```
 
 ---
 
 **getchannelsepoch** - *List the channels that are available on this Blackrock device for a given set of files*
 
+```
 CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES)
  
    Returns the channel list of acquired channels in this session
@@ -99,23 +107,25 @@ CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES)
   'name'             | The name of the channel (e.g., 'ai1')
   'type'             | The type of data stored in the channel
                      |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
-
+```
 
 ---
 
 **id** - *return the identifier of an ndi.ido object*
 
+```
 IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
 Help for ndi.daq.reader.mfdaq.blackrock/id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -129,31 +139,34 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.daq.reader.mfdaq.blackrock.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *create a new ndi.document for an ndi.daq.reader object*
 
+```
 DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
  
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
 Help for ndi.daq.reader.mfdaq.blackrock/newdocument is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **read_blackrock_headers** - *read information from Blackrock Micro header files*
 
+```
 [NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])
-
+```
 
 ---
 
 **readchannels_epochsamples** - *read the data based on specified channels*
 
+```
 DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
  
    CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
@@ -163,12 +176,13 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
    EPOCH is set of epoch files
  
    DATA is the channel data (each column contains data from an indvidual channel)
-
+```
 
 ---
 
 **readevents_epochsamples** - *read events, markers, and digital events of specified channels for a specified epoch*
 
+```
 [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHSTREAMS, EPOCH_SELECT, T0, T1)
  
    Returns TIMESTAMPS and DATA corresponding to event or marker channels. If the number of CHANNEL entries is 1, then TIMESTAMPS
@@ -196,12 +210,13 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
    EPOCHSFILES is a cell array of full path file names
 
 Help for ndi.daq.reader.mfdaq.blackrock/readevents_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ
-
+```
 
 ---
 
 **readevents_epochsamples_native** - *read events or markers of specified channels for a specified epoch*
 
+```
 [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    CHANNELTYPE is the type of channel to read
@@ -218,12 +233,13 @@ Help for ndi.daq.reader.mfdaq.blackrock/readevents_epochsamples is inherited fro
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
 Help for ndi.daq.reader.mfdaq.blackrock/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
-
+```
 
 ---
 
 **samplerate** - *GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL*
 
+```
 SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
   CHANNELTYPE can be either a string or a cell array of
   strings the same length as the vector CHANNEL.
@@ -231,23 +247,25 @@ SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
   that CHANNELTYPE applies to every entry of CHANNEL.
  
   SR is the list of sample rate from specified channels
-
+```
 
 ---
 
 **searchquery** - *create a search for this ndi.daq.reader object*
 
+```
 SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
 Help for ndi.daq.reader.mfdaq.blackrock/searchquery is inherited from superclass NDI.DAQ.READER
-
+```
 
 ---
 
 **t0_t1** - *return the t0_t1 (beginning and end) epoch times for an epoch*
 
+```
 T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
  
   Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
@@ -256,19 +274,20 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
   The abstract class always returns {[NaN NaN]}.
  
   See also: ndi.time.clocktype, EPOCHCLOCK
-
+```
 
 ---
 
 **verifyepochprobemap** - *Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk*
 
+```
 B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHPROBEMAP, EPOCHFILES)
  
   Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
   with epoch files EPOCHFILES.
  
   See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
-
+```
 
 ---
 

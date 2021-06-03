@@ -1,7 +1,10 @@
 # CLASS ndi.setup.daq.metadatareader.AngelucciStims
 
+```
   NDI_DAQMETADATAREADER_ANGELUCCISTIMS - a class for reading stims from Angelucci lab example data
 
+
+```
 ## Superclasses
 **[ndi.daq.metadatareader](../../../+daq/metadatareader.m.md)**, **[ndi.ido](../../../ido.m.md)**, **[ndi.documentservice](../../../documentservice.m.md)**
 
@@ -31,6 +34,7 @@
 
 **AngelucciStims** - *Create a new multifunction DAQ object*
 
+```
 D = NDI_DAQMETADATAREADER_ANGELUCCI_STIMS()
    or
    D = ndi.daq.metadatareader(STIMDATA_MAT_FILE)
@@ -38,35 +42,38 @@ D = NDI_DAQMETADATAREADER_ANGELUCCI_STIMS()
    Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
    is given, it indicates a regular expression to use to search EPOCHFILES
    for a tab-separated-value text file that describes stimulus parameters.
-
+```
 
 ---
 
 **eq** - *are 2 ndi.daq.metadatareader objects equal?*
 
+```
 TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)
  
   TF is 1 if the two objects are of the same class and have the same properties.
   TF is 0 otherwise.
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims/eq is inherited from superclass NDI.DAQ.METADATAREADER
-
+```
 
 ---
 
 **id** - *return the identifier of an ndi.ido object*
 
+```
 IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims/id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **ndi_unique_id** - *Generate a unique ID number for NDI projects*
 
+```
 ID = NDI_UNIQUE_ID
  
   Generates a unique ID character array based on the current time and a random
@@ -80,24 +87,26 @@ ID = NDI_UNIQUE_ID
   See also: NUM2HEX, NOW, RAND
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims.ndi_unique_id is inherited from superclass NDI.IDO
-
+```
 
 ---
 
 **newdocument** - *create a new ndi.document for an ndi.daq.metadatareader object*
 
+```
 DOC = NEWDOCUMENT(ndi.daq.metadatareader OBJ)
  
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims/newdocument is inherited from superclass NDI.DAQ.METADATAREADER
-
+```
 
 ---
 
 **readmetadata** - *PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)*
 
+```
 Returns the parameters (cell array of structures) associated with the
   stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
  
@@ -120,28 +129,30 @@ Returns the parameters (cell array of structures) associated with the
   This function can be overridden in more specialized stimulus classes.
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims/readmetadata is inherited from superclass NDI.DAQ.METADATAREADER
-
+```
 
 ---
 
 **readmetadatafromfile** - *read in metadata from the file that is identified*
 
+```
 PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_ANGELUCCI_STIMS_OBJ, FILE)
  
   Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER_ANGELUCCI_STIMS
   document, this function loads in the metadata.
-
+```
 
 ---
 
 **searchquery** - *create a search for this ndi.daq.reader object*
 
+```
 SQ = SEARCHQUERY(NDI_DAQMETADATAREADER_OBJ)
  
   Creates a search query for the ndi.daq.metadatareader object.
 
 Help for ndi.setup.daq.metadatareader.AngelucciStims/searchquery is inherited from superclass NDI.DAQ.METADATAREADER
-
+```
 
 ---
 

@@ -1,5 +1,6 @@
 # ndi.test.daq.build_intan_flat_exp
 
+```
   BUILD_INTAN_FLAT_EXP - Create an Intan driver and save it to an session
  
    ndi.test.daq.build_intan_flat_exp([DIRNAME])
@@ -11,3 +12,5 @@
  
    If DIRNAME is not provided, the default directory
    [NDIPATH]/example_sessions/exp1_eg_saved is used.
+
+```

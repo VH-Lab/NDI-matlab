@@ -1,5 +1,6 @@
 # ndi.probe.fun.probestruct2probe
 
+```
   NDI.PROBE.FUN.PROBESTRUCT2PROBE - Convert probe structures to NDI_PROBE objects
  
   NDI_PROBE_OBJ = ndi.probe.fun.probestruct2probe(PROBESTRUCT, EXP)
@@ -13,3 +14,5 @@
   make the conversion.
  
   See also: ndi.globals and NDI_PROBETYPE2OBJECT
+
+```
