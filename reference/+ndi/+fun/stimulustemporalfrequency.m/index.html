@@ -4686,13 +4686,17 @@
                 
                 
                 <h1 id="ndifunstimulustemporalfrequency">ndi.fun.stimulustemporalfrequency<a class="headerlink" href="#ndifunstimulustemporalfrequency" title="Permanent link">&para;</a></h1>
-<p>NDI_STIMULUSTEMPORALFREQUENCY - given a stimulus parameter set, return the temporal frequency</p>
-<p>[TF_VALUE, TF_NAME] = ndi.fun.stimulustemporalfrequency(STIMULUS_PARAMETERS)</p>
-<p>Given a set of STIMULUS_PARAMETERS (a structure array), this function will
-  check to see if any names match those in ndi.fun.stimulustemporalfrequency.JSON.
-  If so, the value for this stimulus is returned in TF_VALUE and the name of
-  the parameter is returned in TF_NAME.</p>
-<p>If no temporal frequency can be determined, TF_VALUE and TF_NAME are blank.</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_STIMULUSTEMPORALFREQUENCY</span> <span class="o">-</span> <span class="nv">given</span> <span class="nv">a</span> <span class="nv">stimulus</span> <span class="nv">parameter</span> <span class="nv">set</span>, <span class="k">return</span> <span class="nv">the</span> <span class="nv">temporal</span> <span class="nv">frequency</span>
+
+  [<span class="nv">TF_VALUE</span>, <span class="nv">TF_NAME</span>] <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">fun</span>.<span class="nv">stimulustemporalfrequency</span><span class="ss">(</span><span class="nv">STIMULUS_PARAMETERS</span><span class="ss">)</span>
+
+  <span class="nv">Given</span> <span class="nv">a</span> <span class="nv">set</span> <span class="nv">of</span> <span class="nv">STIMULUS_PARAMETERS</span> <span class="ss">(</span><span class="nv">a</span> <span class="nv">structure</span> <span class="nv">array</span><span class="ss">)</span>, <span class="nv">this</span> <span class="nv">function</span> <span class="nv">will</span>
+  <span class="nv">check</span> <span class="nv">to</span> <span class="nv">see</span> <span class="k">if</span> <span class="nv">any</span> <span class="nv">names</span> <span class="nv">match</span> <span class="nv">those</span> <span class="nv">in</span> <span class="nv">ndi</span>.<span class="nv">fun</span>.<span class="nv">stimulustemporalfrequency</span>.<span class="nv">JSON</span>.
+  <span class="k">If</span> <span class="nv">so</span>, <span class="nv">the</span> <span class="nv">value</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">stimulus</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">TF_VALUE</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span>
+  <span class="nv">the</span> <span class="nv">parameter</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">in</span> <span class="nv">TF_NAME</span>.
+
+  <span class="k">If</span> <span class="nv">no</span> <span class="nv">temporal</span> <span class="nv">frequency</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">determined</span>, <span class="nv">TF_VALUE</span> <span class="nv">and</span> <span class="nv">TF_NAME</span> <span class="nv">are</span> <span class="nv">blank</span>.
+</code></pre></div>
                 
               
               

@@ -4785,14 +4785,20 @@
                 
                 
                 <h1 id="class-nditimetimemapping">CLASS ndi.time.timemapping<a class="headerlink" href="#class-nditimetimemapping" title="Permanent link">&para;</a></h1>
-<p>NDI.TIME.TIMEMAPPING - class for managing mapping of time across epochs and devices</p>
-<p>Describes mapping from one time base to another. The base class, ndi.time.timemapping, provides
-  polynomial mapping, although usually only linear mapping is used.
-  The property MAPPING is a vector of length N+1 that describes the coefficients of a
-  polynomial such that:</p>
-<p>t_out = mapping(1)<em>t_in^N + mapping(2)</em>t_in^(N-1) + ... mapping(N)*t_in + mapping(N+1)</p>
-<p>Usually, one specifies a linear relationship only, with MAPPING = [scale shift] so that</p>
-<p>t_out = scale * t_in + shift</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI</span><span class="p">.</span><span class="n">TIME</span><span class="p">.</span><span class="n">TIMEMAPPING</span> <span class="o">-</span> <span class="k">class</span> <span class="k">for</span> <span class="n">managing</span> <span class="n">mapping</span> <span class="n">of</span> <span class="n">time</span> <span class="n">across</span> <span class="n">epochs</span> <span class="n">and</span> <span class="n">devices</span>
+
+  <span class="n">Describes</span> <span class="n">mapping</span> <span class="n">from</span> <span class="n">one</span> <span class="n">time</span> <span class="n">base</span> <span class="n">to</span> <span class="n">another</span><span class="p">.</span> <span class="n">The</span> <span class="n">base</span> <span class="k">class</span><span class="p">,</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">,</span> <span class="n">provides</span>
+  <span class="n">polynomial</span> <span class="n">mapping</span><span class="p">,</span> <span class="n">although</span> <span class="n">usually</span> <span class="n">only</span> <span class="n">linear</span> <span class="n">mapping</span> <span class="n">is</span> <span class="n">used</span><span class="p">.</span>
+  <span class="n">The</span> <span class="n">property</span> <span class="n">MAPPING</span> <span class="n">is</span> <span class="n">a</span> <span class="n">vector</span> <span class="n">of</span> <span class="n">length</span> <span class="n">N</span><span class="o">+</span><span class="mi">1</span> <span class="n">that</span> <span class="n">describes</span> <span class="n">the</span> <span class="n">coefficients</span> <span class="n">of</span> <span class="n">a</span>
+  <span class="n">polynomial</span> <span class="n">such</span> <span class="nl">that</span><span class="p">:</span>
+
+  <span class="n">t_out</span> <span class="o">=</span> <span class="n">mapping</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">t_in</span><span class="o">^</span><span class="n">N</span> <span class="o">+</span> <span class="n">mapping</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="n">t_in</span><span class="o">^</span><span class="p">(</span><span class="n">N</span><span class="mi">-1</span><span class="p">)</span> <span class="o">+</span> <span class="p">...</span> <span class="n">mapping</span><span class="p">(</span><span class="n">N</span><span class="p">)</span><span class="o">*</span><span class="n">t_in</span> <span class="o">+</span> <span class="n">mapping</span><span class="p">(</span><span class="n">N</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+
+  <span class="n">Usually</span><span class="p">,</span> <span class="n">one</span> <span class="n">specifies</span> <span class="n">a</span> <span class="n">linear</span> <span class="n">relationship</span> <span class="n">only</span><span class="p">,</span> <span class="n">with</span> <span class="n">MAPPING</span> <span class="o">=</span> <span class="p">[</span><span class="n">scale</span> <span class="n">shift</span><span class="p">]</span> <span class="n">so</span> <span class="n">that</span>
+
+  <span class="n">t_out</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">t_in</span> <span class="o">+</span> <span class="n">shift</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4831,22 +4837,30 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>map</strong> - <em>perform a mapping from one time base to another</em></p>
-<p>T_OUT = MAP(NDI_TIMEMAPPING_OBJ, T_IN)</p>
+<p>```T_OUT = MAP(NDI_TIMEMAPPING_OBJ, T_IN)</p>
 <p>Perform the mapping described by NDI_TIMEMAPPING_OBJ from one time base to another.</p>
 <p>In the base class ndi.time.timemapping, the mapping is a polynomial.</p>
-<hr />
-<p><strong>timemapping</strong> - <em>ndi.time.timemapping</em></p>
-<p>NDI_TIMEMAPPING_OBJ = ndi.time.timemapping()
-     or
-  NDI_TIMEMAPPING_OBJ = ndi.time.timemapping(MAPPING)</p>
-<p>Creates a new ndi.time.timemapping object. In this base class,
-  the ndi.time.timemapping object specifies a polynomial mapping
-  from one time base to another.</p>
-<p>If the function is called with no input arguments, then
-  the trivial mapping MAPPING = [ 1 0 ] is used; this corresponds
-  to the polynomial t_out = 1*t_in + 0.</p>
-<p>Typically, the mapping is linear, so that MAPPING = [scale shift].</p>
-<p>See also: POLYVAL</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">timemapping</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">NDI_TIMEMAPPING_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">()</span>
+     <span class="n">or</span>
+  <span class="n">NDI_TIMEMAPPING_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span><span class="p">(</span><span class="n">MAPPING</span><span class="p">)</span>
+
+  <span class="n">Creates</span> <span class="n">a</span> <span class="n">new</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span> <span class="n">object</span><span class="p">.</span> <span class="n">In</span> <span class="n">this</span> <span class="n">base</span> <span class="k">class</span><span class="p">,</span>
+  <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span> <span class="n">object</span> <span class="n">specifies</span> <span class="n">a</span> <span class="n">polynomial</span> <span class="n">mapping</span>
+  <span class="n">from</span> <span class="n">one</span> <span class="n">time</span> <span class="n">base</span> <span class="n">to</span> <span class="n">another</span><span class="p">.</span>
+
+  <span class="n">If</span> <span class="n">the</span> <span class="n">function</span> <span class="n">is</span> <span class="n">called</span> <span class="n">with</span> <span class="n">no</span> <span class="n">input</span> <span class="n">arguments</span><span class="p">,</span> <span class="n">then</span>
+  <span class="n">the</span> <span class="n">trivial</span> <span class="n">mapping</span> <span class="n">MAPPING</span> <span class="o">=</span> <span class="p">[</span> <span class="mi">1</span> <span class="mi">0</span> <span class="p">]</span> <span class="n">is</span> <span class="n">used</span><span class="p">;</span> <span class="n">this</span> <span class="n">corresponds</span>
+  <span class="n">to</span> <span class="n">the</span> <span class="n">polynomial</span> <span class="n">t_out</span> <span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="n">t_in</span> <span class="o">+</span> <span class="mf">0.</span>
+
+  <span class="n">Typically</span><span class="p">,</span> <span class="n">the</span> <span class="n">mapping</span> <span class="n">is</span> <span class="n">linear</span><span class="p">,</span> <span class="n">so</span> <span class="n">that</span> <span class="n">MAPPING</span> <span class="o">=</span> <span class="p">[</span><span class="n">scale</span> <span class="n">shift</span><span class="p">].</span>
+
+  <span class="n">See</span> <span class="nl">also</span><span class="p">:</span> <span class="n">POLYVAL</span>
+</code></pre></div>
+
 <hr />
                 
               

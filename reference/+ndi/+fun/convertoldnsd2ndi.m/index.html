@@ -4686,16 +4686,22 @@
                 
                 
                 <h1 id="ndifunconvertoldnsd2ndi">ndi.fun.convertoldnsd2ndi<a class="headerlink" href="#ndifunconvertoldnsd2ndi" title="Permanent link">&para;</a></h1>
-<p>NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'</p>
-<p>ndi.fun.convertoldnsd2ndi(PATHNAME)</p>
-<p>Converts the NDS_SESSION_DIR session at PATHNAME to the new 'ndi' name
-  convention. Needs to be run on MacOS for the unix tools used (might work on Linux).</p>
-<p>The following irreversible changes are made:</p>
-<p>(1) Any instance of 'nsd' in a filename is changed to 'ndi'.
-  (2) Any instance of 'NSD' in a filename is changed to 'NDI'.
-  (3) All instances of 'nsd' in .m, .json, .txt <em>object_</em> files are replaced with 'ndi'.
-  (4) All instances of 'NSD' in .m, .json, .txt or <em>object_</em> files are replaced with 'NDI'. </p>
-<p>This function is depricated and should be irrelevant shortly as everyone uses 'NDI' instead of 'NSD'</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI_CONVERTOLDNSD2NDI</span> <span class="o">-</span> <span class="nb">convert</span> <span class="n">an</span> <span class="n">old</span> <span class="s1">&#39;nsd&#39;</span> <span class="n">session</span> <span class="n">to</span> <span class="s1">&#39;ndi&#39;</span>
+
+  <span class="n">ndi</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">convertoldnsd2ndi</span><span class="p">(</span><span class="n">PATHNAME</span><span class="p">)</span>
+
+  <span class="n">Converts</span> <span class="n">the</span> <span class="n">NDS_SESSION_DIR</span> <span class="n">session</span> <span class="n">at</span> <span class="n">PATHNAME</span> <span class="n">to</span> <span class="n">the</span> <span class="n">new</span> <span class="s1">&#39;ndi&#39;</span> <span class="n">name</span>
+  <span class="n">convention</span><span class="o">.</span> <span class="n">Needs</span> <span class="n">to</span> <span class="n">be</span> <span class="n">run</span> <span class="n">on</span> <span class="n">MacOS</span> <span class="k">for</span> <span class="n">the</span> <span class="n">unix</span> <span class="n">tools</span> <span class="n">used</span> <span class="p">(</span><span class="n">might</span> <span class="n">work</span> <span class="n">on</span> <span class="n">Linux</span><span class="p">)</span><span class="o">.</span>
+
+  <span class="n">The</span> <span class="n">following</span> <span class="n">irreversible</span> <span class="n">changes</span> <span class="n">are</span> <span class="n">made</span><span class="p">:</span>
+
+  <span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="n">Any</span> <span class="n">instance</span> <span class="n">of</span> <span class="s1">&#39;nsd&#39;</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">filename</span> <span class="k">is</span> <span class="n">changed</span> <span class="n">to</span> <span class="s1">&#39;ndi&#39;</span><span class="o">.</span>
+  <span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="n">Any</span> <span class="n">instance</span> <span class="n">of</span> <span class="s1">&#39;NSD&#39;</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">filename</span> <span class="k">is</span> <span class="n">changed</span> <span class="n">to</span> <span class="s1">&#39;NDI&#39;</span><span class="o">.</span>
+  <span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="n">All</span> <span class="n">instances</span> <span class="n">of</span> <span class="s1">&#39;nsd&#39;</span> <span class="ow">in</span> <span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="o">.</span><span class="n">json</span><span class="p">,</span> <span class="o">.</span><span class="n">txt</span> <span class="o">*</span><span class="n">object_</span><span class="o">*</span> <span class="n">files</span> <span class="n">are</span> <span class="n">replaced</span> <span class="n">with</span> <span class="s1">&#39;ndi&#39;</span><span class="o">.</span>
+  <span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="n">All</span> <span class="n">instances</span> <span class="n">of</span> <span class="s1">&#39;NSD&#39;</span> <span class="ow">in</span> <span class="o">.</span><span class="n">m</span><span class="p">,</span> <span class="o">.</span><span class="n">json</span><span class="p">,</span> <span class="o">.</span><span class="n">txt</span> <span class="ow">or</span> <span class="o">*</span><span class="n">object_</span><span class="o">*</span> <span class="n">files</span> <span class="n">are</span> <span class="n">replaced</span> <span class="n">with</span> <span class="s1">&#39;NDI&#39;</span><span class="o">.</span> 
+
+  <span class="n">This</span> <span class="n">function</span> <span class="k">is</span> <span class="n">depricated</span> <span class="ow">and</span> <span class="n">should</span> <span class="n">be</span> <span class="n">irrelevant</span> <span class="n">shortly</span> <span class="k">as</span> <span class="n">everyone</span> <span class="n">uses</span> <span class="s1">&#39;NDI&#39;</span> <span class="n">instead</span> <span class="n">of</span> <span class="s1">&#39;NSD&#39;</span>
+</code></pre></div>
                 
               
               

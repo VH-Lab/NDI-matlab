@@ -4688,29 +4688,36 @@
                 
                 
                 <h1 id="ndidatabasefuncreategenbankcontrolledvocabulary">ndi.database.fun.createGenBankControlledVocabulary<a class="headerlink" href="#ndidatabasefuncreategenbankcontrolledvocabulary" title="Permanent link">&para;</a></h1>
-<p>NDI_CREATEGENBANKCONTROLLEDVOCABULARY - create the controlled vocabulary dictionary for animals</p>
-<p>ndi.database.fun.createGenBankControlledVocabulary(DIRNAME, ...)</p>
-<p>This function examines the name file 'names.dmp' and node file 'nodes.dmp' from 
-  the GenBank taxonomy database in the directory DIRNAME. It generates a new text file
-  called 'GenBankControlledVocabulary.tsv' with the following structure:</p>
-<p>Header row:
-    'Scientific_Name<tab>GenBank_Common_Name<tab>Synonyms<tab>&lt;Other_Common_Name'
-    and then 1 entry per organism.</p>
-<p>This function also takes name/value pairs that modify the behavior.
-  Parameter (default)     | Description</p>
-<hr />
-<p>root_node ('Bilateria') | Root scientific name to start with; usually 'Bilateria' to
-                          |  include most research organisms but not cell lines, 
-                          |  bacteria, viruses, etc (everything not 'Bilateria').
-                          |  Use 'Root' for everything.
-  nodefile ('nodes.dmp')  | File name of the node file within DIRNAME
-  namefile ('names.dmp')  | File name of the name file with DIRNAME
-  outname (...            | Output filen name of the file written to disk
-  ['GenBankControlled'... | 
-    'Vocabulary.tsv'])</p>
-<p>The taxonomy data is available at https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz.</p>
-<p>This function usually takes a couple of hours to run and shows 3 progress bars
-  (the first one is faster than the second).</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nt">NDI_CREATEGENBANKCONTROLLEDVOCABULARY</span> <span class="nt">-</span> <span class="nt">create</span> <span class="nt">the</span> <span class="nt">controlled</span> <span class="nt">vocabulary</span> <span class="nt">dictionary</span> <span class="nt">for</span> <span class="nt">animals</span>
+
+  <span class="nt">ndi</span><span class="p">.</span><span class="nc">database</span><span class="p">.</span><span class="nc">fun</span><span class="p">.</span><span class="nc">createGenBankControlledVocabulary</span><span class="o">(</span><span class="nt">DIRNAME</span><span class="o">,</span> <span class="o">...)</span>
+
+  <span class="nt">This</span> <span class="nt">function</span> <span class="nt">examines</span> <span class="nt">the</span> <span class="nt">name</span> <span class="nt">file</span> <span class="s1">&#39;names.dmp&#39;</span> <span class="nt">and</span> <span class="nt">node</span> <span class="nt">file</span> <span class="s1">&#39;nodes.dmp&#39;</span> <span class="nt">from</span> 
+  <span class="nt">the</span> <span class="nt">GenBank</span> <span class="nt">taxonomy</span> <span class="nt">database</span> <span class="nt">in</span> <span class="nt">the</span> <span class="nt">directory</span> <span class="nt">DIRNAME</span><span class="o">.</span> <span class="nt">It</span> <span class="nt">generates</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">text</span> <span class="nt">file</span>
+  <span class="nt">called</span> <span class="s1">&#39;GenBankControlledVocabulary.tsv&#39;</span> <span class="nt">with</span> <span class="nt">the</span> <span class="nt">following</span> <span class="nt">structure</span><span class="o">:</span>
+
+  <span class="nt">Header</span> <span class="nt">row</span><span class="o">:</span>
+    <span class="s1">&#39;Scientific_Name&lt;tab&gt;GenBank_Common_Name&lt;tab&gt;Synonyms&lt;tab&gt;&lt;Other_Common_Name&#39;</span>
+    <span class="nt">and</span> <span class="nt">then</span> <span class="nt">1</span> <span class="nt">entry</span> <span class="nt">per</span> <span class="nt">organism</span><span class="o">.</span>
+
+  <span class="nt">This</span> <span class="nt">function</span> <span class="nt">also</span> <span class="nt">takes</span> <span class="nt">name</span><span class="o">/</span><span class="nt">value</span> <span class="nt">pairs</span> <span class="nt">that</span> <span class="nt">modify</span> <span class="nt">the</span> <span class="nt">behavior</span><span class="o">.</span>
+  <span class="nt">Parameter</span> <span class="o">(</span><span class="nt">default</span><span class="o">)</span>     <span class="o">|</span> <span class="nt">Description</span>
+  <span class="nt">---------------------------------------------------------------------------</span>
+  <span class="nt">root_node</span> <span class="o">(</span><span class="s1">&#39;Bilateria&#39;</span><span class="o">)</span> <span class="o">|</span> <span class="nt">Root</span> <span class="nt">scientific</span> <span class="nt">name</span> <span class="nt">to</span> <span class="nt">start</span> <span class="nt">with</span><span class="o">;</span> <span class="nt">usually</span> <span class="s1">&#39;Bilateria&#39;</span> <span class="nt">to</span>
+                          <span class="o">|</span>  <span class="nt">include</span> <span class="nt">most</span> <span class="nt">research</span> <span class="nt">organisms</span> <span class="nt">but</span> <span class="nt">not</span> <span class="nt">cell</span> <span class="nt">lines</span><span class="o">,</span> 
+                          <span class="o">|</span>  <span class="nt">bacteria</span><span class="o">,</span> <span class="nt">viruses</span><span class="o">,</span> <span class="nt">etc</span> <span class="o">(</span><span class="nt">everything</span> <span class="nt">not</span> <span class="s1">&#39;Bilateria&#39;</span><span class="o">).</span>
+                          <span class="o">|</span>  <span class="nt">Use</span> <span class="s1">&#39;Root&#39;</span> <span class="nt">for</span> <span class="nt">everything</span><span class="o">.</span>
+  <span class="nt">nodefile</span> <span class="o">(</span><span class="s1">&#39;nodes.dmp&#39;</span><span class="o">)</span>  <span class="o">|</span> <span class="nt">File</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">node</span> <span class="nt">file</span> <span class="nt">within</span> <span class="nt">DIRNAME</span>
+  <span class="nt">namefile</span> <span class="o">(</span><span class="s1">&#39;names.dmp&#39;</span><span class="o">)</span>  <span class="o">|</span> <span class="nt">File</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">name</span> <span class="nt">file</span> <span class="nt">with</span> <span class="nt">DIRNAME</span>
+  <span class="nt">outname</span> <span class="o">(...</span>            <span class="o">|</span> <span class="nt">Output</span> <span class="nt">filen</span> <span class="nt">name</span> <span class="nt">of</span> <span class="nt">the</span> <span class="nt">file</span> <span class="nt">written</span> <span class="nt">to</span> <span class="nt">disk</span>
+  <span class="cp">[</span><span class="s1">&#39;GenBankControlled&#39;</span><span class="nx">...</span> <span class="o">|</span> 
+    <span class="s1">&#39;Vocabulary.tsv&#39;</span><span class="cp">]</span><span class="o">)</span>
+
+  <span class="nt">The</span> <span class="nt">taxonomy</span> <span class="nt">data</span> <span class="nt">is</span> <span class="nt">available</span> <span class="nt">at</span> <span class="nt">https</span><span class="o">://</span><span class="nt">ftp</span><span class="p">.</span><span class="nc">ncbi</span><span class="p">.</span><span class="nc">nlm</span><span class="p">.</span><span class="nc">nih</span><span class="p">.</span><span class="nc">gov</span><span class="o">/</span><span class="nt">pub</span><span class="o">/</span><span class="nt">taxonomy</span><span class="o">/</span><span class="nt">taxdump</span><span class="p">.</span><span class="nc">tar</span><span class="p">.</span><span class="nc">gz</span><span class="o">.</span>
+
+  <span class="nt">This</span> <span class="nt">function</span> <span class="nt">usually</span> <span class="nt">takes</span> <span class="nt">a</span> <span class="nt">couple</span> <span class="nt">of</span> <span class="nt">hours</span> <span class="nt">to</span> <span class="nt">run</span> <span class="nt">and</span> <span class="nt">shows</span> <span class="nt">3</span> <span class="nt">progress</span> <span class="nt">bars</span>
+  <span class="o">(</span><span class="nt">the</span> <span class="nt">first</span> <span class="nt">one</span> <span class="nt">is</span> <span class="nt">faster</span> <span class="nt">than</span> <span class="nt">the</span> <span class="nt">second</span><span class="o">).</span>
+</code></pre></div>
                 
               
               

@@ -4785,7 +4785,9 @@
                 
                 
                 <h1 id="class-nditimeclocktype">CLASS ndi.time.clocktype<a class="headerlink" href="#class-nditimeclocktype" title="Permanent link">&para;</a></h1>
-<p>NDI_CLOCKTYPE - a class for specifying a clock type in the NDI framework</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_CLOCKTYPE</span> <span class="o">-</span> <span class="nv">a</span> <span class="nv">class</span> <span class="k">for</span> <span class="nv">specifying</span> <span class="nv">a</span> <span class="nv">clock</span> <span class="nv">type</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">NDI</span> <span class="nv">framework</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4844,7 +4846,7 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>clocktype</strong> - <em>Creates a new ndi.time.clocktype object</em></p>
-<p>OBJ = ndi.time.clocktype(TYPE)</p>
+<p>```OBJ = ndi.time.clocktype(TYPE)</p>
 <p>Creates a new ndi.time.clocktype object. TYPE can be
   any of the following strings (with description):</p>
 <p>TYPE string               | Description</p>
@@ -4860,43 +4862,61 @@
   'dev_local_time'          | A device keeps its own local time only within epochs
   'no_time'                 | No timing information
   'inherited'               | The timing information is inherited from another device.</p>
-<hr />
-<p><strong>epochgraph_edge</strong> - <em>provide epochgraph edge based purely on clock type</em></p>
-<p>[COST, MAPPING] = EPOCHGRAPH_EDGE(NDI_CLOCKTYPE_A, NDI_CLOCKTYPE_B)</p>
-<p>Returns the COST and ndi.time.timemapping object MAPPING that describes the
-  automatic mapping between epochs that have clock types NDI_CLOCKTYPE_A
-  and NDI_CLOCKTYPE_B.</p>
-<p>The following NDI_CLOCKTYPES, if they exist, are linked across epochs with
-  a cost of 1 and a linear mapping rule with shift 1 and offset 0:
-    'utc' -&gt; 'utc'
-    'utc' -&gt; 'approx_utc'
-    'exp_global_time' -&gt; 'exp_global_time'
-    'exp_global_time' -&gt; 'approx_exp_global_time'
-    'dev_global_time' -&gt; 'dev_global_time'
-    'dev_global_time' -&gt; 'approx_dev_global_time'</p>
-<p>Otherwise, COST is Inf and MAPPING is empty.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">epochgraph_edge</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">provide</span> <span class="n">epochgraph</span> <span class="n">edge</span> <span class="n">based</span> <span class="n">purely</span> <span class="n">on</span> <span class="n">clock</span> <span class="kr">type</span><span class="o">*</span>
+
+<span class="err">```</span><span class="p">[</span><span class="n">COST</span><span class="p">,</span> <span class="n">MAPPING</span><span class="p">]</span> <span class="o">=</span> <span class="n">EPOCHGRAPH_EDGE</span><span class="p">(</span><span class="n">NDI_CLOCKTYPE_A</span><span class="p">,</span> <span class="n">NDI_CLOCKTYPE_B</span><span class="p">)</span>
+
+  <span class="n">Returns</span> <span class="n">the</span> <span class="n">COST</span> <span class="kr">and</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">timemapping</span> <span class="n">object</span> <span class="n">MAPPING</span> <span class="n">that</span> <span class="n">describes</span> <span class="n">the</span>
+  <span class="n">automatic</span> <span class="n">mapping</span> <span class="kr">between</span> <span class="n">epochs</span> <span class="n">that</span> <span class="n">have</span> <span class="n">clock</span> <span class="n">types</span> <span class="n">NDI_CLOCKTYPE_A</span>
+  <span class="kr">and</span> <span class="n">NDI_CLOCKTYPE_B</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">following</span> <span class="n">NDI_CLOCKTYPES</span><span class="p">,</span> <span class="nf">if</span> <span class="n">they</span> <span class="n">exist</span><span class="p">,</span> <span class="n">are</span> <span class="n">linked</span> <span class="n">across</span> <span class="n">epochs</span> <span class="n">with</span>
+  <span class="n">a</span> <span class="n">cost</span> <span class="kr">of</span> <span class="mi">1</span> <span class="kr">and</span> <span class="n">a</span> <span class="n">linear</span> <span class="n">mapping</span> <span class="kt">rule</span> <span class="n">with</span> <span class="n">shift</span> <span class="mi">1</span> <span class="kr">and</span> <span class="n">offset</span> <span class="mi">0</span><span class="o">:</span>
+    <span class="s">&#39;utc&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;utc&#39;</span>
+    <span class="s">&#39;utc&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;approx_utc&#39;</span>
+    <span class="s">&#39;exp_global_time&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;exp_global_time&#39;</span>
+    <span class="s">&#39;exp_global_time&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;approx_exp_global_time&#39;</span>
+    <span class="s">&#39;dev_global_time&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;dev_global_time&#39;</span>
+    <span class="s">&#39;dev_global_time&#39;</span> <span class="o">-&gt;</span> <span class="s">&#39;approx_dev_global_time&#39;</span>
+
+  <span class="n">Otherwise</span><span class="p">,</span> <span class="n">COST</span> <span class="n">is</span> <span class="n">Inf</span> <span class="kr">and</span> <span class="n">MAPPING</span> <span class="n">is</span> <span class="n">empty</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>eq</strong> - <em>are two ndi.time.clocktype objects equal?</em></p>
-<p>B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)</p>
+<p>```B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)</p>
 <p>Compares two NDI_CLOCKTYPE_objects and returns 1 if they refer to the 
   same clock type.</p>
-<hr />
-<p><strong>ndi_clocktype2char</strong> - <em>produce the NDI_CLOCKTOP's type as a string</em></p>
-<p>STR = NDI_CLOCKTYPE2CHAR(NDI_CLOCKTYPE_OBJ)</p>
-<p>Return a string STR equal to the ndi.time.clocktype object's type parameter.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">ndi_clocktype2char</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">produce</span> <span class="nv">the</span> <span class="nv">NDI_CLOCKTOP</span><span class="s1">&#39;</span><span class="s">s type as a string*</span>
+
+```<span class="nv">STR</span> <span class="o">=</span> <span class="nv">NDI_CLOCKTYPE2CHAR</span><span class="ss">(</span><span class="nv">NDI_CLOCKTYPE_OBJ</span><span class="ss">)</span>
+
+  <span class="k">Return</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">STR</span> <span class="nv">equal</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span> <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s type parameter.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>ne</strong> - <em>are two ndi.time.clocktype objects not equal?</em></p>
-<p>B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)</p>
+<p>```B = EQ(NDS_CLOCK_OBJ_A, NDI_CLOCKTYPE_OBJ_B)</p>
 <p>Compares two NDI_CLOCKTYPE_objects and returns 0 if they refer to the 
   same clock type.</p>
-<hr />
-<p><strong>needsepoch</strong> - <em>does this clocktype need an epoch for full description?</em></p>
-<p>B = NEEDSEPOCH(NDI_CLOCKTYPE_OBJ)</p>
-<p>Does this ndi.time.clocktype object need an epoch in order to specify time?</p>
-<p>Returns 1 for 'dev_local_time', 0 otherwise.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">needsepoch</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">does</span> <span class="nv">this</span> <span class="nv">clocktype</span> <span class="nv">need</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="k">for</span> <span class="nv">full</span> <span class="nv">description</span>?<span class="o">*</span>
+
+```<span class="nv">B</span> <span class="o">=</span> <span class="nv">NEEDSEPOCH</span><span class="ss">(</span><span class="nv">NDI_CLOCKTYPE_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Does</span> <span class="nv">this</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span> <span class="nv">object</span> <span class="nv">need</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="nv">in</span> <span class="nv">order</span> <span class="nv">to</span> <span class="nv">specify</span> <span class="nv">time</span>?
+
+  <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">for</span> <span class="s1">&#39;</span><span class="s">dev_local_time</span><span class="s1">&#39;</span>, <span class="mi">0</span> <span class="nv">otherwise</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>setclocktype</strong> - <em>Set the type of an ndi.time.clocktype</em></p>
-<p>NDI_CLOCKTYPE_OBJ = SETCLOCKTYPE(NDI_CLOCKTYPE_OBJ, TYPE)</p>
+<p>```NDI_CLOCKTYPE_OBJ = SETCLOCKTYPE(NDI_CLOCKTYPE_OBJ, TYPE)</p>
 <p>Sets the TYPE property of an ndi.time.clocktype object NDI_CLOCKTYPE_OBJ.
   Valid values for the TYPE string are as follows:</p>
 <p>TYPE string               | Description</p>
@@ -4911,7 +4931,8 @@
                             |   (that is, it knows its own clock across recording epochs)
   'dev_local_time'          | A device keeps its own local time only within epochs
   'no_time'                 | No timing information
-  'inherited'               | The timing information is inherited from another device.</p>
+  'inherited'               | The timing information is inherited from another device.
+```</p>
 <hr />
                 
               

@@ -4686,48 +4686,26 @@
                 
                 
                 <h1 id="ndiglobalsassert">ndi.globals.assert<a class="headerlink" href="#ndiglobalsassert" title="Permanent link">&para;</a></h1>
-<p>ndi.globals.assert - check that ndi_globals has been initialized properly</p>
-<p>[B,MSG] = ndi.globals.assert(ndi_global_variables, ...)</p>
-<p>Returns true if the variable ndi_global_variables has been initialized properly. 
-  Returns 0 otherwise, and, by default, triggers an error.
-  Also returns the error message in MSG, if applicable. If there was no error,
-  MSG is empty.</p>
-<p>This function takes name/value pairs that modify its default behavior:</p>
-<hr />
-<table>
-<thead>
-<tr>
-<th>Parameter (default)</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>generateError (1)</td>
-<td>0/1 Should we generate a Matlab error call</td>
-</tr>
-<tr>
-<td></td>
-<td>and message? (0=no, 1=yes)</td>
-</tr>
-<tr>
-<td>tryToInit (1)</td>
-<td>0/1 Should we try to initialize ndi by</td>
-</tr>
-<tr>
-<td></td>
-<td>calling ndi_Init if globals are not</td>
-</tr>
-<tr>
-<td></td>
-<td>set up?</td>
-</tr>
-<tr>
-<td>----------------------------------------------------------------------------</td>
-<td></td>
-</tr>
-</tbody>
-</table>
+<div class="codehilite"><pre><span></span><code>  <span class="n">ndi</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">assert</span> <span class="o">-</span> <span class="n">check</span> <span class="n">that</span> <span class="n">ndi_globals</span> <span class="n">has</span> <span class="n">been</span> <span class="n">initialized</span> <span class="n">properly</span>
+
+  <span class="p">[</span><span class="n">B</span><span class="p">,</span><span class="n">MSG</span><span class="p">]</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">globals</span><span class="o">.</span><span class="n">assert</span><span class="p">(</span><span class="n">ndi_global_variables</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+  <span class="n">Returns</span> <span class="bp">true</span> <span class="k">if</span> <span class="n">the</span> <span class="n">variable</span> <span class="n">ndi_global_variables</span> <span class="n">has</span> <span class="n">been</span> <span class="n">initialized</span> <span class="n">properly</span><span class="o">.</span> 
+  <span class="n">Returns</span> <span class="mi">0</span> <span class="n">otherwise</span><span class="p">,</span> <span class="ow">and</span><span class="p">,</span> <span class="n">by</span> <span class="n">default</span><span class="p">,</span> <span class="n">triggers</span> <span class="n">an</span> <span class="n">error</span><span class="o">.</span>
+  <span class="n">Also</span> <span class="n">returns</span> <span class="n">the</span> <span class="n">error</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">MSG</span><span class="p">,</span> <span class="k">if</span> <span class="n">applicable</span><span class="o">.</span> <span class="n">If</span> <span class="n">there</span> <span class="n">was</span> <span class="n">no</span> <span class="n">error</span><span class="p">,</span>
+  <span class="n">MSG</span> <span class="k">is</span> <span class="n">empty</span><span class="o">.</span>
+
+  <span class="n">This</span> <span class="n">function</span> <span class="n">takes</span> <span class="n">name</span><span class="o">/</span><span class="n">value</span> <span class="n">pairs</span> <span class="n">that</span> <span class="n">modify</span> <span class="n">its</span> <span class="n">default</span> <span class="n">behavior</span><span class="p">:</span>
+  <span class="o">------------------------------------------------------------------------------</span>
+  <span class="o">|</span> <span class="n">Parameter</span> <span class="p">(</span><span class="n">default</span><span class="p">)</span>          <span class="o">|</span> <span class="n">Description</span>                                 <span class="o">|</span>
+  <span class="o">|------------------------------|---------------------------------------------|</span>
+  <span class="o">|</span> <span class="n">generateError</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>            <span class="o">|</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span> <span class="n">Should</span> <span class="n">we</span> <span class="n">generate</span> <span class="n">a</span> <span class="n">Matlab</span> <span class="n">error</span> <span class="n">call</span>  <span class="o">|</span>
+  <span class="o">|</span>                              <span class="o">|</span>        <span class="ow">and</span> <span class="n">message</span><span class="err">?</span> <span class="p">(</span><span class="mi">0</span><span class="o">=</span><span class="n">no</span><span class="p">,</span> <span class="mi">1</span><span class="o">=</span><span class="n">yes</span><span class="p">)</span>           <span class="o">|</span>
+  <span class="o">|</span> <span class="n">tryToInit</span> <span class="p">(</span><span class="mi">1</span><span class="p">)</span>                <span class="o">|</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span> <span class="n">Should</span> <span class="n">we</span> <span class="n">try</span> <span class="n">to</span> <span class="n">initialize</span> <span class="n">ndi</span> <span class="n">by</span>      <span class="o">|</span>
+  <span class="o">|</span>                              <span class="o">|</span>        <span class="n">calling</span> <span class="n">ndi_Init</span> <span class="k">if</span> <span class="n">globals</span> <span class="n">are</span> <span class="ow">not</span>  <span class="o">|</span>
+  <span class="o">|</span>                              <span class="o">|</span>        <span class="n">set</span> <span class="n">up</span><span class="err">?</span>                              <span class="o">|</span>
+  <span class="o">|----------------------------------------------------------------------------|</span>
+</code></pre></div>
                 
               
               

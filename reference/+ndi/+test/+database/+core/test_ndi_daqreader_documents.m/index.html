@@ -4690,21 +4690,24 @@
                 
                 
                 <h1 id="nditestdatabasecoretest_ndi_daqreader_documents">ndi.test.database.core.test_ndi_daqreader_documents<a class="headerlink" href="#nditestdatabasecoretest_ndi_daqreader_documents" title="Permanent link">&para;</a></h1>
-<p>TEST_NDI_DAQREADER_DOCUMENTS - test creating database entries, searching, and building from documents</p>
-<p>ndi.test.daq.reader.documents(DIRNAME)</p>
-<p>Given a directory that corresponds to an session, this function tries to create
-  the following objects :
-    1) ndi.daq.reader
-    2) ndi.daq.reader.mfdaq
-    3) ndi.daq.reader.mfdaq.cedspike2
-    4) ndi.daq.reader.mfdaq.intan
-    5) ndi.daq.reader.mfdaq.spikegadgets
-    6) ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2</p>
-<div class="codehilite"><pre><span></span><code><span class="k">Then</span>, <span class="nv">the</span> <span class="nv">following</span> <span class="nv">tests</span> <span class="nv">actions</span> <span class="nv">are</span> <span class="nv">conducted</span> <span class="k">for</span> <span class="nv">each</span> <span class="nv">document</span> <span class="nv">type</span>:
-<span class="nv">a</span><span class="ss">)</span> <span class="nv">Create</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span>
-<span class="nv">b</span><span class="ss">)</span> <span class="nv">Add</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">database</span>
-<span class="nv">c</span><span class="ss">)</span> <span class="nv">Search</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">document</span>
-<span class="nv">d</span><span class="ss">)</span> <span class="nv">Create</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">object</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">entry</span>, <span class="nv">and</span> <span class="nv">test</span> <span class="nv">that</span> <span class="nv">it</span> <span class="nv">matches</span> <span class="nv">the</span> <span class="nv">original</span>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">TEST_NDI_DAQREADER_DOCUMENTS</span> <span class="o">-</span> <span class="nv">test</span> <span class="nv">creating</span> <span class="nv">database</span> <span class="nv">entries</span>, <span class="nv">searching</span>, <span class="nv">and</span> <span class="nv">building</span> <span class="nv">from</span> <span class="nv">documents</span>
+
+  <span class="nv">ndi</span>.<span class="nv">test</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">documents</span><span class="ss">(</span><span class="k">DIRNAME</span><span class="ss">)</span>
+
+  <span class="nv">Given</span> <span class="nv">a</span> <span class="nv">directory</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">session</span>, <span class="nv">this</span> <span class="nv">function</span> <span class="nv">tries</span> <span class="nv">to</span> <span class="nv">create</span>
+  <span class="nv">the</span> <span class="nv">following</span> <span class="nv">objects</span> :
+    <span class="mi">1</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>
+    <span class="mi">2</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>
+    <span class="mi">3</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">cedspike2</span>
+    <span class="mi">4</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span>
+    <span class="mi">5</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">spikegadgets</span>
+    <span class="mi">6</span><span class="ss">)</span> <span class="nv">ndi</span>.<span class="nv">setup</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">stimulus</span>.<span class="nv">vhlabvisspike2</span>
+
+    <span class="k">Then</span>, <span class="nv">the</span> <span class="nv">following</span> <span class="nv">tests</span> <span class="nv">actions</span> <span class="nv">are</span> <span class="nv">conducted</span> <span class="k">for</span> <span class="nv">each</span> <span class="nv">document</span> <span class="nv">type</span>:
+    <span class="nv">a</span><span class="ss">)</span> <span class="nv">Create</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span>
+    <span class="nv">b</span><span class="ss">)</span> <span class="nv">Add</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">database</span>
+    <span class="nv">c</span><span class="ss">)</span> <span class="nv">Search</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">document</span>
+    <span class="nv">d</span><span class="ss">)</span> <span class="nv">Create</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">object</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">database</span> <span class="nv">entry</span>, <span class="nv">and</span> <span class="nv">test</span> <span class="nv">that</span> <span class="nv">it</span> <span class="nv">matches</span> <span class="nv">the</span> <span class="nv">original</span>
 </code></pre></div>
                 
               

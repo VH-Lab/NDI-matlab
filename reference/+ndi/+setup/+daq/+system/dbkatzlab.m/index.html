@@ -4690,22 +4690,29 @@
                 
                 
                 <h1 id="ndisetupdaqsystemdbkatzlab">ndi.setup.daq.system.dbkatzlab<a class="headerlink" href="#ndisetupdaqsystemdbkatzlab" title="Permanent link">&para;</a></h1>
-<p>KATZLAB_MAKEDEV - initialize devices used by KATZLAB</p>
-<p>EXP = ndi.setups.katzlab_makedev(EXP, DEVNAME)</p>
-<p>Creates devices that look for files in the KATZLAB standard recording
-  scheme, where data from different epochs are organized into
-  subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
-  name a device in the table below. These devices are added to the ndi.session
-  object EXP. If DEVNAME is a cell list of strings, then multiple items are added.</p>
-<p>If the function is called with no input arguments, then it returns a list
-  of all valid device names.</p>
-<p>Each epoch is defined by the presence specific files that are needed by each
-  device as described below.</p>
-<p>Devices created    | Description</p>
-<hr />
-<p>narendra_intan     |  ndi_daqsystem_multichannel_mfdaq that looks for
-                     |    files 'time.dat, 'info.rhd', and 'epochprobemap.txt'</p>
-<p>See also: ndi.file.navigator.epochdir</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">KATZLAB_MAKEDEV</span> <span class="o">-</span> <span class="nv">initialize</span> <span class="nv">devices</span> <span class="nv">used</span> <span class="nv">by</span> <span class="nv">KATZLAB</span>
+
+  <span class="nv">EXP</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">setups</span>.<span class="nv">katzlab_makedev</span><span class="ss">(</span><span class="nv">EXP</span>, <span class="nv">DEVNAME</span><span class="ss">)</span>
+
+  <span class="nv">Creates</span> <span class="nv">devices</span> <span class="nv">that</span> <span class="nv">look</span> <span class="k">for</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">KATZLAB</span> <span class="nv">standard</span> <span class="nv">recording</span>
+  <span class="nv">scheme</span>, <span class="nv">where</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">different</span> <span class="nv">epochs</span> <span class="nv">are</span> <span class="nv">organized</span> <span class="nv">into</span>
+  <span class="nv">subdirectories</span> <span class="ss">(</span><span class="nv">using</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>.<span class="nv">epochdir</span><span class="ss">)</span>. <span class="nv">DEVNAME</span> <span class="nv">should</span> <span class="nv">be</span> <span class="nv">the</span> 
+  <span class="nv">name</span> <span class="nv">a</span> <span class="nv">device</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">table</span> <span class="nv">below</span>. <span class="nv">These</span> <span class="nv">devices</span> <span class="nv">are</span> <span class="nv">added</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>
+  <span class="nv">object</span> <span class="nv">EXP</span>. <span class="k">If</span> <span class="nv">DEVNAME</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="k">then</span> <span class="nv">multiple</span> <span class="nv">items</span> <span class="nv">are</span> <span class="nv">added</span>.
+
+  <span class="k">If</span> <span class="nv">the</span> <span class="nv">function</span> <span class="nv">is</span> <span class="nv">called</span> <span class="nv">with</span> <span class="nv">no</span> <span class="nv">input</span> <span class="nv">arguments</span>, <span class="k">then</span> <span class="nv">it</span> <span class="nv">returns</span> <span class="nv">a</span> <span class="nv">list</span>
+  <span class="nv">of</span> <span class="nv">all</span> <span class="nv">valid</span> <span class="nv">device</span> <span class="nv">names</span>.
+
+  <span class="nv">Each</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="nv">defined</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">presence</span> <span class="nv">specific</span> <span class="nv">files</span> <span class="nv">that</span> <span class="nv">are</span> <span class="nv">needed</span> <span class="nv">by</span> <span class="nv">each</span>
+  <span class="nv">device</span> <span class="nv">as</span> <span class="nv">described</span> <span class="nv">below</span>.
+
+  <span class="nv">Devices</span> <span class="nv">created</span>    <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">----------------------------------------------------------------</span>
+  <span class="nv">narendra_intan</span>     <span class="o">|</span>  <span class="nv">ndi_daqsystem_multichannel_mfdaq</span> <span class="nv">that</span> <span class="nv">looks</span> <span class="k">for</span>
+                     <span class="o">|</span>    <span class="nv">files</span> <span class="s1">&#39;</span><span class="s">time.dat, </span><span class="s1">&#39;</span><span class="nv">info</span>.<span class="nv">rhd</span><span class="s1">&#39;</span><span class="s">, and </span><span class="s1">&#39;</span><span class="nv">epochprobemap</span>.<span class="nv">txt</span><span class="s1">&#39;</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>.<span class="nv">epochdir</span>
+</code></pre></div>
                 
               
               

@@ -4686,19 +4686,26 @@
                 
                 
                 <h1 id="ndiepochfindepochnode">ndi.epoch.findepochnode<a class="headerlink" href="#ndiepochfindepochnode" title="Permanent link">&para;</a></h1>
-<p>FINDEPOCHNODE - find an occurence of an epochnode in an array of epochnodes</p>
-<p>INDEX = ndi.epoch.findepochnode(EPOCHNODE, EPOCHNODEARRAY)</p>
-<p>Returns the index of any occurrence(s) of EPOCHNODE in EPOCHNODEARRAY.
-  EPOCHNODE and EPOCHNODEARRAY should be structures of the type returned by
-  ndi.epoch.epochset/EPOCHNODES.</p>
-<p>EPOCHNODE should be a single element, and EPOCHNODEARRAY can be an array of
-  epochnode structures.</p>
-<p>If any fields of EPOCHNODE are empty or are not present in the structure,
-  then that field is not searched over. Thus, INDEX can be an array of all
-  nodes that match the other criteria. If EPOCHNODE is fully filled, then
-  only exact matches are returned.</p>
-<p>Note: at present, the 'epochprobemap' field is not compared.</p>
-<p>See also: ndi.epoch.epochset/EPOCHNODES</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">FINDEPOCHNODE</span> <span class="o">-</span> <span class="nv">find</span> <span class="nv">an</span> <span class="nv">occurence</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">epochnode</span> <span class="nv">in</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">epochnodes</span>
+
+  <span class="nv">INDEX</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">findepochnode</span><span class="ss">(</span><span class="nv">EPOCHNODE</span>, <span class="nv">EPOCHNODEARRAY</span><span class="ss">)</span>
+
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">index</span> <span class="nv">of</span> <span class="nv">any</span> <span class="nv">occurrence</span><span class="ss">(</span><span class="nv">s</span><span class="ss">)</span> <span class="nv">of</span> <span class="nv">EPOCHNODE</span> <span class="nv">in</span> <span class="nv">EPOCHNODEARRAY</span>.
+  <span class="nv">EPOCHNODE</span> <span class="nv">and</span> <span class="nv">EPOCHNODEARRAY</span> <span class="nv">should</span> <span class="nv">be</span> <span class="nv">structures</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">returned</span> <span class="nv">by</span>
+  <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span><span class="o">/</span><span class="nv">EPOCHNODES</span>.
+
+  <span class="nv">EPOCHNODE</span> <span class="nv">should</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">element</span>, <span class="nv">and</span> <span class="nv">EPOCHNODEARRAY</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span>
+  <span class="nv">epochnode</span> <span class="nv">structures</span>.
+
+  <span class="k">If</span> <span class="nv">any</span> <span class="nv">fields</span> <span class="nv">of</span> <span class="nv">EPOCHNODE</span> <span class="nv">are</span> <span class="nv">empty</span> <span class="nv">or</span> <span class="nv">are</span> <span class="nv">not</span> <span class="nv">present</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">structure</span>,
+  <span class="k">then</span> <span class="nv">that</span> <span class="nv">field</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">searched</span> <span class="nv">over</span>. <span class="nv">Thus</span>, <span class="nv">INDEX</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">all</span>
+  <span class="nv">nodes</span> <span class="nv">that</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">other</span> <span class="nv">criteria</span>. <span class="k">If</span> <span class="nv">EPOCHNODE</span> <span class="nv">is</span> <span class="nv">fully</span> <span class="nv">filled</span>, <span class="k">then</span>
+  <span class="nv">only</span> <span class="nv">exact</span> <span class="nv">matches</span> <span class="nv">are</span> <span class="nv">returned</span>.
+
+  <span class="nv">Note</span>: <span class="nv">at</span> <span class="nv">present</span>, <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">epochprobemap</span><span class="s1">&#39;</span> <span class="nv">field</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">compared</span>.
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochset</span><span class="o">/</span><span class="nv">EPOCHNODES</span>
+</code></pre></div>
                 
               
               

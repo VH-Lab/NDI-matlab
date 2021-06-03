@@ -4690,23 +4690,30 @@
                 
                 
                 <h1 id="ndisetupdaqsystemmarderlab">ndi.setup.daq.system.marderlab<a class="headerlink" href="#ndisetupdaqsystemmarderlab" title="Permanent link">&para;</a></h1>
-<p>NDI_MARDERLAB_MAKEDEV - initialize devices used by MARDERLAB</p>
-<p>EXP = ndi.setups.marderlab.makedev(EXP, DEVNAME)</p>
-<p>Creates devices that look for files in the MARDERLAB standard recording
-  scheme, where data from different epochs are organized into
-  subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
-  name a device in the table below. These devices are added to the ndi.session
-  object EXP. If DEVNAME is a cell list of strings, then multiple items are added.</p>
-<p>If the function is called with no input arguments, then it returns a list
-  of all valid device names.</p>
-<p>Each epoch is defined by the presence specific files that are needed by each
-  device as described below.</p>
-<p>Devices created    | Description</p>
-<hr />
-<p>marder_ced         |  ndi_daqsystem_multichannel_mfdaq that looks for
-                     |    files '[something].smr' and
-                     |    '[something].epochprobemap.txt'</p>
-<p>See also: ndi.file.navigator.epochdir</p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="n">NDI_MARDERLAB_MAKEDEV</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="k">initialize</span><span class="w"> </span><span class="n">devices</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">MARDERLAB</span><span class="w"></span>
+
+<span class="w">  </span><span class="nf">EXP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setups</span><span class="p">.</span><span class="n">marderlab</span><span class="p">.</span><span class="n">makedev</span><span class="p">(</span><span class="nf">EXP</span><span class="p">,</span><span class="w"> </span><span class="n">DEVNAME</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Creates</span><span class="w"> </span><span class="n">devices</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">look</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">MARDERLAB</span><span class="w"> </span><span class="n">standard</span><span class="w"> </span><span class="n">recording</span><span class="w"></span>
+<span class="w">  </span><span class="n">scheme</span><span class="p">,</span><span class="w"> </span><span class="k">where</span><span class="w"> </span><span class="k">data</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">different</span><span class="w"> </span><span class="n">epochs</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">organized</span><span class="w"> </span><span class="k">into</span><span class="w"></span>
+<span class="w">  </span><span class="n">subdirectories</span><span class="w"> </span><span class="p">(</span><span class="k">using</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="p">.</span><span class="n">epochdir</span><span class="p">).</span><span class="w"> </span><span class="n">DEVNAME</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">the</span><span class="w"> </span>
+<span class="w">  </span><span class="n">name</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nc">table</span><span class="w"> </span><span class="n">below</span><span class="p">.</span><span class="w"> </span><span class="n">These</span><span class="w"> </span><span class="n">devices</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">added</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">session</span><span class="w"></span>
+<span class="w">  </span><span class="k">object</span><span class="w"> </span><span class="nf">EXP</span><span class="p">.</span><span class="w"> </span><span class="k">If</span><span class="w"> </span><span class="n">DEVNAME</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">cell</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">strings</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">multiple</span><span class="w"> </span><span class="n">items</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">added</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">called</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="k">no</span><span class="w"> </span><span class="k">input</span><span class="w"> </span><span class="n">arguments</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">returns</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">list</span><span class="w"></span>
+<span class="w">  </span><span class="k">of</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">valid</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="k">names</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">Each</span><span class="w"> </span><span class="n">epoch</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">defined</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">presence</span><span class="w"> </span><span class="k">specific</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">needed</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="k">each</span><span class="w"></span>
+<span class="w">  </span><span class="n">device</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">described</span><span class="w"> </span><span class="n">below</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Devices</span><span class="w"> </span><span class="n">created</span><span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="n">marder_ced</span><span class="w">         </span><span class="o">|</span><span class="w">  </span><span class="n">ndi_daqsystem_multichannel_mfdaq</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">looks</span><span class="w"> </span><span class="k">for</span><span class="w"></span>
+<span class="w">                     </span><span class="o">|</span><span class="w">    </span><span class="n">files</span><span class="w"> </span><span class="s1">&#39;[something].smr&#39;</span><span class="w"> </span><span class="ow">and</span><span class="w"></span>
+<span class="w">                     </span><span class="o">|</span><span class="w">    </span><span class="s1">&#39;[something].epochprobemap.txt&#39;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">See</span><span class="w"> </span><span class="nl">also</span><span class="p">:</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="p">.</span><span class="n">epochdir</span><span class="w"></span>
+</code></pre></div>
                 
               
               

@@ -4688,26 +4688,33 @@
                 
                 
                 <h1 id="ndidatabasefunplotinteractivedocgraph">ndi.database.fun.plotinteractivedocgraph<a class="headerlink" href="#ndidatabasefunplotinteractivedocgraph" title="Permanent link">&para;</a></h1>
-<p>ndi.database.fun.plotinteractivedocgraph(DOCS, G, MDIGRAPH, NODES, LAYOUT,INTERACTIVE)</p>
-<p>Given a cell array of NDI_DOCUMENTs DOCS, a connectivity matrix
-  G, a DIGRAPH object MDIGRAPH, a cell array of node names NODES,
-  and a type of DIGRAPH/PLOT layout LAYOUT, this plots a graph
-  of the graph of the NDI_DOCUMENTS. Usually, G, MDIGRAPH, and NODES
-  are the output of ndi.database.fun.docs2graph</p>
-<p>If INTERACTIVE is 1, then the plot is made interactive, in that the
-  closest node to any clicked point will be displayed on the command line,
-  and a global variable 'clicked_node' will be set to the ndi.document of
-  the closest node to the clicked point. The user should click nearby but
-  not directly on the node to reveal it.</p>
-<p>If INTERACTIVE is 0, then some data about each document node is shown as a data
-  tip when the user hovers over the node.</p>
-<p>Example values of LAYOUT include 'force', 'layered', 'auto', and
-  others. See HELP DIGRAPH/PLOT for all options.</p>
-<p>See also: DIGRAPH/PLOT, ndi.database.fun.docs2graph</p>
-<p>Example: % Given session E, plot a graph of all documents.
-    docs = E.database_search({'document_class.class_name','(.*)'});
-    [G,nodes,mdigraph] = ndi.database.fun.docs2graph(docs);
-    ndi.database.fun.plotinteractivedocgraph(docs,G,mdigraph,nodes,'layered');</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">plotinteractivedocgraph</span><span class="p">(</span><span class="n">DOCS</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">MDIGRAPH</span><span class="p">,</span> <span class="n">NODES</span><span class="p">,</span> <span class="n">LAYOUT</span><span class="p">,</span><span class="n">INTERACTIVE</span><span class="p">)</span>
+
+  <span class="n">Given</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">NDI_DOCUMENTs</span> <span class="n">DOCS</span><span class="p">,</span> <span class="n">a</span> <span class="n">connectivity</span> <span class="n">matrix</span>
+  <span class="n">G</span><span class="p">,</span> <span class="n">a</span> <span class="n">DIGRAPH</span> <span class="n">object</span> <span class="n">MDIGRAPH</span><span class="p">,</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">node</span> <span class="n">names</span> <span class="n">NODES</span><span class="p">,</span>
+  <span class="ow">and</span> <span class="n">a</span> <span class="n">type</span> <span class="n">of</span> <span class="n">DIGRAPH</span><span class="o">/</span><span class="n">PLOT</span> <span class="n">layout</span> <span class="n">LAYOUT</span><span class="p">,</span> <span class="n">this</span> <span class="n">plots</span> <span class="n">a</span> <span class="n">graph</span>
+  <span class="n">of</span> <span class="n">the</span> <span class="n">graph</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NDI_DOCUMENTS</span><span class="o">.</span> <span class="n">Usually</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">MDIGRAPH</span><span class="p">,</span> <span class="ow">and</span> <span class="n">NODES</span>
+  <span class="n">are</span> <span class="n">the</span> <span class="n">output</span> <span class="n">of</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">docs2graph</span>
+
+  <span class="n">If</span> <span class="n">INTERACTIVE</span> <span class="k">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">then</span> <span class="n">the</span> <span class="n">plot</span> <span class="k">is</span> <span class="n">made</span> <span class="n">interactive</span><span class="p">,</span> <span class="ow">in</span> <span class="n">that</span> <span class="n">the</span>
+  <span class="n">closest</span> <span class="n">node</span> <span class="n">to</span> <span class="n">any</span> <span class="n">clicked</span> <span class="n">point</span> <span class="n">will</span> <span class="n">be</span> <span class="n">displayed</span> <span class="n">on</span> <span class="n">the</span> <span class="n">command</span> <span class="n">line</span><span class="p">,</span>
+  <span class="ow">and</span> <span class="n">a</span> <span class="n">global</span> <span class="n">variable</span> <span class="s1">&#39;clicked_node&#39;</span> <span class="n">will</span> <span class="n">be</span> <span class="n">set</span> <span class="n">to</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="n">of</span>
+  <span class="n">the</span> <span class="n">closest</span> <span class="n">node</span> <span class="n">to</span> <span class="n">the</span> <span class="n">clicked</span> <span class="n">point</span><span class="o">.</span> <span class="n">The</span> <span class="n">user</span> <span class="n">should</span> <span class="n">click</span> <span class="n">nearby</span> <span class="n">but</span>
+  <span class="ow">not</span> <span class="n">directly</span> <span class="n">on</span> <span class="n">the</span> <span class="n">node</span> <span class="n">to</span> <span class="n">reveal</span> <span class="n">it</span><span class="o">.</span>
+
+  <span class="n">If</span> <span class="n">INTERACTIVE</span> <span class="k">is</span> <span class="mi">0</span><span class="p">,</span> <span class="n">then</span> <span class="n">some</span> <span class="n">data</span> <span class="n">about</span> <span class="n">each</span> <span class="n">document</span> <span class="n">node</span> <span class="k">is</span> <span class="n">shown</span> <span class="k">as</span> <span class="n">a</span> <span class="n">data</span>
+  <span class="n">tip</span> <span class="n">when</span> <span class="n">the</span> <span class="n">user</span> <span class="n">hovers</span> <span class="n">over</span> <span class="n">the</span> <span class="n">node</span><span class="o">.</span>
+
+  <span class="n">Example</span> <span class="n">values</span> <span class="n">of</span> <span class="n">LAYOUT</span> <span class="n">include</span> <span class="s1">&#39;force&#39;</span><span class="p">,</span> <span class="s1">&#39;layered&#39;</span><span class="p">,</span> <span class="s1">&#39;auto&#39;</span><span class="p">,</span> <span class="ow">and</span>
+  <span class="n">others</span><span class="o">.</span> <span class="n">See</span> <span class="n">HELP</span> <span class="n">DIGRAPH</span><span class="o">/</span><span class="n">PLOT</span> <span class="k">for</span> <span class="n">all</span> <span class="n">options</span><span class="o">.</span>
+
+  <span class="n">See</span> <span class="n">also</span><span class="p">:</span> <span class="n">DIGRAPH</span><span class="o">/</span><span class="n">PLOT</span><span class="p">,</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">docs2graph</span>
+
+  <span class="n">Example</span><span class="p">:</span> <span class="o">%</span> <span class="n">Given</span> <span class="n">session</span> <span class="n">E</span><span class="p">,</span> <span class="n">plot</span> <span class="n">a</span> <span class="n">graph</span> <span class="n">of</span> <span class="n">all</span> <span class="n">documents</span><span class="o">.</span>
+    <span class="n">docs</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">database_search</span><span class="p">({</span><span class="s1">&#39;document_class.class_name&#39;</span><span class="p">,</span><span class="s1">&#39;(.*)&#39;</span><span class="p">});</span>
+    <span class="p">[</span><span class="n">G</span><span class="p">,</span><span class="n">nodes</span><span class="p">,</span><span class="n">mdigraph</span><span class="p">]</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">docs2graph</span><span class="p">(</span><span class="n">docs</span><span class="p">);</span>
+    <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">plotinteractivedocgraph</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span><span class="n">G</span><span class="p">,</span><span class="n">mdigraph</span><span class="p">,</span><span class="n">nodes</span><span class="p">,</span><span class="s1">&#39;layered&#39;</span><span class="p">);</span>
+</code></pre></div>
                 
               
               

@@ -4785,10 +4785,14 @@
                 
                 
                 <h1 id="class-ndiappspikesorter">CLASS ndi.app.spikesorter<a class="headerlink" href="#class-ndiappspikesorter" title="Permanent link">&para;</a></h1>
-<p>NDI.APP.spikesorter - an app to sort spikewaves found in sessions</p>
-<p>NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)</p>
-<p>Creates a new NDI_APP_spikesorter object that can operate on
-  NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.</p>
+<div class="codehilite"><pre><span></span><code>  NDI.APP.spikesorter - an app to sort spikewaves found in sessions
+
+  NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)
+
+  Creates a new NDI_APP_spikesorter object that can operate on
+  NDI_SESSIONS. The app is named &#39;ndi_app_spikesorter&#39;.
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><strong><a href="../../app.m/">ndi.app</a></strong>, <strong><a href="../../documentservice.m/">ndi.documentservice</a></strong>, <strong><a href="../appdoc.m/">ndi.app.appdoc</a></strong></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4915,7 +4919,7 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>add_appdoc</strong> - <em>Load data from an application document</em></p>
-<p>[...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
+<p>```[...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
       APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])</p>
 <p>Creates a new ndi.document that is based on the type APPDOC_TYPE with creation data
   specified by APPDOC_STRUCT.  [additional inputs] are used to find or specify the
@@ -4938,188 +4942,222 @@
   'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
                             |    the data structures that define the document are not equal.</p>
 <p>Help for ndi.app.spikesorter/add_appdoc is inherited from superclass NDI.APP.APPDOC</p>
-<hr />
-<p><strong>appdoc_description</strong> - <em>a function that prints a description of all appdoc types</em></p>
-<p>For ndi_app_spikeextractor, there are the following types:
-  APPDOC_TYPE                 | Description</p>
-<hr />
-<p>'sorting_parameters'        | A document that describes the parameters to be used for sorting
-  'spike_clusters'            | A document that contains the assignment of a set of spikes to clusters</p>
-<hr />
-<hr />
-<p>APPDOC 1: SORTING_PARAMETERS</p>
-<hr />
-<div class="codehilite"><pre><span></span><code><span class="o">----------------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
-<span class="o">----------------------------------</span><span class="w"></span>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
 
-<span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">hold</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">guide</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">of</span><span class="w"></span>
-<span class="n">spikewaves</span><span class="p">.</span><span class="w"></span>
+<span class="o">**</span><span class="n">appdoc_description</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">a</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">prints</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">description</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="ow">all</span><span class="w"> </span><span class="n">appdoc</span><span class="w"> </span><span class="n">types</span><span class="o">*</span><span class="w"></span>
 
-<span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">apps</span><span class="o">/</span><span class="n">spikesorter</span><span class="o">/</span><span class="n">sorting_parameters</span><span class="p">.</span><span class="n">json</span><span class="w"></span>
+<span class="err">```</span><span class="k">For</span><span class="w"> </span><span class="n">ndi_app_spikeextractor</span><span class="p">,</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="nl">types</span><span class="p">:</span><span class="w"></span>
+<span class="w">  </span><span class="n">APPDOC_TYPE</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">describes</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">sorting</span><span class="w"></span>
+<span class="w">  </span><span class="s1">&#39;spike_clusters&#39;</span><span class="w">            </span><span class="o">|</span><span class="w"> </span><span class="n">A</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">contains</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">assignment</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">set</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">spikes</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">clusters</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
 
-<span class="o">-------------------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
-<span class="o">-------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="n">APPDOC</span><span class="w"> </span><span class="mi">1</span><span class="err">:</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
 
-<span class="n">DOC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMS</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">----------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">    </span><span class="o">----------------------------------</span><span class="w"></span>
 
-<span class="n">SORTING_NAME</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">string</span><span class="w"> </span><span class="n">containing</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="n">document</span><span class="p">.</span><span class="w"></span>
+<span class="w">    </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">hold</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">guide</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">of</span><span class="w"></span>
+<span class="w">    </span><span class="n">spikewaves</span><span class="p">.</span><span class="w"></span>
 
-<span class="n">SORTING_PARAMS</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">contain</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="nl">fields</span><span class="p">:</span><span class="w"></span>
-<span class="n">Fieldname</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
-<span class="o">-------------------------------------------------------------------------</span><span class="w"></span>
-<span class="n">graphical_mode</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">Should</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="n">graphical</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="vm">?</span><span class="w"></span>
-<span class="n">num_pca_features</span><span class="w"> </span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="n">Number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">pca</span><span class="o">-</span><span class="n">driven</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">clustering</span><span class="w"> </span><span class="n">calculation</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
-<span class="n">interpolation</span><span class="w"> </span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="k">By</span><span class="w"> </span><span class="n">how</span><span class="w"> </span><span class="n">many</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">oversample</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">spikes</span><span class="p">,</span><span class="w"> </span><span class="n">interpolating</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">splines</span><span class="vm">?</span><span class="w"></span>
-<span class="n">min_clusters</span><span class="w"> </span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="n">Minimum</span><span class="w"> </span><span class="n">clusters</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">KlustaKwik</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
-<span class="n">max_clusters</span><span class="w"> </span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">Maximum</span><span class="w"> </span><span class="n">clusters</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">KlustaKwik</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
-<span class="n">num_start</span><span class="w"> </span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">Number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">random</span><span class="w"> </span><span class="n">starting</span><span class="w"> </span><span class="n">positions</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
+<span class="w">    </span><span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">apps</span><span class="o">/</span><span class="n">spikesorter</span><span class="o">/</span><span class="n">sorting_parameters</span><span class="p">.</span><span class="n">json</span><span class="w"></span>
+
+<span class="w">    </span><span class="o">-------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">    </span><span class="o">-------------------------------------</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">DOC</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMS</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">SORTING_NAME</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">string</span><span class="w"> </span><span class="n">containing</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="n">document</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">SORTING_PARAMS</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">contain</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="nl">fields</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">Fieldname</span><span class="w">                 </span><span class="o">|</span><span class="w"> </span><span class="n">Description</span><span class="w"></span>
+<span class="w">    </span><span class="o">-------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="n">graphical_mode</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w">        </span><span class="o">|</span><span class="w"> </span><span class="n">Should</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="n">graphical</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"> </span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="vm">?</span><span class="w"></span>
+<span class="w">    </span><span class="n">num_pca_features</span><span class="w"> </span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">     </span><span class="o">|</span><span class="w"> </span><span class="n">Number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">pca</span><span class="o">-</span><span class="n">driven</span><span class="w"> </span><span class="n">features</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">use</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">clustering</span><span class="w"> </span><span class="n">calculation</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
+<span class="w">    </span><span class="n">interpolation</span><span class="w"> </span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="k">By</span><span class="w"> </span><span class="n">how</span><span class="w"> </span><span class="n">many</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">we</span><span class="w"> </span><span class="n">oversample</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">spikes</span><span class="p">,</span><span class="w"> </span><span class="n">interpolating</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">splines</span><span class="vm">?</span><span class="w"></span>
+<span class="w">    </span><span class="n">min_clusters</span><span class="w"> </span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="w">          </span><span class="o">|</span><span class="w"> </span><span class="n">Minimum</span><span class="w"> </span><span class="n">clusters</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">KlustaKwik</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
+<span class="w">    </span><span class="n">max_clusters</span><span class="w"> </span><span class="p">(</span><span class="mi">10</span><span class="p">)</span><span class="w">         </span><span class="o">|</span><span class="w"> </span><span class="n">Maximum</span><span class="w"> </span><span class="n">clusters</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">KlustaKwik</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
+<span class="w">    </span><span class="n">num_start</span><span class="w"> </span><span class="p">(</span><span class="mi">5</span><span class="p">)</span><span class="w">             </span><span class="o">|</span><span class="w"> </span><span class="n">Number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">random</span><span class="w"> </span><span class="n">starting</span><span class="w"> </span><span class="n">positions</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">automatic</span><span class="w"> </span><span class="n">mode</span><span class="w"></span>
 
 
-<span class="o">------------------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------------------</span><span class="w"></span>
 
-<span class="o">[</span><span class="n">SORTING_PARAMETERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
-<span class="w">     </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">[</span><span class="n">SORTING_PARAMETERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="w">         </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"> </span>
-<span class="w">  </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="n">document</span><span class="w"></span>
-<span class="nl">OUPUT</span><span class="p">:</span><span class="w"> </span>
-<span class="w">  </span><span class="k">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">.</span><span class="w"></span>
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"> </span>
+<span class="w">      </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="n">document</span><span class="w"></span>
+<span class="w">    </span><span class="nl">OUPUT</span><span class="p">:</span><span class="w"> </span>
+<span class="w">      </span><span class="k">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">.</span><span class="w"></span>
 
-<span class="o">------------------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------------------</span><span class="w"></span>
 
-<span class="o">[</span><span class="n">SORTING_PARAMETERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
-<span class="w">     </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">[</span><span class="n">SORTING_PARAMETERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="w">         </span><span class="s1">&#39;sorting_parameters&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"> </span>
-<span class="w">  </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="n">document</span><span class="w"></span>
-<span class="nl">OUPUT</span><span class="p">:</span><span class="w"> </span>
-<span class="w">  </span><span class="k">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">.</span><span class="w"></span>
-</code></pre></div>
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"> </span>
+<span class="w">      </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameter</span><span class="w"> </span><span class="n">document</span><span class="w"></span>
+<span class="w">    </span><span class="nl">OUPUT</span><span class="p">:</span><span class="w"> </span>
+<span class="w">      </span><span class="k">Returns</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">.</span><span class="w"></span>
 
-<hr />
-<p>APPDOC 2: SPIKE_CLUSTERS</p>
-<hr />
-<div class="codehilite"><pre><span></span><code><span class="o">---------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
-<span class="o">---------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
+<span class="w">  </span><span class="n">APPDOC</span><span class="w"> </span><span class="mi">2</span><span class="err">:</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"></span>
+<span class="w">  </span><span class="o">----------------------------------------------------------------------------------------------</span><span class="w"></span>
 
-<span class="n">SPIKEWAVES</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">spike</span><span class="w"> </span><span class="n">waveforms</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">read</span><span class="w"> </span><span class="n">during</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">spike</span><span class="w"> </span><span class="n">extraction</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"></span>
-<span class="n">DEPENDS</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">performed</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"></span>
-<span class="n">that</span><span class="w"> </span><span class="n">descibed</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="p">.</span><span class="w"></span>
+<span class="w">    </span><span class="o">---------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">ABOUT</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">    </span><span class="o">---------------------------</span><span class="w"></span>
 
-<span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">apps</span><span class="o">/</span><span class="n">spikesorter</span><span class="o">/</span><span class="n">spike_clusters</span><span class="w"></span>
+<span class="w">    </span><span class="n">SPIKEWAVES</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="n">store</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">spike</span><span class="w"> </span><span class="n">waveforms</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="k">read</span><span class="w"> </span><span class="n">during</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">spike</span><span class="w"> </span><span class="n">extraction</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"></span>
+<span class="w">    </span><span class="n">DEPENDS</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="k">on</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">performed</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">SORTING_PARAMETERS</span><span class="w"></span>
+<span class="w">    </span><span class="n">that</span><span class="w"> </span><span class="n">descibed</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="p">.</span><span class="w"></span>
 
-<span class="o">------------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
-<span class="o">------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="nl">Definition</span><span class="p">:</span><span class="w"> </span><span class="n">apps</span><span class="o">/</span><span class="n">spikesorter</span><span class="o">/</span><span class="n">spike_clusters</span><span class="w"></span>
 
-<span class="n">Spike</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">created</span><span class="w"> </span><span class="n">internally</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">SORT</span><span class="w"> </span><span class="k">function</span><span class="w"></span>
+<span class="w">    </span><span class="o">------------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">--</span><span class="w"> </span><span class="n">CREATION</span><span class="w"> </span><span class="o">|</span><span class="w"> </span>
+<span class="w">    </span><span class="o">------------------------------</span><span class="w"></span>
 
-<span class="o">----------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">----------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="n">Spike</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">documents</span><span class="w"> </span><span class="k">are</span><span class="w"> </span><span class="n">created</span><span class="w"> </span><span class="n">internally</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">SORT</span><span class="w"> </span><span class="k">function</span><span class="w"></span>
 
-<span class="o">[</span><span class="n">SPIKE_CLUSTERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;spike_clusters&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
-<span class="w">                            </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">----------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">FINDING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">----------------------------</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
-<span class="w">   </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"></span>
-<span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">SPIKECLUSTERS_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">information</span><span class="w"></span>
+<span class="w">    </span><span class="o">[</span><span class="n">SPIKE_CLUSTERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">FIND_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;spike_clusters&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="w">                                </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
 
-<span class="o">----------------------------</span><span class="w"></span>
-<span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
-<span class="o">----------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
+<span class="w">       </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"></span>
+<span class="w">    </span><span class="k">OUTPUT</span><span class="err">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">SPIKECLUSTERS_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">information</span><span class="w"></span>
 
-<span class="o">[</span><span class="n">CLUSTERIDS, SPIKE_CLUSTERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;spike_clusters&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
-<span class="w">                            </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">,</span><span class="w"> </span><span class="n">EXTRACTION_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="o">----------------------------</span><span class="w"></span>
+<span class="w">    </span><span class="o">|</span><span class="w"> </span><span class="n">SPIKE_CLUSTERS</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">LOADING</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">    </span><span class="o">----------------------------</span><span class="w"></span>
 
-<span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
-<span class="w">   </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"></span>
-<span class="w">   </span><span class="n">EXTRACTION_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
+<span class="w">    </span><span class="o">[</span><span class="n">CLUSTERIDS, SPIKE_CLUSTERS_DOC</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;spike_clusters&#39;</span><span class="p">,</span><span class="w"> </span><span class="p">...</span><span class="w"></span>
+<span class="w">                                </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="p">,</span><span class="w"> </span><span class="n">EXTRACTION_PARAMETERS_NAME</span><span class="p">)</span><span class="w"></span>
 
-<span class="nl">OUTPUTS</span><span class="p">:</span><span class="w"></span>
-<span class="w">   </span><span class="nl">CLUSTERIDS</span><span class="p">:</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">each</span><span class="w"> </span><span class="n">spike</span><span class="w"></span>
-<span class="w">   </span><span class="n">SPIKE_CLUSTERS_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">clusters</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">includes</span><span class="w"> </span><span class="n">detailed</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">information</span><span class="p">.</span><span class="w"></span>
+<span class="w">    </span><span class="nl">INPUTS</span><span class="p">:</span><span class="w"></span>
+<span class="w">       </span><span class="n">NDI_TIMESERIES_OBJ</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">timeseries</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">was</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
+<span class="w">       </span><span class="n">SORTING_PARAMETERS_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">sorting</span><span class="w"></span>
+<span class="w">       </span><span class="n">EXTRACTION_NAME</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"> </span><span class="k">parameters</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">used</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">extraction</span><span class="w"></span>
+
+<span class="w">    </span><span class="nl">OUTPUTS</span><span class="p">:</span><span class="w"></span>
+<span class="w">       </span><span class="nl">CLUSTERIDS</span><span class="p">:</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">id</span><span class="w"> </span><span class="n">number</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="k">each</span><span class="w"> </span><span class="n">spike</span><span class="w"></span>
+<span class="w">       </span><span class="n">SPIKE_CLUSTERS_DOC</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">clusters</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="n">includes</span><span class="w"> </span><span class="n">detailed</span><span class="w"> </span><span class="n">cluster</span><span class="w"> </span><span class="n">information</span><span class="p">.</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
 <p><strong>check_sorting_parameters</strong> - <em>check sorting parameters for validity</em></p>
-<p>SORTING_PARAMETERS_STRUCT = CHECK_SORTING_PARAMETERS(NDI_APP_SPIKESORTER_OBJ, SORTING_PARAMETERS_STRUCT)</p>
+<p>```SORTING_PARAMETERS_STRUCT = CHECK_SORTING_PARAMETERS(NDI_APP_SPIKESORTER_OBJ, SORTING_PARAMETERS_STRUCT)</p>
 <p>Given a sorting parameters structure (see help ndi.app.spikesorter/appdoc_description), check that the
   parameters are provided and are in appropriate ranges. </p>
 <p>interpolation</p>
-<hr />
-<p><strong>clear_appdoc</strong> - <em>remove an ndi.app.appdoc document from a session database</em></p>
-<p>B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])</p>
-<p>Deletes the app document of style DOC_NAME from the database.
-  [additional inputs] are used to find the NDI_document in the database.
-  They are passed to the function FIND_APPDOC, so see help FIND_APPDOC for the documentation
-  for each app.</p>
-<p>B is 1 if the document is found, and 0 otherwise.</p>
-<p>Help for ndi.app.spikesorter/clear_appdoc is inherited from superclass NDI.APP.APPDOC</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">clear_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">remove</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">appdoc</span> <span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">session</span> <span class="n">database</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">B</span> <span class="o">=</span> <span class="n">CLEAR_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">])</span>
+
+  <span class="n">Deletes</span> <span class="n">the</span> <span class="n">app</span> <span class="n">document</span> <span class="n">of</span> <span class="n">style</span> <span class="n">DOC_NAME</span> <span class="n">from</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">the</span> <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="n">They</span> <span class="n">are</span> <span class="n">passed</span> <span class="n">to</span> <span class="n">the</span> <span class="n">function</span> <span class="n">FIND_APPDOC</span><span class="p">,</span> <span class="n">so</span> <span class="n">see</span> <span class="n">help</span> <span class="n">FIND_APPDOC</span> <span class="k">for</span> <span class="n">the</span> <span class="n">documentation</span>
+  <span class="k">for</span> <span class="n">each</span> <span class="n">app</span><span class="p">.</span>
+
+  <span class="n">B</span> <span class="n">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">document</span> <span class="n">is</span> <span class="n">found</span><span class="p">,</span> <span class="n">and</span> <span class="mi">0</span> <span class="n">otherwise</span><span class="p">.</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">spikesorter</span><span class="o">/</span><span class="n">clear_appdoc</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">APP</span><span class="p">.</span><span class="n">APPDOC</span>
+</code></pre></div>
+
 <hr />
 <p><strong>clusters2neurons</strong> - <em>create ndi.neuron objects from spike clusterings</em></p>
-<p>CLUSTERS2NEURONS(NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ, SORTING_PARAMETER_NAME, EXTRACTION_PARAMETERS_NAME, REDO)</p>
+<p>```CLUSTERS2NEURONS(NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ, SORTING_PARAMETER_NAME, EXTRACTION_PARAMETERS_NAME, REDO)</p>
 <p>Generates ndi.neuron objects for each spike cluster represented in the</p>
-<hr />
-<p><strong>defaultstruct_appdoc</strong> - <em>return a default appdoc structure for a given APPDOC type</em></p>
-<p>APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)</p>
-<p>Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.</p>
-<p>In the base class, the blank version of the ndi.document is read in and the
-  default structure is built from the ndi.document's class property list.</p>
-<p>Help for ndi.app.spikesorter/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">defaultstruct_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">default</span> <span class="nv">appdoc</span> <span class="nv">structure</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">APPDOC</span> <span class="nv">type</span><span class="o">*</span>
+
+```<span class="nv">APPDOC_STRUCT</span> <span class="o">=</span> <span class="nv">DEFAULTSTRUCT_APPDOC</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span><span class="ss">)</span>
+
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">default</span> <span class="nv">data</span> <span class="nv">structure</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">APPDOC_TYPE</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">appdoc</span> <span class="nv">object</span>.
+
+  <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">the</span> <span class="nv">blank</span> <span class="nv">version</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">is</span> <span class="nv">read</span> <span class="nv">in</span> <span class="nv">and</span> <span class="nv">the</span>
+  <span class="nv">default</span> <span class="nv">structure</span> <span class="nv">is</span> <span class="nv">built</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span><span class="s1">&#39;</span><span class="s">s class property list.</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">spikesorter</span><span class="o">/</span><span class="nv">defaultstruct_appdoc</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>.<span class="nv">APPDOC</span>
+</code></pre></div>
+
 <hr />
 <p><strong>doc2struct</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
-<p>DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
+<p>```DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
 <p>Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
   according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.</p>
 <p>In the base class, this uses the property info in the ndi.document to load the data structure.</p>
 <p>Help for ndi.app.spikesorter/doc2struct is inherited from superclass NDI.APP.APPDOC</p>
-<hr />
-<p><strong>find_appdoc</strong> - <em>find an ndi_app_appdoc document in the session database</em></p>
-<p>See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">find_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">find</span> <span class="nv">an</span> <span class="nv">ndi_app_appdoc</span> <span class="nv">document</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">session</span> <span class="nv">database</span><span class="o">*</span>
+
+```<span class="nv">See</span> <span class="nv">ndi_app_spikesorter</span><span class="o">/</span><span class="nv">APPDOC_DESCRIPTION</span> <span class="k">for</span> <span class="nv">documentation</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>isequal_appdoc_struct</strong> - <em>are two APPDOC data structures the same (equal)?</em></p>
-<p>B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)</p>
+<p>```B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)</p>
 <p>Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
   true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).</p>
 <p>Help for ndi.app.spikesorter/isequal_appdoc_struct is inherited from superclass NDI.APP.APPDOC</p>
-<hr />
-<p><strong>isvalid_appdoc_struct</strong> - <em>is an input structure a valid descriptor for an APPDOC?</em></p>
-<p>[B,ERRORMSG] = ISVALID_APPDOC_STRUCT(ndi.app.spikeextractor_OBJ, APPDOC_TYPE, APPDOC_STRUCT)</p>
-<p>Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
-  ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.</p>
-<p>For ndi_app_spikesorter, one can use an APPDOC_TYPE of the following:
-  APPDOC_TYPE               | Description</p>
-<hr />
-<p>'sorting_parameters'   | A document that describes the parameters to be used for sorting
-  'spike_clusters'       | A document that describes the</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">isvalid_appdoc_struct</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">is</span> <span class="nv">an</span> <span class="nv">input</span> <span class="nv">structure</span> <span class="nv">a</span> <span class="nv">valid</span> <span class="nv">descriptor</span> <span class="k">for</span> <span class="nv">an</span> <span class="nv">APPDOC</span>?<span class="o">*</span>
+
+```[<span class="nv">B</span>,<span class="nv">ERRORMSG</span>] <span class="o">=</span> <span class="nv">ISVALID_APPDOC_STRUCT</span><span class="ss">(</span><span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">spikeextractor_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT</span><span class="ss">)</span>
+
+  <span class="nv">Examines</span> <span class="nv">APPDOC_STRUCT</span> <span class="nv">and</span> <span class="nv">determines</span> <span class="nv">whether</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">valid</span> <span class="nv">input</span> <span class="k">for</span> <span class="nv">creating</span> <span class="nv">an</span>
+  <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">described</span> <span class="nv">by</span> <span class="nv">APPDOC_TYPE</span>. <span class="nv">B</span> <span class="nv">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">valid</span> <span class="nv">and</span> <span class="mi">0</span> <span class="nv">otherwise</span>.
+
+  <span class="k">For</span> <span class="nv">ndi_app_spikesorter</span>, <span class="nv">one</span> <span class="nv">can</span> <span class="nv">use</span> <span class="nv">an</span> <span class="nv">APPDOC_TYPE</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">following</span>:
+  <span class="nv">APPDOC_TYPE</span>               <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">----------------------------------------------------------------------------------------------</span>
+  <span class="s1">&#39;</span><span class="s">sorting_parameters</span><span class="s1">&#39;</span>   <span class="o">|</span> <span class="nv">A</span> <span class="nv">document</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">parameters</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">used</span> <span class="k">for</span> <span class="nv">sorting</span>
+  <span class="s1">&#39;</span><span class="s">spike_clusters</span><span class="s1">&#39;</span>       <span class="o">|</span> <span class="nv">A</span> <span class="nv">document</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span>
+</code></pre></div>
+
 <hr />
 <p><strong>loaddata_appdoc</strong> - <em>load data from an application document</em></p>
-<p>See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.</p>
-<hr />
-<p><strong>loadspiketimes</strong> - <em>load extracted spike times for an ndi_timeseries_obj</em></p>
-<p>[SPIKETIMES, EPOCHINFO, EXTRACTION_PARAMS_DOC, SPIKETIMES_DOCS] = LOADSPIKETIMES(...
-          NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)</p>
-<p>Loads extracted SPIKETIMES from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.</p>
-<p>SPIKTIMES is a vector description of each spike waveform.
-  EPOCHINFO - a structure with fields EpochStartSamples that indicates the spiketime number that begins each new
-     epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
-  EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
-  SPIKETIMES_DOCS is a cell array of ndi.documents for each extracted spike waveform document.</p>
+<p>```See ndi_app_spikesorter/APPDOC_DESCRIPTION for documentation.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">loadspiketimes</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nb">load</span> <span class="n">extracted</span> <span class="n">spike</span> <span class="n">times</span> <span class="k">for</span> <span class="n">an</span> <span class="n">ndi_timeseries_obj</span><span class="o">*</span>
+
+<span class="err">```</span><span class="p">[</span><span class="n">SPIKETIMES</span><span class="p">,</span> <span class="n">EPOCHINFO</span><span class="p">,</span> <span class="n">EXTRACTION_PARAMS_DOC</span><span class="p">,</span> <span class="n">SPIKETIMES_DOCS</span><span class="p">]</span> <span class="o">=</span> <span class="n">LOADSPIKETIMES</span><span class="p">(</span><span class="o">...</span>
+          <span class="n">NDI_APP_SPIKESORTER_OBJ</span><span class="p">,</span> <span class="n">NDI_TIMESERIES_OBJ</span><span class="p">,</span><span class="n">EXTRACTION_NAME</span><span class="p">)</span>
+
+  <span class="n">Loads</span> <span class="n">extracted</span> <span class="n">SPIKETIMES</span> <span class="n">from</span> <span class="n">an</span> <span class="n">NDI_TIMESERIERS_OBJ</span> <span class="n">with</span> <span class="n">extraction</span> <span class="n">name</span> <span class="n">EXTRACTION_NAME</span><span class="o">.</span>
+
+  <span class="n">SPIKTIMES</span> <span class="k">is</span> <span class="n">a</span> <span class="n">vector</span> <span class="n">description</span> <span class="n">of</span> <span class="n">each</span> <span class="n">spike</span> <span class="n">waveform</span><span class="o">.</span>
+  <span class="n">EPOCHINFO</span> <span class="o">-</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">with</span> <span class="n">fields</span> <span class="n">EpochStartSamples</span> <span class="n">that</span> <span class="n">indicates</span> <span class="n">the</span> <span class="n">spiketime</span> <span class="n">number</span> <span class="n">that</span> <span class="n">begins</span> <span class="n">each</span> <span class="n">new</span>
+     <span class="n">epoch</span> <span class="n">from</span> <span class="n">the</span> <span class="n">NDI_TIMESERIES_OBJ</span> <span class="ow">and</span> <span class="n">EpochNames</span> <span class="n">that</span> <span class="k">is</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">ID</span> <span class="n">of</span> <span class="n">each</span> <span class="n">epoch</span><span class="o">.</span>
+  <span class="n">EXTRACTION_PARAMS_DOC</span> <span class="k">is</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">document</span> <span class="k">for</span> <span class="n">the</span> <span class="n">extraction</span> <span class="n">parameters</span><span class="o">.</span>
+  <span class="n">SPIKETIMES_DOCS</span> <span class="k">is</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">ndi</span><span class="o">.</span><span class="n">documents</span> <span class="k">for</span> <span class="n">each</span> <span class="n">extracted</span> <span class="n">spike</span> <span class="n">waveform</span> <span class="n">document</span><span class="o">.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>loadwaveforms</strong> - <em>load extracted spike waveforms for an ndi_timeseries_obj</em></p>
-<p>[WAVEFORMS, WAVEFORMPARAMS, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
+<p>```[WAVEFORMS, WAVEFORMPARAMS, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
           NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)</p>
 <p>Loads extracted spike WAVEFORMS from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.</p>
 <p>WAVEFORMS is a NumSamples x NumChannels x NumSpikes representation of each spike waveform.
@@ -5130,52 +5168,76 @@
      epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
   EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
   WAVEFORM_DOCS is a cell array of ndi.documents for each extracted spike waveform document.</p>
-<hr />
-<p><strong>newdocument</strong> - <em>return a new database document of type ndi.document based on an app</em></p>
-<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)</p>
-<p>Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
-  is filled out with the name of NDI_APP_OBJ.VARAPPNAME().</p>
-<p>Help for ndi.app.spikesorter/newdocument is inherited from superclass NDI.APP</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">newdocument</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">database</span> <span class="nv">document</span> <span class="nv">of</span> <span class="nv">type</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">an</span> <span class="nv">app</span><span class="o">*</span>
+
+```<span class="nv">NDI_DOCUMENT_OBJ</span> <span class="o">=</span> <span class="nv">NEWDOCUMENT</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">of</span> <span class="nv">type</span> <span class="s1">&#39;</span><span class="s">ndi_document_app</span><span class="s1">&#39;</span>. <span class="nv">The</span> <span class="s1">&#39;</span><span class="s">app.name</span><span class="s1">&#39;</span> <span class="nv">field</span>
+  <span class="nv">is</span> <span class="nv">filled</span> <span class="nv">out</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">NDI_APP_OBJ</span>.<span class="nv">VARAPPNAME</span><span class="ss">()</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">spikesorter</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>
+</code></pre></div>
+
 <hr />
 <p><strong>searchquery</strong> - <em>return a search query for an ndi.document related to this app</em></p>
-<p>C = SEARCHQUERY(NDI_APP_OBJ)</p>
+<p>```C = SEARCHQUERY(NDI_APP_OBJ)</p>
 <p>Returns a cell array of strings that allow the creation or searching of an
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.</p>
 <p>Help for ndi.app.spikesorter/searchquery is inherited from superclass NDI.APP</p>
-<hr />
-<p><strong>spike_sort</strong> - <em>method that sorts spikes from specific probes in session to ndi_doc</em></p>
-<p>SPIKE_CLUSTER_DOC = SPIKE_SORT(SPIKEWAVES, SORT_NAME, SORTING_PARAMS)
- %%%%%%%%%%%%
-  SORT_NAME name given to save sort to ndi_doc</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+
+<span class="o">**</span><span class="n">spike_sort</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="n">method</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">sorts</span><span class="w"> </span><span class="n">spikes</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="n">specific</span><span class="w"> </span><span class="n">probes</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">session</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">ndi_doc</span><span class="o">*</span><span class="w"></span>
+
+```<span class="n">SPIKE_CLUSTER_DOC</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">SPIKE_SORT</span><span class="p">(</span><span class="n">SPIKEWAVES</span><span class="p">,</span><span class="w"> </span><span class="n">SORT_NAME</span><span class="p">,</span><span class="w"> </span><span class="n">SORTING_PARAMS</span><span class="p">)</span><span class="w"></span>
+<span class="w"> </span><span class="c">%%%%%%%%%%%%</span><span class="w"></span>
+<span class="w">  </span><span class="n">SORT_NAME</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="n">given</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="nb">save</span><span class="w"> </span><span class="nb">sort</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">ndi_doc</span><span class="w"></span>
+</code></pre></div>
+
 <hr />
 <p><strong>spikesorter</strong> - <em>an app to sort spikewaves found in sessions</em></p>
-<p>NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)</p>
+<p>```NDI.APP.spikesorter_OBJ = ndi.app.spikesorter(SESSION)</p>
 <p>Creates a new NDI_APP_spikesorter object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_spikesorter'.</p>
-<hr />
-<p><strong>struct2doc</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
-<p>DOC = STRUCT2DOC(NDI_APP_SPIKESORTER_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)</p>
-<p>For ndi.app.spikesorter, one can use an APPDOC_TYPE of the following:
-  APPDOC_TYPE                 | Description</p>
-<hr />
-<p>'sorting_parameters'  | A document that describes the parameters to be used for sorting</p>
-<p>See APPDOC_DESCRIPTION for a list of the parameters.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">struct2doc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">create</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">input</span> <span class="nv">structure</span> <span class="nv">and</span> <span class="nv">input</span> <span class="nv">parameters</span><span class="o">*</span>
+
+```<span class="nv">DOC</span> <span class="o">=</span> <span class="nv">STRUCT2DOC</span><span class="ss">(</span><span class="nv">NDI_APP_SPIKESORTER_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT</span>, ...<span class="ss">)</span>
+
+  <span class="k">For</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">spikesorter</span>, <span class="nv">one</span> <span class="nv">can</span> <span class="nv">use</span> <span class="nv">an</span> <span class="nv">APPDOC_TYPE</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">following</span>:
+  <span class="nv">APPDOC_TYPE</span>                 <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">----------------------------------------------------------------------------------------------</span>
+  <span class="s1">&#39;</span><span class="s">sorting_parameters</span><span class="s1">&#39;</span>  <span class="o">|</span> <span class="nv">A</span> <span class="nv">document</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">parameters</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">used</span> <span class="k">for</span> <span class="nv">sorting</span>
+
+
+  <span class="nv">See</span> <span class="nv">APPDOC_DESCRIPTION</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">parameters</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>varappname</strong> - <em>return the name of the application for use in variable creation</em></p>
-<p>AN = VARAPPNAME(NDI_APP_OBJ)</p>
+<p>```AN = VARAPPNAME(NDI_APP_OBJ)</p>
 <p>Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.</p>
 <p>Help for ndi.app.spikesorter/varappname is inherited from superclass NDI.APP</p>
-<hr />
-<p><strong>version_url</strong> - <em>return the app version and url</em></p>
-<p>[V, URL] = VERSION_URL(NDI_APP_OBJ)</p>
-<p>Return the version and url for the current app. In the base class,
-  it is assumed that GIT is used and is available from the command line
-  and the version and url are read from the git directory.</p>
-<p>Developers should override this method in their own class if they use a 
-  different version control system.</p>
-<p>Help for ndi.app.spikesorter/version_url is inherited from superclass NDI.APP</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">version_url</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="nv">the</span> <span class="nv">app</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span><span class="o">*</span>
+
+```[<span class="nv">V</span>, <span class="nv">URL</span>] <span class="o">=</span> <span class="nv">VERSION_URL</span><span class="ss">(</span><span class="nv">NDI_APP_OBJ</span><span class="ss">)</span>
+
+  <span class="k">Return</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">app</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>,
+  <span class="nv">it</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">that</span> <span class="nv">GIT</span> <span class="nv">is</span> <span class="nv">used</span> <span class="nv">and</span> <span class="nv">is</span> <span class="nv">available</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">command</span> <span class="nv">line</span>
+  <span class="nv">and</span> <span class="nv">the</span> <span class="nv">version</span> <span class="nv">and</span> <span class="nv">url</span> <span class="nv">are</span> <span class="nv">read</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">git</span> <span class="nv">directory</span>.
+
+  <span class="nv">Developers</span> <span class="nv">should</span> <span class="nv">override</span> <span class="nv">this</span> <span class="nv">method</span> <span class="nv">in</span> <span class="nv">their</span> <span class="nv">own</span> <span class="nv">class</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">use</span> <span class="nv">a</span> 
+  <span class="nv">different</span> <span class="nv">version</span> <span class="nv">control</span> <span class="nv">system</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">app</span>.<span class="nv">spikesorter</span><span class="o">/</span><span class="nv">version_url</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">APP</span>
+</code></pre></div>
+
 <hr />
                 
               

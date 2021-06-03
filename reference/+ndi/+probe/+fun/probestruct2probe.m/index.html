@@ -4688,15 +4688,20 @@
                 
                 
                 <h1 id="ndiprobefunprobestruct2probe">ndi.probe.fun.probestruct2probe<a class="headerlink" href="#ndiprobefunprobestruct2probe" title="Permanent link">&para;</a></h1>
-<p>NDI.PROBE.FUN.PROBESTRUCT2PROBE - Convert probe structures to NDI_PROBE objects</p>
-<p>NDI_PROBE_OBJ = ndi.probe.fun.probestruct2probe(PROBESTRUCT, EXP)</p>
-<p>Given an array of structures PROBESTRUCT with field 
-  'name', 'reference', and 'type', and an ndi.session EXP,
-  this function generates the appropriate subclass of ndi.probe for
-  dealing with the PROBE and returns the objects in a cell array NDI_PROBE_OBJ.</p>
-<p>This function uses the ndi.globals variable 'ndi.globals.probetype2object' to
-  make the conversion.</p>
-<p>See also: ndi.globals and NDI_PROBETYPE2OBJECT</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI</span><span class="o">.</span><span class="n">PROBE</span><span class="o">.</span><span class="n">FUN</span><span class="o">.</span><span class="n">PROBESTRUCT2PROBE</span> <span class="o">-</span> <span class="n">Convert</span> <span class="n">probe</span> <span class="n">structures</span> <span class="n">to</span> <span class="n">NDI_PROBE</span> <span class="n">objects</span>
+
+  <span class="n">NDI_PROBE_OBJ</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">probe</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">probestruct2probe</span><span class="p">(</span><span class="n">PROBESTRUCT</span><span class="p">,</span> <span class="n">EXP</span><span class="p">)</span>
+
+  <span class="n">Given</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">structures</span> <span class="n">PROBESTRUCT</span> <span class="n">with</span> <span class="n">field</span> 
+  <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="s1">&#39;reference&#39;</span><span class="p">,</span> <span class="ow">and</span> <span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="ow">and</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span> <span class="n">EXP</span><span class="p">,</span>
+  <span class="n">this</span> <span class="n">function</span> <span class="n">generates</span> <span class="n">the</span> <span class="n">appropriate</span> <span class="n">subclass</span> <span class="n">of</span> <span class="n">ndi</span><span class="o">.</span><span class="n">probe</span> <span class="k">for</span>
+  <span class="n">dealing</span> <span class="n">with</span> <span class="n">the</span> <span class="n">PROBE</span> <span class="ow">and</span> <span class="n">returns</span> <span class="n">the</span> <span class="n">objects</span> <span class="ow">in</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">NDI_PROBE_OBJ</span><span class="o">.</span>
+
+  <span class="n">This</span> <span class="n">function</span> <span class="n">uses</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">globals</span> <span class="n">variable</span> <span class="s1">&#39;ndi.globals.probetype2object&#39;</span> <span class="n">to</span>
+  <span class="n">make</span> <span class="n">the</span> <span class="n">conversion</span><span class="o">.</span>
+
+  <span class="n">See</span> <span class="n">also</span><span class="p">:</span> <span class="n">ndi</span><span class="o">.</span><span class="n">globals</span> <span class="ow">and</span> <span class="n">NDI_PROBETYPE2OBJECT</span>
+</code></pre></div>
                 
               
               

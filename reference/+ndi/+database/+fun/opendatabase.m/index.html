@@ -4688,14 +4688,19 @@
                 
                 
                 <h1 id="ndidatabasefunopendatabase">ndi.database.fun.opendatabase<a class="headerlink" href="#ndidatabasefunopendatabase" title="Permanent link">&para;</a></h1>
-<p>NDI_OPENDATABASE - open the database associated with an session</p>
-<p>DB = ndi.database.fun.opendatabase(DATABASE_PATH, SESSION_UNIQUE_REFERENCE)</p>
-<p>Searches the file path DATABASE_PATH for any known databases
-  in NDI_DATABASEHIERACHY. If it finds a datbase of subtype ndi.database,
-  then it is opened and returned in DB.</p>
-<p>If it finds no databases, then it tries to create a new database following
-  the order in the hierarchy.</p>
-<p>Otherwise, DB is empty.</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI_OPENDATABASE</span> <span class="o">-</span> <span class="n">open</span> <span class="n">the</span> <span class="n">database</span> <span class="n">associated</span> <span class="n">with</span> <span class="n">an</span> <span class="n">session</span>
+
+  <span class="n">DB</span> <span class="o">=</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">fun</span><span class="p">.</span><span class="n">opendatabase</span><span class="p">(</span><span class="n">DATABASE_PATH</span><span class="p">,</span> <span class="n">SESSION_UNIQUE_REFERENCE</span><span class="p">)</span>
+
+  <span class="n">Searches</span> <span class="n">the</span> <span class="n">file</span> <span class="n">path</span> <span class="n">DATABASE_PATH</span> <span class="n">for</span> <span class="n">any</span> <span class="n">known</span> <span class="n">databases</span>
+  <span class="n">in</span> <span class="n">NDI_DATABASEHIERACHY</span><span class="p">.</span> <span class="n">If</span> <span class="n">it</span> <span class="n">finds</span> <span class="n">a</span> <span class="n">datbase</span> <span class="n">of</span> <span class="n">subtype</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">,</span>
+  <span class="n">then</span> <span class="n">it</span> <span class="n">is</span> <span class="n">opened</span> <span class="n">and</span> <span class="n">returned</span> <span class="n">in</span> <span class="n">DB</span><span class="p">.</span>
+
+  <span class="n">If</span> <span class="n">it</span> <span class="n">finds</span> <span class="n">no</span> <span class="n">databases</span><span class="p">,</span> <span class="n">then</span> <span class="n">it</span> <span class="n">tries</span> <span class="n">to</span> <span class="n">create</span> <span class="n">a</span> <span class="n">new</span> <span class="n">database</span> <span class="n">following</span>
+  <span class="n">the</span> <span class="n">order</span> <span class="n">in</span> <span class="n">the</span> <span class="n">hierarchy</span><span class="p">.</span>
+
+  <span class="n">Otherwise</span><span class="p">,</span> <span class="n">DB</span> <span class="n">is</span> <span class="n">empty</span><span class="p">.</span>
+</code></pre></div>
                 
               
               

@@ -4783,13 +4783,17 @@
                 
                 
                 <h1 id="class-ndiido">CLASS ndi.ido<a class="headerlink" href="#class-ndiido" title="Permanent link">&para;</a></h1>
-<p>ndi.ido - identifier object class for ndi</p>
-<p>This class creates and retrieves unique identifiers.  The identifier is a hexidecimal string
-   based on both the current date/time and a random number. When identifiers are sorted in
-   alphabetical order, they are also sorted in the order of fime of creation. </p>
-<p><strong>Example</strong>:
-    i = ndi.ido();
-    id = i.id(), % view the id that was created</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="o">-</span> <span class="nv">identifier</span> <span class="nv">object</span> <span class="nv">class</span> <span class="k">for</span> <span class="nv">ndi</span>
+
+  <span class="nv">This</span> <span class="nv">class</span> <span class="nv">creates</span> <span class="nv">and</span> <span class="nv">retrieves</span> <span class="nv">unique</span> <span class="nv">identifiers</span>.  <span class="nv">The</span> <span class="nv">identifier</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">string</span>
+   <span class="nv">based</span> <span class="nv">on</span> <span class="nv">both</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">date</span><span class="o">/</span><span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span> <span class="nv">number</span>. <span class="nv">When</span> <span class="nv">identifiers</span> <span class="nv">are</span> <span class="nv">sorted</span> <span class="nv">in</span>
+   <span class="nv">alphabetical</span> <span class="nv">order</span>, <span class="nv">they</span> <span class="nv">are</span> <span class="nv">also</span> <span class="nv">sorted</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">order</span> <span class="nv">of</span> <span class="nv">fime</span> <span class="nv">of</span> <span class="nv">creation</span>. 
+
+  <span class="o">**</span><span class="nv">Example</span><span class="o">**</span>:
+    <span class="nv">i</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">ido</span><span class="ss">()</span><span class="c1">;</span>
+    <span class="nv">id</span> <span class="o">=</span> <span class="nv">i</span>.<span class="nv">id</span><span class="ss">()</span>, <span class="o">%</span> <span class="nv">view</span> <span class="nv">the</span> <span class="nv">id</span> <span class="nv">that</span> <span class="nv">was</span> <span class="nv">created</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4832,23 +4836,29 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
-<p>IDENTIFIER = ID(NDI_ID_OBJ)</p>
+<p>```IDENTIFIER = ID(NDI_ID_OBJ)</p>
 <p>Returns the unique identifier of an ndi.ido object.</p>
-<hr />
-<p><strong>ido</strong> - <em>create a new ndi.ido object</em></p>
-<p>NDI_ID_OBJ = ndi.ido()</p>
-<p>Creates a new ndi.ido object and generates a unique id
-  that is stored in the property 'identifier'.</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**ido** - *create a new ndi.ido object*
+
+```NDI_ID_OBJ = ndi.ido()
+
+  Creates a new ndi.ido object and generates a unique id
+  that is stored in the property &#39;identifier&#39;.
+</code></pre></div>
+
 <hr />
 <p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>ID = NDI_UNIQUE_ID</p>
+<p>```ID = NDI_UNIQUE_ID</p>
 <p>Generates a unique ID character array based on the current time and a random
   number. It is a hexidecimal representation of the serial date number in
   UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
   The integer portion of the date is the whole number of days and the fractional part of the date number
   is the fraction of days.</p>
 <p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND</p>
+<p>See also: NUM2HEX, NOW, RAND
+```</p>
 <hr />
                 
               

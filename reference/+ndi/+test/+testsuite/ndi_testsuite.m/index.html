@@ -4688,21 +4688,25 @@
                 
                 
                 <h1 id="nditesttestsuitendi_testsuite">ndi.test.testsuite.ndi_testsuite<a class="headerlink" href="#nditesttestsuitendi_testsuite" title="Permanent link">&para;</a></h1>
-<p>NDI_TESTSUITE - run a suite of tests</p>
-<p>OUTPUT = ndi.test.testsuite</p>
-<p>Loads a set of test suite instructions in the file
-  'ndi_testsuite_list.txt'. This file is a tab-delimited table
-  that can be loaded with vlt.file.loadStructArray with fields
-  Field name          | Description</p>
-<hr />
-<p>code                | The code to be run (as a Matlab evaluation)
-  runit               | Should we run it? 0/1
-  comment             | A comment string describing the test</p>
-<p>OUTPUT is a structure of outcomes. It includes the following fields:
-  Field name          | Descriptopn</p>
-<hr />
-<p>outcome             | Success is 1, failure is 0. -1 means it was not run.
-  errormsg            | Any error message</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI_TESTSUITE</span> <span class="o">-</span> <span class="n">run</span> <span class="n">a</span> <span class="n">suite</span> <span class="n">of</span> <span class="n">tests</span>
+
+  <span class="n">OUTPUT</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">test</span><span class="o">.</span><span class="n">testsuite</span>
+
+  <span class="n">Loads</span> <span class="n">a</span> <span class="n">set</span> <span class="n">of</span> <span class="n">test</span> <span class="n">suite</span> <span class="n">instructions</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">file</span>
+  <span class="s1">&#39;ndi_testsuite_list.txt&#39;</span><span class="o">.</span> <span class="n">This</span> <span class="n">file</span> <span class="k">is</span> <span class="n">a</span> <span class="n">tab</span><span class="o">-</span><span class="n">delimited</span> <span class="n">table</span>
+  <span class="n">that</span> <span class="n">can</span> <span class="n">be</span> <span class="n">loaded</span> <span class="n">with</span> <span class="n">vlt</span><span class="o">.</span><span class="n">file</span><span class="o">.</span><span class="n">loadStructArray</span> <span class="n">with</span> <span class="n">fields</span>
+  <span class="n">Field</span> <span class="n">name</span>          <span class="o">|</span> <span class="n">Description</span>
+  <span class="o">--------------------------------------------------------------------------</span>
+  <span class="n">code</span>                <span class="o">|</span> <span class="n">The</span> <span class="n">code</span> <span class="n">to</span> <span class="n">be</span> <span class="n">run</span> <span class="p">(</span><span class="k">as</span> <span class="n">a</span> <span class="n">Matlab</span> <span class="n">evaluation</span><span class="p">)</span>
+  <span class="n">runit</span>               <span class="o">|</span> <span class="n">Should</span> <span class="n">we</span> <span class="n">run</span> <span class="n">it</span><span class="err">?</span> <span class="mi">0</span><span class="o">/</span><span class="mi">1</span>
+  <span class="n">comment</span>             <span class="o">|</span> <span class="n">A</span> <span class="n">comment</span> <span class="n">string</span> <span class="n">describing</span> <span class="n">the</span> <span class="n">test</span>
+
+  <span class="n">OUTPUT</span> <span class="k">is</span> <span class="n">a</span> <span class="n">structure</span> <span class="n">of</span> <span class="n">outcomes</span><span class="o">.</span> <span class="n">It</span> <span class="n">includes</span> <span class="n">the</span> <span class="n">following</span> <span class="n">fields</span><span class="p">:</span>
+  <span class="n">Field</span> <span class="n">name</span>          <span class="o">|</span> <span class="n">Descriptopn</span>
+  <span class="o">--------------------------------------------------------------------------</span>
+  <span class="n">outcome</span>             <span class="o">|</span> <span class="n">Success</span> <span class="k">is</span> <span class="mi">1</span><span class="p">,</span> <span class="n">failure</span> <span class="k">is</span> <span class="mf">0.</span> <span class="o">-</span><span class="mi">1</span> <span class="n">means</span> <span class="n">it</span> <span class="n">was</span> <span class="ow">not</span> <span class="n">run</span><span class="o">.</span>
+  <span class="n">errormsg</span>            <span class="o">|</span> <span class="n">Any</span> <span class="n">error</span> <span class="n">message</span>
+</code></pre></div>
                 
               
               

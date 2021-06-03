@@ -4785,8 +4785,10 @@
                 
                 
                 <h1 id="class-ndiguidata">CLASS ndi.gui.Data<a class="headerlink" href="#class-ndiguidata" title="Permanent link">&para;</a></h1>
-<p>ndi.gui.Data is a class.
-    obj = Data</p>
+<div class="codehilite"><pre><span></span><code>ndi.gui.Data is a class.
+    obj = Data
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><strong>handle</strong></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4925,13 +4927,17 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>Data</strong> - <em>ndi.gui.Data/Data is a constructor.</em></p>
-<p>obj = Data</p>
-<hr />
-<p><strong>addDoc</strong> - <em>ndi.gui.Data/addDoc is a function.</em></p>
-<p>addDoc(obj, docs)</p>
+<p>```obj = Data</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**addDoc** - *ndi.gui.Data/addDoc is a function.*
+
+```addDoc(obj, docs)
+</code></pre></div>
+
 <hr />
 <p><strong>addlistener</strong> - <em>ADDLISTENER  Add listener for event.</em></p>
-<p>el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
+<p>```el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
     responds to the named event on any handle in the array.  callbackFcn
@@ -4966,21 +4972,24 @@
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">addlistener</span>
 </code></pre></div>
 
-<hr />
-<p><strong>delete</strong> - <em>DELETE   Delete a handle object.</em></p>
-<p>DELETE(H) deletes all handle objects in array H. After the delete 
-    function call, H is an array of invalid objects.</p>
-<div class="codehilite"><pre><span></span><code>See also NDI.GUI.DATA, NDI.GUI.DATA/ISVALID, CLEAR
-</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<p>Help for ndi.gui.Data/delete is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">delete</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">delete</span>
+<span class="o">**</span><span class="nv">delete</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">DELETE</span>   <span class="nv">Delete</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">object</span>.<span class="o">*</span>
+
+```<span class="nv">DELETE</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">deletes</span> <span class="nv">all</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">in</span> <span class="nv">array</span> <span class="nv">H</span>. <span class="nv">After</span> <span class="nv">the</span> <span class="nv">delete</span> 
+    <span class="nv">function</span> <span class="nv">call</span>, <span class="nv">H</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">invalid</span> <span class="nv">objects</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">ISVALID</span>, <span class="nv">CLEAR</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">delete</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">delete</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">delete</span>
 </code></pre></div>
 
 <hr />
 <p><strong>details</strong> - <em>DETAILS Display array details</em></p>
-<p>DETAILS(X) displays X with a detailed description. </p>
+<p>```DETAILS(X) displays X with a detailed description. </p>
 <div class="codehilite"><pre><span></span><code><span class="nv">When</span> <span class="nv">X</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">MATLAB</span> <span class="nv">object</span>, <span class="nv">details</span> <span class="nv">provides</span> <span class="nv">more</span> <span class="nv">information</span> <span class="nv">about</span> <span class="nv">the</span>
 <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s properties, methods, and events, and if applicable, the</span>
 <span class="nv">package</span> <span class="nv">in</span> <span class="nv">which</span> <span class="nv">the</span> <span class="nv">class</span> <span class="nv">is</span> <span class="nv">defined</span>.
@@ -4988,31 +4997,34 @@
 <span class="nv">See</span> <span class="nv">also</span> <span class="nv">DISP</span>, <span class="nv">DISPLAY</span>, <span class="nv">CLASSDEF</span>.
 </code></pre></div>
 
-<hr />
-<p><strong>eq</strong> - <em>== (EQ)   Test handle equality.</em></p>
-<p>Handles are equal if they are handles for the same object.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">==</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
-<span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
-<span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
-<span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*==</span> <span class="ss">(</span><span class="nv">EQ</span><span class="ss">)</span>   <span class="nv">Test</span> <span class="nv">handle</span> <span class="nv">equality</span>.<span class="o">*</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+```<span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+    <span class="nv">H1</span> <span class="o">==</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">equality</span> <span class="nb">result</span>.
 
-<p>Help for ndi.gui.Data/eq is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">eq</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">eq</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">eq</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">eq</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">eq</span>
 </code></pre></div>
 
 <hr />
 <p><strong>filter</strong> - <em>dimensional digital filter.</em></p>
-<p>Y = FILTER(B,A,X) filters the data in vector X with the
+<p>```Y = FILTER(B,A,X) filters the data in vector X with the
     filter described by vectors A and B to create the filtered
     data Y.  The filter is a "Direct Form II Transposed"
     implementation of the standard difference equation:</p>
@@ -5045,27 +5057,30 @@
 <span class="nv">Toolbox</span>.
 </code></pre></div>
 
-<hr />
-<p><strong>findobj</strong> - <em>FINDOBJ   Find objects matching specified conditions.</em></p>
-<p>The FINDOBJ method of the HANDLE class follows the same syntax as the 
-    MATLAB FINDOBJ command, except that the first argument must be an array
-    of handles to objects.</p>
-<div class="codehilite"><pre><span></span><code>HM = FINDOBJ(H, &lt;conditions&gt;) searches the handle object array H and 
-returns an array of handle objects matching the specified conditions.
-Only the public members of the objects of H are considered when 
-evaluating the conditions.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-See also FINDOBJ, NDI.GUI.DATA
-</code></pre></div>
+<span class="o">**</span><span class="nv">findobj</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FINDOBJ</span>   <span class="nv">Find</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">specified</span> <span class="nv">conditions</span>.<span class="o">*</span>
 
-<p>Help for ndi.gui.Data/findobj is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">findobj</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
+```<span class="nv">The</span> <span class="nv">FINDOBJ</span> <span class="nv">method</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">HANDLE</span> <span class="nv">class</span> <span class="nv">follows</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">syntax</span> <span class="nv">as</span> <span class="nv">the</span> 
+    <span class="nv">MATLAB</span> <span class="nv">FINDOBJ</span> <span class="nv">command</span>, <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">argument</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span>
+    <span class="nv">of</span> <span class="nv">handles</span> <span class="nv">to</span> <span class="nv">objects</span>.
+
+    <span class="nv">HM</span> <span class="o">=</span> <span class="nv">FINDOBJ</span><span class="ss">(</span><span class="nv">H</span>, <span class="o">&lt;</span><span class="nv">conditions</span><span class="o">&gt;</span><span class="ss">)</span> <span class="nv">searches</span> <span class="nv">the</span> <span class="nv">handle</span> <span class="nv">object</span> <span class="nv">array</span> <span class="nv">H</span> <span class="nv">and</span> 
+    <span class="nv">returns</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">conditions</span>.
+    <span class="nv">Only</span> <span class="nv">the</span> <span class="nv">public</span> <span class="nv">members</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">objects</span> <span class="nv">of</span> <span class="nv">H</span> <span class="nv">are</span> <span class="nv">considered</span> <span class="nv">when</span> 
+    <span class="nv">evaluating</span> <span class="nv">the</span> <span class="nv">conditions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">FINDOBJ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">findobj</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">findobj</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
 </code></pre></div>
 
 <hr />
 <p><strong>findprop</strong> - <em>FINDPROP   Find property of MATLAB handle object.</em></p>
-<p>p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
+<p>```p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
     name of a property defined by the class of H or a dynamic property 
@@ -5081,52 +5096,58 @@ See also FINDOBJ, NDI.GUI.DATA
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findprop</span>
 </code></pre></div>
 
-<hr />
-<p><strong>ge</strong> - <em>&gt;= (GE)   Greater than or equal relation for handles.</em></p>
-<p>H1 &gt;= H2 performs element-wise comparisons between handle arrays H1 and
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt;= result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+<span class="o">**</span><span class="nv">ge</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&gt;=</span> <span class="ss">(</span><span class="nv">GE</span><span class="ss">)</span>   <span class="nv">Greater</span> <span class="nv">than</span> <span class="nv">or</span> <span class="nv">equal</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+```<span class="nv">H1</span> <span class="o">&gt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
 
-<p>Help for ndi.gui.Data/ge is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">ge</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">ge</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">ge</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
 </code></pre></div>
 
 <hr />
 <p><strong>graph</strong> - <em>ndi.gui.Data/graph is a function.</em></p>
-<p>graph(obj, ~, ~, ind)</p>
-<hr />
-<p><strong>gt</strong> - <em>&gt; (GT)   Greater than relation for handles.</em></p>
-<p>H1 &gt; H2 performs element-wise comparisons between handle arrays H1 and 
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.<br />
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt; result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<p>```graph(obj, ~, ~, ind)</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+<span class="o">**</span><span class="nv">gt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&gt;</span> <span class="ss">(</span><span class="nv">GT</span><span class="ss">)</span>   <span class="nv">Greater</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+```<span class="nv">H1</span> <span class="o">&gt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span> 
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.  
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;</span> <span class="nb">result</span>.
 
-<p>Help for ndi.gui.Data/gt is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">gt</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">gt</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">gt</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
 </code></pre></div>
 
 <hr />
 <p><strong>isvalid</strong> - <em>ISVALID   Test handle validity.</em></p>
-<p>TF = ISVALID(H) performs an element-wise check for validity on the 
+<p>```TF = ISVALID(H) performs an element-wise check for validity on the 
     handle elements of H.  The result is a logical array of the same 
     dimensions as H, where each element is the element-wise validity 
     result.</p>
@@ -5141,37 +5162,40 @@ See also FINDOBJ, NDI.GUI.DATA
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
 </code></pre></div>
 
-<hr />
-<p><strong>le</strong> - <em>&lt;= (LE)   Less than or equal relation for handles.</em></p>
-<p>Handles are equal if they are handles for the same object.  All 
-    comparisons use a number associated with each handle object.  Nothing
-    can be assumed about the result of a handle comparison except that the
-    repeated comparison of two handles in the same MATLAB session will 
-    yield the same result.  The order of handle values is purely arbitrary 
-    and has no connection to the state of the handle objects being 
-    compared.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">&lt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
-<span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
-<span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
-<span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<span class="o">**</span><span class="nv">le</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;=</span> <span class="ss">(</span><span class="nv">LE</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">or</span> <span class="nv">equal</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">LE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+```<span class="nv">Handles</span> <span class="nv">are</span> <span class="nv">equal</span> <span class="k">if</span> <span class="nv">they</span> <span class="nv">are</span> <span class="nv">handles</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">object</span>.  <span class="nv">All</span> 
+    <span class="nv">comparisons</span> <span class="nv">use</span> <span class="nv">a</span> <span class="nv">number</span> <span class="nv">associated</span> <span class="nv">with</span> <span class="nv">each</span> <span class="nv">handle</span> <span class="nv">object</span>.  <span class="nv">Nothing</span>
+    <span class="nv">can</span> <span class="nv">be</span> <span class="nv">assumed</span> <span class="nv">about</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">comparison</span> <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span>
+    <span class="nv">repeated</span> <span class="nv">comparison</span> <span class="nv">of</span> <span class="nv">two</span> <span class="nv">handles</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">MATLAB</span> <span class="nv">session</span> <span class="nv">will</span> 
+    <span class="nv">yield</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nb">result</span>.  <span class="nv">The</span> <span class="nv">order</span> <span class="nv">of</span> <span class="nv">handle</span> <span class="nv">values</span> <span class="nv">is</span> <span class="nv">purely</span> <span class="nv">arbitrary</span> 
+    <span class="nv">and</span> <span class="nv">has</span> <span class="nv">no</span> <span class="nv">connection</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">state</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">being</span> 
+    <span class="nv">compared</span>.
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+    <span class="nv">H1</span> <span class="o">&lt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
 
-<p>Help for ndi.gui.Data/le is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">le</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">le</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">LE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">le</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">le</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">le</span>
 </code></pre></div>
 
 <hr />
 <p><strong>listener</strong> - <em>LISTENER  Add listener for event without binding the listener to the source object.</em></p>
-<p>el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
+<p>```el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle<br />
     object hSource.  If hSource is an array of source handles, the listener
     responds to the named event on any handle in the array.  callbackFcn
@@ -5211,29 +5235,32 @@ See also FINDOBJ, NDI.GUI.DATA
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">listener</span>
 </code></pre></div>
 
-<hr />
-<p><strong>lt</strong> - <em>&lt; (LT)   Less than relation for handles.</em></p>
-<p>H1 &lt; H2 performs element-wise comparisons between handle arrays H1 and
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &lt; result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">LT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+<span class="o">**</span><span class="nv">lt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&lt;</span> <span class="ss">(</span><span class="nv">LT</span><span class="ss">)</span>   <span class="nv">Less</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+```<span class="nv">H1</span> <span class="o">&lt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&lt;</span> <span class="nb">result</span>.
 
-<p>Help for ndi.gui.Data/lt is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">lt</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">lt</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">LT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">GUI</span>.<span class="nv">DATA</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">lt</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">lt</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">lt</span>
 </code></pre></div>
 
 <hr />
 <p><strong>ne</strong> - <em>~= (NE)   Not equal relation for handles.</em></p>
-<p>Handles are equal if they are handles for the same object and are 
+<p>```Handles are equal if they are handles for the same object and are 
     unequal otherwise.</p>
 <div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
 <span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
@@ -5254,28 +5281,31 @@ See also FINDOBJ, NDI.GUI.DATA
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
 </code></pre></div>
 
-<hr />
-<p><strong>notify</strong> - <em>NOTIFY   Notify listeners of event.</em></p>
-<p>NOTIFY(H, eventname) notifies listeners added to the event named 
-    eventname for handle object array H that the event is taking place. 
-    eventname can be a string scalar or character vector.<br />
-    H is the array of handles to the event source objects, and 'eventname'
-    must be a character vector.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">eventname</span><span class="p">,</span><span class="n">ed</span><span class="p">)</span> <span class="n">provides</span> <span class="n">a</span> <span class="n">way</span> <span class="n">of</span> <span class="n">encapsulating</span> <span class="n">information</span> 
-<span class="n">about</span> <span class="n">an</span> <span class="k">event</span> <span class="n">which</span> <span class="n">can</span> <span class="n">then</span> <span class="n">be</span> <span class="n">accessed</span> <span class="n">by</span> <span class="n">each</span> <span class="n">registered</span> <span class="n">listener</span><span class="p">.</span>
-<span class="n">ed</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span> <span class="n">class</span><span class="p">.</span>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="o">/</span><span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="o">/</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span><span class="p">,</span> <span class="n">EVENTS</span>
-</code></pre></div>
+<span class="o">**</span><span class="n">notify</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">NOTIFY</span>   <span class="n">Notify</span> <span class="n">listeners</span> <span class="n">of</span> <span class="k">event</span><span class="p">.</span><span class="o">*</span>
 
-<p>Help for ndi.gui.Data/notify is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">gui</span>.<span class="nv">Data</span><span class="o">/</span><span class="nv">notify</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">notify</span>
+<span class="err">``</span><span class="no">`NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">eventname</span><span class="p">)</span> <span class="n">notifies</span> <span class="n">listeners</span> <span class="n">added</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">named</span> 
+    <span class="n">eventname</span> <span class="k">for</span> <span class="n">handle</span> <span class="n">object</span> <span class="n">array</span> <span class="n">H</span> <span class="n">that</span> <span class="n">the</span> <span class="k">event</span> <span class="n">is</span> <span class="n">taking</span> <span class="n">place</span><span class="p">.</span> 
+    <span class="n">eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> <span class="k">string</span> <span class="n">scalar</span> <span class="k">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">.</span>  
+    <span class="n">H</span> <span class="n">is</span> <span class="n">the</span> <span class="n">array</span> <span class="n">of</span> <span class="n">handles</span> <span class="n">to</span> <span class="n">the</span> <span class="k">event</span> <span class="n">source</span> <span class="n">objects</span><span class="p">,</span> <span class="k">and</span> <span class="p">&#39;</span><span class="n">eventname</span><span class="p">&#39;</span>
+    <span class="n">must</span> <span class="n">be</span> <span class="n">a</span> <span class="n">character</span> <span class="n">vector</span><span class="p">.</span>
+
+    <span class="n">NOTIFY</span><span class="p">(</span><span class="n">H</span><span class="p">,</span><span class="n">eventname</span><span class="p">,</span><span class="n">ed</span><span class="p">)</span> <span class="n">provides</span> <span class="n">a</span> <span class="n">way</span> <span class="n">of</span> <span class="n">encapsulating</span> <span class="n">information</span> 
+    <span class="n">about</span> <span class="n">an</span> <span class="k">event</span> <span class="n">which</span> <span class="n">can</span> <span class="n">then</span> <span class="n">be</span> <span class="n">accessed</span> <span class="n">by</span> <span class="n">each</span> <span class="n">registered</span> <span class="n">listener</span><span class="p">.</span>
+    <span class="n">ed</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span> <span class="n">class</span><span class="p">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="o">/</span><span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="p">.</span><span class="n">GUI</span><span class="p">.</span><span class="n">DATA</span><span class="o">/</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="p">.</span><span class="n">EVENTDATA</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">gui</span><span class="p">.</span><span class="n">Data</span><span class="o">/</span><span class="n">notify</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">gui</span><span class="p">.</span><span class="n">Data</span><span class="o">/</span><span class="n">notify</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="p">.</span><span class="n">notify</span>
 </code></pre></div>
 
 <hr />
 <p><strong>subgraph</strong> - <em>ndi.gui.Data/subgraph is a function.</em></p>
-<p>subgraph(obj, ~, ~, ind)</p>
+<p><code>subgraph(obj, ~, ~, ind)</code></p>
 <hr />
                 
               

@@ -4789,9 +4789,13 @@
                 
                 
                 <h1 id="class-ndidaqreadermfdaqspikegadgets">CLASS ndi.daq.reader.mfdaq.spikegadgets<a class="headerlink" href="#class-ndidaqreadermfdaqspikegadgets" title="Permanent link">&para;</a></h1>
-<p>NDI_DAQREADER_MFDAQ_SPIKEGADGETS - Device driver for SpikeGadgets .rec video file format</p>
-<p>This class reads data from video files .rec that spikegadgets use</p>
-<p>Spike Gadgets: http://spikegadgets.com/</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_DAQREADER_MFDAQ_SPIKEGADGETS</span> <span class="o">-</span> <span class="nv">Device</span> <span class="nv">driver</span> <span class="k">for</span> <span class="nv">SpikeGadgets</span> .<span class="nv">rec</span> <span class="nv">video</span> <span class="nv">file</span> <span class="nv">format</span>
+
+  <span class="nv">This</span> <span class="nv">class</span> <span class="nv">reads</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">video</span> <span class="nv">files</span> .<span class="nv">rec</span> <span class="nv">that</span> <span class="nv">spikegadgets</span> <span class="nv">use</span>
+
+  <span class="nv">Spike</span> <span class="nv">Gadgets</span>: <span class="nv">http</span>:<span class="o">//</span><span class="nv">spikegadgets</span>.<span class="nv">com</span><span class="o">/</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><strong><a href="../../mfdaq.m/">ndi.daq.reader.mfdaq</a></strong>, <strong><a href="../../../reader.m/">ndi.daq.reader</a></strong>, <strong><a href="../../../../ido.m/">ndi.ido</a></strong>, <strong><a href="../../../../documentservice.m/">ndi.documentservice</a></strong></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4890,68 +4894,99 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>epochclock</strong> - <em>return the ndi.time.clocktype objects for an epoch</em></p>
-<p>EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)</p>
+<p>```EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)</p>
 <p>Return the clock types available for this epoch as a cell array
   of ndi.time.clocktype objects (or sub-class members).</p>
 <p>For the generic ndi.daq.reader.mfdaq, this returns a single clock
   type 'dev_local'time';</p>
 <p>See also: ndi.time.clocktype</p>
 <p>Help for ndi.daq.reader.mfdaq.spikegadgets/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ</p>
-<hr />
-<p><strong>eq</strong> - <em>tests whether 2 ndi.daq.reader objects are equal</em></p>
-<p>B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)</p>
-<p>Examines whether or not the ndi.daq.reader objects are equal.</p>
-<p>Help for ndi.daq.reader.mfdaq.spikegadgets/eq is inherited from superclass NDI.DAQ.READER</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">tests</span> <span class="nv">whether</span> <span class="mi">2</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equal</span><span class="o">*</span>
+
+```<span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ1</span>, <span class="nv">NDI_DAQREADER_OBJ2</span><span class="ss">)</span>
+
+  <span class="nv">Examines</span> <span class="nv">whether</span> <span class="nv">or</span> <span class="nv">not</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equal</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">spikegadgets</span><span class="o">/</span><span class="nv">eq</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+</code></pre></div>
+
 <hr />
 <p><strong>filenamefromepochfiles</strong> - <em>ndi.daq.reader.mfdaq.spikegadgets/filenamefromepochfiles is a function.</em></p>
-<p>filename = filenamefromepochfiles(ndi_daqreader_mfdaq_spikegadgets_obj, filename)</p>
-<hr />
-<p><strong>getchannelsepoch</strong> - <em>GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER</em></p>
-<p>CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)</p>
-<p>CHANNELS is a STRUCT</p>
+<p>```filename = filenamefromepochfiles(ndi_daqreader_mfdaq_spikegadgets_obj, filename)</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**getchannelsepoch** - *GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER*
+
+```CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)
+
+  CHANNELS is a STRUCT
+</code></pre></div>
+
 <hr />
 <p><strong>getchannelsepochdetailed</strong> - <em>GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER WITH EXTRA DETAILS</em></p>
-<p>CHANNELS = GETCHANNELSEPOCHDETAILED(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)</p>
+<p>```CHANNELS = GETCHANNELSEPOCHDETAILED(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)</p>
 <p>CHANNELS is a STRUCT</p>
-<hr />
-<p><strong>getepochprobemap</strong> - <em>GETEPOCHPROBEMAP returns struct with probe information</em></p>
-<p>name, reference, n-trode, channels</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**getepochprobemap** - *GETEPOCHPROBEMAP returns struct with probe information*
+
+```name, reference, n-trode, channels
+</code></pre></div>
+
 <hr />
 <p><strong>id</strong> - <em>return the identifier of an ndi.ido object</em></p>
-<p>IDENTIFIER = ID(NDI_ID_OBJ)</p>
+<p>```IDENTIFIER = ID(NDI_ID_OBJ)</p>
 <p>Returns the unique identifier of an ndi.ido object.</p>
 <p>Help for ndi.daq.reader.mfdaq.spikegadgets/id is inherited from superclass NDI.IDO</p>
-<hr />
-<p><strong>ndi_unique_id</strong> - <em>Generate a unique ID number for NDI projects</em></p>
-<p>ID = NDI_UNIQUE_ID</p>
-<p>Generates a unique ID character array based on the current time and a random
-  number. It is a hexidecimal representation of the serial date number in
-  UTC Leap Seconds time. The serial date number is the number of days since January 0, 0000 at 0:00:00.
-  The integer portion of the date is the whole number of days and the fractional part of the date number
-  is the fraction of days.</p>
-<p>ID = [NUM2HEX(SERIAL_DATE_NUMBER) '_' NUM2HEX(RAND)]</p>
-<p>See also: NUM2HEX, NOW, RAND</p>
-<p>Help for ndi.daq.reader.mfdaq.spikegadgets.ndi_unique_id is inherited from superclass NDI.IDO</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">ndi_unique_id</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Generate</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">number</span> <span class="k">for</span> <span class="nv">NDI</span> <span class="nv">projects</span><span class="o">*</span>
+
+```<span class="nv">ID</span> <span class="o">=</span> <span class="nv">NDI_UNIQUE_ID</span>
+
+  <span class="nv">Generates</span> <span class="nv">a</span> <span class="nv">unique</span> <span class="nv">ID</span> <span class="nv">character</span> <span class="nv">array</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">current</span> <span class="nv">time</span> <span class="nv">and</span> <span class="nv">a</span> <span class="k">random</span>
+  <span class="nv">number</span>. <span class="nv">It</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">hexidecimal</span> <span class="nv">representation</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">in</span>
+  <span class="nv">UTC</span> <span class="nv">Leap</span> <span class="nv">Seconds</span> <span class="nv">time</span>. <span class="nv">The</span> <span class="nv">serial</span> <span class="nv">date</span> <span class="nv">number</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">since</span> <span class="nv">January</span> <span class="mi">0</span>, <span class="mi">0000</span> <span class="nv">at</span> <span class="mi">0</span>:<span class="mi">00</span>:<span class="mi">00</span>.
+  <span class="nv">The</span> <span class="nv">integer</span> <span class="nv">portion</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">whole</span> <span class="nv">number</span> <span class="nv">of</span> <span class="nv">days</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">fractional</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">date</span> <span class="nv">number</span>
+  <span class="nv">is</span> <span class="nv">the</span> <span class="nv">fraction</span> <span class="nv">of</span> <span class="nv">days</span>.
+
+  <span class="nv">ID</span> <span class="o">=</span> [<span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">SERIAL_DATE_NUMBER</span><span class="ss">)</span> <span class="s1">&#39;</span><span class="s">_</span><span class="s1">&#39;</span> <span class="nv">NUM2HEX</span><span class="ss">(</span><span class="nv">RAND</span><span class="ss">)</span>]
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">spikegadgets</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+</code></pre></div>
+
 <hr />
 <p><strong>newdocument</strong> - <em>create a new ndi.document for an ndi.daq.reader object</em></p>
-<p>DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)</p>
+<p>```DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)</p>
 <p>Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.</p>
 <p>Help for ndi.daq.reader.mfdaq.spikegadgets/newdocument is inherited from superclass NDI.DAQ.READER</p>
-<hr />
-<p><strong>readchannels_epochsamples</strong> - <em>read the data based on specified channels</em></p>
-<p>DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)</p>
-<p>CHANNELTYPE is the type of channel to read
-  'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'</p>
-<p>CHANNEL is a vector of the channel numbers to
-  read beginning from 1 if 'etrodeftrode' is channeltype,
-  if channeltype is 'analog_in' channel is an array with the
-  string names of analog channels 'Ain1'through 8</p>
-<p>EPOCH is set of files in the epoch</p>
-<p>DATA is the channel data (each column contains data from an indvidual channel)</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">readchannels_epochsamples</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">read</span> <span class="nv">the</span> <span class="nv">data</span> <span class="nv">based</span> <span class="nv">on</span> <span class="nv">specified</span> <span class="nv">channels</span><span class="o">*</span>
+
+```<span class="nv">DATA</span> <span class="o">=</span> <span class="nv">READ_CHANNELS</span><span class="ss">(</span><span class="nv">MYDEV</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span>, <span class="nv">EPOCHFILES</span> ,<span class="nv">S0</span>, <span class="nv">S1</span><span class="ss">)</span>
+
+  <span class="nv">CHANNELTYPE</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">channel</span> <span class="nv">to</span> <span class="nv">read</span>
+  <span class="s1">&#39;</span><span class="s">digital_in</span><span class="s1">&#39;</span>, <span class="s1">&#39;</span><span class="s">digital_out</span><span class="s1">&#39;</span>, <span class="s1">&#39;</span><span class="s">analog_in</span><span class="s1">&#39;</span>, <span class="s1">&#39;</span><span class="s">analog_out</span><span class="s1">&#39;</span> <span class="nv">or</span> <span class="s1">&#39;</span><span class="s">auxiliary</span><span class="s1">&#39;</span>
+
+  <span class="nv">CHANNEL</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">vector</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">channel</span> <span class="nv">numbers</span> <span class="nv">to</span>
+  <span class="nv">read</span> <span class="nv">beginning</span> <span class="nv">from</span> <span class="mi">1</span> <span class="k">if</span> <span class="s1">&#39;</span><span class="s">etrodeftrode</span><span class="s1">&#39;</span> <span class="nv">is</span> <span class="nv">channeltype</span>,
+  <span class="k">if</span> <span class="nv">channeltype</span> <span class="nv">is</span> <span class="s1">&#39;</span><span class="s">analog_in</span><span class="s1">&#39;</span> <span class="nv">channel</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">with</span> <span class="nv">the</span>
+  <span class="nv">string</span> <span class="nv">names</span> <span class="nv">of</span> <span class="nv">analog</span> <span class="nv">channels</span> <span class="s1">&#39;</span><span class="s">Ain1</span><span class="s1">&#39;</span><span class="nv">through</span> <span class="mi">8</span>
+
+  <span class="nv">EPOCH</span> <span class="nv">is</span> <span class="nv">set</span> <span class="nv">of</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span>
+
+  <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">channel</span> <span class="nv">data</span> <span class="ss">(</span><span class="nv">each</span> <span class="nv">column</span> <span class="nv">contains</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">indvidual</span> <span class="nv">channel</span><span class="ss">)</span>
+</code></pre></div>
+
 <hr />
 <p><strong>readevents_epochsamples</strong> - <em>read events, markers, and digital events of specified channels for a specified epoch</em></p>
-<p>[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHSTREAMS, EPOCH_SELECT, T0, T1)</p>
+<p>```[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHSTREAMS, EPOCH_SELECT, T0, T1)</p>
 <p>Returns TIMESTAMPS and DATA corresponding to event or marker channels. If the number of CHANNEL entries is 1, then TIMESTAMPS
    is a column vector of type double, and DATA is also a column of a type that depends on the type of event that is read.
    If the number of CHANNEL entries is more than 1, then TIMESTAMPS and DATA are both columns of cell arrays, with 1 column
@@ -4973,50 +5008,74 @@
 <p>CHANNEL is a vector with the identity(ies) of the channel(s) to be read.</p>
 <p>EPOCHSFILES is a cell array of full path file names</p>
 <p>Help for ndi.daq.reader.mfdaq.spikegadgets/readevents_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ</p>
-<hr />
-<p><strong>readevents_epochsamples_native</strong> - <em>read events or markers of specified channels for a specified epoch</em></p>
-<p>[TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)</p>
-<p>CHANNELTYPE is the type of channel to read
-   ('event','marker', etc). It must be a string (not a cell array of strings).</p>
-<p>CHANNEL is a vector with the identity of the channel(s) to be read.</p>
-<p>EPOCH is the epoch number or epochID</p>
-<p>DATA is a two-column vector; the first column has the time of the event. The second
-   column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
-   is requested, DATA is returned as a cell array, one entry per channel.</p>
-<p>TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.</p>
-<p>Help for ndi.daq.reader.mfdaq.spikegadgets/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">readevents_epochsamples_native</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">read</span> <span class="nv">events</span> <span class="nv">or</span> <span class="nv">markers</span> <span class="nv">of</span> <span class="nv">specified</span> <span class="nv">channels</span> <span class="k">for</span> <span class="nv">a</span> <span class="nv">specified</span> <span class="nv">epoch</span><span class="o">*</span>
+
+```[<span class="nv">TIMESTAMPS</span>, <span class="nv">DATA</span>] <span class="o">=</span> <span class="nv">READEVENTS_EPOCHSAMPLES_NATIVE</span><span class="ss">(</span><span class="nv">MYDEV</span>, <span class="nv">CHANNELTYPE</span>, <span class="nv">CHANNEL</span>, <span class="nv">EPOCHFILES</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
+
+   <span class="nv">CHANNELTYPE</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">channel</span> <span class="nv">to</span> <span class="nv">read</span>
+   <span class="ss">(</span><span class="s1">&#39;</span><span class="s">event</span><span class="s1">&#39;</span>,<span class="s1">&#39;</span><span class="s">marker</span><span class="s1">&#39;</span>, <span class="nv">etc</span><span class="ss">)</span>. <span class="nv">It</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">string</span> <span class="ss">(</span><span class="nv">not</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span><span class="ss">)</span>.
+
+   <span class="nv">CHANNEL</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">vector</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">identity</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">channel</span><span class="ss">(</span><span class="nv">s</span><span class="ss">)</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">read</span>.
+
+   <span class="nv">EPOCH</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">number</span> <span class="nv">or</span> <span class="nv">epochID</span>
+
+   <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">two</span><span class="o">-</span><span class="nv">column</span> <span class="nv">vector</span><span class="c1">; the first column has the time of the event. The second</span>
+   <span class="nv">column</span> <span class="nv">indicates</span> <span class="nv">the</span> <span class="nv">marker</span> <span class="nv">code</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">case</span> <span class="nv">of</span> <span class="s1">&#39;</span><span class="s">events</span><span class="s1">&#39;</span>, <span class="nv">this</span> <span class="nv">is</span> <span class="nv">just</span> <span class="mi">1</span>. <span class="k">If</span> <span class="nv">more</span> <span class="nv">than</span> <span class="nv">one</span> <span class="nv">channel</span>
+   <span class="nv">is</span> <span class="nv">requested</span>, <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">returned</span> <span class="nv">as</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span>, <span class="nv">one</span> <span class="nv">entry</span> <span class="nv">per</span> <span class="nv">channel</span>.
+
+   <span class="nv">TIMEREF</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">NDI_CLOCK</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">device</span>, <span class="nv">referring</span> <span class="nv">to</span> <span class="nv">epoch</span> <span class="nv">N</span> <span class="nv">at</span> <span class="nv">time</span> <span class="mi">0</span> <span class="nv">as</span> <span class="nv">the</span> <span class="nv">reference</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">spikegadgets</span><span class="o">/</span><span class="nv">readevents_epochsamples_native</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>.<span class="nv">MFDAQ</span>
+</code></pre></div>
+
 <hr />
 <p><strong>samplerate</strong> - <em>GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL</em></p>
-<p>SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)</p>
+<p>```SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)</p>
 <p>SR is the list of sample rate from specified channels</p>
 <p>CHANNELTYPE and CHANNEL not used in this case since it is the
   same for all channels in this device</p>
-<hr />
-<p><strong>searchquery</strong> - <em>create a search for this ndi.daq.reader object</em></p>
-<p>SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)</p>
-<p>Creates a search query for the ndi.daq.reader object.</p>
-<p>Help for ndi.daq.reader.mfdaq.spikegadgets/searchquery is inherited from superclass NDI.DAQ.READER</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">searchquery</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">create</span> <span class="nv">a</span> <span class="nv">search</span> <span class="k">for</span> <span class="nv">this</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span><span class="o">*</span>
+
+```<span class="nv">SQ</span> <span class="o">=</span> <span class="nv">SEARCHQUERY</span><span class="ss">(</span><span class="nv">NDI_DAQREADER_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">spikegadgets</span><span class="o">/</span><span class="nv">searchquery</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+</code></pre></div>
+
 <hr />
 <p><strong>spikegadgets</strong> - <em>Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object</em></p>
-<p>D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)</p>
+<p>```D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)</p>
 <p>Creates a new NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS object with name NAME and associated
    filenavigator THEFILENAVIGATOR.</p>
-<hr />
-<p><strong>t0_t1</strong> - <em>return the t0_t1 (beginning and end) epoch times for an epoch</em></p>
-<p>T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)</p>
-<p>Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
-  in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.</p>
-<p>The abstract class always returns {[NaN NaN]}.</p>
-<p>See also: ndi.time.clocktype, EPOCHCLOCK</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">t0_t1</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">return</span> <span class="n">the</span> <span class="n">t0_t1</span> <span class="p">(</span><span class="n">beginning</span> <span class="n">and</span> <span class="n">end</span><span class="p">)</span> <span class="n">epoch</span> <span class="n">times</span> <span class="k">for</span> <span class="n">an</span> <span class="n">epoch</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">T0T1</span> <span class="o">=</span> <span class="n">T0_T1</span><span class="p">(</span><span class="n">NDI_EPOCHSET_OBJ</span><span class="p">,</span> <span class="n">EPOCHFILES</span><span class="p">)</span>
+
+  <span class="n">Return</span> <span class="n">the</span> <span class="n">beginning</span> <span class="p">(</span><span class="n">t0</span><span class="p">)</span> <span class="n">and</span> <span class="n">end</span> <span class="p">(</span><span class="n">t1</span><span class="p">)</span> <span class="n">times</span> <span class="n">of</span> <span class="n">the</span> <span class="n">epoch</span> <span class="n">EPOCH_NUMBER</span>
+  <span class="k">in</span> <span class="n">the</span> <span class="n">same</span> <span class="n">units</span> <span class="n">as</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span> <span class="n">objects</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">EPOCHCLOCK</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">abstract</span> <span class="k">class</span> <span class="n">always</span> <span class="n">returns</span> <span class="p">{[</span><span class="n">NaN</span> <span class="n">NaN</span><span class="p">]}.</span>
+
+  <span class="n">See</span> <span class="nl">also</span><span class="p">:</span> <span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">clocktype</span><span class="p">,</span> <span class="n">EPOCHCLOCK</span>
+</code></pre></div>
+
 <hr />
 <p><strong>verifyepochprobemap</strong> - <em>Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk</em></p>
-<p>B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)</p>
+<p>```B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)</p>
 <p>Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
   epoch NUMBER.</p>
 <p>For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
   EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.</p>
 <p>See also: ndi.daq.reader.mfdaq.spikegadgets, ndi.epoch.epochprobemap_daqsystem</p>
-<p>Help for ndi.daq.reader.mfdaq.spikegadgets/verifyepochprobemap is inherited from superclass NDI.DAQ.READER</p>
+<p>Help for ndi.daq.reader.mfdaq.spikegadgets/verifyepochprobemap is inherited from superclass NDI.DAQ.READER
+```</p>
 <hr />
                 
               

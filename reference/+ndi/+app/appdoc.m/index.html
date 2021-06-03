@@ -4785,17 +4785,23 @@
                 
                 
                 <h1 id="class-ndiappappdoc">CLASS ndi.app.appdoc<a class="headerlink" href="#class-ndiappappdoc" title="Permanent link">&para;</a></h1>
-<p>ndi.app.appdoc - create a new ndi.app.appdoc document</p>
-<p>NDI_APPDOC_OBJ = ndi.app.appdoc(DOC_TYPES, DOC_DOCUMENT_TYPES, DOC_SESSION)</p>
-<p>Creates and initializes a new ndi.app.appdoc object.</p>
-<p>DOC_TYPES should be a cell array of strings describing the internal names
-     of the document types.
-  DOC_DOCUMENT_TYPES should be a cell array of strings describing the
-     NDI_document datatypes for each parameter document.
-  NOC_SESSION should be an ndi.session object that is used to access the 
-     connected database.</p>
-<p>Example:
-    ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">-</span> <span class="nt">create</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">document</span>
+
+  <span class="nt">NDI_APPDOC_OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="nt">DOC_TYPES</span><span class="o">,</span> <span class="nt">DOC_DOCUMENT_TYPES</span><span class="o">,</span> <span class="nt">DOC_SESSION</span><span class="o">)</span>
+
+  <span class="nt">Creates</span> <span class="nt">and</span> <span class="nt">initializes</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">object</span><span class="o">.</span>
+
+  <span class="nt">DOC_TYPES</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">strings</span> <span class="nt">describing</span> <span class="nt">the</span> <span class="nt">internal</span> <span class="nt">names</span>
+     <span class="nt">of</span> <span class="nt">the</span> <span class="nt">document</span> <span class="nt">types</span><span class="o">.</span>
+  <span class="nt">DOC_DOCUMENT_TYPES</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">strings</span> <span class="nt">describing</span> <span class="nt">the</span>
+     <span class="nt">NDI_document</span> <span class="nt">datatypes</span> <span class="nt">for</span> <span class="nt">each</span> <span class="nt">parameter</span> <span class="nt">document</span><span class="o">.</span>
+  <span class="nt">NOC_SESSION</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">session</span> <span class="nt">object</span> <span class="nt">that</span> <span class="nt">is</span> <span class="nt">used</span> <span class="nt">to</span> <span class="nt">access</span> <span class="nt">the</span> 
+     <span class="nt">connected</span> <span class="nt">database</span><span class="o">.</span>
+
+  <span class="nt">Example</span><span class="o">:</span>
+    <span class="nt">ndi_app_appdoc_obj</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="p">{</span><span class="err">&#39;extraction_doc&#39;</span><span class="p">}</span><span class="o">,</span><span class="p">{</span><span class="err">&#39;/apps/spikeextractor/spike_extraction_parameters&#39;</span><span class="p">}</span><span class="o">);</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4878,7 +4884,7 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>add_appdoc</strong> - <em>Load data from an application document</em></p>
-<p>[...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
+<p>```[...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
       APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])</p>
 <p>Creates a new ndi.document that is based on the type APPDOC_TYPE with creation data
   specified by APPDOC_STRUCT.  [additional inputs] are used to find or specify the
@@ -4900,21 +4906,28 @@
                             |    that depend on the original.
   'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
                             |    the data structures that define the document are not equal.</p>
-<hr />
-<p><strong>appdoc</strong> - <em>create a new ndi.app.appdoc document</em></p>
-<p>NDI_APPDOC_OBJ = ndi.app.appdoc(DOC_TYPES, DOC_DOCUMENT_TYPES, DOC_SESSION)</p>
-<p>Creates and initializes a new ndi.app.appdoc object.</p>
-<p>DOC_TYPES should be a cell array of strings describing the internal names
-     of the document types.
-  DOC_DOCUMENT_TYPES should be a cell array of strings describing the
-     NDI_document datatypes for each parameter document.
-  NOC_SESSION should be an ndi.session object that is used to access the 
-     connected database.</p>
-<p>Example:
-    ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
+
+<span class="o">**</span><span class="nt">appdoc</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">create</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">document</span><span class="o">*</span>
+
+<span class="err">```</span><span class="nt">NDI_APPDOC_OBJ</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="nt">DOC_TYPES</span><span class="o">,</span> <span class="nt">DOC_DOCUMENT_TYPES</span><span class="o">,</span> <span class="nt">DOC_SESSION</span><span class="o">)</span>
+
+  <span class="nt">Creates</span> <span class="nt">and</span> <span class="nt">initializes</span> <span class="nt">a</span> <span class="nt">new</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span> <span class="nt">object</span><span class="o">.</span>
+
+  <span class="nt">DOC_TYPES</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">strings</span> <span class="nt">describing</span> <span class="nt">the</span> <span class="nt">internal</span> <span class="nt">names</span>
+     <span class="nt">of</span> <span class="nt">the</span> <span class="nt">document</span> <span class="nt">types</span><span class="o">.</span>
+  <span class="nt">DOC_DOCUMENT_TYPES</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">a</span> <span class="nt">cell</span> <span class="nt">array</span> <span class="nt">of</span> <span class="nt">strings</span> <span class="nt">describing</span> <span class="nt">the</span>
+     <span class="nt">NDI_document</span> <span class="nt">datatypes</span> <span class="nt">for</span> <span class="nt">each</span> <span class="nt">parameter</span> <span class="nt">document</span><span class="o">.</span>
+  <span class="nt">NOC_SESSION</span> <span class="nt">should</span> <span class="nt">be</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">session</span> <span class="nt">object</span> <span class="nt">that</span> <span class="nt">is</span> <span class="nt">used</span> <span class="nt">to</span> <span class="nt">access</span> <span class="nt">the</span> 
+     <span class="nt">connected</span> <span class="nt">database</span><span class="o">.</span>
+
+  <span class="nt">Example</span><span class="o">:</span>
+    <span class="nt">ndi_app_appdoc_obj</span> <span class="o">=</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">app</span><span class="p">.</span><span class="nc">appdoc</span><span class="o">(</span><span class="p">{</span><span class="err">&#39;extraction_doc&#39;</span><span class="p">}</span><span class="o">,</span><span class="p">{</span><span class="err">&#39;/apps/spikeextractor/spike_extraction_parameters&#39;</span><span class="p">}</span><span class="o">);</span>
+</code></pre></div>
+
 <hr />
 <p><strong>appdoc_description</strong> - <em>a function that prints a description of all appdoc types</em></p>
-<p>Every subclass should override this function to describe the APPDOC types available
+<p>```Every subclass should override this function to describe the APPDOC types available
   to the subclass. It should follow the following form.</p>
 <hr />
 <p>The APPDOCs available to this class are the following:</p>
@@ -4974,29 +4987,41 @@
 </code></pre></div>
 
 <p>(If there were more appdoc types, list them here...)</p>
-<hr />
-<p><strong>clear_appdoc</strong> - <em>remove an ndi.app.appdoc document from a session database</em></p>
-<p>B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])</p>
-<p>Deletes the app document of style DOC_NAME from the database.
-  [additional inputs] are used to find the NDI_document in the database.
-  They are passed to the function FIND_APPDOC, so see help FIND_APPDOC for the documentation
-  for each app.</p>
-<p>B is 1 if the document is found, and 0 otherwise.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">clear_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">remove</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">appdoc</span> <span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">session</span> <span class="n">database</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">B</span> <span class="o">=</span> <span class="n">CLEAR_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">])</span>
+
+  <span class="n">Deletes</span> <span class="n">the</span> <span class="n">app</span> <span class="n">document</span> <span class="n">of</span> <span class="n">style</span> <span class="n">DOC_NAME</span> <span class="n">from</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">the</span> <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="n">They</span> <span class="n">are</span> <span class="n">passed</span> <span class="n">to</span> <span class="n">the</span> <span class="n">function</span> <span class="n">FIND_APPDOC</span><span class="p">,</span> <span class="n">so</span> <span class="n">see</span> <span class="n">help</span> <span class="n">FIND_APPDOC</span> <span class="k">for</span> <span class="n">the</span> <span class="n">documentation</span>
+  <span class="k">for</span> <span class="n">each</span> <span class="n">app</span><span class="p">.</span>
+
+  <span class="n">B</span> <span class="n">is</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">the</span> <span class="n">document</span> <span class="n">is</span> <span class="n">found</span><span class="p">,</span> <span class="n">and</span> <span class="mi">0</span> <span class="n">otherwise</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>defaultstruct_appdoc</strong> - <em>return a default appdoc structure for a given APPDOC type</em></p>
-<p>APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)</p>
+<p>```APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)</p>
 <p>Return the default data structure for a given APPDOC_TYPE of an ndi.app.appdoc object.</p>
 <p>In the base class, the blank version of the ndi.document is read in and the
   default structure is built from the ndi.document's class property list.</p>
-<hr />
-<p><strong>doc2struct</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
-<p>DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
-<p>Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
-  according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.</p>
-<p>In the base class, this uses the property info in the ndi.document to load the data structure.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">doc2struct</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">create</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">an</span> <span class="n">input</span> <span class="n">structure</span> <span class="n">and</span> <span class="n">input</span> <span class="n">parameters</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">DOC</span> <span class="o">=</span> <span class="n">STRUCT2DOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">SESSION</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="n">APPDOC_STRUCT</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">parameters</span><span class="p">]</span>
+
+  <span class="n">Create</span> <span class="n">an</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">from</span> <span class="n">a</span> <span class="n">data</span> <span class="n">structure</span> <span class="n">APPDOC_STRUCT</span><span class="p">.</span> <span class="n">The</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">is</span> <span class="n">created</span>
+  <span class="n">according</span> <span class="n">to</span> <span class="n">the</span> <span class="n">APPDOC_TYPE</span> <span class="n">of</span> <span class="n">the</span> <span class="n">NDI_APPDOC_OBJ</span><span class="p">.</span>
+
+  <span class="n">In</span> <span class="n">the</span> <span class="n">base</span> <span class="k">class</span><span class="p">,</span> <span class="n">this</span> <span class="n">uses</span> <span class="n">the</span> <span class="n">property</span> <span class="n">info</span> <span class="k">in</span> <span class="n">the</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span> <span class="n">to</span> <span class="n">load</span> <span class="n">the</span> <span class="n">data</span> <span class="n">structure</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>find_appdoc</strong> - <em>find an ndi.app.appdoc document in the session database</em></p>
-<p>DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])</p>
+<p>```DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])</p>
 <p>Using search criteria that is supported by [additional inputs], FIND_APPDOC
   searches the database for the ndi.document object DOC that is
   described by APPDOC_TYPE.</p>
@@ -5005,35 +5030,48 @@
   this function to search for each document type.</p>
 <p>The documentation for subclasses should be in the overriden function
   APPDOC_DESCRIPTION.</p>
-<hr />
-<p><strong>isequal_appdoc_struct</strong> - <em>are two APPDOC data structures the same (equal)?</em></p>
-<p>B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_STRUCT2)</p>
-<p>Returns 1 if the structures APPDOC_STRUCT1 and APPDOC_STRUCT2 are valid and equal. In the base class, this is
-  true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
-  B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">isequal_appdoc_struct</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">are</span> <span class="nv">two</span> <span class="nv">APPDOC</span> <span class="nv">data</span> <span class="nv">structures</span> <span class="nv">the</span> <span class="nv">same</span> <span class="ss">(</span><span class="nv">equal</span><span class="ss">)</span>?<span class="o">*</span>
+
+```<span class="nv">B</span> <span class="o">=</span> <span class="nv">ISEQUAL_APPDOC_STRUCT</span><span class="ss">(</span><span class="nv">NDI_APPDOC_OBJ</span>, <span class="nv">APPDOC_TYPE</span>, <span class="nv">APPDOC_STRUCT1</span>, <span class="nv">APPDOC_STRUCT2</span><span class="ss">)</span>
+
+  <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">structures</span> <span class="nv">APPDOC_STRUCT1</span> <span class="nv">and</span> <span class="nv">APPDOC_STRUCT2</span> <span class="nv">are</span> <span class="nv">valid</span> <span class="nv">and</span> <span class="nv">equal</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">base</span> <span class="nv">class</span>, <span class="nv">this</span> <span class="nv">is</span>
+  <span class="nv">true</span> <span class="k">if</span> <span class="nv">APPDOC_STRUCT1</span> <span class="nv">and</span> <span class="nv">APPDOC_STRUCT2</span> <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">field</span> <span class="nv">names</span> <span class="nv">and</span> <span class="nv">same</span> <span class="nv">values</span> <span class="nv">and</span> <span class="nv">same</span> <span class="nv">sizes</span>. <span class="nv">That</span> <span class="nv">is</span>,
+  <span class="nv">B</span> <span class="nv">is</span> <span class="nv">vlt</span>.<span class="nv">data</span>.<span class="nv">eqlen</span><span class="ss">(</span><span class="nv">APPDOC_STRUCT1</span>, <span class="nv">APPDOC_STRUCT2</span><span class="ss">)</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>isvalid_appdoc_struct</strong> - <em>is an input structure a valid descriptor for an APPDOC?</em></p>
-<p>[B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT)</p>
+<p>```[B,ERRORMSG] = ISVALID_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT)</p>
 <p>Examines APPDOC_STRUCT and determines whether it is a valid input for creating an
   ndi.document described by APPDOC_TYPE. B is 1 if it is valid and 0 otherwise.</p>
 <p>In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'</p>
-<hr />
-<p><strong>loaddata_appdoc</strong> - <em>Load data from an application document</em></p>
-<p>[...] = LOADDATA_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional arguments])</p>
-<p>Loads the data from app document of style DOC_NAME from the database.
-  [additional inputs] are used to find the NDI_document in the database.
-  They are passed to the function FIND_APPDOC, so see help FIND_APPDOC for the documentation
-  for each app.</p>
-<p>In the base class, this always returns empty. This function should be overridden by each
-  subclass.</p>
-<p>The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">loaddata_appdoc</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Load</span> <span class="n">data</span> <span class="n">from</span> <span class="n">an</span> <span class="n">application</span> <span class="n">document</span><span class="o">*</span>
+
+<span class="err">```</span><span class="p">[...]</span> <span class="o">=</span> <span class="n">LOADDATA_APPDOC</span><span class="p">(</span><span class="n">NDI_APPDOC_OBJ</span><span class="p">,</span> <span class="n">APPDOC_TYPE</span><span class="p">,</span> <span class="p">[</span><span class="n">additional</span> <span class="n">arguments</span><span class="p">])</span>
+
+  <span class="n">Loads</span> <span class="n">the</span> <span class="n">data</span> <span class="n">from</span> <span class="n">app</span> <span class="n">document</span> <span class="n">of</span> <span class="n">style</span> <span class="n">DOC_NAME</span> <span class="n">from</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="p">[</span><span class="n">additional</span> <span class="n">inputs</span><span class="p">]</span> <span class="n">are</span> <span class="n">used</span> <span class="n">to</span> <span class="n">find</span> <span class="n">the</span> <span class="n">NDI_document</span> <span class="k">in</span> <span class="n">the</span> <span class="n">database</span><span class="p">.</span>
+  <span class="n">They</span> <span class="n">are</span> <span class="n">passed</span> <span class="n">to</span> <span class="n">the</span> <span class="n">function</span> <span class="n">FIND_APPDOC</span><span class="p">,</span> <span class="n">so</span> <span class="n">see</span> <span class="n">help</span> <span class="n">FIND_APPDOC</span> <span class="k">for</span> <span class="n">the</span> <span class="n">documentation</span>
+  <span class="k">for</span> <span class="n">each</span> <span class="n">app</span><span class="p">.</span>
+
+  <span class="n">In</span> <span class="n">the</span> <span class="n">base</span> <span class="k">class</span><span class="p">,</span> <span class="n">this</span> <span class="n">always</span> <span class="n">returns</span> <span class="n">empty</span><span class="p">.</span> <span class="n">This</span> <span class="n">function</span> <span class="n">should</span> <span class="n">be</span> <span class="n">overridden</span> <span class="n">by</span> <span class="n">each</span>
+  <span class="n">subclass</span><span class="p">.</span>
+
+  <span class="n">The</span> <span class="n">documentation</span> <span class="k">for</span> <span class="n">subclasses</span> <span class="n">should</span> <span class="n">be</span> <span class="k">in</span> <span class="n">the</span> <span class="n">overridden</span> <span class="n">function</span> <span class="n">APPDOC_DESCRIPTION</span><span class="p">.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>struct2doc</strong> - <em>create an ndi.document from an input structure and input parameters</em></p>
-<p>DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
+<p>```DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]</p>
 <p>Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
   according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.</p>
 <p>In the base class, this always returns empty. It must be overridden in subclasses.
-  The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.</p>
+  The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
+```</p>
 <hr />
                 
               

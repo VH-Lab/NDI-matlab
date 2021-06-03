@@ -4690,17 +4690,21 @@
                 
                 
                 <h1 id="nditestdatabasecoretest_ndi_daq_documents">ndi.test.database.core.test_ndi_daq_documents<a class="headerlink" href="#nditestdatabasecoretest_ndi_daq_documents" title="Permanent link">&para;</a></h1>
-<p>TEST_NDI_DAQ_DOCUMENTS - Test the functionality of the storage of DAQ objects using NDI_DOCUMENT and the NDI_SESSION database</p>
-<p>ndi.test.daq.documents([DIRNAME])</p>
-<p>Given a directory, this function tries to create and test the
-   following objects and subclasses:
-      1) ndi.file.navigator (by calling test_ndi_filenavigator_document)
-      2) ndi.daq.reader (by calling test_ndi_daqreader_document)
-      3) ndi.daq.system (by calling test_ndi_daqsystem_document)
-      4) ndi.time.syncrule (by calling test_ndi_syncrule_document)
-      5) ndi.time.syncgraph (by calling test_ndi_syncgraph_document)</p>
-<p>If DIRNAME is not provided, the default directory
-   [NDIEXAMPLEEXPERPATH/exp1_eg] is used.</p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="n">TEST_NDI_DAQ_DOCUMENTS</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">Test</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">functionality</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">storage</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">DAQ</span><span class="w"> </span><span class="n">objects</span><span class="w"> </span><span class="k">using</span><span class="w"> </span><span class="n">NDI_DOCUMENT</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">NDI_SESSION</span><span class="w"> </span><span class="k">database</span><span class="w"></span>
+
+<span class="w">   </span><span class="n">ndi</span><span class="p">.</span><span class="n">test</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">documents</span><span class="p">(</span><span class="o">[</span><span class="n">DIRNAME</span><span class="o">]</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">   </span><span class="n">Given</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">directory</span><span class="p">,</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">tries</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">create</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">test</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
+<span class="w">   </span><span class="n">following</span><span class="w"> </span><span class="n">objects</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="nl">subclasses</span><span class="p">:</span><span class="w"></span>
+<span class="w">      </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">file</span><span class="p">.</span><span class="n">navigator</span><span class="w"> </span><span class="p">(</span><span class="k">by</span><span class="w"> </span><span class="n">calling</span><span class="w"> </span><span class="n">test_ndi_filenavigator_document</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="mi">2</span><span class="p">)</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">reader</span><span class="w"> </span><span class="p">(</span><span class="k">by</span><span class="w"> </span><span class="n">calling</span><span class="w"> </span><span class="n">test_ndi_daqreader_document</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="mi">3</span><span class="p">)</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="k">system</span><span class="w"> </span><span class="p">(</span><span class="k">by</span><span class="w"> </span><span class="n">calling</span><span class="w"> </span><span class="n">test_ndi_daqsystem_document</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="mi">4</span><span class="p">)</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">syncrule</span><span class="w"> </span><span class="p">(</span><span class="k">by</span><span class="w"> </span><span class="n">calling</span><span class="w"> </span><span class="n">test_ndi_syncrule_document</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="mi">5</span><span class="p">)</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="nc">time</span><span class="p">.</span><span class="n">syncgraph</span><span class="w"> </span><span class="p">(</span><span class="k">by</span><span class="w"> </span><span class="n">calling</span><span class="w"> </span><span class="n">test_ndi_syncgraph_document</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">   </span><span class="k">If</span><span class="w"> </span><span class="n">DIRNAME</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">provided</span><span class="p">,</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="n">directory</span><span class="w"></span>
+<span class="w">   </span><span class="o">[</span><span class="n">NDIEXAMPLEEXPERPATH/exp1_eg</span><span class="o">]</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">used</span><span class="p">.</span><span class="w"></span>
+</code></pre></div>
                 
               
               

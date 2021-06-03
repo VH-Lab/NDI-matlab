@@ -4690,28 +4690,35 @@
                 
                 
                 <h1 id="ndisetupdaqsystemvhlab">ndi.setup.daq.system.vhlab<a class="headerlink" href="#ndisetupdaqsystemvhlab" title="Permanent link">&para;</a></h1>
-<p>ndi.setup.daq.system.vhlab - initialize daq systems used by VHLAB</p>
-<p>S = ndi.setup.daq.system.vhlab(S, DEVNAME)</p>
-<p>Creates daq systems that look for files in the VHLAB standard recording
-  scheme, where data from different epochs are organized into
-  subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the 
-  name a daq systems in the table below. These daq systems are added to the ndi.session
-  object S. If DEVNAME is a cell list of strings, then multiple items are added.</p>
-<p>If the function is called with no input arguments, then it returns a list
-  of all valid device names.</p>
-<p>Each epoch is defined by the presence of a 'reference.txt' file, as well
-  as specific files that are needed by each device as described below.</p>
-<p>Devices created   | Description
-  |------------------|--------------------------------------------------|
-  | vhintan          | ndi.daq.system.mfdaq that looks for files        |
-  |                  |    'vhintan_channelgrouping.txt' and '<em>.rhd'     |
-  | vhspike2         |    ndi.daq.system.mfdaq that looks for files     |
-  |                  |    'vhspike2_channelgrouping.txt' and '</em>.smr'    |
-  | vhvis_spike2     | ndi.daq.system.mfdaq.stimulus that looks for     |
-  |                  |    files 'stimtimes.txt', 'verticalblanking.txt',|
-  |                  |    'stims.mat', and 'spike2data.smr'.            |</p>
-<hr />
-<p>See also: ndi.file.navigator.epochdir</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">ndi</span>.<span class="nv">setup</span>.<span class="nv">daq</span>.<span class="nv">system</span>.<span class="nv">vhlab</span> <span class="o">-</span> <span class="nv">initialize</span> <span class="nv">daq</span> <span class="nv">systems</span> <span class="nv">used</span> <span class="nv">by</span> <span class="nv">VHLAB</span>
+
+  <span class="nv">S</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">setup</span>.<span class="nv">daq</span>.<span class="nv">system</span>.<span class="nv">vhlab</span><span class="ss">(</span><span class="nv">S</span>, <span class="nv">DEVNAME</span><span class="ss">)</span>
+
+  <span class="nv">Creates</span> <span class="nv">daq</span> <span class="nv">systems</span> <span class="nv">that</span> <span class="nv">look</span> <span class="k">for</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">VHLAB</span> <span class="nv">standard</span> <span class="nv">recording</span>
+  <span class="nv">scheme</span>, <span class="nv">where</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">different</span> <span class="nv">epochs</span> <span class="nv">are</span> <span class="nv">organized</span> <span class="nv">into</span>
+  <span class="nv">subdirectories</span> <span class="ss">(</span><span class="nv">using</span> <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>.<span class="nv">epochdir</span><span class="ss">)</span>. <span class="nv">DEVNAME</span> <span class="nv">should</span> <span class="nv">be</span> <span class="nv">the</span> 
+  <span class="nv">name</span> <span class="nv">a</span> <span class="nv">daq</span> <span class="nv">systems</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">table</span> <span class="nv">below</span>. <span class="nv">These</span> <span class="nv">daq</span> <span class="nv">systems</span> <span class="nv">are</span> <span class="nv">added</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>
+  <span class="nv">object</span> <span class="nv">S</span>. <span class="k">If</span> <span class="nv">DEVNAME</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="k">then</span> <span class="nv">multiple</span> <span class="nv">items</span> <span class="nv">are</span> <span class="nv">added</span>.
+
+  <span class="k">If</span> <span class="nv">the</span> <span class="nv">function</span> <span class="nv">is</span> <span class="nv">called</span> <span class="nv">with</span> <span class="nv">no</span> <span class="nv">input</span> <span class="nv">arguments</span>, <span class="k">then</span> <span class="nv">it</span> <span class="nv">returns</span> <span class="nv">a</span> <span class="nv">list</span>
+  <span class="nv">of</span> <span class="nv">all</span> <span class="nv">valid</span> <span class="nv">device</span> <span class="nv">names</span>.
+
+  <span class="nv">Each</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="nv">defined</span> <span class="nv">by</span> <span class="nv">the</span> <span class="nv">presence</span> <span class="nv">of</span> <span class="nv">a</span> <span class="s1">&#39;</span><span class="s">reference.txt</span><span class="s1">&#39;</span> <span class="nv">file</span>, <span class="nv">as</span> <span class="nv">well</span>
+  <span class="nv">as</span> <span class="nv">specific</span> <span class="nv">files</span> <span class="nv">that</span> <span class="nv">are</span> <span class="nv">needed</span> <span class="nv">by</span> <span class="nv">each</span> <span class="nv">device</span> <span class="nv">as</span> <span class="nv">described</span> <span class="nv">below</span>.
+
+   <span class="nv">Devices</span> <span class="nv">created</span>   <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">|------------------|--------------------------------------------------|</span>
+  <span class="o">|</span> <span class="nv">vhintan</span>          <span class="o">|</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span>.<span class="nv">mfdaq</span> <span class="nv">that</span> <span class="nv">looks</span> <span class="k">for</span> <span class="nv">files</span>        <span class="o">|</span>
+  <span class="o">|</span>                  <span class="o">|</span>    <span class="s1">&#39;</span><span class="s">vhintan_channelgrouping.txt</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">*.rhd</span><span class="s1">&#39;</span>     <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">vhspike2</span>         <span class="o">|</span>    <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span>.<span class="nv">mfdaq</span> <span class="nv">that</span> <span class="nv">looks</span> <span class="k">for</span> <span class="nv">files</span>     <span class="o">|</span>
+  <span class="o">|</span>                  <span class="o">|</span>    <span class="s1">&#39;</span><span class="s">vhspike2_channelgrouping.txt</span><span class="s1">&#39;</span> <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">*.smr</span><span class="s1">&#39;</span>    <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">vhvis_spike2</span>     <span class="o">|</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">system</span>.<span class="nv">mfdaq</span>.<span class="nv">stimulus</span> <span class="nv">that</span> <span class="nv">looks</span> <span class="k">for</span>     <span class="o">|</span>
+  <span class="o">|</span>                  <span class="o">|</span>    <span class="nv">files</span> <span class="s1">&#39;</span><span class="s">stimtimes.txt</span><span class="s1">&#39;</span>, <span class="s1">&#39;</span><span class="s">verticalblanking.txt</span><span class="s1">&#39;</span>,<span class="o">|</span>
+  <span class="o">|</span>                  <span class="o">|</span>    <span class="s1">&#39;</span><span class="s">stims.mat</span><span class="s1">&#39;</span>, <span class="nv">and</span> <span class="s1">&#39;</span><span class="s">spike2data.smr</span><span class="s1">&#39;</span>.            <span class="o">|</span>
+  <span class="o">-----------------------------------------------------------------------</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">file</span>.<span class="nv">navigator</span>.<span class="nv">epochdir</span>
+</code></pre></div>
                 
               
               

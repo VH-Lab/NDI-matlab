@@ -4682,21 +4682,29 @@
                 
                 
                 <h1 id="ndi_install">ndi_install<a class="headerlink" href="#ndi_install" title="Permanent link">&para;</a></h1>
-<p>NDI_INSTALL - install the NDI distribution and its ancillary directories</p>
-<div class="codehilite"><pre><span></span><code>  B = NDI_INSTALL
-</code></pre></div>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI_INSTALL</span> <span class="o">-</span> <span class="n">install</span> <span class="n">the</span> <span class="n">NDI</span> <span class="n">distribution</span> <span class="ow">and</span> <span class="n">its</span> <span class="n">ancillary</span> <span class="n">directories</span>
 
-<p>Installs the GitHub distributions necessary to run NDI-matlab.
-  These are installed at [USERPATH filesep 'tools']
-     (for example, /Users/steve/Documents/MATLAB/tools/)</p>
-<p>The startup file is edited to add a startup procedure in VHTOOLS.</p>
-<p>One can also dictate a different install directory by passing a full pathname:</p>
-<p>B = NDI_INSTALL(PATHNAME)</p>
-<p>PATHNAME should not include any shell script shortcuts (like '~').</p>
-<p>Finally, one can also install either the minimal set of tools needed for NDI (DEPENDENCIES=1),
-  or one can install the standard VHTOOLS suite (DEPENDENCIES=2):</p>
-<p>B = NDI_INSTALL(PATHNAME, DEPENDENCIES)</p>
-<p>If PATHNAME is blank, then the default pathway of [USERPATH filesep 'tools'] is used.</p>
+      <span class="n">B</span> <span class="o">=</span> <span class="n">NDI_INSTALL</span>
+
+  <span class="n">Installs</span> <span class="n">the</span> <span class="n">GitHub</span> <span class="n">distributions</span> <span class="n">necessary</span> <span class="n">to</span> <span class="n">run</span> <span class="n">NDI</span><span class="o">-</span><span class="n">matlab</span><span class="o">.</span>
+  <span class="n">These</span> <span class="n">are</span> <span class="n">installed</span> <span class="n">at</span> <span class="p">[</span><span class="n">USERPATH</span> <span class="n">filesep</span> <span class="s1">&#39;tools&#39;</span><span class="p">]</span>
+     <span class="p">(</span><span class="k">for</span> <span class="n">example</span><span class="p">,</span> <span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">steve</span><span class="o">/</span><span class="n">Documents</span><span class="o">/</span><span class="n">MATLAB</span><span class="o">/</span><span class="n">tools</span><span class="o">/</span><span class="p">)</span>
+
+  <span class="n">The</span> <span class="n">startup</span> <span class="n">file</span> <span class="k">is</span> <span class="n">edited</span> <span class="n">to</span> <span class="n">add</span> <span class="n">a</span> <span class="n">startup</span> <span class="n">procedure</span> <span class="ow">in</span> <span class="n">VHTOOLS</span><span class="o">.</span>
+
+  <span class="n">One</span> <span class="n">can</span> <span class="n">also</span> <span class="n">dictate</span> <span class="n">a</span> <span class="n">different</span> <span class="n">install</span> <span class="n">directory</span> <span class="n">by</span> <span class="n">passing</span> <span class="n">a</span> <span class="n">full</span> <span class="n">pathname</span><span class="p">:</span>
+
+  <span class="n">B</span> <span class="o">=</span> <span class="n">NDI_INSTALL</span><span class="p">(</span><span class="n">PATHNAME</span><span class="p">)</span>
+
+  <span class="n">PATHNAME</span> <span class="n">should</span> <span class="ow">not</span> <span class="n">include</span> <span class="n">any</span> <span class="n">shell</span> <span class="n">script</span> <span class="n">shortcuts</span> <span class="p">(</span><span class="n">like</span> <span class="s1">&#39;~&#39;</span><span class="p">)</span><span class="o">.</span>
+
+  <span class="n">Finally</span><span class="p">,</span> <span class="n">one</span> <span class="n">can</span> <span class="n">also</span> <span class="n">install</span> <span class="n">either</span> <span class="n">the</span> <span class="n">minimal</span> <span class="n">set</span> <span class="n">of</span> <span class="n">tools</span> <span class="n">needed</span> <span class="k">for</span> <span class="n">NDI</span> <span class="p">(</span><span class="n">DEPENDENCIES</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+  <span class="ow">or</span> <span class="n">one</span> <span class="n">can</span> <span class="n">install</span> <span class="n">the</span> <span class="n">standard</span> <span class="n">VHTOOLS</span> <span class="n">suite</span> <span class="p">(</span><span class="n">DEPENDENCIES</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+  <span class="n">B</span> <span class="o">=</span> <span class="n">NDI_INSTALL</span><span class="p">(</span><span class="n">PATHNAME</span><span class="p">,</span> <span class="n">DEPENDENCIES</span><span class="p">)</span>
+
+  <span class="n">If</span> <span class="n">PATHNAME</span> <span class="k">is</span> <span class="n">blank</span><span class="p">,</span> <span class="n">then</span> <span class="n">the</span> <span class="n">default</span> <span class="n">pathway</span> <span class="n">of</span> <span class="p">[</span><span class="n">USERPATH</span> <span class="n">filesep</span> <span class="s1">&#39;tools&#39;</span><span class="p">]</span> <span class="k">is</span> <span class="n">used</span><span class="o">.</span>
+</code></pre></div>
                 
               
               

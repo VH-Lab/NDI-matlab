@@ -4785,7 +4785,9 @@
                 
                 
                 <h1 id="class-nditimetimeseries">CLASS ndi.time.timeseries<a class="headerlink" href="#class-nditimetimeseries" title="Permanent link">&para;</a></h1>
-<p>NDI_TIMESERIES - abstract class for managing time series data</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_TIMESERIES</span> <span class="o">-</span> <span class="nv">abstract</span> <span class="nv">class</span> <span class="k">for</span> <span class="nv">managing</span> <span class="nv">time</span> <span class="nv">series</span> <span class="nv">data</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><strong><a href="../../documentservice.m/">ndi.documentservice</a></strong></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4831,54 +4833,73 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>newdocument</strong> - <em>create a new ndi.document based on information in this object</em></p>
-<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)</p>
+<p>```NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)</p>
 <p>Create a new ndi.document based on information in this class.</p>
 <p>The base ndi.documentservice class returns empty.</p>
 <p>Help for ndi.time.timeseries/newdocument is inherited from superclass NDI.DOCUMENTSERVICE</p>
-<hr />
-<p><strong>readtimeseries</strong> - <em>read a time series from this parent object (ndi.time.timeseries)</em></p>
-<p>[DATA, T, TIMEREF] = READTIMESERIES(NDI_TIMESERIES_OBJ, TIMEREF_OR_EPOCH, T0, T1)</p>
-<p>Reads timeseries data from an ndi.time.timeseries object. The DATA and time information T that are
-   returned depend on the the specific subclass of ndi.time.timeseries that is called (see READTIMESERIESEPOCH).</p>
-<p>TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the time reference for
-   T0, T1, or it can be a single number, which will indicate the data are to be read from that
-   epoch.</p>
-<p>DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
-   ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">readtimeseries</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">read</span> <span class="nv">a</span> <span class="nv">time</span> <span class="nv">series</span> <span class="nv">from</span> <span class="nv">this</span> <span class="nv">parent</span> <span class="nv">object</span> <span class="ss">(</span><span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span><span class="ss">)</span><span class="o">*</span>
+
+```[<span class="nv">DATA</span>, <span class="nv">T</span>, <span class="nv">TIMEREF</span>] <span class="o">=</span> <span class="nv">READTIMESERIES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">TIMEREF_OR_EPOCH</span>, <span class="nv">T0</span>, <span class="nv">T1</span><span class="ss">)</span>
+
+   <span class="nv">Reads</span> <span class="nv">timeseries</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">object</span>. <span class="nv">The</span> <span class="nv">DATA</span> <span class="nv">and</span> <span class="nv">time</span> <span class="nv">information</span> <span class="nv">T</span> <span class="nv">that</span> <span class="nv">are</span>
+   <span class="nv">returned</span> <span class="nv">depend</span> <span class="nv">on</span> <span class="nv">the</span> <span class="nv">the</span> <span class="nv">specific</span> <span class="nv">subclass</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">called</span> <span class="ss">(</span><span class="nv">see</span> <span class="nv">READTIMESERIESEPOCH</span><span class="ss">)</span>.
+
+   <span class="nv">TIMEREF_OR_EPOCH</span> <span class="nv">is</span> <span class="nv">either</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span> <span class="nv">indicating</span> <span class="nv">the</span> <span class="nv">time</span> <span class="nv">reference</span> <span class="k">for</span>
+   <span class="nv">T0</span>, <span class="nv">T1</span>, <span class="nv">or</span> <span class="nv">it</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">single</span> <span class="nv">number</span>, <span class="nv">which</span> <span class="nv">will</span> <span class="nv">indicate</span> <span class="nv">the</span> <span class="nv">data</span> <span class="nv">are</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">read</span> <span class="nv">from</span> <span class="nv">that</span>
+   <span class="nv">epoch</span>.
+
+   <span class="nv">DATA</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">data</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">probe</span>.  <span class="nv">T</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">time</span> <span class="nv">structure</span>, <span class="nv">in</span> <span class="nv">units</span> <span class="nv">of</span> <span class="nv">TIMEREF</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span>
+   <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">object</span> <span class="nv">or</span> <span class="nv">in</span> <span class="nv">units</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="k">if</span> <span class="nv">an</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="nv">passed</span>.  <span class="nv">The</span> <span class="nv">TIMEREF</span> <span class="nv">is</span> <span class="nv">returned</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>samplerate</strong> - <em>return the sample rate of an ndi.time.timeseries object</em></p>
-<p>SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)</p>
+<p>```SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)</p>
 <p>Returns the sampling rate of a given ndi.time.timeseries object for the epoch
   EPOCH. EPOCH can be specified as an index or EPOCH_ID.</p>
 <p>If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.</p>
-<hr />
-<p><strong>samples2times</strong> - <em>convert from the timeseries time to sample numbers</em></p>
-<p>SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)</p>
-<p>For a given ndi.time.timeseries object and a recording epoch EPOCH,
-  return the sample index numbers SAMPLE that corresponds to the times TIMES.
-  The first sample in the epoch is 1.
-  The TIMES requested might be out of bounds of the EPOCH; no checking is performed.</p>
-<p>TODO: convert times to dev_local_clock</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">samples2times</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">timeseries</span> <span class="nv">time</span> <span class="nv">to</span> <span class="nv">sample</span> <span class="nv">numbers</span><span class="o">*</span>
+
+```<span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIME2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
+
+  <span class="k">For</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">a</span> <span class="nv">recording</span> <span class="nv">epoch</span> <span class="nv">EPOCH</span>,
+  <span class="k">return</span> <span class="nv">the</span> <span class="nv">sample</span> <span class="nv">index</span> <span class="nv">numbers</span> <span class="nv">SAMPLE</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">times</span> <span class="nv">TIMES</span>.
+  <span class="nv">The</span> <span class="nv">first</span> <span class="nv">sample</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="mi">1</span>.
+  <span class="nv">The</span> <span class="nv">TIMES</span> <span class="nv">requested</span> <span class="nv">might</span> <span class="nv">be</span> <span class="nv">out</span> <span class="nv">of</span> <span class="nv">bounds</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">EPOCH</span><span class="c1">; no checking is performed.</span>
+
+  <span class="nv">TODO</span>: <span class="nv">convert</span> <span class="nv">times</span> <span class="nv">to</span> <span class="nv">dev_local_clock</span>
+</code></pre></div>
+
 <hr />
 <p><strong>searchquery</strong> - <em>create a search query to find this object as an ndi.document</em></p>
-<p>SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)</p>
+<p>```SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)</p>
 <p>Return a search query that can be used to find this object's representation as an
   ndi.document.</p>
 <p>The base class ndi.documentservice just returns empty.</p>
 <p>Help for ndi.time.timeseries/searchquery is inherited from superclass NDI.DOCUMENTSERVICE</p>
-<hr />
-<p><strong>times2samples</strong> - <em>convert from the timeseries time to sample numbers</em></p>
-<p>SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)</p>
-<p>For a given ndi.time.timeseries object and a recording epoch EPOCH,
-  return the sample index numbers SAMPLE that corresponds to the times TIMES.
-  The first sample in the epoch is 1.
-  The TIMES requested might be out of bounds of the EPOCH; no checking is performed.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">times2samples</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">convert</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">timeseries</span> <span class="nv">time</span> <span class="nv">to</span> <span class="nv">sample</span> <span class="nv">numbers</span><span class="o">*</span>
+
+```<span class="nv">SAMPLES</span> <span class="o">=</span> <span class="nv">TIMES2SAMPLES</span><span class="ss">(</span><span class="nv">NDI_TIMESERIES_OBJ</span>, <span class="nv">EPOCH</span>, <span class="nv">TIMES</span><span class="ss">)</span>
+
+  <span class="k">For</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timeseries</span> <span class="nv">object</span> <span class="nv">and</span> <span class="nv">a</span> <span class="nv">recording</span> <span class="nv">epoch</span> <span class="nv">EPOCH</span>,
+  <span class="k">return</span> <span class="nv">the</span> <span class="nv">sample</span> <span class="nv">index</span> <span class="nv">numbers</span> <span class="nv">SAMPLE</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">times</span> <span class="nv">TIMES</span>.
+  <span class="nv">The</span> <span class="nv">first</span> <span class="nv">sample</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">epoch</span> <span class="nv">is</span> <span class="mi">1</span>.
+  <span class="nv">The</span> <span class="nv">TIMES</span> <span class="nv">requested</span> <span class="nv">might</span> <span class="nv">be</span> <span class="nv">out</span> <span class="nv">of</span> <span class="nv">bounds</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">EPOCH</span><span class="c1">; no checking is performed.</span>
+</code></pre></div>
+
 <hr />
 <p><strong>timeseries</strong> - <em>create an ndi.time.timeseries object</em></p>
-<p>NDI_TIMESERIES_OBJ = ndi.time.timeseries()</p>
+<p>```NDI_TIMESERIES_OBJ = ndi.time.timeseries()</p>
 <p>This function creates an ndi.time.timeseries object, which is an
   abstract class that defines methods for other objects that deal with
-  time series.</p>
+  time series.
+```</p>
 <hr />
                 
               

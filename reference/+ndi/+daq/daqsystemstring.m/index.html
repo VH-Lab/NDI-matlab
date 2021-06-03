@@ -4785,27 +4785,36 @@
                 
                 
                 <h1 id="class-ndidaqdaqsystemstring">CLASS ndi.daq.daqsystemstring<a class="headerlink" href="#class-ndidaqdaqsystemstring" title="Permanent link">&para;</a></h1>
-<p>NDI_DAQSYSTEMSTRING - a class for describing the device and channels that correspond to an NDI_EPOCHPROBEMAP_DAQSYSTEM</p>
-<p>ndi.daq.daqsystemstring</p>
-<p>A 'devicestring' is a part of an ndi.epoch.epochprobemap_daqsystem that indicates the channel types and
-   channel numbers that correspond to a particular record.</p>
-<p>For example, one may specify that a 4-channel extracellular recording with name
-   'ctx' and reference 1 was recorded on a device called 'mydevice' via analog input
-   on channels 27-28 and 45 and 88 with the following ndi.epoch.epochprobemap_daqsystem entry:
-            name: 'ctx'
-       reference: 1
-            type: 'extracellular_electrode-4'
-    devicestring: 'mydevice:ai27-28,45,88</p>
-<p>The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
-   ndi.daq.system object, CT is the channel type identifier, and #### is a list of channels.
-   The #### list of channels should be numbered from 1, and can use the symbols '-' to
-   indicate a sequential run of channels, and ',' to separate channels.
-   Use a semicolon to separate channel types (e.g., 'ai27-28;di1')</p>
-<p>For example:
-      '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]
-      '2,5,11-12,8     corresponds to [2 5 11 12 8]
-      ''               corresponds to []  % if the device doesn't have channels</p>
-<p>See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nt">NDI_DAQSYSTEMSTRING</span> <span class="nt">-</span> <span class="nt">a</span> <span class="nt">class</span> <span class="nt">for</span> <span class="nt">describing</span> <span class="nt">the</span> <span class="nt">device</span> <span class="nt">and</span> <span class="nt">channels</span> <span class="nt">that</span> <span class="nt">correspond</span> <span class="nt">to</span> <span class="nt">an</span> <span class="nt">NDI_EPOCHPROBEMAP_DAQSYSTEM</span>
+
+   <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span>
+
+   <span class="nt">A</span> <span class="s1">&#39;devicestring&#39;</span> <span class="nt">is</span> <span class="nt">a</span> <span class="nt">part</span> <span class="nt">of</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">epoch</span><span class="p">.</span><span class="nc">epochprobemap_daqsystem</span> <span class="nt">that</span> <span class="nt">indicates</span> <span class="nt">the</span> <span class="nt">channel</span> <span class="nt">types</span> <span class="nt">and</span>
+   <span class="nt">channel</span> <span class="nt">numbers</span> <span class="nt">that</span> <span class="nt">correspond</span> <span class="nt">to</span> <span class="nt">a</span> <span class="nt">particular</span> <span class="nt">record</span><span class="o">.</span>
+
+   <span class="nt">For</span> <span class="nt">example</span><span class="o">,</span> <span class="nt">one</span> <span class="nt">may</span> <span class="nt">specify</span> <span class="nt">that</span> <span class="nt">a</span> <span class="nt">4-channel</span> <span class="nt">extracellular</span> <span class="nt">recording</span> <span class="nt">with</span> <span class="nt">name</span>
+   <span class="s1">&#39;ctx&#39;</span> <span class="nt">and</span> <span class="nt">reference</span> <span class="nt">1</span> <span class="nt">was</span> <span class="nt">recorded</span> <span class="nt">on</span> <span class="nt">a</span> <span class="nt">device</span> <span class="nt">called</span> <span class="s1">&#39;mydevice&#39;</span> <span class="nt">via</span> <span class="nt">analog</span> <span class="nt">input</span>
+   <span class="nt">on</span> <span class="nt">channels</span> <span class="nt">27-28</span> <span class="nt">and</span> <span class="nt">45</span> <span class="nt">and</span> <span class="nt">88</span> <span class="nt">with</span> <span class="nt">the</span> <span class="nt">following</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">epoch</span><span class="p">.</span><span class="nc">epochprobemap_daqsystem</span> <span class="nt">entry</span><span class="o">:</span>
+            <span class="nt">name</span><span class="o">:</span> <span class="s1">&#39;ctx&#39;</span>
+       <span class="nt">reference</span><span class="o">:</span> <span class="nt">1</span>
+            <span class="nt">type</span><span class="o">:</span> <span class="s1">&#39;extracellular_electrode-4&#39;</span>
+    <span class="nt">devicestring</span><span class="o">:</span> <span class="s1">&#39;mydevice:ai27-28,45,88</span>
+
+<span class="s1">   The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of </span>
+<span class="s1">   ndi.daq.system object, CT is the channel type identifier, and #### is a list of channels.</span>
+<span class="s1">   The #### list of channels should be numbered from 1, and can use the symbols &#39;</span><span class="nt">-</span><span class="s1">&#39; to</span>
+<span class="s1">   indicate a sequential run of channels, and &#39;</span><span class="o">,</span><span class="s1">&#39; to separate channels.</span>
+<span class="s1">   Use a semicolon to separate channel types (e.g., &#39;</span><span class="nt">ai27-28</span><span class="o">;</span><span class="nt">di1</span><span class="s1">&#39;)</span>
+
+<span class="s1">   For example:</span>
+<span class="s1">      &#39;</span><span class="nt">1-5</span><span class="o">,</span><span class="nt">10</span><span class="o">,</span><span class="nt">17</span><span class="s1">&#39;      corresponds to </span><span class="cp">[</span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">10</span> <span class="mi">17</span><span class="cp">]</span><span class="s1"></span>
+<span class="s1">      &#39;</span><span class="nt">2</span><span class="o">,</span><span class="nt">5</span><span class="o">,</span><span class="nt">11-12</span><span class="o">,</span><span class="nt">8</span>     <span class="nt">corresponds</span> <span class="nt">to</span> <span class="cp">[</span><span class="mi">2</span> <span class="mi">5</span> <span class="mi">11</span> <span class="mi">12</span> <span class="mi">8</span><span class="cp">]</span>
+      <span class="s1">&#39;&#39;</span>               <span class="nt">corresponds</span> <span class="nt">to</span> <span class="cp">[]</span>  <span class="o">%</span> <span class="nt">if</span> <span class="nt">the</span> <span class="nt">device</span> <span class="nt">doesn</span><span class="err">&#39;</span><span class="nt">t</span> <span class="nt">have</span> <span class="nt">channels</span>
+
+
+   <span class="nt">See</span> <span class="nt">also</span><span class="o">:</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span><span class="o">/</span><span class="nt">NDI_DEVICESTRING</span><span class="o">,</span> <span class="nt">NDI_DEVICESTRING</span><span class="o">/</span><span class="nt">DEVICESTRING</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4856,7 +4865,7 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>daqsystemstring</strong> - <em>Create an NDI_DEVICESTRING object from a string or from a device name, channel type, and channel list</em></p>
-<p>DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
+<p>```DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
      or DEVSTR = ndi.daq.daqsystemstring(DEVSTRING)</p>
 <p>Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from a DEVICENAME,
   a cell array of strings CHANNELTYPE (such as 'ai', 'di', 'ao'), and a CHANNELLIST.</p>
@@ -4881,18 +4890,26 @@
 </code></pre></div>
 
 <p>See also: ndi.daq.daqsystemstring</p>
-<hr />
-<p><strong>devicestring</strong> - <em>Produce an ndi.daq.daqsystemstring character string</em></p>
-<p>DEVSTR = DEVICESTRING(SELF)</p>
-<p>Creates a device string suitable for a ndi.epoch.epochprobemap_daqsystem from an ndi.daq.daqsystemstring object.</p>
-<p>Inputs:
-     SELF - an ndi.daq.daqsystemstring object
-  Outputs:
-     DEVSTR - the device string; e.g., 'mydevice:ai1-5,10,11-23'</p>
-<p>See also: ndi.daq.daqsystemstring</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
+
+<span class="o">**</span><span class="nt">devicestring</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">Produce</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span> <span class="nt">character</span> <span class="nt">string</span><span class="o">*</span>
+
+<span class="err">```</span><span class="nt">DEVSTR</span> <span class="o">=</span> <span class="nt">DEVICESTRING</span><span class="o">(</span><span class="nt">SELF</span><span class="o">)</span>
+
+  <span class="nt">Creates</span> <span class="nt">a</span> <span class="nt">device</span> <span class="nt">string</span> <span class="nt">suitable</span> <span class="nt">for</span> <span class="nt">a</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">epoch</span><span class="p">.</span><span class="nc">epochprobemap_daqsystem</span> <span class="nt">from</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span> <span class="nt">object</span><span class="o">.</span>
+
+  <span class="nt">Inputs</span><span class="o">:</span>
+     <span class="nt">SELF</span> <span class="nt">-</span> <span class="nt">an</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span> <span class="nt">object</span>
+  <span class="nt">Outputs</span><span class="o">:</span>
+     <span class="nt">DEVSTR</span> <span class="nt">-</span> <span class="nt">the</span> <span class="nt">device</span> <span class="nt">string</span><span class="o">;</span> <span class="nt">e</span><span class="p">.</span><span class="nc">g</span><span class="o">.,</span> <span class="s1">&#39;mydevice:ai1-5,10,11-23&#39;</span>
+
+
+  <span class="nt">See</span> <span class="nt">also</span><span class="o">:</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">daq</span><span class="p">.</span><span class="nc">daqsystemstring</span>
+</code></pre></div>
+
 <hr />
 <p><strong>ndi_daqsystemstring2channel</strong> - <em>Convert an ndi.daq.daqsystemstring to device, channel type, channel list</em></p>
-<p>[DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)</p>
+<p>```[DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)</p>
 <p>Returns the device name (DEVICENAME), channel type (CHANNELTYPE), and channel list
   (CHANNEL) of a device string.</p>
 <p>Inputs:
@@ -4905,7 +4922,8 @@
      devstr = ndi.daq.daqsystemstring('mydevice:ai1-5,13,18');
      [devicename, channeltype, channel] = ndi_daqsystemstring2channel(devstr);
      % devicename == 'mydevice', channelype = 'ai', channel == [1 2 3 4 5 13 18]</p>
-<p>See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING</p>
+<p>See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING
+```</p>
 <hr />
                 
               

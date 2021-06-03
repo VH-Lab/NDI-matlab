@@ -4783,7 +4783,9 @@
                 
                 
                 <h1 id="class-ndidocumentservice">CLASS ndi.documentservice<a class="headerlink" href="#class-ndidocumentservice" title="Permanent link">&para;</a></h1>
-<p>ndi.documentservice - a class of methods that allows objects to interact with ndi.document objects</p>
+<div class="codehilite"><pre><span></span><code>  ndi.documentservice - a class of methods that allows objects to interact with ndi.document objects
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4813,18 +4815,25 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>documentservice</strong> - <em>create an ndi.documentservice object, which is just an abstract class</em></p>
-<p>NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();</p>
-<hr />
-<p><strong>newdocument</strong> - <em>create a new ndi.document based on information in this object</em></p>
-<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)</p>
-<p>Create a new ndi.document based on information in this class.</p>
-<p>The base ndi.documentservice class returns empty.</p>
+<p>```NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**newdocument** - *create a new ndi.document based on information in this object*
+
+```NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)
+
+  Create a new ndi.document based on information in this class.
+
+  The base ndi.documentservice class returns empty.
+</code></pre></div>
+
 <hr />
 <p><strong>searchquery</strong> - <em>create a search query to find this object as an ndi.document</em></p>
-<p>SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)</p>
+<p>```SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)</p>
 <p>Return a search query that can be used to find this object's representation as an
   ndi.document.</p>
-<p>The base class ndi.documentservice just returns empty.</p>
+<p>The base class ndi.documentservice just returns empty.
+```</p>
 <hr />
                 
               

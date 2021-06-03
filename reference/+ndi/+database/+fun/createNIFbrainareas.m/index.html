@@ -4688,28 +4688,34 @@
                 
                 
                 <h1 id="ndidatabasefuncreatenifbrainareas">ndi.database.fun.createNIFbrainareas<a class="headerlink" href="#ndidatabasefuncreatenifbrainareas" title="Permanent link">&para;</a></h1>
-<p>NDI_CREATENIFBRAINAREAS - create a list of allowable brain areas from the NIF-Ontology</p>
-<p>BA = ndi.database.fun.createNIFbrainareas(...)</p>
-<p>Creates a list of 'controlled' brain area labels and the corresponding nodes in the NIF-Ontology.</p>
-<p>Traces all areas that make up a part of the UBERON node 'nervous system', excluding those in the
-  first level of depth (which are all relatively vague descriptors). This is then written to a file
-  'NIFBrainAreaControlledVocabulary.tsv' with a string id that describes the NIF-Ontology node ID
-  and a string lbl that describes the NIF-Ontology label:</p>
-<p>Header row:
-    'ID<tab>LABEL<tab>Synonyms<tab>&lt;Other_Common_Name'
-    and then 1 entry per anatomical node.</p>
-<p>This function also takes name/value pairs that modify the behavior.
-  Parameter (default)     | Description</p>
-<hr />
-<p>root ('UBERON:'...      | Root node for establishing the controlled vocabulary.
-   '0001016')             |  (Default is 'nervous system' in Uberon ontology.)
-  depth (1000)            | How deep past "nervous system" to look
-  depth_exclude (1)       | The depths to exclude from the list
-  exclude_ontologies ({...| Ontologies to exclude
-   'CL'})                 |
-  outname (...            | Output filen name of the file written to disk
-  ['NIFBrainAreaContr'... |
-   'olledVocabulary.tsv'])|</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_CREATENIFBRAINAREAS</span> <span class="o">-</span> <span class="nv">create</span> <span class="nv">a</span> <span class="nv">list</span> <span class="nv">of</span> <span class="nv">allowable</span> <span class="nv">brain</span> <span class="nv">areas</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">NIF</span><span class="o">-</span><span class="nv">Ontology</span>
+
+  <span class="nv">BA</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">fun</span>.<span class="nv">createNIFbrainareas</span><span class="ss">(</span>...<span class="ss">)</span>
+
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">list</span> <span class="nv">of</span> <span class="s1">&#39;</span><span class="s">controlled</span><span class="s1">&#39;</span> <span class="nv">brain</span> <span class="nv">area</span> <span class="nv">labels</span> <span class="nv">and</span> <span class="nv">the</span> <span class="nv">corresponding</span> <span class="nv">nodes</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">NIF</span><span class="o">-</span><span class="nv">Ontology</span>.
+
+  <span class="nv">Traces</span> <span class="nv">all</span> <span class="nv">areas</span> <span class="nv">that</span> <span class="nv">make</span> <span class="nv">up</span> <span class="nv">a</span> <span class="nv">part</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">UBERON</span> <span class="nv">node</span> <span class="s1">&#39;</span><span class="s">nervous system</span><span class="s1">&#39;</span>, <span class="nv">excluding</span> <span class="nv">those</span> <span class="nv">in</span> <span class="nv">the</span>
+  <span class="nv">first</span> <span class="nv">level</span> <span class="nv">of</span> <span class="nv">depth</span> <span class="ss">(</span><span class="nv">which</span> <span class="nv">are</span> <span class="nv">all</span> <span class="nv">relatively</span> <span class="nv">vague</span> <span class="nv">descriptors</span><span class="ss">)</span>. <span class="nv">This</span> <span class="nv">is</span> <span class="k">then</span> <span class="nv">written</span> <span class="nv">to</span> <span class="nv">a</span> <span class="nv">file</span>
+  <span class="s1">&#39;</span><span class="s">NIFBrainAreaControlledVocabulary.tsv</span><span class="s1">&#39;</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">id</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">NIF</span><span class="o">-</span><span class="nv">Ontology</span> <span class="nv">node</span> <span class="nv">ID</span>
+  <span class="nv">and</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">lbl</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">NIF</span><span class="o">-</span><span class="nv">Ontology</span> <span class="nv">label</span>:
+
+  <span class="nv">Header</span> <span class="nv">row</span>:
+    <span class="s1">&#39;</span><span class="s">ID&lt;tab&gt;LABEL&lt;tab&gt;Synonyms&lt;tab&gt;&lt;Other_Common_Name</span><span class="s1">&#39;</span>
+    <span class="nv">and</span> <span class="k">then</span> <span class="mi">1</span> <span class="nv">entry</span> <span class="nv">per</span> <span class="nv">anatomical</span> <span class="nv">node</span>.
+
+  <span class="nv">This</span> <span class="nv">function</span> <span class="nv">also</span> <span class="nv">takes</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">that</span> <span class="nv">modify</span> <span class="nv">the</span> <span class="nv">behavior</span>.
+  <span class="nv">Parameter</span> <span class="ss">(</span><span class="nv">default</span><span class="ss">)</span>     <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">---------------------------------------------------------------------------</span>
+  <span class="nv">root</span> <span class="ss">(</span><span class="s1">&#39;</span><span class="s">UBERON:</span><span class="s1">&#39;</span>...      <span class="o">|</span> <span class="nv">Root</span> <span class="nv">node</span> <span class="k">for</span> <span class="nv">establishing</span> <span class="nv">the</span> <span class="nv">controlled</span> <span class="nv">vocabulary</span>.
+   <span class="s1">&#39;</span><span class="s">0001016</span><span class="s1">&#39;</span><span class="ss">)</span>             <span class="o">|</span>  <span class="ss">(</span><span class="nv">Default</span> <span class="nv">is</span> <span class="s1">&#39;</span><span class="s">nervous system</span><span class="s1">&#39;</span> <span class="nv">in</span> <span class="nv">Uberon</span> <span class="nv">ontology</span>.<span class="ss">)</span>
+  <span class="nv">depth</span> <span class="ss">(</span><span class="mi">1000</span><span class="ss">)</span>            <span class="o">|</span> <span class="nv">How</span> <span class="nv">deep</span> <span class="nv">past</span> <span class="s2">&quot;</span><span class="s">nervous system</span><span class="s2">&quot;</span> <span class="nv">to</span> <span class="nv">look</span>
+  <span class="nv">depth_exclude</span> <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span>       <span class="o">|</span> <span class="nv">The</span> <span class="nv">depths</span> <span class="nv">to</span> <span class="nv">exclude</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">list</span>
+  <span class="nv">exclude_ontologies</span> <span class="ss">(</span>{...<span class="o">|</span> <span class="nv">Ontologies</span> <span class="nv">to</span> <span class="nv">exclude</span>
+   <span class="s1">&#39;</span><span class="s">CL</span><span class="s1">&#39;</span>}<span class="ss">)</span>                 <span class="o">|</span>
+  <span class="nv">outname</span> <span class="ss">(</span>...            <span class="o">|</span> <span class="nv">Output</span> <span class="nv">filen</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">file</span> <span class="nv">written</span> <span class="nv">to</span> <span class="nv">disk</span>
+  [<span class="s1">&#39;</span><span class="s">NIFBrainAreaContr</span><span class="s1">&#39;</span>... <span class="o">|</span>
+   <span class="s1">&#39;</span><span class="s">olledVocabulary.tsv</span><span class="s1">&#39;</span>]<span class="ss">)</span><span class="o">|</span>
+</code></pre></div>
                 
               
               

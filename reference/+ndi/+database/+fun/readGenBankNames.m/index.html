@@ -4688,24 +4688,28 @@
                 
                 
                 <h1 id="ndidatabasefunreadgenbanknames">ndi.database.fun.readGenBankNames<a class="headerlink" href="#ndidatabasefunreadgenbanknames" title="Permanent link">&para;</a></h1>
-<p>NDI_READGENBANKNAMES - read the GenBank names from the 'names.dmp' file</p>
-<p>GENBANK_NAMES = ndi.database.fun.readGenBankNames(FILENAME)</p>
-<p>Given a 'names.dmp' file from a GenBank taxonomy data dump,
-  this function produces a Matlab structure with the following fields:</p>
-<p>fieldname            | Description</p>
-<hr />
-<p>genbank_commonname   | The genbank common name of the organism
-                       |   (cell array of strings, 1 entry per node)
-                       |   genbank_commonname{i} is the entry for node i.
-  scientific_name      | The genbank scientific name
-                       |   (cell array of strings, 1 entry per node)
-                       |   scientific_name{i} is the entry for node i.
-  synonym              | A cell array of strings with scientific name synonyms
-                       |   (cell array of strings, potentially many entries per node)
-                       |   synonym{i}{j} is the jth synonym for node i
-  other_commonname     | A cell array of strings with the other common names
-                       |   (cell array of strings, potentially many entries per node)
-                       |   other_commonname{i}{j} is the jth other common name for node i</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">NDI_READGENBANKNAMES</span> <span class="o">-</span> <span class="nv">read</span> <span class="nv">the</span> <span class="nv">GenBank</span> <span class="nv">names</span> <span class="nv">from</span> <span class="nv">the</span> <span class="s1">&#39;</span><span class="s">names.dmp</span><span class="s1">&#39;</span> <span class="nv">file</span>
+
+  <span class="nv">GENBANK_NAMES</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">fun</span>.<span class="nv">readGenBankNames</span><span class="ss">(</span><span class="nv">FILENAME</span><span class="ss">)</span>
+
+  <span class="nv">Given</span> <span class="nv">a</span> <span class="s1">&#39;</span><span class="s">names.dmp</span><span class="s1">&#39;</span> <span class="nv">file</span> <span class="nv">from</span> <span class="nv">a</span> <span class="nv">GenBank</span> <span class="nv">taxonomy</span> <span class="nv">data</span> <span class="nv">dump</span>,
+  <span class="nv">this</span> <span class="nv">function</span> <span class="nv">produces</span> <span class="nv">a</span> <span class="nv">Matlab</span> <span class="nv">structure</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">following</span> <span class="nv">fields</span>:
+
+  <span class="nv">fieldname</span>            <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">-----------------------------------------------------------------</span>
+  <span class="nv">genbank_commonname</span>   <span class="o">|</span> <span class="nv">The</span> <span class="nv">genbank</span> <span class="nv">common</span> <span class="nv">name</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">organism</span>
+                       <span class="o">|</span>   <span class="ss">(</span><span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="mi">1</span> <span class="nv">entry</span> <span class="nv">per</span> <span class="nv">node</span><span class="ss">)</span>
+                       <span class="o">|</span>   <span class="nv">genbank_commonname</span>{<span class="nv">i</span>} <span class="nv">is</span> <span class="nv">the</span> <span class="nv">entry</span> <span class="k">for</span> <span class="nv">node</span> <span class="nv">i</span>.
+  <span class="nv">scientific_name</span>      <span class="o">|</span> <span class="nv">The</span> <span class="nv">genbank</span> <span class="nv">scientific</span> <span class="nv">name</span>
+                       <span class="o">|</span>   <span class="ss">(</span><span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="mi">1</span> <span class="nv">entry</span> <span class="nv">per</span> <span class="nv">node</span><span class="ss">)</span>
+                       <span class="o">|</span>   <span class="nv">scientific_name</span>{<span class="nv">i</span>} <span class="nv">is</span> <span class="nv">the</span> <span class="nv">entry</span> <span class="k">for</span> <span class="nv">node</span> <span class="nv">i</span>.
+  <span class="nv">synonym</span>              <span class="o">|</span> <span class="nv">A</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span> <span class="nv">with</span> <span class="nv">scientific</span> <span class="nv">name</span> <span class="nv">synonyms</span>
+                       <span class="o">|</span>   <span class="ss">(</span><span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="nv">potentially</span> <span class="nv">many</span> <span class="nv">entries</span> <span class="nv">per</span> <span class="nv">node</span><span class="ss">)</span>
+                       <span class="o">|</span>   <span class="nv">synonym</span>{<span class="nv">i</span>}{<span class="nv">j</span>} <span class="nv">is</span> <span class="nv">the</span> <span class="nv">jth</span> <span class="nv">synonym</span> <span class="k">for</span> <span class="nv">node</span> <span class="nv">i</span>
+  <span class="nv">other_commonname</span>     <span class="o">|</span> <span class="nv">A</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">other</span> <span class="nv">common</span> <span class="nv">names</span>
+                       <span class="o">|</span>   <span class="ss">(</span><span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">strings</span>, <span class="nv">potentially</span> <span class="nv">many</span> <span class="nv">entries</span> <span class="nv">per</span> <span class="nv">node</span><span class="ss">)</span>
+                       <span class="o">|</span>   <span class="nv">other_commonname</span>{<span class="nv">i</span>}{<span class="nv">j</span>} <span class="nv">is</span> <span class="nv">the</span> <span class="nv">jth</span> <span class="nv">other</span> <span class="nv">common</span> <span class="nv">name</span> <span class="k">for</span> <span class="nv">node</span> <span class="nv">i</span>
+</code></pre></div>
                 
               
               

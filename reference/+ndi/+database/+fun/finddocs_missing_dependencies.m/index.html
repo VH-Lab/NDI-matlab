@@ -4688,15 +4688,21 @@
                 
                 
                 <h1 id="ndidatabasefunfinddocs_missing_dependencies">ndi.database.fun.finddocs_missing_dependencies<a class="headerlink" href="#ndidatabasefunfinddocs_missing_dependencies" title="Permanent link">&para;</a></h1>
-<p>NDI_FINDDOCS_MISSING_DEPENDENCIES - find documents that have dependencies on documents that do not exist</p>
-<p>D = ndi.database.fun.finddocs_missing_dependencies(E)</p>
-<p>Searches the database of session E and returns all documents that have a 
-  dependency ('depends_on') field for which the 'value' field does not 
-  correspond to an existing document.</p>
-<p>The following form:</p>
-<p>D = ndi.database.fun.finddocs_missing_dependencies(E, NAME1, NAME2, ...)</p>
-<p>works similarly except that it only examines variables with depends_on
-  fields with names NAME1, NAME2, etc.</p>
+<div class="codehilite"><pre><span></span><code>  <span class="n">NDI_FINDDOCS_MISSING_DEPENDENCIES</span> <span class="o">-</span> <span class="n">find</span> <span class="n">documents</span> <span class="n">that</span> <span class="n">have</span> <span class="n">dependencies</span> <span class="n">on</span> <span class="n">documents</span> <span class="n">that</span> <span class="n">do</span> <span class="ow">not</span> <span class="n">exist</span>
+
+  <span class="n">D</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">finddocs_missing_dependencies</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+
+  <span class="n">Searches</span> <span class="n">the</span> <span class="n">database</span> <span class="n">of</span> <span class="n">session</span> <span class="n">E</span> <span class="ow">and</span> <span class="n">returns</span> <span class="n">all</span> <span class="n">documents</span> <span class="n">that</span> <span class="n">have</span> <span class="n">a</span> 
+  <span class="n">dependency</span> <span class="p">(</span><span class="s1">&#39;depends_on&#39;</span><span class="p">)</span> <span class="n">field</span> <span class="k">for</span> <span class="n">which</span> <span class="n">the</span> <span class="s1">&#39;value&#39;</span> <span class="n">field</span> <span class="n">does</span> <span class="ow">not</span> 
+  <span class="n">correspond</span> <span class="n">to</span> <span class="n">an</span> <span class="n">existing</span> <span class="n">document</span><span class="o">.</span>
+
+  <span class="n">The</span> <span class="n">following</span> <span class="n">form</span><span class="p">:</span>
+
+  <span class="n">D</span> <span class="o">=</span> <span class="n">ndi</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">fun</span><span class="o">.</span><span class="n">finddocs_missing_dependencies</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">NAME1</span><span class="p">,</span> <span class="n">NAME2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+  <span class="n">works</span> <span class="n">similarly</span> <span class="n">except</span> <span class="n">that</span> <span class="n">it</span> <span class="n">only</span> <span class="n">examines</span> <span class="n">variables</span> <span class="n">with</span> <span class="n">depends_on</span>
+  <span class="n">fields</span> <span class="n">with</span> <span class="n">names</span> <span class="n">NAME1</span><span class="p">,</span> <span class="n">NAME2</span><span class="p">,</span> <span class="n">etc</span><span class="o">.</span>
+</code></pre></div>
                 
               
               

@@ -4785,7 +4785,9 @@
                 
                 
                 <h1 id="class-ndisessiondir">CLASS ndi.session.dir<a class="headerlink" href="#class-ndisessiondir" title="Permanent link">&para;</a></h1>
-<p>NDI_SESSION_DIR - NDI_SESSION_DIR object class - an session with an associated file directory</p>
+<div class="codehilite"><pre><span></span><code>  NDI_SESSION_DIR - NDI_SESSION_DIR object class - an session with an associated file directory
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><strong><a href="../../session.m/">ndi.session</a></strong>, <strong>handle</strong></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4972,7 +4974,7 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>addlistener</strong> - <em>ADDLISTENER  Add listener for event.</em></p>
-<p>el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
+<p>```el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
     for the event named Eventname.  The source of the event is the handle 
     object hSource.  If hSource is an array of source handles, the listener
     responds to the named event on any handle in the array.  callbackFcn
@@ -5007,64 +5009,94 @@
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">addlistener</span>
 </code></pre></div>
 
-<hr />
-<p><strong>daqsystem_add</strong> - <em>Add a sampling device to a ndi.session object</em></p>
-<p>NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)</p>
-<p>Adds the device DEV to the ndi.session NDI_SESSION_OBJ</p>
-<p>The devices can be accessed by referencing NDI_SESSION_OBJ.device</p>
-<p>See also: DAQSYSTEM_RM, ndi.session.dir</p>
-<p>Help for ndi.session.dir/daqsystem_add is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">daqsystem_add</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Add</span> <span class="nv">a</span> <span class="nv">sampling</span> <span class="nv">device</span> <span class="nv">to</span> <span class="nv">a</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span><span class="o">*</span>
+
+```<span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DAQSYSTEM_ADD</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DEV</span><span class="ss">)</span>
+
+  <span class="nv">Adds</span> <span class="nv">the</span> <span class="nv">device</span> <span class="nv">DEV</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">NDI_SESSION_OBJ</span>
+
+  <span class="nv">The</span> <span class="nv">devices</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">accessed</span> <span class="nv">by</span> <span class="nv">referencing</span> <span class="nv">NDI_SESSION_OBJ</span>.<span class="nv">device</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">DAQSYSTEM_RM</span>, <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">daqsystem_add</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>daqsystem_clear</strong> - <em>remove all DAQSYSTEM objects from an ndi.session</em></p>
-<p>NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)</p>
+<p>```NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)</p>
 <p>Permanently removes all ndi.daq.system objects from an ndi.session.</p>
 <p>Be sure you mean it!</p>
 <p>Help for ndi.session.dir/daqsystem_clear is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>daqsystem_load</strong> - <em>Load daqsystem objects from an ndi.session</em></p>
-<p>DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
-          or
-  DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ)</p>
-<p>Returns the ndi.daq.system objects in the ndi.session with metadata parameters PARAMS1 that matches
-  VALUE1, PARAMS2 that matches VALUE2, etc.</p>
-<p>One can also search for 'name' as a parameter; this will be automatically changed to search
-  for database documents with fields 'ndi_document.name' equal to the corresponding value.</p>
-<p>If more than one object is requested, then DEV will be a cell list of matching objects.
-  Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.</p>
-<p>Help for ndi.session.dir/daqsystem_load is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="n">daqsystem_load</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">Load</span> <span class="n">daqsystem</span> <span class="n">objects</span> <span class="n">from</span> <span class="n">an</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">*</span>
+
+<span class="err">```</span><span class="n">DEV</span> <span class="o">=</span> <span class="n">DAQSYSTEM_LOAD</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span> <span class="n">PARAM1</span><span class="p">,</span> <span class="n">VALUE1</span><span class="p">,</span> <span class="n">PARAM2</span><span class="p">,</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+          <span class="ow">or</span>
+  <span class="n">DEV</span> <span class="o">=</span> <span class="n">DAQSYSTEM_LOAD</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">)</span>
+
+  <span class="n">Returns</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">system</span> <span class="n">objects</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span> <span class="n">with</span> <span class="n">metadata</span> <span class="n">parameters</span> <span class="n">PARAMS1</span> <span class="n">that</span> <span class="n">matches</span>
+  <span class="n">VALUE1</span><span class="p">,</span> <span class="n">PARAMS2</span> <span class="n">that</span> <span class="n">matches</span> <span class="n">VALUE2</span><span class="p">,</span> <span class="n">etc</span><span class="o">.</span>
+
+  <span class="n">One</span> <span class="n">can</span> <span class="n">also</span> <span class="n">search</span> <span class="k">for</span> <span class="s1">&#39;name&#39;</span> <span class="k">as</span> <span class="n">a</span> <span class="n">parameter</span><span class="p">;</span> <span class="n">this</span> <span class="n">will</span> <span class="n">be</span> <span class="n">automatically</span> <span class="n">changed</span> <span class="n">to</span> <span class="n">search</span>
+  <span class="k">for</span> <span class="n">database</span> <span class="n">documents</span> <span class="n">with</span> <span class="n">fields</span> <span class="s1">&#39;ndi_document.name&#39;</span> <span class="n">equal</span> <span class="n">to</span> <span class="n">the</span> <span class="n">corresponding</span> <span class="n">value</span><span class="o">.</span>
+
+  <span class="n">If</span> <span class="n">more</span> <span class="n">than</span> <span class="n">one</span> <span class="n">object</span> <span class="k">is</span> <span class="n">requested</span><span class="p">,</span> <span class="n">then</span> <span class="n">DEV</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">list</span> <span class="n">of</span> <span class="n">matching</span> <span class="n">objects</span><span class="o">.</span>
+  <span class="n">Otherwise</span><span class="p">,</span> <span class="n">the</span> <span class="n">object</span> <span class="n">will</span> <span class="n">be</span> <span class="n">a</span> <span class="n">single</span> <span class="n">element</span><span class="o">.</span> <span class="n">If</span> <span class="n">there</span> <span class="n">are</span> <span class="n">no</span> <span class="n">matches</span><span class="p">,</span> <span class="n">empty</span> <span class="p">([])</span> <span class="k">is</span> <span class="n">returned</span><span class="o">.</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">daqsystem_load</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>daqsystem_rm</strong> - <em>Remove a sampling device from an ndi.session object</em></p>
-<p>NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)</p>
+<p>```NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)</p>
 <p>Removes the device DEV from the device list.</p>
 <p>See also: DAQSYSTEM_ADD, ndi.session.dir</p>
 <p>Help for ndi.session.dir/daqsystem_rm is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>database_add</strong> - <em>Add an ndi.document to an ndi.session object</em></p>
-<p>NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)</p>
-<p>Adds the ndi.document NDI_DOCUMENT_OBJ to the ndi.session NDI_SESSION_OBJ.
-  NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will all be added
-  in turn.</p>
-<p>The database can be queried by calling NDI_SESSION_OBJ/SEARCH</p>
-<p>See also: DATABASE_RM, ndi.session.dir, ndi.database, ndi.session.dir/SEARCH</p>
-<p>Help for ndi.session.dir/database_add is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">database_add</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Add</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span><span class="o">*</span>
+
+```<span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_ADD</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">NDI_DOCUMENT_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Adds</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">NDI_DOCUMENT_OBJ</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">NDI_SESSION_OBJ</span>.
+  <span class="nv">NDI_DOCUMENT_OBJ</span> <span class="nv">can</span> <span class="nv">also</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">objects</span>, <span class="nv">which</span> <span class="nv">will</span> <span class="nv">all</span> <span class="nv">be</span> <span class="nv">added</span>
+  <span class="nv">in</span> <span class="nv">turn</span>.
+
+  <span class="nv">The</span> <span class="nv">database</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">queried</span> <span class="nv">by</span> <span class="nv">calling</span> <span class="nv">NDI_SESSION_OBJ</span><span class="o">/</span><span class="nv">SEARCH</span>
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">DATABASE_RM</span>, <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span>, <span class="nv">ndi</span>.<span class="nv">database</span>, <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">SEARCH</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">database_add</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>database_clear</strong> - <em>deletes/removes all entries from the database associated with an session</em></p>
-<p>DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)</p>
+<p>```DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)</p>
 <div class="codehilite"><pre><span></span><code>Removes all documents from the NDI_SESSION_OBJ object.
 </code></pre></div>
 
 <p>Use with care. If AREYOUSURE is 'yes' then the
   function will proceed. Otherwise, it will not.</p>
 <p>Help for ndi.session.dir/database_clear is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>database_closebinarydoc</strong> - <em>close and unlock an ndi.database.binarydoc</em></p>
-<p>[NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)</p>
-<p>Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
-  database, which is why it is necessary to call this function through the session object.</p>
-<p>Help for ndi.session.dir/database_closebinarydoc is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+
+<span class="o">**</span><span class="n">database_closebinarydoc</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">unlock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">binarydoc</span><span class="o">*</span><span class="w"></span>
+
+<span class="err">```</span><span class="o">[</span><span class="n">NDI_BINARYDOC_OBJ</span><span class="o">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">DATABASE_CLOSEBINARYDOC</span><span class="p">(</span><span class="n">NDI_DATABASE_OBJ</span><span class="p">,</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">Close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="w"> </span><span class="n">must</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">unlocked</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
+<span class="w">  </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">necessary</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">call</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">session</span><span class="w"> </span><span class="k">object</span><span class="p">.</span><span class="w"></span>
+
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">session</span><span class="p">.</span><span class="n">dir</span><span class="o">/</span><span class="n">database_closebinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">SESSION</span><span class="w"></span>
+</code></pre></div>
+
 <hr />
 <p><strong>database_openbinarydoc</strong> - <em>open the ndi.database.binarydoc channel of an ndi.document</em></p>
-<p>NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)</p>
+<p>```NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)</p>
 <div class="codehilite"><pre><span></span><code><span class="k">Return</span> <span class="nv">the</span> <span class="nv">open</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">binarydoc</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">corresponds</span> <span class="nv">to</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">and</span>
 <span class="nv">NDI_DOCUMENT_OR_ID</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">either</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">id</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">or</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">itsef</span>.
 </code></pre></div>
@@ -5073,82 +5105,101 @@
    The locked nature of the binary doc is a property of the database, not the document, which is why
    the database is needed in the method.</p>
 <p>Help for ndi.session.dir/database_openbinarydoc is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>database_rm</strong> - <em>Remove an ndi.document with a given document ID from an ndi.session object</em></p>
-<p>NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
-    or
-  NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC)</p>
-<p>Removes an ndi.document with document id DOC_UNIQUE_ID from the
-  NDI_SESSION_OBJ.database. In the second form, if an ndi.document or cell array of
-  NDI_DOCUMENTS is passed for DOC, then the document unique ids are retrieved and they
-  are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is taken.</p>
-<p>This function also takes parameters as name/value pairs that modify its behavior:
-  Parameter (default)        | Description</p>
-<hr />
-<p>ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.</p>
-<p>See also: DATABASE_ADD, ndi.session.dir</p>
-<p>Help for ndi.session.dir/database_rm is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">database_rm</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Remove</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">given</span> <span class="nv">document</span> <span class="nv">ID</span> <span class="nv">from</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span> <span class="nv">object</span><span class="o">*</span>
+
+```<span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_RM</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DOC_UNIQUE_ID</span><span class="ss">)</span>
+    <span class="nv">or</span>
+  <span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">DATABASE_RM</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">DOC</span><span class="ss">)</span>
+
+  <span class="nv">Removes</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">with</span> <span class="nv">document</span> <span class="nv">id</span> <span class="nv">DOC_UNIQUE_ID</span> <span class="nv">from</span> <span class="nv">the</span>
+  <span class="nv">NDI_SESSION_OBJ</span>.<span class="nv">database</span>. <span class="nv">In</span> <span class="nv">the</span> <span class="nv">second</span> <span class="nv">form</span>, <span class="k">if</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">or</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span>
+  <span class="nv">NDI_DOCUMENTS</span> <span class="nv">is</span> <span class="nv">passed</span> <span class="k">for</span> <span class="nv">DOC</span>, <span class="k">then</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">ids</span> <span class="nv">are</span> <span class="nv">retrieved</span> <span class="nv">and</span> <span class="nv">they</span>
+  <span class="nv">are</span> <span class="nv">removed</span> <span class="nv">in</span> <span class="nv">turn</span>.  <span class="k">If</span> <span class="nv">DOC</span><span class="o">/</span><span class="nv">DOC_UNIQUE_ID</span> <span class="nv">is</span> <span class="nv">empty</span>, <span class="nv">no</span> <span class="nv">action</span> <span class="nv">is</span> <span class="nv">taken</span>.
+
+  <span class="nv">This</span> <span class="nv">function</span> <span class="nv">also</span> <span class="nv">takes</span> <span class="nv">parameters</span> <span class="nv">as</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span> <span class="nv">that</span> <span class="nv">modify</span> <span class="nv">its</span> <span class="nv">behavior</span>:
+  <span class="nv">Parameter</span> <span class="ss">(</span><span class="nv">default</span><span class="ss">)</span>        <span class="o">|</span> <span class="nv">Description</span>
+  <span class="o">--------------------------------------------------------------------------------</span>
+  <span class="nv">ErrIfNotFound</span> <span class="ss">(</span><span class="mi">0</span><span class="ss">)</span>          <span class="o">|</span> <span class="nv">Produce</span> <span class="nv">an</span> <span class="nv">error</span> <span class="k">if</span> <span class="nv">an</span> <span class="nv">ID</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">deleted</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">found</span>.
+
+  <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">DATABASE_ADD</span>, <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">database_rm</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>database_search</strong> - <em>Search for an ndi.document in a database of an ndi.session object</em></p>
-<p>NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)</p>
+<p>```NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)</p>
 <p>Given search parameters, which are a cell list {'PARAM1', VALUE1, 'PARAM2, VALUE2, ...},
   the database associated with the ndi.session object is searched.</p>
 <p>Matches are returned in a cell list NDI_DOCUMENT_OBJ.</p>
 <p>Help for ndi.session.dir/database_search is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>delete</strong> - <em>DELETE   Delete a handle object.</em></p>
-<p>DELETE(H) deletes all handle objects in array H. After the delete 
-    function call, H is an array of invalid objects.</p>
-<div class="codehilite"><pre><span></span><code>See also NDI.SESSION.DIR, NDI.SESSION.DIR/ISVALID, CLEAR
-</code></pre></div>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<p>Help for ndi.session.dir/delete is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">delete</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">delete</span>
+<span class="o">**</span><span class="nv">delete</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">DELETE</span>   <span class="nv">Delete</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">object</span>.<span class="o">*</span>
+
+```<span class="nv">DELETE</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">deletes</span> <span class="nv">all</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">in</span> <span class="nv">array</span> <span class="nv">H</span>. <span class="nv">After</span> <span class="nv">the</span> <span class="nv">delete</span> 
+    <span class="nv">function</span> <span class="nv">call</span>, <span class="nv">H</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">invalid</span> <span class="nv">objects</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">ISVALID</span>, <span class="nv">CLEAR</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">delete</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">delete</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">delete</span>
 </code></pre></div>
 
 <hr />
 <p><strong>dir</strong> - <em>Create a new ndi.session.dir ndi_session_dir_object</em></p>
-<p>E = ndi.session.dir(REFERENCE, PATHNAME)</p>
+<p>```E = ndi.session.dir(REFERENCE, PATHNAME)</p>
 <p>Creates an ndi.session.dir ndi_session_dir_object, or an session with an
   associated directory. REFERENCE should be a unique reference for the
   session and directory PATHNAME.</p>
 <p>One can also open an existing session by using</p>
 <p>E = ndi.session.dir(PATHNAME)</p>
 <p>See also: ndi.session, ndi.session.dir/GETPATH</p>
-<hr />
-<p><strong>eq</strong> - <em>Are two ndi.session.dir objects equivalent?</em></p>
-<p>B = EQ(NDI_SESSION_DIR_OBJ_A, NDI_SESSION_DIR_OBJ_B)</p>
-<p>Returns 1 if the two ndi.session.dir objects have the same
-  path and reference fields. They do not have to be the same handles
-  (that is, have the same location in memory).</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">eq</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">Are</span> <span class="nv">two</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span> <span class="nv">objects</span> <span class="nv">equivalent</span>?<span class="o">*</span>
+
+```<span class="nv">B</span> <span class="o">=</span> <span class="nv">EQ</span><span class="ss">(</span><span class="nv">NDI_SESSION_DIR_OBJ_A</span>, <span class="nv">NDI_SESSION_DIR_OBJ_B</span><span class="ss">)</span>
+
+  <span class="nv">Returns</span> <span class="mi">1</span> <span class="k">if</span> <span class="nv">the</span> <span class="nv">two</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span> <span class="nv">objects</span> <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span>
+  <span class="nv">path</span> <span class="nv">and</span> <span class="nv">reference</span> <span class="nv">fields</span>. <span class="nv">They</span> <span class="k">do</span> <span class="nv">not</span> <span class="nv">have</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">handles</span>
+  <span class="ss">(</span><span class="nv">that</span> <span class="nv">is</span>, <span class="nv">have</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">location</span> <span class="nv">in</span> <span class="nv">memory</span><span class="ss">)</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>findexpobj</strong> - <em>search an ndi.session for a specific object given name and classname</em></p>
-<p>OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)</p>
+<p>```OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)</p>
 <p>Examines the DAQSYSTEM list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
   and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).</p>
 <p>Help for ndi.session.dir/findexpobj is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>findobj</strong> - <em>FINDOBJ   Find objects matching specified conditions.</em></p>
-<p>The FINDOBJ method of the HANDLE class follows the same syntax as the 
-    MATLAB FINDOBJ command, except that the first argument must be an array
-    of handles to objects.</p>
-<div class="codehilite"><pre><span></span><code>HM = FINDOBJ(H, &lt;conditions&gt;) searches the handle object array H and 
-returns an array of handle objects matching the specified conditions.
-Only the public members of the objects of H are considered when 
-evaluating the conditions.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-See also FINDOBJ, NDI.SESSION.DIR
-</code></pre></div>
+<span class="o">**</span><span class="nv">findobj</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">FINDOBJ</span>   <span class="nv">Find</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">specified</span> <span class="nv">conditions</span>.<span class="o">*</span>
 
-<p>Help for ndi.session.dir/findobj is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">findobj</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
+```<span class="nv">The</span> <span class="nv">FINDOBJ</span> <span class="nv">method</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">HANDLE</span> <span class="nv">class</span> <span class="nv">follows</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">syntax</span> <span class="nv">as</span> <span class="nv">the</span> 
+    <span class="nv">MATLAB</span> <span class="nv">FINDOBJ</span> <span class="nv">command</span>, <span class="nv">except</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">first</span> <span class="nv">argument</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">an</span> <span class="nv">array</span>
+    <span class="nv">of</span> <span class="nv">handles</span> <span class="nv">to</span> <span class="nv">objects</span>.
+
+    <span class="nv">HM</span> <span class="o">=</span> <span class="nv">FINDOBJ</span><span class="ss">(</span><span class="nv">H</span>, <span class="o">&lt;</span><span class="nv">conditions</span><span class="o">&gt;</span><span class="ss">)</span> <span class="nv">searches</span> <span class="nv">the</span> <span class="nv">handle</span> <span class="nv">object</span> <span class="nv">array</span> <span class="nv">H</span> <span class="nv">and</span> 
+    <span class="nv">returns</span> <span class="nv">an</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">handle</span> <span class="nv">objects</span> <span class="nv">matching</span> <span class="nv">the</span> <span class="nv">specified</span> <span class="nv">conditions</span>.
+    <span class="nv">Only</span> <span class="nv">the</span> <span class="nv">public</span> <span class="nv">members</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">objects</span> <span class="nv">of</span> <span class="nv">H</span> <span class="nv">are</span> <span class="nv">considered</span> <span class="nv">when</span> 
+    <span class="nv">evaluating</span> <span class="nv">the</span> <span class="nv">conditions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">FINDOBJ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">findobj</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">findobj</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findobj</span>
 </code></pre></div>
 
 <hr />
 <p><strong>findprop</strong> - <em>FINDPROP   Find property of MATLAB handle object.</em></p>
-<p>p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
+<p>```p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
     associated with property name PROPNAME of scalar handle object H.
     PROPNAME can be a string scalar or character vector.  It can be the 
     name of a property defined by the class of H or a dynamic property 
@@ -5164,29 +5215,32 @@ See also FINDOBJ, NDI.SESSION.DIR
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">findprop</span>
 </code></pre></div>
 
-<hr />
-<p><strong>ge</strong> - <em>&gt;= (GE)   Greater than or equal relation for handles.</em></p>
-<p>H1 &gt;= H2 performs element-wise comparisons between handle arrays H1 and
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt;= result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+<span class="o">**</span><span class="nv">ge</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&gt;=</span> <span class="ss">(</span><span class="nv">GE</span><span class="ss">)</span>   <span class="nv">Greater</span> <span class="nv">than</span> <span class="nv">or</span> <span class="nv">equal</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+```<span class="nv">H1</span> <span class="o">&gt;=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span>
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;=</span> <span class="nb">result</span>.
 
-<p>Help for ndi.session.dir/ge is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">ge</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GE</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">GT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">ge</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">ge</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ge</span>
 </code></pre></div>
 
 <hr />
 <p><strong>getelements</strong> - <em>Return all ndi.element objects that are found in session database</em></p>
-<p>ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)</p>
+<p>```ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)</p>
 <p>Examines all the database of NDI_SESSION_OBJ and returns all ndi.element
   entries.</p>
 <p>ELEMENTS is a cell array of ndi.element.* objects.</p>
@@ -5195,15 +5249,21 @@ See also FINDOBJ, NDI.SESSION.DIR
   has a value of VALUE2, etc. Properties of elements are 'element.name', 'element.type',
   'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.</p>
 <p>Help for ndi.session.dir/getelements is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>getpath</strong> - <em>Return the path of the session</em></p>
-<p>P = GETPATH(NDI_SESSION_DIR_OBJ)</p>
-<p>Returns the path of an ndi.session.dir object.</p>
-<p>The path is some sort of reference to the storage location of
-  the session. This might be a URL, or a file directory.</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">getpath</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">Return</span> <span class="nv">the</span> <span class="nv">path</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">session</span><span class="o">*</span>
+
+```<span class="nv">P</span> <span class="o">=</span> <span class="nv">GETPATH</span><span class="ss">(</span><span class="nv">NDI_SESSION_DIR_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">path</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span> <span class="nv">object</span>.
+
+  <span class="nv">The</span> <span class="nv">path</span> <span class="nv">is</span> <span class="nv">some</span> <span class="nv">sort</span> <span class="nv">of</span> <span class="nv">reference</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">storage</span> <span class="nv">location</span> <span class="nv">of</span>
+  <span class="nv">the</span> <span class="nv">session</span>. <span class="nv">This</span> <span class="nv">might</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">URL</span>, <span class="nv">or</span> <span class="nv">a</span> <span class="nv">file</span> <span class="nv">directory</span>.
+</code></pre></div>
+
 <hr />
 <p><strong>getprobes</strong> - <em>Return all NDI_PROBES that are found in ndi.daq.system epoch contents entries</em></p>
-<p>PROBES = GETPROBES(NDI_SESSION_OBJ, ...)</p>
+<p>```PROBES = GETPROBES(NDI_SESSION_OBJ, ...)</p>
 <p>Examines all ndi.daq.system entries in the NDI_SESSION_OBJ's device array
   and returns all ndi.probe.* entries that can be constructed from each device's
   ndi.epoch.epochprobemap entries.</p>
@@ -5217,51 +5277,57 @@ See also FINDOBJ, NDI.SESSION.DIR
 <p>returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
   has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_ID'.</p>
 <p>Help for ndi.session.dir/getprobes is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>gt</strong> - <em>&gt; (GT)   Greater than relation for handles.</em></p>
-<p>H1 &gt; H2 performs element-wise comparisons between handle arrays H1 and 
-    H2.  H1 and H2 must be of the same dimensions unless one is a scalar.<br />
-    The result is a logical array of the same dimensions, where each
-    element is an element-wise &gt; result.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
-<span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
-<span class="nv">dimensions</span>.
+<span class="o">**</span><span class="nv">gt</span><span class="o">**</span> <span class="o">-</span> <span class="o">*&gt;</span> <span class="ss">(</span><span class="nv">GT</span><span class="ss">)</span>   <span class="nv">Greater</span> <span class="nv">than</span> <span class="nv">relation</span> <span class="k">for</span> <span class="nv">handles</span>.<span class="o">*</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">NE</span>
-</code></pre></div>
+```<span class="nv">H1</span> <span class="o">&gt;</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> <span class="nv">and</span> 
+    <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">scalar</span>.  
+    <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span>, <span class="nv">where</span> <span class="nv">each</span>
+    <span class="nv">element</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="o">&gt;</span> <span class="nb">result</span>.
 
-<p>Help for ndi.session.dir/gt is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">gt</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
+    <span class="k">If</span> <span class="nv">one</span> <span class="nv">of</span> <span class="nv">H1</span> <span class="nv">or</span> <span class="nv">H2</span> <span class="nv">is</span> <span class="nv">scalar</span>, <span class="nv">scalar</span> <span class="nv">expansion</span> <span class="nv">is</span> <span class="nv">performed</span> <span class="nv">and</span> <span class="nv">the</span> 
+    <span class="nb">result</span> <span class="nv">will</span> <span class="nv">match</span> <span class="nv">the</span> <span class="nv">dimensions</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">array</span> <span class="nv">that</span> <span class="nv">is</span> <span class="nv">not</span> <span class="nv">scalar</span>.
+
+    <span class="nv">TF</span> <span class="o">=</span> <span class="nv">GT</span><span class="ss">(</span><span class="nv">H1</span>, <span class="nv">H2</span><span class="ss">)</span> <span class="nv">stores</span> <span class="nv">the</span> <span class="nb">result</span> <span class="nv">in</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">EQ</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">GE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LE</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">LT</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">NE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">gt</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">gt</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">gt</span>
 </code></pre></div>
 
 <hr />
 <p><strong>id</strong> - <em>return the identifier of an ndi.session object</em></p>
-<p>IDENTIFIER = ID(NDI_SESSION_OBJ)</p>
+<p>```IDENTIFIER = ID(NDI_SESSION_OBJ)</p>
 <p>Returns the unique identifier of an ndi.session object.</p>
 <p>Help for ndi.session.dir/id is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>isvalid</strong> - <em>ISVALID   Test handle validity.</em></p>
-<p>TF = ISVALID(H) performs an element-wise check for validity on the 
-    handle elements of H.  The result is a logical array of the same 
-    dimensions as H, where each element is the element-wise validity 
-    result.</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
-<span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">DELETE</span>
-</code></pre></div>
+<span class="o">**</span><span class="nv">isvalid</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">ISVALID</span>   <span class="nv">Test</span> <span class="nv">handle</span> <span class="nv">validity</span>.<span class="o">*</span>
 
-<p>Help for ndi.session.dir/isvalid is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">isvalid</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
+```<span class="nv">TF</span> <span class="o">=</span> <span class="nv">ISVALID</span><span class="ss">(</span><span class="nv">H</span><span class="ss">)</span> <span class="nv">performs</span> <span class="nv">an</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">check</span> <span class="k">for</span> <span class="nv">validity</span> <span class="nv">on</span> <span class="nv">the</span> 
+    <span class="nv">handle</span> <span class="nv">elements</span> <span class="nv">of</span> <span class="nv">H</span>.  <span class="nv">The</span> <span class="nb">result</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">logical</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> 
+    <span class="nv">dimensions</span> <span class="nv">as</span> <span class="nv">H</span>, <span class="nv">where</span> <span class="nv">each</span> <span class="nv">element</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">validity</span> 
+    <span class="nb">result</span>.
+
+    <span class="nv">A</span> <span class="nv">handle</span> <span class="nv">is</span> <span class="nv">invalid</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">has</span> <span class="nv">been</span> <span class="nv">deleted</span> <span class="nv">or</span> <span class="k">if</span> <span class="nv">it</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">element</span>
+    <span class="nv">of</span> <span class="nv">a</span> <span class="nv">handle</span> <span class="nv">array</span> <span class="nv">and</span> <span class="nv">has</span> <span class="nv">not</span> <span class="nv">yet</span> <span class="nv">been</span> <span class="nv">initialized</span>.
+
+    <span class="nv">See</span> <span class="nv">also</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span>, <span class="nv">NDI</span>.<span class="nv">SESSION</span>.<span class="nv">DIR</span><span class="o">/</span><span class="nv">DELETE</span>
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">isvalid</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">HANDLE</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">isvalid</span>
+       <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">isvalid</span>
 </code></pre></div>
 
 <hr />
 <p><strong>le</strong> - <em>&lt;= (LE)   Less than or equal relation for handles.</em></p>
-<p>Handles are equal if they are handles for the same object.  All 
+<p>```Handles are equal if they are handles for the same object.  All 
     comparisons use a number associated with each handle object.  Nothing
     can be assumed about the result of a handle comparison except that the
     repeated comparison of two handles in the same MATLAB session will 
@@ -5287,51 +5353,54 @@ See also FINDOBJ, NDI.SESSION.DIR
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">le</span>
 </code></pre></div>
 
-<hr />
-<p><strong>listener</strong> - <em>LISTENER  Add listener for event without binding the listener to the source object.</em></p>
-<p>el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
-    for the event named Eventname.  The source of the event is the handle<br />
-    object hSource.  If hSource is an array of source handles, the listener
-    responds to the named event on any handle in the array.  callbackFcn
-    is a function handle that is invoked when the event is triggered.</p>
-<div class="codehilite"><pre><span></span><code><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
-<span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
-<span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
-<span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
-<span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
-<span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
-<span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
-<span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
-<span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
-<span class="n">properties</span><span class="o">.</span>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
 
-<span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
-<span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
-<span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
-<span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span>
+<span class="o">**</span><span class="n">listener</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="n">LISTENER</span>  <span class="n">Add</span> <span class="n">listener</span> <span class="k">for</span> <span class="n">event</span> <span class="n">without</span> <span class="n">binding</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.*</span>
 
-<span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
-<span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
-<span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
-<span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
-<span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
-<span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
-<span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+<span class="err">```</span><span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callbackFcn</span><span class="p">)</span> <span class="n">creates</span> <span class="n">a</span> <span class="n">listener</span>
+    <span class="k">for</span> <span class="n">the</span> <span class="n">event</span> <span class="n">named</span> <span class="n">Eventname</span><span class="o">.</span>  <span class="n">The</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">the</span> <span class="n">handle</span>  
+    <span class="n">object</span> <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">source</span> <span class="n">handles</span><span class="p">,</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">responds</span> <span class="n">to</span> <span class="n">the</span> <span class="n">named</span> <span class="n">event</span> <span class="n">on</span> <span class="n">any</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">array</span><span class="o">.</span>  <span class="n">callbackFcn</span>
+    <span class="k">is</span> <span class="n">a</span> <span class="n">function</span> <span class="n">handle</span> <span class="n">that</span> <span class="k">is</span> <span class="n">invoked</span> <span class="n">when</span> <span class="n">the</span> <span class="n">event</span> <span class="k">is</span> <span class="n">triggered</span><span class="o">.</span>
 
-<span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="o">.</span><span class="n">DIR</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
-</code></pre></div>
+    <span class="n">el</span> <span class="o">=</span> <span class="n">LISTENER</span><span class="p">(</span><span class="n">hSource</span><span class="p">,</span> <span class="n">PropName</span><span class="p">,</span> <span class="n">Eventname</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span> <span class="n">adds</span> <span class="n">a</span> 
+    <span class="n">listener</span> <span class="k">for</span> <span class="n">a</span> <span class="n">property</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Eventname</span> <span class="n">must</span> <span class="n">be</span> <span class="n">one</span> <span class="n">of</span>  
+    <span class="s1">&#39;PreGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PostGet&#39;</span><span class="p">,</span> <span class="s1">&#39;PreSet&#39;</span><span class="p">,</span> <span class="ow">or</span> <span class="s1">&#39;PostSet&#39;</span><span class="o">.</span> <span class="n">Eventname</span> <span class="n">can</span> <span class="n">be</span> <span class="n">a</span> 
+    <span class="n">string</span> <span class="n">sclar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="o">.</span>  <span class="n">PropName</span> <span class="n">must</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="n">single</span> 
+    <span class="n">property</span> <span class="n">name</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">string</span> <span class="n">scalar</span> <span class="ow">or</span> <span class="n">character</span> <span class="n">vector</span><span class="p">,</span> <span class="ow">or</span> 
+    <span class="n">a</span> <span class="n">collection</span> <span class="n">of</span> <span class="n">property</span> <span class="n">names</span> <span class="n">specified</span> <span class="k">as</span> <span class="n">a</span> <span class="n">cell</span> <span class="n">array</span> <span class="n">of</span> <span class="n">character</span> 
+    <span class="n">vectors</span> <span class="ow">or</span> <span class="n">a</span> <span class="n">string</span> <span class="n">array</span><span class="p">,</span> <span class="ow">or</span> <span class="k">as</span> <span class="n">an</span> <span class="n">array</span> <span class="n">of</span> <span class="n">one</span> <span class="n">ore</span> <span class="n">more</span> 
+    <span class="n">meta</span><span class="o">.</span><span class="n">property</span> <span class="n">objects</span><span class="o">.</span> <span class="n">The</span> <span class="n">properties</span> <span class="n">must</span> <span class="n">belong</span> <span class="n">to</span> <span class="n">the</span> <span class="k">class</span> <span class="n">of</span> 
+    <span class="n">hSource</span><span class="o">.</span>  <span class="n">If</span> <span class="n">hSource</span> <span class="k">is</span> <span class="n">scalar</span><span class="p">,</span> <span class="n">PropName</span> <span class="n">can</span> <span class="n">include</span> <span class="n">dynamic</span> 
+    <span class="n">properties</span><span class="o">.</span>
 
-<p>Help for ndi.session.dir/listener is inherited from superclass HANDLE</p>
-<div class="codehilite"><pre><span></span><code><span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">listener</span>
-   <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">listener</span>
+    <span class="n">For</span> <span class="n">all</span> <span class="n">forms</span><span class="p">,</span> <span class="n">listener</span> <span class="n">returns</span> <span class="n">an</span> <span class="n">event</span><span class="o">.</span><span class="n">listener</span><span class="o">.</span>  <span class="n">To</span> <span class="n">remove</span> <span class="n">a</span>
+    <span class="n">listener</span><span class="p">,</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">object</span> <span class="n">returned</span> <span class="n">by</span> <span class="n">listener</span><span class="o">.</span>  <span class="n">For</span> <span class="n">example</span><span class="p">,</span>
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">calls</span> <span class="n">the</span> <span class="n">handle</span> <span class="k">class</span> <span class="n">delete</span> <span class="n">method</span> <span class="n">to</span> <span class="n">remove</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="ow">and</span> <span class="n">delete</span> <span class="n">it</span> <span class="n">from</span> <span class="n">the</span> <span class="n">workspace</span><span class="o">.</span>  <span class="n">Calling</span> <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">on</span> <span class="n">the</span> <span class="n">listener</span>
+    <span class="n">object</span> <span class="n">deletes</span> <span class="n">the</span> <span class="n">listener</span><span class="p">,</span> <span class="n">which</span> <span class="n">means</span> <span class="n">the</span> <span class="n">event</span> <span class="n">no</span> <span class="n">longer</span> <span class="n">causes</span>
+    <span class="n">the</span> <span class="n">callback</span> <span class="n">function</span> <span class="n">to</span> <span class="n">execute</span><span class="o">.</span> 
+
+    <span class="n">LISTENER</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">bind</span> <span class="n">the</span> <span class="n">listener</span><span class="s1">&#39;s lifecycle to the object that is</span>
+    <span class="n">the</span> <span class="n">source</span> <span class="n">of</span> <span class="n">the</span> <span class="n">event</span><span class="o">.</span>  <span class="n">Destroying</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">impact</span>
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">object</span><span class="o">.</span>  <span class="n">A</span> <span class="n">listener</span> <span class="n">created</span> <span class="n">with</span> <span class="n">LISTENER</span>
+    <span class="n">must</span> <span class="n">be</span> <span class="n">destroyed</span> <span class="n">independently</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="o">.</span>  <span class="n">Calling</span> 
+    <span class="n">delete</span><span class="p">(</span><span class="n">el</span><span class="p">)</span> <span class="n">explicitly</span> <span class="n">destroys</span> <span class="n">the</span> <span class="n">listener</span><span class="o">.</span> <span class="n">Redefining</span> <span class="ow">or</span> <span class="n">clearing</span> 
+    <span class="n">the</span> <span class="n">variable</span> <span class="n">containing</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">can</span> <span class="n">delete</span> <span class="n">the</span> <span class="n">listener</span> <span class="k">if</span> <span class="n">no</span> 
+    <span class="n">other</span> <span class="n">references</span> <span class="n">to</span> <span class="n">it</span> <span class="n">exist</span><span class="o">.</span>  <span class="n">To</span> <span class="n">tie</span> <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">listener</span> <span class="n">to</span> 
+    <span class="n">the</span> <span class="n">lifecycle</span> <span class="n">of</span> <span class="n">the</span> <span class="n">source</span> <span class="n">object</span><span class="p">,</span> <span class="n">use</span> <span class="n">addlistener</span><span class="o">.</span>
+
+    <span class="n">See</span> <span class="n">also</span> <span class="n">ADDLISTENER</span><span class="p">,</span> <span class="n">EVENT</span><span class="o">.</span><span class="n">LISTENER</span><span class="p">,</span> <span class="n">NDI</span><span class="o">.</span><span class="n">SESSION</span><span class="o">.</span><span class="n">DIR</span><span class="p">,</span> <span class="n">NOTIFY</span><span class="p">,</span> <span class="n">DELETE</span><span class="p">,</span> <span class="n">META</span><span class="o">.</span><span class="n">PROPERTY</span><span class="p">,</span> <span class="n">EVENTS</span>
+
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">listener</span> <span class="k">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">HANDLE</span>
+
+    <span class="n">Documentation</span> <span class="k">for</span> <span class="n">ndi</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">dir</span><span class="o">/</span><span class="n">listener</span>
+       <span class="n">doc</span> <span class="n">handle</span><span class="o">.</span><span class="n">listener</span>
 </code></pre></div>
 
 <hr />
 <p><strong>lt</strong> - <em>&lt; (LT)   Less than relation for handles.</em></p>
-<p>H1 &lt; H2 performs element-wise comparisons between handle arrays H1 and
+<p>```H1 &lt; H2 performs element-wise comparisons between handle arrays H1 and
     H2.  H1 and H2 must be of the same dimensions unless one is a scalar.
     The result is a logical array of the same dimensions, where each
     element is an element-wise &lt; result.</p>
@@ -5349,14 +5418,20 @@ See also FINDOBJ, NDI.SESSION.DIR
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">lt</span>
 </code></pre></div>
 
-<hr />
-<p><strong>ndipathname</strong> - <em>Return the path of the NDI files within the session</em></p>
-<p>P = NDIPATHNAME(NDI_SESSION_DIR_OBJ)</p>
-<p>Returns the pathname to the NDI files in the ndi.session.dir object.</p>
-<p>It is the ndi.session.dir object's path plus [filesep '.ndi' ]</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">ndipathname</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="k">Return</span> <span class="nv">the</span> <span class="nv">path</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">NDI</span> <span class="nv">files</span> <span class="nv">within</span> <span class="nv">the</span> <span class="nv">session</span><span class="o">*</span>
+
+```<span class="nv">P</span> <span class="o">=</span> <span class="nv">NDIPATHNAME</span><span class="ss">(</span><span class="nv">NDI_SESSION_DIR_OBJ</span><span class="ss">)</span>
+
+  <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">pathname</span> <span class="nv">to</span> <span class="nv">the</span> <span class="nv">NDI</span> <span class="nv">files</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span> <span class="nv">object</span>.
+
+  <span class="nv">It</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span> <span class="nv">object</span><span class="s1">&#39;</span><span class="s">s path plus [filesep </span><span class="s1">&#39;</span>.<span class="nv">ndi</span><span class="s1">&#39;</span><span class="s"> ]</span>
+</code></pre></div>
+
 <hr />
 <p><strong>ne</strong> - <em>~= (NE)   Not equal relation for handles.</em></p>
-<p>Handles are equal if they are handles for the same object and are 
+<p>```Handles are equal if they are handles for the same object and are 
     unequal otherwise.</p>
 <div class="codehilite"><pre><span></span><code><span class="nv">H1</span> <span class="o">~=</span> <span class="nv">H2</span> <span class="nv">performs</span> <span class="nv">element</span><span class="o">-</span><span class="nv">wise</span> <span class="nv">comparisons</span> <span class="nv">between</span> <span class="nv">handle</span> <span class="nv">arrays</span> <span class="nv">H1</span> 
 <span class="nv">and</span> <span class="nv">H2</span>.  <span class="nv">H1</span> <span class="nv">and</span> <span class="nv">H2</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">same</span> <span class="nv">dimensions</span> <span class="nv">unless</span> <span class="nv">one</span> <span class="nv">is</span> <span class="nv">a</span> 
@@ -5377,20 +5452,28 @@ See also FINDOBJ, NDI.SESSION.DIR
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">ne</span>
 </code></pre></div>
 
-<hr />
-<p><strong>newdocument</strong> - <em>create a new ndi.database document of type ndi.document</em></p>
-<p>NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VALUE1, ...)</p>
-<p>Creates an empty database document NDI_DOCUMENT_OBJ. DOCUMENT_TYPE is
-  an optional argument and can be any type that confirms to the .json
-  files in $NDI_COMMON/database_documents/*, a URL to such a file, or
-  a full path filename. If DOCUMENT_TYPE is not specified, it is taken
-  to be 'ndi_document.json'.</p>
-<p>If additional PROPERTY values are specified, they are set to the VALUES indicated.</p>
-<p>Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');</p>
-<p>Help for ndi.session.dir/newdocument is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span><span class="w"></span>
+
+<span class="o">**</span><span class="n">newdocument</span><span class="o">**</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="o">*</span><span class="k">create</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="k">new</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="o">*</span><span class="w"></span>
+
+<span class="err">```</span><span class="n">NDI_DOCUMENT_OBJ</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">NEWDOCUMENT</span><span class="p">(</span><span class="n">NDI_SESSION_OBJ</span><span class="p">,</span><span class="w"> </span><span class="o">[</span><span class="n">DOCUMENT_TYPE</span><span class="o">]</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;PROPERTY1&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">VALUE1</span><span class="p">,</span><span class="w"> </span><span class="p">...)</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Creates</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">empty</span><span class="w"> </span><span class="k">database</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="n">NDI_DOCUMENT_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">DOCUMENT_TYPE</span><span class="w"> </span><span class="k">is</span><span class="w"></span>
+<span class="w">  </span><span class="n">an</span><span class="w"> </span><span class="n">optional</span><span class="w"> </span><span class="n">argument</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">can</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="ow">any</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">confirms</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="p">.</span><span class="n">json</span><span class="w"></span>
+<span class="w">  </span><span class="n">files</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="err">$</span><span class="n">NDI_COMMON</span><span class="o">/</span><span class="n">database_documents</span><span class="cm">/*, a URL to such a file, or</span>
+<span class="cm">  a full path filename. If DOCUMENT_TYPE is not specified, it is taken</span>
+<span class="cm">  to be &#39;ndi_document.json&#39;.</span>
+
+<span class="cm">  If additional PROPERTY values are specified, they are set to the VALUES indicated.</span>
+
+<span class="cm">  Example: mydoc = ndi_session_obj.newdocument(&#39;ndi_document&#39;,&#39;ndi_document.name&#39;,&#39;myname&#39;);</span>
+
+<span class="cm">Help for ndi.session.dir/newdocument is inherited from superclass NDI.SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>notify</strong> - <em>NOTIFY   Notify listeners of event.</em></p>
-<p>NOTIFY(H, eventname) notifies listeners added to the event named 
+<p>```NOTIFY(H, eventname) notifies listeners added to the event named 
     eventname for handle object array H that the event is taking place. 
     eventname can be a string scalar or character vector.<br />
     H is the array of handles to the event source objects, and 'eventname'
@@ -5407,33 +5490,48 @@ See also FINDOBJ, NDI.SESSION.DIR
    <span class="nv">doc</span> <span class="nv">handle</span>.<span class="nv">notify</span>
 </code></pre></div>
 
-<hr />
-<p><strong>searchquery</strong> - <em>return a search query for database objects in this session</em></p>
-<p>SQ = SEARCHQUERY(NDI_SESSION_OBJ)</p>
-<p>Returns a search query that will match all ndi.document objects that were generated
-  by this session.</p>
-<p>SQ = {'ndi_document.session_id', ndi_session_obj.id()};</p>
-<p>Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');</p>
-<p>Help for ndi.session.dir/searchquery is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="nt">---</span>
+
+<span class="o">**</span><span class="nt">searchquery</span><span class="o">**</span> <span class="nt">-</span> <span class="o">*</span><span class="nt">return</span> <span class="nt">a</span> <span class="nt">search</span> <span class="nt">query</span> <span class="nt">for</span> <span class="nt">database</span> <span class="nt">objects</span> <span class="nt">in</span> <span class="nt">this</span> <span class="nt">session</span><span class="o">*</span>
+
+<span class="err">```</span><span class="nt">SQ</span> <span class="o">=</span> <span class="nt">SEARCHQUERY</span><span class="o">(</span><span class="nt">NDI_SESSION_OBJ</span><span class="o">)</span>
+
+  <span class="nt">Returns</span> <span class="nt">a</span> <span class="nt">search</span> <span class="nt">query</span> <span class="nt">that</span> <span class="nt">will</span> <span class="nt">match</span> <span class="nt">all</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">document</span> <span class="nt">objects</span> <span class="nt">that</span> <span class="nt">were</span> <span class="nt">generated</span>
+  <span class="nt">by</span> <span class="nt">this</span> <span class="nt">session</span><span class="o">.</span>
+
+  <span class="nt">SQ</span> <span class="o">=</span> <span class="p">{</span><span class="err">&#39;ndi_document.session_id&#39;,</span> <span class="err">ndi_session_obj.id()</span><span class="p">}</span><span class="o">;</span>
+
+  <span class="nt">Example</span><span class="o">:</span> <span class="nt">mydoc</span> <span class="o">=</span> <span class="nt">ndi_session_obj</span><span class="p">.</span><span class="nc">newdocument</span><span class="o">(</span><span class="s1">&#39;ndi_document&#39;</span><span class="o">,</span><span class="s1">&#39;ndi_document.name&#39;</span><span class="o">,</span><span class="s1">&#39;myname&#39;</span><span class="o">);</span>
+
+<span class="nt">Help</span> <span class="nt">for</span> <span class="nt">ndi</span><span class="p">.</span><span class="nc">session</span><span class="p">.</span><span class="nc">dir</span><span class="o">/</span><span class="nt">searchquery</span> <span class="nt">is</span> <span class="nt">inherited</span> <span class="nt">from</span> <span class="nt">superclass</span> <span class="nt">NDI</span><span class="p">.</span><span class="nc">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>syncgraph_addrule</strong> - <em>add an ndi.time.syncrule to the syncgraph</em></p>
-<p>NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)</p>
+<p>```NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)</p>
 <p>Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.</p>
 <p>Help for ndi.session.dir/syncgraph_addrule is inherited from superclass NDI.SESSION</p>
-<hr />
-<p><strong>syncgraph_rmrule</strong> - <em>remove an ndi.time.syncrule from the syncgraph</em></p>
-<p>NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)</p>
-<p>Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
-  object NDI_SESSION_OBJ.</p>
-<p>Help for ndi.session.dir/syncgraph_rmrule is inherited from superclass NDI.SESSION</p>
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">syncgraph_rmrule</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">remove</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">syncgraph</span><span class="o">*</span>
+
+```<span class="nv">NDI_SESSION_OBJ</span> <span class="o">=</span> <span class="nv">SYNCGRAPH_RMRULE</span><span class="ss">(</span><span class="nv">NDI_SESSION_OBJ</span>, <span class="nv">INDEX</span><span class="ss">)</span>
+
+  <span class="nv">Removes</span> <span class="nv">the</span> <span class="nv">INDEXth</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncrule</span> <span class="nv">from</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">syncgraph</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">session</span>
+  <span class="nv">object</span> <span class="nv">NDI_SESSION_OBJ</span>.
+
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">session</span>.<span class="nv">dir</span><span class="o">/</span><span class="nv">syncgraph_rmrule</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">SESSION</span>
+</code></pre></div>
+
 <hr />
 <p><strong>unique_reference_string</strong> - <em>return the unique reference string for this session</em></p>
-<p>REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)</p>
+<p>```REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)</p>
 <p>Returns the unique reference string for the ndi.session.
   REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
   and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.</p>
-<p>Help for ndi.session.dir/unique_reference_string is inherited from superclass NDI.SESSION</p>
+<p>Help for ndi.session.dir/unique_reference_string is inherited from superclass NDI.SESSION
+```</p>
 <hr />
                 
               

@@ -4783,12 +4783,14 @@
                 
                 
                 <h1 id="class-ndivalidate">CLASS ndi.validate<a class="headerlink" href="#class-ndivalidate" title="Permanent link">&para;</a></h1>
-<p>Validate a ndi_document to ensure that the type of its properties 
-  match with the expected type according to its schema. Most of the logic
-  behind is implemented by Java using everit-org's json-schema library: 
-  https://github.com/everit-org/json-schema, a JSON Schema Validator 
-  for Java, based on org.json API. It implements the DRAFT 7 version
-  of the JSON Schema: https://json-schema.org/</p>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">Validate</span> <span class="nv">a</span> <span class="nv">ndi_document</span> <span class="nv">to</span> <span class="nv">ensure</span> <span class="nv">that</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">its</span> <span class="nv">properties</span> 
+  <span class="nv">match</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">expected</span> <span class="nv">type</span> <span class="nv">according</span> <span class="nv">to</span> <span class="nv">its</span> <span class="nv">schema</span>. <span class="nv">Most</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">logic</span>
+  <span class="nv">behind</span> <span class="nv">is</span> <span class="nv">implemented</span> <span class="nv">by</span> <span class="nv">Java</span> <span class="nv">using</span> <span class="nv">everit</span><span class="o">-</span><span class="nv">org</span><span class="s1">&#39;</span><span class="s">s json-schema library: </span>
+  <span class="nv">https</span>:<span class="o">//</span><span class="nv">github</span>.<span class="nv">com</span><span class="o">/</span><span class="nv">everit</span><span class="o">-</span><span class="nv">org</span><span class="o">/</span><span class="nv">json</span><span class="o">-</span><span class="nv">schema</span>, <span class="nv">a</span> <span class="nv">JSON</span> <span class="nv">Schema</span> <span class="nv">Validator</span> 
+  <span class="k">for</span> <span class="nv">Java</span>, <span class="nv">based</span> <span class="nv">on</span> <span class="nv">org</span>.<span class="nv">json</span> <span class="nv">API</span>. <span class="nv">It</span> <span class="nv">implements</span> <span class="nv">the</span> <span class="nv">DRAFT</span> <span class="mi">7</span> <span class="nv">version</span>
+  <span class="nv">of</span> <span class="nv">the</span> <span class="nv">JSON</span> <span class="nv">Schema</span>: <span class="nv">https</span>:<span class="o">//</span><span class="nv">json</span><span class="o">-</span><span class="nv">schema</span>.<span class="nv">org</span><span class="o">/</span>
+</code></pre></div>
+
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
 <p><em>none</em></p>
 <h2 id="properties">Properties<a class="headerlink" href="#properties" title="Permanent link">&para;</a></h2>
@@ -4871,40 +4873,50 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>extract_schema</strong> - <em>Extract the content of the ndi.document's</em></p>
-<p>corresponding schema</p>
+<p>```corresponding schema</p>
 <div class="codehilite"><pre><span></span><code>SCHEMA_JSON = EXTRACT_SCHEMA(NDI_DOCUMENT_OBJ)
 </code></pre></div>
 
-<hr />
-<p><strong>extractnamefromdefinition</strong> - <em>File name contains ".json" extension</em></p>
-<p>Remove the file extension</p>
-<div class="codehilite"><pre><span></span><code>NAME = EXTRACTNAME(STR)
+<div class="codehilite"><pre><span></span><code>---
+
+**extractnamefromdefinition** - *File name contains &quot;.json&quot; extension*
+
+```Remove the file extension
+
+    NAME = EXTRACTNAME(STR)
 </code></pre></div>
 
 <hr />
 <p><strong>load_format_validator</strong> - **</p>
-<p>LOAD the the list of FormatValidator configurated based on
+<p>```LOAD the the list of FormatValidator configurated based on
    the JSON file ndi_validate_config.json</p>
-<hr />
-<p><strong>readHashMap</strong> - <em>an instance of java.util.HashMAP</em></p>
-<p>turn an instance of java.util.hashmap into string useful
-    for displaying the error messages</p>
-<div class="codehilite"><pre><span></span><code>STR = READHASHMAP(JAVA_HASHMAP)
+<div class="codehilite"><pre><span></span><code><span class="o">---</span>
+
+<span class="o">**</span><span class="nv">readHashMap</span><span class="o">**</span> <span class="o">-</span> <span class="o">*</span><span class="nv">an</span> <span class="nv">instance</span> <span class="nv">of</span> <span class="nv">java</span>.<span class="nv">util</span>.<span class="nv">HashMAP</span><span class="o">*</span>
+
+```<span class="nv">turn</span> <span class="nv">an</span> <span class="nv">instance</span> <span class="nv">of</span> <span class="nv">java</span>.<span class="nv">util</span>.<span class="nv">hashmap</span> <span class="nv">into</span> <span class="nv">string</span> <span class="nv">useful</span>
+    <span class="k">for</span> <span class="nv">displaying</span> <span class="nv">the</span> <span class="nv">error</span> <span class="nv">messages</span>
+
+    <span class="nv">STR</span> <span class="o">=</span> <span class="nv">READHASHMAP</span><span class="ss">(</span><span class="nv">JAVA_HASHMAP</span><span class="ss">)</span>
 </code></pre></div>
 
 <hr />
 <p><strong>replace_ndipath</strong> - <em>ndi.validate.replace_ndipath is a function.</em></p>
-<p>new_path = replace_ndipath(path)</p>
-<hr />
-<p><strong>throw_error</strong> - <em>ndi.validate/throw_error is a function.</em></p>
-<p>throw_error(ndi_validate_obj)</p>
+<p>```new_path = replace_ndipath(path)</p>
+<div class="codehilite"><pre><span></span><code>---
+
+**throw_error** - *ndi.validate/throw_error is a function.*
+
+```throw_error(ndi_validate_obj)
+</code></pre></div>
+
 <hr />
 <p><strong>validate</strong> - <em>Validate a ndi_document to ensure that the type of its properties</em></p>
-<p>match with the expected type according to its schema. Most of the logic
+<p><code>match with the expected type according to its schema. Most of the logic
   behind is implemented by Java using everit-org's json-schema library: 
   https://github.com/everit-org/json-schema, a JSON Schema Validator 
   for Java, based on org.json API. It implements the DRAFT 7 version
-  of the JSON Schema: https://json-schema.org/</p>
+  of the JSON Schema: https://json-schema.org/</code></p>
 <hr />
                 
               

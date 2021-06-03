@@ -4688,85 +4688,33 @@
                 
                 
                 <h1 id="ndiexampletutorialplottreeshrewdata">ndi.example.tutorial.plottreeshrewdata<a class="headerlink" href="#ndiexampletutorialplottreeshrewdata" title="Permanent link">&para;</a></h1>
-<p>ndi.example.tutorial.plottreeshrewdata - plot tree shrew data from Van Hooser et al. 2014</p>
-<p>ndi.example.tutorial.plottreeshrewdata(filename)</p>
-<p>This function also accepts additional arguments in the form of name/value pairs
-  (see help NAMEVALUEPAIR)</p>
-<hr />
-<table>
-<thead>
-<tr>
-<th>Property (default)</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>electrodeChannel (11)</td>
-<td>Channel with the electrode recording</td>
-</tr>
-<tr>
-<td>stimTriggerChannel (2)</td>
-<td>Channel with the stimulus trigger record</td>
-</tr>
-<tr>
-<td>syncChannel (4)</td>
-<td>Channel with the synchronizing information</td>
-</tr>
-<tr>
-<td>stimCodeMarkChannel (32)</td>
-<td>Channel with stimulus code mark information</td>
-</tr>
-<tr>
-<td>timeWindow ([0 100])</td>
-<td>Time window to show initially in graph</td>
-</tr>
-<tr>
-<td>ePhysYRange ([-11 11])</td>
-<td>ePhys Y range</td>
-</tr>
-<tr>
-<td>ePhysYStimLabel (7)</td>
-<td>Y location for stimulus code type plot</td>
-</tr>
-<tr>
-<td>syncYRange ([0 8])</td>
-<td>stimSync Y range</td>
-</tr>
-<tr>
-<td>syncYStimLabel (7)</td>
-<td>Y location for stimulus code type plot</td>
-</tr>
-<tr>
-<td>stimDuration (2))</td>
-<td>Stimulus duration in seconds</td>
-</tr>
-<tr>
-<td>fig ([])</td>
-<td>The figure to use. If empty, make a new one</td>
-</tr>
-<tr>
-<td>verbose (1)</td>
-<td>Should we print status messages?</td>
-</tr>
-<tr>
-<td>plotit (1)</td>
-<td>Plot the data</td>
-</tr>
-<tr>
-<td>plotstimsync (0)</td>
-<td>Plot a graph of the stimSync data</td>
-</tr>
-<tr>
-<td>title_string ('')</td>
-<td>Plot title string</td>
-</tr>
-<tr>
-<td>-----------------------------------------------------------------------------</td>
-<td></td>
-</tr>
-</tbody>
-</table>
+<div class="codehilite"><pre><span></span><code>  <span class="nv">ndi</span>.<span class="nv">example</span>.<span class="nv">tutorial</span>.<span class="nv">plottreeshrewdata</span> <span class="o">-</span> <span class="nv">plot</span> <span class="nv">tree</span> <span class="nv">shrew</span> <span class="nv">data</span> <span class="nv">from</span> <span class="nv">Van</span> <span class="nv">Hooser</span> <span class="nv">et</span> <span class="nv">al</span>. <span class="mi">2014</span>
+
+  <span class="nv">ndi</span>.<span class="nv">example</span>.<span class="nv">tutorial</span>.<span class="nv">plottreeshrewdata</span><span class="ss">(</span><span class="nv">filename</span><span class="ss">)</span>
+
+
+  <span class="nv">This</span> <span class="nv">function</span> <span class="nv">also</span> <span class="nv">accepts</span> <span class="nv">additional</span> <span class="nv">arguments</span> <span class="nv">in</span> <span class="nv">the</span> <span class="nv">form</span> <span class="nv">of</span> <span class="nv">name</span><span class="o">/</span><span class="nv">value</span> <span class="nv">pairs</span>
+  <span class="ss">(</span><span class="nv">see</span> <span class="nv">help</span> <span class="nv">NAMEVALUEPAIR</span><span class="ss">)</span>
+  <span class="o">-------------------------------------------------------------------------------</span>
+  <span class="o">|</span> <span class="nv">Property</span> <span class="ss">(</span><span class="nv">default</span><span class="ss">)</span>       <span class="o">|</span> <span class="nv">Description</span>                                      <span class="o">|</span>
+  <span class="o">|</span> <span class="o">------------------------</span> <span class="o">|</span> <span class="o">------------------------------------------------</span> <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">electrodeChannel</span> <span class="ss">(</span><span class="mi">11</span><span class="ss">)</span>    <span class="o">|</span> <span class="nv">Channel</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">electrode</span> <span class="nv">recording</span>             <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">stimTriggerChannel</span> <span class="ss">(</span><span class="mi">2</span><span class="ss">)</span>   <span class="o">|</span> <span class="nv">Channel</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">stimulus</span> <span class="nv">trigger</span> <span class="nv">record</span>         <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">syncChannel</span> <span class="ss">(</span><span class="mi">4</span><span class="ss">)</span>          <span class="o">|</span> <span class="nv">Channel</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">synchronizing</span> <span class="nv">information</span>       <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">stimCodeMarkChannel</span> <span class="ss">(</span><span class="mi">32</span><span class="ss">)</span> <span class="o">|</span> <span class="nv">Channel</span> <span class="nv">with</span> <span class="nv">stimulus</span> <span class="nv">code</span> <span class="nv">mark</span> <span class="nv">information</span>      <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">timeWindow</span> <span class="ss">(</span>[<span class="mi">0</span> <span class="mi">100</span>]<span class="ss">)</span>     <span class="o">|</span> <span class="nv">Time</span> <span class="nv">window</span> <span class="nv">to</span> <span class="k">show</span> <span class="nv">initially</span> <span class="nv">in</span> <span class="nv">graph</span>           <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">ePhysYRange</span> <span class="ss">(</span>[<span class="o">-</span><span class="mi">11</span> <span class="mi">11</span>]<span class="ss">)</span>   <span class="o">|</span> <span class="nv">ePhys</span> <span class="nv">Y</span> <span class="nv">range</span>                                    <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">ePhysYStimLabel</span> <span class="ss">(</span><span class="mi">7</span><span class="ss">)</span>      <span class="o">|</span> <span class="nv">Y</span> <span class="nv">location</span> <span class="k">for</span> <span class="nv">stimulus</span> <span class="nv">code</span> <span class="nv">type</span> <span class="nv">plot</span>           <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">syncYRange</span> <span class="ss">(</span>[<span class="mi">0</span> <span class="mi">8</span>]<span class="ss">)</span>       <span class="o">|</span> <span class="nv">stimSync</span> <span class="nv">Y</span> <span class="nv">range</span>                                 <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">syncYStimLabel</span> <span class="ss">(</span><span class="mi">7</span><span class="ss">)</span>       <span class="o">|</span> <span class="nv">Y</span> <span class="nv">location</span> <span class="k">for</span> <span class="nv">stimulus</span> <span class="nv">code</span> <span class="nv">type</span> <span class="nv">plot</span>           <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">stimDuration</span> <span class="ss">(</span><span class="mi">2</span><span class="ss">))</span>        <span class="o">|</span> <span class="nv">Stimulus</span> <span class="nv">duration</span> <span class="nv">in</span> <span class="nv">seconds</span>                     <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">fig</span> <span class="ss">(</span>[]<span class="ss">)</span>                 <span class="o">|</span> <span class="nv">The</span> <span class="nv">figure</span> <span class="nv">to</span> <span class="nv">use</span>. <span class="k">If</span> <span class="nv">empty</span>, <span class="nv">make</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">one</span>      <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">verbose</span> <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span>              <span class="o">|</span> <span class="nv">Should</span> <span class="nv">we</span> <span class="nv">print</span> <span class="nv">status</span> <span class="nv">messages</span>?                 <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">plotit</span> <span class="ss">(</span><span class="mi">1</span><span class="ss">)</span>               <span class="o">|</span> <span class="nv">Plot</span> <span class="nv">the</span> <span class="nv">data</span>                                    <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">plotstimsync</span> <span class="ss">(</span><span class="mi">0</span><span class="ss">)</span>         <span class="o">|</span> <span class="nv">Plot</span> <span class="nv">a</span> <span class="nv">graph</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">stimSync</span> <span class="nv">data</span>                <span class="o">|</span>
+  <span class="o">|</span> <span class="nv">title_string</span> <span class="ss">(</span><span class="s1">&#39;&#39;</span><span class="ss">)</span>        <span class="o">|</span> <span class="nv">Plot</span> <span class="nv">title</span> <span class="nv">string</span>                                <span class="o">|</span>
+  <span class="o">|-----------------------------------------------------------------------------|</span>
+</code></pre></div>
                 
               
               
