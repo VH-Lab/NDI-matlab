@@ -12,7 +12,7 @@
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
     
     
       
@@ -20,7 +20,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.bde7dde4.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.e35208c4.min.css">
       
         
         <link rel="stylesheet" href="../../../assets/stylesheets/palette.ef6f36e2.min.css">
@@ -348,11 +348,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#12-ndi-concepts-and-vocabuary" class="md-nav__link">
-    1.2 NDI Concepts and vocabuary
+  <a href="#12-ndi-concepts-and-vocabulary" class="md-nav__link">
+    1.2 NDI Concepts and vocabulary
   </a>
   
-    <nav class="md-nav" aria-label="1.2 NDI Concepts and vocabuary">
+    <nav class="md-nav" aria-label="1.2 NDI Concepts and vocabulary">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4726,21 +4726,6 @@
   
 
     
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../learning_matlab/" class="md-nav__link">
-        Learning Matlab
-      </a>
-    </li>
-  
-
-    
   </ul>
 </nav>
                   </div>
@@ -4767,11 +4752,11 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#12-ndi-concepts-and-vocabuary" class="md-nav__link">
-    1.2 NDI Concepts and vocabuary
+  <a href="#12-ndi-concepts-and-vocabulary" class="md-nav__link">
+    1.2 NDI Concepts and vocabulary
   </a>
   
-    <nav class="md-nav" aria-label="1.2 NDI Concepts and vocabuary">
+    <nav class="md-nav" aria-label="1.2 NDI Concepts and vocabulary">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -4838,23 +4823,23 @@
                 
                 
                 <h1 id="tutorial-1-introduction">Tutorial 1: Introduction<a class="headerlink" href="#tutorial-1-introduction" title="Permanent link">&para;</a></h1>
-<h2 id="12-ndi-concepts-and-vocabuary">1.2 NDI Concepts and vocabuary<a class="headerlink" href="#12-ndi-concepts-and-vocabuary" title="Permanent link">&para;</a></h2>
+<h2 id="12-ndi-concepts-and-vocabulary">1.2 NDI Concepts and vocabulary<a class="headerlink" href="#12-ndi-concepts-and-vocabulary" title="Permanent link">&para;</a></h2>
 <p>In order to make NDI easy to use, we sought to codify the elements of actual experiments using specific terms, in much the same way that concepts like files, folders, and windows make modern computer operating systems easier to use.</p>
 <h3 id="probes-subjects-elements-daq-systems">Probes, subjects, elements, DAQ systems<a class="headerlink" href="#probes-subjects-elements-daq-systems" title="Permanent link">&para;</a></h3>
 <p>We define a <strong>probe</strong> as an instrument that makes a measurement of or produces a stimulus for a <strong>subject</strong>. </p>
 <p>In this framework, a variety of experimental apparatus are considered <em>probes</em>. Examples of <em>probes</em> that make measurements include a whole cell pipette, a sharp electrode, a single channel extracellular electrode, multichannel electrodes with either known or unknown geometries, cameras, 2-photon microscopes, fMRI machines, nose-poke detectors, EMG electrodes, and EEG electrodes. Examples of <em>probes</em> that provide stimulation are odor ports, valve-driven interaural cannulae, food reward dispensers, visual stimulus monitors, audio speakers, and stimulating electrodes.</p>
 <p>A <em>probe</em> requires two important connections. The first connection is with a <em>subject</em>. This <em>subject</em> can be an experimental research animal, a human subject, a set of cells in a dish, a test resistor, the air, a potato, anything, but it must be named and given an identifier in NDI. </p>
 <p>The second important connection of a <strong>probe</strong> is to a data acquisition system that stores the measurements or the stimulation history of the <em>probe</em>. We term such a system a <strong>DAQ system</strong>. Each time a <em>DAQ system</em> is switched into record mode, an <strong>epoch</strong> of data is recorded. </p>
-<p><em>Probes</em> are part of a broader class of experiment items that we term <strong>elements</strong>, which include concrete physical objects like <em>probes</em> but also inferred objects that are not observed directly, such as neurons in an extracellular recording experiment, or abstract quantities, such as simulated data, or a model of the information that an animal has about a stimulus at a given time.</p>
+<p><em>Probes</em> are part of a broader class of experiment items that we term <strong>elements</strong>, which include not only concrete physical objects like <em>probes</em> but also inferred objects that are not observed directly, such as neurons in an extracellular recording experiment, or abstract quantities, such as simulated data, or a model of the information that an animal has about a stimulus at a given time.</p>
 <h3 id="real-world-vocabulary">Real world vocabulary<a class="headerlink" href="#real-world-vocabulary" title="Permanent link">&para;</a></h3>
 <p><img alt="NDI real world vocabulary" src="../2_realworldvocabulary_topleft.jpg" /></p>
-<p>An example experiment. A <em>probe</em> is any instrument that can make a measurement from or provide stimulation to a <em>subject</em>. In this case, an electrode with an amplifier is monitoring signals in cerebral cortex of a ferret and the electrode is a <em>probe</em> and the ferret is a <em>subject</em>. A DAQ system is an instrument that digitally logs the measurements or stimulus history of a <em>probe</em>. In this case, a data acquisition system (DAQ) is logging the voltage values produced by the electrode's amplifier and storing the results in a file on a computer. An epoch is an interval of time during which a DAQ system is switched on and then off to make a recording. In this case, 3 epochs have been sampled. The experiment has additional experiment <em>elements</em>. One of these <em>elements</em> is a filtered version of the electrode data. A second <em>element</em> is a neuron, whose existence and spike times have been inferred by a spike analysis application and recorded in the experiment. </p>
+<p>An example experiment. A <em>probe</em> is any instrument that can make a measurement from or provide stimulation to a <em>subject</em>. In this case, an electrode with an amplifier is monitoring signals in the cerebral cortex of a ferret. The electrode is a <em>probe</em>, and the ferret is a <em>subject</em>. A DAQ system is an instrument that digitally logs the measurements or stimulus history of a <em>probe</em>. In this case, a data acquisition system (DAQ) is logging the voltage values produced by the electrode's amplifier and storing the results in a file on a computer. An epoch is an interval of time during which a DAQ system is switched on and then off to make a recording. In this case, 3 epochs have been sampled. The experiment has additional experiment <em>elements</em>. One of these <em>elements</em> is a filtered version of the electrode data. A second <em>element</em> is a neuron, whose existence and spike times have been inferred by a spike analysis application and recorded in the experiment. </p>
 <h4 id="real-world-vocabulary-elements">Real world vocabulary: elements<a class="headerlink" href="#real-world-vocabulary-elements" title="Permanent link">&para;</a></h4>
 <p><img alt="NDI real world vocabulary: elements" src="../2_realworldvocabulary_bottom.jpg" /></p>
-<p>In NDI, a wide variety of experiment items are called <em>elements</em>, of which <em>probes</em> are a subset. Examples of <em>probes</em> include multi-channel extracellular electrodes, reward wells, 2-photon microscopes, intrinsic signal imaging systems, intracellular or extracellular single electrodes, and visual stimulus monitors. Other <em>elements</em> include items that are directly linked to <em>probes</em>, such as filtered versions of signals, or inferred objects like neurons whose activity are inferred from extracellular recordings or images. Still other <em>elements</em> have no physical derivation, such as artificial data or purely simulated data; nevertheless, we want to be able to treat these items identically in analysis pipelines. Finally, <em>elements</em> might be the result of complex modeling that depends on many other experiment <em>elements</em>, such as an inferred phenomenological model of the amount of information that an animal has about whether a stimulus is a grating.</p>
+<p>In NDI, a wide variety of experiment items are called <em>elements</em>, of which <em>probes</em> are a subset. Examples of <em>probes</em> include multi-channel extracellular electrodes, reward wells, 2-photon microscopes, intrinsic signal imaging systems, intracellular or extracellular single electrodes, and visual stimulus monitors. Other <em>elements</em> include items that are directly linked to <em>probes</em>, such as filtered versions of signals, or inferred objects like neurons whose activities are inferred from extracellular recordings or images. Still, other <em>elements</em> have no physical derivation, such as artificial data or purely simulated data; nevertheless, we want to be able to treat these items identically in analysis pipelines. Finally, <em>elements</em> might be the result of complex modeling that depends on many other experiment <em>elements</em>, such as an inferred phenomenological model of the amount of information that an animal has about whether a stimulus is a grating.</p>
 <h4 id="real-world-vocabulary-daq-systems">Real world vocabulary: DAQ systems<a class="headerlink" href="#real-world-vocabulary-daq-systems" title="Permanent link">&para;</a></h4>
 <p><img alt="NDI real world vocabulary: DAQ systems" src="../2_realworldvocabulary_topright.jpg" /></p>
-<p>DAQ systems digitally record <em>probe</em> measurements or histories of stimulator activity. In NDI, DAQ systems are logical entities, which could correspond physically to a single DAQ device made by a particular company (top), or a collection of home-brewed devices that operate together to have the behavior of a single DAQ device (bottom). In the bottom example, information from an electrode <em>probe</em> and digital triggers from a visual stimulation <em>probe</em> are acquired on a single DAQ device, but digital information from both systems (in separate files) is needed to fully describe the activity in each epoch.</p>
+<p>DAQ systems digitally record <em>probe</em> measurements or histories of stimulator activity. In NDI, DAQ systems are logical entities, which could correspond physically to a single DAQ device made by a particular company (top) or a collection of home-brewed devices that operate together to have the behavior of a single DAQ device (bottom). In the bottom example, information from an electrode <em>probe</em> and digital triggers from a visual stimulation <em>probe</em> are acquired on a single DAQ device, but digital information from both systems (in separate files) is needed to fully describe the activity in each epoch.</p>
 <h3 id="discussionfeedback">Discussion/Feedback<a class="headerlink" href="#discussionfeedback" title="Permanent link">&para;</a></h3>
 <p>Post <a href="https://github.com/VH-Lab/NDI-matlab/issues/175">comments, bugs, questions, or discuss</a>.</p>
                 
@@ -4925,10 +4910,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
       
     
   </body>
