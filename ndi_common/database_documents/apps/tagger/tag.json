@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/tagger\/tag.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/tagger\/tag.json",
+		"class_name":						"ndi_document_apps_tagger_tag",
+		"property_list_name":					"tag",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
+		]
+	},
+	"depends_on": [
+		{
+			"name":		"document_id",
+			"value":	"",
+		}
+	],
+	"tag": {
+		"ontology":		"",
+		"ontology_name":	"",
+		"ontology_id":		"",
+		"value":		""
+	}
+}
+
