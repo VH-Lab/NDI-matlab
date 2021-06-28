@@ -236,137 +236,60 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 		end; % plot_oridir_response
 
     % functions that override ndi_app_appdoc
-
-        function doc = add_appdoc(ndi_app_oridirtuning_obj, appdoc_type, appdoc_struct, docexistsaction, varargin)
-			% ADD_APPDOC - Load data from an application document
-			%
-			% [...] = ADD_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, ...
-			%     APPDOC_STRUCT, DOCEXISTSACTION, [additional arguments])
-			%
-			% Creates a new ndi.document that is based on the type APPDOC_TYPE with creation data
-			% specified by APPDOC_STRUCT.  [additional inputs] are used to find or specify the
-			% NDI_document in the database. They are passed to the function FIND_APPDOC,
-			% so see help FIND_APPDOC for the documentation for each app.
-			%
-			% The DOC is returned as a cell array of NDI_DOCUMENTs (should have 1 entry but could have more than
-			% 1 if the document already exists).
-			%
-			% If APPDOC_STRUCT is empty, then default values are used. If it is a character array, then it is
-			% assumed to be a filename of a tab-separated-value text file. If it is an ndi.document, then it
-			% is assumed to be an ndi.document and it will be converted to the parameters using DOC2STRUCT.
-			%
-			% This function also takes a string DOCEXISTSACTION that describes what it should do
-			% in the event that the document fitting the [additional inputs] already exists:
-			% DOCEXISTACTION value      | Description
-			% ----------------------------------------------------------------------------------
-			% 'Error'                   | An error is generating indicating the document exists.
-			% 'NoAction'                | The existing document is left alone. The existing ndi.document
-			%                           |    is returned in DOC.
-			% 'Replace'                 | Replace the document; note that this deletes all NDI_DOCUMENTS
-			%                           |    that depend on the original.
-			% 'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
-			%                           |    the data structures that define the document are not equal.
-			% 
-			%
-
-				% Step 1, load the appdoc_struct if it is not already a structure
-
-				if isempty(appdoc_struct),
-					appdoc_struct = ndi_app_appdoc_obj.defaultstruct_appdoc(appdoc_type);
-				elseif isa(appdoc_struct,'ndi.document'),
-					appdoc_struct = ndi_app_appdoc_obj.doc2struct(appdoc_type,appdoc_struct);
-				elseif isa(appdoc_struct,'char'),
-					try,
-						appdoc_struct = vlt.file.loadStructArray(appdoc_strut);
-					catch,
-						error(['APPDOC_STRUCT was a character array, so it was assumed to be a file.' ...
-								' But file reading failed with error ' lasterr '.']);
-					end;
-				elseif isstruct(appdoc_struct),
-					% we are happy, nothing to do
-				else,
-					error(['Do not know how to process APPDOC_STRUCT as provided.']);
-				end;
-
-				% Step 2, see if a document by this description already exists
-
-				doc = ndi_app_appdoc_obj.find_appdoc(appdoc_type, varargin{:});
-
-				if ~isempty(doc),
-					switch (lower(docexistsaction)),
-						case 'error',
-							error([int2str(numel(doc)) ' document(s) of application document type '...
-								appdoc_type ' already exist.']);
-						case 'noaction',
-							return; % we are done
-						case {'replace','replaceifdifferent'},
-							aredifferent = 1; % by default, we will replace unless told to check
-							if strcmpi(docexistsaction,'ReplaceIfDifferent'),
-								% see if they really are different
-								if numel(doc)>1, % there are multiple versions, must be different
-									aredifferent = 1;
-								else,
-									appdoc_struct_here = ndi_app_appdoc_obj.doc2struct(appdoc_type, doc{1});
-									b = ndi_app_appdoc_obj.isequal_appdoc_struct(appdoc_type, appdoc_struct, ...
-										appdoc_struct_here);
-									aredifferent = ~b;
-								end;
-							end;
-							if aredifferent,
-								b = ndi_app_appdoc_obj.clear_appdoc(appdoc_type, varargin{:});
-								if ~b,
-									error(['Could not delete existing ' appdoc_type ' document(s).']);
-								end;
-							else,
-								return; % nothing to do, it's already there and the same as we wanted
-							end;
-						otherwise,
-							error(['Unknown DOCEXISTSACTION: ' docexistsaction '.']);
-					end; % switch(docexistsaction)
-				end;
-
-				% if we haven't returned, we need to make a document and add it
-
-				doc = ndi_app_appdoc_obj.struct2doc(appdoc_type,appdoc_struct,varargin{:});
-
-				ndi_app_appdoc_obj.doc_session.database_add(doc);
-
-				doc = {doc}; % make it a cell array
-
-		end; % add_appdoc
         
         function doc = struct2doc(ndi_app_oridirtuning_obj, appdoc_type, appdoc_struct, varargin)
 			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APP_ORIDIRTUNING_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
 			%
-			% For ndi.app.oridirtuning, one can use an APPDOC_TYPE of the following:
-			% APPDOC_TYPE                 | Description
+			% For ndi_app_oridirtuning, one can use an APPDOC_TYPE of the following:
+			% APPDOC_TYPE                   | Description
 			% ----------------------------------------------------------------------------------------------
-			% 'orientation_tuning_direction'  | A document that describes
-            %                                 | the parameters to be used for extraction for a single epoch 
+			% 'orientation_tuning_direction'| A document that describes the parameters to be used for 
+			%                               | orientation tuning direction 
 			% 
 			%
 			% See APPDOC_DESCRIPTION for a list of the parameters.
 			% 
 
-%               if strcmpi(appdoc_type,'orientation_direction_tuning'),
-% 					if numel(varargin)<1,
-% 						error(['Needs an additional argument describing the sorting parameters name']);
-% 					end;
-%     					if ~ischar(varargin{1}),
-%     						error(['sorting parameters name must be a character string.']);
-%     					end;
-%     					oridirtun_name = varargin{1};
-%     					doc = ndi.document('vision/oridir/orientation_tuning_direction',...
-%     						'orientation_direction_tuning',appdoc_struct) + ...
-%     						ndi_app_oridirtuning_obj.newdocument() + ...
-%     						ndi.document('ndi_document','ndi_document.name',oridirtun_name);
-% 				else
-% 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-% 				end;
+              if strcmpi(appdoc_type,'orientation_direction_tuning'),
+					if numel(varargin)<1,
+						error(['Needs an additional argument describing the orientation direction tuning name']);
+					end;
+    					if ~ischar(varargin{1}),
+    						error(['orientation direction tuning name must be a character string.']);
+    					end;
+    					oridirtuning_name = varargin{1};
+    					doc = ndi.document('vision/oridir/orientation_tuning_direction',...
+    						'orientation_direction_tuning',appdoc_struct) + ...
+    						ndi_app_oridirtuning_obj.newdocument() + ...
+    						ndi.document('ndi_document','ndi_document.name',oridirtuning_name);
+				else
+					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+				end;
        	end; %struct2doc()
 
+        function doc = find_appdoc(ndi_app_oridirtuning_obj, appdoc_type, varargin)
+			% FIND_APPDOC - find an ndi_app_appdoc document in the session database
+			%
+			% See ndi_app_oridirtuning/APPDOC_DESCRIPTION for documentation.
+			%
+				doc = {};
+            
+				switch(lower(appdoc_type))
+					case 'orientation_direction_tuning'
+						orientation_direction_tuning_name = varargin{1};
+                    
+						oridirtuning_search = ndi.query('ndi_document.name','exact_string',orientation_direction_tuning_name,'') & ...
+						ndi.query('','isa','orientation_direction_tuning', '');
+						doc = ndi_app_oridirtuning_obj.session.database_search(oridirtuning_search);
+                
+				
+                        otherwise
+                            error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+                        end %switch
+		end % find_appdoc()
+        
     % functions that override ndi_app
 
 
