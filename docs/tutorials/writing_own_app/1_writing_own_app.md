@@ -66,7 +66,7 @@ Here is the document. Since this is part of NDI, we put it in the `ndi_common/da
 	"depends_on": [
 		{
 			"name":         "document_id",
-			"value":        "",
+			"value":        ""
 		}
 	],
 	"tag": {
@@ -78,10 +78,66 @@ Here is the document. Since this is part of NDI, we put it in the `ndi_common/da
 }
 ```
 
+INSERT DETAIL DESCRIBING DOCUMENT
+
 And the schema:
 
-#### ndi_common/database_documents/app
+#### ndi_common/schema_documents/apps/tagger/tag.json
 
+
+```json
+{
+	"$schema": "http://json-schema.org/draft/2019-09/schema#",
+	"id": "$NDISCHEMAPATH\/apps\/ndi_document_apps_tagger_tag.json",
+	"title": "tag",
+	"type": "object",
+	"properties": {
+		"ontology": {
+			"type": "string",
+			"doc_default_value": "none",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of the ontology to be used. At the present time it is okay to leave this blank and use a term that is outside an ontology."
+		},
+		"ontology_name": {
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The name of tag in the ontology. If an ontology is specified, this `ontology_name` must match a word in the ontology."
+		},
+		"ontology_id": {
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "The ID of the word in the ontology. If an ontology is specified, the ID must match the ID of the word or element `ontology_name` in the ontology."
+		},
+		"value": {
+			"type": "string",
+			"doc_default_value": "",
+			"doc_data_type": "character array (ASCII)",
+			"doc_description": "A field that may be associated with the tag. May be blank."
+		},
+		"depends_on" : {
+			"type" : "array",
+			"items" : [
+				{
+					"type": "object", 
+					"properties" : {
+						"name" : {
+							"const" : "document_id"
+						},
+						"value" : {
+							"type" : "string"
+						}
+					}
+				}
+			]
+		}
+	}
+}
+```
+
+
+INSERT DETAIL DESCRIBING SCHEMA
 
 
 

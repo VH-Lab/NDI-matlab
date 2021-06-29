@@ -12,7 +12,7 @@
 	"depends_on": [
 		{
 			"name":		"document_id",
-			"value":	"",
+			"value":	""
 		}
 	],
 	"tag": {
