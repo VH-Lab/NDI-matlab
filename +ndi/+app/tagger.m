@@ -44,33 +44,31 @@ classdef tagger < ndi.app & ndi.app.appdoc
 				if strcmpi(appdoc_type,'tag'),
 					tagged_doc_id = appdoc_struct.tagged_doc_id;
 					tag = rmfield(appdoc_struct,'tagged_doc_id');
-					if numel(varargin) >=1, 
-						tag.ontology = varargin{1};
-					else,
-						error(['tag document needs ONTOLOGY.']);
-					end;
-					if numel(varargin) >=2,
-						tag.ontology_name = varargin{2};
-					else,
-						error(['tag document needs ONTOLOGY_NAME.']);
-					end;
-					if numel(varargin) >=3,
-						tag.ontology_id = varargin{3};
-					else,
-						error(['tag document needs ONTOLOGY_ID.']);
-					end;
-					tag.ontology_value = '';
-					if numel(varargin) >=4,
-						tag.ontology_value = varargin{4};
-					end;
 					doc = ndi.document('apps/tagger/tag','tag',tag) + ...
 						ndi_app_tagger_obj.newdocument(); % add app info for this document
 					doc = doc.set_dependency_value('document_id',tagged_doc_id);	
 				else,
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end;
-
 		end; % struct2doc()
+
+		function appdoc_struct = doc2struct(ndi_app_tagger_obj, appdoc_type, doc)
+			% DOC2STRUCT - create an ndi.document from an input structure and input parameters
+			%
+			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
+			%
+			% Create an ndi.document from a data structure APPDOC_STRUCT. The ndi.document is created
+			% according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.
+			%
+			% In the base class, this uses the property info in the ndi.document to load the data structure.
+			%
+				% first, call superclass method
+				appdoc_struct = doc2struct@ndi.app.appdoc(ndi_app_tagger_obj, appdoc_type, doc);
+				% then, add on tagged_doc_id, which has the form of a dependency instead of being in the 'tag' structure
+				if strcmpi(appdoc_type,'tag'),
+					appdoc_struct.tagged_doc_id = doc.dependency_value('document_id');
+				end;
+		end; % doc2struct()
 
 		function [b,errormsg] = isvalid_appdoc_struct(ndi_app_tagger_obj, appdoc_type, appdoc_struct)
 			% ISVALID_APPDOC_STRUCT - is an input structure a valid descriptor for an APPDOC?
@@ -87,7 +85,16 @@ classdef tagger < ndi.app & ndi.app.appdoc
 			%
 				errormsg = '';
 				if strcmpi(appdoc_type,'tag'),
-					b = 1; % punt on this right now
+					fields_needed = {'ontology','ontology_name','ontology_id','value','tagged_doc_id'};
+					sizes_needed = { [1 -1],[1 -1],[1 -1], [-1 -1],[1 -1]};
+					[b,errormsg] = vlt.data.hasAllFields(appdoc_struct,fields_needed,sizes_needed);
+					if b, % if we are still good
+						doc_exists = ndi_app_tagger_obj.session.database_search(ndi.query('ndi_document.id','exact_string',appdoc_struct.tagged_doc_id,''));
+						if isempty(doc_exists),
+							b = 0;
+							errormsg = ['No such document with id ' appdoc_struct.tagged_doc_id '.'];
+						end;
+					end;
 				else,
 					error(['Unknown appdoc_type ' appdoc_type '.']);
 				end;
@@ -187,14 +194,19 @@ classdef tagger < ndi.app & ndi.app.appdoc
 			%   | TAG -- CREATION | 
 			%   -------------------
 			%
-			%   DOC = ADD_APPDOC(NDI_APP_TAGGER_OBJ, 'tag', STRUCT, DOCEXISTSACTION, ...
-			%        ONTOLOGY, ONTOLOGY_NAME, ONTOLOGY_ID, ONTOLOGY_VALUE)
+			%   DOC = ADD_APPDOC(NDI_APP_TAGGER_OBJ, 'tag', TAG_STRUCT, DOCEXISTSACTION)
 			%
-			%   Creates a new tag document to the ndi.document. STRUCT should be a structure with a single field
-			%   'tagged_doc_ID'. The tag document is created with ID TAGGED_DOC_ID, from the ontology
-			%   ONTOLOGY, and with the name ONTOLOGY_NAME and id ONTOLOGY_ID and an optional value ONTOLOGY_VALUE.
-			%   ONTOLOGY_NAME and ONTOLOGY_ID should be the name and id string of a valid word in the given ontology.
-			%   ONTOLOGY can be blank, in which case ONTOLOGY_NAME is just a name provided by the user.
+			%   Creates a new tag document to the ndi.document.
+			%
+			%   TAG_STRUCT should be a structure with the following fields:
+			%   Fieldname                       | Description
+			%   --------------------------------|-------------------------------------------------------
+			%   ontology ('')                   | Name of the ontology where `ontology_name` and 
+			%                                   |   `ontology_id` are defined.
+			%   ontology_name ('')              | The name of a word in `ontology` that is to be used as a tag
+			%   ontology_id ('')                | The ID of the word in `ontology` that is to be used as a tag
+			%   value ('')                      | The value of the tag (only appropriate for some tags).
+			%
 			%   DOCEXISTSACTION is the action to be taken when a document already exists and should be 'Error', 'NoAction',
 			%   'Replace', or 'ReplaceIfDifferent' (see help ndi.app.appdoc.add_appdoc)
 			%
