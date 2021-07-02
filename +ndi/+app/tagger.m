@@ -116,7 +116,7 @@ classdef tagger < ndi.app & ndi.app.appdoc
 							% if a tagged_doc_id is provided, include it in the search
 							tagged_doc_id = varargin{1};
 							if ~isempty(tagged_doc_id),
-								q = q & ndi.query('','depends_on',tagged_doc_id,'');
+								q = q & ndi.query('','depends_on','document_id',tagged_doc_id);
 							end;
 						end;
 						ontology = '';
