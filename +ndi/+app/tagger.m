@@ -239,6 +239,75 @@ classdef tagger < ndi.app & ndi.app.appdoc
 				eval(['help ndi_app_tagger/appdoc_description']); 
 		end; % appdoc_description()
 
+
+		function [docs] = struct2tags(ndi_app_tagger_obj, tagstruct, docExistAction)
+			% STRUCT2TAGS - create a set of tag objects from a structure, usually read from a tab-separated value file
+			%
+			% [DOCS] = STRUCT2TAGS(NDI_APP_TAGGER_OBJ, TAGSTRUCT, DOCEXISTACTION)
+			%
+			% Adds tag documents to a given session using information specified in a structure TAGSTRUCT.
+			% (The session is the session property of NDI_APP_TAGGER_OBJ.) DOCEXISTACTION describes
+			% the action to take if the tag document already exists; it is one of 'Error', 'NoAction',
+			% 'Replace', or 'ReplaceIfDifferent' (see help ndi.app.appdoc.add_appdoc).
+			% DOCS is a cell array of ndi documents that are added.
+			%
+			% TAGSTRUCT should have the following fields:
+			% ------------------------------------------------------------------------
+			% Fieldname            | Description                                    
+			% ------------------------------------------------------------------------
+			% 'doc'                | Either the ID of an ndi.document in the sessions'
+			%                      |   - or -
+			%                      | the string query:STR where STR is an input to
+			%                      |   ndi.query.string2query(STR). If a _single_
+			%                      |   document is returned, then that document is
+			%                      |   tagged. Otherwise, an error is generated.
+			% 'ontology'           | The ontology for the tag document
+			% 'ontology_name'      | The name of the tag (word in the ontology)
+			% 'ontology_id'        | The ID of the word in the ontology
+			% 'value'              | The value of the tag (if any)
+			%
+			%
+				error(['I am not tested yet.']);
+				[g,e] = vlt.data.hasAllFields(tagstruct(1),...
+					{'doc','ontology','ontology_name','ontology_id','value'},...
+					[1 -1],[1 -1],[1 -1],[1 -1],[-1 -1]);
+
+				if ~g,
+					error(['Bad tagstruct input: ' e ]);
+				end;
+
+				docs = {};
+				appdoc_struct = vlt.data.emptystruct('tagged_doc_id','ontology','ontology_name','ontology_id','value');
+					
+				for i=1:numel(tagstruct),
+						% check for query
+					if strncmpi(tagstruct(i).doc,'query:'),
+						qstr = tagstruct(i).doc(7:end);
+						q = ndi.query.string2query(qstr);
+					else, % assume it is a doc ID
+						qstr = strtrim(tagstruct(i).doc);
+						q = ndi.query('ndi_document.id','exact_string',qstr,'');
+					end;
+					d = ndi_app_tagger_obj.session.database_search(q);
+					if numel(d)==0,
+						error(['No documents found matching ' qstr '.']);
+					elseif numel(d)>1,
+						error(['Multiple documents ' int2str(numel(d)) ' found matching ' qstr '. Must only be 1.']);
+					end;
+					% now we can continue
+					appdoc_struct_here.tagged_doc_id = d{1}.id();
+					appdoc_struct_here.ontology = tagstruct(i).ontology;
+					appdoc_struct_here.ontology_name = tagstruct(i).ontology_name;
+					appdoc_struct_here.ontology_id = tagstruct(i).ontology_id;
+					appdoc_struct_here.value= tagstruct(i).value;
+					appdoc_struct(i) = appdoc_struct_here;
+				end;
+				% now that we have safetly verified the parameters of the inputs, we will add the docs
+				for i=1:numel(appdoc_struct),
+					docs{i} = ndi_app_tagger_obj.add_appdoc(appdoc_struct(i),docExistAction);
+				end;
+		end; % struct2tags()
+
 	end; % methods
 
 end % ndi_app_tagger
