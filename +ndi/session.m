@@ -178,7 +178,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					dev = {dev};
 				end;
 				for i=1:numel(dev),
-					dev{i},
 					ndi_session_obj = ndi_session_obj.daqsystem_rm(dev{i});
 				end;
 
