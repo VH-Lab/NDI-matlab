@@ -257,8 +257,8 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% 
 
                 if strcmpi(appdoc_type,'orientation_direction_tuning'),
-                   tuning_doc = appdoc_struct.tuning_doc;
-                   doc = ndi_app_oridirtuning_object.calculate_oridir_indexes(tuning_doc, 0);
+                   tuning_doc_id = appdoc_struct.tuning_doc_id;
+                   doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(tuning_doc, 0);
 				else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end;
@@ -310,7 +310,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% In the base class, this uses the property info in the ndi.document to load the data structure.
 			%
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
-                    appdoc_struct.tuning_doc = doc.dependency_value('stimulus_tuningcurve_id');
+                    appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
 				end;
 		end; % doc2struct()
         
