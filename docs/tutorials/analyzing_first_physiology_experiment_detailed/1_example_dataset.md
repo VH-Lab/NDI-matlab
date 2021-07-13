@@ -57,9 +57,9 @@ First, let's list these files using the `ls` command (that's the letter `l` foll
 prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 ls([prefix filesep 'ts_exper1' filesep 't*']); % list all the files in the t0000N folders
 ```
-In the first line, we declare and initialize a variable called "prefix." Declaring a variable means assigning it a name and allocating memory for data to be stored, and initializing it means to assign it a value. In this case, this variable ‘prefix’ has been assigned a text string that corresponds to a folder path, or an ordered list of folders. 
+In the first line, we declare and initialize a variable called "prefix." Declaring a variable means assigning it a name and allocating memory for data to be stored, and initializing it means to assign it a value. In this case, this variable "prefix" has been assigned a text string that corresponds to a folder path, or an ordered list of folders. 
 
-In order to make this path, we start by using the function "userpath," which returns the name of the default MATLAB folder that we previously put the ‘ts_exper1’ folder into. Each new folder name afterwards represents going to a subfolder within the starting folder, and "filesep" acts as the separator characters between subfolders. We use filesep to make sure that every type of device can properly read the path, as different operating systems have different file separation characters. In Windows, this path would be represented as MATLAB\Documents\NDI, while in macOS, this path is MATLAB/Documents/NDI. Rather than writing out the entire path every time we access a file, we will want to go through the process of assigning a path to a variable for quicker access.
+In order to make this path, we start by using the function "userpath," which returns the name of the default MATLAB folder that we previously put the `ts_exper1` folder into. Each new folder name afterwards represents going to a subfolder within the starting folder, and "filesep" acts as the separator characters between subfolders. We use filesep to make sure that every type of device can properly read the path, as different operating systems have different file separation characters. In Windows, this path would be represented as MATLAB\Documents\NDI, while in macOS, this path is MATLAB/Documents/NDI. Rather than writing out the entire path every time we access a file, we will want to go through the process of assigning a path to a variable for quicker access.
 
 The `ls` command (short for *list*), lists all the files in a designated folder. In this case, we start from the folder described by "prefix," which we initialized earlier as MATLAB\Documents\NDI, then we go further down and select the t* folder inside ts_exper1. 
 #### Code block 3.1.2.2: Examining the Data (Type this in to Matlab)
@@ -210,7 +210,7 @@ After creating the navigator, we create the reader object that can specifically 
 
 We do not need to create a metadatareader object in this case because there is no metadata. Therefore, we can finally create the ndi.daq.system.mfdaq object. 
 
-Utilizing the ndi.daq.system.mfdaq method, we create the ced_system object. We specify the name as ‘ced_daqsystem’, the filenavigator as ced_filenav, the daqreader as ced_rdr, and the epochprobemap_class as ‘ndi.epoch.epochprobemap_daqsystem’. We do not specify the daqmetadatareader because we do not need one here, and we do not specify the identifier because we only make a single object; there's no need for a unique identifier.
+Utilizing the ndi.daq.system.mfdaq method, we create the ced_system object. We specify the name as `ced_daqsystem`, the filenavigator as ced_filenav, the daqreader as ced_rdr, and the epochprobemap_class as `ndi.epoch.epochprobemap_daqsystem`. We do not specify the daqmetadatareader because we do not need one here, and we do not specify the identifier because we only make a single object; there's no need for a unique identifier.
 
 Let's look at the epochs that ced_system can find in order to understand how it searches for epochs:
 
@@ -242,10 +242,10 @@ vis_system = ndi.daq.system.mfdaq('vis_daqsystem', vis_filenav, vis_rdr, {vis_md
 S.daqsystem_add(vis_system);
 ```
 
-The ced_system and the vis_system both have very similar readers ndi.daq.reader.mfdaq.cedspike2() under different object names. The only difference between the two is that the file parameters for the vis_system reader include the ‘stims.tsv’ file. This means that the vis_rdr will be able to access the ‘stims.tsv’ file as well. Again, we don't use identifiers when creating our ndi.daq.system.mfdaq object.
+The ced_system and the vis_system both have very similar readers ndi.daq.reader.mfdaq.cedspike2() under different object names. The only difference between the two is that the file parameters for the vis_system reader include the `stims.tsv` file. This means that the vis_rdr will be able to access the `stims.tsv` file as well. Again, we don't use identifiers when creating our ndi.daq.system.mfdaq object.
 It might be useful to assign identifiers to each object now that we have more than one, but we won't be doing too much with these particular objects other than making our DAQ system.
 
-Aside from differences in file parameters, the key difference between the ced_system and the vis_system is that the vis_system requires a ndi.daq.metadatareader object. Unlike the reader object which only requires an identifier that is assigned by NDI, the metadatareader object requires for us to manually identify the tab_separated_file_parameter property. In this case, we identify the tab_separated_file_parameter as the ‘stims.tsv’ file. 
+Aside from differences in file parameters, the key difference between the ced_system and the vis_system is that the vis_system requires a ndi.daq.metadatareader object. Unlike the reader object which only requires an identifier that is assigned by NDI, the metadatareader object requires for us to manually identify the tab_separated_file_parameter property. In this case, we identify the tab_separated_file_parameter as the `stims.tsv` file. 
 
 Last, we will tell NDI how these devices are synchronized with each other. These two daq systems have a file in common (`spike2data.smr`), which
 means that they have a common time base, but NDI doesn't know that the two daq systems can be synchronized yet. Here we add a "syncrule" that
@@ -285,7 +285,7 @@ of 1, the second has an index of 2, and so on.
 When you open p in the workspace, you see that there are 3 probes with unique properties. Each has a session, name, type, reference, underlying_element, direct, subject_id, dependencies, and identifier property assigned to them. To take a look at the properties of each probe in the command window, we utilize this for loop:
 ```	for i=1:numel(p), p{i}, end;	```
 
-For loops are useful when we need to run a segment of code a specified number of times, such as iterating through each entry of an array. For loops work by creating a variable of a specified value, defining an end point with another value, then incrementing the variable until it equals the end point. Let’s break down the for loop above. 
+For loops are useful when we need to run a segment of code a specified number of times, such as iterating through each entry of an array. For loops work by creating a variable of a specified value, defining an end point with another value, then incrementing the variable until it equals the end point. Let's break down the for loop above. 
 
 We first define a variable i that begins at 1 and ends at numel(p). The colon is used to create a range of values that our loop will iterate through, increasing from the first value until it reaches the second value. The range is inclusive in Matlab, so the loop runs once more once it reaches the final value. For loops increment the variable by 1 by default, but a middle argument can be included to increment by a different amount instead. 
 
@@ -386,15 +386,15 @@ vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimon+2,'stimid',data.
 ```
 We use the readtimeseries method to read the p_visstim data. Note that we specify to the function that we are using the timeref_p_ctx1 from the electrode probe data to ask for the time of the stimulus presentations with respect to our electrode's clock.
 
-By calling figure(100) once more, we specify to Matlab that we want to use figure 100 to plot our stimulus data. However, the problem that arises is that the electrode probe data is already plotted on figure 100. To solve this problem, we utilize the “hold on” command. 
+By calling figure(100) once more, we specify to Matlab that we want to use figure 100 to plot our stimulus data. However, the problem that arises is that the electrode probe data is already plotted on figure 100. To solve this problem, we utilize the `hold on` command. 
 
-“hold on” is used to save the plots on the current figure so that new plots added on the figure do not delete the existing plots. This is important for us because we want to see the simulus data in relation to the electrode probe data on the same graph. 
+`hold on` is used to save the plots on the current figure so that new plots added on the figure do not delete the existing plots. This is important for us because we want to see the simulus data in relation to the electrode probe data on the same graph. 
 
 The function vlt.neuro.stimulus.plot_stimulus_timeseries is then used to represent the stimulus data as black bars on the plot.
 
 Let's look at what `readtimeseries` returned in the case of a stimulator. It is a little different than when being used with regularly-sampled data.
 
-#### Code block 3.1.5.6. The output of the ‘readtimeseries’ method for the stimulator. Type this in to Matlab:
+#### Code block 3.1.5.6. The output of the `readtimeseries` method for the stimulator. Type this in to Matlab:
 
 ```matlab
 t, % show timestamps
@@ -419,6 +419,6 @@ This concludes our tutorial on the fully manual way of reading data through NDI.
 
 In the next tutorial, we'll explore how to create a couple of code objects that read our data directly from a lab's internal structure.
 
-Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/176).
+Post [comments, bugs, questions, or discuss](https://github.com/VH-Lab/NDI-matlab/issues/193).
 
 

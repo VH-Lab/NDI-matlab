@@ -1,5 +1,7 @@
 # Tutorial 2: Analyzing your first electrophysiology experiment with NDI
 
+This is a beginner's tutorial for NDI. This tutorial is designed for users who have some basic familiarity with coding or Matlab. If you're a Matlab and coding newbie, please use [Tutorial 3.1, the detailed version](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset/).
+
 ## 2.1: Reading an example dataset
 
 We will start with learning to read an example dataset into NDI. We assume you have already
