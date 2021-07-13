@@ -16,7 +16,7 @@
     
     
       
-        <title>Tutorial 2: Analyzing your first electrophysiology experiment with NDI - NDI-matlab</title>
+        <title>Tutorial 7: Writing your own apps - NDI-matlab</title>
       
     
     
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" class="md-skip">
+        <a href="#tutorial-7-writing-your-own-apps" class="md-skip">
           Skip to content
         </a>
       
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tutorial 2: Analyzing your first electrophysiology experiment with NDI
+              Tutorial 7: Writing your own apps
             
           </span>
         </div>
@@ -422,13 +422,13 @@
         <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
       
       <label class="md-nav__link" for="__nav_3_3">
-        Planned
+        3 Tutorials for new coders or new Matlab users
         <span class="md-nav__icon md-icon"></span>
       </label>
-      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+      <nav class="md-nav" aria-label="3 Tutorials for new coders or new Matlab users" data-md-level="2">
         <label class="md-nav__title" for="__nav_3_3">
           <span class="md-nav__icon md-icon"></span>
-          Planned
+          3 Tutorials for new coders or new Matlab users
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -437,12 +437,39 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reading_own_data_ndi/" class="md-nav__link">
-        3. Reading your own data in NDI
+      <a href="../../analzing_first_physiology_experiment_detailed/1_example_dataset.md" class="md-nav__link">
+        3.1 Newbie version of your first electrophysiology experiment with NDI
       </a>
     </li>
   
 
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
+      
+      <label class="md-nav__link" for="__nav_3_4">
+        Planned
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          Planned
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
             
   
@@ -3299,6 +3326,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../reference/%2Bndi/%2Bsession/mock.m/" class="md-nav__link">
+        ndi.session.mock
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../reference/%2Bndi/%2Bsession/sessiontable.m/" class="md-nav__link">
         ndi.session.sessiontable
       </a>
@@ -4635,6 +4674,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../learning_matlab/" class="md-nav__link">
+        Learning Matlab
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4661,38 +4715,45 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#22-automating-the-reading-of-data-from-your-rig-or-lab-or-collaborator" class="md-nav__link">
-    2.2 Automating the reading of data from your rig or lab or collaborator
+  <a href="#71-writing-a-simple-ndi-app" class="md-nav__link">
+    7.1: Writing a simple ndi app
   </a>
   
-    <nav class="md-nav" aria-label="2.2 Automating the reading of data from your rig or lab or collaborator">
+    <nav class="md-nav" aria-label="7.1: Writing a simple ndi app">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#221-download-an-experiment-with-all-vhlab-metadata-left-intact" class="md-nav__link">
-    2.2.1 Download an experiment with all vhlab metadata left intact
+  <a href="#711-deciding-what-the-app-will-do" class="md-nav__link">
+    7.1.1 Deciding what the app will do
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#222-example-ndi-matlab-files-for-vhlab" class="md-nav__link">
-    2.2.2 Example NDI-matlab files for vhlab
+  <a href="#712-discussing-the-design-of-the-app-to-ensure-it-is-a-very-good-way-of-solving-the-problem" class="md-nav__link">
+    7.1.2 Discussing the design of the app to ensure it is a very good way of solving the problem
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#223-creating-a-setup-file" class="md-nav__link">
-    2.2.3 Creating a setup file.
+  <a href="#713" class="md-nav__link">
+    7.1.3
   </a>
   
-    <nav class="md-nav" aria-label="2.2.3 Creating a setup file.">
+    <nav class="md-nav" aria-label="7.1.3">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#code-block-2231-content-of-ndisetupvhlabm-do-not-type-into-matlab-command-line" class="md-nav__link">
-    Code block 2.2.3.1: Content of +ndi/+setup/vhlab.m. (Do not type into Matlab command line.)
+  <a href="#ndi_commondatabase_documentsappstaggertagjson" class="md-nav__link">
+    ndi_common/database_documents/apps/tagger/tag.json
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ndi_commonschema_documentsappstaggertagjson" class="md-nav__link">
+    ndi_common/schema_documents/apps/tagger/tag.json
   </a>
   
 </li>
@@ -4703,62 +4764,8 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#224-creating-a-function-that-creates-the-daq-systems-for-a-lab" class="md-nav__link">
-    2.2.4 Creating a function that creates the daq systems for a lab
-  </a>
-  
-    <nav class="md-nav" aria-label="2.2.4 Creating a function that creates the daq systems for a lab">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#code-block-2241-content-of-ndisetupdaqsystemvhlabm-do-not-type-into-matlab-command-line" class="md-nav__link">
-    Code block 2.2.4.1: Content of +ndi/+setup/+daq/+system/vhlab.m. (Do not type into Matlab command line.)
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#225-creating-a-custom-ndidaqreadermfdaqstimulus-object" class="md-nav__link">
-    2.2.5 Creating a custom ndi.daq.reader.mfdaq.stimulus object:
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#226-creating-a-custom-epochprobemap-class" class="md-nav__link">
-    2.2.6 Creating a custom epochprobemap class
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#227-putting-it-all-together" class="md-nav__link">
-    2.2.7 Putting it all together
-  </a>
-  
-    <nav class="md-nav" aria-label="2.2.7 Putting it all together">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#code-block-2271-type-this-into-matlab" class="md-nav__link">
-    Code block 2.2.7.1 Type this into Matlab
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#228-discussionfeedback" class="md-nav__link">
-    2.2.8 Discussion/Feedback
+  <a href="#716-discussionfeedback" class="md-nav__link">
+    7.1.6 Discussion/Feedback
   </a>
   
 </li>
@@ -4780,332 +4787,148 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/analyzing_first_physiology_experiment_detailed/2_theautomatedway.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/VH-Lab/NDI-matlab/edit/master/docs/tutorials/writing_own_app/1_writing_own_app.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                <h1 id="tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi">Tutorial 2: Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
-<h2 id="22-automating-the-reading-of-data-from-your-rig-or-lab-or-collaborator">2.2 Automating the reading of data from your rig or lab or collaborator<a class="headerlink" href="#22-automating-the-reading-of-data-from-your-rig-or-lab-or-collaborator" title="Permanent link">&para;</a></h2>
-<p>In the previous tutorial, we reviewed the steps necessary to create <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/">ndi.daq.system</a> objects to read in a dataset, and
-to add the metadata that is necessary to tell NDI about the contents of each epoch. </p>
-<p>Most labs use the same data acquisition devices and file organization schemes over and over again, and many labs also store
-the necessary metadata that describes the probes and subjects that are acquired. NDI allows you to create small software objects
-that read this metadata directly from the laboratory files. Then, opening an experimental session becomes as simple as a one
-line command such as </p>
-<div class="codehilite"><pre><span></span><code><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">vhlab</span><span class="p">([</span><span class="n">reference</span><span class="p">],[</span><span class="n">foldername</span><span class="p">]);</span><span class="w"></span>
-</code></pre></div>
-
-<p>Once this command has been run once, the directory can be opened with the standard <code>ndi.session.dir</code> command thereafter
-(though there is no harm to re-issuing the <code>ndi.setup.*</code> command).</p>
-<p>It's our guess that many labs have at least one person handy with code, and this task might fall to them. This tutorial is
-written for people who already have some familiarity with coding. If you'd like help creating these functions for your lab,
-use the <a href="https://github.com/VH-Lab/NDI-matlab/issues">issue tracker</a> to post a question. Creating these automatic readers 
-is the biggest stress point in using NDI. The system is relatively easy to use once you are able to read your data!</p>
-<p>While there are many ways to organize code for custom setups, we have created a motif that is easy to follow. The <code>ndi</code> package
-in Matlab has a subpackage called <code>setup</code>. Here, we have placed m-files that create an <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/session.m/">ndi.session</a> with the default
-settings for various labs or users. The <code>setup</code> package also has a subpackage structure that mimics the subpackage structure
-of <code>ndi</code>. In Matlab, packages are denoted by putting a <code>+</code> in the folder name:</p>
-<ul>
-<li><code>+ndi/+setup/</code><ul>
-<li><code>+daq/</code><ul>
-<li><code>+metadata/</code></li>
-<li><code>+metadatareader/</code></li>
-<li><code>+reader/</code></li>
-<li><code>+system/</code>  </li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<h3 id="221-download-an-experiment-with-all-vhlab-metadata-left-intact">2.2.1 Download an experiment with all vhlab metadata left intact<a class="headerlink" href="#221-download-an-experiment-with-all-vhlab-metadata-left-intact" title="Permanent link">&para;</a></h3>
-<p>Please download an example data directory called <a href="https://drive.google.com/file/d/1otNMkVgZ6KBIn2Y-W2oYVj2DgSOgV-xE/view?usp=sharing">ts_exper2</a>. Be sure to unzip the files, and we recommend placing them in your Matlab userpath under 'MATLAB/Documents/NDI/' as before. This directory contains the files that were generated at the
-time of acquisition on Steve's rig in the Fitzpatrick lab at Duke, which is nearly identical to the format that we use in the
-vhlab now. You'll see that these directories have a few more files. It's not necessary to follow the identities of the files in detail, but let's look at what is in t00001 as an example:</p>
-<ul>
-<li><code>t00001/</code><ul>
-<li><code>filetime.txt</code> - The time of the acquisition beginning in seconds from midnight</li>
-<li><code>reference.txt</code> = A file describing the probes that are present in this directory</li>
-<li><code>spike2data.S2R</code> - This is an irrelevant file! But it's there every time.</li>
-<li><code>spike2data.smr</code> - The raw data file acquired by CED's program Spike2 (data acquired via Micro1401)</li>
-<li><code>spike2datalog.txt</code> - A text log file (not relevant)</li>
-<li><code>stims.mat</code> - The record of stimulation as produced by the stimulus computer. It uses <a href="http://github.com/VH-Lab/vhlab-NewStim-matlab">NewStim</a> stimuli and is written by VH lab's <a href="http://github.com/VH-Lab/vhlab-RunExperiment-matlab">RunExperiment</a> program.</li>
-<li><code>stimtimes.txt</code> - A text file where each line contains a) the stimulus onset trigger, b) the stimulus ID number between 1-255, and c) an array of video frame trigger times (when the video frame was changed)</li>
-<li><code>twophotontimes.txt</code> - A record of triggers of all 2-photon frames. None in this experiment.</li>
-<li><code>verticalblanking.txt</code> - A record of each refresh of the monitor. This was not yet used in these experiments but is now part of the VH lab's suite.</li>
-<li><code>vhspike2_channelgrouping.txt</code> - A text file that indicates which acquisition channels of our vhspike2 DAQ system are connected to each probe.</li>
-</ul>
-</li>
-</ul>
-<h3 id="222-example-ndi-matlab-files-for-vhlab">2.2.2 Example NDI-matlab files for vhlab<a class="headerlink" href="#222-example-ndi-matlab-files-for-vhlab" title="Permanent link">&para;</a></h3>
-<p>To import data from our lab, we created 4 Matlab files:</p>
-<ul>
-<li><code>+ndi/+setup/vhlab.m</code> - A function that builds an ndi.session object with daq systems that read from our lab's major devices.</li>
-<li><code>+ndi/+setup/+daq/+metadata/epochprobemap_daqsystem_vhlab.m</code> - A class that examines our lab's metadata files that describe the mapping between probes and data acquisition systems and returns an epochprobemap that NDI can interpret. Overrides the default <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bepoch/epochprobemap_daqsystem.m/">ndi.epoch.epochprobemap_daqsystem.m</a> class that reads the <code>probemap.txt</code> text files we saw in <a href="../1_example_dataset/">Tutorial 2.1</a>. </li>
-<li><code>+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m</code> - A class that reads stimulus event data from our custom acquisition files.</li>
-<li><code>+ndi/+daq/+metadatareader/NewStimStims.m</code> - A class that imports stimulus metadata from our lab's open source <a href="https://github.com/VH-Lab/vhlab-NewStim-matlab">NewStim</a> package. (We put it in NDI proper because it is an open source program, not intended solely for our lab.)</li>
-</ul>
-<h3 id="223-creating-a-setup-file">2.2.3 Creating a <code>setup</code> file.<a class="headerlink" href="#223-creating-a-setup-file" title="Permanent link">&para;</a></h3>
-<p>The setup file accomplishes, in an automated fashion, exactly what we did in <a href="../1_example_dataset/">Tutorial 2.1</a>: it 
-opens an <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/session.m/">ndi.session</a> with a particular reference name and directory path, and adds the daq systems that are necessary
-to read the probe data. It normally lives in <code>+ndi/+setup/LABORINVESTIGATORNAME.m</code>. We include the code here:</p>
-<h4 id="code-block-2231-content-of-ndisetupvhlabm-do-not-type-into-matlab-command-line">Code block 2.2.3.1: Content of <code>+ndi/+setup/vhlab.m</code>. (Do not type into Matlab command line.)<a class="headerlink" href="#code-block-2231-content-of-ndisetupvhlabm-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span><code><span class="k">function</span><span class="w"> </span>S<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">vhlab</span><span class="p">(</span>ref, dirname<span class="p">)</span><span class="w"></span>
-<span class="c">% ndi.setup.vhlab - initialize an ndi.session.dir with VHLAB devices</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">%  S = ndi.setup.vhlab(REF, DIRNAME)</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">%  Initializes an ndi.session.dir object for the directory</span><span class="w"></span>
-<span class="c">%  DIRNAME with the standard compliment of VHLAB devices, as</span><span class="w"></span>
-<span class="c">%  found in ndi.setup.daq.system.vhlab.</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">%  If the devices are already added, they are not re-created.</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-
-<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">dir</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="n">dirname</span><span class="p">);</span><span class="w"></span>
-<span class="n">vhlabdevnames</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">system</span><span class="p">.</span><span class="n">vhlab</span><span class="p">();</span><span class="w"> </span><span class="c">% returns list of daq system names</span><span class="w"></span>
-
-<span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">numel</span><span class="p">(</span><span class="n">vhlabdevnames</span><span class="p">),</span><span class="w"></span>
-<span class="w">    </span><span class="n">dev</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">daqsystem_load</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span><span class="n">vhlabdevnames</span><span class="p">{</span><span class="nb">i</span><span class="p">});</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="nb">isempty</span><span class="p">(</span><span class="n">dev</span><span class="p">),</span><span class="w"></span>
-<span class="w">        </span><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">system</span><span class="p">.</span><span class="n">vhlab</span><span class="p">(</span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">vhlabdevnames</span><span class="p">{</span><span class="nb">i</span><span class="p">});</span><span class="w"></span>
-<span class="w">    </span><span class="k">end</span><span class="w"></span>
-<span class="k">end</span><span class="w"></span>
-
-<span class="w"> </span><span class="c">% update SYNCGRAPH</span><span class="w"></span>
-<span class="n">nsf</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">syncrule</span><span class="p">.</span><span class="n">filematch</span><span class="p">(</span><span class="nb">struct</span><span class="p">(</span><span class="s">&#39;number_fullpath_matches&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">));</span><span class="w"></span>
-<span class="n">n_intan2spike2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">time</span><span class="p">.</span><span class="n">syncrule</span><span class="p">.</span><span class="n">filefind</span><span class="p">(</span><span class="nb">struct</span><span class="p">(</span><span class="s">&#39;number_fullpath_matches&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="k">...</span><span class="w"></span>
-<span class="w">    </span><span class="s">&#39;syncfilename&#39;</span><span class="p">,</span><span class="s">&#39;vhintan_intan2spike2time.txt&#39;</span><span class="p">,</span><span class="k">...</span><span class="w"></span>
-<span class="w">    </span><span class="s">&#39;daqsystem1&#39;</span><span class="p">,</span><span class="s">&#39;vhintan&#39;</span><span class="p">,</span><span class="s">&#39;daqsystem2&#39;</span><span class="p">,</span><span class="s">&#39;vhvis_spike2&#39;</span><span class="p">));</span><span class="w"></span>
-
-<span class="n">S</span><span class="p">.</span><span class="n">syncgraph_addrule</span><span class="p">(</span><span class="n">nsf</span><span class="p">);</span><span class="w"></span>
-<span class="n">S</span><span class="p">.</span><span class="n">syncgraph_addrule</span><span class="p">(</span><span class="n">n_intan2spike2</span><span class="p">);</span><span class="w"></span>
-</code></pre></div>
-
-<p>This function calls another function that we will see in a minute (<code>ndi.setup.daq.system.vhlab</code>) that actually builds the
-daq system objects that we use in our lab. At the end of this function, 2 <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Btime/syncrule.m/">ndi.time.syncrules</a> are added that describe
-how synchronization is performed across our devices. If 2 or more of the same files are present in an epoch, then it is assumed
-that files are from the same underlying device and they are assumed to have the same time clock. Our custom acquisition code
-also produces a file <code>vhintan_intan2spike2time.txt</code> that has the time shift and scaling between our Intan acquisition system
-and our CED Spike2 acquisition system, and we instruct NDI to use that file to synchronize the 2 devices using shift and scale 
-in that file.</p>
-<h3 id="224-creating-a-function-that-creates-the-daq-systems-for-a-lab">2.2.4 Creating a function that creates the daq systems for a lab<a class="headerlink" href="#224-creating-a-function-that-creates-the-daq-systems-for-a-lab" title="Permanent link">&para;</a></h3>
-<p>We also write a function that builds the daq systems that we use in our lab. This process involves 1) naming the daq system,
-2) specifying the <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bdaq/reader.m/">ndi.daq.reader</a> that is used, 3) specifying any <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bdaq/metadatareader.m/">ndi.daq.metadatareader</a> if necessary, and 
-4) specifying the <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/+file/navigator.m/">ndi.file.navigator</a> to find the files that comprise each epoch.</p>
-<p>If this function here is called with 0 input arguments, then it returns a list of all known daq systems objects for our lab
-(<code>'vhintan', 'vhspike2', 'vhvis_spike2'</code>).
-Otherwise, if it is called with the name of a daq system that this function knows how to build, it builds it. It adds the
-appropriate <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bdaq/reader.m/">ndi.daq.reader</a>, <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bdaq/metadatareader.m/">ndi.daq.metadatareader</a>, and <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/+file/navigator.m/">ndi.file.navigator</a>.</p>
-<h4 id="code-block-2241-content-of-ndisetupdaqsystemvhlabm-do-not-type-into-matlab-command-line">Code block 2.2.4.1: Content of <code>+ndi/+setup/+daq/+system/vhlab.m</code>. (Do not type into Matlab command line.)<a class="headerlink" href="#code-block-2241-content-of-ndisetupdaqsystemvhlabm-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span><code><span class="k">function</span><span class="w"> </span>S<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">vhlab</span><span class="p">(</span>S, daqsystemname<span class="p">)</span><span class="w"></span>
-<span class="c">% ndi.setup.daq.system.vhlab - initialize daq systems used by VHLAB</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">% S = ndi.setup.daq.system.vhlab(S, DEVNAME)</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">% Creates daq systems that look for files in the VHLAB standard recording</span><span class="w"></span>
-<span class="c">% scheme, where data from different epochs are organized into</span><span class="w"></span>
-<span class="c">% subdirectories (using ndi.file.navigator.epochdir). DEVNAME should be the </span><span class="w"></span>
-<span class="c">% name a daq systems in the table below. These daq systems are added to the ndi.session</span><span class="w"></span>
-<span class="c">% object S. If DEVNAME is a cell list of strings, then multiple items are added.</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">% If the function is called with no input arguments, then it returns a list</span><span class="w"></span>
-<span class="c">% of all valid device names.</span><span class="w"></span>
-<span class="c">% </span><span class="w"></span>
-<span class="c">% Each epoch is defined by the presence of a &#39;reference.txt&#39; file, as well</span><span class="w"></span>
-<span class="c">% as specific files that are needed by each device as described below.</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">%  Devices created   | Description</span><span class="w"></span>
-<span class="c">% |------------------|--------------------------------------------------|</span><span class="w"></span>
-<span class="c">% | vhintan          | ndi.daq.system.mfdaq that looks for files        |</span><span class="w"></span>
-<span class="c">% |                  |    &#39;vhintan_channelgrouping.txt&#39; and &#39;*.rhd&#39;     |</span><span class="w"></span>
-<span class="c">% | vhspike2         |    ndi.daq.system.mfdaq that looks for files     |</span><span class="w"></span>
-<span class="c">% |                  |    &#39;vhspike2_channelgrouping.txt&#39; and &#39;*.smr&#39;    |</span><span class="w"></span>
-<span class="c">% | vhvis_spike2     | ndi.daq.system.mfdaq.stimulus that looks for     |</span><span class="w"></span>
-<span class="c">% |                  |    files &#39;stimtimes.txt&#39;, &#39;verticalblanking.txt&#39;,|</span><span class="w"></span>
-<span class="c">% |                  |    &#39;stims.mat&#39;, and &#39;spike2data.smr&#39;.            |</span><span class="w"></span>
-<span class="c">% -----------------------------------------------------------------------</span><span class="w"></span>
-<span class="c">%</span><span class="w"></span>
-<span class="c">% See also: ndi.file.navigator.epochdir</span><span class="w"></span>
-
-<span class="k">if</span><span class="w"> </span><span class="nb">nargin</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;vhintan&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;vhspike2&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;vhvis_spike2&#39;</span><span class="p">};</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
-<span class="k">end</span><span class="p">;</span><span class="w"></span>
-
-<span class="k">if</span><span class="w"> </span><span class="nb">iscell</span><span class="p">(</span><span class="n">daqsystemname</span><span class="p">),</span><span class="w"></span>
-<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">length</span><span class="p">(</span><span class="n">daqsystemname</span><span class="p">),</span><span class="w"></span>
-<span class="w">        </span><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">system</span><span class="p">.</span><span class="n">vhlab</span><span class="p">(</span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">daqsystemname</span><span class="p">{</span><span class="nb">i</span><span class="p">});</span><span class="w"></span>
-<span class="w">    </span><span class="k">end</span><span class="w"></span>
-<span class="w">    </span><span class="k">return</span><span class="p">;</span><span class="w"></span>
-<span class="k">end</span><span class="w"></span>
-
-<span class="w">  </span><span class="c">% all of our daq systems use this custom epochprobemap class</span><span class="w"></span>
-<span class="n">epochprobemapclass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s">&#39;ndi.setup.daq.metadata.epochprobemap_daqsystem_vhlab&#39;</span><span class="p">;</span><span class="w"></span>
-
-<span class="k">switch</span><span class="w"> </span><span class="n">daqsystemname</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s">&#39;vhintan&#39;</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">fileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;reference.txt&#39;</span><span class="p">,</span><span class="s">&#39;.*\.rhd\&gt;&#39;</span><span class="p">,</span><span class="s">&#39;vhintan_channelgrouping.txt&#39;</span><span class="p">};</span><span class="w">  </span>
-<span class="w">        </span><span class="n">readerobjectclass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s">&#39;ndi.daq.reader.mfdaq.intan&#39;</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="n">epochprobemapfileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;vhintan_channelgrouping.txt&#39;</span><span class="p">};</span><span class="w"></span>
-<span class="w">        </span><span class="n">mdr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{};</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s">&#39;vhspike2&#39;</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="n">fileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;reference.txt&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;.*\.smr\&gt;&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;vhspike2_channelgrouping.txt&#39;</span><span class="p">};</span><span class="w"> </span>
-<span class="w">        </span><span class="n">readerobjectclass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s">&#39;ndi.daq.reader.mfdaq.cedspike2&#39;</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="n">epochprobemapfileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;vhspike2_channelgrouping.txt&#39;</span><span class="p">};</span><span class="w"></span>
-<span class="w">        </span><span class="n">mdr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{};</span><span class="w"></span>
-<span class="w">    </span><span class="k">case</span><span class="w"> </span><span class="s">&#39;vhvis_spike2&#39;</span><span class="w"></span>
-<span class="w">        </span><span class="n">fileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;reference.txt&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;stimtimes.txt&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;verticalblanking.txt&#39;</span><span class="p">,</span><span class="k">...</span><span class="w"></span>
-<span class="w">            </span><span class="s">&#39;stims.mat&#39;</span><span class="p">,</span><span class="w"> </span><span class="s">&#39;spike2data.smr&#39;</span><span class="p">};</span><span class="w"> </span>
-<span class="w">        </span><span class="n">readerobjectclass</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s">&#39;ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2&#39;</span><span class="p">];</span><span class="w"></span>
-<span class="w">        </span><span class="n">epochprobemapfileparameters</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="s">&#39;stimtimes.txt&#39;</span><span class="p">};</span><span class="w"> </span>
-<span class="w">        </span><span class="n">mdr</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">metadatareader</span><span class="p">.</span><span class="n">NewStimStims</span><span class="p">(</span><span class="s">&#39;stims.mat&#39;</span><span class="p">)};</span><span class="w"></span>
-<span class="w">    </span><span class="k">otherwise</span><span class="p">,</span><span class="w"></span>
-<span class="w">        </span><span class="nb">error</span><span class="p">([</span><span class="s">&#39;Unknown device requested &#39;</span><span class="w"> </span><span class="n">daqsystemname</span><span class="w"> </span><span class="s">&#39;.&#39;</span><span class="p">]);</span><span class="w"></span>
-<span class="k">end</span><span class="w"></span>
-
-<span class="n">ft</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">file</span><span class="p">.</span><span class="n">navigator</span><span class="p">.</span><span class="n">epochdir</span><span class="p">(</span><span class="n">S</span><span class="p">,</span><span class="w"> </span><span class="n">fileparameters</span><span class="p">,</span><span class="w"> </span><span class="n">epochprobemapclass</span><span class="p">,</span><span class="w"> </span><span class="n">epochprobemapfileparameters</span><span class="p">);</span><span class="w"></span>
-
-<span class="nb">eval</span><span class="p">([</span><span class="s">&#39;dr = &#39;</span><span class="w"> </span><span class="n">readerobjectclass</span><span class="w"> </span><span class="s">&#39;();&#39;</span><span class="p">]);</span><span class="w"></span>
-
-<span class="n">mydev</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">daq</span><span class="p">.</span><span class="n">system</span><span class="p">.</span><span class="n">mfdaq</span><span class="p">(</span><span class="n">daqsystemname</span><span class="p">,</span><span class="w"> </span><span class="n">ft</span><span class="p">,</span><span class="w"> </span><span class="n">dr</span><span class="p">,</span><span class="w"> </span><span class="n">mdr</span><span class="p">);</span><span class="w"> </span><span class="c">% create the daq system object</span><span class="w"></span>
-<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">daqsystem_add</span><span class="p">(</span><span class="n">mydev</span><span class="p">);</span><span class="w"> </span><span class="c">% add the daq system object to our ndi.session</span><span class="w"></span>
-</code></pre></div>
-
-<p>Let's look at the creation of these daq system objects in detail. </p>
-<ul>
-<li>
-<p><code>vhintan</code> - This daq system looks for groups of files with one file named <code>reference.txt</code>, a file that ends in <code>.rhd</code>, and
-another file called <code>vhintan_channelgrouping.txt</code>. These files are produced by the computer that runs our main acquisition on our rigs, when an Intan acquisition device is used. Together, <code>reference.txt</code> and <code>vhintan_channelgrouping.txt</code> have information
-about the probes that were used in that recording and the channel mapping of those probes. We will look at these in more detail later. We use the reader <code>ndi.daq.reader.mfdaq.intan</code>, which knows how to read channel data from Intan .rhd files. We tell our
-daq.system object that 'vhintan_channelgrouping.txt' is the file to use to read epochprobemap information (we will instruct it
-how to interpret the data in a later function), and there is no metadata reader <code>mdr</code>. We also tell ndi.file.navigator that
-all of these files will appear in subfolders within our main folder by using the <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/+file/%2Bnavigator/epochdir.m/">ndi.file.navigator.epochdir</a> class.</p>
-</li>
-<li>
-<p><code>vhspike2</code> - This daq system is very similar to <code>vhintan</code>, except that it looks for files that end in .smr and looks for a
-different epochmap metadata file (<code>vhspike2_channelgrouping.txt</code>).</p>
-</li>
-<li>
-<p><code>vhvis_spike2</code> - This system is more custom. It relies on text files that are generated by our scripts that run on our CED Micro1401 acquisition system: <code>stimtimes.txt</code>, <code>verticalblanking.txt</code>, <code>spike2data.smr</code>, and a file generated by our visual stimulation system called <code>stims.mat</code>. We add a metadatareader <code>ndi.daq.metadatareader.NewStimStims</code> that knows how to interpret the <code>stims.mat</code> file. We will cover this custom <a href="https://vh-lab.github.io/NDI-matlab/reference/+ndi/%2Bdaq/reader.m/">ndi.daq.reader</a> next.</p>
-</li>
-</ul>
-<h3 id="225-creating-a-custom-ndidaqreadermfdaqstimulus-object">2.2.5 Creating a custom <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m/">ndi.daq.reader.mfdaq.stimulus</a> object:<a class="headerlink" href="#225-creating-a-custom-ndidaqreadermfdaqstimulus-object" title="Permanent link">&para;</a></h3>
-<p>Our visual stimulation system produces a variety of event data, including information about stimulus onset and offset, the
-vertical refresh signal from the monitor, an 8-bit code for each stimulus ID, a video frame trigger (every time we update the
-image on the screen), and a signal we call the "pretime" trigger that is generally issued 0.5 seconds <em>before</em> a stimulus is
-begun (used for baseline subtracting in intrinsic signal imaging experiments among other applications).</p>
-<p>Our acquisition system running on a CED Micro1401 generates text files related to these events, and we propagate them through
-as a set of event channels. We define 5 fixed channels for our daq system: </p>
-<ul>
-<li><code>mk1</code>: a marker channel that indicates stim ON (+1) or stim OFF (-1)</li>
-<li><code>mk2</code>: a marker channel that indicates the 8-bit stimulus identifier (stimid)</li>
-<li><code>mk3</code>: a marker channel that indicates when the stimulus period opens (+1) and closes (-1); this includes interstimulus "background" time</li>
-<li><code>e1</code>: an event channel that indicates each frame trigger / video frame update</li>
-<li><code>e2</code>: an event channel that indicates the vertical refresh times of the stimulus monitor</li>
-<li><code>e3</code>: an event channel that indicates the pre-stimulus trigger (indicates stimulus is upcoming, usually 0.5s away)</li>
-</ul>
-<p>Rather than copying the entire code here, we will include a link to the file: <a href="https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bdaq/%2Breader/%2Bmfdaq/%2Bstimulus/vhlabvisspike2.m">ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.m</a> . It should be relatively
-self-explanitory for someone with a coding background to read and mimic this file.</p>
-<h3 id="226-creating-a-custom-epochprobemap-class">2.2.6 Creating a custom epochprobemap class<a class="headerlink" href="#226-creating-a-custom-epochprobemap-class" title="Permanent link">&para;</a></h3>
-<p>In <a href="../1_example_dataset/">Tutorial 2.1</a>, we saw that each epoch of data had an associated epochprobemap that contained the 
-following fields of information:</p>
+                <h1 id="tutorial-7-writing-your-own-apps">Tutorial 7: Writing your own apps<a class="headerlink" href="#tutorial-7-writing-your-own-apps" title="Permanent link">&para;</a></h1>
+<h2 id="71-writing-a-simple-ndi-app">7.1: Writing a simple ndi app<a class="headerlink" href="#71-writing-a-simple-ndi-app" title="Permanent link">&para;</a></h2>
+<p>This tutorial covers writing an ndi.app in Matlab for NDI that uses the ndi.app.appdoc framework.</p>
+<p>The app we will make here, called ndi.app.tagger, is very simple, so it serves as a good example.</p>
+<h3 id="711-deciding-what-the-app-will-do">7.1.1 Deciding what the app will do<a class="headerlink" href="#711-deciding-what-the-app-will-do" title="Permanent link">&para;</a></h3>
+<p>The first step in designing an app is to have a clear picture of what the app will do. </p>
+<p>Tagger was developed because there is a need to be able to specify metadata for ndi documents that is not
+part of their intrinsic parameters. For example, if you put a drug on your preparation, you might want to
+label certain epochs as belonging to that condition. The label would ideally conform to an ontology, which is
+a regulated vocabulary.</p>
+<p>In developing Tagger, we decided there were 2 types of documents that we would like to store. We would like
+to be able to put a "tag", or a label that also potentially has a value, onto any database document.  It has
+the same properties as a tag, but the name implies that the tag refers to a particular type of information,
+which is an experimental condition.</p>
+<p>That is, we want a single document type:</p>
+<ol>
+<li>A <em>tag</em> document that allows one to specify a name and value of a tag, the ontology that it comes from, and to have it "depend on" an NDI document id, so it is associated with a particular document.</li>
+</ol>
+<p>We want our app to be able to </p>
+<ol>
+<li>Add a tag to the database</li>
+<li>Find tags that match certain criteria</li>
+</ol>
+<h3 id="712-discussing-the-design-of-the-app-to-ensure-it-is-a-very-good-way-of-solving-the-problem">7.1.2 Discussing the design of the app to ensure it is a very good way of solving the problem<a class="headerlink" href="#712-discussing-the-design-of-the-app-to-ensure-it-is-a-very-good-way-of-solving-the-problem" title="Permanent link">&para;</a></h3>
+<p>It is important to discuss the design of any new app to make sure that it is, at least, a very good way of
+solving the problem. I usually write out a few alternatives and a written "debate" among them.</p>
 <table>
 <thead>
 <tr>
-<th>name</th>
-<th>reference</th>
-<th>type</th>
-<th>devicestring</th>
-<th>subjectstring</th>
+<th>Alternative idea</th>
+<th>Discussion</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>ctx</td>
-<td>1</td>
-<td>n-trode</td>
-<td>ced_daqsystem:ai11</td>
-<td>treeshrew_12345@mylab.org</td>
+<td>Why not add the tags to database documents directly?</td>
+<td>NDI documents are not editable once created; they are designed to be made once, with a time stamp. Other calculations depend on these documents remaining in their original state. If we made NDI documents editable, then, potentially, all calculations based on that document would need to be updated. Instead, you can only delete documents entirely (which removes all dependent documents).</td>
 </tr>
 <tr>
-<td>vis_stim</td>
-<td>1</td>
-<td>stimulator</td>
-<td>vis_daqsystem:mk30;text30;md1</td>
-<td>treeshrew_12345@mylab.org</td>
+<td>Why not allow multiple tags to be added in a single database document? Won't limiting to 1 tag per document mean that there could be a lot of documents?</td>
+<td>The argument against is the same as the above. We can't edit NDI documents. If someone wants to modify or delete one of the entries, they would have to delete the whole document.</td>
+</tr>
+<tr>
+<td>Why not just have the user search for tags using the normal database querying? Why write a function to find the documents?</td>
+<td>This is not necessary but it is a helpful addition; the user could use normal database querying to discover the same things. We offer the function here in the app as a shortcut.</td>
 </tr>
 </tbody>
 </table>
-<p>We need to write a substitute class that is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap</a> that reads the epoch information and returns all of this same information.</p>
-<p>In our vhlab session directories, we always have a single subject whose unique identifier is specified in a text file called
-<code>subject.txt</code> in the top directory. This file is read, and this text is used as the <code>subjectstring</code> for all probes.</p>
-<p>In each vhlab epoch directory, we have a file called <code>reference.txt</code> that includes the name, reference, and type of recording
-present in each epoch. Our class's creator reads this file, and uses it to pull out the <code>name</code> and <code>reference</code> number for all
-electrode (or imaging) probes. </p>
-<p>If our <code>reference.txt</code> file indicates that our vhlab "type" is singleEC (single extracellular) or 'ntrode', then it looks for
-other text files that contain a mapping between the name and reference of each probe and the channels that were used on a
-recording device to acquire it. In this experiment, we have <code>vhspike2_channelgrouping.txt</code> that indicates that our
-probe 'ctx | 1' was acquired on channel 11 of our CED Micro1401/Spike2 system. </p>
-<p>Finally, if a file named <code>stimtimes.txt</code> exists in the epoch directory, then we add in an epochprobemap entry for our visual
-stimulator:</p>
-<table>
-<thead>
-<tr>
-<th>name</th>
-<th>reference</th>
-<th>type</th>
-<th>devicestring</th>
-<th>subjectstring</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>vis_stim</td>
-<td>1</td>
-<td>stimulator</td>
-<td>vhvis_spike2:mk1-3;e1-3;md1</td>
-<td>treeshrew_12345@mylab.org</td>
-</tr>
-</tbody>
-</table>
-<p>We will not reproduce the code here but refer the reader to the <a href="https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/%2Bndi/%2Bsetup/%2Bepoch/epochprobemap_daqsystem_vhlab.m">link for the source code</a> of the class ndi.setup.epoch.epochprobemap_daqsystem_vhlab that is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap_daqsystem</a>.</p>
-<h3 id="227-putting-it-all-together">2.2.7 Putting it all together<a class="headerlink" href="#227-putting-it-all-together" title="Permanent link">&para;</a></h3>
-<p>Now that we have these pieces together, we can read our example data that we call <code>ts_exper2</code>. We will pull up the same plots that we pulled up in <a href="../1_example_dataset/">Tutorial 2.1</a>.</p>
-<h4 id="code-block-2271-type-this-into-matlab">Code block 2.2.7.1 Type this into Matlab<a class="headerlink" href="#code-block-2271-type-this-into-matlab" title="Permanent link">&para;</a></h4>
-<div class="codehilite"><pre><span></span><code><span class="n">prefix</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="nb">userpath</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;Documents&#39;</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;NDI&#39;</span><span class="p">];</span><span class="w"> </span><span class="c">% if you put the folder somewhere else, edit this</span><span class="w"></span>
-<span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">setup</span><span class="p">.</span><span class="n">vhlab</span><span class="p">(</span><span class="s">&#39;ts_exper2&#39;</span><span class="p">,[</span><span class="n">prefix</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper2&#39;</span><span class="p">]);</span><span class="w"></span>
-
-<span class="n">p_ctx1_list</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">(</span><span class="s">&#39;name&#39;</span><span class="p">,</span><span class="s">&#39;ctx&#39;</span><span class="p">,</span><span class="s">&#39;reference&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="c">% returns a cell array of matches</span><span class="w"></span>
-<span class="n">p_ctx1</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">p_ctx1_list</span><span class="p">{</span><span class="mi">1</span><span class="p">};</span><span class="w"> </span><span class="c">% take the first one, should be the only one</span><span class="w"></span>
-
-<span class="n">epoch_to_read</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
-<span class="p">[</span><span class="n">data</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">timeref_p_ctx1</span><span class="p">]=</span><span class="n">p_ctx1</span><span class="p">.</span><span class="n">readtimeseries</span><span class="p">(</span><span class="n">epoch_to_read</span><span class="p">,</span><span class="o">-</span><span class="nb">Inf</span><span class="p">,</span><span class="nb">Inf</span><span class="p">);</span><span class="w"> </span><span class="c">% read all data from epoch 1</span><span class="w"></span>
-<span class="nb">figure</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span><span class="w"></span>
-<span class="nb">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">data</span><span class="p">);</span><span class="w"></span>
-<span class="nb">xlabel</span><span class="p">(</span><span class="s">&#39;Time(s)&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="nb">ylabel</span><span class="p">(</span><span class="s">&#39;Voltage (V)&#39;</span><span class="p">);</span><span class="w"></span>
-<span class="nb">set</span><span class="p">(</span><span class="nb">gca</span><span class="p">,</span><span class="s">&#39;xlim&#39;</span><span class="p">,[</span><span class="n">t</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="k">end</span><span class="p">)]);</span><span class="w"></span>
-<span class="n">box</span><span class="w"> </span><span class="s">off</span><span class="p">;</span><span class="w"></span>
-
-<span class="n">p_visstim_list</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;stimulator&#39;</span><span class="p">)</span><span class="w"> </span><span class="c">% returns a cell array of matches</span><span class="w"></span>
-<span class="n">p_visstim</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">p_visstim_list</span><span class="p">{</span><span class="mi">1</span><span class="p">};</span><span class="w"> </span><span class="c">% take the first one, should be the only one</span><span class="w"></span>
-<span class="p">[</span><span class="n">data</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">timeref_stim</span><span class="p">]=</span><span class="n">p_visstim</span><span class="p">.</span><span class="n">readtimeseries</span><span class="p">(</span><span class="n">timeref_p_ctx1</span><span class="p">,</span><span class="o">-</span><span class="nb">Inf</span><span class="p">,</span><span class="nb">Inf</span><span class="p">);</span><span class="w"> </span><span class="c">% read all data from epoch 1 of p_ctx1 !</span><span class="w"></span>
-<span class="nb">figure</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span><span class="w"></span>
-<span class="n">hold</span><span class="w"> </span><span class="s">on</span><span class="p">;</span><span class="w"></span>
-<span class="n">vlt</span><span class="p">.</span><span class="n">neuro</span><span class="p">.</span><span class="n">stimulus</span><span class="p">.</span><span class="n">plot_stimulus_timeseries</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="n">t</span><span class="p">.</span><span class="n">stimon</span><span class="p">,</span><span class="n">t</span><span class="p">.</span><span class="n">stimoff</span><span class="p">,</span><span class="s">&#39;stimid&#39;</span><span class="p">,</span><span class="n">data</span><span class="p">.</span><span class="n">stimid</span><span class="p">);</span><span class="w"></span>
+<h3 id="713">7.1.3<a class="headerlink" href="#713" title="Permanent link">&para;</a></h3>
+<p>Now we need to add a new document type. There are 2 steps. First, we have to add a blank document that
+indicates the structure of the document. Second, we have to add a schema document that describes how the
+document is to be filled in.</p>
+<p>Here is the document. Since this is part of NDI, we put it in the <code>ndi_common/database_documents/apps/tagger/</code> directory:</p>
+<h4 id="ndi_commondatabase_documentsappstaggertagjson">ndi_common/database_documents/apps/tagger/tag.json<a class="headerlink" href="#ndi_commondatabase_documentsappstaggertagjson" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+    <span class="nt">&quot;document_class&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;definition&quot;</span><span class="p">:</span>           <span class="s2">&quot;$NDIDOCUMENTPATH\/apps\/tagger\/tag.json&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;validation&quot;</span><span class="p">:</span>           <span class="s2">&quot;$NDISCHEMAPATH\/apps\/tagger\/tag.json&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;class_name&quot;</span><span class="p">:</span>           <span class="s2">&quot;ndi_document_apps_tagger_tag&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;property_list_name&quot;</span><span class="p">:</span>   <span class="s2">&quot;tag&quot;</span><span class="p">,</span>
+        <span class="nt">&quot;class_version&quot;</span><span class="p">:</span>        <span class="mi">1</span><span class="p">,</span>
+        <span class="nt">&quot;superclasses&quot;</span><span class="p">:</span> <span class="p">[</span>
+            <span class="p">{</span> <span class="nt">&quot;definition&quot;</span><span class="p">:</span>     <span class="s2">&quot;$NDIDOCUMENTPATH\/ndi_document.json&quot;</span> <span class="p">}</span>
+        <span class="p">]</span>
+    <span class="p">},</span>
+    <span class="nt">&quot;depends_on&quot;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="nt">&quot;name&quot;</span><span class="p">:</span>         <span class="s2">&quot;document_id&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;value&quot;</span><span class="p">:</span>        <span class="s2">&quot;&quot;</span>
+        <span class="p">}</span>
+    <span class="p">],</span>
+    <span class="nt">&quot;tag&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nt">&quot;ontology&quot;</span><span class="p">:</span>             <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;ontology_name&quot;</span><span class="p">:</span>        <span class="s2">&quot;&quot;</span><span class="p">,</span>     
+                <span class="nt">&quot;ontology_id&quot;</span><span class="p">:</span>          <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="nt">&quot;value&quot;</span><span class="p">:</span>                <span class="s2">&quot;&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div>
 
-<p>If you are paying close attention, you'll notice we got a little more information out of the <code>readtimeseries</code> command here. <code>t.stimoff</code> exists (it's extracted from our stimulus metadata), so we don't have to know the stimulus duration from elsewhere. That information is not directly accessible in the event record of the smr file, so there is an advantage to reading all the metadata that is available from all sources with a custom object.</p>
-<h3 id="228-discussionfeedback">2.2.8 Discussion/Feedback<a class="headerlink" href="#228-discussionfeedback" title="Permanent link">&para;</a></h3>
-<p>This concludes our tutorial on setting up code files to read one's own data and metadata into NDI.</p>
-<p>To help make this process clearer, we also include 3 other case studies in reading data (tutorials currently under construction):</p>
-<ul>
-<li>Alessandra Angelluci lab (reads unpublished recording)</li>
-<li>Don Katz lab (reads <a href="https://pubmed.ncbi.nlm.nih.gov/31232693/">Mukherjee et al., 2019</a>) </li>
-<li>Eve Marder lab (reads <a href="https://pubmed.ncbi.nlm.nih.gov/25914899/">Hamood et al., 2015</a>)</li>
-</ul>
-<p>Post <a href="https://github.com/VH-Lab/NDI-matlab/issues/177">comments, bugs, questions, or discuss</a>.</p>
+<p>INSERT DETAIL DESCRIBING DOCUMENT</p>
+<p>And the schema:</p>
+<h4 id="ndi_commonschema_documentsappstaggertagjson">ndi_common/schema_documents/apps/tagger/tag.json<a class="headerlink" href="#ndi_commonschema_documentsappstaggertagjson" title="Permanent link">&para;</a></h4>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+    <span class="nt">&quot;$schema&quot;</span><span class="p">:</span> <span class="s2">&quot;http://json-schema.org/draft/2019-09/schema#&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;$NDISCHEMAPATH\/apps\/ndi_document_apps_tagger_tag.json&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;title&quot;</span><span class="p">:</span> <span class="s2">&quot;tag&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span>
+    <span class="nt">&quot;properties&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="nt">&quot;ontology&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_default_value&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;character array (ASCII)&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_description&quot;</span><span class="p">:</span> <span class="s2">&quot;The name of the ontology to be used. At the present time it is okay to leave this blank and use a term that is outside an ontology.&quot;</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;ontology_name&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_default_value&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;character array (ASCII)&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_description&quot;</span><span class="p">:</span> <span class="s2">&quot;The name of tag in the ontology. If an ontology is specified, this `ontology_name` must match a word in the ontology.&quot;</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;ontology_id&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_default_value&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;character array (ASCII)&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_description&quot;</span><span class="p">:</span> <span class="s2">&quot;The ID of the word in the ontology. If an ontology is specified, the ID must match the ID of the word or element `ontology_name` in the ontology.&quot;</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;value&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;string&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_default_value&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_data_type&quot;</span><span class="p">:</span> <span class="s2">&quot;character array (ASCII)&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;doc_description&quot;</span><span class="p">:</span> <span class="s2">&quot;A field that may be associated with the tag. May be blank.&quot;</span>
+        <span class="p">},</span>
+        <span class="nt">&quot;depends_on&quot;</span> <span class="p">:</span> <span class="p">{</span>
+            <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;array&quot;</span><span class="p">,</span>
+            <span class="nt">&quot;items&quot;</span> <span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;object&quot;</span><span class="p">,</span> 
+                    <span class="nt">&quot;properties&quot;</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="nt">&quot;name&quot;</span> <span class="p">:</span> <span class="p">{</span>
+                            <span class="nt">&quot;const&quot;</span> <span class="p">:</span> <span class="s2">&quot;document_id&quot;</span>
+                        <span class="p">},</span>
+                        <span class="nt">&quot;value&quot;</span> <span class="p">:</span> <span class="p">{</span>
+                            <span class="nt">&quot;type&quot;</span> <span class="p">:</span> <span class="s2">&quot;string&quot;</span>
+                        <span class="p">}</span>
+                    <span class="p">}</span>
+                <span class="p">}</span>
+            <span class="p">]</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>INSERT DETAIL DESCRIBING SCHEMA</p>
+<h3 id="716-discussionfeedback">7.1.6 Discussion/Feedback<a class="headerlink" href="#716-discussionfeedback" title="Permanent link">&para;</a></h3>
+<p>This concludes our tutorial on writing a simple app in NDI.</p>
+<p>Post <a href="https://github.com/VH-Lab/NDI-matlab/issues/190">comments, bugs, questions, or discuss</a>.</p>
                 
               
               

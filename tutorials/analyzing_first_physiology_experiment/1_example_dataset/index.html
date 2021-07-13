@@ -456,11 +456,11 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#214-gaining-acess-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" class="md-nav__link">
-    2.1.4 Gaining acess to the data in NDI: ndi.session and ndi.daq.system objects
+  <a href="#214-gaining-access-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" class="md-nav__link">
+    2.1.4 Gaining access to the data in NDI: ndi.session and ndi.daq.system objects
   </a>
   
-    <nav class="md-nav" aria-label="2.1.4 Gaining acess to the data in NDI: ndi.session and ndi.daq.system objects">
+    <nav class="md-nav" aria-label="2.1.4 Gaining access to the data in NDI: ndi.session and ndi.daq.system objects">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -657,13 +657,13 @@
         <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
       
       <label class="md-nav__link" for="__nav_3_3">
-        Planned
+        3 Tutorials for new coders or new Matlab users
         <span class="md-nav__icon md-icon"></span>
       </label>
-      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+      <nav class="md-nav" aria-label="3 Tutorials for new coders or new Matlab users" data-md-level="2">
         <label class="md-nav__title" for="__nav_3_3">
           <span class="md-nav__icon md-icon"></span>
-          Planned
+          3 Tutorials for new coders or new Matlab users
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -672,12 +672,39 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reading_own_data_ndi/" class="md-nav__link">
-        3. Reading your own data in NDI
+      <a href="../../analzing_first_physiology_experiment_detailed/1_example_dataset.md" class="md-nav__link">
+        3.1 Newbie version of your first electrophysiology experiment with NDI
       </a>
     </li>
   
 
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
+      
+      <label class="md-nav__link" for="__nav_3_4">
+        Planned
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          Planned
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
             
   
@@ -3534,6 +3561,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../reference/%2Bndi/%2Bsession/mock.m/" class="md-nav__link">
+        ndi.session.mock
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../reference/%2Bndi/%2Bsession/sessiontable.m/" class="md-nav__link">
         ndi.session.sessiontable
       </a>
@@ -4870,6 +4909,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../learning_matlab/" class="md-nav__link">
+        Learning Matlab
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4965,11 +5019,11 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#214-gaining-acess-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" class="md-nav__link">
-    2.1.4 Gaining acess to the data in NDI: ndi.session and ndi.daq.system objects
+  <a href="#214-gaining-access-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" class="md-nav__link">
+    2.1.4 Gaining access to the data in NDI: ndi.session and ndi.daq.system objects
   </a>
   
-    <nav class="md-nav" aria-label="2.1.4 Gaining acess to the data in NDI: ndi.session and ndi.daq.system objects">
+    <nav class="md-nav" aria-label="2.1.4 Gaining access to the data in NDI: ndi.session and ndi.daq.system objects">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -5111,6 +5165,7 @@
                 
                 
                 <h1 id="tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi">Tutorial 2: Analyzing your first electrophysiology experiment with NDI<a class="headerlink" href="#tutorial-2-analyzing-your-first-electrophysiology-experiment-with-ndi" title="Permanent link">&para;</a></h1>
+<p>This is a beginner's tutorial for NDI. This tutorial is designed for users who have some basic familiarity with coding or Matlab. If you're a Matlab and coding newbie, please use <a href="https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset/">Tutorial 3.1, the detailed version</a>.</p>
 <h2 id="21-reading-an-example-dataset">2.1: Reading an example dataset<a class="headerlink" href="#21-reading-an-example-dataset" title="Permanent link">&para;</a></h2>
 <p>We will start with learning to read an example dataset into NDI. We assume you have already
 <a href="https://vh-lab.github.io/NDI-matlab/installation/">installed NDI</a> and taken the <a href="https://vh-lab.github.io/NDI-matlab/tutorials/ndimodel/1_intro/">introductory tutorial of the NDI model</a>. These data are available in a
@@ -5130,11 +5185,11 @@ an amplifier, and the output signal was recorded by a Cambridge Electronic Desig
 script was used that stored 1 recording epoch per folder. In software, the voltage from the electrode was assigned to channel 11. A visual stimulus
 monitor was set up in front of the animal, and visual stimuli were 
 generated by custom software running on a separate computer. A record of the stimulus parameters was stored in the epoch folder in a file called
-<code>stims.mat</code>, and stimulus timing information was delievered to the digital inputs of the micro1401 in the form of a stimulus onset trigger and
+<code>stims.mat</code>, and stimulus timing information was delivered to the digital inputs of the micro1401 in the form of a stimulus onset trigger and
 an 8-bit stimulus code signal that were generated by the stimulus computer.</p>
 <h3 id="212-introduction-to-the-data">2.1.2 Introduction to the data<a class="headerlink" href="#212-introduction-to-the-data" title="Permanent link">&para;</a></h3>
 <p>The data are in a folder called <code>ts_exper1</code>. It contains recordings of two neurons, an LGN neuron and a V1 neuron, to presentation of sinusoidal 
-gratings that either vary in orientation or in spatial frequency. The data as provided by the host lab are organized into subfolders, named <code>t00001</code>, <code>t00002</code>, <code>t00003</code>, and <code>t00004</code>. The first two folders are recordings of the LGN neuron, and the second two folders are recordings of the V1 neuron. Each <code>t0000N</code> folder has 3 files:</p>
+gratings that either vary in orientation or in spatial frequency. The data, as provided by the host lab, are organized into subfolders, named <code>t00001</code>, <code>t00002</code>, <code>t00003</code>, and <code>t00004</code>. The first two folders are recordings of the LGN neuron, and the second two folders are recordings of the V1 neuron. Each <code>t0000N</code> folder has 3 files:</p>
 <ul>
 <li><code>probemap.txt</code> - a file that we made for NDI that describe what probes are recorded in this folder</li>
 <li><code>spike2data.smr</code> - a CED Spike2 file that has the raw electrophysiology data and the stimulus timing information</li>
@@ -5159,7 +5214,7 @@ gratings that either vary in orientation or in spatial frequency. The data as pr
 <p>First, we need to tell NDI what <strong>probes</strong> we have in our experiment. A <strong>probe</strong> is anything that measures or stimulates; one end of a probe 
 is connected to a <strong>subject</strong>, and the other end of a probe is connected to a data acquisition device. We tell NDI how the probe is connected by
 creating an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/">ndi.epoch.epochprobemap</a>. Usually, we do this with a little
-code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example we will use the
+code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example, we will use the
 generic <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/">ndi.epoch.epochprobemap_daqsystem</a> object, which reads in a simple tab-delimited text file.</p>
 <p>Let's print the <code>probemap.txt</code> file for directory <code>t00001</code>:</p>
 <h4 id="code-block-2131-type-this-in-to-matlab">Code block 2.1.3.1. Type this in to Matlab:<a class="headerlink" href="#code-block-2131-type-this-in-to-matlab" title="Permanent link">&para;</a></h4>
@@ -5207,14 +5262,14 @@ data can be read directly, but here we have made another tab-delimited text file
 <div class="codehilite"><pre><span></span><code><span class="nb">type</span><span class="w"> </span><span class="p">(</span><span class="nb">fullfile</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span><span class="s">&#39;ts_exper1&#39;</span><span class="p">,</span><span class="s">&#39;t00001&#39;</span><span class="p">,</span><span class="s">&#39;stims.tsv&#39;</span><span class="p">))</span><span class="w"></span>
 </code></pre></div>
 
-<h3 id="214-gaining-acess-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects">2.1.4 Gaining acess to the data in NDI: <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> and <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/">ndi.daq.system</a> objects<a class="headerlink" href="#214-gaining-acess-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" title="Permanent link">&para;</a></h3>
+<h3 id="214-gaining-access-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects">2.1.4 Gaining access to the data in NDI: <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> and <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/">ndi.daq.system</a> objects<a class="headerlink" href="#214-gaining-access-to-the-data-in-ndi-ndisession-and-ndidaqsystem-objects" title="Permanent link">&para;</a></h3>
 <p>Now all that remains is to open the data directory as an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/">ndi.session</a> object, and make <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/">ndi.daq.system</a> objects to read your data. We will use an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bsession/dir.m/">ndi.session.dir</a> object, which allows us to read information from a directory (folder) on disk. </p>
 <p>We will create a new ndi.system object by calling the constructor with the reference name we wish to give to the session and the pathname to our data:</p>
 <h4 id="code-block-2141-type-this-in-to-matlab">Code block 2.1.4.1. Type this in to Matlab:<a class="headerlink" href="#code-block-2141-type-this-in-to-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">S</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">session</span><span class="p">.</span><span class="n">dir</span><span class="p">(</span><span class="s">&#39;ts_exper1&#39;</span><span class="p">,[</span><span class="n">prefix</span><span class="w"> </span><span class="nb">filesep</span><span class="w"> </span><span class="s">&#39;ts_exper1&#39;</span><span class="p">])</span><span class="w"></span>
 </code></pre></div>
 
-<p>Now you have made a new NDI session. The session is brand new, and doesn't know about any of the devices we used in our experiment. So, if we
+<p>Now you have made a new NDI session. The session is brand new and doesn't know about any of the devices we used in our experiment. So, if we
 try to see if there are any probes, we will see that it doesn't know of any:</p>
 <h4 id="code-block-2142-type-this-in-to-matlab">Code block 2.1.4.2. Type this in to Matlab:<a class="headerlink" href="#code-block-2142-type-this-in-to-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">()</span><span class="w"></span>
@@ -5240,7 +5295,7 @@ read the electrode data from our CED SMR files.</p>
 <span class="n">S</span><span class="p">.</span><span class="n">daqsystem_add</span><span class="p">(</span><span class="n">ced_system</span><span class="p">);</span><span class="w"></span>
 </code></pre></div>
 
-<p>Note: If you ran the tutorial before, you may have added <code>ced_system</code> to your session <code>S</code> already. That's fine, you'll get an error if you try to do it again. If you want to remove all your daq systems, you can call <code>ndi.session.daqsystem_clear()</code> by typing <code>S.daqsystem_clear()</code> and then you can add them again.</p>
+<p>Note: If you ran the tutorial before, you may have added <code>ced_system</code> to your session <code>S</code> already. That's fine, you'll get an error if you try to do it again. If you want to remove all your daq systems, you can call <code>ndi.session.daqsystem_clear()</code> by typing <code>S.daqsystem_clear()</code>, and then you can add them again.</p>
 <p>Let's look at the epochs that <code>ced_system</code> can find, in order to understand how it searches for epochs:</p>
 <h4 id="code-block-2144-type-this-into-matlab">Code block 2.1.4.4 Type this into Matlab<a class="headerlink" href="#code-block-2144-type-this-into-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="w"> </span><span class="c">% let&#39;s look at the epochs the daq.system can find</span><span class="w"></span>
@@ -5268,7 +5323,7 @@ tells NDI that any daq systems that share at least 2 files per epoch also share 
 </code></pre></div>
 
 <h3 id="215-opening-the-data-in-ndi-accessing-probes-via-from-ndidaqsystemmfdaq">2.1.5 Opening the data in NDI: accessing probes via from <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/">ndi.daq.system.mfdaq</a><a class="headerlink" href="#215-opening-the-data-in-ndi-accessing-probes-via-from-ndidaqsystemmfdaq" title="Permanent link">&para;</a></h3>
-<p>Now we can use NDI to see the probes that these daq systems can find, and to access the data from those probes. Let's look at the electrode probe data first.</p>
+<p>Now we can use NDI to see the probes that these daq systems can find and to access the data from those probes. Let's look at the electrode probe data first.</p>
 <h4 id="code-block-2151-type-this-in-to-matlab">Code block 2.1.5.1. Type this in to Matlab:<a class="headerlink" href="#code-block-2151-type-this-in-to-matlab" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">p</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">()</span><span class="w"> </span><span class="c">% get all of the probes that are in the ndi.session S</span><span class="w"></span>
 <span class="k">for</span><span class="w"> </span><span class="nb">i</span><span class="p">=</span><span class="mi">1</span><span class="p">:</span><span class="nb">numel</span><span class="p">(</span><span class="n">p</span><span class="p">),</span><span class="w"> </span><span class="n">p</span><span class="p">{</span><span class="nb">i</span><span class="p">},</span><span class="w"> </span><span class="k">end</span><span class="p">;</span><span class="w"> </span><span class="c">% display the probe information for each probe</span><span class="w"></span>

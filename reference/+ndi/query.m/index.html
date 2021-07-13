@@ -422,13 +422,13 @@
         <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_3" type="checkbox" id="__nav_3_3" >
       
       <label class="md-nav__link" for="__nav_3_3">
-        Planned
+        3 Tutorials for new coders or new Matlab users
         <span class="md-nav__icon md-icon"></span>
       </label>
-      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+      <nav class="md-nav" aria-label="3 Tutorials for new coders or new Matlab users" data-md-level="2">
         <label class="md-nav__title" for="__nav_3_3">
           <span class="md-nav__icon md-icon"></span>
-          Planned
+          3 Tutorials for new coders or new Matlab users
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -437,12 +437,39 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tutorials/reading_own_data_ndi/" class="md-nav__link">
-        3. Reading your own data in NDI
+      <a href="../../../tutorials/analzing_first_physiology_experiment_detailed/1_example_dataset.md" class="md-nav__link">
+        3.1 Newbie version of your first electrophysiology experiment with NDI
       </a>
     </li>
   
 
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
+      
+      <label class="md-nav__link" for="__nav_3_4">
+        Planned
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Planned" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          Planned
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
           
             
   
@@ -3370,6 +3397,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../%2Bsession/mock.m/" class="md-nav__link">
+        ndi.session.mock
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../%2Bsession/sessiontable.m/" class="md-nav__link">
         ndi.session.sessiontable
       </a>
@@ -4706,6 +4745,21 @@
   
 
     
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../learning_matlab/" class="md-nav__link">
+        Learning Matlab
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -4881,6 +4935,10 @@
 <td>make a search structure from field, operation, param1, param2 inputs</td>
 </tr>
 <tr>
+<td><em>string2query</em></td>
+<td>create an ndi.query from a simple paramterized string</td>
+</tr>
+<tr>
 <td><em>to_searchstructure</em></td>
 <td>convert an ndi.query object to a set of search structures</td>
 </tr>
@@ -4971,6 +5029,32 @@
   Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.
 
   See also: vlt.data.fieldsearch, ndi.query/ndi.query
+</code></pre></div>
+
+<hr />
+<p><strong>string2query</strong> - <em>create an ndi.query from a simple paramterized string</em></p>
+<div class="codehilite"><pre><span></span><code><span class="n">Q_OUT</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">STRING2QUERY</span><span class="p">(</span><span class="n">STR</span><span class="p">)</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">STRING2QUERY</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">short</span><span class="o">-</span><span class="n">cut</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">specifying</span><span class="w"> </span><span class="n">simple</span><span class="w"> </span><span class="n">queries</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">a</span><span class="w"> </span>
+<span class="w">  </span><span class="n">a</span><span class="w"> </span><span class="nb">single</span><span class="w"> </span><span class="n">character</span><span class="w"> </span><span class="nb">string</span><span class="p">.</span><span class="w"> </span><span class="n">It</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">not</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">powerful</span><span class="w"> </span><span class="n">as</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">the</span><span class="w"> </span>
+<span class="w">  </span><span class="n">usual</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="w"> </span><span class="n">creator</span><span class="w"> </span><span class="n">but</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">useful</span><span class="w"> </span><span class="n">shortener</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">some</span><span class="w"> </span><span class="n">situations</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">STR</span><span class="w"> </span><span class="n">should</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="nb">string</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">form</span><span class="w"></span>
+<span class="w">     </span><span class="s">&#39;parameter1=value1,parameter2=&quot;value2&quot;,parameterN=valueN&#39;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Parameters</span><span class="w"> </span><span class="nb">values</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">surrounded</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="n">quotes</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">they</span><span class="w"> </span><span class="n">are</span><span class="w"> </span>
+<span class="w">  </span><span class="n">character</span><span class="w"> </span><span class="nb">strings</span><span class="p">;</span><span class="w"> </span><span class="k">otherwise</span><span class="p">,</span><span class="w"> </span><span class="n">they</span><span class="w"> </span><span class="n">are</span><span class="w"> </span><span class="n">assumed</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="n">and</span><span class="w"></span>
+<span class="w">  </span><span class="n">are</span><span class="w"> </span><span class="n">converted</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="n">numbers</span><span class="w"> </span><span class="n">using</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nb">str2num</span><span class="w"> </span><span class="k">function</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">If</span><span class="w"> </span><span class="n">parameter</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">equal</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s">&#39;isa&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">then</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">query</span><span class="w"> </span><span class="n">uses</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">operator</span><span class="w"></span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="s">&#39;isa&#39;</span><span class="w"> </span><span class="n">and</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="w"> </span><span class="nb">type</span><span class="p">.</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Example</span><span class="p">:</span><span class="w"></span>
+<span class="w">    </span><span class="n">q_out</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">.</span><span class="n">string2query</span><span class="p">(</span><span class="s">&#39;element.name=&quot;ctx&quot;,element.ref=1&#39;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="c">% q_out = ndi.query(&#39;element.name&#39;,&#39;exact_string&#39;,&#39;ctx&#39;,&#39;&#39;) &amp; ...</span><span class="w"></span>
+<span class="w">    </span><span class="c">%    ndi.query(&#39;element.ref&#39;,&#39;exact_number&#39;,1)</span><span class="w"></span>
+<span class="w">    </span><span class="n">q_out2</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">query</span><span class="p">.</span><span class="n">string2query</span><span class="p">(</span><span class="s">&#39;isa=subject&#39;</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="c">% q_out2 = ndi.query(&#39;&#39;,&#39;isa&#39;,&#39;subject&#39;,&#39;&#39;)</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
