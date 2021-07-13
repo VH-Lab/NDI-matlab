@@ -20,9 +20,10 @@ classdef mock < ndi.session.dir
 			ref = 'mock_test';
 			dirname = [ndi_globals.path.temppath filesep 'mock_test'];
 
-			if ~vlt.file.isfolder(dirname),
-				mkdir(dirname);
+			if vlt.file.isfolder(dirname),
+				rmdir(dirname,'s');
 			end;
+			mkdir(dirname);
 
 			ndi_session_mock_obj = ndi_session_mock_obj@ndi.session.dir(ref,dirname);
 
