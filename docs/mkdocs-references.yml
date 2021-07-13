@@ -113,6 +113,7 @@
           - ndi.probe.timeseries.stimulator: 'reference/+ndi/+probe/+timeseries/stimulator.m.md'
       - session PACKAGE:
         - ndi.session.dir: 'reference/+ndi/+session/dir.m.md'
+        - ndi.session.mock: 'reference/+ndi/+session/mock.m.md'
         - ndi.session.sessiontable: 'reference/+ndi/+session/sessiontable.m.md'
       - setup PACKAGE:
         - ndi.setup.angeluccilab: 'reference/+ndi/+setup/angeluccilab.m.md'

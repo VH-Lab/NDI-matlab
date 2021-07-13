@@ -72,6 +72,7 @@
 | *query* | create a query object for searching the database |
 | *searchcellarray2searchstructure* | convert a search cell array to a search structure |
 | *searchstruct* | make a search structure from field, operation, param1, param2 inputs |
+| *string2query* | create an ndi.query from a simple paramterized string |
 | *to_searchstructure* | convert an ndi.query object to a set of search structures |
 
 
@@ -175,6 +176,35 @@ SEARCHSTRUCT_OUT = SEARCHSTRUCT(FIELD, OPERATION, PARAM1, PARAM2)
   Creates search structure with the given fields FIELD, OPERATION, PARAM1, PARAM2.
   
   See also: vlt.data.fieldsearch, ndi.query/ndi.query
+```
+
+---
+
+**string2query** - *create an ndi.query from a simple paramterized string*
+
+```
+Q_OUT = STRING2QUERY(STR)
+  
+  STRING2QUERY is a short-cut for specifying simple queries using a 
+  a single character string. It is not as powerful as using the 
+  usual ndi.query creator but it is a useful shortener for some situations.
+ 
+  STR should be a string of the form
+     'parameter1=value1,parameter2="value2",parameterN=valueN'
+ 
+  Parameters values are to be surrounded in quotes if they are 
+  character strings; otherwise, they are assumed to be numbers and
+  are converted to numbers using the str2num function.
+ 
+  If parameter is equal to 'isa', then the query uses the operator
+  for the ndi.query is 'isa' and the value is the document type.
+ 
+  Example:
+    q_out = ndi.query.string2query('element.name="ctx",element.ref=1')
+    % q_out = ndi.query('element.name','exact_string','ctx','') & ...
+    %    ndi.query('element.ref','exact_number',1)
+    q_out2 = ndi.query.string2query('isa=subject')
+    % q_out2 = ndi.query('','isa','subject','')
 ```
 
 ---
