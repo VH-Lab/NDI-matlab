@@ -197,7 +197,7 @@ classdef database
 				if strcmpi(areyousure,'Yes')
 					ids = ndi_database_obj.alldocids;
 					for i=1:numel(ids), 
-						ndi_database_obj.remove(ids{i}) % remove the entry
+						ndi_database_obj.remove(ids{i}); % remove the entry
 					end
 				else,
 					disp(['Not clearing because user did not indicate he/she is sure.']);

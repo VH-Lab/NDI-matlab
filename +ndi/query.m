@@ -189,7 +189,7 @@ classdef query
 					end;
 					searchstruct(end+1) = newstructure;
 				end;
-		end;
+		end; % searchcellarray2searchstructure()
 
 		function searchstruct_out = searchstruct(field, operation, param1, param2)
 			% SEARCHSTRUCT - make a search structure from field, operation, param1, param2 inputs
@@ -200,7 +200,79 @@ classdef query
 			% 
 			% See also: vlt.data.fieldsearch, ndi.query/ndi.query
 				searchstruct_out = struct('field',field,'operation',operation,'param1',param1,'param2',param2);	 
-		end; 
+		end;  % searchstruct()
+
+		function q_out = string2query(str)
+			% STRING2QUERY - create an ndi.query from a simple paramterized string
+			%
+			% Q_OUT = STRING2QUERY(STR)
+			% 
+			% STRING2QUERY is a short-cut for specifying simple queries using a 
+			% a single character string. It is not as powerful as using the 
+			% usual ndi.query creator but it is a useful shortener for some situations.
+			%
+			% STR should be a string of the form
+			%    'parameter1=value1,parameter2="value2",parameterN=valueN'
+			%
+			% Parameters values are to be surrounded in quotes if they are 
+			% character strings; otherwise, they are assumed to be numbers and
+			% are converted to numbers using the str2num function.
+			%
+			% If parameter is equal to 'isa', then the query uses the operator
+			% for the ndi.query is 'isa' and the value is the document type.
+			%
+			% Example:
+			%   q_out = ndi.query.string2query('element.name="ctx",element.ref=1')
+			%   % q_out = ndi.query('element.name','exact_string','ctx','') & ...
+			%   %    ndi.query('element.ref','exact_number',1)
+			%   q_out2 = ndi.query.string2query('isa=subject')
+			%   % q_out2 = ndi.query('','isa','subject','')
+			%
+				q_out = [];
+			 	% as a first step, find everything that is outside quotes
+				level = vlt.string.quotelevel(str);
+				comma =find( (str==',') & (level==0)); % find only commas outside the quotes
+				strs = vlt.string.splitindex(str,comma);
+				for i=1:numel(strs),
+					strs{i} = strtrim(strs{i}); % trim whitespace
+					level_ = vlt.string.quotelevel(strs{i});
+					eq_str = find( strs{i}=='=' & (level_==0));
+					if isempty(eq_str),
+						error(['No equals sign found in ' strs{i} '.']);
+					end;
+					op = '';
+					param = strs{i}(1:eq_str-1);
+					if strcmp(param,'isa'),
+						op = 'isa';
+						param = '';
+					end;
+					if any(level_), % it has a quote in it
+						if sum(level_)<2, 
+							error(['Quoted phrase in ' strs{i} ' must have a beginning and ending quote.']);
+						end;
+						fl = find(level_);
+						value = strs{i}(fl(1):fl(end));
+						if isempty(op),
+							op = 'extract_string';
+						end;
+					else, % it's a number unless param is isa
+						if strcmp(op,'isa'),
+							value = strs{i}(eq_str+1:end);
+						else,
+							value = str2num(strs{i}(eq_str+1:end));
+							op = 'exact_number';
+						end;
+					end;
+
+					q_ = ndi.query(param,op,value,'');
+					if isempty(q_out),
+						q_out = q_;
+					else,
+						q_out = q_out & q_;
+					end;
+				end;
+		end; % string2query()
+
 	end; % methods (Static)
 end 
 
