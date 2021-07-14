@@ -258,7 +258,12 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
                 if strcmpi(appdoc_type,'orientation_direction_tuning'),
                    tuning_doc_id = appdoc_struct.tuning_doc_id;
-                   doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(tuning_doc, 0);
+                   td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc_id,''));
+                   if numel(td)==1, td = td{1};
+                   elseif numel(td)>1, error(['Too many tuning documents.']); % should not happen
+                   elseif numel(td)==0, error(['No tuning doc with id ' tuning_doc_id '.']);
+                   end;
+                   doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);
 				else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end;
