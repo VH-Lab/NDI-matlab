@@ -1,4 +1,4 @@
-classdef calculation < ndi.app & ndi.appdoc
+classdef calculation < ndi.app & ndi.app.appdoc
 
 	properties (SetAccess=protected,GetAccess=public)
 	end; % properties
@@ -23,12 +23,18 @@ classdef calculation < ndi.app & ndi.appdoc
 					session = varargin{1};
 				end;
 				ndi_calculation_obj = ndi_calculation_obj@ndi.app(session,'calculation');
-				if nargin>2,
+				if nargin>1,
 					document_type = varargin{2};
-					path_to_doc_type = varargin{3};
-					ndi_calculation_obj = ndi_calculation_obj@ndi.app.appdoc(document_type,
-						path_to_doc_type);
+				else,
+					document_type = '';
 				end;
+				if nargin>2,
+					path_to_doc_type = varargin{3};
+				else,
+					path_to_doc_type = '';
+				end;
+				ndi_calculation_obj = ndi_calculation_obj@ndi.app.appdoc({document_type}, ...
+					{path_to_doc_type},session);
 		end; % calculation creator
 
 		function docs = run(ndi_calculation_obj, docExistsAction, parameters)
@@ -57,7 +63,7 @@ classdef calculation < ndi.app & ndi.appdoc
 				% take the appropriate action. If we need to, perform the calculation.
 
 				for i=1:numel(all_parameters),
-					previous_calculations_here = ndi_calculation_obj.search_for_calculation_docs, all_parameters{i});
+					previous_calculations_here = ndi_calculation_obj.search_for_calculation_docs(all_parameters{i});
 					do_calc = 0;
 					if ~isempty(previous_calculations_here),
 						switch(DocExistsAction),
@@ -115,7 +121,7 @@ classdef calculation < ndi.app & ndi.appdoc
 			% |-----------------------|-----------------------------------------------
 			%
 			%
-				fixed_input_parameters = parameters_specification_input_parameters;
+				fixed_input_parameters = parameters_specification.input_parameters;
 				if isfield(parameters_specification,'depends_on'),
 					fixed_depends_on = parameters_specification.depends_on;
 				else,
@@ -126,7 +132,7 @@ classdef calculation < ndi.app & ndi.appdoc
 					q = ndi.query('ndi_document.id','exact_string',fixed_depends_on(i).value,'');
 					l = ndi_calculation_obj.session.database_search(q);
 					if numel(l)~=1,
-						error(['Could not locate ndi document with id ' fixed_depends_on(i).value ' that corresponded to name ' fixed_depends_on(i).name ']);
+						error(['Could not locate ndi document with id ' fixed_depends_on(i).value ' that corresponded to name ' fixed_depends_on(i).name '.']);
 					end;
 				end;
 
@@ -141,7 +147,7 @@ classdef calculation < ndi.app & ndi.appdoc
 				doclist = {};
 				V = [];
 				for i=1:numel(parameters_specification.query),
-					doclist{i} = ndi_calculation_obj.session.database_search(parameters_specification.query(i));
+					doclist{i} = ndi_calculation_obj.session.database_search(parameters_specification.query(i).query);
 					V(i) = numel(doclist{i});
 				end;
 
@@ -230,7 +236,7 @@ classdef calculation < ndi.app & ndi.appdoc
 				doc = {};
 		end; % calculate()
 
-		function diagnostic_plot(ndi_calculation_obj, doc_or_parameters. varargin)
+		function diagnostic_plot(ndi_calculation_obj, doc_or_parameters, varargin)
 			% DIAGNOSTIC_PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
 			%
 			% DIAGNOSTIC_PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)

@@ -11,7 +11,7 @@ classdef simple < ndi.calculation
 			%
 				ndi.globals;
 				simple_obj = simple_obj@ndi.calculation(session,'simple_calc',...
-					fullfile(ndi_globals.path.commonpath,'apps','calculations','simple_calc.json'));
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','simple_calc.json'));
 		end; % simple()
 
 		function doc = calculate(ndi_calculation_obj, parameters)
@@ -24,8 +24,8 @@ classdef simple < ndi.calculation
 			% The document that is created simple has an 'answer' that is given
 			% by the input parameters.
 				% check inputs
-				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks 'input_parameters.']); end;
-				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks 'depends_on.']); end;
+				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
+				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
 				
 				simple = parameters;
 				simple.answer = parameters.input_parameters.answer;
@@ -65,5 +65,6 @@ classdef simple < ndi.calculation
 			%
 				eval(['help ndi.calc.example.simple.doc_about']);
 		end; %doc_about()
+	end; % methods()
 			
 end % simple
