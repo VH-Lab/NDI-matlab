@@ -27,7 +27,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                 
 		end % ndi.app.oridirtuning() creator
 
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, varargin)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, docexistaction, varargin)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
 			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
@@ -54,13 +54,12 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
 		end; % calculate_tuning_curve()
 
-		function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj);
+		function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction);
 			% 
 			%
 				oriprops = {};
 				E = ndi_app_oridirtuning_obj.session;
-				rapp = ndi.app.stimulus.tuning_response(E);
-
+                
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
 				rdoc = E.database_search(q_rdoc&q_relement);
@@ -73,7 +72,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						q_tdocrdoc = ndi.query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
 						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),
-							oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
+							appdoc_struct.tuning_doc.id = tdoc{t}.id();
+                            
+                            %oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
+                            oriprops{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning', appdoc_struct, docexistsaction);
 						end;
 					end;
 				end;
@@ -260,8 +262,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                    tuning_doc_id = appdoc_struct.tuning_doc_id;
                    td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc_id,''));
                    if numel(td)==1, td = td{1};
-                   elseif numel(td)>1, error(['Too many tuning documents.']); % should not happen
-                   elseif numel(td)==0, error(['No tuning doc with id ' tuning_doc_id '.']);
+                   elseif numel(td)>1,
+                       error(['Too many tuning documents.']); % should not happen
+                   elseif numel(td)==0,
+                       error(['No tuning doc with id ' tuning_doc_id '.']);
                    end;
                    doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);
 				else
@@ -283,14 +287,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     					
                     q = ndi.query('','isa','orientation_direction_tuning', '');
                     
-                    if numel(varargin)>1,
+                    if numel(varargin)>=1,
                         tuning_doc=varargin{1};
                         if ~isempty(tuning_doc),
                             q = q&ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_doc.id());
                         end;
                     end;
                     
-                    if numel(varargin)>2,
+                    if numel(varargin)>=2,
                         element_id = varargin{2};
                         if ~isempty(element_id),
                             q = q&ndi.query('','depends_on','element_id',element_id);
