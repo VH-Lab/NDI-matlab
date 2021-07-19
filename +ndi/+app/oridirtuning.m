@@ -20,14 +20,15 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					session = varargin{1};
 				end
 				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
-                ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.appdoc(...
+				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.appdoc(...
 					{'orientation_direction_tuning'},...
 					{'vision/oridir/orientation_direction_tuning'},...
 					session);
                 
 		end % ndi.app.oridirtuning() creator
 
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, docexistaction, varargin)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction)
+
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
 			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, ndi.element)
@@ -55,6 +56,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 		end; % calculate_tuning_curve()
 
 		function oriprops = calculate_all_oridir_indexes(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction);
+
 			% 
 			%
 				oriprops = {};
@@ -72,10 +74,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						q_tdocrdoc = ndi.query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
 						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),
-							appdoc_struct.tuning_doc.id = tdoc{t}.id();
-                            
-                            %oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
-                            oriprops{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning', appdoc_struct, docexistsaction);
+							appdoc_struct.tuning_doc_id = tdoc{t}.id();
+							% call add_appdoc with the 
+							%oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
+							oriprops{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning',appdoc_struct,docexistsaction,tdoc{t});
 						end;
 					end;
 				end;
@@ -88,9 +90,9 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%
 			%
 				if nargin < 3,
-                    do_add = 1;
-                end;
-                E = ndi_app_oridirtuning_obj.session;
+					do_add = 1;
+				end;
+				E = ndi_app_oridirtuning_obj.session;
 				tapp = ndi.app.stimulus.tuning_response(E);
 				ind = {};
 				ind_real = {};
@@ -183,8 +185,8 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
 
 				if do_add == 1,
-                    E.database_add(oriprops);
-                end;
+					E.database_add(oriprops);
+				end;
 
 				figure;
 				ndi_app_oridirtuning_obj.plot_oridir_response(oriprops);
@@ -211,7 +213,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				end;
 				desc = vlt.data.structwhatvaries(stim_props(included));
 				b = vlt.data.eqlen(desc,{'angle'});
-		end; % is_oridir_stimulus_response
+		end; % is_oridir_stimulus_response()
 
 		function plot_oridir_response(ndi_app_oridirtuning_obj, oriprops_doc)
 
@@ -242,9 +244,9 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
 		end; % plot_oridir_response
 
-    % functions that override ndi_app_appdoc
+		%%% functions that override ndi_app_appdoc  %%
         
-        function doc = struct2doc(ndi_app_oridirtuning_obj, appdoc_type, appdoc_struct, varargin)
+		function doc = struct2doc(ndi_app_oridirtuning_obj, appdoc_type, appdoc_struct, varargin)
 			% STRUCT2DOC - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APP_ORIDIRTUNING_OBJ, APPDOC_TYPE, APPDOC_STRUCT, ...)
@@ -255,27 +257,27 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% 'orientation_tuning_direction'| A document that describes the parameters to be used for 
 			%                               | orientation tuning direction 
 			% 
-            % See APPDOC_DESCRIPTION for a list of the parameters.
+			% See APPDOC_DESCRIPTION for a list of the parameters.
 			% 
 
                 if strcmpi(appdoc_type,'orientation_direction_tuning'),
                    tuning_doc_id = appdoc_struct.tuning_doc_id;
                    td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc_id,''));
-                   if numel(td)==1, td = td{1};
+                   if numel(td)==1, 
+                       td = td{1};
                    elseif numel(td)>1,
                        error(['Too many tuning documents.']); % should not happen
                    elseif numel(td)==0,
                        error(['No tuning doc with id ' tuning_doc_id '.']);
                    end;
                    doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);
+                   
 				else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end;
-                
-               
-       	end; %struct2doc()
+		end; %struct2doc()
 
-        function doc = find_appdoc(ndi_app_oridirtuning_obj, appdoc_type, varargin)
+		function doc = find_appdoc(ndi_app_oridirtuning_obj, appdoc_type, varargin)
 			% FIND_APPDOC - find an ndi_app_appdoc document in the session database
 			%
 			% See ndi_app_oridirtuning/APPDOC_DESCRIPTION for documentation.
@@ -284,31 +286,26 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             
 				switch(lower(appdoc_type))
 					case 'orientation_direction_tuning'
-                    					
-                    q = ndi.query('','isa','orientation_direction_tuning', '');
-                    
-                    if numel(varargin)>=1,
-                        tuning_doc=varargin{1};
-                        if ~isempty(tuning_doc),
-                            q = q&ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_doc.id());
-                        end;
-                    end;
-                    
-                    if numel(varargin)>=2,
-                        element_id = varargin{2};
-                        if ~isempty(element_id),
-                            q = q&ndi.query('','depends_on','element_id',element_id);
-                        end;
-                    end;
-                            
-                       doc = ndi_app_oridirtuning_obj.session.database_search(q);
-				
-                        otherwise
-                            error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-                        end %switch
+						q = ndi.query('','isa','orientation_direction_tuning', '');
+						if numel(varargin)>=1,
+							tuning_doc=varargin{1};
+							if ~isempty(tuning_doc),
+								q = q&ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_doc.id());
+							end;
+						end;
+						if numel(varargin)>=2,
+							element_id = varargin{2};
+							if ~isempty(element_id),
+								q = q&ndi.query('','depends_on','element_id',element_id);
+							end;
+						end;
+						doc = ndi_app_oridirtuning_obj.session.database_search(q);
+					otherwise,
+						error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+				end %switch
 		end % find_appdoc()
         
-        function appdoc_struct = doc2struct(ndi_app_oridirtuning_obj, appdoc_type, doc)
+		function appdoc_struct = doc2struct(ndi_app_oridirtuning_obj, appdoc_type, doc)
 			% DOC2STRUCT - create an ndi.document from an input structure and input parameters
 			%
 			% DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additional parameters]
@@ -319,11 +316,11 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% In the base class, this uses the property info in the ndi.document to load the data structure.
 			%
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
-                    appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
+					appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
 				end;
 		end; % doc2struct()
         
-    end; % methods
+	end; % methods
     
 	methods (Static),
 		
