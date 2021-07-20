@@ -270,11 +270,13 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                    elseif numel(td)==0,
                        error(['No tuning doc with id ' tuning_doc_id '.']);
                    end;
-                   doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);
-                   
-				else
+                   doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);            
+                elseif strcmpi(appdoc_type,'tuning_curve'),
+                    tuning_curve_doc = appdoc_struct.tuning_curve_doc;
+                    doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(tuning_curve_doc, 0);
+                else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
-				end;
+                end;
 		end; %struct2doc()
 
 		function doc = find_appdoc(ndi_app_oridirtuning_obj, appdoc_type, varargin)
@@ -317,7 +319,9 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
 					appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
-				end;
+                elseif strcmpi(appdoc_type,'tuning_curve'),
+            		appdoc_struct.tuning_curve_doc = doc;
+                end;
 		end; % doc2struct()
         
 	end; % methods
