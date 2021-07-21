@@ -22,12 +22,13 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
 				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.appdoc(...
 					{'orientation_direction_tuning'},...
-					{'vision/oridir/orientation_direction_tuning'},...
+					{'apps/vision/oridir/orientation_direction_tuning',...
+                    'stimulus/tuning_curve'},...
 					session);
                 
 		end % ndi.app.oridirtuning() creator
 
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, docexistsaction)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj)
 
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
@@ -259,7 +260,6 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% 
 			% See APPDOC_DESCRIPTION for a list of the parameters.
 			% 
-
                 if strcmpi(appdoc_type,'orientation_direction_tuning'),
                    tuning_doc_id = appdoc_struct.tuning_doc_id;
                    td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc_id,''));
@@ -302,8 +302,19 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 							end;
 						end;
 						doc = ndi_app_oridirtuning_obj.session.database_search(q);
+                    
+                    case 'tuning_curve'
+						q = ndi.query('','isa','stimulus_tuningcurve', '');
+                        q = 
+						if numel(varargin)>=1,
+							tuning_doc=varargin{1};
+								q = q&ndi.query('','depends_on','element_id',element.id());
+                        end;
+						doc = ndi_app_oridirtuning_obj.session.database_search(q);
+                        
 					otherwise,
 						error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+                        
 				end %switch
 		end % find_appdoc()
         
