@@ -21,8 +21,8 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				end
 				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app(session, name);
 				ndi_app_oridirtuning_obj = ndi_app_oridirtuning_obj@ndi.app.appdoc(...
-					{'orientation_direction_tuning'},...
-					{'apps/vision/oridir/orientation_direction_tuning',...
+					{'orientation_direction_tuning','tuning_curve'},...
+					{'stimulus/vision/oridir/orientation_direction_tuning',...
                     'stimulus/tuning_curve'},...
 					session);
                 
@@ -272,8 +272,9 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                    end;
                    doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);            
                 elseif strcmpi(appdoc_type,'tuning_curve'),
-                    tuning_curve_doc = appdoc_struct.tuning_curve_doc;
-                    doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(tuning_curve_doc, 0);
+                    element_id = appdoc_struct.element_id;
+                    ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
+                    doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj);                    
                 else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
                 end;
@@ -302,17 +303,18 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 							end;
 						end;
 						doc = ndi_app_oridirtuning_obj.session.database_search(q);
-                    
-                    case 'tuning_curve'
-						q = ndi.query('','isa','stimulus_tuningcurve', '');
-                        q = 
-						if numel(varargin)>=1,
-							tuning_doc=varargin{1};
-								q = q&ndi.query('','depends_on','element_id',element.id());
-                        end;
-						doc = ndi_app_oridirtuning_obj.session.database_search(q);
                         
-					otherwise,
+                    case 'tuning_curve',
+                        q = ndi.query('','isa','stimulus_tuningcurve','');
+                        % need to search for independent variable:
+                        % direction
+                        if numel(varargin)>=1,
+                            element = varargin{1};
+                            q = q&ndi.query('','depends_on','element_id',element.id());
+                        end;
+                        doc = ndi_app_oridirtuning_obj.session.database_search(q);
+
+                    otherwise,
 						error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
                         
 				end %switch
@@ -331,9 +333,130 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
 					appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
                 elseif strcmpi(appdoc_type,'tuning_curve'),
-            		appdoc_struct.tuning_curve_doc = doc;
+                    appdoc_struct.element_id = doc.dependency_value('element_id');
                 end;
 		end; % doc2struct()
+
+		function appdoc_description(ndi_app_appdoc_obj)
+			% APPDOC_DESCRIPTION - a function that prints a description of all appdoc types
+			%
+			% Every subclass should override this function to describe the APPDOC types available
+			% to the subclass. It should follow the following form.
+			%
+			% --------------------
+			%
+			% The APPDOCs available to this class are the following:
+			%
+			% APPDOC_TYPE               | Description
+			% ----------------------------------------------------------------------------------------------
+			% 'doctype1'                | The first app document type.
+			% (in the base class, there are no APPDOCS; in subclasses, the document types should appear here)
+			% (here, 'doctype1' is a dummy example.)
+			%
+			% ----------------------------------------------------------------------------------------------
+			% APPDOC 1: DOCTYPE1
+			% ----------------------------------------------------------------------------------------------
+			%
+			%   ---------------------
+			%   | DOCTYPE1 -- ABOUT |
+			%   ---------------------
+			%
+			%   DOCTYPE documents store X. It DEPENDS ON documents Y and Z. 
+			%
+			%   Definition: app/myapp/doctype1
+			%
+			%   --------------------------
+			%   | DOCTYPE1 -- CREATION |
+			%   --------------------------
+			%
+			%   DOC = STRUCT2DOC(NDI_APPDOC_OBJ, 'doctype1', DOCTYPE1PARAMS, ...)
+			%
+			%   DOCTYPE1PARAMS should contain the following fields:
+			%   Fieldname                 | Description
+			%   -------------------------------------------------------------------------
+			%   field1                    | field1 description
+			%   overlap                   | field2 description
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - FINDING |
+			%   ------------------------
+			%
+			%   [DOCTYPE1_DOC] = FIND_APPDOC(NDI_APPDOC_OBJ, 'doctype1', INPUT1, INPUT2, ...) 
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      DOCTYPE1_DOC - the ndi.document of the application document DOCTYPE1
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - LOADING |
+			%   ------------------------
+			%
+			%   [OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC] = LOADDOC_APPDOC(NDI_APPDOC_OBJ, ...
+			%       'doctype1', INPUT1, INPUT2,...);
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      OUTPUT1 - the first type of loaded data contained in DOCTYPE1 documents
+			%      OUTPUT2 - the second type of loaded data contained in DOCTYPE1 documents
+			%
+			% ----------------------------------------------------------------------------------------------
+			% APPDOC 2: tuning_curve
+			% ----------------------------------------------------------------------------------------------
+			%
+			%   ---------------------
+			%   | DOCTYPE1 -- ABOUT |
+			%   ---------------------
+			%
+			%   Tuning curve that has response values as a function of stimulus direction or orientation 
+			%
+			%   Definition: stimulus/stimulus_tuningcurve
+			%
+			%   --------------------------
+			%   | DOCTYPE1 -- CREATION |
+			%   --------------------------
+			%
+			%   DOC = STRUCT2DOC(NDI_APPDOC_OBJ, 'doctype1', DOCTYPE1PARAMS, ...)
+			%
+			%   DOCTYPE1PARAMS should contain the following fields:
+			%   Fieldname                 | Description
+			%   -------------------------------------------------------------------------
+			%   field1                    | field1 description
+			%   overlap                   | field2 description
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - FINDING |
+			%   ------------------------
+			%
+			%   [DOCTYPE1_DOC] = FIND_APPDOC(NDI_APPDOC_OBJ, 'doctype1', INPUT1, INPUT2, ...) 
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      DOCTYPE1_DOC - the ndi.document of the application document DOCTYPE1
+			%
+			%   ------------------------
+			%   | DOCTYPE1 - LOADING |
+			%   ------------------------
+			%
+			%   [OUTPUT1,OUTPUT2,...,DOCTYPE1_DOC] = LOADDOC_APPDOC(NDI_APPDOC_OBJ, ...
+			%       'doctype1', INPUT1, INPUT2,...);
+			%
+			%   INPUTS:
+			%      INPUT1 - first input needed to find doctype1 documents
+			%      INPUT2 - the second input needed to find doctype1 documents
+			%   OUTPUT:
+			%      OUTPUT1 - the first type of loaded data contained in DOCTYPE1 documents
+			%      OUTPUT2 - the second type of loaded data contained in DOCTYPE1 documents
+			%
+				eval(['help ndi.app.appdoc/appdoc_description']); % change to your class here
+		end; % appdoc_description()
+			        
+        
         
 	end; % methods
     
