@@ -34,7 +34,6 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%
 				tuning_doc = {};
 				E = ndi_app_oridirtuning_obj.session;
-                rapp = ndi.app.stimulus.tuning_response(E);
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
 				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
@@ -48,7 +47,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						doc = E.database_search(q_doc&q_tdocrdoc&q_relement);
 						for t=1:numel(doc),
 							appdoc_struct.tuning_doc_id = doc{t}.id();
-							% call add_appdoc with the 
+							% call add_appdoc
 							tuning_doc{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning',appdoc_struct,docexistsaction,doc{t});
 						end;
 					end;
