@@ -313,7 +313,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
                     ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
                     doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, 0);                    
                 else
-					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
+                    error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
                 end;
 		end; %struct2doc()
 
