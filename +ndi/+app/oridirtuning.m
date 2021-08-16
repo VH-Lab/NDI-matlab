@@ -43,7 +43,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						appdoc_struct.element_id = ndi_element_obj.id();
 						appdoc_struct.response_doc_id = rdoc{r}.id();
 						% call add_appdoc
-						tuning_doc{end+1} = ndi_app_oridirtuning_obj.add_appdoc('tuning_curve',appdoc_struct,docexistsaction,ndi_element_obj,rdoc{r});
+						tuning_doc{end+1} = ndi_app_oridirtuning_obj.add_appdoc('stimulus_tuningcurve',appdoc_struct,docexistsaction,ndi_element_obj,rdoc{r});
 					end;
 				end;
               
@@ -278,7 +278,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% ----------------------------------------------------------------------------------------------
 			% 'orientation_tuning_direction'| A document that describes the parameters to be used for 
 			%                               | spike element's orientation tuning direction 
-			% 'tuning_curve'                | A document that describes the parameters to be used for 
+			% 'stimulus_tuningcurve'        | A document that describes the parameters to be used for 
 			%                               | spike element's tuning curve 
 			% 
 			% See APPDOC_DESCRIPTION for a list of the parameters.
@@ -294,7 +294,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						error(['No tuning doc with id ' tuning_doc_id '.']);
 					end;
 					doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);            
-				elseif strcmpi(appdoc_type,'tuning_curve'),
+				elseif strcmpi(appdoc_type,'stimulus_tuningcurve'),
 					element_id = appdoc_struct.element_id;
 					response_doc = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',appdoc_struct.response_doc_id,''));
 					if numel(response_doc)==1, 
@@ -336,8 +336,8 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 							end;
 						end;
 						doc = ndi_app_oridirtuning_obj.session.database_search(q);
-					case 'tuning_curve',
-						q = ndi.query('','isa','tuning_curve','');
+					case 'stimulus_tuningcurve',
+						q = ndi.query('','isa','stimulus_tuningcurve','');
 						% need to search for independent variable:
 						% direction
 						if numel(varargin)>=1,
@@ -365,7 +365,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
 					appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
-				elseif strcmpi(appdoc_type,'tuning_curve'),
+				elseif strcmpi(appdoc_type,'stimulus_tuningcurve'),
 					appdoc_struct.element_id = doc.dependency_value('element_id');
 					appdoc_struct.response_doc_id = doc.dependency_value('stimulus_response_scalar_id');
 				end;
@@ -437,7 +437,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%   | STIMULUS_TUNINGCURVE -- CREATION |
 			%   ------------------------------------
 			%
-			%   DOC = STRUCT2DOC(NDI_APP_ORIDIRTUNING_OBJ, 'tuning_curve', APPDOC_STRUCT, ...)
+			%   DOC = STRUCT2DOC(NDI_APP_ORIDIRTUNING_OBJ, 'stimulus_tuningcurve', APPDOC_STRUCT, ...)
 			%
 			%   APPDOC_STRUCT should contain the following fields:
 			%   Fieldname                 | Description
@@ -448,7 +448,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%   | STIMULUS_TUNINGCURVE - FINDING |
 			%   ----------------------------------
 			%
-			%   [STIMULUS_TUNINGCURVE_DOC] = FIND_APPDOC(NDI_APP_ORIDIRTUNING_OBJ, 'tuning_curve', ELEMENT, ...) 
+			%   [STIMULUS_TUNINGCURVE_DOC] = FIND_APPDOC(NDI_APP_ORIDIRTUNING_OBJ, 'stimulus_tuningcurve', ELEMENT, ...) 
 			%
 			%   INPUTS:
 			%      ELEMENT - first input needed to find doctype1 documents
