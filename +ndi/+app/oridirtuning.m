@@ -49,7 +49,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
               
 		end; % calculate_all_tuning_curves()
         
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, ndi_response_doc, do_add)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_response_doc, do_add)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
 			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, NDI_ELEMENT_OBJ, NDI_RESPONSE_DOC)
@@ -97,7 +97,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),
 							appdoc_struct.tuning_doc_id = tdoc{t}.id();
-							% call add_appdoc with the 
+							% call add_appdoc 
 							% oriprops{end+1} = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tdoc{t});
 							oriprops{end+1} = ndi_app_oridirtuning_obj.add_appdoc('orientation_direction_tuning',appdoc_struct,docexistsaction,tdoc{t});
 						end;
@@ -297,8 +297,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				elseif strcmpi(appdoc_type,'tuning_curve'),
 					element_id = appdoc_struct.element_id;
 					response_doc = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',appdoc_struct.response_doc_id,''));
-					% KELLY - add error checking here if response_doc_id is not found or is not exactly 1 element
-					ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
+					if numel(response_doc)==1, 
+						response_doc = response_doc{1};
+					elseif numel(response_doc)>1,
+						error(['Too many response documents.']); % should not happen
+					elseif numel(response_doc)==0,
+						error(['No response doc with id ' element_id '.']);
+					end;
+                    ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
 					doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc{1}, 0); 
 				else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
