@@ -49,7 +49,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
               
 		end; % calculate_all_tuning_curves()
         
-		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_response_doc, do_add)
+		function tuning_doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, ndi_response_doc, do_add)
 			% CALCULATE_TUNING_CURVE - calculate an orientation/direction tuning curve from stimulus responses
 			%
 			% TUNING_DOC = CALCULATE_TUNING_CURVE(NDI_APP_ORIDIRTUNING_OBJ, NDI_ELEMENT_OBJ, NDI_RESPONSE_DOC)
@@ -61,19 +61,19 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
 				E = ndi_app_oridirtuning_obj.session;
 				rapp = ndi.app.stimulus.tuning_response(E);
-
+                
 				rdoc = ndi_response_doc;
 
 				if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc),
-						independent_parameter = {'angle'};
-						independent_label = {'direction'};
-						constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
-						tuning_doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
-							'independent_label',independent_label,'constraint',constraint);
-                        
-						if do_add == 1,
-							E.database_add(tuning_doc);
-						end;
+                    independent_parameter = {'angle'};
+                    independent_label = {'direction'};
+                    constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
+                    tuning_doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
+                        'independent_label',independent_label,'constraint',constraint);
+
+                    if do_add == 1,
+                        E.database_add(tuning_doc);
+                    end;
 				end;
 
 		end; % calculate_tuning_curve()
@@ -302,10 +302,12 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					elseif numel(response_doc)>1,
 						error(['Too many response documents.']); % should not happen
 					elseif numel(response_doc)==0,
-						error(['No response doc with id ' element_id '.']);
+						error(['No response doc with id ' appdoc_struct.response_doc_id '.']);
 					end;
                     ndi_element_obj = ndi.database.fun.ndi_document2ndi_object(element_id, ndi_app_oridirtuning_obj.session);
-					doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc{1}, 0); 
+					doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc, 0); 
+%					doc = calculate_tuning_curve(ndi_app_oridirtuning_obj, ndi_element_obj, response_doc{1}, 0); 
+                    
 				else
 					error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end;
