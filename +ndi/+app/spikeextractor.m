@@ -368,13 +368,13 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 		end; % isvalid_appdoc_struct()
 
-        function doc = find_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
-            % FIND_APPDOC - find an ndi_app_appdoc document in the session database
-            %
-            % See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
-            %
-            % See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
-            %
+		function doc = find_appdoc(ndi_app_spikeextractor_obj, appdoc_type, varargin)
+			% FIND_APPDOC - find an ndi_app_appdoc document in the session database
+			%
+			% See ndi_app_spikeextractor/APPDOC_DESCRIPTION for documentation.
+			%
+			% See also: ndi_app_spikeextractor/APPDOC_DESCRIPTION
+			%
         			switch(lower(appdoc_type)),
 					case 'extraction_parameters',
 						if numel(varargin)<1,
