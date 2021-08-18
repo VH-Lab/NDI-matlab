@@ -149,8 +149,8 @@ After generating the tuning curve, we can calculate many, many index values that
 oapp = ndi.app.oridirtuning(S);
 
 for i=1:2,
-	tdoc{i} = oapp.calculate_tuning_curve(e{i});
-	oriprops{i} = oapp.calculate_all_oridir_indexes(e{i}); % this takes a few minutes
+	tdoc{i} = oapp.calculate_all_tuning_curves(e{i},'Replace'); % replace any existing 
+	oriprops{i} = oapp.calculate_all_oridir_indexes(e{i},'Replace'); % this takes a few minutes
 end;
 ```
 
@@ -166,15 +166,15 @@ Now let's take a look at these index values for the first cell. These index valu
 
 ```matlab
   % see all the categories
-oriprops{1}{1}.document_properties.orientation_direction_tuning
+oriprops{1}{1}{1}.document_properties.orientation_direction_tuning
   % see the property information
-oriprops{1}{1}.document_properties.orientation_direction_tuning.properties
+oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.properties
   % see significance. Responses across orientation are very significant:
-oriprops{1}{1}.document_properties.orientation_direction_tuning.significance
+oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.significance
   % fit parameters:
-oriprops{1}{1}.document_properties.orientation_direction_tuning.fit
+oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.fit
   % vector tuning parameters:
-oriprops{1}{1}.document_properties.orientation_direction_tuning.vector
+oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.vector
 ```
 
 Now we have seen how we can analyze stimulus responses and use applications to calculate tuning curves and index values. If you had your own stimulus responses of a different type, you could write functions or apps that analyze the results and calculate the appropriate index values.

@@ -65,15 +65,16 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				rdoc = ndi_response_doc;
 
 				if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc),
-                    independent_parameter = {'angle'};
-                    independent_label = {'direction'};
-                    constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
-                    tuning_doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
-                        'independent_label',independent_label,'constraint',constraint);
-
-                    if do_add == 1,
-                        E.database_add(tuning_doc);
-                    end;
+					independent_parameter = {'angle'};
+					independent_label = {'direction'};
+					constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
+					tuning_doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
+						'independent_label',independent_label,'constraint',constraint);
+					tuning_doc = tuning_doc.set_dependency_value('element_id',ndi_element_obj.id());
+					tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',rdoc.id());
+					if do_add == 1,
+						E.database_add(tuning_doc);
+					end;
 				end;
 
 		end; % calculate_tuning_curve()
