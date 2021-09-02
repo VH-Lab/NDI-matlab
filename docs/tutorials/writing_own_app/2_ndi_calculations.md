@@ -21,151 +21,244 @@ c.run('NoAction'); % will run but will not replace existing calculations with th
 
 We will cover the develop of a very simple calculation: ndi.calc.example.simple
 
-### 7.2.1 Designing the database document
+### 7.2.1 ndi.calc.example.simple
 
+Our simple example will be very simple and silly, but illustrates the process of creating an ndi.calculation.
 
+We will create a calculation that creates a document for each 'ndi.probe' object that simply has a field called
+'answer' that is equal to 5. It is not useful for anything other than demonstrating the steps necessary to create a calculation, but you
+can use it to design calculations that perform useful analysis and save the results to the database.  Let's design this very simple calculation.
 
+### 7.2.2 Designing the database document
 
+Let's look at the design of the database document definition for ndi.calc.example.simple, which we placed in `ndi_common/database_documents/apps/calculations/simple_calc.json`:
 
-
-
-
-
-OLD TEXT:
-
-
-The first step in designing an app is to have a clear picture of what the app will do. 
-
-Tagger was developed because there is a need to be able to specify metadata for ndi documents that is not
-part of their intrinsic parameters. For example, if you put a drug on your preparation, you might want to
-label certain epochs as belonging to that condition. The label would ideally conform to an ontology, which is
-a regulated vocabulary.
-
-In developing Tagger, we decided there were 2 types of documents that we would like to store. We would like
-to be able to put a "tag", or a label that also potentially has a value, onto any database document.  It has
-the same properties as a tag, but the name implies that the tag refers to a particular type of information,
-which is an experimental condition.
-
-That is, we want a single document type:
-
-1.  A *tag* document that allows one to specify a name and value of a tag, the ontology that it comes from, and to have it "depend on" an NDI document id, so it is associated with a particular document.
-
-We want our app to be able to 
-
-1. Add a tag to the database
-2. Find tags that match certain criteria
-
-
-### 7.1.2 Discussing the design of the app to ensure it is a very good way of solving the problem
-
-It is important to discuss the design of any new app to make sure that it is, at least, a very good way of
-solving the problem. I usually write out a few alternatives and a written "debate" among them.
-
-| Alternative idea | Discussion | 
-| ---              |   ----     |
-| Why not add the tags to database documents directly? | NDI documents are not editable once created; they are designed to be made once, with a time stamp. Other calculations depend on these documents remaining in their original state. If we made NDI documents editable, then, potentially, all calculations based on that document would need to be updated. Instead, you can only delete documents entirely (which removes all dependent documents). |
-| Why not allow multiple tags to be added in a single database document? Won't limiting to 1 tag per document mean that there could be a lot of documents? | The argument against is the same as the above. We can't edit NDI documents. If someone wants to modify or delete one of the entries, they would have to delete the whole document. |
-| Why not just have the user search for tags using the normal database querying? Why write a function to find the documents? | This is not necessary but it is a helpful addition; the user could use normal database querying to discover the same things. We offer the function here in the app as a shortcut. | 
-
-### 7.1.3
-
-Now we need to add a new document type. There are 2 steps. First, we have to add a blank document that
-indicates the structure of the document. Second, we have to add a schema document that describes how the
-document is to be filled in.
-
-Here is the document. Since this is part of NDI, we put it in the `ndi_common/database_documents/apps/tagger/` directory:
-
-#### ndi_common/database_documents/apps/tagger/tag.json
+#### Code block 7.2.2.1: Database documentation definition for `simple_calc` (Do not type into Matlab command line)
 
 ```json
 {
 	"document_class": {
-		"definition":			"$NDIDOCUMENTPATH\/apps\/tagger\/tag.json",
-		"validation":			"$NDISCHEMAPATH\/apps\/tagger\/tag.json",
-		"class_name":			"ndi_document_apps_tagger_tag",
-		"property_list_name":	"tag",
-		"class_version":		1,
+		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/simple_calc.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/simple_calc_schema.json",
+		"class_name":						"ndi_calculation_simple_simple_calc",
+		"property_list_name":					"simple",
+		"class_version":					1,
 		"superclasses": [
-			{ "definition":		"$NDIDOCUMENTPATH\/ndi_document.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
 	"depends_on": [
-		{
-			"name":         "document_id",
-			"value":        ""
+		{	"name": "probe_id",
+			"value": 0 
 		}
 	],
-	"tag": {
-                "ontology":             "",
-                "ontology_name":        "",     
-                "ontology_id":          "",
-                "value":                ""
+	"simple": {
+		"input_parameters": {
+			"answer":					5,
+		},
+		"answer":						0
 	}
 }
 ```
 
-INSERT DETAIL DESCRIBING DOCUMENT
+The first block, `document_class`, is necessary for any document defined in NDI. It includes the location of the definition file, the location
+of a file for validation (we will cover later), the class name, the `property_list_name` which tells NDI what the structure that has the main
+results (later on in the file), the class version (which is 1), and the superclasses of the document. The line that includes the definition for `ndi_document` indicates that simple calc documents have all the fields of an ndi.document, which must be true for any NDI document. In this case, this document also is a subclass of ndi_document_app, which allows information about the application that created the calculation to be recorded.
 
-And the schema:
+In the next block, there is a set of "depends_on" fields, which indicate which dependencies are required for this document type. Here, we make the
+document that describes each probe as a dependency, so that the "answer" can be attributed to the probe by any program or user that examines the
+document. 
 
-#### ndi_common/schema_documents/apps/tagger/tag.json
+Finally, we have the data that is associated with our calculation in the structure `simple`. Because it is a document for an NDI calculation, it
+must contain a structure "input_parameters" that describe how the calculator should search for its inputs, if there are such parameters (or the
+structure can be empty if there are none). Last, we have the entries of the structure that contain the output of our calculation, which in this
+case is a simple field "answer".
 
+### 7.2.3 Writing the calculation object code
 
-```json
-{
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/apps\/ndi_document_apps_tagger_tag.json",
-	"title": "tag",
-	"type": "object",
-	"properties": {
-		"ontology": {
-			"type": "string",
-			"doc_default_value": "none",
-			"doc_data_type": "character array (ASCII)",
-			"doc_description": "The name of the ontology to be used. At the present time it is okay to leave this blank and use a term that is outside an ontology."
-		},
-		"ontology_name": {
-			"type": "string",
-			"doc_default_value": "",
-			"doc_data_type": "character array (ASCII)",
-			"doc_description": "The name of tag in the ontology. If an ontology is specified, this `ontology_name` must match a word in the ontology."
-		},
-		"ontology_id": {
-			"type": "string",
-			"doc_default_value": "",
-			"doc_data_type": "character array (ASCII)",
-			"doc_description": "The ID of the word in the ontology. If an ontology is specified, the ID must match the ID of the word or element `ontology_name` in the ontology."
-		},
-		"value": {
-			"type": "string",
-			"doc_default_value": "",
-			"doc_data_type": "character array (ASCII)",
-			"doc_description": "A field that may be associated with the tag. May be blank."
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "document_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				}
-			]
-		}
-	}
-}
+We are now ready to write the calculation code. This is the code that we will call to make our calculation.  The code has four functions. 
+
+The first function that is needed is the *creator*. This function has the same name as the class and does any building that is necessary
+to make the calculation function. Because ndi.calculation is a subclass of ndi.app and ndi.appdoc, most of our initialization is handled for us.
+Our code object `simple` is a subclass of ndi.calculation, which has a handy routine that can be used to tell the object what document it should
+make. 
+
+Here is a snapshot of the creator function. Note that this code snippet can't stand on its own; we will give the full object code at the bottom.
+
+#### Code block 7.2.3.1: Creator for `ndi.calc.example.simple` (do not type into Matlab command line):
+
+```matlab
+		function simple_obj = simple(session)
+			% SIMPLE - a simple demonstration of an ndi.calculation object
+			%
+			% SIMPLE_OBJ = SIMPLE(SESSION)
+			%
+			% Creates a SIMPLE ndi.calculation object
+			%
+				ndi.globals;
+				simple_obj = simple_obj@ndi.calculation(session,'simple_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','simple_calc.json'));
+		end; % simple()
 ```
 
+The second function is the `calculate` function that actually performs the calculation, given inputs. The `parameters` input to `calculate` needs
+to have the same fields as the structure that holds the central data of the document; in this case, it needs to be a structure with the fields
+of `simple` in the document above (`input_parameters`, `depends_on`,`simple`).
 
-INSERT DETAIL DESCRIBING SCHEMA
+#### Code block 7.2.3.2: `calculate` function for `ndi.calc.example.simple` (do not type into Matlab command line):
 
+```matlab
+	function doc = calculate(ndi_calculation_obj, parameters)
+		% CALCULATE - perform the calculation for ndi.calc.example.simple
+		%
+		% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+		%
+		% Creates a simple_calc document given input parameters.
+		%
+		% The document that is created simple has an 'answer' that is given
+		% by the input parameters.
+			% check inputs
+			if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
+			if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
+			
+			simple = parameters;
+			simple.answer = parameters.input_parameters.answer;
+			doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'simple',simple);
+			for i=1:numel(parameters.depends_on),
+				doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
+			end;
+	end; % calculate
+```
 
+The function simply sets the `answer` field to the `answer` field of the input_parameters, and then sets the dependency that was input.
+
+You'll notice that the `calculate` function performs the calculation with its inputs fully set up. Some other function has set up the inputs 
+correctly so that the function can perform its calculation. The user can do this manually, but the best practice is to have the ndi.calculation
+object search for all of the possible inputs on which it can perform the calculation. This allows the calculation to be called simply by the `run`
+function. 
+
+#### Code block 7.2.3.3: `default_search_for_input_parameters` function for `ndi.calc.example.simple` (do not type into Matlab command line):
+
+```matlab
+		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
+			%
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			%
+			% Returns a list of the default search parameters for finding appropriate inputs
+			% to the calculation.
+			%
+				parameters.input_parameters = struct('answer',5);
+				parameters.depends_on = vlt.data.emptystruct('name','value');
+				parameters.query = struct('name','probe_id','query',ndi.query('element.ndi_element_class','contains_string','ndi.probe',''));
+		end; % default_search_for_input_parameters
+```
+
+The last function that we need is a documentation function that simply returns its own help as a text string. This allows other programs to
+see the documentation for the calculation, and gives programmers/users a consistent place in the help to look for a description of what the calculation does.
+
+#### Code block 7.2.3.4 `doc_about` for `ndi.calc.example.simple` (do not type into Matlab command line):
+
+```matlab
+		function doc_about(ndi_calculation_obj)
+			% ----------------------------------------------------------------------------------------------
+			% NDI_CALCULATION: SIMPLE_CALC
+			% ----------------------------------------------------------------------------------------------
+			%
+			%   ------------------------
+			%   | SIMPLE_CALC -- ABOUT |
+			%   ------------------------
+			%
+			%   SIMPLE_CALC is a demonstration document. It simply produces the 'answer' that
+			%   is provided in the input parameters. Each SIMPLE_CALC document 'depends_on' an
+			%   NDI daq system.
+			%
+			%   Definition: apps/simple_calc.json
+			%
+				eval(['help ndi.calc.example.simple.doc_about']);
+		end; %doc_about()
+```
+
+Putting it all together, we can look at the entire calculation:
+
+#### Code block 7.2.3.5: Full object code for `ndi.calc.example.simple`:
+
+```matlab
+classdef simple < ndi.calculation
+
+	methods
+
+		function simple_obj = simple(session)
+			% SIMPLE - a simple demonstration of an ndi.calculation object
+			%
+			% SIMPLE_OBJ = SIMPLE(SESSION)
+			%
+			% Creates a SIMPLE ndi.calculation object
+			%
+				ndi.globals;
+				simple_obj = simple_obj@ndi.calculation(session,'simple_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','simple_calc.json'));
+		end; % simple()
+
+		function doc = calculate(ndi_calculation_obj, parameters)
+			% CALCULATE - perform the calculation for ndi.calc.example.simple
+			%
+			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+			%
+			% Creates a simple_calc document given input parameters.
+			%
+			% The document that is created simple has an 'answer' that is given
+			% by the input parameters.
+				% check inputs
+				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
+				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
+				
+				simple = parameters;
+				simple.answer = parameters.input_parameters.answer;
+				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'simple',simple);
+				for i=1:numel(parameters.depends_on),
+					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
+				end;
+		end; % calculate
+
+		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
+			%
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			%
+			% Returns a list of the default search parameters for finding appropriate inputs
+			% to the calculation.
+			%
+				parameters.input_parameters = struct('answer',5);
+				parameters.depends_on = vlt.data.emptystruct('name','value');
+				parameters.query = struct('name','probe_id','query',ndi.query('element.ndi_element_class','contains_string','ndi.probe',''));
+		end; % default_search_for_input_parameters
+
+		function doc_about(ndi_calculation_obj)
+			% ----------------------------------------------------------------------------------------------
+			% NDI_CALCULATION: SIMPLE_CALC
+			% ----------------------------------------------------------------------------------------------
+			%
+			%   ------------------------
+			%   | SIMPLE_CALC -- ABOUT |
+			%   ------------------------
+			%
+			%   SIMPLE_CALC is a demonstration document. It simply produces the 'answer' that
+			%   is provided in the input parameters. Each SIMPLE_CALC document 'depends_on' an
+			%   NDI probe.
+			%
+			%   Definition: apps/simple_calc.json
+			%
+				eval(['help ndi.calc.example.simple.doc_about']);
+		end; %doc_about()
+	end; % methods()
+			
+end % simple
+
+```
+
+### 7.3.1 Running the calculation
 
 
 
