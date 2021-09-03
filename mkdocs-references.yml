@@ -3,6 +3,7 @@
     - ndi PACKAGE:
       - ndi.app: 'reference/+ndi/app.m.md'
       - ndi.cache: 'reference/+ndi/cache.m.md'
+      - ndi.calculation: 'reference/+ndi/calculation.m.md'
       - ndi.database: 'reference/+ndi/database.m.md'
       - ndi.document: 'reference/+ndi/document.m.md'
       - ndi.documentservice: 'reference/+ndi/documentservice.m.md'
@@ -27,6 +28,9 @@
         - stimulus PACKAGE:
           - ndi.app.stimulus.decoder: 'reference/+ndi/+app/+stimulus/decoder.m.md'
           - ndi.app.stimulus.tuning_response: 'reference/+ndi/+app/+stimulus/tuning_response.m.md'
+      - calc PACKAGE:
+        - example PACKAGE:
+          - ndi.calc.example.simple: 'reference/+ndi/+calc/+example/simple.m.md'
       - daq PACKAGE:
         - ndi.daq.daqsystemstring: 'reference/+ndi/+daq/daqsystemstring.m.md'
         - ndi.daq.metadatareader: 'reference/+ndi/+daq/metadatareader.m.md'
