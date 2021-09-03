@@ -50,6 +50,8 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% Step 1: set up input parameters; they can either be completely specified by
 				% the caller, or defaults can be used
 
+				docs = {};
+
 				if nargin<3,
 					parameters = ndi_calculation_obj.default_search_for_input_parameters();
 				end;
@@ -66,10 +68,11 @@ classdef calculation < ndi.app & ndi.app.appdoc
 					previous_calculations_here = ndi_calculation_obj.search_for_calculation_docs(all_parameters{i});
 					do_calc = 0;
 					if ~isempty(previous_calculations_here),
-						switch(DocExistsAction),
+						switch(docExistsAction),
 							case 'Error',
 								error(['Doc for input parameters already exists; error was requested.']);
 							case {'NoAction','ReplaceIfDifferent'},
+								docs = cat(2,docs,previous_calculations_here);
 								continue; % skip to the next calculation
 							case {'Replace'},
 								ndi_calculation_obj.session.database_rm(previous_calculations_here);
@@ -79,8 +82,15 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						do_calc = 1;
 					end;
 					if do_calc,
-						ndi_calculation_obj.calculate(all_parameters{i});
+						docs_out = ndi_calculation_obj.calculate(all_parameters{i});
+						if ~iscell(docs_out),
+							docs_out = {docs_out};
+						end;
+						docs = cat(2,docs,docs_out);
 					end;
+				end;
+				if ~isempty(docs),
+					ndi_calculation_obj.session.database_add(docs);
 				end;
 		end; % run()
 
@@ -196,14 +206,15 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% in the abstract class, this returns empty
 				myemptydoc = ndi.document(ndi_calculation_obj.doc_document_types{1});
 				property_list_name = myemptydoc.document_properties.document_class.property_list_name;
-				class_name = myemptydoc.document_properties.document_class.class_name;
+				%class_name = myemptydoc.document_properties.document_class.class_name
+				[parent,class_name,ext] = fileparts(myemptydoc.document_properties.document_class.definition);
 				
 				q_input = ndi.query([property_list_name '.input_parameters'],'partial_struct',parameters.input_parameters,'');
 				q_type = ndi.query('','isa',class_name,'');
 				q = q_input & q_type;
 				if isfield(parameters,'depends_on')
-					for i=1:numel(parameters.depends),
-						q = q & ndi.query('','depends_on',parameters.depends(i).name,parameters(depends(i)).value);
+					for i=1:numel(parameters.depends_on),
+						q = q & ndi.query('','depends_on',parameters.depends_on(i).name,parameters.depends_on(i).value);
 					end;
 				end;
 				docs = ndi_calculation_obj.session.database_search(q);

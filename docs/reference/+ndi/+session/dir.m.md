@@ -97,8 +97,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session.dir/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/addlistener
+    Documentation for ndi.session.dir/addlistener
+       doc handle.addlistener
 ```
 
 ---
@@ -273,17 +273,15 @@ Help for ndi.session.dir/database_search is inherited from superclass NDI.SESSIO
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/ISVALID, CLEAR
 
 Help for ndi.session.dir/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/delete
+    Documentation for ndi.session.dir/delete
+       doc handle.delete
 ```
 
 ---
@@ -347,8 +345,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.session.dir/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/findobj
+    Documentation for ndi.session.dir/findobj
+       doc handle.findobj
 ```
 
 ---
@@ -369,8 +367,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.session.dir/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/findprop
+    Documentation for ndi.session.dir/findprop
+       doc handle.findprop
 ```
 
 ---
@@ -393,8 +391,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.dir/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/ge
+    Documentation for ndi.session.dir/ge
+       doc handle.ge
 ```
 
 ---
@@ -480,8 +478,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.dir/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/gt
+    Documentation for ndi.session.dir/gt
+       doc handle.gt
 ```
 
 ---
@@ -513,8 +511,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.session.dir/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/isvalid
+    Documentation for ndi.session.dir/isvalid
+       doc handle.isvalid
 ```
 
 ---
@@ -545,8 +543,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.session.dir/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/le
+    Documentation for ndi.session.dir/le
+       doc handle.le
 ```
 
 ---
@@ -591,8 +589,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session.dir/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/listener
+    Documentation for ndi.session.dir/listener
+       doc handle.listener
 ```
 
 ---
@@ -615,8 +613,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.dir/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/lt
+    Documentation for ndi.session.dir/lt
+       doc handle.lt
 ```
 
 ---
@@ -654,8 +652,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.session.dir/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/ne
+    Documentation for ndi.session.dir/ne
+       doc handle.ne
 ```
 
 ---
@@ -697,8 +695,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.session.dir/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.session.dir/notify
+    Documentation for ndi.session.dir/notify
+       doc handle.notify
 ```
 
 ---

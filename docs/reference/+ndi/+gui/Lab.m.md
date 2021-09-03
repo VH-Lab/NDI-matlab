@@ -137,8 +137,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Lab/addlistener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/addlistener
+    Documentation for ndi.gui.Lab/addlistener
+       doc handle.addlistener
 ```
 
 ---
@@ -252,17 +252,15 @@ cut(obj, src, ~)
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/ISVALID, CLEAR
 
 Help for ndi.gui.Lab/delete is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/delete
+    Documentation for ndi.gui.Lab/delete
+       doc handle.delete
 ```
 
 ---
@@ -309,8 +307,8 @@ Handles are equal if they are handles for the same object.
 
 Help for ndi.gui.Lab/eq is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/eq
+    Documentation for ndi.gui.Lab/eq
+       doc handle.eq
 ```
 
 ---
@@ -331,8 +329,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.gui.Lab/findobj is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/findobj
+    Documentation for ndi.gui.Lab/findobj
+       doc handle.findobj
 ```
 
 ---
@@ -353,8 +351,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.gui.Lab/findprop is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/findprop
+    Documentation for ndi.gui.Lab/findprop
+       doc handle.findprop
 ```
 
 ---
@@ -377,8 +375,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/ge is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/ge
+    Documentation for ndi.gui.Lab/ge
+       doc handle.ge
 ```
 
 ---
@@ -422,8 +420,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/gt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/gt
+    Documentation for ndi.gui.Lab/gt
+       doc handle.gt
 ```
 
 ---
@@ -451,8 +449,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.gui.Lab/isvalid is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/isvalid
+    Documentation for ndi.gui.Lab/isvalid
+       doc handle.isvalid
 ```
 
 ---
@@ -483,8 +481,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.gui.Lab/le is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/le
+    Documentation for ndi.gui.Lab/le
+       doc handle.le
 ```
 
 ---
@@ -529,8 +527,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.gui.Lab/listener is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/listener
+    Documentation for ndi.gui.Lab/listener
+       doc handle.listener
 ```
 
 ---
@@ -553,8 +551,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.gui.Lab/lt is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/lt
+    Documentation for ndi.gui.Lab/lt
+       doc handle.lt
 ```
 
 ---
@@ -588,8 +586,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.gui.Lab/ne is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/ne
+    Documentation for ndi.gui.Lab/ne
+       doc handle.ne
 ```
 
 ---
@@ -611,8 +609,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.gui.Lab/notify is inherited from superclass HANDLE
 
-    Reference page in Doc Center
-       doc ndi.gui.Lab/notify
+    Documentation for ndi.gui.Lab/notify
+       doc handle.notify
 ```
 
 ---

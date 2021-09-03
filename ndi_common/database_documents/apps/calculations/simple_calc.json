@@ -7,7 +7,6 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
@@ -18,7 +17,7 @@
 	],
 	"simple": {
 		"input_parameters": {
-			"answer":					5,
+			"answer":					5
 		},
 		"answer":						0
 	}
