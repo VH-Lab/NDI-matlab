@@ -16,7 +16,7 @@
     
     
       
-        <title>Tutorial 7: Writing your own apps - NDI-matlab</title>
+        <title>7.2 Writing short calculations - NDI-matlab</title>
       
     
     
@@ -99,7 +99,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Tutorial 7: Writing your own apps
+              7.2 Writing short calculations
             
           </span>
         </div>
@@ -255,12 +255,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
       
       <label class="md-nav__link" for="__nav_3">
         Tutorials
@@ -453,19 +455,236 @@
             
   
   
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" checked>
+      
+      <label class="md-nav__link" for="__nav_3_4">
+        7 Writing your own apps and calculations
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="7 Writing your own apps and calculations" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_4">
+          <span class="md-nav__icon md-icon"></span>
+          7 Writing your own apps and calculations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          7.2 Writing short calculations
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        7.2 Writing short calculations
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#72-writing-a-simple-calculation" class="md-nav__link">
+    7.2: Writing a simple calculation
+  </a>
+  
+    <nav class="md-nav" aria-label="7.2: Writing a simple calculation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7201-dont-type-into-the-matlab-command-line-until-the-end-at-the-bottom" class="md-nav__link">
+    Code block 7.2.0.1 (Don't type into the Matlab command line until the end, at the bottom.)
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#721-ndicalcexamplesimple" class="md-nav__link">
+    7.2.1 ndi.calc.example.simple
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#722-designing-the-database-document" class="md-nav__link">
+    7.2.2 Designing the database document
+  </a>
+  
+    <nav class="md-nav" aria-label="7.2.2 Designing the database document">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7221-database-documentation-definition-for-simple_calc-do-not-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.2.2.1: Database documentation definition for simple_calc (Do not type into Matlab command line)
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#723-writing-the-calculation-object-code" class="md-nav__link">
+    7.2.3 Writing the calculation object code
+  </a>
+  
+    <nav class="md-nav" aria-label="7.2.3 Writing the calculation object code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7231-creator-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.2.3.1: Creator for ndi.calc.example.simple (do not type into Matlab command line):
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7232-calculate-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.2.3.2: calculate function for ndi.calc.example.simple (do not type into Matlab command line):
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7233-default_search_for_input_parameters-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.2.3.3: default_search_for_input_parameters function for ndi.calc.example.simple (do not type into Matlab command line):
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7234-doc_about-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.2.3.4 doc_about for ndi.calc.example.simple (do not type into Matlab command line):
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7235-full-object-code-for-ndicalcexamplesimple" class="md-nav__link">
+    Code block 7.2.3.5: Full object code for ndi.calc.example.simple:
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#731-running-the-calculation" class="md-nav__link">
+    7.3.1 Running the calculation
+  </a>
+  
+    <nav class="md-nav" aria-label="7.3.1 Running the calculation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7311-opening-the-tree-shrew-experiment-type-into-the-matlab-command-line" class="md-nav__link">
+    Code block 7.3.1.1. Opening the tree shrew experiment (type into the Matlab command line).
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7312-running-the-calculation-asking-the-program-to-find-all-possible-inputs-type-into-the-matlab-command-line" class="md-nav__link">
+    Code block 7.3.1.2. Running the calculation, asking the program to find all possible inputs (type into the Matlab command line).
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7313-searching-for-the-calculations-we-made-type-into-matlab-command-line" class="md-nav__link">
+    Code block 7.3.1.3. Searching for the calculations we made (type into Matlab command line).
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#code-block-7314-running-the-calculation-asking-the-program-to-find-a-specific-input-to-the-calculation-type-into-the-matlab-command-line" class="md-nav__link">
+    Code block 7.3.1.4 Running the calculation, asking the program to find a specific input to the calculation (type into the Matlab command line).
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#716-discussionfeedback" class="md-nav__link">
+    7.1.6 Discussion/Feedback
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
   
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_4" type="checkbox" id="__nav_3_4" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_5" type="checkbox" id="__nav_3_5" >
       
-      <label class="md-nav__link" for="__nav_3_4">
+      <label class="md-nav__link" for="__nav_3_5">
         Planned
         <span class="md-nav__icon md-icon"></span>
       </label>
       <nav class="md-nav" aria-label="Planned" data-md-level="2">
-        <label class="md-nav__title" for="__nav_3_4">
+        <label class="md-nav__title" for="__nav_3_5">
           <span class="md-nav__icon md-icon"></span>
           Planned
         </label>
@@ -4994,28 +5213,28 @@
                 <h1 id="tutorial-7-writing-your-own-apps">Tutorial 7: Writing your own apps<a class="headerlink" href="#tutorial-7-writing-your-own-apps" title="Permanent link">&para;</a></h1>
 <h2 id="72-writing-a-simple-calculation">7.2: Writing a simple calculation<a class="headerlink" href="#72-writing-a-simple-calculation" title="Permanent link">&para;</a></h2>
 <p>Usually, end user scientists do not want to develop an app, but instead want to develop a consistent and tested
-method for performing a calculation. We have developed an NDI mini-app class called ndi.calculation for that purpose.</p>
-<p>ndi.calculation objects require very little in the way of construction:</p>
+method for performing a calculation. We have developed an NDI mini-app class called <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a> for that purpose.</p>
+<p><a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a> objects require very little in the way of construction:</p>
 <ol>
 <li>A single document type that they produce</li>
 <li>A function that creates the document type from input parameters</li>
 <li>A function that searches for all possible inputs to the function</li>
 <li>A short documentation for the document type</li>
 </ol>
-<p>Once we have these ingredients, we have an ndi.calculation that can be run as simply as</p>
+<p>Once we have these ingredients, we have an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a> that can be run as simply as</p>
 <h4 id="code-block-7201-dont-type-into-the-matlab-command-line-until-the-end-at-the-bottom">Code block 7.2.0.1 (Don't type into the Matlab command line until the end, at the bottom.)<a class="headerlink" href="#code-block-7201-dont-type-into-the-matlab-command-line-until-the-end-at-the-bottom" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">c</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">calc</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">simple</span><span class="p">(</span><span class="n">S</span><span class="p">);</span><span class="w"> </span><span class="c">% where S is an ndi.session</span><span class="w"></span>
 <span class="n">c</span><span class="p">.</span><span class="n">run</span><span class="p">(</span><span class="s">&#39;NoAction&#39;</span><span class="p">);</span><span class="w"> </span><span class="c">% will run but will not replace existing calculations with the same parameters</span><span class="w"></span>
 </code></pre></div>
 
-<p>We will cover the develop of a very simple calculation: ndi.calc.example.simple</p>
+<p>We will cover the develop of a very simple calculation: <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a></p>
 <h3 id="721-ndicalcexamplesimple">7.2.1 ndi.calc.example.simple<a class="headerlink" href="#721-ndicalcexamplesimple" title="Permanent link">&para;</a></h3>
-<p>Our simple example will be very simple and silly, but illustrates the process of creating an ndi.calculation.</p>
+<p>Our simple example will be very simple and silly, but illustrates the process of creating an <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a>.</p>
 <p>We will create a calculation that creates a document for each 'ndi.probe' object that simply has a field called
 'answer' that is equal to 5. It is not useful for anything other than demonstrating the steps necessary to create a calculation, but you
 can use it to design calculations that perform useful analysis and save the results to the database.  Let's design this very simple calculation.</p>
 <h3 id="722-designing-the-database-document">7.2.2 Designing the database document<a class="headerlink" href="#722-designing-the-database-document" title="Permanent link">&para;</a></h3>
-<p>Let's look at the design of the database document definition for ndi.calc.example.simple, which we placed in <code>ndi_common/database_documents/apps/calculations/simple_calc.json</code>:</p>
+<p>Let's look at the design of the database document definition for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a>, which we placed in <code>ndi_common/database_documents/apps/calculations/simple_calc.json</code>:</p>
 <h4 id="code-block-7221-database-documentation-definition-for-simple_calc-do-not-type-into-matlab-command-line">Code block 7.2.2.1: Database documentation definition for <code>simple_calc</code> (Do not type into Matlab command line)<a class="headerlink" href="#code-block-7221-database-documentation-definition-for-simple_calc-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="p">{</span>
     <span class="nt">&quot;document_class&quot;</span><span class="p">:</span> <span class="p">{</span>
@@ -5056,11 +5275,11 @@ case is a simple field "answer".</p>
 <h3 id="723-writing-the-calculation-object-code">7.2.3 Writing the calculation object code<a class="headerlink" href="#723-writing-the-calculation-object-code" title="Permanent link">&para;</a></h3>
 <p>We are now ready to write the calculation code. This is the code that we will call to make our calculation.  The code has four functions. </p>
 <p>The first function that is needed is the <em>creator</em>. This function has the same name as the class and does any building that is necessary
-to make the calculation function. Because ndi.calculation is a subclass of ndi.app and ndi.appdoc, most of our initialization is handled for us.
-Our code object <code>simple</code> is a subclass of ndi.calculation, which has a handy routine that can be used to tell the object what document it should
+to make the calculation function. Because <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a> is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/">ndi.app</a> and <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/">ndi.appdoc</a>, most of our initialization is handled for us.
+Our code object <code>simple</code> is a subclass of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a>, which has a handy routine that can be used to tell the object what document it should
 make. </p>
 <p>Here is a snapshot of the creator function. Note that this code snippet can't stand on its own; we will give the full object code at the bottom.</p>
-<h4 id="code-block-7231-creator-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.1: Creator for <code>ndi.calc.example.simple</code> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7231-creator-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
+<h4 id="code-block-7231-creator-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.1: Creator for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7231-creator-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="w">        </span><span class="k">function</span><span class="w"> </span>simple_obj<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">simple</span><span class="p">(</span>session<span class="p">)</span><span class="w"></span>
 <span class="w">            </span><span class="c">% SIMPLE - a simple demonstration of an ndi.calculation object</span><span class="w"></span>
 <span class="w">            </span><span class="c">%</span><span class="w"></span>
@@ -5077,7 +5296,7 @@ make. </p>
 <p>The second function is the <code>calculate</code> function that actually performs the calculation, given inputs. The <code>parameters</code> input to <code>calculate</code> needs
 to have the same fields as the structure that holds the central data of the document; in this case, it needs to be a structure with the fields
 of <code>simple</code> in the document above (<code>input_parameters</code>, <code>depends_on</code>,<code>simple</code>).</p>
-<h4 id="code-block-7232-calculate-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.2: <code>calculate</code> function for <code>ndi.calc.example.simple</code> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7232-calculate-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
+<h4 id="code-block-7232-calculate-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.2: <code>calculate</code> function for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7232-calculate-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="w">    </span><span class="k">function</span><span class="w"> </span>doc<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">calculate</span><span class="p">(</span>ndi_calculation_obj, parameters<span class="p">)</span><span class="w"></span>
 <span class="w">        </span><span class="c">% CALCULATE - perform the calculation for ndi.calc.example.simple</span><span class="w"></span>
 <span class="w">        </span><span class="c">%</span><span class="w"></span>
@@ -5105,7 +5324,7 @@ of <code>simple</code> in the document above (<code>input_parameters</code>, <co
 correctly so that the function can perform its calculation. The user can do this manually, but the best practice is to have the ndi.calculation
 object search for all of the possible inputs on which it can perform the calculation. This allows the calculation to be called simply by the <code>run</code>
 function. </p>
-<h4 id="code-block-7233-default_search_for_input_parameters-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.3: <code>default_search_for_input_parameters</code> function for <code>ndi.calc.example.simple</code> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7233-default_search_for_input_parameters-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
+<h4 id="code-block-7233-default_search_for_input_parameters-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.3: <code>default_search_for_input_parameters</code> function for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7233-default_search_for_input_parameters-function-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="w">        </span><span class="k">function</span><span class="w"> </span>parameters<span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="nf">default_search_for_input_parameters</span><span class="p">(</span>ndi_calculation_obj<span class="p">)</span><span class="w"></span>
 <span class="w">            </span><span class="c">% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs</span><span class="w"></span>
 <span class="w">            </span><span class="c">%</span><span class="w"></span>
@@ -5122,7 +5341,7 @@ function. </p>
 
 <p>The last function that we need is a documentation function that simply returns its own help as a text string. This allows other programs to
 see the documentation for the calculation, and gives programmers/users a consistent place in the help to look for a description of what the calculation does.</p>
-<h4 id="code-block-7234-doc_about-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.4 <code>doc_about</code> for <code>ndi.calc.example.simple</code> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7234-doc_about-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
+<h4 id="code-block-7234-doc_about-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line">Code block 7.2.3.4 <code>doc_about</code> for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a> (do not type into Matlab command line):<a class="headerlink" href="#code-block-7234-doc_about-for-ndicalcexamplesimple-do-not-type-into-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="w">        </span><span class="k">function</span><span class="w"> </span><span class="nf">doc_about</span><span class="p">(</span>ndi_calculation_obj<span class="p">)</span><span class="w"></span>
 <span class="w">            </span><span class="c">% ----------------------------------------------------------------------------------------------</span><span class="w"></span>
 <span class="w">            </span><span class="c">% NDI_CALCULATION: SIMPLE_CALC</span><span class="w"></span>
@@ -5143,7 +5362,7 @@ see the documentation for the calculation, and gives programmers/users a consist
 </code></pre></div>
 
 <p>Putting it all together, we can look at the entire calculation:</p>
-<h4 id="code-block-7235-full-object-code-for-ndicalcexamplesimple">Code block 7.2.3.5: Full object code for <code>ndi.calc.example.simple</code>:<a class="headerlink" href="#code-block-7235-full-object-code-for-ndicalcexamplesimple" title="Permanent link">&para;</a></h4>
+<h4 id="code-block-7235-full-object-code-for-ndicalcexamplesimple">Code block 7.2.3.5: Full object code for <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a>:<a class="headerlink" href="#code-block-7235-full-object-code-for-ndicalcexamplesimple" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="k">classdef</span><span class="w"> </span><span class="n">simple</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">calculation</span><span class="w"></span>
 
 <span class="w">    </span><span class="k">methods</span><span class="w"></span>
@@ -5238,7 +5457,7 @@ see the documentation for the calculation, and gives programmers/users a consist
 <span class="n">D</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">depends_on</span><span class="w">  </span><span class="c">% should have name of &#39;probe_id&#39;</span><span class="w"></span>
 </code></pre></div>
 
-<p>The other way to call a calculation is to use a very targeted set of parameters. If you want to perform your calculation only on specific items, such in the case of <code>ndi.calc.example.simple</code>,
+<p>The other way to call a calculation is to use a very targeted set of parameters. If you want to perform your calculation only on specific items, such in the case of <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/">ndi.calc.example.simple</a>,
 a specific probe or probes, then you can do that, too, by specifying the specific inputs that you want to search for. </p>
 <h4 id="code-block-7314-running-the-calculation-asking-the-program-to-find-a-specific-input-to-the-calculation-type-into-the-matlab-command-line">Code block 7.3.1.4 Running the calculation, asking the program to find a specific input to the calculation (type into the Matlab command line).<a class="headerlink" href="#code-block-7314-running-the-calculation-asking-the-program-to-find-a-specific-input-to-the-calculation-type-into-the-matlab-command-line" title="Permanent link">&para;</a></h4>
 <div class="codehilite"><pre><span></span><code><span class="n">p</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="n">S</span><span class="p">.</span><span class="n">getprobes</span><span class="p">(</span><span class="s">&#39;type&#39;</span><span class="p">,</span><span class="s">&#39;n-trode&#39;</span><span class="p">);</span><span class="w"></span>
@@ -5252,7 +5471,7 @@ a specific probe or probes, then you can do that, too, by specifying the specifi
 <span class="n">d2</span><span class="p">{</span><span class="mi">1</span><span class="p">}.</span><span class="n">document_properties</span><span class="p">.</span><span class="n">depends_on</span><span class="w">  </span><span class="c">% should have name of &#39;probe_id&#39; and p{1}&#39;s probe id</span><span class="w"></span>
 </code></pre></div>
 
-<p>One can use some additional queries to find specific or parameterized documents to use as inputs for a calculation. See <code>help ndi.calculation.search_for_input_parameters</code>.</p>
+<p>One can use some additional queries to find specific or parameterized documents to use as inputs for a calculation. See <code>help ndi.calculation.search_for_input_parameters</code> or look at the <a href="https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/">ndi.calculation</a> help page.</p>
 <h3 id="716-discussionfeedback">7.1.6 Discussion/Feedback<a class="headerlink" href="#716-discussionfeedback" title="Permanent link">&para;</a></h3>
 <p>This concludes our tutorial on writing a simple NDI calculation.</p>
 <p>Post <a href="https://github.com/VH-Lab/NDI-matlab/issues/199">comments, bugs, questions, or discuss</a>.</p>
@@ -5271,6 +5490,39 @@ a specific probe or probes, then you can do that, too, by specifying the specifi
       
         
 <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        <a href="../../analyzing_first_physiology_experiment_detailed/1_example_dataset/" class="md-footer__link md-footer__link--prev" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              3.1 Newbie version of your first electrophysiology experiment with NDI
+            </div>
+          </div>
+        </a>
+      
+      
+        <a href="../../case_studies_reading_data/" class="md-footer__link md-footer__link--next" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              4. Case studies in reading data in NDI
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
