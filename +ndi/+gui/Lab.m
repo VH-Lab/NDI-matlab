@@ -57,21 +57,21 @@ classdef Lab < handle
         
         function addSubject(obj, subj)
             for i=1:numel(subj)
-                obj.subjects = [obj.subjects Icon(obj, numel(obj.subjects), ...
+                obj.subjects = [obj.subjects ndi.gui.Icon(obj, numel(obj.subjects), ...
                                 subj{i}, 1, 1, 4, 3, [0.2 0.4 1])];
             end
         end
         
         function addProbe(obj, prob)
             for i=1:numel(prob)
-                obj.probes = [obj.probes Icon(obj, numel(obj.probes), ...
+                obj.probes = [obj.probes ndi.gui.Icon(obj, numel(obj.probes), ...
                               prob{i}, 6, 6, 2, 3, [0 0.6 0])];
             end
         end
         
         function addDAQ(obj, daq)
             for i=1:numel(daq)
-                obj.DAQs = [obj.DAQs Icon(obj, numel(obj.DAQs), ...
+                obj.DAQs = [obj.DAQs ndi.gui.Icon(obj, numel(obj.DAQs), ...
                             daq{i}, 9, 12, 4, 2, [1 0.6 0])];
             end
             obj.connects = zeros(numel([obj.subjects obj.probes obj.DAQs]));
@@ -246,6 +246,9 @@ classdef Lab < handle
                 src = varargin{3};
                 obj.symbol(src);
             end
+            if isempty(src),
+                return;
+            end;
             ind = find([obj.subjects obj.probes obj.DAQs] == src, 1);
             if obj.transmitting
                 obj.row = ind;

@@ -37,10 +37,10 @@ function ndi_gui_v2(ndi_session_obj)
          'ButtonDownFcn', @displayData);
         
     %Create info
-    data = Data();
+    data = ndi.gui.Data();
     
     %Create lab
-    lab = Lab();
+    lab = ndi.gui.Lab();
     set(gcf, 'WindowButtonMotionFcn', @lab.move);
     
     %Import ndi_session_obj
@@ -58,7 +58,7 @@ function ndi_gui_v2(ndi_session_obj)
     s_id = unique(s_id);
     s = {};
     for i = 1:numel(s_id)
-        s{i} = ndi_session_obj.database_search(ndi_query('ndi_document.id','exact_string',s_id{i},''));
+        s{i} = ndi_session_obj.database_search(ndi.query('ndi_document.id','exact_string',s_id{i},''));
     end
     
     %Add elements
@@ -74,7 +74,7 @@ function ndi_gui_v2(ndi_session_obj)
     %Connect elements
     for i = 1:numel(p)
         ps_id = p{i}.subject_id;
-        ps = p{i}.session.database_search(ndi_query('ndi_document.id','exact_string',ps_id,''));
+        ps = p{i}.session.database_search(ndi.query('ndi_document.id','exact_string',ps_id,''));
         lab.connect(findobj(lab.subjects, 'elem', ps));
         lab.connect(findobj(lab.probes, 'elem', p{i}));       
         et = p{i}.epochtable();
