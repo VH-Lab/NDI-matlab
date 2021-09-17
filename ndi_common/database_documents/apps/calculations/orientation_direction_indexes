@@ -1,0 +1,72 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/orientation_direction_index.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/orientation_direction_index_schema.json",
+		"class_name":						"ndi_calculation_simple_orientation_direction_index",
+                "property_list_name":                                   "orientation_direction_index",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"depends_on": [
+		{
+			"name":		"element_id",
+			"value":	"" 
+		},
+	        {	"name":     "stimulus_tuningcurve_id",
+			"value":    ""
+		}
+	],
+	"orientation_direction_index":  {
+  		"input_parameters": {
+        "depends_on": [
+          {
+            "name":		"stimulus_tuningcurve_id",
+            "value":	"" 
+          }
+    },
+		"properties": {
+			"coordinates":						"compass",
+			"response_units":					0,
+			"response_type":					"mean"
+		},
+		"tuning_curve": {
+			"direction":						0,
+			"mean":							0,
+			"stddev":						0,
+			"stderr":						0,
+			"individual":	{
+			},
+			"raw_individual": {
+			},
+			"control_individual": {
+			}
+		},
+		"significance": {
+			"visual_response_anova_p":		 		1,
+			"across_stimuli_anova_p":				1
+		},
+		"vector": {
+			"circular_variance":					1,
+			"direction_circular_variance":				1,
+			"hotelling2test":					1,
+			"orientation_preference":				0,
+			"direction_preference":					0,
+			"direction_hotelling2test":				1,
+			"dot_direction_significance":				1
+		},
+		"fit": {
+			"double_gaussian_parameters":				[0],
+			"double_gaussian_fit_angles":				[0],
+			"double_gaussian_fit_values":				[0],
+			"orientation_preferred_orthogonal_ratio":		[0],
+			"direction_preferred_null_ratio":			[0],
+			"orientation_preferred_orthogonal_ratio_rectified":	[0],
+			"direction_preferred_null_ratio_rectified":		[0],
+			"orientation_angle_preference":				0,
+			"direction_angle_preference":				0,
+			"hwhh":							0
+		}
+	}
+}
