@@ -23,6 +23,10 @@ classdef Lab < handle
     end
     methods
         function obj = Lab()
+            
+            ndi.globals;
+            guipath = [ndi_globals.path.path filesep '+ndi' filesep '+gui'];
+            
             %Create lab
             obj.window = axes('position', [1/18 1/12 2/3 2/3], ...
                               'XLim', [0 24], 'YLim', [0 16]);
@@ -47,10 +51,10 @@ classdef Lab < handle
         
             %Create zoom
             obj.zIn = image(obj.window, [22.1 22.9], [15.1 15.9], ...
-                            flip(imread('zoomIn.png'), 1), ...
+                            flip(imread([guipath filesep 'zoomIn.png']), 1), ...
                             'ButtonDownFcn', {@obj.setZoom 2/3});
             obj.zOut = image(obj.window, [23.1 23.9], [15.1 15.9], ...
-                             flip(imread('zoomOut.png'), 1), ...
+                             flip(imread([guipath filesep 'zoomOut.png']), 1), ...
                              'ButtonDownFcn', {@obj.setZoom 3/2});
             colormap(flipud(gray(2)));
         end

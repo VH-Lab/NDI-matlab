@@ -97,7 +97,7 @@ function ndi_gui_v2(ndi_session_obj)
         set(lab.panel, 'Visible', 'off');
         set(data.table, 'Visible', 'on');
         set(data.panel, 'Visible', 'on');
-        set(data.search, 'Visible', 'on');!git
+        set(data.search, 'Visible', 'on');
         set(lTab, 'facecolor', [0.7 0.7 0.7], ...
             'EdgeColor', [0 0 0]);
         set(dTab, 'facecolor', [0.8 0.8 0.8], ...
