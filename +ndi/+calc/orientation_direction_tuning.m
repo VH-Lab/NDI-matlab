@@ -12,8 +12,8 @@ classdef orientation_direction_tuning < ndi.calculation
 			% Creates a orientation_direction_tuning ndi.calculation object
 			%
 				ndi.globals;
-				orientation_direction_tuning_obj = orientation_direction_tuning_obj@ndi.calculation(session,'orientation_direction_tuning',...
-					fullfile(ndi_globals.path.documentpath,'stimulus','vision','oridir','orientation_direction_tuning_schema.json'));
+				orientation_direction_tuning_obj = orientation_direction_tuning_obj@ndi.calculation(session,'orientation_direction_index',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','orientation_direction_index.json'));
 		end; % orientation_direction_tuning() creator
 
 		function doc = calculate(ndi_calculation_obj, parameters)
@@ -156,19 +156,19 @@ classdef orientation_direction_tuning < ndi.calculation
 
 		function doc_about(ndi_calculation_obj)
 			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATION: orientation_direction_tuning_CALC
+			% NDI_CALCULATION: ORIENTATION_DIRECTION_TUNING_CALC
 			% ----------------------------------------------------------------------------------------------
 			%
-			%   ------------------------
-			%   | orientation_direction_tuning_CALC -- ABOUT |
-			%   ------------------------
+			%   ----------------------------------------------
+			%   | ORIENTATION_DIRECTION_TUNING_CALC -- ABOUT |
+			%   ----------------------------------------------
 			%
-			%   orientation_direction_tuning_CALC is an ndi.calculation object that calculates the orientation and direction tuning
+			%   ORIENTATION_DIRECTION_TUNING_CALC is an ndi.calculation object that calculates the orientation and direction tuning
 			%   curves from spike elements.
             %   
-			%   Each SIMPLE_CALC document 'depends_on' an NDI daq system.
+			%   Each  document 'depends_on' an NDI daq system.
 			%
-			%   Definition: stimulus/vision/orientation_direction_tuning/orientation_direction_tuning.json
+			%   Definition: stimulus/vision/oridir/orientation_direction_tuning.json
 			%
 				eval(['help ndi.calc.orientation_direction_tuning.doc_about']);
 		end; %doc_about()
