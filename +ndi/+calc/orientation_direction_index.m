@@ -1,23 +1,24 @@
-classdef orientation_direction_tuning < ndi.calculation
+classdef orientation_direction_index < ndi.calculation
 
 	methods
 
-		function orientation_direction_tuning_obj = orientation_direction_tuning(session)
-			% ORIENTATION_DIRECTION_TUNING - ndi.calculation object that
+		function orientation_direction_index_obj = orientation_direction_tuning(session)
+			% ORIENTATION_DIRECTION_INDEX - ndi.calculation object that
 			% calculates orientation and direction tuning curves from spike
 			% elements
 			%
-			% ORIENTATION_DIRECTION_TUNING_OBJ = ORIENTATION_DIRECTION_TUNING(SESSION)
+			% ORIENTATION_DIRECTION_TUNING_OBJ = ORIENTATION_DIRECTION_INDEX(SESSION)
 			%
 			% Creates a orientation_direction_tuning ndi.calculation object
 			%
 				ndi.globals;
-				orientation_direction_tuning_obj = orientation_direction_tuning_obj@ndi.calculation(session,'orientation_direction_index',...
+				orientation_direction_index_obj = orientation_direction_index_obj@ndi.calculation(session,'orientation_direction_index',...
 					fullfile(ndi_globals.path.documentpath,'apps','calculations','orientation_direction_index.json'));
-		end; % orientation_direction_tuning() creator
+		end; % orientation_direction_index() creator
 
 		function doc = calculate(ndi_calculation_obj, parameters)
-			% CALCULATE - perform the calculation for ndi.calc.orientation_direction_tuning
+			% CALCULATE - perform the calculation for
+			% ndi.calc.orientation_direction_index
 			%
 			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
 			%
@@ -118,14 +119,14 @@ classdef orientation_direction_tuning < ndi.calculation
 					'hwhh', fi.tuning_width);
 
                 % Store calculation in document
-                orientation_direction_tuning = ndi.document('vision/orientation_direction_tuning/orientation_direction_tuning', ...
+                orientation_direction_index = ndi.document('vision/orientation_direction_tuning/orientation_direction_tuning', ...
 					'orientation_direction_tuning', vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_orientation_direction_tuningtuning_obj.newdocument();
-				orientation_direction_tuning = orientation_direction_tuning.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
+				orientation_direction_index = orientation_direction_index.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
                  
-                orientation_direction_tuning = parameters;
+                orientation_direction_index = parameters;
 			%%%	orientation_direction_tuning.answer = parameters.input_parameters.answer;
-				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'orientation_direction_tuning',orientation_direction_tuning);
+				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'orientation_direction_tuning',orientation_direction_index);
 				for i=1:numel(parameters.depends_on),
 					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
 				end;
@@ -156,22 +157,22 @@ classdef orientation_direction_tuning < ndi.calculation
 
 		function doc_about(ndi_calculation_obj)
 			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATION: ORIENTATION_DIRECTION_TUNING_CALC
+			% NDI_CALCULATION: ORIENTATION_DIRECTION_INDEX_CALC
 			% ----------------------------------------------------------------------------------------------
 			%
-			%   ----------------------------------------------
-			%   | ORIENTATION_DIRECTION_TUNING_CALC -- ABOUT |
-			%   ----------------------------------------------
+			%   ---------------------------------------------
+			%   | ORIENTATION_DIRECTION_INDEX_CALC -- ABOUT |
+			%   ---------------------------------------------
 			%
-			%   ORIENTATION_DIRECTION_TUNING_CALC is an ndi.calculation object that calculates the orientation and direction tuning
+			%   ORIENTATION_DIRECTION_INDEX_CALC is an ndi.calculation object that calculates the orientation and direction tuning
 			%   curves from spike elements.
             %   
 			%   Each  document 'depends_on' an NDI daq system.
 			%
-			%   Definition: stimulus/vision/oridir/orientation_direction_tuning.json
+			%   Definition: apps/calc/orientation_direction_index.json
 			%
-				eval(['help ndi.calc.orientation_direction_tuning.doc_about']);
+				eval(['help ndi.calc.orientation_direction_index.doc_about']);
 		end; %doc_about()
 	end; % methods()
 			
-end % orientation_direction_tuning
+end % orientation_direction_index

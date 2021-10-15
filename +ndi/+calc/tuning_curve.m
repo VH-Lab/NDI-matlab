@@ -46,7 +46,9 @@ classdef tuning_curve < ndi.calculation
 			% Returns a list of the default search parameters for finding appropriate inputs
 			% to the calculation.
 			%
-				parameters.input_parameters = struct('answer',5);
+					appdoc_struct.element_id = doc.dependency_value('element_id');
+					appdoc_struct.response_doc_id = doc.dependency_value('stimulus_response_scalar_id');
+                parameters.input_parameters = struct('stimulus_response_scalar_id',input);
 				parameters.depends_on = vlt.data.emptystruct('name','value');
 				parameters.query = struct('name','probe_id','query',ndi.query('element.ndi_element_class','contains_string','ndi.probe',''));
 		end; % default_search_for_input_parameters
