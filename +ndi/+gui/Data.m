@@ -44,7 +44,14 @@ classdef Data < handle
             for i=1:numel(docs)
                 obj.fullDocuments = [obj.fullDocuments; docs{i}];
                 d = docs{i}.document_properties.ndi_document;
-                obj.fullTable(end+1,:) = {d.name d.id d.type d.datestamp};
+                
+%               Encoding the JSON data
+                jsonDetails = docs{i}.document_properties;
+                jsonDetails = jsonencode(jsonDetails);
+                
+%               Formatting the JSON data
+                jsonDetails = vlt.data.prettyjson(jsonDetails);
+                obj.fullTable(end+1,:) = {d.name d.id d.type d.datestamp char(jsonDetails)};
             end
             obj.tempTable = obj.fullTable;
             obj.tempDocuments = obj.fullDocuments;
@@ -84,7 +91,6 @@ classdef Data < handle
         end
         
         function clear(obj, ~, ~)
-%             disp(obj.search)
             obj.table.Data = {};
         end
         
@@ -100,7 +106,7 @@ classdef Data < handle
                                       'BackgroundColor', [1 1 1]) ...
                             uicontrol(obj.panel, 'units', 'normalized', 'Style', 'edit', ...
                                       'Position', [0 1/4 1 1/2], 'min', 0, 'max', 2, ...
-                                      'String', {'Type:' id{3} '' 'Date:' id{4} '' 'ID:' id{2}}, ...
+                                      'String', {'Type:' id{3} '' 'Date:' id{4} '' 'ID:' id{2} '' 'Content:' id{5}}, ...
                                       'enable', 'inactive', 'HorizontalAlignment', 'left', 'BackgroundColor', [1 1 1]) ...
                             uicontrol(obj.panel, 'units', 'normalized', 'Style', 'pushbutton', ...
                                       'Position', [1/6 7/48 2/3 1/16], 'String', 'Graph', ...
