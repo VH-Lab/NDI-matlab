@@ -10,11 +10,8 @@
 		]
 	},
 	"depends_on": [
-		{
-			"name":		"element_id",
-			"value":	"" 
-		},
-	        {	"name":     "stimulus_tuningcurve_id",
+        {	
+            "name":     "stimulus_tuningcurve_id",
 			"value":    ""
 		}
 	],

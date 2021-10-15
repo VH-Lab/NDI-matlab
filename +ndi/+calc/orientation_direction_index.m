@@ -23,7 +23,8 @@ classdef orientation_direction_index < ndi.calculation
 			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
 			%
 			% Creates a orientation_direction_tuning_calc document given input parameters.
-			% Check inputs
+			
+                % Check inputs
 				if ~isfield(parameters,'tuning_doc'), 
                     error(['parameters structure lacks ''tuning_doc.''']); 
                 else,
@@ -35,7 +36,11 @@ classdef orientation_direction_index < ndi.calculation
                     id = parameters{2};
                 end;
 				
-            % Calculate orientation and direction indexes from stimulus responses
+                % Check if calculation has been done before. If so,
+                % 'Replace' or 'NoAction'
+                
+                
+                % Calculate orientation and direction indexes from stimulus responses
 				E = ndi_calculation_obj.session;
 				tapp = ndi.app.stimulus.tuning_response(E);
 				ind = {};
@@ -143,7 +148,8 @@ classdef orientation_direction_index < ndi.calculation
 			%
 
             % search for stimulus_tuningcurve_id
-            
+            appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
+
             if numel(varargin)>=1,
                 tuning_doc=varargin{1};
                 if ~isempty(tuning_doc),

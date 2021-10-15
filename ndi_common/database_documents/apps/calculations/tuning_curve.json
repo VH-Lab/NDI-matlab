@@ -10,11 +10,8 @@
 		]
 	},
 	"depends_on": [
-		{
-			"name":		"element_id",
-			"value":	"" 
-		},
-	        {	"name":     "stimulus_response_scalar_id",
+		{	
+            "name":     "stimulus_response_scalar_id",
 			"value":    ""
 		}
 	],
