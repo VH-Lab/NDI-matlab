@@ -17,14 +17,14 @@
 	],
 	"tuning_curve":  {
   		"input_parameters": {
-        "depends_on": [
+            "independent_variable_label":				[[]],
+            "independent_variable_value":				[],
+        "depends_on":
           {
             "name":		"stimulus_response_scalar_id",
             "value":	"" 
           }
         },
-        "independent_variable_label":				[[]],
-		"independent_variable_value":				[],
 		"stimid":						[],
 		"response_mean":					[],
 		"response_stddev":					[],

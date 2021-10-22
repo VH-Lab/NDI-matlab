@@ -17,7 +17,7 @@
 	],
 	"orientation_direction_index":  {
   		"input_parameters": {
-        "depends_on": [
+        "depends_on":
           {
             "name":		"stimulus_tuningcurve_id",
             "value":	"" 

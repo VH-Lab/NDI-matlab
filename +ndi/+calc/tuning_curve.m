@@ -30,19 +30,26 @@ classdef tuning_curve < ndi.calculation
 				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
 				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
 				
-                % calculate
 				tuning_curve = parameters;
-				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuning_curve',tuning_curve);
+                tuning_curve.independent_variable_label = parameters.input_parameters.independent_variable_label;
+                tuning_curve.independent_label = parameters.input_parameters.independent_variable_value;
+                
+                % calculate
+                E = ndi_calc_tuning_curve_obj.session;
+                rapp = ndi.app.stimulus.tuning_response(E);
+                
 				tuning_curve.independent_parameter = {'angle'};
                 tuning_curve.independent_label = {'direction'};
                 tuning_curve.constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
                 
-                doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
-                    'independent_label',independent_label,'constraint',constraint);
+%                doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
+%                    'independent_label',independent_label,'constraint',constraint);
+
+                doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuning_curve',tuning_curve);                
                 for i=1:numel(parameters.depends_on),
 					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
 				end;
-	
+                             
 		end; % calculate
 
 		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
@@ -53,16 +60,19 @@ classdef tuning_curve < ndi.calculation
 			% Returns a list of the default search parameters for finding appropriate inputs
 			% to the calculation.
 			%
-                parameters.input_parameters = struct(input);
+                parameters.input_parameters = struct('independent_variable_label',given,'independent_variable_value',given);
+                tuning_doc.document_properties.tuning_curve.independent_variable_value
 				parameters.depends_on = vlt.data.emptystruct('name','value');
+                
               	q = ndi.query('','isa','stimulus_tuningcurve','');
                 q = q&ndi.query('element.ndi_element_class','contains_string','ndi.stimulus_tuning_curve','');
+                parameters.query = struct('name', 'stimulus_response_scalar_id','query',q);
                 
-                if input ~= empty,
-                    response_doc = input;
-                    q = q&ndi.query('','depends_on','stimulus_response_scalar_id',response_doc.id());
-                end;
-                parameters.query = ndi_app_calculation_obj.session.database_search(q);
+%                 if input ~= empty,
+%                     response_doc = input;
+%                     q = q&ndi.query('','depends_on','stimulus_response_scalar_id',response_doc.id());
+%                 end;
+%                parameters.query = ndi_app_calculation_obj.session.database_search(q);
 		end; % default_search_for_input_parameters
 
 		function doc_about(ndi_calculation_obj)
