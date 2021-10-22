@@ -60,7 +60,7 @@ classdef tuning_curve < ndi.calculation
 			% Returns a list of the default search parameters for finding appropriate inputs
 			% to the calculation.
 			%
-                parameters.input_parameters = struct('independent_variable_label',given,'independent_variable_value',given);
+                parameters.input_parameters = struct('independent_variable_label','','independent_variable_value','');
                 tuning_doc.document_properties.tuning_curve.independent_variable_value
 				parameters.depends_on = vlt.data.emptystruct('name','value');
                 

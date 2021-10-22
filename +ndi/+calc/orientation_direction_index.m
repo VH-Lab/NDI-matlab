@@ -25,23 +25,18 @@ classdef orientation_direction_index < ndi.calculation
 			% Creates a orientation_direction_tuning_calc document given input parameters.
 			
                 % Check inputs
-				if ~isfield(parameters,'tuning_doc'), 
-                    error(['parameters structure lacks ''tuning_doc.''']); 
-                else,
-                    tuning_doc = parameters{1};
-                end;
-				if ~isfield(parameters,'depends_on'), 
-                    error(['parameters structure lacks ''stimulus_tuningcurve_id.''']); 
-                else,
-                    id = parameters{2};
-                end;
+                if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
+				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
 				
-                % Check if calculation has been done before. If so,
-                % 'Replace' or 'NoAction'
-                
-                
                 % Calculate orientation and direction indexes from stimulus responses
-				E = ndi_calculation_obj.session;
+                orientation_direction_index = parameters;
+				
+                doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'orientation_direction_tuning',orientation_direction_index);
+				for i=1:numel(parameters.depends_on),
+					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
+				end;
+				
+                E = ndi_calculation_obj.session;
 				tapp = ndi.app.stimulus.tuning_response(E);
 				ind = {};
 				ind_real = {};
@@ -52,8 +47,6 @@ classdef orientation_direction_index < ndi.calculation
 				response_stddev = [];
 				response_stderr = [];
                 
-			%%%	stim_response_doc = E.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
-
 				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
 				tuning_doc = tapp.tuningdoc_fixcellarrays(tuning_doc);
 
@@ -128,13 +121,7 @@ classdef orientation_direction_index < ndi.calculation
 					'orientation_direction_tuning', vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit')) + ...
 						ndi_app_orientation_direction_tuningtuning_obj.newdocument();
 				orientation_direction_index = orientation_direction_index.set_dependency_value('stimulus_tuningcurve_id', tuning_doc.id());
-                 
-                orientation_direction_index = parameters;
-			%%%	orientation_direction_tuning.answer = parameters.input_parameters.answer;
-				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'orientation_direction_tuning',orientation_direction_index);
-				for i=1:numel(parameters.depends_on),
-					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);
-				end;
+               
                 
 		end; % calculate
 
@@ -148,16 +135,14 @@ classdef orientation_direction_index < ndi.calculation
 			%
 
             % search for stimulus_tuningcurve_id
-            appdoc_struct.tuning_doc_id = doc.dependency_value('stimulus_tuningcurve_id');
+            parameters.input_parameters = struct('');
+            parameters.depends_on = vlt.data.emptystruct('name','value');
+            
+            q = ndi.query('','isa','orientation_direction_index', '');
+            q = q&ndi.query('element.ndi_element_class','contains_string','ndi.stimulus_tuningcurve_id','');
 
-            if numel(varargin)>=1,
-                tuning_doc=varargin{1};
-                if ~isempty(tuning_doc),
-                    parameters.input_parameters = struct('stimulus_tuningcurve_id',q);
-                    parameters.depends_on = vlt.data.emptystruct('stimulus_tuningcurve_id','value');
-                    parameters.query = struct('name','stimulus_tuningcurve_id','query',ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_doc.id());
-                end;
-            end;
+			parameters.query = struct('name','stimulus_tuningcurve_id','query',q);           
+                   
                         
 		end; % default_search_for_input_parameters
 
