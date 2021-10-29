@@ -61,7 +61,6 @@ classdef tuning_curve < ndi.calculation
 			% to the calculation.
 			%
                 parameters.input_parameters = struct('independent_variable_label','','independent_variable_value','');
-                tuning_doc.document_properties.tuning_curve.independent_variable_value
 				parameters.depends_on = vlt.data.emptystruct('name','value');
                 
               	q = ndi.query('','isa','stimulus_tuningcurve','');
