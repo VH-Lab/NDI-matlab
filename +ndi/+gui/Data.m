@@ -140,6 +140,9 @@ classdef Data < handle
             end
             figure('position', [920, 100, 480, 480], 'resize', 'off');
             ax = axes('position', [0 0 1 1]);
+            % mygraph = digraph(s,t);
+            % build data tips from all nodes
+            % data tips could be name, type, id, creation time
             p = plot(ax, digraph(s, t), 'layout', 'layered');
             highlight(p, ind, 'NodeColor', 'r', 'MarkerSize', 6);
             set(gca, 'ydir', 'reverse');
