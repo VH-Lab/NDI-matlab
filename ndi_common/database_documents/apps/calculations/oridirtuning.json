@@ -1,9 +1,9 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/orientation_direction_index.json",
-		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/orientation_direction_index_schema.json",
-		"class_name":						"ndi_calculation_simple_orientation_direction_index",
-                "property_list_name":                                   "orientation_direction_index",
+		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/oridirtuning.json",
+		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/oridirtuning_schema.json",
+		"class_name":						"ndi_calculation_simple_oridirtuning",
+                "property_list_name":                                   "oridirtuning",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
@@ -15,7 +15,7 @@
 			"value":    ""
 		}
 	],
-	"orientation_direction_index":  {
+	"oridirtuning":  {
   		"input_parameters": {
         "depends_on":
           {
