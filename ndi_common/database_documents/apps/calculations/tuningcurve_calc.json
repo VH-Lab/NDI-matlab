@@ -1,0 +1,31 @@
+{
+	"document_class": {
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/tuningcurve_calc.json",
+		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/tuningcurve_calc.json",
+		"class_name":                       "ndi_calculation_tuningcurve",
+		"property_list_name":                   "tuningcurve_calc", 
+		"class_version":                    1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus/stimulus_tuning_curve.json"}
+		]
+	},
+	"tuningcurve_calc": {
+		"input_parameters": {
+			"depends_on": [
+				"name":				"stimulus_response_scalar_id",
+				"value":			[]
+			]
+			"independent_label":			[],
+			"independent_parameter":		[],
+			"best_algorithm":			"empirical_maximum",
+			"selection:" [
+				"property":			[],
+				"operation":			[],
+				"value":			[]
+			],
+		}
+	}
+}
+
