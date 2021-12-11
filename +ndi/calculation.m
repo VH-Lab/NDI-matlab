@@ -247,10 +247,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				doc = {};
 		end; % calculate()
 
-		function diagnostic_plot(ndi_calculation_obj, doc_or_parameters, varargin)
-			% DIAGNOSTIC_PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
+		function plot(ndi_calculation_obj, doc_or_parameters, varargin)
+			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
 			%
-			% DIAGNOSTIC_PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			% PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
 			%
 			% Produce a diagnostic plot that can indicate to a reader whether or not
 			% the calculation has been performed in a manner that makes sense with
@@ -272,7 +272,8 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				vlt.data.assign(varargin{:});
 
 				% base class does nothing
-		end; % diagnostic_plot()
+		end; % plot()
+
 
 		%%%% methods that override ndi.appdoc %%%%
 
@@ -349,5 +350,44 @@ classdef calculation < ndi.app & ndi.app.appdoc
 		end; % appdoc_description()
 
 	end; % methods
+
+	methods (Static)
+
+
+		function param = plot_parameters(varargin);
+			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
+			%
+			% PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			%
+			% Produce a diagnostic plot that can indicate to a reader whether or not
+			% the calculation has been performed in a manner that makes sense with
+			% its input data. Useful for debugging / validating a calculation.
+			%
+			% By default, this plot is made in the current axes.
+			%
+			% This function takes additional input arguments as name/value pairs:
+			% |---------------------------|--------------------------------------|
+			% | Parameter (default)       | Description                          |
+			% |---------------------------|--------------------------------------|
+			% | newfigure (0)             | 0/1 Should we make a new figure?     |
+			% | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
+			% |                           |   state of the current axes?         |
+			% | 
+			% |---------------------------|--------------------------------------|
+			%
+				newfigure = 0;
+				holdstate = 0;
+				suppress_x_label = 0;
+				suppress_y_label = 0;
+				suppress_z_label = 0;
+				vlt.data.assign(varargin{:});
+				param = vlt.data.workspace2struct();
+				param = rmfield(param,'varargin');
+
+
+		end;
+
+	end; % Static methods
+
 end
 

@@ -8,23 +8,27 @@
 		"superclasses": [
 			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
 			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" },
-			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus/stimulus_tuning_curve.json"}
+			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus/stimulus_tuningcurve.json"}
 		]
 	},
 	"tuningcurve_calc": {
 		"input_parameters": {
 			"depends_on": [
-				"name":				"stimulus_response_scalar_id",
-				"value":			[]
-			]
+				{
+					"name":				"stimulus_response_scalar_id",
+					"value":			[]
+				}
+			],
 			"independent_label":			[],
 			"independent_parameter":		[],
 			"best_algorithm":			"empirical_maximum",
-			"selection:" [
-				"property":			[],
-				"operation":			[],
-				"value":			[]
-			],
+			"selection": [
+				{
+					"property":			[],
+					"operation":			[],
+					"value":			[]
+				}
+			]
 		}
 	}
 }

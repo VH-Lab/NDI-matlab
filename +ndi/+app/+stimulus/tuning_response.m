@@ -324,6 +324,8 @@ classdef tuning_response < ndi.app
 			% constraint ([])             | Constraints in the form of a vlt.data.fieldsearch structure.
 			%                             |   Example: struct('field','sFrequency','operation',...
 			%                             |              'exact_number','param1',1,'param2','')
+			% doAdd (1)                   | 0/1 Should we actually add the tuning document to the session?
+			%
 			%
 			% See also: vlt.data.fieldsearch
 
@@ -331,6 +333,7 @@ classdef tuning_response < ndi.app
 
 				independent_parameter = {};
 				constraint = [];
+				doAdd = 1;
 
 				vlt.data.assign(varargin{:});
 
@@ -455,7 +458,9 @@ classdef tuning_response < ndi.app
 				tuning_doc = ndi.document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('element_id',stim_response_doc.dependency_value('element_id'));
-				E.database_add(tuning_doc);
+				if doAdd,
+					E.database_add(tuning_doc);
+				end;
 				
 
 		end; % tuning_curve()
