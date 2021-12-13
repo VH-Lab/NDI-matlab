@@ -247,14 +247,16 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				doc = {};
 		end; % calculate()
 
-		function plot(ndi_calculation_obj, doc_or_parameters, varargin)
+		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
 			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
 			%
-			% PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			% H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
 			%
 			% Produce a diagnostic plot that can indicate to a reader whether or not
 			% the calculation has been performed in a manner that makes sense with
 			% its input data. Useful for debugging / validating a calculation.
+			%
+			% Handles to the figure, the axes, and any objects created are returned in H.
 			% 
 			% By default, this plot is made in the current axes.
 			%
@@ -262,7 +264,28 @@ classdef calculation < ndi.app & ndi.app.appdoc
 			% See ndi.calculation.plot_parameters for a description of those parameters.
 			%
 				params = ndi.calculation.plot_parameters(varargin{:});
-				% base class does nothing
+				% base class does nothing except pop up figure and title after the doc name
+				h.axes = [];
+				h.figure = [];
+				h.objects = [];
+				h.params = params;
+				if params.newfigure,
+					h.figure = figure;
+				else,
+					h.figure = gcf;
+				end;
+				h.axes = gca;
+				if ~params.suppress_title,
+					if isa(doc_or_parameters,'ndi.document'),
+						id = doc_or_parameters.id();
+						h.title = title([id],'interp','none');
+					end;
+				end;
+				if params.holdstate,
+					hold on;
+				else,
+					hold off;
+				end;
 		end; % plot()
 
 

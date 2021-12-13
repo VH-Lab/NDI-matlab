@@ -109,6 +109,51 @@ classdef tuningcurve < ndi.calculation
 				eval(['help ndi.calc.example.tuningcurve.doc_about']);
 		end; %doc_about()
 
+		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
+                        % PLOT - provide a diagnostic plot to show the results of the calculation
+                        %
+                        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+                        %
+                        % Produce a plot of the tuning curve.
+			%
+                        % Handles to the figure, the axes, and any objects created are returned in H.
+                        %
+                        % This function takes additional input arguments as name/value pairs.
+                        % See ndi.calculation.plot_parameters for a description of those parameters.
+
+				% call superclass plot method to set up axes
+				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+
+				if isa(doc_or_parameters,'ndi.document'),
+					doc = doc_or_parameters;
+				else,
+					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
+				end;
+
+				tc = doc.document_properties.tuning_curve; % shorten our typing
+
+				% if more than 2-d, complain
+				
+				if numel(tc.independent_variable_label)>2,
+					a = axis;
+					h.objects(end+1) = text(mean(a(1:2)),mean(a(3:4)),['Do not know how to plot with more than 2 independent axes.']);
+					return;
+				end;
+
+				if numel(tc.independent_variable_label)==1,
+					net_responses = tc.response_mean - tc.control_response_mean;
+					h_errorbar = errorbar(tc.independent_variable_value,tc.response_mean,tc.response_stderr,tc.response_stderr);
+					set(h_errorbar,'color',[0 0 0],'linewidth',1);
+					h.objects = cat(2,h.objects,h_errorbar);
+					hold on;
+					h.objects(end+1) = plot([tc.independent_variable_value(1) tc.independent_variable_value(end)],[0 0],'k--','linewidth',1.0001);
+					xlabel(tc.independent_variable_label);
+					ylabel(['Response (' tc.response_units ')']);
+					box off;
+				end;
+		end; % plot()
+
+
 		% NEW functions in tuningcurve_calc that are not overriding any superclass functions
 
 		function [n,v,property_value] = best_value(ndi_calculation_obj, algorithm, stim_response_doc, property)
