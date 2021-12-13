@@ -258,19 +258,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 			% 
 			% By default, this plot is made in the current axes.
 			%
-			% This function takes additional input arguments as name/value pairs:
-			% |---------------------------|--------------------------------------|
-			% | Parameter (default)       | Description                          |
-			% |---------------------------|--------------------------------------|
-			% | newfigure (0)             | 0/1 Should we make a new figure?     |
-			% | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
-			% |                           |   state of the current axes?         |
-			% |---------------------------|--------------------------------------|
+			% This function takes additional input arguments as name/value pairs.
+			% See ndi.calculation.plot_parameters for a description of those parameters.
 			%
-				newfigure = 0;
-				holdstate = 0;
-				vlt.data.assign(varargin{:});
-
+				params = ndi.calculation.plot_parameters(varargin{:});
 				% base class does nothing
 		end; % plot()
 
@@ -352,8 +343,6 @@ classdef calculation < ndi.app & ndi.app.appdoc
 	end; % methods
 
 	methods (Static)
-
-
 		function param = plot_parameters(varargin);
 			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
 			%
@@ -372,7 +361,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 			% | newfigure (0)             | 0/1 Should we make a new figure?     |
 			% | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
 			% |                           |   state of the current axes?         |
-			% | 
+			% | suppress_x_label (0)      | 0/1 Should we suppress the x label?  |
+			% | suppress_y_label (0)      | 0/1 Should we suppress the y label?  |
+			% | suppress_z_label (0)      | 0/1 Should we suppress the z label?  |
+			% | suppress_title (0)        | 0/1 Should we suppress the title?    |
 			% |---------------------------|--------------------------------------|
 			%
 				newfigure = 0;
@@ -380,11 +372,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				suppress_x_label = 0;
 				suppress_y_label = 0;
 				suppress_z_label = 0;
+				suppress_title = 0;
 				vlt.data.assign(varargin{:});
 				param = vlt.data.workspace2struct();
 				param = rmfield(param,'varargin');
-
-
 		end;
 
 	end; % Static methods
