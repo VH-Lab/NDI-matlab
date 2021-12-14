@@ -147,8 +147,12 @@ classdef tuningcurve < ndi.calculation
 					h.objects = cat(2,h.objects,h_errorbar);
 					hold on;
 					h.objects(end+1) = plot([tc.independent_variable_value(1) tc.independent_variable_value(end)],[0 0],'k--','linewidth',1.0001);
-					xlabel(tc.independent_variable_label);
-					ylabel(['Response (' tc.response_units ')']);
+					if ~h.params.suppress_x_label,
+						h.xlabel = xlabel(tc.independent_variable_label);
+					end;
+					if ~h.params.suppress_y_label,
+						h.ylabel = ylabel(['Response (' tc.response_units ')']);
+					end;
 					box off;
 				end;
 		end; % plot()

@@ -269,6 +269,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				h.figure = [];
 				h.objects = [];
 				h.params = params;
+				h.title = [];
+				h.xlabel = [];
+				h.ylabel = [];
+				h.zlabel = [];
 				if params.newfigure,
 					h.figure = figure;
 				else,

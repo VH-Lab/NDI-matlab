@@ -278,13 +278,16 @@ classdef syncgraph < ndi.ido
 								end;
 								lowcost = Inf;
 								mappinghere = [];
-								for k=1:numel(ndi_syncgraph_obj.rules),
-									[c,m] = apply(ndi_syncgraph_obj.rules{k}, ginfo.nodes(i_), ginfo.nodes(j_));
+								for K=1:numel(ndi_syncgraph_obj.rules),
+									[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
 									end;
-								end
+                                end
+                                if isempty(mappinghere) & ~isinf(lowcost),
+                                    keyboard;
+                                end;
 								ginfo.G(i_,j_) = lowcost;
 								ginfo.mapping{i_,j_} = mappinghere;
 							end
