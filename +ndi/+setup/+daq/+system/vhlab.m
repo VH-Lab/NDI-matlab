@@ -45,7 +45,7 @@ epochprobemapclass = 'ndi.setup.epoch.epochprobemap_daqsystem_vhlab';
 
 switch daqsystemname,
 	case 'vhintan',
-		fileparameters = {'reference.txt','.*\.rhd\>','vhintan_channelgrouping.txt'};  
+		fileparameters = {'reference.txt','.*\.rhd\>','vhintan_channelgrouping.txt','vhintan_intan2spike2time.txt'};  
 		readerobjectclass = ['ndi.daq.reader.mfdaq.intan'];
 		epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
 		mdr = {};

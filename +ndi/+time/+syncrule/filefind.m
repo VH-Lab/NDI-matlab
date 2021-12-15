@@ -157,7 +157,6 @@ classdef filefind < ndi.time.syncrule
 						for i=1:numel(epochnode_a.underlying_epochs.underlying),
 							[filepath,filename,fileext] = fileparts(epochnode_a.underlying_epochs.underlying{i});
 							if strcmp([filename fileext],ndi_syncrule_filefind_obj.parameters.syncfilename), % match!
-                                disp('forward match.')
 								syncdata = load(epochnode_a.underlying_epochs.underlying{i},'-ascii');
 								shift = syncdata(1);
 								scale = syncdata(2);
@@ -165,7 +164,7 @@ classdef filefind < ndi.time.syncrule
 								return;
 							end;
 						end;
-                        error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
+						error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
 					end;
 
 					% here is b->a
@@ -183,7 +182,7 @@ classdef filefind < ndi.time.syncrule
 								return;
 							end;
 						end;
-                        error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
+						error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
 					end;
 				end
 		end % apply
