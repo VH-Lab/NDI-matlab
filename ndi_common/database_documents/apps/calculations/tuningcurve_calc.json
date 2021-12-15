@@ -13,12 +13,6 @@
 	},
 	"tuningcurve_calc": {
 		"input_parameters": {
-			"depends_on": [
-				{
-					"name":				"stimulus_response_scalar_id",
-					"value":			[]
-				}
-			],
 			"independent_label":			[],
 			"independent_parameter":		[],
 			"best_algorithm":			"empirical_maximum",
@@ -29,7 +23,13 @@
 					"value":			[]
 				}
 			]
-		}
+		},
+		"depends_on": [
+			{
+				"name":				"stimulus_response_scalar_id",
+				"value":			[]
+			}
+		]
 	}
 }
 
