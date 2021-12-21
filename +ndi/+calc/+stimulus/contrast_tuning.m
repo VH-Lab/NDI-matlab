@@ -1,0 +1,240 @@
+classdef contrast_tuning < ndi.calculation
+	methods
+
+		function contrast_tuning_obj = contrast_tuning(session)
+			% CONTRAST_TUNING - a contrast_tuning demonstration of an ndi.calculation object
+			%
+			% CONTRAST_TUNING_OBJ = CONTRAST_TUNING(SESSION)
+			%
+			% Creates a CONTRAST_TUNING ndi.calculation object
+			%
+				ndi.globals;
+				contrast_tuning_obj = contrast_tuning_obj@ndi.calculation(session,'contrast_tuning_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','contrast_tuning_calc.json'));
+		end; % contrast_tuning()
+
+		function doc = calculate(ndi_calculation_obj, parameters)
+			% CALCULATE - perform the calculation for ndi.calc.example.contrast_tuning
+			%
+			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+			%
+			% Creates a contrast_tuning_calc document given input parameters.
+			%
+			% The document that is created contrast_tuning
+			% by the input parameters.
+				% check inputs
+				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters''.']); end;
+				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on''.']); end;
+				
+				% Step 1: set up the output structure
+				contrast_tuning_calc = parameters;
+
+				tuning_response_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
+					vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_tuningcurve_id'),''));
+				if numel(tuning_response_doc)~=1, 
+					error(['Could not find stimulus tuning doc..']);
+				end;
+				stim_response_doc = stim_response_doc{1};
+			
+				% Step 2: perform the calculation, which here creates a contrast_tuning doc
+
+				% build input arguments for tuning curve app
+
+				% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
+				doc = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
+					'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
+				if ~isempty(doc), % if doc is actually created, that is, all stimuli were not excluded
+					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrast_tuning_calc',contrast_tuning_calc) + doc;
+				end;
+		end; % calculate
+
+		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
+			%
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			%
+			% Returns a list of the default search parameters for finding appropriate inputs
+			% to the calculation. For contrast_tuning_calc, there is no appropriate default parameters
+			% so this search will yield empty.
+			%
+				parameters.input_parameters = struct('independent_label','','independent_parameter','','best_algorithm','empirical_maximum');
+				parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
+				parameters.depends_on = vlt.data.emptystruct('name','value');
+				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query(end+1) = struct('name','will_fail','query',...
+					ndi.query('ndi_document.id','exact_string','123',''));
+					
+		end; % default_search_for_input_parameters
+
+                function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
+			%
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			%
+			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
+			% select particular documents to be placed into the parameters 'depends_on' specification.
+			% If one does not provide any 'query' structure, then the default values here are used.
+			%
+			% The function returns:
+			% |-----------------------|----------------------------------------------|
+			% | query                 | A structure with 'name' and 'query' fields   |
+			% |                       |   that describes a search to be performed to |
+			% |                       |   identify inputs for the 'depends_on' field |
+			% |                       |   in the PARAMETERS output.                  |
+			% |-----------------------|-----------------------------------------------
+			%
+			% For the ndi.calc.stimulus.contrast_tuning_calc class, this looks for 
+			% documents of type 'stimulus_response_scalar.json' with 'response_type' fields
+			% the contain 'mean' or 'F1'.
+			%
+			%
+				q1 = ndi.query('','isa','stimulus_tuningcurve.json','');
+				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
+				q3 = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
+				q4 = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
+				q23 = q2 | q3 | q4;
+				q_total = q1 & q23;
+
+				query = struct('name','stimulus_tuningcurve_id','query',q_total);
+		end; % default_parameters_query()
+
+		function b = is_valid_dependency_input(ndi_calculation_obj, name, value)
+			% IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculation?
+			%
+			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATION_OBJ, NAME, VALUE)
+			%
+			% Tests whether a potential input to a calculation is valid.
+			% The potential dependency name is provided in NAME and its ndi_document id is
+			% provided in VALUE.
+			%
+			% The base class behavior of this function is simply to return true, but it
+			% can be overriden if additional criteria beyond an ndi.query are needed to
+			% assess if a document is an appropriate input for the calculation.
+			%
+				b = 1;
+				return;
+
+				% could also use the below, but will require an extra query operation
+	
+				switch lower(name),
+					case lower('stimulus_tuningcurve_id'),
+						q = ndi.query('ndi_document.id','exact_string',value,'');
+						d = ndi_calculation_obj.S.database_search(q);
+						b = (numel(d.document_properties.independent_variable_label) ==1);
+					case lower('element_id'),
+						b = 1;
+				end;
+		end; % is_valid_dependency_input()
+
+		function doc_about(ndi_calculation_obj)
+			% ----------------------------------------------------------------------------------------------
+			% NDI_CALCULATION: CONTRAST_TUNING_CALC
+			% ----------------------------------------------------------------------------------------------
+			%
+			%   ------------------------
+			%   | CONTRAST_TUNING_CALC -- ABOUT |
+			%   ------------------------
+			%
+			%   CONTRAST_TUNING_CALC is a demonstration document. It simply produces the 'answer' that
+			%   is provided in the input parameters. Each CONTRAST_TUNING_CALC document 'depends_on' an
+			%   NDI daq system.
+			%
+			%   Definition: apps/contrast_tuning_calc.json
+			%
+				eval(['help ndi.calc.example.contrast_tuning.doc_about']);
+		end; %doc_about()
+
+		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
+                        % PLOT - provide a diagnostic plot to show the results of the calculation
+                        %
+                        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+                        %
+                        % Produce a plot of the tuning curve.
+			%
+                        % Handles to the figure, the axes, and any objects created are returned in H.
+                        %
+                        % This function takes additional input arguments as name/value pairs.
+                        % See ndi.calculation.plot_parameters for a description of those parameters.
+
+				% call superclass plot method to set up axes
+				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+
+				if isa(doc_or_parameters,'ndi.document'),
+					doc = doc_or_parameters;
+				else,
+					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
+				end;
+
+				return;
+
+				tc = doc.document_properties.tuning_curve; % shorten our typing
+
+				% if more than 2-d, complain
+				
+				if numel(tc.independent_variable_label)>2,
+					a = axis;
+					h.objects(end+1) = text(mean(a(1:2)),mean(a(3:4)),['Do not know how to plot with more than 2 independent axes.']);
+					return;
+				end;
+
+				if numel(tc.independent_variable_label)==1,
+					hold on;
+					h_baseline = plot([min(tc.independent_variable_value) max(tc.independent_variable_value)],...
+						[0 0],'k--','linewidth',1.0001);
+					h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
+					h.objects(end+1) = h_baseline;
+					net_responses = tc.response_mean - tc.control_response_mean;
+					[v,sortorder] = sort(tc.independent_variable_value);
+					h_errorbar = errorbar(tc.independent_variable_value(sortorder(:)),...
+						tc.response_mean(sortorder(:)),tc.response_stderr(sortorder(:)),tc.response_stderr(sortorder(:)));
+					set(h_errorbar,'color',[0 0 0],'linewidth',1);
+					h.objects = cat(2,h.objects,h_errorbar);
+					if ~h.params.suppress_x_label,
+						h.xlabel = xlabel(tc.independent_variable_label);
+					end;
+					if ~h.params.suppress_y_label,
+						h.ylabel = ylabel(['Response (' tc.response_units ')']);
+					end;
+					box off;
+				end;
+
+		end; % plot()
+
+		contrast_props_doc = calculate_contrast_indexes(ndi_calculation_obj, tuning_doc)
+			% CALCULATE_CONTRAST_INDEXES - calculate contrast index values from a tuning curve
+			%
+			% CONTRAST_PROPS_DOC = CALCULATE_CONTRAST_INDEXES(NDI_CONTRAST_TUNING_CALC_OBJ, TUNING_DOC)
+			%
+			% Given a 1-dimensional tuning curve document, this function calculates contrast response
+			% parameters and stores them in CONTRAST_TUNING document CONTRAST_PROPS_DOC.
+			%
+			%
+
+				resp = ndi.app.stimulus.tuning_response.tuningcurvedoc2vhlabrespstruct(tuning_doc);
+
+				[anova_across_stims, anova_across_stims_blank] = neural_response_significance(resp);
+
+				emp = vlt.neuro.vision.contrast.index.empirical(resp);
+				fi = vlt.neuro.vision.contrast.index.fit(resp);
+
+				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
+				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
+
+				tuning_curve = struct('direction', vlt.data.rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
+					'mean', resp.curve(2,:), ...
+					'stddev', resp.curve(3,:), ...
+					'stderr', resp.curve(4,:), ...
+					'individual', resp.ind, ...
+					'raw_individual', {ind_real}, ... % need
+					'control_individual', {control_ind_real}); %need
+
+				significance = struct('visual_response_anova_p',anova_across_stims_blank,'across_stimuli_anova_p', anova_across_stims);
+
+				
+			
+
+
+		end; % calculate_contrast_indexes()
+
+	end; % methods()
+end % contrast_tuning

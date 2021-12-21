@@ -73,6 +73,12 @@ classdef tuningcurve < ndi.calculation
 							deal_constraints_group(end+1) = deal_constraints_here;
 						end;
 						deal_constraints{end+1} = deal_constraints_group;
+					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'varies'),
+						pva = ndi_calculation_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						if numel(pva)<2, % we don't have any variation in the parameter requested, quit
+							doc = {};
+							return;
+						end;
 					else,
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation',parameters.input_parameters.selection(i).operation,...
@@ -94,7 +100,6 @@ classdef tuningcurve < ndi.calculation
 				end;
 				deal_str(end) = '';
 
-
 				% Step 3: place the results of the calculation into an NDI document
 				tapp = ndi.app.stimulus.tuning_response(ndi_calculation_obj.session);
 
@@ -104,7 +109,7 @@ classdef tuningcurve < ndi.calculation
 					constraints_mod = constraint;
 					eval(['[' deal_str ']=ind2sub(size(deal_constraints),i);']);
 					for j=1:numel(deal_constraints),
-						deal_here = deal_constraints{j}(sz_{j})
+						deal_here = deal_constraints{j}(sz_{j});
 						if isstruct(deal_here),
 							constraints_mod(end+1) = deal_here;
 						end;
@@ -113,8 +118,10 @@ classdef tuningcurve < ndi.calculation
 					% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
 						'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
-					doc_here = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
-					doc{end+1} = doc_here;
+					if ~isempty(doc_here), % if doc is actually created, that is, all stimuli were not excluded
+						doc_here = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
+						doc{end+1} = doc_here;
+					end;
 				end;
 				if numel(doc)==1,
 					doc = doc{1};
@@ -133,12 +140,42 @@ classdef tuningcurve < ndi.calculation
 				parameters.input_parameters = struct('independent_label','','independent_parameter','','best_algorithm','empirical_maximum');
 				parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
 				parameters.depends_on = vlt.data.emptystruct('name','value');
-				parameters.query = struct('name','stimulus_response_scalar_id','query',...
-					ndi.query('','isa','stimulus_response_scalar.json',''));
-				parameters.query(2) = struct('name','will_fail','query',...
+				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query(end+1) = struct('name','will_fail','query',...
 					ndi.query('ndi_document.id','exact_string','123',''));
 					
 		end; % default_search_for_input_parameters
+
+                function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
+			%
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			%
+			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
+			% select particular documents to be placed into the parameters 'depends_on' specification.
+			% If one does not provide any 'query' structure, then the default values here are used.
+			%
+			% The function returns:
+			% |-----------------------|----------------------------------------------|
+			% | query                 | A structure with 'name' and 'query' fields   |
+			% |                       |   that describes a search to be performed to |
+			% |                       |   identify inputs for the 'depends_on' field |
+			% |                       |   in the PARAMETERS output.                  |
+			% |-----------------------|-----------------------------------------------
+			%
+			% For the ndi.calc.stimulus.tuningcurve_calc class, this looks for 
+			% documents of type 'stimulus_response_scalar.json' with 'response_type' fields
+			% the contain 'mean' or 'F1'.
+			%
+			%
+				q1 = ndi.query('','isa','stimulus_response_scalar.json','');
+				q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
+				q3 = ndi.query('stimulus_response_scalar.response_type','contains_string','F1','');
+				q23 = q2 | q3;
+				q_total = q1 & q23;
+
+				query = struct('name','stimulus_response_scalar_id','query',q_total);
+		end; % default_parameters_query()
 
 		function b = is_valid_dependency_input(ndi_calculation_obj, name, value)
 			% IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculation?
@@ -153,12 +190,14 @@ classdef tuningcurve < ndi.calculation
 			% can be overriden if additional criteria beyond an ndi.query are needed to
 			% assess if a document is an appropriate input for the calculation.
 			%
+				b = 1;
+				return;
+				% the below is wrong..this function does not take tuningcurves or tuningcurve_calc objects as inputs
 				q1 = ndi.query('ndi_document.id','exact_string',value,'');
 				q2 = ndi.query('','isa','tuningcurve_calc.json','');
 				% can't also be a tuningcurve_calc document or we could have infinite recursion
 				b = isempty(ndi_calculation_obj.session.database_search(q1&q2));
 		end; % is_valid_dependency_input()
-
 
 		function doc_about(ndi_calculation_obj)
 			% ----------------------------------------------------------------------------------------------

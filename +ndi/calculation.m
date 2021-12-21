@@ -131,6 +131,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 			% |-----------------------|-----------------------------------------------
 			%
 			%
+				t_start = tic;
 				fixed_input_parameters = parameters_specification.input_parameters;
 				if isfield(parameters_specification,'depends_on'),
 					fixed_depends_on = parameters_specification.depends_on;
@@ -147,6 +148,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				end;
 
 				if ~isfield(parameters_specification,'query'),
+					parameters_specification.query = ndi_calculation_obj.default_parameters_query(parameters_specification);
+				end;
+
+				if numel(parameters_specification.query)==0,
 					% we are done, everything is fixed
 					parameters.input_parameters = fixed_input_parameters;
 					parameters.depends_on = fixed_depends_on;
@@ -182,6 +187,28 @@ classdef calculation < ndi.app & ndi.app.appdoc
 					end;
 				end;
 		end; % search_for_input_parameters()
+
+		function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
+			%
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			%
+			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
+			% select particular documents to be placed into the parameters 'depends_on' specification.
+			% If one does not provide any 'query' structure, then the default values here are used.
+			%
+			% The function returns:
+			% |-----------------------|----------------------------------------------|
+			% | query                 | A structure with 'name' and 'query' fields   |
+			% |                       |   that describes a search to be performed to |
+			% |                       |   identify inputs for the 'depends_on' field |
+			% |                       |   in the PARAMETERS output.                  |
+			% |-----------------------|-----------------------------------------------
+			%
+			% In the base class, this returns an empty structure.
+			%
+				query = vlt.data.emptystruct('name','query');
+		end; % default_parameters_query()
 
 		function docs = search_for_calculation_docs(ndi_calculation_obj, parameters)  % can call find_appdoc, most of the code should be put in find_appdoc
 			% SEARCH_FOR_CALCULATION_DOCS - search for previous calculations

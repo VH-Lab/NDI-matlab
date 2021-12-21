@@ -722,4 +722,99 @@ classdef tuning_response < ndi.app
 		end; % make_1d_tuning
 
 	end; % methods
+
+	methods (Static)
+		function resp = tuningcurvedoc2vhlabrespstruct(tuning_doc)
+			% TUNINGCURVEDOC2VHLABRESPSTRUCT - convert between a tuning curve document and the VH lab response structure
+			%
+			% RESPSTRUCT = TUNINGCURVEDOC2VHLABRESPSTRUCT(TUNINGCURVE_DOC)
+			%
+			% Converts entries from an NDI TUNINGCURVE document to a VH-lab response structure.
+			% This function is generally used when one wants to call the VH lab libraries.
+			%
+			%   RESPSTRUCT is a structure  of response properties with fields:
+			%   curve    |    4xnumber of directions tested,
+			%            |      curve(1,:) is directions tested (degrees, compass coords.)
+			%            |      curve(2,:) is mean responses, with control subtracted
+			%            |      curve(3,:) is standard deviation
+			%            |      curve(4,:) is standard error
+			%   ind      |    cell list of individual trial responses for each direction
+			%   spont    |    control responses [mean stddev stderr]
+			%   spontind |    individual control responses
+			%   Optionally:
+			%   blankresp|    response to a control trial: [mean stddev stderr]
+			%   blankind |    individual responses to control
+
+				ind = {};
+				ind_real = {};
+				control_ind = {};
+				control_ind_real = {};
+				response_ind = {};
+				response_mean = [];
+				response_stddev = [];
+				response_stderr = [];
+
+				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+				tuning_doc = ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static(tuning_doc);
+
+				for i=1:numel(tuning_doc.document_properties.tuning_curve.individual_responses_real),
+					ind{i} = tuning_doc.document_properties.tuning_curve.individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.individual_responses_imaginary{i};
+					ind_real{i} = ind{i};
+					if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end;
+					control_ind{i} = tuning_doc.document_properties.tuning_curve.control_individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.control_individual_responses_imaginary{i};
+					control_ind_real{i} = control_ind{i};
+					if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end;
+					response_ind{i} = ind{i} - control_ind{i};
+					response_mean(i) = nanmean(response_ind{i});
+					if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end;
+					response_stddev(i) = nanstd(response_ind{i});
+					response_stderr(i) = vlt.data.nanstderr(response_ind{i});
+					if any(~isreal(response_ind{i})),
+						response_ind{i} = abs(response_ind{i});
+					end;
+				end;
+
+				resp.ind = ind_real;
+				resp.blankind = control_ind_real{1};
+				resp.spontind = resp.blankind;
+				resp.blankresp = [mean(resp.blankind(:)) std(resp.blankind(:)) vlt.stats.stderr(resp.blankind(:))];
+				resp.spont = resp.blankresp; 
+
+				resp.curve = ...
+					[ tuning_doc.document_properties.tuning_curve.independent_variable_value(:)' ; ...
+						response_mean ; ...
+						response_stddev ; ...
+						response_stderr; ];
+				resp.ind = response_ind;
+
+
+		end; % tuningcurvedoc2vhlabrespstruct()
+
+		function tc_doc = tuningdoc_fixcellarrays_static(tc_doc)
+			% TUNINGDOC_FIXCELLARRAYS_STATIC - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
+			%
+				document_properties = tc_doc.document_properties;
+
+				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+					document_properties.tuning_curve.individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_real);
+                                        document_properties.tuning_curve.individual_responses_imaginary= ...
+                                                        vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+					document_properties.tuning_curve.control_individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+					document_properties.tuning_curve.control_individual_responses_imaginary= ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+					document_properties.tuning_curve.stimulus_presentation_number = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+                                end;
+
+				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
+
+		end;  % fixcellarrays()
+
+	end; % methods(static)
+		
 end % ndi_app_stimulus_response
