@@ -34,16 +34,12 @@ classdef contrast_tuning < ndi.calculation
 				if numel(tuning_response_doc)~=1, 
 					error(['Could not find stimulus tuning doc..']);
 				end;
-				stim_response_doc = stim_response_doc{1};
-			
+				tuning_response_doc = tuning_response_doc{1};
+
 				% Step 2: perform the calculation, which here creates a contrast_tuning doc
-
-				% build input arguments for tuning curve app
-
-				% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
-				doc = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
-					'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
-				if ~isempty(doc), % if doc is actually created, that is, all stimuli were not excluded
+				doc = ndi_calculation_obj.calculate_contrast_indexes(tuning_response_doc);
+				
+				if ~isempty(doc), 
 					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrast_tuning_calc',contrast_tuning_calc) + doc;
 				end;
 		end; % calculate
@@ -57,12 +53,9 @@ classdef contrast_tuning < ndi.calculation
 			% to the calculation. For contrast_tuning_calc, there is no appropriate default parameters
 			% so this search will yield empty.
 			%
-				parameters.input_parameters = struct('independent_label','','independent_parameter','','best_algorithm','empirical_maximum');
-				parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
+				parameters.input_parameters = struct([]);
 				parameters.depends_on = vlt.data.emptystruct('name','value');
 				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
-				parameters.query(end+1) = struct('name','will_fail','query',...
-					ndi.query('ndi_document.id','exact_string','123',''));
 					
 		end; % default_search_for_input_parameters
 
@@ -92,8 +85,8 @@ classdef contrast_tuning < ndi.calculation
 				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
 				q3 = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
 				q4 = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
-				q23 = q2 | q3 | q4;
-				q_total = q1 & q23;
+				q234 = q2 | q3 | q4;
+				q_total = q1 & q234;
 
 				query = struct('name','stimulus_tuningcurve_id','query',q_total);
 		end; % default_parameters_query()
@@ -209,18 +202,16 @@ classdef contrast_tuning < ndi.calculation
 			% parameters and stores them in CONTRAST_TUNING document CONTRAST_PROPS_DOC.
 			%
 			%
+				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
+				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
 
 				resp = ndi.app.stimulus.tuning_response.tuningcurvedoc2vhlabrespstruct(tuning_doc);
 
 				[anova_across_stims, anova_across_stims_blank] = neural_response_significance(resp);
 
-				emp = vlt.neuro.vision.contrast.index.empirical(resp);
-				fi = vlt.neuro.vision.contrast.index.fit(resp);
-
-				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
-				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
-
-				tuning_curve = struct('direction', vlt.data.rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
+				tuning_curve = struct(...
+					'contrast', ...
+						vlt.data.rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
 					'mean', resp.curve(2,:), ...
 					'stddev', resp.curve(3,:), ...
 					'stderr', resp.curve(4,:), ...
@@ -228,11 +219,42 @@ classdef contrast_tuning < ndi.calculation
 					'raw_individual', {ind_real}, ... % need
 					'control_individual', {control_ind_real}); %need
 
-				significance = struct('visual_response_anova_p',anova_across_stims_blank,'across_stimuli_anova_p', anova_across_stims);
+				significance = struct('visual_response_anova_p',anova_across_stims_blank,...
+					'across_stimuli_anova_p', anova_across_stims);
 
-				
-			
+				fitless.interpolated_c50 = vlt.neuro.vision.contrast.indexes.c50interpolated(tuning_curve.contrast,...
+					tuning_curve.mean);
 
+				prefixes = {'naka_rushton_RB_','naka_rushton_RBN', naka_Rushton_RBNS'};
+				fitterms = 2:4;
+
+				fit = struct([]);
+
+				for f = 1:numel(fitterms),
+					fi = vlt.neuro.vision.contrast.indexes.fitindexes(resp,fitterms(f));
+					fit = setfield(fit,[prefixes{f} 'parameters'],fi.fit_parameters);
+					fit = setfield(fit,[prefixes{f} 'contrast'],fi.fit(1,:));
+					fit = setfield(fit,[prefixes{f} 'values'],fi.fit(2,:));
+					[m,pref_index] = max(fi.fit(2,:));
+					pref = fi.fit(1,pref_index);
+					fit = setfield(fit,[prefixes{f} 'pref'], pref);
+					fit = setfield(fit,[prefixes{f} 'empirical_c50'], fi.empirical_C50);
+					fit = setfield(fit,[prefixes{f} 'relative_max_gain'], fi.relative_max_gain);
+					fit = setfield(fit,[prefixes{f} 'saturation_index'], fi.saturation_index);
+					fit = setfield(fit,[prefixes{f} 'sensitivity'], fi.sensitivity);
+				end;
+
+				contrast_tuning.properties = properties;
+				contrast_tuning.tuning_curve = tuning_curve;
+				contrast_tuning.significance = significance;
+				contrast_tuning.fitless = fitless;
+				contrast_tuning.fit = fit;
+
+				contrast_props_doc = ndi.document('vision/contrast/contrast_tuning',...
+					'contrast_tuning',contrast_tuning);
+				contrast_props_doc = contrast_props_doc.set_dependency_value('element_id', ...
+					tuning_doc{1}.dependency_value('element_id'));
+				contrast_props_doc = contrast_props_doc.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 
 		end; % calculate_contrast_indexes()
 
