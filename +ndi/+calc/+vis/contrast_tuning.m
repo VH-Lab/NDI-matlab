@@ -1,6 +1,6 @@
 classdef contrast_tuning < ndi.calculation
-	methods
 
+	methods
 		function contrast_tuning_obj = contrast_tuning(session)
 			% CONTRAST_TUNING - a contrast_tuning demonstration of an ndi.calculation object
 			%
@@ -9,8 +9,8 @@ classdef contrast_tuning < ndi.calculation
 			% Creates a CONTRAST_TUNING ndi.calculation object
 			%
 				ndi.globals;
-				contrast_tuning_obj = contrast_tuning_obj@ndi.calculation(session,'contrast_tuning_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','contrast_tuning_calc.json'));
+				contrast_tuning_obj = contrast_tuning_obj@ndi.calculation(session,'contrasttuning_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','contrasttuning_calc.json'));
 		end; % contrast_tuning()
 
 		function doc = calculate(ndi_calculation_obj, parameters)
@@ -40,7 +40,7 @@ classdef contrast_tuning < ndi.calculation
 				doc = ndi_calculation_obj.calculate_contrast_indexes(tuning_response_doc);
 				
 				if ~isempty(doc), 
-					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrast_tuning_calc',contrast_tuning_calc) + doc;
+					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrasttuning_calc',contrast_tuning_calc) + doc;
 				end;
 		end; % calculate
 
@@ -158,42 +158,49 @@ classdef contrast_tuning < ndi.calculation
 					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
 				end;
 
-				return;
+				ct = doc.document_properties.contrast_tuning; % shorten our typing
+				tc = ct.tuning_curve; % shorten our typing
+				ft = ct.fit;
 
-				tc = doc.document_properties.tuning_curve; % shorten our typing
-
-				% if more than 2-d, complain
+				% First plot responses
+				hold on;
+				h_baseline = plot([min(tc.contrast) max(tc.contrast)],...
+					[0 0],'k--','linewidth',1.0001);
+				h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
+				h.objects(end+1) = h_baseline;
+				[v,sortorder] = sort(tc.contrast);
+				h_errorbar = errorbar(tc.contrast(sortorder(:)),...
+					tc.mean(sortorder(:)),tc.stderr(sortorder(:)),tc.stderr(sortorder(:)));
+				set(h_errorbar,'color',[0 0 0],'linewidth',1,'linestyle','none');
+				h.objects = cat(2,h.objects,h_errorbar);
 				
-				if numel(tc.independent_variable_label)>2,
-					a = axis;
-					h.objects(end+1) = text(mean(a(1:2)),mean(a(3:4)),['Do not know how to plot with more than 2 independent axes.']);
-					return;
+				% Second plot all fits
+
+				h.objects(end+1) = plot(ft.naka_rushton_RB_contrast,ft.naka_rushton_RB_values,'-','color',0.33*[1 0 1],...
+					'linewidth',1.5);
+				h.objects(end+1) = plot(ft.naka_rushton_RBN_contrast,ft.naka_rushton_RBN_values,'-','color',0.67*[1 0 1],...
+					'linewidth',1.5);
+				h.objects(end+1) = plot(ft.naka_rushton_RBNS_contrast,ft.naka_rushton_RBNS_values,'-','color',1*[1 0 1],...
+					'linewidth',1.5);
+
+				if ~h.params.suppress_x_label,
+					h.xlabel = xlabel('Contrast');
+				end;
+				if ~h.params.suppress_y_label,
+					h.ylabel = ylabel(['Response (' ct.properties.response_type ', ' ct.properties.response_units ')']);
 				end;
 
-				if numel(tc.independent_variable_label)==1,
-					hold on;
-					h_baseline = plot([min(tc.independent_variable_value) max(tc.independent_variable_value)],...
-						[0 0],'k--','linewidth',1.0001);
-					h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
-					h.objects(end+1) = h_baseline;
-					net_responses = tc.response_mean - tc.control_response_mean;
-					[v,sortorder] = sort(tc.independent_variable_value);
-					h_errorbar = errorbar(tc.independent_variable_value(sortorder(:)),...
-						tc.response_mean(sortorder(:)),tc.response_stderr(sortorder(:)),tc.response_stderr(sortorder(:)));
-					set(h_errorbar,'color',[0 0 0],'linewidth',1);
-					h.objects = cat(2,h.objects,h_errorbar);
-					if ~h.params.suppress_x_label,
-						h.xlabel = xlabel(tc.independent_variable_label);
+				if 0, % when database is faster :-/
+					if ~h.params.suppress_title,
+						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('element_id'),ndi_calculation_obj.session);
+						h.title = title(element.elementstring(), 'interp','none');
 					end;
-					if ~h.params.suppress_y_label,
-						h.ylabel = ylabel(['Response (' tc.response_units ')']);
-					end;
-					box off;
 				end;
+				box off;
 
 		end; % plot()
 
-		contrast_props_doc = calculate_contrast_indexes(ndi_calculation_obj, tuning_doc)
+		function contrast_props_doc = calculate_contrast_indexes(ndi_calculation_obj, tuning_doc)
 			% CALCULATE_CONTRAST_INDEXES - calculate contrast index values from a tuning curve
 			%
 			% CONTRAST_PROPS_DOC = CALCULATE_CONTRAST_INDEXES(NDI_CONTRAST_TUNING_CALC_OBJ, TUNING_DOC)
@@ -203,7 +210,17 @@ classdef contrast_tuning < ndi.calculation
 			%
 			%
 				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
-				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
+				
+				stim_response_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id',...
+					'exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
+				if numel(stim_response_doc)~=1,
+					error(['Could not find stimulus response scalar document.']);
+				end;
+				if iscell(stim_response_doc),
+					stim_response_doc = stim_response_doc{1};
+				end;
+
+				properties.response_type = stim_response_doc.document_properties.stimulus_response_scalar.response_type;
 
 				resp = ndi.app.stimulus.tuning_response.tuningcurvedoc2vhlabrespstruct(tuning_doc);
 
@@ -215,9 +232,9 @@ classdef contrast_tuning < ndi.calculation
 					'mean', resp.curve(2,:), ...
 					'stddev', resp.curve(3,:), ...
 					'stderr', resp.curve(4,:), ...
-					'individual', resp.ind, ...
-					'raw_individual', {ind_real}, ... % need
-					'control_individual', {control_ind_real}); %need
+					'individual', {resp.ind}, ...
+					'control_stddev', resp.blankresp(2),...
+					'control_stderr', resp.blankresp(3));
 
 				significance = struct('visual_response_anova_p',anova_across_stims_blank,...
 					'across_stimuli_anova_p', anova_across_stims);
@@ -225,10 +242,12 @@ classdef contrast_tuning < ndi.calculation
 				fitless.interpolated_c50 = vlt.neuro.vision.contrast.indexes.c50interpolated(tuning_curve.contrast,...
 					tuning_curve.mean);
 
-				prefixes = {'naka_rushton_RB_','naka_rushton_RBN', naka_Rushton_RBNS'};
+				prefixes = {'naka_rushton_RB_','naka_rushton_RBN_', 'naka_rushton_RBNS_'};
 				fitterms = 2:4;
 
 				fit = struct([]);
+
+				fit(1).naka_rushton_RB_parameters = [];
 
 				for f = 1:numel(fitterms),
 					fi = vlt.neuro.vision.contrast.indexes.fitindexes(resp,fitterms(f));
@@ -239,6 +258,7 @@ classdef contrast_tuning < ndi.calculation
 					pref = fi.fit(1,pref_index);
 					fit = setfield(fit,[prefixes{f} 'pref'], pref);
 					fit = setfield(fit,[prefixes{f} 'empirical_c50'], fi.empirical_C50);
+					fit = setfield(fit,[prefixes{f} '_r2'], fi.r2);
 					fit = setfield(fit,[prefixes{f} 'relative_max_gain'], fi.relative_max_gain);
 					fit = setfield(fit,[prefixes{f} 'saturation_index'], fi.saturation_index);
 					fit = setfield(fit,[prefixes{f} 'sensitivity'], fi.sensitivity);
@@ -250,10 +270,10 @@ classdef contrast_tuning < ndi.calculation
 				contrast_tuning.fitless = fitless;
 				contrast_tuning.fit = fit;
 
-				contrast_props_doc = ndi.document('vision/contrast/contrast_tuning',...
+				contrast_props_doc = ndi.document('stimulus/vision/contrast/contrast_tuning',...
 					'contrast_tuning',contrast_tuning);
 				contrast_props_doc = contrast_props_doc.set_dependency_value('element_id', ...
-					tuning_doc{1}.dependency_value('element_id'));
+					tuning_doc.dependency_value('element_id'));
 				contrast_props_doc = contrast_props_doc.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 
 		end; % calculate_contrast_indexes()

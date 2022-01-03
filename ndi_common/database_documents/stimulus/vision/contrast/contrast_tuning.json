@@ -29,10 +29,7 @@
 			"stderr":						0,
 			"individual":	{
 			},
-			"raw_individual": {
-			},
-			"control_individual": {
-			},
+			"control_stddev":					0,
 			"control_stderr": 					0
 		},
 		"significance": {
@@ -49,7 +46,7 @@
 			"naka_rushton_RB_pref":					[0],
 			"naka_rushton_RB_empirical_c50":			[0],
 			"naka_rushton_RB_r2":					[0],
-			"naka_rushton_RB_relative_max_gain			[0],
+			"naka_rushton_RB_relative_max_gain":			[0],
 			"naka_rushton_RB_saturation_index":			[0],
 			"naka_rushton_RB_sensitivity":				[0],
 			"naka_rushton_RBN_parameters":				[0],
@@ -58,7 +55,7 @@
 			"naka_rushton_RBN_pref":				[0],
 			"naka_rushton_RBN_empirical_c50":			[0],
 			"naka_rushton_RBN_r2":					[0],
-			"naka_rushton_RBN_relative_max_gain			[0],
+			"naka_rushton_RBN_relative_max_gain":			[0],
 			"naka_rushton_RBN_saturation_index":			[0],
 			"naka_rushton_RBN_sensitivity":				[0],
 			"naka_rushton_RBNS_parameters":				[0],
@@ -67,7 +64,7 @@
 			"naka_rushton_RBNS_pref":				[0],
 			"naka_rushton_RBNS_empirical_c50":			[0],
 			"naka_rushton_RBNS_r2":					[0],
-			"naka_rushton_RBNS_relative_max_gain			[0],
+			"naka_rushton_RBNS_relative_max_gain":			[0],
 			"naka_rushton_RBNS_saturation_index":			[0],
 			"naka_rushton_RBNS_sensitivity":			[0]
 		}

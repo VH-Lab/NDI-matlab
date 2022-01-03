@@ -8,10 +8,10 @@
 		"superclasses": [
 			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
 			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" },
-			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus/vision/\contrast/\contrast_tuning.json"}
+			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus\/vision\/contrast\/contrast_tuning.json"}
 		]
 	},
-	"tuningcurve_calc": {
+	"contrasttuning_calc": {
 		"input_parameters": {
 		},
 		"depends_on": [
