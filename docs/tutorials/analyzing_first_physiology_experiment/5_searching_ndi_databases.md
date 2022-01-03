@@ -57,7 +57,7 @@ The `document_class` fields contain critical information about the class, such a
 
 Let's look at the data that specifies the superclasses:
 
-#### Code block 2.5.1.3. Type this into Matlab.
+#### Code block 2.5.2.1. Type this into Matlab.
 
 ```matlab
 stim_pres_doc{1}.document_properties.document_class
@@ -104,6 +104,8 @@ The most useful item in each [ndi.document](https://vh-lab.github.io/NDI-matlab/
 
 Performing analyses or analyses of analyses in NDI involves searching for previous entries in the database, building upon them, and writing the
 results back to the database. The object [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) allows one to express database searches. Let's learn about [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) with a few examples.
+
+#### Code block 2.5.3.1. Type this into Matlab.
 
 ```matlab
 % search for document classes that contain the string 'stim'
