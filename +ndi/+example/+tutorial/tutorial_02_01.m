@@ -13,30 +13,31 @@ function tutorial_02_01(prefix, testing)
 % PREFIX should be the directory that contains the directory 'ts_exper1'. If it is not
 % provided or is empty, the default is [userpath filesep 'Documents' filesep 'NDI'].
 %
-% If TESTING is 1, then the files are copied to the temporary directory before proceeding so that the files 
-% in the directory called PREFIX are not touched.
+% If TESTING is 1, then PREFIX is taken to be [userpath filesep 'Documents' filesep' NDI filesep 'Test'], 
+% and the files are copied to the temporary directory before proceeding so that the files 
+% in the directory called PREFIX are not touched. 
 %
 
 if nargin<1 | isempty(prefix),
 	prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 end;
 
-testing = 0;
-
 if nargin<2,
-	testing = testing;
+	testing = 0;
 end;
 
 tutorial_dir = 'ts_exper1';
 
 if testing, % copy the files to the temp directory
+	prefix = [userpath filesep 'Documents' filesep 'NDI' filesep 'Test']; 
+	disp(['Assuming clean data files ts_exper1 are in ' prefix '.']);
 	ndi.globals() 
 	disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
 	try,
 		rmdir([ndi_globals.path.temppath filesep tutorial_dir],'s');
 	end;
 	disp(['Copying ''' tutorial_dir ''' to the temporary directory']);
-	copyfile([prefix filesep tutorial_dir], ndi_globals.path.temppath);
+	copyfile([prefix filesep tutorial_dir], [ndi_globals.path.temppath filesep tutorial_dir]);
 
 	prefix = ndi_globals.path.temppath;
 end
