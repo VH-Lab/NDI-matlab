@@ -7,7 +7,6 @@
 - Functioning local database
 - Basic Tutorials (Tutorials 1.\*, 2.\*, 3.\*)
 - App API
-- Initial developer Tutorial (7.1)
 
 ## Version 1.2 (Future)
 - Support for using NDR as a DAQ reader
