@@ -32,7 +32,7 @@ tutorial_dir = 'ts_exper2';
 if testing, % copy the files to the temp directory
 	ndi.globals() 
 	prefix = ndi_globals.path.temppath;
-	disp(['Assuming clean data files ts_exper2 are in ' prefix '.']);
+	disp(['Assuming data files ts_exper2 are in ' prefix '.']);
 end
 
  % Code block 2.4.1.1
