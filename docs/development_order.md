@@ -22,4 +22,3 @@
 - Read/write NWB
 - Use of DID-database (more general database with better version control)
 - Tutorials set 6.\*: Using NDI with data archives
-
