@@ -1,122 +1,151 @@
-% This script contains all of the code for
+function tutorial_02_03(prefix, testing)
+% ndi.example.tutorials.tutorial_02_03 - runs the code in Tutorial 2.3
+%
+% out = ndi.example.tutorials.tutorial_02_03(PREFIX, [TESTING])
+%
+% Runs (and tests) the code for 
 %
 % NDI Tutorial 2: Analzying your first electrophysiology experiment with NDI
-%    Tutorial 2.1: Reading an example dataset
+%    Tutorial 2.3: Using apps to analyze data (example - spike sorting)
 % The tutorial is available at 
-%     https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset.md
+%     https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/
 %
+% PREFIX should be the directory that contains the directory 'ts_exper2'. If it is not
+% provided or is empty, the default is [userpath filesep 'Documents' filesep 'NDI'].
+%
+% If TESTING is 1, then the files are examined in the temporary directory ndi_globals.path.temppath (use
+% ndi.globals() to make this variable available for inspection). It is assumed that
+% ndi.example.tutorial.tutorial_t02_02([],1) has been run (with TESTING set to 1).
+%
+% Note: a little manual intervention is needed in this tutorial.
 %
 
- % Code block 2.1.2.1
+if nargin<1 | isempty(prefix),
+	prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
+end;
 
-prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
-ls([prefix filesep 'ts_exper1' filesep 't*']); % list all the files in the t0000N folders
+if nargin<2,
+	testing = 0;
+end;
 
- % Code block 2.1.2.2
+tutorial_dir = 'ts_exper2';
 
-my_smr_file = fullfile(prefix,'ts_exper1','t00001','spike2data.smr')
-ndi.example.tutorial.plottreeshrewdata(my_smr_file);
+if testing, % copy the files to the temp directory
+	ndi.globals() 
+	prefix = ndi_globals.path.temppath;
+	disp(['Assuming data files ts_exper2 are in ' prefix '.']);
+end
 
- % Code block 2.1.3.1
+ % Code block 2.3.2.1
 
-type (fullfile(prefix,'ts_exper1','t00001','probemap.txt'))
+disp(['Code block 2.3.2.1:']);
+dirname = [prefix filesep 'ts_exper2']; % differs from manual tutorial
+ref = 'ts_exper2';
+S = ndi.setup.vhlab(ref,dirname);  
 
- % Code block 2.1.3.2
+% let's find our probes that correspond to extracellular electrodes
 
-type (fullfile(prefix,'ts_exper1','t00001','stims.tsv'))
+p = S.getprobes('type','n-trode');
 
- % Code block 2.1.4.1
+% make a new app instance
+se = ndi.app.spikeextractor(S);
 
-S = ndi.session.dir('ts_exper1',[prefix filesep 'ts_exper1'])
+% find out what the spike extraction parameters are
+extraction_param_struct = se.defaultstruct_appdoc('extraction_parameters');
+% if we wanted to modify these parameters, we could
+extraction_param_struct.threshold_parameter = 4;
+extraction_param_struct.threshold_sign = 1;
+my_extraction_name{1} = 'my_positive_extraction_params';
+extraction_param_doc = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name{1});
+my_extraction_name{2} = 'my_negative_extraction_params';
+extraction_param_struct.threshold_parameter = -4;
+extraction_param_struct.threshold_sign = -1;
+extraction_param_doc_2 = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name{2});
 
- % inserted code for the full script:
+% we will add a parameter document to our database that our extractor will use
 
-S.daqsystem_clear() % make sure we don't have old daq systems from the demo
 
- % Code block 2.1.4.2
-S.getprobes()
+% now let's perform the extraction over all epochs
 
- % Code block 2.1.4.3
+redo = 1; % redo it if we already did it
+ % we know there are two probes, so do it for both
+se.extract(p{1},[],my_extraction_name{1},redo);
+se.extract(p{2},[],my_extraction_name{2},redo);
 
-ced_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt'}, ...
-    'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
-ced_rdr = ndi.daq.reader.mfdaq.cedspike2();
-ced_system = ndi.daq.system.mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
- % if you haven't already added the daq system, you can add it here:
-S.daqsystem_add(ced_system);
 
- % Code block 2.1.4.4
+ % Code block 2.3.2.2
+disp(['Code block 2.3.2.2:']);
 
- % let's look at the epochs the daq.system can find
-et = ced_system.epochtable() % should see a 4 element answer
-f = ced_system.filenavigator.getepochfiles(1) % you should see the files from epoch 1, t00001
+% now let's take a look at what we got for the first probe, first epoch
+epoch_id = 't00001';
 
- % Code block 2.1.4.5
+[spikes,waveparameters,spikewaves_doc] = se.loaddata_appdoc('spikewaves',p{1},epoch_id,my_extraction_name{1});
 
-vis_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt', 'stims.tsv'},...
-     'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
-vis_rdr = ndi.daq.reader.mfdaq.cedspike2();
-vis_mdrdr = ndi.daq.metadatareader('stims.tsv');
-vis_system = ndi.daq.system.mfdaq('vis_daqsystem', vis_filenav, vis_rdr, {vis_mdrdr});
- % if you haven't already added the daq system, you can add it here:
-S.daqsystem_add(vis_system);
+% let's plot these waveforms
 
- % Code block 2.1.4.6
+t_spike = [waveparameters.S0:waveparameters.S1] * 1/waveparameters.samplerate; % create a time vector
 
-nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
-S.syncgraph_addrule(nsf);
+% spikes is a 3-d matrix.
+% The first dimension has the number of samples per spike.
+% The second dimension has data from each channel. Because this is a single electrode, there is only one channel. If it were a tetrode, this would be 4.
+% The third dimension is the number of spikes detected.
+size(spikes)
 
- % Code block 2.1.5.1
-
-p = S.getprobes() % get all of the probes that are in the ndi.session S
-for i=1:numel(p), p{i}, end; % display the probe information for each probe
-
-% look at the number of epochs recorded for probe 1
-p_ctx1_list = S.getprobes('name','ctx','reference',1) % returns a cell array of matches
-p_ctx1 = p_ctx1_list{1}; % take the first one, should be the only one
-et = p_ctx1.epochtable()
-for i=1:numel(et), et(i), end; % display the epoch table entries
-epoch_to_read = 1;
-
- % Code block 2.1.5.2
-
-[data,t,timeref_p_ctx1]=p_ctx1.readtimeseries(epoch_to_read,-Inf,Inf); % read all data from epoch 1
-figure(100);
-plot(t,data);
-xlabel('Time(s)');
-ylabel('Voltage (V)');
-set(gca,'xlim',[t(1) t(end)]);
+figure(101);
+plot(t_spike,squeeze(spikes));
+xlabel('Time (s)');
+ylabel('Voltage');
 box off;
 
- % Code block 2.1.5.3
+% We can see how we did by plotting the spike times back with the raw data:
 
-p_visstim_list = S.getprobes('name','vis_stim','reference',1) % returns a cell array of matches
-p_visstim = p_visstim_list{1}; % take the first one, should be the only one
-et = p_visstim.epochtable()
-for i=1:numel(et), et(i), end; % display the epoch table entries
+[spiketimes,spiketimes_doc] = se.loaddata_appdoc('spiketimes',p{1},epoch_id,my_extraction_name{1});
 
- % Code block 2.1.5.4
-
-timeref_p_ctx1
-
- % Code block 2.1.5.5
-
-[data,t,timeref_stim]=p_visstim.readtimeseries(timeref_p_ctx1,-Inf,Inf); % read all data from epoch 1 of p_ctx1 !
-figure(100);
+[d,t] = readtimeseries(p{1},epoch_id,-Inf,Inf);
+figure(102);
+plot(t,d);
 hold on;
-vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimon+2,'stimid',data.stimid);
-
- % Code block 2.1.5.6
-
-t, % show timestamps
-t.stimon,
-data, % show data
-data.stimid,
-data.parameters{1}
+samples = round(vlt.signal.value2sample(spiketimes, 1/(t(2)-t(1)), 0));
+plot(t(samples),d(samples),'ko'); % mark each spike peak location with a circle 
 
 
+ % Code block 2.3.3
+
+disp(['Code block 2.3.3.1:'])
+disp(['Note: manual intervention will be required. See https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/']);
+disp(['(pausing for 5 seconds.)']);
+pause(5);
+
+ssa = ndi.app.spikesorter(S);
+
+sorting_params_struct = ssa.defaultstruct_appdoc('sorting_parameters');
+my_sorting_name = 'my_sorting_params';
+sorting_param_doc = ssa.add_appdoc('sorting_parameters',sorting_params_struct,'Replace',my_sorting_name);
+
+spike_cluster_doc = ssa.spike_sort(p{1},my_extraction_name{1},my_sorting_name,redo)
+ssa.clusters2neurons(p{1},my_sorting_name,my_extraction_name{1},redo)
+
+spike_cluster_doc = ssa.spike_sort(p{2},my_extraction_name{2},my_sorting_name,redo)
+ssa.clusters2neurons(p{2},my_sorting_name,my_extraction_name{2})
 
 
+ % Code block 2.3.3.2
 
+disp(['Code block 2.3.3.2:'])
+
+e = S.getelements('element.type','spikes','element.name','ctx_1')
+[D,T] = e{1}.readtimeseries('t00001',-Inf,Inf);
+
+figure(102);
+hold on;
+samples2 = round(vlt.signal.value2sample(T, 1/(t(2)-t(1)), 0));
+plot(T,d(samples2), 'gs');
+
+% now spike times from neuron 1 are plotted as green squares
+
+ % Code block 2.3.4.1
+
+disp(['Clode block 2.3.4.1:']);
+help ndi.app.spikeextractor/appdoc_description
 
 

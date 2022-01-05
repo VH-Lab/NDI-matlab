@@ -97,8 +97,8 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session.mock/addlistener is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/addlistener
-       doc handle.addlistener
+    Reference page in Doc Center
+       doc ndi.session.mock/addlistener
 ```
 
 ---
@@ -273,15 +273,17 @@ Help for ndi.session.mock/database_search is inherited from superclass NDI.SESSI
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-DELETE(H) deletes all handle objects in array H. After the delete 
-    function call, H is an array of invalid objects.
+The DELETE method deletes a handle object but does not clear the handle
+    from the workspace.  A deleted handle is no longer valid.
+ 
+    DELETE(H) deletes the handle object H, where H is a scalar handle.
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/ISVALID, CLEAR
 
 Help for ndi.session.mock/delete is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/delete
-       doc handle.delete
+    Reference page in Doc Center
+       doc ndi.session.mock/delete
 ```
 
 ---
@@ -329,8 +331,8 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
 
 Help for ndi.session.mock/findobj is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/findobj
-       doc handle.findobj
+    Reference page in Doc Center
+       doc ndi.session.mock/findobj
 ```
 
 ---
@@ -351,8 +353,8 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
 
 Help for ndi.session.mock/findprop is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/findprop
-       doc handle.findprop
+    Reference page in Doc Center
+       doc ndi.session.mock/findprop
 ```
 
 ---
@@ -375,8 +377,8 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.mock/ge is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/ge
-       doc handle.ge
+    Reference page in Doc Center
+       doc ndi.session.mock/ge
 ```
 
 ---
@@ -464,8 +466,8 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.mock/gt is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/gt
-       doc handle.gt
+    Reference page in Doc Center
+       doc ndi.session.mock/gt
 ```
 
 ---
@@ -497,8 +499,8 @@ TF = ISVALID(H) performs an element-wise check for validity on the
 
 Help for ndi.session.mock/isvalid is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/isvalid
-       doc handle.isvalid
+    Reference page in Doc Center
+       doc ndi.session.mock/isvalid
 ```
 
 ---
@@ -529,8 +531,8 @@ Handles are equal if they are handles for the same object.  All
 
 Help for ndi.session.mock/le is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/le
-       doc handle.le
+    Reference page in Doc Center
+       doc ndi.session.mock/le
 ```
 
 ---
@@ -575,8 +577,8 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
 
 Help for ndi.session.mock/listener is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/listener
-       doc handle.listener
+    Reference page in Doc Center
+       doc ndi.session.mock/listener
 ```
 
 ---
@@ -599,8 +601,8 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
 
 Help for ndi.session.mock/lt is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/lt
-       doc handle.lt
+    Reference page in Doc Center
+       doc ndi.session.mock/lt
 ```
 
 ---
@@ -654,8 +656,8 @@ Handles are equal if they are handles for the same object and are
 
 Help for ndi.session.mock/ne is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/ne
-       doc handle.ne
+    Reference page in Doc Center
+       doc ndi.session.mock/ne
 ```
 
 ---
@@ -697,8 +699,8 @@ NOTIFY(H, eventname) notifies listeners added to the event named
 
 Help for ndi.session.mock/notify is inherited from superclass HANDLE
 
-    Documentation for ndi.session.mock/notify
-       doc handle.notify
+    Reference page in Doc Center
+       doc ndi.session.mock/notify
 ```
 
 ---

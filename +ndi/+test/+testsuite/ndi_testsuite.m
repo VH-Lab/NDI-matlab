@@ -19,6 +19,15 @@ function output = ndi_testsuite
 % errormsg            | Any error message
 %
 
+disp(['First we will check for all necessary MATLAB toolboxes:']);
+
+ndi.fun.check_Matlab_toolboxes
+
+disp('Toolbox check completed. Pausing for 5 seconds.');
+
+pause(5);
+
+
 w = which('ndi.test.testsuite.ndi_testsuite');
 p = fileparts(w);
 jobs = vlt.file.loadStructArray([p filesep 'ndi_testsuite_list.txt']),

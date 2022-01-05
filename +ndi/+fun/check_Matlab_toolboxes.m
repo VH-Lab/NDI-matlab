@@ -17,3 +17,4 @@ for j=1:numel(r.toolboxes.required),
 		warning(['Required toolbox "' char(r.toolboxes.required(j)) '" is not found in your Matlab installation. Key components of NDI-matlab will likely not work.']);
 	end;
 end;
+
