@@ -47,6 +47,11 @@
             - ndi.daq.reader.mfdaq.spikegadgets: 'reference/+ndi/+daq/+reader/+mfdaq/spikegadgets.m.md'
         - system PACKAGE:
           - ndi.daq.system.mfdaq: 'reference/+ndi/+daq/+system/mfdaq.m.md'
+        - premature FOLDER:
+          - ndi.daq/premature.ndi_daqsystem_image: 'reference/+ndi/+daq/premature/ndi_daqsystem_image.m.md'
+          - ndi.daq/premature.ndi_daqsystem_image_tiffstack: 'reference/+ndi/+daq/premature/ndi_daqsystem_image_tiffstack.m.md'
+          - ndi.daq/premature.ndi_image: 'reference/+ndi/+daq/premature/ndi_image.m.md'
+          - ndi.daq/premature.ndi_image_tiffstack: 'reference/+ndi/+daq/premature/ndi_image_tiffstack.m.md'
       - data PACKAGE:
         - ndi.data.evaluate_fitcurve: 'reference/+ndi/+data/evaluate_fitcurve.m.md'
       - database PACKAGE:
@@ -88,7 +93,10 @@
         - tutorial PACKAGE:
           - ndi.example.tutorial.plottreeshrewdata: 'reference/+ndi/+example/+tutorial/plottreeshrewdata.m.md'
           - ndi.example.tutorial.tutorial_02_01: 'reference/+ndi/+example/+tutorial/tutorial_02_01.m.md'
+          - ndi.example.tutorial.tutorial_02_02: 'reference/+ndi/+example/+tutorial/tutorial_02_02.m.md'
           - ndi.example.tutorial.tutorial_02_03: 'reference/+ndi/+example/+tutorial/tutorial_02_03.m.md'
+          - ndi.example.tutorial.tutorial_02_04: 'reference/+ndi/+example/+tutorial/tutorial_02_04.m.md'
+          - ndi.example.tutorial.tutorial_02_05: 'reference/+ndi/+example/+tutorial/tutorial_02_05.m.md'
       - file PACKAGE:
         - ndi.file.navigator: 'reference/+ndi/+file/navigator.m.md'
         - navigator PACKAGE:
@@ -96,6 +104,7 @@
       - fun PACKAGE:
         - ndi.fun.check_Matlab_toolboxes: 'reference/+ndi/+fun/check_Matlab_toolboxes.m.md'
         - ndi.fun.convertoldnsd2ndi: 'reference/+ndi/+fun/convertoldnsd2ndi.m.md'
+        - ndi.fun.run_Linux_checks: 'reference/+ndi/+fun/run_Linux_checks.m.md'
         - ndi.fun.stimulustemporalfrequency: 'reference/+ndi/+fun/stimulustemporalfrequency.m.md'
       - globals PACKAGE:
         - ndi.globals.assert: 'reference/+ndi/+globals/assert.m.md'
@@ -186,6 +195,8 @@
           - ndi.test.testsuite.ndi_testsuite: 'reference/+ndi/+test/+testsuite/ndi_testsuite.m.md'
         - time PACKAGE:
           - ndi.test.time.filefind: 'reference/+ndi/+test/+time/filefind.m.md'
+        - tutorial PACKAGE:
+          - ndi.test.tutorial.tutorial_02_set: 'reference/+ndi/+test/+tutorial/tutorial_02_set.m.md'
       - time PACKAGE:
         - ndi.time.clocktype: 'reference/+ndi/+time/clocktype.m.md'
         - ndi.time.syncgraph: 'reference/+ndi/+time/syncgraph.m.md'

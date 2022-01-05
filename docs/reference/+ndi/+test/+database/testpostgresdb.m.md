@@ -1,6 +1,7 @@
 # ndi.test.database.testpostgresdb
 
 ```
-ndi.test.database.testpostgresdb is a script.
+ mypostgresdb = ndi.database.postgresdb( % insert your creator arguments here ); 
+  here it connects to your postgres database
 
 ```
