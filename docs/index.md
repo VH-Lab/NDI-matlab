@@ -20,7 +20,7 @@ NDI is inspired by [FAIR](https://www.go-fair.org/fair-principles/) principles.
 
 ## Availability
 
-A mature prototype of NDI is available in [Matlab](https://github.com/VH-Lab/NDI-matlab) and a version for Python is well under construction.
+A version of NDI is available in [Matlab](https://github.com/VH-Lab/NDI-matlab) and a version for Python is well under construction.
 
 ## Installation
 
