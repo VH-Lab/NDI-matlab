@@ -64,7 +64,11 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% Step 3: check if we've already done the calculation for these parameters; if we have,
 				% take the appropriate action. If we need to, perform the calculation.
 
+				ndi.globals();
+				ndi_globals.log.msg('system',1,['Beginning calculation by class ' classname(ndi_calculation_obj) '...']);
+
 				for i=1:numel(all_parameters),
+					ndi_globals.log.msg('system',1,['Performing calculation ' int2str(i) ' of ' int2str(numel(all_parameters)) '.']);
 					previous_calculations_here = ndi_calculation_obj.search_for_calculation_docs(all_parameters{i});
 					do_calc = 0;
 					if ~isempty(previous_calculations_here),
@@ -92,6 +96,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				if ~isempty(docs),
 					ndi_calculation_obj.session.database_add(docs);
 				end;
+				ndi_globals.log.msg('system',1,'Concluding calculation.');
 		end; % run()
 
 		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
