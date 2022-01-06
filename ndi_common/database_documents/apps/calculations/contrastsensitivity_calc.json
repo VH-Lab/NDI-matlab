@@ -36,6 +36,10 @@
 		"sensitivity_RB":				[],
 		"sensitivity_RBN":				[],
 		"sensitivity_RBNS":				[],
+		"is_modulated_response":			0,
+		"across_stimuli_varies_p_bonferroni":		[],
+		"visual_response_p_bonferroni":			[],
+		"response_varies_p_bonferroni":			[],
 		"response_type":				[]
 	}
 }

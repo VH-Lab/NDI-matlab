@@ -815,7 +815,7 @@ classdef tuning_response < ndi.app
 
 		end;  % fixcellarrays()
 
-		function [b,ratio,meanresponse,modulatedresponse] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
+		function [b,ratio,meanresponse,modulatedresponse,meandoc_i,moddoc_i] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
 			% MODULATED_OR_MEAN - is the response stronger in modulation or mean?
 			%
 			% [B,ratio,mean_response,modulated_response] = MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
@@ -899,8 +899,8 @@ classdef tuning_response < ndi.app
 
 				b = -1;
 				ratio = NaN;
-				meanresponse = NaN;
-				modulationresponse = NaN;
+				meanresponse = -Inf;
+				modulationresponse = -Inf;
 
 				if sum(matches_mean)==0 | sum(matches_modulation)==0, 
 					return; % nothing more to do
@@ -914,13 +914,15 @@ classdef tuning_response < ndi.app
 				end;
 
 				mean_stim_response = find(matches_mean); % will be 1 element
+				meandoc_i = mean_stim_response;
 				modulation_stim_response = find(matches_modulation); % will be 1 element
+				moddoc_i = modulation_stim_response;
 
 				mean_resps = [];
 				modulation_resps = [];
 
-				R_mean = stimulus_response_scalar_docs{mean_stim_response}.document_properties.stimulus_response_scalar.responses
-				R_mod = stimulus_response_scalar_docs{modulation_stim_response}.document_properties.stimulus_response_scalar.responses
+				R_mean = stimulus_response_scalar_docs{mean_stim_response}.document_properties.stimulus_response_scalar.responses;
+				R_mod = stimulus_response_scalar_docs{modulation_stim_response}.document_properties.stimulus_response_scalar.responses;
 				stimids_present = unique(R_mean.stimid);
 
 				for i=1:numel(stimids_present),

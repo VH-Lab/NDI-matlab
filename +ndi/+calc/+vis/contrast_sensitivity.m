@@ -44,84 +44,125 @@ classdef contrast_sensitivity < ndi.calculation
 
 				tuning_curve_app = ndi.calc.stimulus.tuningcurve(ndi_calculation_obj.session);
 
-				doc = {};
+				% Step 3: find out how many stimulus presentations we have here; could be several
+				stim_pres_ids_all = {};
 
 				for i=1:numel(stim_resp_scalar),
+					stim_pres_ids_all{i} = stim_resp_scalar{i}.dependency_value('stimulus_presentation_id');
+				end;
+
+				stim_pres_id = unique(stim_pres_ids_all)
+
+				% Now, if possible, construct a constrast sensitivity curve for each stimulus presentation
+				
+				doc = {};
+
+				for i=1:numel(stim_pres_id),
+					
 					% now see if the stimulus presentations vary in contrast and spatial frequency
-					q2 = ndi.query('ndi_document.id','exact_string',stim_resp_scalar{i}.dependency_value('stimulus_presentation_id'),'');
+					q2 = ndi.query('ndi_document.id','exact_string',stim_pres_id{i},'');
 					stim_pres_doc = ndi_calculation_obj.session.database_search(q2);
 					if numel(stim_pres_doc) ~=1,
-						error(['Missing stimulus presentation document for ' stim_resp_scalar.id() '. (Should not happen).']);
+						error(['Missing stimulus presentation document for ' stim_pres_id{i} '. (Should not happen).']);
 					end;
 					stim_pres_doc = stim_pres_doc{1};
 					good = 0;
-					v1 = tuning_curve_app.property_value_array(stim_resp_scalar{i},'contrast');
+					stim_resp_doc_indexes = find(strcmp(stim_pres_id{i},stim_pres_ids_all)); % find all the responses associated with this stimulus presentation
+					v1 = tuning_curve_app.property_value_array(stim_resp_scalar{stim_resp_doc_indexes(1)},'contrast');
 					if numel(v1)>2, 
 						good = 1;
 					end;
 					if good,
-						v2 = tuning_curve_app.property_value_array(stim_resp_scalar{i},'sFrequency');
+						v2 = tuning_curve_app.property_value_array(stim_resp_scalar{stim_resp_doc_indexes(1)},'sFrequency');
+					else,
+						v2 = {};
 					end;
 					if numel(v2)<=2,
 						good = 0;
 					end;
+					good,
+					keyboard
 					if good,
-						% Step 3: Search for contrast tuning curve objects that depend on this stimulus response document
-						q3a = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
-						q3b = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
-						q3c = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
-						q4 = ndi.query('','depends_on','stimulus_response_scalar_id',stim_resp_scalar{i}.id());
-						q5 = ndi.query('','isa','stimulus_tuningcurve.json','');
-						tuning_curves = ndi_calculation_obj.session.database_search( (q3a|q3b|q3c) & q4 & q5);
-
-						spatial_frequencies = [];
-						sensitivity_RB = [];
-						sensitivity_RBN = [];
-						sensitivity_RBNS = [];
-						response_type = stim_resp_scalar{i}.document_properties.stimulus_response_scalar.response_type;
+						if numel(stim_resp_doc_indexes)==1, % we're okay, just use the one choice
+							stim_resp_index_value = 1;
+						else,
+							[b,r,dummy1,dummy2,mean_i,mod_i] = ndi.app.stimulus.tuning_response.modulated_or_mean(stim_resp_scalar(stim_resp_doc_indexes));
+							if b==-1,
+								warning(['Skipping responses to stimulus presentation ' stim_pres_id{i} ' because we found more than one response and could not identify mean and modulated response.']);
+								stim_resp_index_value = [];
+							elseif b==0,
+								stim_resp_index_value = mean_i;
+							elseif b==1,
+								stim_resp_index_value = mod_i;
+							end;
+						end;
 						
-						for k=1:numel(tuning_curves),
-							q6 = ndi.query('','isa','contrast_tuning','');
-							q7 = ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_curves{k}.id());
+						if ~isempty(stim_resp_index_value),
+							% Step 3: Search for contrast tuning curve objects that depend on this stimulus response document
+							q3a = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
+							q3b = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
+							q3c = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
+							q4 = ndi.query('','depends_on','stimulus_response_scalar_id',stim_resp_scalar{stim_resp_index_value}.id());
+							q5 = ndi.query('','isa','stimulus_tuningcurve.json','');
+							tuning_curves = ndi_calculation_obj.session.database_search( (q3a|q3b|q3c) & q4 & q5);
+
+							spatial_frequencies = [];
+							sensitivity_RB = [];
+							sensitivity_RBN = [];
+							sensitivity_RBNS = [];
+							response_type = stim_resp_scalar{stim_resp_index_value}.document_properties.stimulus_response_scalar.response_type;
+
+							visual_response_p = [];
+							across_stims_p = [];
 							
-							contrast_tuning_props = ndi_calculation_obj.session.database_search(q6&q7);
+							for k=1:numel(tuning_curves),
+								q6 = ndi.query('','isa','contrast_tuning','');
+								q7 = ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_curves{k}.id());
+								
+								contrast_tuning_props = ndi_calculation_obj.session.database_search(q6&q7);
 
-							if numel(contrast_tuning_props)>1,
-								error(['Found multiple contrast tuning property records for a single tuning curve.']);
-							elseif numel(contrast_tuning_props)==0,
-								error(['Found contrast tuning curve but no contrast tuning curve properties for element with id ' element_doc.id()]);
-							else,
-								contrast_tuning_props = contrast_tuning_props{1};
+								if numel(contrast_tuning_props)>1,
+									error(['Found multiple contrast tuning property records for a single tuning curve.']);
+								elseif numel(contrast_tuning_props)==0,
+									error(['Found contrast tuning curve but no contrast tuning curve properties for element with id ' element_doc.id()]);
+								else,
+									contrast_tuning_props = contrast_tuning_props{1};
+								end;
+
+								stimid = tuning_curves{k}.document_properties.tuning_curve.stimid(1);
+								params_here = stim_pres_doc.document_properties.stimulus_presentation.stimuli(stimid).parameters;
+								if isfield(params_here,'sFrequency'),
+									spatial_frequencies(end+1) = getfield(params_here,'sFrequency');
+								else,
+									error(['Expected spatial frequency information.']); % should this be an error or just a skip?
+								end;
+								sensitivity_RB = [ sensitivity_RB vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RB_sensitivity) ];
+								sensitivity_RBN = [ sensitivity_RBN vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RBN_sensitivity) ];
+								sensitivity_RBNS = [ sensitivity_RBNS vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RBNS_sensitivity) ];
+								visual_response_p(end+1) = contrast_tuning_props.document_properties.contrast_tuning.significance.visual_response_anova_p;
+								across_stims_p(end+1) = contrast_tuning_props.document_properties.contrast_tuning.significance.across_stimuli_anova_p;
 							end;
 
-							stimid = tuning_curves{k}.document_properties.tuning_curve.stimid(1);
-							params_here = stim_pres_doc.document_properties.stimulus_presentation.stimuli(stimid).parameters;
-							if isfield(params_here,'sFrequency'),
-								spatial_frequencies(end+1) = getfield(params_here,'sFrequency');
-							else,
-								error(['Expected spatial frequency information.']); % should this be an error or just a skip?
-							end;
-							sensitivity_RB = [ sensitivity_RB vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RB_sensitivity) ];
-							sensitivity_RBN = [ sensitivity_RBN vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RBN_sensitivity) ];
-							sensitivity_RBNS = [ sensitivity_RBNS vlt.data.colvec(contrast_tuning_props.document_properties.contrast_tuning.fit.naka_rushton_RBNS_sensitivity) ];
-						end;
-						[spatial_frequencies,order] = sort(spatial_frequencies);
-						sensitivity_RB = sensitivity_RB(:,order);
-						sensitivity_RBN = sensitivity_RBN(:,order);
-						sensitivity_RBNS = sensitivity_RBNS(:,order);
+							[spatial_frequencies,order] = sort(spatial_frequencies);
+							sensitivity_RB = sensitivity_RB(:,order);
+							sensitivity_RBN = sensitivity_RBN(:,order);
+							sensitivity_RBNS = sensitivity_RBNS(:,order);
 
-						% make the doc
+							% make the doc
 
-						parameters_here = contrastsensitivity_calc;
-						parameters_here.spatial_frequencies = vlt.data.rowvec(spatial_frequencies);
-						parameters_here.sensitivity_RB = sensitivity_RB;
-						parameters_here.sensitivity_RBN = sensitivity_RBN;
-						parameters_here.sensitivity_RBNS = sensitivity_RBNS;
-					
-						if numel(tuning_curves)>0,	
-							doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrastsensitivity_calc',parameters_here);
-						end;
+							parameters_here = contrastsensitivity_calc;
+							parameters_here.spatial_frequencies = vlt.data.rowvec(spatial_frequencies);
+							parameters_here.sensitivity_RB = sensitivity_RB;
+							parameters_here.sensitivity_RBN = sensitivity_RBN;
+							parameters_here.sensitivity_RBNS = sensitivity_RBNS;
+							parameters_here.is_modulated_response = b;
+							parameters_here.visual_response_p_bonferroni = nanmin(visual_response_p)*numel(visual_response_p);
+							parameters_here.response_varies_p_bonferroni = nanmin(across_stims_p)*numel(across_stims_p);
 						
+							if numel(tuning_curves)>0,	
+								doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrastsensitivity_calc',parameters_here);
+							end;
+						end; % if stim_resp_index_value is not empty
 					end; % if good
 				end;
 				
