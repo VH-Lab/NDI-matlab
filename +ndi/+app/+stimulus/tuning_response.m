@@ -815,6 +815,149 @@ classdef tuning_response < ndi.app
 
 		end;  % fixcellarrays()
 
-	end; % methods(static)
-		
+		function [b,ratio,meanresponse,modulatedresponse] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
+			% MODULATED_OR_MEAN - is the response stronger in modulation or mean?
+			%
+			% [B,ratio,mean_response,modulated_response] = MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
+			% 
+			% Given a cell array of STIMULUS_RESPONSE_SCALAR documents that
+			% correspond to different response types to the same stimulus, this
+			% function examines whether the best modulated response
+			% is greater than the best mean response.
+			%
+			% B is 1 if the modulated response is greater, and 0 if the mean response is greater.
+			% If there is no basis for the comparison, then -1 is returned.
+			%
+			% MEAN_RESPONSE is the mean response for the stimulus that has the largest
+			% response (this largest response could be the mean or the modulated response).
+			% MODULATED_RESPONSE is the modulated response for the stimulus that has the largest
+			% response (this largest response could be the mean or the modulated response).
+			% RATIO is the ratio of these two values (MODULATED_RESPONSE / MEAN_RESPONSE).
+			% 
+			% This function examines the empirical responses and does not do any
+			% fitting.
+			%
+			% This function also takes name/value pairs that modify the default behavior.
+			%
+			% |--------------------------------------------------------------------------------| 
+			% | Parameter (default)          | Description                                     |
+			% |--------------------------------------------------------------------------------|
+			% |  modulated_response_names    | Possible matches for the modulated responses    |
+			% |  ({'F1','modulated'})        |   in the 'response_type' field of the           |
+			% |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+			% |  mean_response_names         | Possible matches for the mean responses         |
+			% |  ({'F0','mean'})             |   in the 'response_type' field of the           |
+                        % |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+			% |------------------------------|-------------------------------------------------|
+			%
+				% Step 0: initialize parameters
+
+				modulated_response_names = {'F1','modulated'};
+				mean_response_names = {'F0','mean'};
+
+				vlt.data.assign(varargin{:});
+
+				% Step 1: check the inputs
+				% Step 1a: do some sanity checking on inputs
+	
+				if ~iscell(stimulus_response_scalar_docs), 
+					error(['STIMULUS_RESPONSE_SCALAR_DOCS should be a cell array.']);
+				end;
+
+				% Step 1b: make sure stimulus_response_scalar documents depend on the same
+				%  stimulus. At the same time, grab some information out of the documents about
+				%  response types.
+
+				good = 1;
+
+				response_types = {};
+				matches_mean = [];
+				matches_modulation = [];
+				stimulus_presentation = dependency_value(stimulus_response_scalar_docs{1},'stimulus_presentation_id');
+
+				for i=1:numel(stimulus_response_scalar_docs),
+					if ~isa(stimulus_response_scalar_docs{i},'ndi.document'),
+						good = 0;
+						break; 
+					else,
+						if ~isfield(stimulus_response_scalar_docs{i}.document_properties,'stimulus_response_scalar'),
+							good = 0;
+							break;
+						else,
+							response_types{i} = stimulus_response_scalar_docs{i}.document_properties.stimulus_response_scalar.response_type;
+							matches_mean(i) = any(strcmpi(response_types{i},mean_response_names));
+							matches_modulation(i) = any(strcmpi(response_types{i},modulated_response_names));
+						end;
+					end;
+				end;
+				
+				if ~good,
+					error(['STIMULUS_RESPONSE_SCALAR_DOCS must be of type ''stimulus_response_scalar''']);
+				end;
+
+				% Step 1c: now see if we have a single mean response
+
+				b = -1;
+				ratio = NaN;
+				meanresponse = NaN;
+				modulationresponse = NaN;
+
+				if sum(matches_mean)==0 | sum(matches_modulation)==0, 
+					return; % nothing more to do
+				end;
+
+				if sum(matches_mean)>1,
+					error(['More than one mean response; do not know which to use.']);
+				end;
+				if sum(matches_modulation)>1,
+					error(['More than one modulated response; do not know which to use.']);
+				end;
+
+				mean_stim_response = find(matches_mean); % will be 1 element
+				modulation_stim_response = find(matches_modulation); % will be 1 element
+
+				mean_resps = [];
+				modulation_resps = [];
+
+				R_mean = stimulus_response_scalar_docs{mean_stim_response}.document_properties.stimulus_response_scalar.responses
+				R_mod = stimulus_response_scalar_docs{modulation_stim_response}.document_properties.stimulus_response_scalar.responses
+				stimids_present = unique(R_mean.stimid);
+
+				for i=1:numel(stimids_present),
+					indexes = find(R_mean.stimid == stimids_present(i));
+					mean_resps_here = R_mean.response_real(indexes) + sqrt(-1)*R_mean.response_imaginary(indexes) - (R_mean.control_response_real(indexes)+sqrt(-1)*R_mean.control_response_imaginary(indexes));
+					mean_resps(i) = nanmean(mean_resps_here);
+					if imag(mean_resps(i))>1e-6,
+						mean_resps(i) = abs(mean_resps(i));
+					else,
+						mean_resps(i) = real(mean_resps(i));
+					end;
+					modulated_resps_here = R_mod.response_real(indexes) + sqrt(-1)*R_mod.response_imaginary(indexes) - (R_mod.control_response_real(indexes)+sqrt(-1)*R_mod.control_response_imaginary(indexes));
+					modulation_resps(i) = nanmean(modulated_resps_here);
+					if abs(imag(modulation_resps(i)))>1e-6,
+						modulation_resps(i) = abs(modulation_resps(i));
+					else,
+						modulation_resps(i) = real(modulation_resps(i));
+					end;
+				end;
+
+				[biggest_modulated,biggest_modulated_index] = max(modulation_resps);
+				[biggest_mean,biggest_mean_index] = max(mean_resps);
+
+				b = biggest_modulated > biggest_mean;
+
+				if b, % simple-like response
+					modulatedresponse = biggest_modulated;
+					meanresponse = mean_resps(biggest_modulated_index);
+				else,
+					modulatedresponse = modulation_resps(biggest_mean_index);
+					meanresponse = biggest_mean;
+				end;
+
+				ratio = modulatedresponse/meanresponse;
+
+		end; % modualated_or_mean
+
+	end; % static methods
+
 end % ndi_app_stimulus_response
