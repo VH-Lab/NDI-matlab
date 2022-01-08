@@ -51,14 +51,13 @@ classdef contrast_sensitivity < ndi.calculation
 					stim_pres_ids_all{i} = stim_resp_scalar{i}.dependency_value('stimulus_presentation_id');
 				end;
 
-				stim_pres_id = unique(stim_pres_ids_all)
+				stim_pres_id = unique(stim_pres_ids_all);
 
 				% Now, if possible, construct a constrast sensitivity curve for each stimulus presentation
 				
 				doc = {};
 
 				for i=1:numel(stim_pres_id),
-					
 					% now see if the stimulus presentations vary in contrast and spatial frequency
 					q2 = ndi.query('ndi_document.id','exact_string',stim_pres_id{i},'');
 					stim_pres_doc = ndi_calculation_obj.session.database_search(q2);
@@ -80,8 +79,6 @@ classdef contrast_sensitivity < ndi.calculation
 					if numel(v2)<=2,
 						good = 0;
 					end;
-					good,
-					keyboard
 					if good,
 						if numel(stim_resp_doc_indexes)==1, % we're okay, just use the one choice
 							stim_resp_index_value = 1;
@@ -156,11 +153,16 @@ classdef contrast_sensitivity < ndi.calculation
 							parameters_here.sensitivity_RBN = sensitivity_RBN;
 							parameters_here.sensitivity_RBNS = sensitivity_RBNS;
 							parameters_here.is_modulated_response = b;
+							% could actually do 2-factor ANOVA on responses; would be better
 							parameters_here.visual_response_p_bonferroni = nanmin(visual_response_p)*numel(visual_response_p);
 							parameters_here.response_varies_p_bonferroni = nanmin(across_stims_p)*numel(across_stims_p);
 						
 							if numel(tuning_curves)>0,	
 								doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrastsensitivity_calc',parameters_here);
+								doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
+								doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
+								doc{end} = doc{end}.set_dependency_value('stimulus_response_scalar_id',...
+									stim_resp_scalar{stim_resp_index_value});
 							end;
 						end; % if stim_resp_index_value is not empty
 					end; % if good
@@ -251,9 +253,14 @@ classdef contrast_sensitivity < ndi.calculation
 
 				cs = doc.document_properties.contrastsensitivity_calc; % shorten our typing
 
-				noise_threshold_indexes = [3 4 5 6];
+				noise_threshold_indexes = [5];
 
 				% First plot responses
+
+				line_type = '-';
+				if ~(cs.visual_response_p_bonferroni<0.05),
+					line_type = '--';
+				end
 
 				for i=1:numel(noise_threshold_indexes),
 					hold on;
@@ -264,13 +271,12 @@ classdef contrast_sensitivity < ndi.calculation
 					
 					% plot all fits
 
-					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RB(noise_threshold_indexes(i),:), 'o-', 'color', (1/(numel(noise_threshold_indexes)-1)) * [0 1 0],...
-						'linewidth',1.5);
-					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RBN(noise_threshold_indexes(i),:), 'd-', 'color', (1/(numel(noise_threshold_indexes)-1)) * [0 0 1],...
-						'linewidth',1.5);
-					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RBNS(noise_threshold_indexes(i),:), 's-', 'color', (1/(numel(noise_threshold_indexes)-1)) * [1 0 1],...
-						'linewidth',1.5);
-
+					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RB(noise_threshold_indexes(i),:), ...
+						['o' line_type], 'color', (1/(max(1,numel(noise_threshold_indexes)-1))) * [0 1 0],'linewidth',1.5);
+					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RBN(noise_threshold_indexes(i),:), ...
+						['d' line_type], 'color', (1/(max(1,numel(noise_threshold_indexes)-1))) * [0 0 1],'linewidth',1.5);
+					h.objects(end+1) = plot(cs.spatial_frequencies, cs.sensitivity_RBNS(noise_threshold_indexes(i),:), ...
+						['s' line_type], 'color', (1/(max(1,numel(noise_threshold_indexes)-1))) * [1 0 1],'linewidth',1.5);
 				end;
 
 				if ~h.params.suppress_x_label,
@@ -286,6 +292,7 @@ classdef contrast_sensitivity < ndi.calculation
 						h.title = title(element.elementstring(), 'interp','none');
 					end;
 				end;
+				set(gca,'xscale','log');
 				box off;
 
 		end; % plot()

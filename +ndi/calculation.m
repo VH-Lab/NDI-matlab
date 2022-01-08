@@ -65,7 +65,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% take the appropriate action. If we need to, perform the calculation.
 
 				ndi.globals();
-				ndi_globals.log.msg('system',1,['Beginning calculation by class ' classname(ndi_calculation_obj) '...']);
+				ndi_globals.log.msg('system',1,['Beginning calculation by class ' class(ndi_calculation_obj) '...']);
 
 				for i=1:numel(all_parameters),
 					ndi_globals.log.msg('system',1,['Performing calculation ' int2str(i) ' of ' int2str(numel(all_parameters)) '.']);
