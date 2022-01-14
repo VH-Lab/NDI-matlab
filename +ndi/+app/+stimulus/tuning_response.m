@@ -781,9 +781,15 @@ classdef tuning_response < ndi.app
 				resp.spontind = resp.blankind;
 				resp.blankresp = [mean(resp.blankind(:)) std(resp.blankind(:)) vlt.stats.stderr(resp.blankind(:))];
 				resp.spont = resp.blankresp; 
+                
+                if size(tuning_doc.document_properties.tuning_curve.independent_variable_value,2)>1,
+                    tuning_axis = 1:numel(response_mean);
+                else,
+                    tuning_axis = tuning_doc.document_properties.tuning_curve.independent_variable_value(:)';
+                end;
 
 				resp.curve = ...
-					[ tuning_doc.document_properties.tuning_curve.independent_variable_value(:)' ; ...
+					[ tuning_axis ; ...
 						response_mean ; ...
 						response_stddev ; ...
 						response_stderr; ];

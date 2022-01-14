@@ -79,6 +79,8 @@ classdef tuningcurve < ndi.calculation
 							doc = {};
 							return;
 						end;
+					elseif isempty(parameters.input_parameters.selection(i).operation),
+						error(['Empty operation for constraint.']);
 					else,
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation',parameters.input_parameters.selection(i).operation,...
@@ -114,7 +116,6 @@ classdef tuningcurve < ndi.calculation
 							constraints_mod(end+1) = deal_here;
 						end;
 					end;
-
 					% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
 						'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
