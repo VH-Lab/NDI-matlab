@@ -48,6 +48,12 @@ classdef stimulator < ndi.probe.timeseries
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
 			%    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF]. If there is a third marker channel present, then STIMOPENCLOSE
 			%    will be defined by +1 and -1 marks on the third marker channel.
+			% T.STIMEVENTS is a cell array of stimulus event triggers that occur while the stimuli are running.
+			%    These channels are optional and may not be present. If the NDI_PROBE_TIMESERIES_STIMULATOR_OBJ has
+			%    no events, this will be an empty cell array.
+			%    There will be one entry per event channel. In a visual stimulus system, the first event channel
+			%    should be data frame events (when the video monitor updates). The second event channel can be the
+			%    monitor's refresh rate, if it has one.
 			%
 			% 
 			% TIMEREF is an ndi.time.timereference object that refers to this EPOCH.
@@ -71,6 +77,7 @@ classdef stimulator < ndi.probe.timeseries
 				mk_ = 0;
 				e_ = 0;
 				md_ = 0;
+				event_data = {};
 				
 				if markermode,
 					for i=1:numel(channeltype),
@@ -97,13 +104,14 @@ classdef stimulator < ndi.probe.timeseries
 								end;
 							case 'e',
 								e_ = e_ + 1;
-								% do nothing
+								event_data{e_} = timestamps{i};
 							case {'md'},
 								data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
 							otherwise,
 								error(['Unknown channel.']);
 						end
 					end
+					t.stimevents = event_data;
 				elseif dimmode,
 					t.stimon = [];
 					t.stimoff = [];
@@ -119,6 +127,9 @@ classdef stimulator < ndi.probe.timeseries
 						if strcmp(channeltype(i),'md'),
 							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
 						end;
+						if strcmp(channeltype(i),'e'),
+							event_data{end+1} = timestamps{i};
+						end;
 					end;
 					[dummy,order] = sort(t.stimon);
 					t.stimon = t.stimon(order(:));
@@ -126,6 +137,7 @@ classdef stimulator < ndi.probe.timeseries
 					data.stimid = data.stimid(order(:));
 					t.stimopenclose(:,1) = t.stimon;
 					t.stimopenclose(:,2) = t.stimoff;
+					t.stimevents = event_data;
 				end;
 
 				timeref = ndi.time.timereference(ndi_probe_timeseries_stimulator_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
