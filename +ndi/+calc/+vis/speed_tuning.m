@@ -167,25 +167,28 @@ classdef speed_tuning < ndi.calculation
 				% First plot responses
 				hold on;
 
-				h_baseline = plot([min(tc.speed) max(tc.speed)],...
-					[0 0],'k--','linewidth',1.0001);
-				h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
+				%h_baseline = plot([min(tc.speed) max(tc.speed)],...
+				%	[0 0],'k--','linewidth',1.0001);
+				%h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
 
 				% now call the plot routine
+
+				[SF,TF,MNs] = vlt.math.vector2mesh(tc.spatial_frequency,tc.temporal_frequency,tc.mean);
+
+				vlt.neuro.vision.speed.plottuning(SF,TF,MNs,'linestyle','-'); 
 				
 				% Second plot all fits
 
-				h.objects(end+1) = plot(ft.naka_rushton_RBNS_speed,ft.naka_rushton_RBNS_values,'-','color',1*[1 0 1],...
-					'linewidth',1.5);
-
+				if 0, % plot function already does this
 				if ~h.params.suppress_x_label,
 					h.xlabel = xlabel('Speed (deg/sec)');
 				end;
 				if ~h.params.suppress_y_label,
 					h.ylabel = ylabel(['Response (' sp.properties.response_type ', ' sp.properties.response_units ')']);
 				end;
-
 				box off;
+				end;
+
 
 		end; % plot()
 
@@ -238,11 +241,11 @@ classdef speed_tuning < ndi.calculation
 				significance = struct('visual_response_anova_p',anova_across_stims_blank,...
 					'across_stimuli_anova_p', anova_across_stims);
 
-				f = speed.fit(tuning_curve.spatial_frequency(:),tuning_curve.temporal_frequency(:),tuning_curve.mean(:));
+				f = vlt.neuro.vision.speed.fit(tuning_curve.spatial_frequency(:),tuning_curve.temporal_frequency(:),tuning_curve.mean(:));
 				sfs = logspace(0.01,60,200);
 				tfs = logspace(0.01,120,200);
 				[SFs,TFs] = meshgrid(sfs,tfs);
-				fit_values = speed.tuningfunc(SFs(:),TFs(:),f);
+				fit_values = vlt.neuro.vision.speed.tuningfunc(SFs(:),TFs(:),f);
 
 				fit.Priebe_fit_parameters = f;
 				fit.Priebe_fit_spatial_frequencies = SFs(:);
