@@ -86,7 +86,11 @@ classdef oridirtuning < ndi.calculation
 			%
 			%   Definition: apps/calc/oridirtuning.json
 			%
+<<<<<<< Updated upstream
 				eval(['help ndi.calc.oridirtuning.doc_about']);
+=======
+				eval(['help ndi.calc.vision.oridirtuning.doc_about']);
+>>>>>>> Stashed changes
 		end; %doc_about()
 	end; % methods()
 			
