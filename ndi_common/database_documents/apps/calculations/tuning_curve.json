@@ -3,10 +3,11 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/tuning_curve.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/tuning_curve_schema.json",
 		"class_name":						"ndi_calculation_simple_tuning_curve",
-                "property_list_name":                                   "tuning_curve",
+        "property_list_name":               "tuning_curve",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
 	"depends_on": [
@@ -25,20 +26,20 @@
             "value":	"" 
           }
         },
-		"stimid":						[],
-		"response_mean":					[],
-		"response_stddev":					[],
-		"response_stderr":					[],
-		"individual_responses_real":				[[]],
-		"individual_responses_imaginary":			[[]],
-		"stimulus_presentation_number":				[],
-		"control_stimid":					[],
-		"control_response_mean":				[],
-		"control_response_stddev":				[],
-		"control_response_stderr":				[],
+		"stimid":                                       [],
+		"response_mean":					            [],
+		"response_stddev":					            [],
+		"response_stderr":					            [],
+		"individual_responses_real":                    [[]],
+		"individual_responses_imaginary":               [[]],
+		"stimulus_presentation_number":                 [],
+		"control_stimid":					            [],
+		"control_response_mean":				        [],
+		"control_response_stddev":                      [],
+		"control_response_stderr":                      [],
 		"control_individual_responses_real":			[[]],
-		"control_individual_responses_imaginary":			[[]],
-		"response_units":					"Spikes/s"
+		"control_individual_responses_imaginary":		[[]],
+		"response_units":                               "Spikes/s"
 		}
 	}
 }
