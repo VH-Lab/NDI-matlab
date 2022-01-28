@@ -27,33 +27,25 @@ classdef tuning_curve < ndi.calculation
 			% by the input parameters.
 				
                 % check inputs
-<<<<<<< Updated upstream
 				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
 				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
 				
-				tuning_curve = parameters;
-                tuning_curve.independent_variable_label = parameters.input_parameters.independent_variable_label;
-                tuning_curve.independent_label = parameters.input_parameters.independent_variable_value;
-                
-                % calculate
-=======
-				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters''.']); end;
-				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on''.']); end;
-				
                 % Step 1: set up output structure
 				tuning_curve = parameters;
-                
+           
 				stim_response_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_response_scalar_id'),''));
 				if numel(stim_response_doc)~=1, 
 					error(['Could not find stimulus response doc..']);
 				end;
 				stim_response_doc = stim_response_doc{1};
-
-%                 tuning_curve.independent_variable_label = parameters.input_parameters.independent_variable_label;
-%                 tuning_curve.independent_label = parameters.input_parameters.independent_variable_value;
+         
+                % Step 2: perform calculation and create a tuning_curve doc
+                doc = ndi_calculation_obj.calculate_tuning_curve(stim_response_doc);
                 
-                % Step 2: perform calculation and create a tuning curve
+                if ~isempty(doc),
+                    doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuning_curve',tuning_curve) + doc;
+                    
 >>>>>>> Stashed changes
                 E = ndi_calc_tuning_curve_obj.session;
                 rapp = ndi.app.stimulus.tuning_response(E);
@@ -85,38 +77,15 @@ classdef tuning_curve < ndi.calculation
 			% Returns a list of the default search parameters for finding appropriate inputs
 			% to the calculation.
 			%
-                parameters.input_parameters = struct('independent_variable_label','','independent_variable_value','');
+				parameters.input_parameters = struct('independent_label','','independent_parameter','','best_algorithm','empirical_maximum');
+				parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
 				parameters.depends_on = vlt.data.emptystruct('name','value');
+				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query(end+1) = struct('name','will_fail','query',...
+					ndi.query('ndi_document.id','exact_string','123',''));
                 
-<<<<<<< Updated upstream
-              	q = ndi.query('','isa','stimulus_tuningcurve','');
-                q = q&ndi.query('element.ndi_element_class','contains_string','ndi.stimulus_tuning_curve','');
-                parameters.query = struct('name', 'stimulus_response_scalar_id','query',q);
-                
-=======
-
-                
-                parameters.query = ndi_calculation_obj.query
->>>>>>> Stashed changes
-%                 if input ~= empty,
-%                     response_doc = input;
-%                     q = q&ndi.query('','depends_on','stimulus_response_scalar_id',response_doc.id());
-%                 end;
-%                parameters.query = ndi_app_calculation_obj.session.database_search(q);
 		end; % default_search_for_input_parameters
-<<<<<<< Updated upstream
-
-=======
         
-        function parameters = default_search_for_input_parameters(ndi_calculation_obj)
-            % DEFAULT_SEARCH_FOR-INPUT_PARAMETERS - default parameters for
-            % searching for inputs
-            %
-            % PARAMETERS =
-            % DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
-            %
-            % Returns a list of the default search parameters for finding
-            % appropriate 
         function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
             % DEFAULT_PARAMETERS_QUERY - what queries should be used to
             % search for input parameters
@@ -143,7 +112,7 @@ classdef tuning_curve < ndi.calculation
             % 'response_type' fields that contain 'mean' or 'F1'.
             %
             %         
-                q1 = ndi.query('','isa','stimulus_tuningcurve.json','');
+                q1 = ndi.query('','isa','stimulus_response_scalar.json','');
                 q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
                 q3 = ndi.query('stimulus_response_scalar.response_type','contains_string','F1','');
                 q23 = q2 | q3;
@@ -175,8 +144,9 @@ classdef tuning_curve < ndi.calculation
                     return;
                     
         end; % is_valid_dependency_input()
+        
+        
                        
->>>>>>> Stashed changes
 		function doc_about(ndi_calculation_obj)
 			% ----------------------------------------------------------------------------------------------
 			% NDI_CALCULATION: TUNING_CURVE
@@ -191,12 +161,9 @@ classdef tuning_curve < ndi.calculation
 			%
 			%   Definition: apps/calc/tuning_curve.json
 			%
-<<<<<<< Updated upstream
-				eval(['help ndi.calc.tuning_curve.doc_about']);
-=======
 				eval(['help ndi.calc.vision.tuning_curve.doc_about']);
->>>>>>> Stashed changes
 		end; %doc_about()
+       
 	end; % methods()
 			
 end % tuning_curve
