@@ -43,7 +43,7 @@ classdef hartley_calc < ndi.calculation
 
 				for i=1:numel(stimulus_presentation_docs),
 
-					[b,stimids] = ndi.calc.vis.hartley_calc.ishartleystim(stimulus_presentation_docs{i})
+					[b,stimids] = ndi.calc.vis.hartley_calc.ishartleystim(stimulus_presentation_docs{i});
 
 					if ~b, continue; end;
 
@@ -63,7 +63,6 @@ classdef hartley_calc < ndi.calculation
 						0, element, ndi.time.clocktype('dev_local_time'));
 					% time is 0 because stim_timeref is relative to 1st stim
 
-					keyboard 
 					if ~isempty(ts_epoch_t0_out), % we have a match
 
 						% Step 3: now to calculate
@@ -98,23 +97,36 @@ classdef hartley_calc < ndi.calculation
 
 						hartley_reverse_correlation.hartley_numbers.S = S;
 						hartley_reverse_correlation.hartley_numbers.KXV = KXV;
-						hartley_reverse_correlation.hartley_numbers.KXY = KXY;
+						hartley_reverse_correlation.hartley_numbers.KYV = KYV;
 						hartley_reverse_correlation.hartley_numbers.ORDER = ORDER;
 
-						% write file here for now
+						hartley_reverse_correlation.spiketimes = spike_times;
+						hartley_reverse_correlation.frameTimes = frameTimes;
+
+						% write JSON file here for now
+
+						mystring = vlt.data.jsonencodenan(hartley_reverse_correlation);
+						myfile = fullfile(ndi_calculation_obj.session.path,...
+							[stimulus_presentation_docs{i}.document_properties.epochid '_' ...
+								element.elementstring() '_hartley.json']);
+						mystring = char(vlt.data.prettyjson(mystring));
+						vlt.file.str2text(myfile,mystring);
 
 						% Step 3c: actually make the document
+						if 0, % not doing this yet
 
-						doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'hartley_calc',parameters_here,...
-							'hartley_reverse_correlation',hartley_reverse_correlation,'reverse_correlation',reverse_correlation);
-						doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
-						doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
-						doc{end} = doc{end}.set_dependency_value('stimulus_response_scalar_id',...
-							stim_resp_scalar{stim_resp_index_value});
+							doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'hartley_calc',parameters_here,...
+								'hartley_reverse_correlation',hartley_reverse_correlation,'reverse_correlation',reverse_correlation);
+							doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
+							doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
+							doc{end} = doc{end}.set_dependency_value('stimulus_response_scalar_id',...
+								stim_resp_scalar{stim_resp_index_value});
 
-						% open the ngrid file
-							
-						% write the ngrid file
+							% open the ngrid file
+								
+							% write the ngrid file
+
+						end;
 					end;
 				end;
 				
@@ -160,7 +172,7 @@ classdef hartley_calc < ndi.calculation
 			% the contain 'mean' or 'F1'.
 			%
 			%
-				q_total = ndi.query('','isa','ndi_document_element','');
+				q_total = ndi.query('element.type','exact_string','spikes','');
 
 				query = struct('name','element_id','query',q_total);
 		end; % default_parameters_query()
