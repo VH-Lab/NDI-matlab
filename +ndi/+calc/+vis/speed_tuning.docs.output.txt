@@ -1,0 +1,1 @@
+Given the appropriate parameters, this tool outputs the calculated speed response parameters, the speed tuning curve, and a plot of the speed tuning curve for a given neuron.

@@ -1,0 +1,1 @@
+When being used, this tool will search for the measured spatial frequency values, temporal frequency values, and responses driven by the spatial and temporal frequency values for a given neuron in order to produce the desired output parameters.

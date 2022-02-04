@@ -1,0 +1,1 @@
+This tool produces and plots the speed turning curve for a neuron given the measured spatial frequency values, temporal frequency values, and responses driven by the spatial and temporal frequency values of the neuron using methods derived from Priebe et al. 2006.
