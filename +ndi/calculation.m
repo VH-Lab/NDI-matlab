@@ -495,6 +495,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						fig = figure;
 					end;
 					% would check calc name and calc type and calc filename for validity here
+					ud = get(fig,'userdata');
 				end;
 
 				if isempty(fig),
@@ -574,6 +575,20 @@ classdef calculation < ndi.app & ndi.app.appdoc
 
 
 					case 'UpdateWindow',
+					case 'DocPopup',
+						% Step 1: search for the objects you need to work with
+						docPopupObj = findobj(fig,'tag','DocPopup');
+						v = get(docPopupObj, 'value');
+						docTextObj = findobj(fig,'tag','DocTxt');
+						% Step 2, take action
+						switch v,
+							case 1, % General documentation
+								% do something to read the new string from the file
+								% set(docTextObj,'string',mynewstring);
+							case 2, % searching for inputs
+							
+							case 3, % output documentation
+						end;
 
 					case 'SearchParametersBt',
 					case 'SearchOutputDocBt',
