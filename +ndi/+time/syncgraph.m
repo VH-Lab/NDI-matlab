@@ -278,13 +278,17 @@ classdef syncgraph < ndi.ido
 								end;
 								lowcost = Inf;
 								mappinghere = [];
-								for k=1:numel(ndi_syncgraph_obj.rules),
-									[c,m] = apply(ndi_syncgraph_obj.rules{k}, ginfo.nodes(i_), ginfo.nodes(j_));
+								for K=1:numel(ndi_syncgraph_obj.rules),
+									[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
 									end;
 								end
+								if isempty(mappinghere) & ~isinf(lowcost),
+									disp('this is an error. notify developers. we did not think we could get here.');
+									keyboard;
+								end;
 								ginfo.G(i_,j_) = lowcost;
 								ginfo.mapping{i_,j_} = mappinghere;
 							end
@@ -471,12 +475,14 @@ classdef syncgraph < ndi.ido
 						struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out)), ...
 						ginfo.nodes);
 					if isempty(any_referent_outs), % add the referent to the table and try again
-						ndi_syncgraph_obj.addunderlyingepochs(referent_out,ginfo);
-						[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
-						return;
-					else,
-						msg = ['Could not find any such destination node.'];
+						new_ginfo = ndi_syncgraph_obj.addunderlyingepochs(referent_out,ginfo);
+						if numel(new_ginfo.nodes)~=numel(ginfo.nodes), % if we added a node, we can keep searching
+							[t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
+							return;
+						end;
 					end;
+					% if we are still here, we failed in our search
+					msg = ['Could not find any such destination node.'];
 					return;
 				end
                 

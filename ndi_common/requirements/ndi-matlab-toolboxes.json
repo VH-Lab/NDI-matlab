@@ -7,8 +7,6 @@
 			"MATLAB",
 			"Optimization Toolbox",
 			"Signal Processing Toolbox",
-			"Simscape",
-			"Simulink",
 			"Statistics and Machine Learning Toolbox"
 		],
 		"recommended": [
