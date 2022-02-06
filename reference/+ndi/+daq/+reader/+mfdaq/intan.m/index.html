@@ -12,7 +12,7 @@
       
       
       <link rel="icon" href="../../../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
     
     
       
@@ -20,7 +20,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.e35208c4.min.css">
+      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.bde7dde4.min.css">
       
         
         <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.ef6f36e2.min.css">
@@ -5303,7 +5303,7 @@
 
   <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">clocktype</span>
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">epochclock</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>.<span class="nv">MFDAQ</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">epochclock</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>
 </code></pre></div>
 
 <hr />
@@ -5312,7 +5312,7 @@
 
   <span class="nv">Examines</span> <span class="nv">whether</span> <span class="nv">or</span> <span class="nv">not</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">objects</span> <span class="nv">are</span> <span class="nv">equal</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">eq</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">eq</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>
 </code></pre></div>
 
 <hr />
@@ -5343,15 +5343,18 @@
 
   <span class="nv">Returns</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="nv">of</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">ido</span> <span class="nv">object</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">ido</span>
 </code></pre></div>
 
 <hr />
 <p><strong>intan</strong> - <em>Create a new NDI_DEVICE_MFDAQ_INTAN object</em></p>
-<div class="codehilite"><pre><span></span><code>D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
+<div class="codehilite"><pre><span></span><code><span class="nv">D</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="ss">(</span><span class="nv">NAME</span>,<span class="nv">THEFILENAVIGATOR</span><span class="ss">)</span>
 
-   Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
-   filenavigator THEFILENAVIGATOR.
+   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span> <span class="nv">object</span> <span class="nv">with</span> <span class="nv">name</span> <span class="nv">NAME</span> <span class="nv">and</span> <span class="nv">associated</span>
+   <span class="nv">filenavigator</span> <span class="nv">THEFILENAVIGATOR</span>.
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">intan</span>
+       <span class="nv">doc</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span>
 </code></pre></div>
 
 <hr />
@@ -5408,7 +5411,7 @@
 
   <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">NUM2HEX</span>, <span class="nv">NOW</span>, <span class="nv">RAND</span>
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">IDO</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span>.<span class="nv">ndi_unique_id</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">ido</span>
 </code></pre></div>
 
 <hr />
@@ -5418,7 +5421,7 @@
   <span class="nv">Creates</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">object</span> <span class="nv">DOC</span> <span class="nv">that</span> <span class="nv">represents</span> <span class="nv">the</span>
      <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>
 </code></pre></div>
 
 <hr />
@@ -5462,7 +5465,7 @@
 
    <span class="nv">EPOCHSFILES</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">full</span> <span class="nv">path</span> <span class="nv">file</span> <span class="nv">names</span>
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">readevents_epochsamples</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>.<span class="nv">MFDAQ</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">readevents_epochsamples</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>
 </code></pre></div>
 
 <hr />
@@ -5482,7 +5485,7 @@
 
    <span class="nv">TIMEREF</span> <span class="nv">is</span> <span class="nv">an</span> <span class="nv">ndi</span>.<span class="nv">time</span>.<span class="nv">timereference</span> <span class="nv">with</span> <span class="nv">the</span> <span class="nv">NDI_CLOCK</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">device</span>, <span class="nv">referring</span> <span class="nv">to</span> <span class="nv">epoch</span> <span class="nv">N</span> <span class="nv">at</span> <span class="nv">time</span> <span class="mi">0</span> <span class="nv">as</span> <span class="nv">the</span> <span class="nv">reference</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">readevents_epochsamples_native</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>.<span class="nv">MFDAQ</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">readevents_epochsamples_native</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>
 </code></pre></div>
 
 <hr />
@@ -5502,7 +5505,7 @@
 
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">search</span> <span class="nv">query</span> <span class="k">for</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span> <span class="nv">object</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">searchquery</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DAQ</span>.<span class="nv">READER</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>.<span class="nv">mfdaq</span>.<span class="nv">intan</span><span class="o">/</span><span class="nv">searchquery</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">daq</span>.<span class="nv">reader</span>
 </code></pre></div>
 
 <hr />
@@ -5596,10 +5599,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
     
     
-      <script src="../../../../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
+      <script src="../../../../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
       
     
   </body>

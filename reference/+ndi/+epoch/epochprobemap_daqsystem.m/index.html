@@ -12,7 +12,7 @@
       
       
       <link rel="icon" href="../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
     
     
       
@@ -20,7 +20,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.e35208c4.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.bde7dde4.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ef6f36e2.min.css">
@@ -5251,27 +5251,30 @@
 </table>
 <h3 id="methods-help">Methods help<a class="headerlink" href="#methods-help" title="Permanent link">&para;</a></h3>
 <p><strong>epochprobemap_daqsystem</strong> - <em>Create a new ndi.epoch.epochprobemap_daqsystem object</em></p>
-<div class="codehilite"><pre><span></span><code>MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
+<div class="codehilite"><pre><span></span><code><span class="nv">MYNDI_EPOCHPROBEMAP_DAQSYSTEM</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap</span><span class="ss">(</span><span class="nv">NAME</span>, <span class="nv">REFERENCE</span>, <span class="nv">TYPE</span>, <span class="nv">DEVICESTRING</span>, <span class="nv">SUBJECTSTRING</span><span class="ss">)</span>
 
-  Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
-  and devicestring DEVICESTRING.
+  <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">with</span> <span class="nv">name</span> <span class="nv">NAME</span>, <span class="nv">reference</span> <span class="nv">REFERENCE</span>, <span class="nv">type</span> <span class="nv">TYPE</span>,
+  <span class="nv">and</span> <span class="nv">devicestring</span> <span class="nv">DEVICESTRING</span>.
 
-  NAME can be any string that begins with a letter and contains no whitespace. It
-  is CASE SENSITIVE.
-  REFERENCE must be a non-negative scalar integer.
-  TYPE is the type of recording.
-  DEVICESTRING is a string that indicates the channels that were used to acquire
-  this record.
-  SUBJECTSTRING describes the subject of the probe, either using the unique local identifier
-    or the document unique identifier (ID) of the ndi.document that describes the subject.
+  <span class="nv">NAME</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">any</span> <span class="nv">string</span> <span class="nv">that</span> <span class="nv">begins</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">letter</span> <span class="nv">and</span> <span class="nv">contains</span> <span class="nv">no</span> <span class="nv">whitespace</span>. <span class="nv">It</span>
+  <span class="nv">is</span> <span class="nv">CASE</span> <span class="nv">SENSITIVE</span>.
+  <span class="nv">REFERENCE</span> <span class="nv">must</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">non</span><span class="o">-</span><span class="nv">negative</span> <span class="nv">scalar</span> <span class="nv">integer</span>.
+  <span class="nv">TYPE</span> <span class="nv">is</span> <span class="nv">the</span> <span class="nv">type</span> <span class="nv">of</span> <span class="nv">recording</span>.
+  <span class="nv">DEVICESTRING</span> <span class="nv">is</span> <span class="nv">a</span> <span class="nv">string</span> <span class="nv">that</span> <span class="nv">indicates</span> <span class="nv">the</span> <span class="nv">channels</span> <span class="nv">that</span> <span class="nv">were</span> <span class="nv">used</span> <span class="nv">to</span> <span class="nv">acquire</span>
+  <span class="nv">this</span> <span class="nv">record</span>.
+  <span class="nv">SUBJECTSTRING</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">subject</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">probe</span>, <span class="nv">either</span> <span class="nv">using</span> <span class="nv">the</span> <span class="nv">unique</span> <span class="nv">local</span> <span class="nv">identifier</span>
+    <span class="nv">or</span> <span class="nv">the</span> <span class="nv">document</span> <span class="nv">unique</span> <span class="nv">identifier</span> <span class="ss">(</span><span class="nv">ID</span><span class="ss">)</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">that</span> <span class="nv">describes</span> <span class="nv">the</span> <span class="nv">subject</span>.
 
-  The function has an alternative form:
+  <span class="nv">The</span> <span class="nv">function</span> <span class="nv">has</span> <span class="nv">an</span> <span class="nv">alternative</span> <span class="nv">form</span>:
 
-    MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
+    <span class="nv">MYNDI_EPOCHPROBEMAP_DAQSYSTEM</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap</span><span class="ss">(</span><span class="nv">FILENAME</span><span class="ss">)</span>
 
-  Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-  that has entries &#39;name&lt;tab&gt;reference&lt;tab&gt;type&lt;tab&gt;devicestring&lt;tab&gt;&lt;subjectstring&gt;&#39;, with
-  one line per ndi.epoch.epochprobemap_daqsystem entry.
+  <span class="nv">Here</span>, <span class="nv">FILENAME</span> <span class="nv">is</span> <span class="nv">assumed</span> <span class="nv">to</span> <span class="nv">be</span> <span class="nv">a</span> <span class="nv">tab</span><span class="o">-</span><span class="nv">delimitted</span> <span class="nv">text</span> <span class="nv">file</span> <span class="nv">with</span> <span class="nv">a</span> <span class="nv">header</span> <span class="nv">row</span>
+  <span class="nv">that</span> <span class="nv">has</span> <span class="nv">entries</span> <span class="s1">&#39;</span><span class="s">name&lt;tab&gt;reference&lt;tab&gt;type&lt;tab&gt;devicestring&lt;tab&gt;&lt;subjectstring&gt;</span><span class="s1">&#39;</span>, <span class="nv">with</span>
+  <span class="nv">one</span> <span class="nv">line</span> <span class="nv">per</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span> <span class="nv">entry</span>.
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span><span class="o">/</span><span class="nv">epochprobemap_daqsystem</span>
+       <span class="nv">doc</span> <span class="nv">ndi</span>.<span class="nv">epoch</span>.<span class="nv">epochprobemap_daqsystem</span>
 </code></pre></div>
 
 <hr />
@@ -5350,10 +5353,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
       
     
   </body>

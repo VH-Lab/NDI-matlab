@@ -12,7 +12,7 @@
       
       
       <link rel="icon" href="../../../../../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.3">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.4">
     
     
       
@@ -20,7 +20,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.e35208c4.min.css">
+      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.bde7dde4.min.css">
       
         
         <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.ef6f36e2.min.css">
@@ -5177,6 +5177,7 @@
                 
                 <h1 id="class-ndidatabaseimplementationsdatabasepostgresdb">CLASS ndi.database.implementations.database.postgresdb<a class="headerlink" href="#class-ndidatabaseimplementationsdatabasepostgresdb" title="Permanent link">&para;</a></h1>
 <div class="codehilite"><pre><span></span><code>ndi.database.implementations.database.postgresdb is a class.
+    obj = ndi.database.implementations.database.postgresdb
 </code></pre></div>
 
 <h2 id="superclasses">Superclasses<a class="headerlink" href="#superclasses" title="Permanent link">&para;</a></h2>
@@ -5281,7 +5282,7 @@
 
   <span class="nv">See</span> <span class="nv">also</span>: <span class="nv">vlt</span>.<span class="nv">data</span>.<span class="nv">namevaluepair</span>
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">add</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">add</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">database</span>
 </code></pre></div>
 
 <hr />
@@ -5307,7 +5308,7 @@
 
 <span class="w">  </span><span class="n">See</span><span class="w"> </span><span class="nl">also</span><span class="p">:</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">REMOVE</span><span class="w"></span>
 
-<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">clear</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">clear</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
@@ -5317,7 +5318,7 @@
 <span class="w">  </span><span class="k">Close</span><span class="w"> </span><span class="ow">and</span><span class="w"> </span><span class="n">lock</span><span class="w"> </span><span class="n">an</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="p">.</span><span class="w"> </span><span class="n">The</span><span class="w"> </span><span class="n">NDI_BINARYDOC_OBJ</span><span class="w"> </span><span class="n">must</span><span class="w"> </span><span class="n">be</span><span class="w"> </span><span class="n">unlocked</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">the</span><span class="w"></span>
 <span class="w">  </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"> </span><span class="n">it</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">necessary</span><span class="w"> </span><span class="k">to</span><span class="w"> </span><span class="k">call</span><span class="w"> </span><span class="n">this</span><span class="w"> </span><span class="k">function</span><span class="w"> </span><span class="n">through</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="p">.</span><span class="w"></span>
 
-<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">closebinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">closebinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
@@ -5347,7 +5348,7 @@
   <span class="nv">Creates</span> <span class="nv">a</span> <span class="nv">new</span><span class="o">/</span><span class="nv">blank</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">document</span> <span class="nv">object</span> <span class="nv">that</span> <span class="nv">can</span> <span class="nv">be</span> <span class="nv">used</span> <span class="nv">with</span> <span class="nv">this</span>
   <span class="nv">ndi</span>.<span class="nv">database</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">newdocument</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">database</span>
 </code></pre></div>
 
 <hr />
@@ -5362,12 +5363,15 @@
 <span class="w">  </span><span class="n">The</span><span class="w"> </span><span class="n">locked</span><span class="w"> </span><span class="n">nature</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="nc">binary</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="n">property</span><span class="w"> </span><span class="k">of</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="p">,</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">document</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">why</span><span class="w"></span>
 <span class="w">  </span><span class="n">the</span><span class="w"> </span><span class="k">database</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">needed</span><span class="p">.</span><span class="w"></span>
 
-<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">openbinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">openbinarydoc</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
 <p><strong>postgresdb</strong> - <em>ndi.database.implementations.database.postgresdb/postgresdb is a constructor.</em></p>
-<div class="codehilite"><pre><span></span><code>
+<div class="codehilite"><pre><span></span><code><span class="nv">obj</span> <span class="o">=</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span>
+
+    <span class="nv">Documentation</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">postgresdb</span>
+       <span class="nv">doc</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span>
 </code></pre></div>
 
 <hr />
@@ -5380,7 +5384,7 @@
 
 <span class="w">  </span><span class="k">If</span><span class="w"> </span><span class="n">there</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">no</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="w"> </span><span class="k">object</span><span class="w"> </span><span class="k">with</span><span class="w"> </span><span class="n">that</span><span class="w"> </span><span class="n">ID</span><span class="p">,</span><span class="w"> </span><span class="k">then</span><span class="w"> </span><span class="n">empty</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">returned</span><span class="w"> </span><span class="p">(</span><span class="err">[]</span><span class="p">).</span><span class="w"></span>
 
-<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="k">read</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">NDI</span><span class="p">.</span><span class="k">DATABASE</span><span class="w"></span>
+<span class="n">Help</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="k">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="k">read</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="n">inherited</span><span class="w"> </span><span class="k">from</span><span class="w"> </span><span class="n">superclass</span><span class="w"> </span><span class="n">ndi</span><span class="p">.</span><span class="k">database</span><span class="w"></span>
 </code></pre></div>
 
 <hr />
@@ -5399,7 +5403,7 @@
   <span class="nv">ndi</span>.<span class="nv">document</span><span class="o">/</span><span class="nv">DOC_UNIQUE_ID</span>. <span class="k">If</span> <span class="nv">a</span> <span class="nv">cell</span> <span class="nv">array</span> <span class="nv">of</span> <span class="nv">ndi</span>.<span class="nv">document</span> <span class="nv">is</span> <span class="nv">passed</span> <span class="nv">instead</span>, <span class="k">then</span>
   <span class="nv">all</span> <span class="nv">of</span> <span class="nv">the</span> <span class="nv">documents</span> <span class="nv">are</span> <span class="nv">removed</span>.
 
-<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">remove</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">NDI</span>.<span class="nv">DATABASE</span>
+<span class="nv">Help</span> <span class="k">for</span> <span class="nv">ndi</span>.<span class="nv">database</span>.<span class="nv">implementations</span>.<span class="nv">database</span>.<span class="nv">postgresdb</span><span class="o">/</span><span class="nv">remove</span> <span class="nv">is</span> <span class="nv">inherited</span> <span class="nv">from</span> <span class="nv">superclass</span> <span class="nv">ndi</span>.<span class="nv">database</span>
 </code></pre></div>
 
 <hr />
@@ -5415,7 +5419,7 @@
   <span class="n">query</span><span class="p">,</span> <span class="n">then</span> <span class="n">an</span> <span class="n">empty</span> <span class="n">cell</span> <span class="n">array</span> <span class="p">({})</span> <span class="n">is</span> <span class="n">returned</span><span class="p">.</span> <span class="n">An</span> <span class="n">array</span> <span class="n">VERSIONS</span> <span class="n">contains</span> <span class="n">the</span> <span class="n">document</span> <span class="n">version</span> <span class="n">of</span>
   <span class="n">of</span> <span class="n">each</span> <span class="n">ndi</span><span class="p">.</span><span class="n">document</span><span class="p">.</span>
 
-<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">search</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">NDI</span><span class="p">.</span><span class="n">DATABASE</span>
+<span class="n">Help</span> <span class="k">for</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">implementations</span><span class="p">.</span><span class="n">database</span><span class="p">.</span><span class="n">postgresdb</span><span class="o">/</span><span class="n">search</span> <span class="n">is</span> <span class="n">inherited</span> <span class="n">from</span> <span class="n">superclass</span> <span class="n">ndi</span><span class="p">.</span><span class="n">database</span>
 </code></pre></div>
 
 <hr />
@@ -5487,10 +5491,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../../../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../../../assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../../../../../..", "features": ["navigation"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "../../../../../../assets/javascripts/workers/search.4fa0e4ee.min.js", "version": null}</script>
     
     
-      <script src="../../../../../../assets/javascripts/bundle.4ea5477f.min.js"></script>
+      <script src="../../../../../../assets/javascripts/bundle.1d3bfcf1.min.js"></script>
       
     
   </body>
