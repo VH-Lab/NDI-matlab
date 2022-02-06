@@ -82,7 +82,7 @@ ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   already exist, they will be overwritten. If there is no epoch 
   EPOCHNUMBER, then an error is returned.
 
-Help for ndi.file.navigator/addepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/addepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -113,7 +113,7 @@ Help for ndi.file.navigator/addepochtag is inherited from superclass NDI.EPOCH.E
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.file.navigator/EPOCHNODES
 
-Help for ndi.file.navigator/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -155,7 +155,7 @@ ET = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.file.navigator/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -169,7 +169,7 @@ Help for ndi.file.navigator/cached_epochgraph is inherited from superclass NDI.E
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.file.navigator/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -201,7 +201,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.file.navigator/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -218,7 +218,7 @@ EC = EPOCHCLOCK(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   See also: ndi.time.clocktype, T0_T1
 
-Help for ndi.file.navigator/epochclock is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochclock is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -236,7 +236,7 @@ Help for ndi.file.navigator/epochclock is inherited from superclass NDI.EPOCH.EP
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.file.navigator/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -297,7 +297,7 @@ ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.file.navigator/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -331,7 +331,7 @@ NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
   If the class has a 'name' property, that property is used.
   Otherwise, 'unknown' is used.
 
-Help for ndi.file.navigator/epochsetname is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochsetname is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -361,7 +361,7 @@ Help for ndi.file.navigator/epochsetname is inherited from superclass NDI.EPOCH.
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.file.navigator/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -375,7 +375,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.file.navigator/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -495,7 +495,7 @@ EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N)
   Output:
       EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
 
-Help for ndi.file.navigator/getepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/getepochprobemap is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -509,7 +509,7 @@ TAG = GETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
   array with fields 'name' and 'value'. If there are no files in
   EPOCHNUMBER then an error is returned.
 
-Help for ndi.file.navigator/getepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/getepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -521,7 +521,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.file.navigator/id is inherited from superclass NDI.IDO
+Help for ndi.file.navigator/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -537,7 +537,7 @@ B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
   For ndi.epoch.epochset objects, this returns 1. For some object types (ndi.probe.*, for example)
   this will return 0 so that the underlying ndi.daq.system epochs are added.
 
-Help for ndi.file.navigator/issyncgraphroot is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/issyncgraphroot is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -550,7 +550,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.file.navigator/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -578,6 +578,9 @@ OBJ = ndi.file.navigator(SESSION, [ FILEPARAMETERS, EPOCHPROBEMAP_CLASS, EPOCHPR
   Output: OBJ - an ndi.file.navigator object
  
   See also: ndi.session
+
+    Documentation for ndi.file.navigator/navigator
+       doc ndi.file.navigator
 ```
 
 ---
@@ -597,7 +600,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.file.navigator.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.file.navigator.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -621,7 +624,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.file.navigator/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -652,7 +655,7 @@ REMOVEEPOCHTAG(NDI_EPOCH_PARAM_OBJ, EPOCHNUMBER, NAME)
   NAME can be a single string, or it can be a cell array of strings
   (which will result in the removal of multiple tags).
 
-Help for ndi.file.navigator/removeepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/removeepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -667,7 +670,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.file.navigator/EPOCHTABLE
 
-Help for ndi.file.navigator/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -709,7 +712,7 @@ SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
-Help for ndi.file.navigator/setepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/setepochprobemap is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -744,7 +747,7 @@ SETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   tags in the epoch directory. If there is no epoch EPOCHNUMBER, then 
   an error is returned.
 
-Help for ndi.file.navigator/setepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/setepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -796,7 +799,7 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   See also: ndi.time.clocktype, EPOCHCLOCK
 
-Help for ndi.file.navigator/t0_t1 is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/t0_t1 is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -813,7 +816,7 @@ Help for ndi.file.navigator/t0_t1 is inherited from superclass NDI.EPOCH.EPOCHSE
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.file.navigator/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.file.navigator/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -833,7 +836,7 @@ Help for ndi.file.navigator/underlyingepochnodes is inherited from superclass ND
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
-Help for ndi.file.navigator/verifyepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.file.navigator/verifyepochprobemap is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---

@@ -90,7 +90,7 @@
   'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
                             |    the data structures that define the document are not equal.
 
-Help for ndi.calculation/add_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/add_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -159,6 +159,9 @@ NDI_CALCULATION_OBJ = CALCULATION(SESSION, DOC_TYPE, PATH_TO_DOC_TYPE)
   Classes that override this function should call
   the creator for ndi.appdoc to record the document type
   that is used by the ndi.calculation mini-app.
+
+    Documentation for ndi.calculation/calculation
+       doc ndi.calculation
 ```
 
 ---
@@ -175,7 +178,7 @@ B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
  
   B is 1 if the document is found, and 0 otherwise.
 
-Help for ndi.calculation/clear_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/clear_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -201,7 +204,7 @@ APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
   In the base class, the blank version of the ndi.document is read in and the
   default structure is built from the ndi.document's class property list.
 
-Help for ndi.calculation/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/defaultstruct_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -239,7 +242,7 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additiona
  
   In the base class, this uses the property info in the ndi.document to load the data structure.
 
-Help for ndi.calculation/doc2struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/doc2struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -278,7 +281,7 @@ DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
   The documentation for subclasses should be in the overriden function
   APPDOC_DESCRIPTION.
 
-Help for ndi.calculation/find_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/find_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -322,7 +325,7 @@ B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_ST
  
   In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'
 
-Help for ndi.calculation/isvalid_appdoc_struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/isvalid_appdoc_struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -342,7 +345,7 @@ Help for ndi.calculation/isvalid_appdoc_struct is inherited from superclass NDI.
  
   The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
 
-Help for ndi.calculation/loaddata_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/loaddata_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -355,7 +358,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.calculation/newdocument is inherited from superclass NDI.APP
+Help for ndi.calculation/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -437,7 +440,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.calculation/searchquery is inherited from superclass NDI.APP
+Help for ndi.calculation/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -453,7 +456,7 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional paramet
   In the base class, this always returns empty. It must be overridden in subclasses.
   The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
 
-Help for ndi.calculation/struct2doc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calculation/struct2doc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -466,7 +469,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.calculation/varappname is inherited from superclass NDI.APP
+Help for ndi.calculation/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -483,7 +486,7 @@ Help for ndi.calculation/varappname is inherited from superclass NDI.APP
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.calculation/version_url is inherited from superclass NDI.APP
+Help for ndi.calculation/version_url is inherited from superclass ndi.app
 ```
 
 ---

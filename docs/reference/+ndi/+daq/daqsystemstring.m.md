@@ -86,6 +86,9 @@ DEVSTR = ndi.daq.daqsystemstring(DEVICENAME, CHANNELTYPE, CHANNELLIST)
        myndi_daqsystemstring2 = ndi_devicestring('mydevice:ai1-5,7,23');
  
   See also: ndi.daq.daqsystemstring
+
+    Documentation for ndi.daq.daqsystemstring/daqsystemstring
+       doc ndi.daq.daqsystemstring
 ```
 
 ---

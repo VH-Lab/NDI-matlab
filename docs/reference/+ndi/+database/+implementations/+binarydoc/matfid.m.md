@@ -96,10 +96,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.database.implementations.binarydoc.matfid/addlistener is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/addlistener
+    Documentation for ndi.database.implementations.binarydoc.matfid/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -111,7 +111,7 @@ DELETE(NDI_BINARYDOC_OBJ)
  
   Closes an ndi.database.binarydoc (if necessary) and then deletes the handle.
 
-Help for ndi.database.implementations.binarydoc.matfid/delete is inherited from superclass NDI.DATABASE.BINARYDOC
+Help for ndi.database.implementations.binarydoc.matfid/delete is inherited from superclass ndi.database.binarydoc
 ```
 
 ---
@@ -134,10 +134,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/NE
 
-Help for ndi.database.implementations.binarydoc.matfid/eq is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/eq
+Help for ndi.database.implementations.binarydoc.matfid/eq is inherited from superclass handle
 ```
 
 ---
@@ -161,7 +158,7 @@ B = FEOF(FILEOBJ_OBJ)
  
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
-Help for ndi.database.implementations.binarydoc.matfid/feof is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/feof is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -174,7 +171,7 @@ Help for ndi.database.implementations.binarydoc.matfid/feof is inherited from su
   Return the most recent file error MESSAGE and ERRORNUM for
   the file associated with FERROR.
 
-Help for ndi.database.implementations.binarydoc.matfid/ferror is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/ferror is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -188,7 +185,7 @@ TLINE = FGETL(FILEOBJ_OBJ)
  
   See also: FGETL
 
-Help for ndi.database.implementations.binarydoc.matfid/fgetl is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fgetl is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -202,7 +199,7 @@ TLINE = FGETS(FILEOBJ_OBJ, [NCHAR])
  
   See also: FGETS
 
-Help for ndi.database.implementations.binarydoc.matfid/fgets is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fgets is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -214,7 +211,7 @@ Help for ndi.database.implementations.binarydoc.matfid/fgets is inherited from s
  
   Returns FILEPARTS of the 'fullpathfilename' field of FILEOBJ.
 
-Help for ndi.database.implementations.binarydoc.matfid/fileparts is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fileparts is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -233,10 +230,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID
 
-Help for ndi.database.implementations.binarydoc.matfid/findobj is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findobj
+    Documentation for ndi.database.implementations.binarydoc.matfid/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -255,10 +252,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.database.implementations.binarydoc.matfid/findprop is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/findprop
+    Documentation for ndi.database.implementations.binarydoc.matfid/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -281,7 +278,7 @@ FILEOBJ_OBJ = FOPEN(FILEOBJ_OBJ, [ , PERMISSION], [MACHINEFORMAT],[FILENAME])
  
   See also: FOPEN, FILEOBJ/FCLOSE, FCLOSE
 
-Help for ndi.database.implementations.binarydoc.matfid/fopen is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fopen is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -294,7 +291,7 @@ Help for ndi.database.implementations.binarydoc.matfid/fopen is inherited from s
   Call FPRINTF (see FPRINTF for inputs) for the file associated with
   FILEOBJ_OBJ.
 
-Help for ndi.database.implementations.binarydoc.matfid/fprintf is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fprintf is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -312,7 +309,7 @@ COUNT = FWRITE(FILEOBJ_OBJ, COUNT, [PRECISION], [SKIP], [MACHINEFORMAT])
  
   See also: FREAD
 
-Help for ndi.database.implementations.binarydoc.matfid/fread is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fread is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -326,7 +323,7 @@ FREWIND(FILEOBJ_OBJ)
  
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
-Help for ndi.database.implementations.binarydoc.matfid/frewind is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/frewind is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -339,7 +336,7 @@ Help for ndi.database.implementations.binarydoc.matfid/frewind is inherited from
   Call FSCANF (see FSCANF for inputs) for the file associated with
   FILEOBJ_OBJ.
 
-Help for ndi.database.implementations.binarydoc.matfid/fscanf is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fscanf is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -359,7 +356,7 @@ B = FSEEK(FILEOBJ_OBJ, OFFSET, REFERENCE)
  
   See also: FSEEK, FILEOBJ/FTELL
 
-Help for ndi.database.implementations.binarydoc.matfid/fseek is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fseek is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -374,7 +371,7 @@ LOCATION = FTELL(FILEOBJ_OBJ)
  
   See also: FSEEK, FILEOBJ/FSEEK, FTELL
 
-Help for ndi.database.implementations.binarydoc.matfid/ftell is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/ftell is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -392,7 +389,7 @@ COUNT = FWRITE(FILEOBJ_OBJ, DATA, [PRECISION], [SKIP], [MACHINEFORMAT])
  
   See also: FWRITE
 
-Help for ndi.database.implementations.binarydoc.matfid/fwrite is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/fwrite is inherited from superclass vlt.file.fileobj
 ```
 
 ---
@@ -413,10 +410,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/EQ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/NE
 
-Help for ndi.database.implementations.binarydoc.matfid/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ge
+Help for ndi.database.implementations.binarydoc.matfid/ge is inherited from superclass handle
 ```
 
 ---
@@ -437,10 +431,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/EQ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/NE
 
-Help for ndi.database.implementations.binarydoc.matfid/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/gt
+Help for ndi.database.implementations.binarydoc.matfid/gt is inherited from superclass handle
 ```
 
 ---
@@ -458,10 +449,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/DELETE
 
-Help for ndi.database.implementations.binarydoc.matfid/isvalid is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/isvalid
+    Documentation for ndi.database.implementations.binarydoc.matfid/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -490,10 +481,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/EQ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/NE
 
-Help for ndi.database.implementations.binarydoc.matfid/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/le
+Help for ndi.database.implementations.binarydoc.matfid/le is inherited from superclass handle
 ```
 
 ---
@@ -536,10 +524,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.database.implementations.binarydoc.matfid/listener is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/listener
+    Documentation for ndi.database.implementations.binarydoc.matfid/listener
+       doc handle/listener
 ```
 
 ---
@@ -560,10 +548,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/EQ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/NE
 
-Help for ndi.database.implementations.binarydoc.matfid/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/lt
+Help for ndi.database.implementations.binarydoc.matfid/lt is inherited from superclass handle
 ```
 
 ---
@@ -576,6 +561,9 @@ NDI_BINARYDOC_MATFID_OBJ = ndi.database.implementations.binarydoc.matfid(PARAM1,
   Follows same arguments as vlt.file.fileobj
  
   See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
+
+    Documentation for ndi.database.implementations.binarydoc.matfid/matfid
+       doc ndi.database.implementations.binarydoc.matfid
 ```
 
 ---
@@ -599,10 +587,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/EQ, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/GT, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LE, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LT
 
-Help for ndi.database.implementations.binarydoc.matfid/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/ne
+Help for ndi.database.implementations.binarydoc.matfid/ne is inherited from superclass handle
 ```
 
 ---
@@ -622,10 +607,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/ADDLISTENER, NDI.DATABASE.IMPLEMENTATIONS.BINARYDOC.MATFID/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.database.implementations.binarydoc.matfid/notify is inherited from superclass HANDLE
+Help for ndi.database.implementations.binarydoc.matfid/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.database.implementations.binarydoc.matfid/notify
+    Documentation for ndi.database.implementations.binarydoc.matfid/notify
+       doc handle/notify
 ```
 
 ---
@@ -643,7 +628,7 @@ FILEOBJ_OBJ = SETPROPERTIES(FILEOBJ_OBJ, 'PROPERTY1',VALUE1, ...)
     permission;       % The file permission
     machineformat     % big-endian ('b'), little-endian ('l'), or native ('n')
 
-Help for ndi.database.implementations.binarydoc.matfid/setproperties is inherited from superclass VLT.FILE.FILEOBJ
+Help for ndi.database.implementations.binarydoc.matfid/setproperties is inherited from superclass vlt.file.fileobj
 ```
 
 ---

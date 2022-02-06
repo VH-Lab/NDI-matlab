@@ -65,7 +65,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.reader/id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -85,7 +85,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.reader.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -113,6 +113,9 @@ OBJ = ndi.daq.reader()
    Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
  
    ndi.daq.reader is essentially an abstract class, and a specific implementation must be used.
+
+    Documentation for ndi.daq.reader/reader
+       doc ndi.daq.reader
 ```
 
 ---

@@ -83,7 +83,7 @@
   'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
                             |    the data structures that define the document are not equal.
 
-Help for ndi.app.oridirtuning/add_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/add_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -218,7 +218,7 @@ B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
  
   B is 1 if the document is found, and 0 otherwise.
 
-Help for ndi.app.oridirtuning/clear_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/clear_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -233,7 +233,7 @@ APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
   In the base class, the blank version of the ndi.document is read in and the
   default structure is built from the ndi.document's class property list.
 
-Help for ndi.app.oridirtuning/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/defaultstruct_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -275,7 +275,7 @@ B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_ST
   true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
 
-Help for ndi.app.oridirtuning/isequal_appdoc_struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/isequal_appdoc_struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -290,7 +290,7 @@ Help for ndi.app.oridirtuning/isequal_appdoc_struct is inherited from superclass
  
   In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'
 
-Help for ndi.app.oridirtuning/isvalid_appdoc_struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/isvalid_appdoc_struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -310,7 +310,7 @@ Help for ndi.app.oridirtuning/isvalid_appdoc_struct is inherited from superclass
  
   The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
 
-Help for ndi.app.oridirtuning/loaddata_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.app.oridirtuning/loaddata_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -323,7 +323,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.app.oridirtuning/newdocument is inherited from superclass NDI.APP
+Help for ndi.app.oridirtuning/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -335,6 +335,9 @@ NDI_APP_ORIDIRTUNING_OBJ = ndi.app.oridirtuning(SESSION)
  
   Creates a new ndi.app.oridirtuning object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.oridirtuning'.
+
+    Documentation for ndi.app.oridirtuning/oridirtuning
+       doc ndi.app.oridirtuning
 ```
 
 ---
@@ -356,7 +359,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.app.oridirtuning/searchquery is inherited from superclass NDI.APP
+Help for ndi.app.oridirtuning/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -387,7 +390,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.app.oridirtuning/varappname is inherited from superclass NDI.APP
+Help for ndi.app.oridirtuning/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -404,7 +407,7 @@ Help for ndi.app.oridirtuning/varappname is inherited from superclass NDI.APP
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.app.oridirtuning/version_url is inherited from superclass NDI.APP
+Help for ndi.app.oridirtuning/version_url is inherited from superclass ndi.app
 ```
 
 ---

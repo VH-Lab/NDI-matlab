@@ -2,6 +2,7 @@
 
 ```
 ndi.database.implementations.database.postgresdb is a class.
+    obj = ndi.database.implementations.database.postgresdb
 
 
 ```
@@ -53,7 +54,7 @@ NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
   
   See also: vlt.data.namevaluepair
 
-Help for ndi.database.implementations.database.postgresdb/add is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/add is inherited from superclass ndi.database
 ```
 
 ---
@@ -85,7 +86,7 @@ CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
  
   See also: ndi.database.implementations.database.postgresdb/REMOVE
 
-Help for ndi.database.implementations.database.postgresdb/clear is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/clear is inherited from superclass ndi.database
 ```
 
 ---
@@ -98,7 +99,7 @@ Help for ndi.database.implementations.database.postgresdb/clear is inherited fro
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the database.
 
-Help for ndi.database.implementations.database.postgresdb/closebinarydoc is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/closebinarydoc is inherited from superclass ndi.database
 ```
 
 ---
@@ -137,7 +138,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
   Creates a new/blank ndi.document document object that can be used with this
   ndi.database.
 
-Help for ndi.database.implementations.database.postgresdb/newdocument is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/newdocument is inherited from superclass ndi.database
 ```
 
 ---
@@ -155,7 +156,7 @@ Help for ndi.database.implementations.database.postgresdb/newdocument is inherit
   The locked nature of the binary doc is a property of the database, not the document, which is why
   the database is needed.
 
-Help for ndi.database.implementations.database.postgresdb/openbinarydoc is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/openbinarydoc is inherited from superclass ndi.database
 ```
 
 ---
@@ -163,7 +164,10 @@ Help for ndi.database.implementations.database.postgresdb/openbinarydoc is inher
 **postgresdb** - *ndi.database.implementations.database.postgresdb/postgresdb is a constructor.*
 
 ```
+obj = ndi.database.implementations.database.postgresdb
 
+    Documentation for ndi.database.implementations.database.postgresdb/postgresdb
+       doc ndi.database.implementations.database.postgresdb
 ```
 
 ---
@@ -179,7 +183,7 @@ NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION])
  
   If there is no ndi.document object with that ID, then empty is returned ([]).
 
-Help for ndi.database.implementations.database.postgresdb/read is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/read is inherited from superclass ndi.database
 ```
 
 ---
@@ -201,7 +205,7 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
   all of the documents are removed.
 
-Help for ndi.database.implementations.database.postgresdb/remove is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/remove is inherited from superclass ndi.database
 ```
 
 ---
@@ -220,7 +224,7 @@ Help for ndi.database.implementations.database.postgresdb/remove is inherited fr
   query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
   of each ndi.document.
 
-Help for ndi.database.implementations.database.postgresdb/search is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.postgresdb/search is inherited from superclass ndi.database
 ```
 
 ---

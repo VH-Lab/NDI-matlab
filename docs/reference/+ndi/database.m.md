@@ -96,6 +96,9 @@ NDI_DATABASE_OBJ = ndi.database(PATH, REFERENCE)
  
   Creates a new ndi.database object with data path PATH
   and reference REFERENCE.
+
+    Documentation for ndi.database/database
+       doc ndi.database
 ```
 
 ---

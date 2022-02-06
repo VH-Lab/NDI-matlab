@@ -117,7 +117,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.time.syncrule/id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -190,7 +190,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.time.syncrule.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -238,6 +238,9 @@ NDI_SYNCRULE_OBJ = ndi.time.syncrule(...)
  
   Creates a new ndi.time.syncrule object with the given PARAMETERS (a structure).
   This is an abstract class, so PARAMETERS must be empty.
+
+    Documentation for ndi.time.syncrule/syncrule
+       doc ndi.time.syncrule
 ```
 
 ---

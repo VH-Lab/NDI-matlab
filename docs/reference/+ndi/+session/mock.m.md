@@ -95,10 +95,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.SESSION.MOCK, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session.mock/addlistener is inherited from superclass HANDLE
+Help for ndi.session.mock/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/addlistener
+    Documentation for ndi.session.mock/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -114,7 +114,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
    
   See also: DAQSYSTEM_RM, ndi.session.mock
 
-Help for ndi.session.mock/daqsystem_add is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/daqsystem_add is inherited from superclass ndi.session
 ```
 
 ---
@@ -128,7 +128,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)
  
   Be sure you mean it!
 
-Help for ndi.session.mock/daqsystem_clear is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/daqsystem_clear is inherited from superclass ndi.session
 ```
 
 ---
@@ -149,7 +149,7 @@ DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
   If more than one object is requested, then DEV will be a cell list of matching objects.
   Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 
-Help for ndi.session.mock/daqsystem_load is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/daqsystem_load is inherited from superclass ndi.session
 ```
 
 ---
@@ -163,7 +163,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)
  
   See also: DAQSYSTEM_ADD, ndi.session.mock
 
-Help for ndi.session.mock/daqsystem_rm is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/daqsystem_rm is inherited from superclass ndi.session
 ```
 
 ---
@@ -181,7 +181,7 @@ NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
    
   See also: DATABASE_RM, ndi.session.mock, ndi.database, ndi.session.mock/SEARCH
 
-Help for ndi.session.mock/database_add is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_add is inherited from superclass ndi.session
 ```
 
 ---
@@ -196,7 +196,7 @@ DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)
   Use with care. If AREYOUSURE is 'yes' then the
   function will proceed. Otherwise, it will not.
 
-Help for ndi.session.mock/database_clear is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_clear is inherited from superclass ndi.session
 ```
 
 ---
@@ -209,7 +209,7 @@ Help for ndi.session.mock/database_clear is inherited from superclass NDI.SESSIO
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the session object.
 
-Help for ndi.session.mock/database_closebinarydoc is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_closebinarydoc is inherited from superclass ndi.session
 ```
 
 ---
@@ -226,7 +226,7 @@ NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
    The locked nature of the binary doc is a property of the database, not the document, which is why
    the database is needed in the method.
 
-Help for ndi.session.mock/database_openbinarydoc is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_openbinarydoc is inherited from superclass ndi.session
 ```
 
 ---
@@ -250,7 +250,7 @@ NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
  
   See also: DATABASE_ADD, ndi.session.mock
 
-Help for ndi.session.mock/database_rm is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_rm is inherited from superclass ndi.session
 ```
 
 ---
@@ -265,7 +265,7 @@ NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
  
   Matches are returned in a cell list NDI_DOCUMENT_OBJ.
 
-Help for ndi.session.mock/database_search is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/database_search is inherited from superclass ndi.session
 ```
 
 ---
@@ -273,17 +273,15 @@ Help for ndi.session.mock/database_search is inherited from superclass NDI.SESSI
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/ISVALID, CLEAR
 
-Help for ndi.session.mock/delete is inherited from superclass HANDLE
+Help for ndi.session.mock/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/delete
+    Documentation for ndi.session.mock/delete
+       doc handle/delete
 ```
 
 ---
@@ -297,7 +295,7 @@ B = EQ(NDI_SESSION_DIR_OBJ_A, NDI_SESSION_DIR_OBJ_B)
   path and reference fields. They do not have to be the same handles
   (that is, have the same location in memory).
 
-Help for ndi.session.mock/eq is inherited from superclass NDI.SESSION.DIR
+Help for ndi.session.mock/eq is inherited from superclass ndi.session.dir
 ```
 
 ---
@@ -310,7 +308,7 @@ OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
   Examines the DAQSYSTEM list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
   and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).
 
-Help for ndi.session.mock/findexpobj is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/findexpobj is inherited from superclass ndi.session
 ```
 
 ---
@@ -329,10 +327,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.SESSION.MOCK
 
-Help for ndi.session.mock/findobj is inherited from superclass HANDLE
+Help for ndi.session.mock/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/findobj
+    Documentation for ndi.session.mock/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -351,10 +349,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.session.mock/findprop is inherited from superclass HANDLE
+Help for ndi.session.mock/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/findprop
+    Documentation for ndi.session.mock/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -375,10 +373,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/EQ, NDI.SESSION.MOCK/GT, NDI.SESSION.MOCK/LE, NDI.SESSION.MOCK/LT, NDI.SESSION.MOCK/NE
 
-Help for ndi.session.mock/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.mock/ge
+Help for ndi.session.mock/ge is inherited from superclass handle
 ```
 
 ---
@@ -399,7 +394,7 @@ ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)
   has a value of VALUE2, etc. Properties of elements are 'element.name', 'element.type',
   'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
 
-Help for ndi.session.mock/getelements is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/getelements is inherited from superclass ndi.session
 ```
 
 ---
@@ -414,7 +409,7 @@ P = GETPATH(NDI_SESSION_DIR_OBJ)
   The path is some sort of reference to the storage location of
   the session. This might be a URL, or a file directory.
 
-Help for ndi.session.mock/getpath is inherited from superclass NDI.SESSION.DIR
+Help for ndi.session.mock/getpath is inherited from superclass ndi.session.dir
 ```
 
 ---
@@ -443,7 +438,7 @@ PROBES = GETPROBES(NDI_SESSION_OBJ, ...)
   returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
   has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_ID'.
 
-Help for ndi.session.mock/getprobes is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/getprobes is inherited from superclass ndi.session
 ```
 
 ---
@@ -464,10 +459,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/EQ, NDI.SESSION.MOCK/GE, NDI.SESSION.MOCK/LE, NDI.SESSION.MOCK/LT, NDI.SESSION.MOCK/NE
 
-Help for ndi.session.mock/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.mock/gt
+Help for ndi.session.mock/gt is inherited from superclass handle
 ```
 
 ---
@@ -479,7 +471,7 @@ IDENTIFIER = ID(NDI_SESSION_OBJ)
  
   Returns the unique identifier of an ndi.session object.
 
-Help for ndi.session.mock/id is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/id is inherited from superclass ndi.session
 ```
 
 ---
@@ -497,10 +489,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/DELETE
 
-Help for ndi.session.mock/isvalid is inherited from superclass HANDLE
+Help for ndi.session.mock/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/isvalid
+    Documentation for ndi.session.mock/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -529,10 +521,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/EQ, NDI.SESSION.MOCK/GE, NDI.SESSION.MOCK/GT, NDI.SESSION.MOCK/LT, NDI.SESSION.MOCK/NE
 
-Help for ndi.session.mock/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.mock/le
+Help for ndi.session.mock/le is inherited from superclass handle
 ```
 
 ---
@@ -575,10 +564,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.SESSION.MOCK, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session.mock/listener is inherited from superclass HANDLE
+Help for ndi.session.mock/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/listener
+    Documentation for ndi.session.mock/listener
+       doc handle/listener
 ```
 
 ---
@@ -599,10 +588,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/EQ, NDI.SESSION.MOCK/GE, NDI.SESSION.MOCK/GT, NDI.SESSION.MOCK/LE, NDI.SESSION.MOCK/NE
 
-Help for ndi.session.mock/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.mock/lt
+Help for ndi.session.mock/lt is inherited from superclass handle
 ```
 
 ---
@@ -617,6 +603,9 @@ S = ndi.session.mock();
   b) a fake subject ('anteater27@nosuchlab.org'),
   c) a device 'fakedevice', and
   d) a single epoch.
+
+    Documentation for ndi.session.mock/mock
+       doc ndi.session.mock
 ```
 
 ---
@@ -630,7 +619,7 @@ P = NDIPATHNAME(NDI_SESSION_DIR_OBJ)
  
   It is the ndi.session.dir object's path plus [filesep '.ndi' ]
 
-Help for ndi.session.mock/ndipathname is inherited from superclass NDI.SESSION.DIR
+Help for ndi.session.mock/ndipathname is inherited from superclass ndi.session.dir
 ```
 
 ---
@@ -654,10 +643,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/EQ, NDI.SESSION.MOCK/GE, NDI.SESSION.MOCK/GT, NDI.SESSION.MOCK/LE, NDI.SESSION.MOCK/LT
 
-Help for ndi.session.mock/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.mock/ne
+Help for ndi.session.mock/ne is inherited from superclass handle
 ```
 
 ---
@@ -677,7 +663,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VA
  
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
 
-Help for ndi.session.mock/newdocument is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/newdocument is inherited from superclass ndi.session
 ```
 
 ---
@@ -697,10 +683,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.SESSION.MOCK, NDI.SESSION.MOCK/ADDLISTENER, NDI.SESSION.MOCK/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.session.mock/notify is inherited from superclass HANDLE
+Help for ndi.session.mock/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.mock/notify
+    Documentation for ndi.session.mock/notify
+       doc handle/notify
 ```
 
 ---
@@ -717,7 +703,7 @@ SQ = SEARCHQUERY(NDI_SESSION_OBJ)
   
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
 
-Help for ndi.session.mock/searchquery is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/searchquery is inherited from superclass ndi.session
 ```
 
 ---
@@ -730,7 +716,7 @@ NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
   Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
 
-Help for ndi.session.mock/syncgraph_addrule is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/syncgraph_addrule is inherited from superclass ndi.session
 ```
 
 ---
@@ -743,7 +729,7 @@ NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)
   Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
 
-Help for ndi.session.mock/syncgraph_rmrule is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/syncgraph_rmrule is inherited from superclass ndi.session
 ```
 
 ---
@@ -757,7 +743,7 @@ REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)
   REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
   and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
 
-Help for ndi.session.mock/unique_reference_string is inherited from superclass NDI.SESSION
+Help for ndi.session.mock/unique_reference_string is inherited from superclass ndi.session
 ```
 
 ---

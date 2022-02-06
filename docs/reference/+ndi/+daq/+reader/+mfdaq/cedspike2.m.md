@@ -53,6 +53,9 @@ D = NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
  
    Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
    filenavigator THEFILENAVIGATOR.
+
+    Documentation for ndi.daq.reader.mfdaq.cedspike2/cedspike2
+       doc ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -92,7 +95,7 @@ EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
  
   See also: ndi.time.clocktype
 
-Help for ndi.daq.reader.mfdaq.cedspike2/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.daq.reader.mfdaq.cedspike2/epochclock is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -104,7 +107,7 @@ B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
-Help for ndi.daq.reader.mfdaq.cedspike2/eq is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.cedspike2/eq is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -132,7 +135,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.reader.mfdaq.cedspike2/id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq.cedspike2/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -152,7 +155,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.reader.mfdaq.cedspike2.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq.cedspike2.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -165,7 +168,7 @@ DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq.cedspike2/newdocument is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.cedspike2/newdocument is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -223,7 +226,7 @@ DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
  
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
-Help for ndi.daq.reader.mfdaq.cedspike2/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.daq.reader.mfdaq.cedspike2/readevents_epochsamples_native is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -245,7 +248,7 @@ SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq.cedspike2/searchquery is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.cedspike2/searchquery is inherited from superclass ndi.daq.reader
 ```
 
 ---

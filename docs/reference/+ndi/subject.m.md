@@ -71,7 +71,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.subject/id is inherited from superclass NDI.IDO
+Help for ndi.subject/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -103,7 +103,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.subject.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.subject.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -135,6 +135,9 @@ NDI_SUBJECT_OBJ = ndi.subject(LOCAL_IDENTIFIER, DESCRIPTION)
  
   Creates an ndi.subject object, either from a local identifier name or 
   an ndi.session object and an ndi.document that describes the ndi.subject object.
+
+    Documentation for ndi.subject/subject
+       doc ndi.subject
 ```
 
 ---

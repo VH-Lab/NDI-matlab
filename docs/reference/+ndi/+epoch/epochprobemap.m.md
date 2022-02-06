@@ -51,6 +51,9 @@ MYNDI_EPOCHPROBEMAP = ndi.epoch.epochprobemap()
   Here, FILENAME is assumed to be a tab-delimitted text file with a header row
   that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
   one line per ndi.epoch.epochprobemap_daqsystem entry.
+
+    Documentation for ndi.epoch.epochprobemap/epochprobemap
+       doc ndi.epoch.epochprobemap
 ```
 
 ---

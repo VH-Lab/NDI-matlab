@@ -105,7 +105,7 @@
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.element/EPOCHNODES
 
-Help for ndi.element/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -145,7 +145,7 @@ ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.element/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -159,7 +159,7 @@ Help for ndi.element/cached_epochgraph is inherited from superclass NDI.EPOCH.EP
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.element/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -188,6 +188,9 @@ NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, 
  
   If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
   element.
+
+    Documentation for ndi.element/element
+       doc ndi.element
 ```
 
 ---
@@ -213,7 +216,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.element/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -243,7 +246,7 @@ EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.element/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -261,7 +264,7 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
 
-Help for ndi.element/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epochid is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -296,7 +299,7 @@ Help for ndi.element/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.element/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -338,7 +341,7 @@ NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.element/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -352,7 +355,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.element/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -438,7 +441,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.element/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -458,7 +461,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.element.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.element.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -488,7 +491,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.element/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -503,7 +506,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.element/EPOCHTABLE
 
-Help for ndi.element/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -550,7 +553,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.element/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

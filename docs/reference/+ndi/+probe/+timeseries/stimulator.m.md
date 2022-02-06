@@ -85,7 +85,7 @@
     T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
                       the probe, in units of the epock clock
 
-Help for ndi.probe.timeseries.stimulator/addepoch is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/addepoch is inherited from superclass ndi.element
 ```
 
 ---
@@ -116,7 +116,7 @@ Help for ndi.probe.timeseries.stimulator/addepoch is inherited from superclass N
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.probe.timeseries.stimulator/EPOCHNODES
 
-Help for ndi.probe.timeseries.stimulator/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -140,7 +140,7 @@ ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-Help for ndi.probe.timeseries.stimulator/buildepochtable is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/buildepochtable is inherited from superclass ndi.probe
 ```
 
 ---
@@ -158,7 +158,7 @@ Help for ndi.probe.timeseries.stimulator/buildepochtable is inherited from super
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.probe.timeseries.stimulator/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -172,7 +172,7 @@ Help for ndi.probe.timeseries.stimulator/cached_epochgraph is inherited from sup
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.probe.timeseries.stimulator/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -185,7 +185,7 @@ UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
 
-Help for ndi.probe.timeseries.stimulator/doc_unique_id is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/doc_unique_id is inherited from superclass ndi.element
 ```
 
 ---
@@ -199,7 +199,7 @@ ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is the string 'element: ' followed by its name
 
-Help for ndi.probe.timeseries.stimulator/elementstring is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/elementstring is inherited from superclass ndi.element
 ```
 
 ---
@@ -213,7 +213,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.probe.timeseries.stimulator/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -227,7 +227,7 @@ EC = EPOCHCLOCK(NDI_PROBE_OBJ, EPOCH_NUMBER)
  
   The ndi.probe class always returns the clock type(s) of the device it is based on
 
-Help for ndi.probe.timeseries.stimulator/epochclock is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/epochclock is inherited from superclass ndi.probe
 ```
 
 ---
@@ -245,7 +245,7 @@ Help for ndi.probe.timeseries.stimulator/epochclock is inherited from superclass
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.probe.timeseries.stimulator/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -263,7 +263,7 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
 
-Help for ndi.probe.timeseries.stimulator/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epochid is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -298,7 +298,7 @@ Help for ndi.probe.timeseries.stimulator/epochid is inherited from superclass ND
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.probe.timeseries.stimulator/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -311,7 +311,7 @@ B = EPOCHPROBEMAPMATCH(NDI_PROBE_OBJ, EPOCHPROBEMAP)
   Returns 1 if the ndi.epoch.epochprobemap object EPOCHPROBEMAP is a match for
   the NDI_PROBE_OBJ probe and 0 otherwise.
 
-Help for ndi.probe.timeseries.stimulator/epochprobemapmatch is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/epochprobemapmatch is inherited from superclass ndi.probe
 ```
 
 ---
@@ -326,7 +326,7 @@ NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
   For ndi.probe objects, this is the string 'probe: ' followed by
   PROBESTRING(NDI_PROBE_OBJ).
 
-Help for ndi.probe.timeseries.stimulator/epochsetname is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/epochsetname is inherited from superclass ndi.probe
 ```
 
 ---
@@ -356,7 +356,7 @@ Help for ndi.probe.timeseries.stimulator/epochsetname is inherited from supercla
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.probe.timeseries.stimulator/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -370,7 +370,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.probe.timeseries.stimulator/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -380,7 +380,7 @@ Help for ndi.probe.timeseries.stimulator/epochtableentry is inherited from super
 ```
 Returns 1 if the objects share an object class, session, and probe string.
 
-Help for ndi.probe.timeseries.stimulator/eq is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/eq is inherited from superclass ndi.probe
 ```
 
 ---
@@ -397,7 +397,7 @@ Help for ndi.probe.timeseries.stimulator/eq is inherited from superclass NDI.PRO
  
   See also: ndi.file.navigator
 
-Help for ndi.probe.timeseries.stimulator/getcache is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/getcache is inherited from superclass ndi.element
 ```
 
 ---
@@ -415,7 +415,7 @@ Help for ndi.probe.timeseries.stimulator/getcache is inherited from superclass N
     CHANNELTYPE is a cell array of the type of each channel
     CHANNELLIST is the channel number of each channel.
 
-Help for ndi.probe.timeseries.stimulator/getchanneldevinfo is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/getchanneldevinfo is inherited from superclass ndi.probe
 ```
 
 ---
@@ -428,7 +428,7 @@ UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
 
-Help for ndi.probe.timeseries.stimulator/id is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/id is inherited from superclass ndi.element
 ```
 
 ---
@@ -443,7 +443,7 @@ B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
  
   For ndi.epoch.epochset and ndi.probe.* this returns 0 so that the underlying ndi.daq.system epochs are added.
 
-Help for ndi.probe.timeseries.stimulator/issyncgraphroot is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/issyncgraphroot is inherited from superclass ndi.probe
 ```
 
 ---
@@ -456,7 +456,7 @@ ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
 
-Help for ndi.probe.timeseries.stimulator/load_all_element_docs is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/load_all_element_docs is inherited from superclass ndi.element
 ```
 
 ---
@@ -470,7 +470,7 @@ ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Returns empty if there is no such document.
 
-Help for ndi.probe.timeseries.stimulator/load_element_doc is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/load_element_doc is inherited from superclass ndi.element
 ```
 
 ---
@@ -483,7 +483,7 @@ Help for ndi.probe.timeseries.stimulator/load_element_doc is inherited from supe
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
 
-Help for ndi.probe.timeseries.stimulator/loadaddedepochs is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/loadaddedepochs is inherited from superclass ndi.element
 ```
 
 ---
@@ -496,7 +496,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.probe.timeseries.stimulator/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -516,7 +516,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.probe.timeseries.stimulator.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.probe.timeseries.stimulator.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -524,7 +524,7 @@ Help for ndi.probe.timeseries.stimulator.ndi_unique_id is inherited from supercl
 **newdocument** - *need docs here*
 
 ```
-Help for ndi.probe.timeseries.stimulator/newdocument is inherited from superclass NDI.PROBE.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/newdocument is inherited from superclass ndi.probe.timeseries
 ```
 
 ---
@@ -538,7 +538,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.probe.timeseries.stimulator/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -552,7 +552,7 @@ PROBESTR = PROBESTRING(NDI_PROBE_OBJ)
  
   This is simply PROBESTR = [NDI_PROBE_OBJ.name ' _ ' in2str(NDI_PROBE_OBJ.reference)]
 
-Help for ndi.probe.timeseries.stimulator/probestring is inherited from superclass NDI.PROBE
+Help for ndi.probe.timeseries.stimulator/probestring is inherited from superclass ndi.probe
 ```
 
 ---
@@ -572,7 +572,7 @@ Help for ndi.probe.timeseries.stimulator/probestring is inherited from superclas
    DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
    ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 
-Help for ndi.probe.timeseries.stimulator/readtimeseries is inherited from superclass NDI.PROBE.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/readtimeseries is inherited from superclass ndi.probe.timeseries
 ```
 
 ---
@@ -626,7 +626,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.probe.timeseries.stimulator/EPOCHTABLE
 
-Help for ndi.probe.timeseries.stimulator/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -641,7 +641,7 @@ SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
  
   If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.
 
-Help for ndi.probe.timeseries.stimulator/samplerate is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/samplerate is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -658,7 +658,7 @@ SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   
   TODO: convert times to dev_local_clock
 
-Help for ndi.probe.timeseries.stimulator/samples2times is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/samples2times is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -666,7 +666,7 @@ Help for ndi.probe.timeseries.stimulator/samples2times is inherited from supercl
 **searchquery** - *need docs here*
 
 ```
-Help for ndi.probe.timeseries.stimulator/searchquery is inherited from superclass NDI.PROBE.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/searchquery is inherited from superclass ndi.probe.timeseries
 ```
 
 ---
@@ -680,6 +680,9 @@ OBJ = ndi.probe.timeseries.stimulator(SESSION, NAME, REFERENCE, TYPE)
   with name NAME (a string that must start with a letter and contain no white space),
   reference number equal to REFERENCE (a non-negative integer), the TYPE of the
   probe (a string that must start with a letter and contain no white space).
+
+    Documentation for ndi.probe.timeseries.stimulator/stimulator
+       doc ndi.probe.timeseries.stimulator
 ```
 
 ---
@@ -700,7 +703,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   TODO: this must be a bug, it's just self-referential
 
-Help for ndi.probe.timeseries.stimulator/t0_t1 is inherited from superclass NDI.ELEMENT
+Help for ndi.probe.timeseries.stimulator/t0_t1 is inherited from superclass ndi.element
 ```
 
 ---
@@ -715,7 +718,7 @@ SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   The first sample in the epoch is 1.
   The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
 
-Help for ndi.probe.timeseries.stimulator/times2samples is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.probe.timeseries.stimulator/times2samples is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -732,7 +735,7 @@ Help for ndi.probe.timeseries.stimulator/times2samples is inherited from supercl
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.probe.timeseries.stimulator/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe.timeseries.stimulator/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

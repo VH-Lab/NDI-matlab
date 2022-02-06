@@ -53,6 +53,9 @@ D = NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2(NAME, THEFILENAVIGATOR, DAQR
  
    Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
    This is an abstract class that is overridden by specific devices.
+
+    Documentation for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/angelucci_visstim
+       doc ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim
 ```
 
 ---
@@ -70,7 +73,7 @@ EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
  
   See also: ndi.time.clocktype
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/epochclock is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -82,7 +85,7 @@ B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/eq is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/eq is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -96,7 +99,7 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/eq is inherited f
   ones have the extension '.nev' (neuro event file) and which have the extension '.ns#', where # is a number, or the source
   data files.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim.filenamefromepochfiles is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim.filenamefromepochfiles is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---
@@ -122,7 +125,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/id is inherited from superclass NDI.IDO
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -142,7 +145,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -155,7 +158,7 @@ DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/newdocument is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/newdocument is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -165,7 +168,7 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/newdocument is in
 ```
 [NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/read_blackrock_headers is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/read_blackrock_headers is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---
@@ -183,7 +186,7 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
  
    DATA is the channel data (each column contains data from an indvidual channel)
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/readchannels_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/readchannels_epochsamples is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---
@@ -227,7 +230,7 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/readchannels_epoc
  
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/readevents_epochsamples_native is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -243,7 +246,7 @@ SR = SAMPLERATE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
  
   SR is the list of sample rate from specified channels
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/samplerate is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/samplerate is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---
@@ -255,7 +258,7 @@ SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/searchquery is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/searchquery is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -272,7 +275,7 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
  
   See also: ndi.time.clocktype, EPOCHCLOCK
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/t0_t1 is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/t0_t1 is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---
@@ -287,7 +290,7 @@ B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHPROBEMAP, EPOCHF
  
   See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/verifyepochprobemap is inherited from superclass NDI.DAQ.READER.MFDAQ.BLACKROCK
+Help for ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim/verifyepochprobemap is inherited from superclass ndi.daq.reader.mfdaq.blackrock
 ```
 
 ---

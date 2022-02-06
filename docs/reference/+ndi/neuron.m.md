@@ -90,7 +90,7 @@
   Outputs:
      If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
 
-Help for ndi.neuron/addepoch is inherited from superclass NDI.ELEMENT.TIMESERIES
+Help for ndi.neuron/addepoch is inherited from superclass ndi.element.timeseries
 ```
 
 ---
@@ -121,7 +121,7 @@ Help for ndi.neuron/addepoch is inherited from superclass NDI.ELEMENT.TIMESERIES
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.neuron/EPOCHNODES
 
-Help for ndi.neuron/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -145,7 +145,7 @@ ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-Help for ndi.neuron/buildepochtable is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/buildepochtable is inherited from superclass ndi.element
 ```
 
 ---
@@ -163,7 +163,7 @@ Help for ndi.neuron/buildepochtable is inherited from superclass NDI.ELEMENT
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.neuron/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -177,7 +177,7 @@ Help for ndi.neuron/cached_epochgraph is inherited from superclass NDI.EPOCH.EPO
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.neuron/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -190,7 +190,7 @@ UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
 
-Help for ndi.neuron/doc_unique_id is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/doc_unique_id is inherited from superclass ndi.element
 ```
 
 ---
@@ -204,7 +204,7 @@ ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is the string 'element: ' followed by its name
 
-Help for ndi.neuron/elementstring is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/elementstring is inherited from superclass ndi.element
 ```
 
 ---
@@ -218,7 +218,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.neuron/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -232,7 +232,7 @@ EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
  
   The ndi.element class always returns the clock type(s) of the element it is based on
 
-Help for ndi.neuron/epochclock is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/epochclock is inherited from superclass ndi.element
 ```
 
 ---
@@ -250,7 +250,7 @@ Help for ndi.neuron/epochclock is inherited from superclass NDI.ELEMENT
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.neuron/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -268,7 +268,7 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
 
-Help for ndi.neuron/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epochid is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -303,7 +303,7 @@ Help for ndi.neuron/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.neuron/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -317,7 +317,7 @@ NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is ndi.element/ELEMENTSTRING.
 
-Help for ndi.neuron/epochsetname is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/epochsetname is inherited from superclass ndi.element
 ```
 
 ---
@@ -347,7 +347,7 @@ Help for ndi.neuron/epochsetname is inherited from superclass NDI.ELEMENT
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.neuron/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -361,7 +361,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.neuron/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -378,7 +378,7 @@ Help for ndi.neuron/epochtableentry is inherited from superclass NDI.EPOCH.EPOCH
  
   See also: ndi.file.navigator
 
-Help for ndi.neuron/getcache is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/getcache is inherited from superclass ndi.element
 ```
 
 ---
@@ -391,7 +391,7 @@ UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
 
-Help for ndi.neuron/id is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/id is inherited from superclass ndi.element
 ```
 
 ---
@@ -406,7 +406,7 @@ B = ISSYNCGRAPHROOT(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this returns 0 so that underlying ndi.probe epochs are added.
 
-Help for ndi.neuron/issyncgraphroot is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/issyncgraphroot is inherited from superclass ndi.element
 ```
 
 ---
@@ -419,7 +419,7 @@ ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
 
-Help for ndi.neuron/load_all_element_docs is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/load_all_element_docs is inherited from superclass ndi.element
 ```
 
 ---
@@ -433,7 +433,7 @@ ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Returns empty if there is no such document.
 
-Help for ndi.neuron/load_element_doc is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/load_element_doc is inherited from superclass ndi.element
 ```
 
 ---
@@ -446,7 +446,7 @@ Help for ndi.neuron/load_element_doc is inherited from superclass NDI.ELEMENT
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
 
-Help for ndi.neuron/loadaddedepochs is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/loadaddedepochs is inherited from superclass ndi.element
 ```
 
 ---
@@ -459,7 +459,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.neuron/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -479,7 +479,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.neuron.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.neuron.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -493,6 +493,9 @@ NDI_NEURON_OBJ = ndi.neuron(...)
   ndi.element.timeseries. 
   
   See ndi.element.timeseries/timeseries
+
+    Documentation for ndi.neuron/neuron
+       doc ndi.neuron
 ```
 
 ---
@@ -500,7 +503,7 @@ NDI_NEURON_OBJ = ndi.neuron(...)
 **newdocument** - *need docs here*
 
 ```
-Help for ndi.neuron/newdocument is inherited from superclass NDI.ELEMENT.TIMESERIES
+Help for ndi.neuron/newdocument is inherited from superclass ndi.element.timeseries
 ```
 
 ---
@@ -514,7 +517,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.neuron/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -535,7 +538,7 @@ Help for ndi.neuron/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
    DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
    ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
 
-Help for ndi.neuron/readtimeseries is inherited from superclass NDI.ELEMENT.TIMESERIES
+Help for ndi.neuron/readtimeseries is inherited from superclass ndi.element.timeseries
 ```
 
 ---
@@ -550,7 +553,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.neuron/EPOCHTABLE
 
-Help for ndi.neuron/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -565,7 +568,7 @@ SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
  
   If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.
 
-Help for ndi.neuron/samplerate is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.neuron/samplerate is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -582,7 +585,7 @@ SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   
   TODO: convert times to dev_local_clock
 
-Help for ndi.neuron/samples2times is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.neuron/samples2times is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -590,7 +593,7 @@ Help for ndi.neuron/samples2times is inherited from superclass NDI.TIME.TIMESERI
 **searchquery** - *need docs here*
 
 ```
-Help for ndi.neuron/searchquery is inherited from superclass NDI.ELEMENT.TIMESERIES
+Help for ndi.neuron/searchquery is inherited from superclass ndi.element.timeseries
 ```
 
 ---
@@ -611,7 +614,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   TODO: this must be a bug, it's just self-referential
 
-Help for ndi.neuron/t0_t1 is inherited from superclass NDI.ELEMENT
+Help for ndi.neuron/t0_t1 is inherited from superclass ndi.element
 ```
 
 ---
@@ -626,7 +629,7 @@ SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   The first sample in the epoch is 1.
   The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
 
-Help for ndi.neuron/times2samples is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.neuron/times2samples is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -643,7 +646,7 @@ Help for ndi.neuron/times2samples is inherited from superclass NDI.TIME.TIMESERI
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.neuron/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.neuron/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

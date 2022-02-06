@@ -30,6 +30,7 @@
 | *find_tuningcurve_document* | find a tuning curve document of a particular element, epochid, etc... |
 | *label_control_stimuli* | label control stimuli for all stimulus presentation documents for a given stimulator |
 | *make_1d_tuning* | create 1d tuning documents out of stimulus responses that covary in 2 parameters |
+| *modulated_or_mean* | is the response stronger in modulation or mean? |
 | *newdocument* | return a new database document of type ndi.document based on an app |
 | *searchquery* | return a search query for an ndi.document related to this app |
 | *stimulus_responses* | write stimulus records for all stimulus epochs of an ndi.element stimulus object |
@@ -147,6 +148,46 @@ TUNING_DOCS = MAKE_1D_TUNING(NDI_APP_TUNING_RESPONSE_OBJ, STIM_RESPONSE_DOC, PAR
 
 ---
 
+**modulated_or_mean** - *is the response stronger in modulation or mean?*
+
+```
+[B,ratio,mean_response,modulated_response] = MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
+  
+  Given a cell array of STIMULUS_RESPONSE_SCALAR documents that
+  correspond to different response types to the same stimulus, this
+  function examines whether the best modulated response
+  is greater than the best mean response.
+ 
+  B is 1 if the modulated response is greater, and 0 if the mean response is greater.
+  If there is no basis for the comparison, then -1 is returned.
+ 
+  MEAN_RESPONSE is the mean response for the stimulus that has the largest
+  response (this largest response could be the mean or the modulated response).
+  MODULATED_RESPONSE is the modulated response for the stimulus that has the largest
+  response (this largest response could be the mean or the modulated response).
+  RATIO is the ratio of these two values (MODULATED_RESPONSE / MEAN_RESPONSE).
+  
+  This function examines the empirical responses and does not do any
+  fitting.
+ 
+  This function also takes name/value pairs that modify the default behavior.
+ 
+  |--------------------------------------------------------------------------------| 
+  | Parameter (default)          | Description                                     |
+  |--------------------------------------------------------------------------------|
+  |  modulated_response_names    | Possible matches for the modulated responses    |
+  |  ({'F1','modulated'})        |   in the 'response_type' field of the           |
+  |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+  |  mean_response_names         | Possible matches for the mean responses         |
+  |  ({'F0','mean'})             |   in the 'response_type' field of the           |
+  |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+  |------------------------------|-------------------------------------------------|
+ 
+  Step 0: initialize parameters
+```
+
+---
+
 **newdocument** - *return a new database document of type ndi.document based on an app*
 
 ```
@@ -155,7 +196,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.app.stimulus.tuning_response/newdocument is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.tuning_response/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -169,7 +210,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.app.stimulus.tuning_response/searchquery is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.tuning_response/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -227,6 +268,9 @@ NDI_APP_TUNING_RESPONSE_OBJ = ndi.app.stimulus.tuning_response(SESSION)
  
   Creates a new ndi.app.stimulus.tuning_response object that can operate on
   NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
+
+    Documentation for ndi.app.stimulus.tuning_response/tuning_response
+       doc ndi.app.stimulus.tuning_response
 ```
 
 ---
@@ -247,7 +291,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -264,7 +308,7 @@ Help for ndi.app.stimulus.tuning_response/varappname is inherited from superclas
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.app.stimulus.tuning_response/version_url is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.tuning_response/version_url is inherited from superclass ndi.app
 ```
 
 ---

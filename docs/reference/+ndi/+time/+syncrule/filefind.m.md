@@ -85,7 +85,7 @@ EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   See also: ndi.time.syncrule.filefind/INELIGIBLECLOCKS
 
-Help for ndi.time.syncrule.filefind/eligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/eligibleclocks is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -117,7 +117,7 @@ B = EQ(NDI_SYNCRULE_OBJ_A, NDI_SYNCRULE_OBJ_B)
   Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
   Otherwise, 0 is returned.
 
-Help for ndi.time.syncrule.filefind/eq is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/eq is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -143,6 +143,9 @@ NDI_SYNCRULE_FILEFIND_OBJ = ndi.time.syncrule.filefind()
                                |  This file should be in the second daq system's epoch files.
   daqsystem1 ('mydaq1')        | The name of the first daq system
   daqsystem2 ('mydaq2')        | The name of the second daq system
+
+    Documentation for ndi.time.syncrule.filefind/filefind
+       doc ndi.time.syncrule.filefind
 ```
 
 ---
@@ -154,7 +157,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.time.syncrule.filefind/id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule.filefind/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -175,7 +178,7 @@ IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   See also: ndi.time.syncrule.filefind/ELIGIBLECLOCKS
 
-Help for ndi.time.syncrule.filefind/ineligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/ineligibleclocks is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -236,7 +239,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.time.syncrule.filefind.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule.filefind.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -249,7 +252,7 @@ DOC = NEWDOCUMENT(NDI_SYNCRULE_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.time.syncrule object.
 
-Help for ndi.time.syncrule.filefind/newdocument is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/newdocument is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -261,7 +264,7 @@ SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
  
   Creates a search query for the ndi.time.syncgraph object.
 
-Help for ndi.time.syncrule.filefind/searchquery is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/searchquery is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -276,7 +279,7 @@ NDI_SYNCRULE_OBJ = SETPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
  
   See also: ndi.time.syncrule.filefind/ISVALIDPARAMETERS
 
-Help for ndi.time.syncrule.filefind/setparameters is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.filefind/setparameters is inherited from superclass ndi.time.syncrule
 ```
 
 ---

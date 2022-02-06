@@ -175,7 +175,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.time.syncgraph/id is inherited from superclass NDI.IDO
+Help for ndi.time.syncgraph/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -208,7 +208,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.time.syncgraph.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.time.syncgraph.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -279,6 +279,9 @@ NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION)
   This function can be called in another form:
   NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
   where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.
+
+    Documentation for ndi.time.syncgraph/syncgraph
+       doc ndi.time.syncgraph
 ```
 
 ---

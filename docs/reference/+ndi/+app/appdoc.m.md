@@ -99,6 +99,9 @@ NDI_APPDOC_OBJ = ndi.app.appdoc(DOC_TYPES, DOC_DOCUMENT_TYPES, DOC_SESSION)
  
   Example:
     ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
+
+    Documentation for ndi.app.appdoc/appdoc
+       doc ndi.app.appdoc
 ```
 
 ---

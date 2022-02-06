@@ -63,7 +63,7 @@ FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
   this function identifies the first file with an extension '.smr' (case insensitive)
   and returns the result in FILENAME (full-path file name).
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2filelist2smrfile is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2filelist2smrfile is inherited from superclass ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -75,7 +75,7 @@ CHANNELTYPE = CEDSPIKE2HEADERTYPE2MFDAQCHANNELTYPE(CEDSPIKE2CHANNELTYPE)
   
   Given an Intan header file type, returns the standard ndi.daq.system.mfdaq channel type
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2headertype2mfdaqchanneltype is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.cedspike2headertype2mfdaqchanneltype is inherited from superclass ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -102,7 +102,7 @@ B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/eq is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/eq is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -132,7 +132,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/id is inherited from superclass NDI.IDO
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -152,7 +152,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -165,7 +165,7 @@ DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/newdocument is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/newdocument is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -183,7 +183,7 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
  
    DATA is the channel data (each column contains data from an indvidual channel)
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsamples is inherited from superclass ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -227,7 +227,7 @@ Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readchannels_epochsa
  
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/readevents_epochsamples_native is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -254,7 +254,7 @@ SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/searchquery is inherited from superclass NDI.DAQ.READER
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/searchquery is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -270,7 +270,7 @@ T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
  
   See also: ndi.time.clocktype, EPOCHCLOCK
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/t0_t1 is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/t0_t1 is inherited from superclass ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -288,7 +288,7 @@ B = VERIFYEPOCHPROBEMAP(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHPROBEMAP, EPOCHF
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
-Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/verifyepochprobemap is inherited from superclass NDI.DAQ.READER.MFDAQ.CEDSPIKE2
+Help for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/verifyepochprobemap is inherited from superclass ndi.daq.reader.mfdaq.cedspike2
 ```
 
 ---
@@ -300,6 +300,9 @@ D = ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2(NAME, THEFILENAVIGATOR, D
  
    Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
    This is an abstract class that is overridden by specific devices.
+
+    Documentation for ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2/vhlabvisspike2
+       doc ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2
 ```
 
 ---

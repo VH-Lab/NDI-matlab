@@ -84,7 +84,7 @@ turn an instance of java.util.hashmap into string useful
 **replace_ndipath** - *ndi.validate.replace_ndipath is a function.*
 
 ```
-new_path = replace_ndipath(path)
+new_path = ndi.validate.replace_ndipath(path)
 ```
 
 ---
@@ -105,6 +105,9 @@ match with the expected type according to its schema. Most of the logic
   https://github.com/everit-org/json-schema, a JSON Schema Validator 
   for Java, based on org.json API. It implements the DRAFT 7 version
   of the JSON Schema: https://json-schema.org/
+
+    Documentation for ndi.validate/validate
+       doc ndi.validate
 ```
 
 ---

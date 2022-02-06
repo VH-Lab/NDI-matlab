@@ -41,6 +41,9 @@ NDI_APP_OBJ = ndi.app (SESSION)
  
   Creates a new ndi.app object that operates on the ndi.session
   object called SESSION.
+
+    Documentation for ndi.app/app
+       doc ndi.app
 ```
 
 ---

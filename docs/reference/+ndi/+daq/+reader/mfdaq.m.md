@@ -80,7 +80,7 @@ B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
-Help for ndi.daq.reader.mfdaq/eq is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq/eq is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -117,7 +117,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.reader.mfdaq/id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -129,6 +129,9 @@ D = ndi.daq.reader.mfdaq()
  
    Creates a new ndi.daq.reader.mfdaq object.
    This is an abstract class that is overridden by specific devices.
+
+    Documentation for ndi.daq.reader.mfdaq/mfdaq
+       doc ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -148,7 +151,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.reader.mfdaq.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -161,7 +164,7 @@ DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq/newdocument is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq/newdocument is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -257,7 +260,7 @@ SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq/searchquery is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq/searchquery is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -289,7 +292,7 @@ B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
  
   See also: ndi.daq.reader.mfdaq, ndi.epoch.epochprobemap_daqsystem
 
-Help for ndi.daq.reader.mfdaq/verifyepochprobemap is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq/verifyepochprobemap is inherited from superclass ndi.daq.reader
 ```
 
 ---

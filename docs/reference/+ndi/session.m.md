@@ -93,10 +93,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.SESSION, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session/addlistener is inherited from superclass HANDLE
+Help for ndi.session/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/addlistener
+    Documentation for ndi.session/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -251,17 +251,15 @@ NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.SESSION, NDI.SESSION/ISVALID, CLEAR
 
-Help for ndi.session/delete is inherited from superclass HANDLE
+Help for ndi.session/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/delete
+    Documentation for ndi.session/delete
+       doc handle/delete
 ```
 
 ---
@@ -301,10 +299,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.SESSION
 
-Help for ndi.session/findobj is inherited from superclass HANDLE
+Help for ndi.session/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/findobj
+    Documentation for ndi.session/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -323,10 +321,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.SESSION, NDI.SESSION/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.session/findprop is inherited from superclass HANDLE
+Help for ndi.session/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/findprop
+    Documentation for ndi.session/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -347,10 +345,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION, NDI.SESSION/EQ, NDI.SESSION/GT, NDI.SESSION/LE, NDI.SESSION/LT, NDI.SESSION/NE
 
-Help for ndi.session/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session/ge
+Help for ndi.session/ge is inherited from superclass handle
 ```
 
 ---
@@ -435,10 +430,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION, NDI.SESSION/EQ, NDI.SESSION/GE, NDI.SESSION/LE, NDI.SESSION/LT, NDI.SESSION/NE
 
-Help for ndi.session/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session/gt
+Help for ndi.session/gt is inherited from superclass handle
 ```
 
 ---
@@ -466,10 +458,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.SESSION, NDI.SESSION/DELETE
 
-Help for ndi.session/isvalid is inherited from superclass HANDLE
+Help for ndi.session/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/isvalid
+    Documentation for ndi.session/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -498,10 +490,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.SESSION, NDI.SESSION/EQ, NDI.SESSION/GE, NDI.SESSION/GT, NDI.SESSION/LT, NDI.SESSION/NE
 
-Help for ndi.session/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session/le
+Help for ndi.session/le is inherited from superclass handle
 ```
 
 ---
@@ -544,10 +533,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.SESSION, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session/listener is inherited from superclass HANDLE
+Help for ndi.session/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/listener
+    Documentation for ndi.session/listener
+       doc handle/listener
 ```
 
 ---
@@ -568,10 +557,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION, NDI.SESSION/EQ, NDI.SESSION/GE, NDI.SESSION/GT, NDI.SESSION/LE, NDI.SESSION/NE
 
-Help for ndi.session/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session/lt
+Help for ndi.session/lt is inherited from superclass handle
 ```
 
 ---
@@ -595,10 +581,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.SESSION, NDI.SESSION/EQ, NDI.SESSION/GE, NDI.SESSION/GT, NDI.SESSION/LE, NDI.SESSION/LT
 
-Help for ndi.session/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session/ne
+Help for ndi.session/ne is inherited from superclass handle
 ```
 
 ---
@@ -636,10 +619,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.SESSION, NDI.SESSION/ADDLISTENER, NDI.SESSION/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.session/notify is inherited from superclass HANDLE
+Help for ndi.session/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session/notify
+    Documentation for ndi.session/notify
+       doc handle/notify
 ```
 
 ---
@@ -672,6 +655,9 @@ NDI_SESSION_OBJ=ndi.session(REFERENCE)
  
   See also: ndi.session/DAQSYSTEM_ADD, ndi.session/DAQSYSTEM_RM, 
     ndi.session/GETPATH, ndi.session/GETREFERENCE
+
+    Documentation for ndi.session/session
+       doc ndi.session
 ```
 
 ---

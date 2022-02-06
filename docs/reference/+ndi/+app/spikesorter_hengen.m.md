@@ -91,7 +91,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.app.spikesorter_hengen/newdocument is inherited from superclass NDI.APP
+Help for ndi.app.spikesorter_hengen/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -113,7 +113,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.app.spikesorter_hengen/searchquery is inherited from superclass NDI.APP
+Help for ndi.app.spikesorter_hengen/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -125,6 +125,9 @@ NDI_APP_spikesorter_hengen_OBJ = ndi.app.spikesorter_hengen(EXPERIMENT)
  
   Creates a new NDI.APP.spikesorter_hengen object that can operate on
   ndi.session objects. The app is named 'ndi_app_spikesorter_hengen'.
+
+    Documentation for ndi.app.spikesorter_hengen/spikesorter_hengen
+       doc ndi.app.spikesorter_hengen
 ```
 
 ---
@@ -137,7 +140,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.app.spikesorter_hengen/varappname is inherited from superclass NDI.APP
+Help for ndi.app.spikesorter_hengen/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -154,7 +157,7 @@ Help for ndi.app.spikesorter_hengen/varappname is inherited from superclass NDI.
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.app.spikesorter_hengen/version_url is inherited from superclass NDI.APP
+Help for ndi.app.spikesorter_hengen/version_url is inherited from superclass ndi.app
 ```
 
 ---

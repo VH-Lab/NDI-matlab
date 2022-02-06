@@ -91,10 +91,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.CACHE, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.cache/addlistener is inherited from superclass HANDLE
+Help for ndi.cache/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/addlistener
+    Documentation for ndi.cache/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -125,6 +125,9 @@ NDI_CACHE_OBJ = NDI.CACHE(...)
   Note that the cache is not 'secure', any function can query the data added.
  
   See also: vlt.data.namevaluepair
+
+    Documentation for ndi.cache/cache
+       doc ndi.cache
 ```
 
 ---
@@ -142,17 +145,15 @@ NDI_CACHE_OBJ = CLEAR(NDI_CACHE_OBJ)
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.CACHE, NDI.CACHE/ISVALID, CLEAR
 
-Help for ndi.cache/delete is inherited from superclass HANDLE
+Help for ndi.cache/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/delete
+    Documentation for ndi.cache/delete
+       doc handle/delete
 ```
 
 ---
@@ -175,10 +176,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.CACHE, NDI.CACHE/GE, NDI.CACHE/GT, NDI.CACHE/LE, NDI.CACHE/LT, NDI.CACHE/NE
 
-Help for ndi.cache/eq is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/eq
+Help for ndi.cache/eq is inherited from superclass handle
 ```
 
 ---
@@ -197,10 +195,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.CACHE
 
-Help for ndi.cache/findobj is inherited from superclass HANDLE
+Help for ndi.cache/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/findobj
+    Documentation for ndi.cache/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -219,10 +217,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.CACHE, NDI.CACHE/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.cache/findprop is inherited from superclass HANDLE
+Help for ndi.cache/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/findprop
+    Documentation for ndi.cache/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -256,10 +254,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.CACHE, NDI.CACHE/EQ, NDI.CACHE/GT, NDI.CACHE/LE, NDI.CACHE/LT, NDI.CACHE/NE
 
-Help for ndi.cache/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/ge
+Help for ndi.cache/ge is inherited from superclass handle
 ```
 
 ---
@@ -280,10 +275,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.CACHE, NDI.CACHE/EQ, NDI.CACHE/GE, NDI.CACHE/LE, NDI.CACHE/LT, NDI.CACHE/NE
 
-Help for ndi.cache/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/gt
+Help for ndi.cache/gt is inherited from superclass handle
 ```
 
 ---
@@ -301,10 +293,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.CACHE, NDI.CACHE/DELETE
 
-Help for ndi.cache/isvalid is inherited from superclass HANDLE
+Help for ndi.cache/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/isvalid
+    Documentation for ndi.cache/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -333,10 +325,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.CACHE, NDI.CACHE/EQ, NDI.CACHE/GE, NDI.CACHE/GT, NDI.CACHE/LT, NDI.CACHE/NE
 
-Help for ndi.cache/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/le
+Help for ndi.cache/le is inherited from superclass handle
 ```
 
 ---
@@ -379,10 +368,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.CACHE, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.cache/listener is inherited from superclass HANDLE
+Help for ndi.cache/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/listener
+    Documentation for ndi.cache/listener
+       doc handle/listener
 ```
 
 ---
@@ -423,10 +412,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.CACHE, NDI.CACHE/EQ, NDI.CACHE/GE, NDI.CACHE/GT, NDI.CACHE/LE, NDI.CACHE/NE
 
-Help for ndi.cache/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/lt
+Help for ndi.cache/lt is inherited from superclass handle
 ```
 
 ---
@@ -450,10 +436,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.CACHE, NDI.CACHE/EQ, NDI.CACHE/GE, NDI.CACHE/GT, NDI.CACHE/LE, NDI.CACHE/LT
 
-Help for ndi.cache/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.cache/ne
+Help for ndi.cache/ne is inherited from superclass handle
 ```
 
 ---
@@ -473,10 +456,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.CACHE, NDI.CACHE/ADDLISTENER, NDI.CACHE/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.cache/notify is inherited from superclass HANDLE
+Help for ndi.cache/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.cache/notify
+    Documentation for ndi.cache/notify
+       doc handle/notify
 ```
 
 ---

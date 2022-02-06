@@ -150,6 +150,9 @@ Creates an ndi.query object, which has a single property
   NDI_QUERY_OBJ = ndi.query(FIELD, OPERATION, PARAM1, PARAM2)
  
    creates a SEARCHSTRUCT with the fields of the appropriate names.
+
+    Documentation for ndi.query/query
+       doc ndi.query
 ```
 
 ---

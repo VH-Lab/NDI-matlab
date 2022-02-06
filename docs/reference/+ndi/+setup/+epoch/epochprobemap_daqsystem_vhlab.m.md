@@ -81,6 +81,9 @@ MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, D
   The NDI device name for this device must be 'vhintan' (VH Intan RHD device), 'vhlv' (VH Lab Labview custom
   acqusition code), 'vhspike2', or 'vhwillow'. The device name will be taken from the filename,
   following [VHDEVICENAME '_channelgrouping.txt']
+
+    Documentation for ndi.setup.epoch.epochprobemap_daqsystem_vhlab/epochprobemap_daqsystem_vhlab
+       doc ndi.setup.epoch.epochprobemap_daqsystem_vhlab
 ```
 
 ---

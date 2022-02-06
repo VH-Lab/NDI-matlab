@@ -50,7 +50,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.metadatareader/id is inherited from superclass NDI.IDO
+Help for ndi.daq.metadatareader/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -65,6 +65,9 @@ D = ndi.daq.metadatareader()
    Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
    is given, it indicates a regular expression to use to search EPOCHFILES
    for a tab-separated-value text file that describes stimulus parameters.
+
+    Documentation for ndi.daq.metadatareader/metadatareader
+       doc ndi.daq.metadatareader
 ```
 
 ---
@@ -84,7 +87,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.metadatareader.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.metadatareader.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---

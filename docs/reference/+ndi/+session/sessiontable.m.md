@@ -151,7 +151,8 @@ REMOVETABLEENTRY(NDI_SESSIONTABLE_OBJ, SESSION_ID)
 **sessiontable** - *a table for managing the file paths of NDI sessions*
 
 ```
-
+Documentation for ndi.session.sessiontable/sessiontable
+       doc ndi.session.sessiontable
 ```
 
 ---

@@ -221,6 +221,9 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
 NDI_EPOCHSET_OBJ = ndi.epoch.epochset()
  
   This class has no parameters so the constructor is called with no input arguments.
+
+    Documentation for ndi.epoch.epochset/epochset
+       doc ndi.epoch.epochset
 ```
 
 ---

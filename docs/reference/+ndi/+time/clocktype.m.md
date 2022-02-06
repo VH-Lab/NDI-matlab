@@ -51,6 +51,9 @@ OBJ = ndi.time.clocktype(TYPE)
   'dev_local_time'          | A device keeps its own local time only within epochs
   'no_time'                 | No timing information
   'inherited'               | The timing information is inherited from another device.
+
+    Documentation for ndi.time.clocktype/clocktype
+       doc ndi.time.clocktype
 ```
 
 ---

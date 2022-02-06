@@ -2,7 +2,7 @@
 
 ```
 ndi.gui.Data is a class.
-    obj = Data
+    obj = ndi.gui.Data
 
 
 ```
@@ -56,6 +56,9 @@ ndi.gui.Data is a class.
 
 ```
 obj = Data
+
+    Documentation for ndi.gui.Data/Data
+       doc ndi.gui.Data
 ```
 
 ---
@@ -101,10 +104,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.GUI.DATA, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Data/addlistener is inherited from superclass HANDLE
+Help for ndi.gui.Data/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/addlistener
+    Documentation for ndi.gui.Data/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -175,17 +178,15 @@ CLEAR removes all variables from the workspace.
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/ISVALID, CLEAR
 
-Help for ndi.gui.Data/delete is inherited from superclass HANDLE
+Help for ndi.gui.Data/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/delete
+    Documentation for ndi.gui.Data/delete
+       doc handle/delete
 ```
 
 ---
@@ -222,10 +223,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/GE, NDI.GUI.DATA/GT, NDI.GUI.DATA/LE, NDI.GUI.DATA/LT, NDI.GUI.DATA/NE
 
-Help for ndi.gui.Data/eq is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/eq
+Help for ndi.gui.Data/eq is inherited from superclass handle
 ```
 
 ---
@@ -283,10 +281,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.GUI.DATA
 
-Help for ndi.gui.Data/findobj is inherited from superclass HANDLE
+Help for ndi.gui.Data/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/findobj
+    Documentation for ndi.gui.Data/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -305,10 +303,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.gui.Data/findprop is inherited from superclass HANDLE
+Help for ndi.gui.Data/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/findprop
+    Documentation for ndi.gui.Data/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -329,10 +327,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/EQ, NDI.GUI.DATA/GT, NDI.GUI.DATA/LE, NDI.GUI.DATA/LT, NDI.GUI.DATA/NE
 
-Help for ndi.gui.Data/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/ge
+Help for ndi.gui.Data/ge is inherited from superclass handle
 ```
 
 ---
@@ -361,10 +356,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/EQ, NDI.GUI.DATA/GE, NDI.GUI.DATA/LE, NDI.GUI.DATA/LT, NDI.GUI.DATA/NE
 
-Help for ndi.gui.Data/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/gt
+Help for ndi.gui.Data/gt is inherited from superclass handle
 ```
 
 ---
@@ -382,10 +374,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/DELETE
 
-Help for ndi.gui.Data/isvalid is inherited from superclass HANDLE
+Help for ndi.gui.Data/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/isvalid
+    Documentation for ndi.gui.Data/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -414,10 +406,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/EQ, NDI.GUI.DATA/GE, NDI.GUI.DATA/GT, NDI.GUI.DATA/LT, NDI.GUI.DATA/NE
 
-Help for ndi.gui.Data/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/le
+Help for ndi.gui.Data/le is inherited from superclass handle
 ```
 
 ---
@@ -460,10 +449,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.GUI.DATA, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Data/listener is inherited from superclass HANDLE
+Help for ndi.gui.Data/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/listener
+    Documentation for ndi.gui.Data/listener
+       doc handle/listener
 ```
 
 ---
@@ -484,10 +473,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/EQ, NDI.GUI.DATA/GE, NDI.GUI.DATA/GT, NDI.GUI.DATA/LE, NDI.GUI.DATA/NE
 
-Help for ndi.gui.Data/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/lt
+Help for ndi.gui.Data/lt is inherited from superclass handle
 ```
 
 ---
@@ -511,10 +497,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/EQ, NDI.GUI.DATA/GE, NDI.GUI.DATA/GT, NDI.GUI.DATA/LE, NDI.GUI.DATA/LT
 
-Help for ndi.gui.Data/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Data/ne
+Help for ndi.gui.Data/ne is inherited from superclass handle
 ```
 
 ---
@@ -534,10 +517,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.GUI.DATA, NDI.GUI.DATA/ADDLISTENER, NDI.GUI.DATA/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.gui.Data/notify is inherited from superclass HANDLE
+Help for ndi.gui.Data/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Data/notify
+    Documentation for ndi.gui.Data/notify
+       doc handle/notify
 ```
 
 ---

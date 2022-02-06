@@ -84,7 +84,7 @@
   'ReplaceIfDifferent'      | Conditionally replace the document, but only if the 
                             |    the data structures that define the document are not equal.
 
-Help for ndi.calc.example.simple/add_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/add_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -126,7 +126,7 @@ DOCUMENT INFO:
     input_parameters          | field1 description
     depends_on                | field2 description
 
-Help for ndi.calc.example.simple/appdoc_description is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/appdoc_description is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -157,7 +157,7 @@ B = CLEAR_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
  
   B is 1 if the document is found, and 0 otherwise.
 
-Help for ndi.calc.example.simple/clear_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/clear_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -183,7 +183,7 @@ APPDOC_STRUCT = DEFAULTSTRUCT_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE)
   In the base class, the blank version of the ndi.document is read in and the
   default structure is built from the ndi.document's class property list.
 
-Help for ndi.calc.example.simple/defaultstruct_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/defaultstruct_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -208,7 +208,7 @@ DIAGNOSTIC_PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
   |                           |   state of the current axes?         |
   |---------------------------|--------------------------------------|
 
-Help for ndi.calc.example.simple/diagnostic_plot is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/diagnostic_plot is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -223,7 +223,7 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, SESSION, APPDOC_TYPE, APPDOC_STRUCT, [additiona
  
   In the base class, this uses the property info in the ndi.document to load the data structure.
 
-Help for ndi.calc.example.simple/doc2struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/doc2struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -264,7 +264,7 @@ DOC = FIND_APPDOC(NDI_APPDOC_OBJ, APPDOC_TYPE, [additional inputs])
   The documentation for subclasses should be in the overriden function
   APPDOC_DESCRIPTION.
 
-Help for ndi.calc.example.simple/find_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/find_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -282,7 +282,7 @@ B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATION_OBJ, NAME, VALUE)
   can be overriden if additional criteria beyond an ndi.query are needed to
   assess if a document is an appropriate input for the calculation.
 
-Help for ndi.calc.example.simple/is_valid_dependency_input is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/is_valid_dependency_input is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -297,7 +297,7 @@ B = ISEQUAL_APPDOC_STRUCT(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT1, APPDOC_ST
   true if APPDOC_STRUCT1 and APPDOC_STRUCT2 have the same field names and same values and same sizes. That is,
   B is vlt.data.eqlen(APPDOC_STRUCT1, APPDOC_STRUCT2).
 
-Help for ndi.calc.example.simple/isequal_appdoc_struct is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/isequal_appdoc_struct is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -312,7 +312,7 @@ Help for ndi.calc.example.simple/isequal_appdoc_struct is inherited from supercl
  
   In the base class, B is always 0 with ERRORMSG 'Base class always returns invalid.'
 
-Help for ndi.calc.example.simple/isvalid_appdoc_struct is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/isvalid_appdoc_struct is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -332,7 +332,7 @@ Help for ndi.calc.example.simple/isvalid_appdoc_struct is inherited from supercl
  
   The documentation for subclasses should be in the overridden function APPDOC_DESCRIPTION.
 
-Help for ndi.calc.example.simple/loaddata_appdoc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/loaddata_appdoc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -345,7 +345,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.calc.example.simple/newdocument is inherited from superclass NDI.APP
+Help for ndi.calc.example.simple/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -363,7 +363,7 @@ DOCS = RUN(NDI_CALCULATION_OBJ, DOCEXISTSACTION, PARAMETERS)
   Step 1: set up input parameters; they can either be completely specified by
   the caller, or defaults can be used
 
-Help for ndi.calc.example.simple/run is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/run is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -390,7 +390,7 @@ Help for ndi.calc.example.simple/run is inherited from superclass NDI.CALCULATIO
  
   in the abstract class, this returns empty
 
-Help for ndi.calc.example.simple/search_for_calculation_docs is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/search_for_calculation_docs is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -419,7 +419,7 @@ PARAMETERS = SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFI
   |                       |   in the PARAMETERS output.                  |
   |-----------------------|-----------------------------------------------
 
-Help for ndi.calc.example.simple/search_for_input_parameters is inherited from superclass NDI.CALCULATION
+Help for ndi.calc.example.simple/search_for_input_parameters is inherited from superclass ndi.calculation
 ```
 
 ---
@@ -433,7 +433,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.calc.example.simple/searchquery is inherited from superclass NDI.APP
+Help for ndi.calc.example.simple/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -444,6 +444,9 @@ Help for ndi.calc.example.simple/searchquery is inherited from superclass NDI.AP
 SIMPLE_OBJ = SIMPLE(SESSION)
  
   Creates a SIMPLE ndi.calculation object
+
+    Documentation for ndi.calc.example.simple/simple
+       doc ndi.calc.example.simple
 ```
 
 ---
@@ -459,7 +462,7 @@ DOC = STRUCT2DOC(NDI_APPDOC_OBJ, APPDOC_TYPE, APPDOC_STRUCT, [additional paramet
   In the base class, this always returns empty. It must be overridden in subclasses.
   The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
 
-Help for ndi.calc.example.simple/struct2doc is inherited from superclass NDI.APP.APPDOC
+Help for ndi.calc.example.simple/struct2doc is inherited from superclass ndi.app.appdoc
 ```
 
 ---
@@ -472,7 +475,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.calc.example.simple/varappname is inherited from superclass NDI.APP
+Help for ndi.calc.example.simple/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -489,7 +492,7 @@ Help for ndi.calc.example.simple/varappname is inherited from superclass NDI.APP
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.calc.example.simple/version_url is inherited from superclass NDI.APP
+Help for ndi.calc.example.simple/version_url is inherited from superclass ndi.app
 ```
 
 ---

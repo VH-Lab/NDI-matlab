@@ -51,6 +51,9 @@ NDI_ID_OBJ = ndi.ido()
  
   Creates a new ndi.ido object and generates a unique id
   that is stored in the property 'identifier'.
+
+    Documentation for ndi.ido/ido
+       doc ndi.ido
 ```
 
 ---

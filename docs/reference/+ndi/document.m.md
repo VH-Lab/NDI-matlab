@@ -123,6 +123,9 @@ UID = DOC_UNIQUE_ID(NDI_DOCUMENT_OBJ)
 NDI_DOCUMENT_OBJ = ndi.document(DOCUMENT_TYPE, 'PARAM1', VALUE1, ...)
     or
   NDI_DOCUMENT_OBJ = ndi.document(MATLAB_STRUCT)
+
+    Documentation for ndi.document/document
+       doc ndi.document
 ```
 
 ---

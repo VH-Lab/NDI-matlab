@@ -60,7 +60,7 @@ EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
  
   See also: ndi.time.clocktype
 
-Help for ndi.daq.reader.mfdaq.intan/epochclock is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.daq.reader.mfdaq.intan/epochclock is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -72,7 +72,7 @@ B = EQ(NDI_DAQREADER_OBJ1, NDI_DAQREADER_OBJ2)
  
   Examines whether or not the ndi.daq.reader objects are equal.
 
-Help for ndi.daq.reader.mfdaq.intan/eq is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.intan/eq is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -112,7 +112,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.reader.mfdaq.intan/id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq.intan/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -124,6 +124,9 @@ D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
  
    Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
    filenavigator THEFILENAVIGATOR.
+
+    Documentation for ndi.daq.reader.mfdaq.intan/intan
+       doc ndi.daq.reader.mfdaq.intan
 ```
 
 ---
@@ -198,7 +201,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.reader.mfdaq.intan.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.reader.mfdaq.intan.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -211,7 +214,7 @@ DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq.intan/newdocument is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.intan/newdocument is inherited from superclass ndi.daq.reader
 ```
 
 ---
@@ -261,7 +264,7 @@ DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
  
    EPOCHSFILES is a cell array of full path file names
 
-Help for ndi.daq.reader.mfdaq.intan/readevents_epochsamples is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.daq.reader.mfdaq.intan/readevents_epochsamples is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -284,7 +287,7 @@ Help for ndi.daq.reader.mfdaq.intan/readevents_epochsamples is inherited from su
  
    TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 
-Help for ndi.daq.reader.mfdaq.intan/readevents_epochsamples_native is inherited from superclass NDI.DAQ.READER.MFDAQ
+Help for ndi.daq.reader.mfdaq.intan/readevents_epochsamples_native is inherited from superclass ndi.daq.reader.mfdaq
 ```
 
 ---
@@ -310,7 +313,7 @@ SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
  
   Creates a search query for the ndi.daq.reader object.
 
-Help for ndi.daq.reader.mfdaq.intan/searchquery is inherited from superclass NDI.DAQ.READER
+Help for ndi.daq.reader.mfdaq.intan/searchquery is inherited from superclass ndi.daq.reader
 ```
 
 ---

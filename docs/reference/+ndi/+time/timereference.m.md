@@ -69,6 +69,9 @@ OBJ = NDI.TIME.TIMEREFERENCE(REFERENT, CLOCKTYPE, EPOCH, TIME)
   where NDI_SESSION_OBJ is an ndi.session and NDI_TIMEREF_STRUCT is a structure
   returned by ndi.time.timereference/NDI_TIMEREFERENCE_STRUCT. The NDI_SESSION_OBJ fields will
   be searched to find the live REFERENT to create OBJ.
+
+    Documentation for ndi.time.timereference/timereference
+       doc ndi.time.timereference
 ```
 
 ---

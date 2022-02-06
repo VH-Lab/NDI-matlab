@@ -103,7 +103,7 @@
     T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
                       the probe, in units of the epock clock
 
-Help for ndi.probe/addepoch is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/addepoch is inherited from superclass ndi.element
 ```
 
 ---
@@ -134,7 +134,7 @@ Help for ndi.probe/addepoch is inherited from superclass NDI.ELEMENT
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.probe/EPOCHNODES
 
-Help for ndi.probe/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -174,7 +174,7 @@ ET = BUILDEPOCHTABLE(NDI_PROBE_OBJ)
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.probe/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -188,7 +188,7 @@ Help for ndi.probe/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOC
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.probe/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -201,7 +201,7 @@ UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
 
-Help for ndi.probe/doc_unique_id is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/doc_unique_id is inherited from superclass ndi.element
 ```
 
 ---
@@ -215,7 +215,7 @@ ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is the string 'element: ' followed by its name
 
-Help for ndi.probe/elementstring is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/elementstring is inherited from superclass ndi.element
 ```
 
 ---
@@ -229,7 +229,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.probe/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -259,7 +259,7 @@ EC = EPOCHCLOCK(NDI_PROBE_OBJ, EPOCH_NUMBER)
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.probe/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -277,7 +277,7 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
 
-Help for ndi.probe/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epochid is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -312,7 +312,7 @@ Help for ndi.probe/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.probe/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -366,7 +366,7 @@ NAME = EPOCHSETNAME(NDI_PROBE_OBJ)
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.probe/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -380,7 +380,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.probe/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -405,7 +405,7 @@ Returns 1 if the objects share an object class, session, and probe string.
  
   See also: ndi.file.navigator
 
-Help for ndi.probe/getcache is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/getcache is inherited from superclass ndi.element
 ```
 
 ---
@@ -434,7 +434,7 @@ UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
 
-Help for ndi.probe/id is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/id is inherited from superclass ndi.element
 ```
 
 ---
@@ -460,7 +460,7 @@ ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
 
-Help for ndi.probe/load_all_element_docs is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/load_all_element_docs is inherited from superclass ndi.element
 ```
 
 ---
@@ -474,7 +474,7 @@ ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Returns empty if there is no such document.
 
-Help for ndi.probe/load_element_doc is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/load_element_doc is inherited from superclass ndi.element
 ```
 
 ---
@@ -487,7 +487,7 @@ Help for ndi.probe/load_element_doc is inherited from superclass NDI.ELEMENT
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
 
-Help for ndi.probe/loadaddedepochs is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/loadaddedepochs is inherited from superclass ndi.element
 ```
 
 ---
@@ -500,7 +500,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.probe/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -520,7 +520,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.probe.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.probe.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -538,7 +538,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
  
   When the document is created, it is automatically added to the session.
 
-Help for ndi.probe/newdocument is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/newdocument is inherited from superclass ndi.element
 ```
 
 ---
@@ -552,7 +552,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.probe/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -570,6 +570,9 @@ OBJ = ndi.probe(SESSION, NAME, REFERENCE, TYPE, SUBJECT_ID)
    probe (a string that must start with a letter and contain no white space).
  
    ndi.probe is a essentially an abstract class, and a specific implementation must be called.
+
+    Documentation for ndi.probe/probe
+       doc ndi.probe
 ```
 
 ---
@@ -596,7 +599,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.probe/EPOCHTABLE
 
-Help for ndi.probe/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -609,7 +612,7 @@ SQ = SEARCHQUERY(NDI_ELEMENT_OBJ, [EPOCHID])
   Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
   with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 
-Help for ndi.probe/searchquery is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/searchquery is inherited from superclass ndi.element
 ```
 
 ---
@@ -630,7 +633,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   TODO: this must be a bug, it's just self-referential
 
-Help for ndi.probe/t0_t1 is inherited from superclass NDI.ELEMENT
+Help for ndi.probe/t0_t1 is inherited from superclass ndi.element
 ```
 
 ---
@@ -647,7 +650,7 @@ Help for ndi.probe/t0_t1 is inherited from superclass NDI.ELEMENT
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.probe/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.probe/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

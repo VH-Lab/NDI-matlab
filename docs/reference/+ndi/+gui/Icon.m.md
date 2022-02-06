@@ -2,7 +2,7 @@
 
 ```
 ndi.gui.Icon is a class.
-    obj = Icon(src, len, elem, hShift, vShift, w, h, color)
+    obj = ndi.gui.Icon(src, len, elem, hShift, vShift, w, h, color)
 
 
 ```
@@ -54,6 +54,9 @@ ndi.gui.Icon is a class.
 
 ```
 obj = Icon(src, len, elem, hShift, vShift, w, h, color)
+
+    Documentation for ndi.gui.Icon/Icon
+       doc ndi.gui.Icon
 ```
 
 ---
@@ -91,10 +94,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.GUI.ICON, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Icon/addlistener is inherited from superclass HANDLE
+Help for ndi.gui.Icon/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/addlistener
+    Documentation for ndi.gui.Icon/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -102,17 +105,15 @@ Help for ndi.gui.Icon/addlistener is inherited from superclass HANDLE
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/ISVALID, CLEAR
 
-Help for ndi.gui.Icon/delete is inherited from superclass HANDLE
+Help for ndi.gui.Icon/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/delete
+    Documentation for ndi.gui.Icon/delete
+       doc handle/delete
 ```
 
 ---
@@ -135,10 +136,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/GE, NDI.GUI.ICON/GT, NDI.GUI.ICON/LE, NDI.GUI.ICON/LT, NDI.GUI.ICON/NE
 
-Help for ndi.gui.Icon/eq is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/eq
+Help for ndi.gui.Icon/eq is inherited from superclass handle
 ```
 
 ---
@@ -157,10 +155,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.GUI.ICON
 
-Help for ndi.gui.Icon/findobj is inherited from superclass HANDLE
+Help for ndi.gui.Icon/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/findobj
+    Documentation for ndi.gui.Icon/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -179,10 +177,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.gui.Icon/findprop is inherited from superclass HANDLE
+Help for ndi.gui.Icon/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/findprop
+    Documentation for ndi.gui.Icon/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -203,10 +201,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/EQ, NDI.GUI.ICON/GT, NDI.GUI.ICON/LE, NDI.GUI.ICON/LT, NDI.GUI.ICON/NE
 
-Help for ndi.gui.Icon/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/ge
+Help for ndi.gui.Icon/ge is inherited from superclass handle
 ```
 
 ---
@@ -227,10 +222,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/EQ, NDI.GUI.ICON/GE, NDI.GUI.ICON/LE, NDI.GUI.ICON/LT, NDI.GUI.ICON/NE
 
-Help for ndi.gui.Icon/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/gt
+Help for ndi.gui.Icon/gt is inherited from superclass handle
 ```
 
 ---
@@ -248,10 +240,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/DELETE
 
-Help for ndi.gui.Icon/isvalid is inherited from superclass HANDLE
+Help for ndi.gui.Icon/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/isvalid
+    Documentation for ndi.gui.Icon/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -280,10 +272,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/EQ, NDI.GUI.ICON/GE, NDI.GUI.ICON/GT, NDI.GUI.ICON/LT, NDI.GUI.ICON/NE
 
-Help for ndi.gui.Icon/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/le
+Help for ndi.gui.Icon/le is inherited from superclass handle
 ```
 
 ---
@@ -326,10 +315,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.GUI.ICON, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Icon/listener is inherited from superclass HANDLE
+Help for ndi.gui.Icon/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/listener
+    Documentation for ndi.gui.Icon/listener
+       doc handle/listener
 ```
 
 ---
@@ -350,10 +339,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/EQ, NDI.GUI.ICON/GE, NDI.GUI.ICON/GT, NDI.GUI.ICON/LE, NDI.GUI.ICON/NE
 
-Help for ndi.gui.Icon/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/lt
+Help for ndi.gui.Icon/lt is inherited from superclass handle
 ```
 
 ---
@@ -377,10 +363,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/EQ, NDI.GUI.ICON/GE, NDI.GUI.ICON/GT, NDI.GUI.ICON/LE, NDI.GUI.ICON/LT
 
-Help for ndi.gui.Icon/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.gui.Icon/ne
+Help for ndi.gui.Icon/ne is inherited from superclass handle
 ```
 
 ---
@@ -400,10 +383,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.GUI.ICON, NDI.GUI.ICON/ADDLISTENER, NDI.GUI.ICON/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.gui.Icon/notify is inherited from superclass HANDLE
+Help for ndi.gui.Icon/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.gui.Icon/notify
+    Documentation for ndi.gui.Icon/notify
+       doc handle/notify
 ```
 
 ---

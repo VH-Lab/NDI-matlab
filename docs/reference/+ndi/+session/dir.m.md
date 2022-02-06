@@ -95,10 +95,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.SESSION.DIR, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session.dir/addlistener is inherited from superclass HANDLE
+Help for ndi.session.dir/addlistener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/addlistener
+    Documentation for ndi.session.dir/addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -114,7 +114,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_ADD(NDI_SESSION_OBJ, DEV)
    
   See also: DAQSYSTEM_RM, ndi.session.dir
 
-Help for ndi.session.dir/daqsystem_add is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/daqsystem_add is inherited from superclass ndi.session
 ```
 
 ---
@@ -128,7 +128,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_CLEAR(NDI_SESSION_OBJ)
  
   Be sure you mean it!
 
-Help for ndi.session.dir/daqsystem_clear is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/daqsystem_clear is inherited from superclass ndi.session
 ```
 
 ---
@@ -149,7 +149,7 @@ DEV = DAQSYSTEM_LOAD(NDI_SESSION_OBJ, PARAM1, VALUE1, PARAM2, VALUE2, ...)
   If more than one object is requested, then DEV will be a cell list of matching objects.
   Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 
-Help for ndi.session.dir/daqsystem_load is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/daqsystem_load is inherited from superclass ndi.session
 ```
 
 ---
@@ -163,7 +163,7 @@ NDI_SESSION_OBJ = DAQSYSTEM_RM(NDI_SESSION_OBJ, DEV)
  
   See also: DAQSYSTEM_ADD, ndi.session.dir
 
-Help for ndi.session.dir/daqsystem_rm is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/daqsystem_rm is inherited from superclass ndi.session
 ```
 
 ---
@@ -181,7 +181,7 @@ NDI_SESSION_OBJ = DATABASE_ADD(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
    
   See also: DATABASE_RM, ndi.session.dir, ndi.database, ndi.session.dir/SEARCH
 
-Help for ndi.session.dir/database_add is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_add is inherited from superclass ndi.session
 ```
 
 ---
@@ -196,7 +196,7 @@ DATABASE_CLEAR(NDI_SESSION_OBJ, AREYOUSURE)
   Use with care. If AREYOUSURE is 'yes' then the
   function will proceed. Otherwise, it will not.
 
-Help for ndi.session.dir/database_clear is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_clear is inherited from superclass ndi.session
 ```
 
 ---
@@ -209,7 +209,7 @@ Help for ndi.session.dir/database_clear is inherited from superclass NDI.SESSION
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the session object.
 
-Help for ndi.session.dir/database_closebinarydoc is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_closebinarydoc is inherited from superclass ndi.session
 ```
 
 ---
@@ -226,7 +226,7 @@ NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
    The locked nature of the binary doc is a property of the database, not the document, which is why
    the database is needed in the method.
 
-Help for ndi.session.dir/database_openbinarydoc is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_openbinarydoc is inherited from superclass ndi.session
 ```
 
 ---
@@ -250,7 +250,7 @@ NDI_SESSION_OBJ = DATABASE_RM(NDI_SESSION_OBJ, DOC_UNIQUE_ID)
  
   See also: DATABASE_ADD, ndi.session.dir
 
-Help for ndi.session.dir/database_rm is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_rm is inherited from superclass ndi.session
 ```
 
 ---
@@ -265,7 +265,7 @@ NDI_DOCUMENT_OBJ = DATABASE_SEARCH(NDI_SESSION_OBJ, SEARCHPARAMETERS)
  
   Matches are returned in a cell list NDI_DOCUMENT_OBJ.
 
-Help for ndi.session.dir/database_search is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/database_search is inherited from superclass ndi.session
 ```
 
 ---
@@ -273,17 +273,15 @@ Help for ndi.session.dir/database_search is inherited from superclass NDI.SESSIO
 **delete** - *DELETE   Delete a handle object.*
 
 ```
-The DELETE method deletes a handle object but does not clear the handle
-    from the workspace.  A deleted handle is no longer valid.
- 
-    DELETE(H) deletes the handle object H, where H is a scalar handle.
+DELETE(H) deletes all handle objects in array H. After the delete 
+    function call, H is an array of invalid objects.
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/ISVALID, CLEAR
 
-Help for ndi.session.dir/delete is inherited from superclass HANDLE
+Help for ndi.session.dir/delete is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/delete
+    Documentation for ndi.session.dir/delete
+       doc handle/delete
 ```
 
 ---
@@ -302,6 +300,9 @@ E = ndi.session.dir(REFERENCE, PATHNAME)
    E = ndi.session.dir(PATHNAME)
  
   See also: ndi.session, ndi.session.dir/GETPATH
+
+    Documentation for ndi.session.dir/dir
+       doc ndi.session.dir
 ```
 
 ---
@@ -326,7 +327,7 @@ OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
   Examines the DAQSYSTEM list, DATABASE, and PROBELIST for an object with name OBJ_NAME 
   and classname OBJ_CLASSNAME. If no object is found, OBJ will be empty ([]).
 
-Help for ndi.session.dir/findexpobj is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/findexpobj is inherited from superclass ndi.session
 ```
 
 ---
@@ -345,10 +346,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.SESSION.DIR
 
-Help for ndi.session.dir/findobj is inherited from superclass HANDLE
+Help for ndi.session.dir/findobj is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/findobj
+    Documentation for ndi.session.dir/findobj
+       doc handle/findobj
 ```
 
 ---
@@ -367,10 +368,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.session.dir/findprop is inherited from superclass HANDLE
+Help for ndi.session.dir/findprop is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/findprop
+    Documentation for ndi.session.dir/findprop
+       doc handle/findprop
 ```
 
 ---
@@ -391,10 +392,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/EQ, NDI.SESSION.DIR/GT, NDI.SESSION.DIR/LE, NDI.SESSION.DIR/LT, NDI.SESSION.DIR/NE
 
-Help for ndi.session.dir/ge is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.dir/ge
+Help for ndi.session.dir/ge is inherited from superclass handle
 ```
 
 ---
@@ -415,7 +413,7 @@ ELEMENTS = GETELEMENTS(NDI_SESSION_OBJ, ...)
   has a value of VALUE2, etc. Properties of elements are 'element.name', 'element.type',
   'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
 
-Help for ndi.session.dir/getelements is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/getelements is inherited from superclass ndi.session
 ```
 
 ---
@@ -457,7 +455,7 @@ PROBES = GETPROBES(NDI_SESSION_OBJ, ...)
   returns only those probes for which 'PROP1' has a value of VALUE1, 'PROP2' 
   has a value of VALUE2, etc. Properties of probes are 'name', 'reference', and 'type', and 'subject_ID'.
 
-Help for ndi.session.dir/getprobes is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/getprobes is inherited from superclass ndi.session
 ```
 
 ---
@@ -478,10 +476,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/EQ, NDI.SESSION.DIR/GE, NDI.SESSION.DIR/LE, NDI.SESSION.DIR/LT, NDI.SESSION.DIR/NE
 
-Help for ndi.session.dir/gt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.dir/gt
+Help for ndi.session.dir/gt is inherited from superclass handle
 ```
 
 ---
@@ -493,7 +488,7 @@ IDENTIFIER = ID(NDI_SESSION_OBJ)
  
   Returns the unique identifier of an ndi.session object.
 
-Help for ndi.session.dir/id is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/id is inherited from superclass ndi.session
 ```
 
 ---
@@ -511,10 +506,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/DELETE
 
-Help for ndi.session.dir/isvalid is inherited from superclass HANDLE
+Help for ndi.session.dir/isvalid is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/isvalid
+    Documentation for ndi.session.dir/isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -543,10 +538,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/EQ, NDI.SESSION.DIR/GE, NDI.SESSION.DIR/GT, NDI.SESSION.DIR/LT, NDI.SESSION.DIR/NE
 
-Help for ndi.session.dir/le is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.dir/le
+Help for ndi.session.dir/le is inherited from superclass handle
 ```
 
 ---
@@ -589,10 +581,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.SESSION.DIR, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.session.dir/listener is inherited from superclass HANDLE
+Help for ndi.session.dir/listener is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/listener
+    Documentation for ndi.session.dir/listener
+       doc handle/listener
 ```
 
 ---
@@ -613,10 +605,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/EQ, NDI.SESSION.DIR/GE, NDI.SESSION.DIR/GT, NDI.SESSION.DIR/LE, NDI.SESSION.DIR/NE
 
-Help for ndi.session.dir/lt is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.dir/lt
+Help for ndi.session.dir/lt is inherited from superclass handle
 ```
 
 ---
@@ -652,10 +641,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/EQ, NDI.SESSION.DIR/GE, NDI.SESSION.DIR/GT, NDI.SESSION.DIR/LE, NDI.SESSION.DIR/LT
 
-Help for ndi.session.dir/ne is inherited from superclass HANDLE
-
-    Reference page in Doc Center
-       doc ndi.session.dir/ne
+Help for ndi.session.dir/ne is inherited from superclass handle
 ```
 
 ---
@@ -675,7 +661,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_SESSION_OBJ, [DOCUMENT_TYPE], 'PROPERTY1', VA
  
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
 
-Help for ndi.session.dir/newdocument is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/newdocument is inherited from superclass ndi.session
 ```
 
 ---
@@ -695,10 +681,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.SESSION.DIR, NDI.SESSION.DIR/ADDLISTENER, NDI.SESSION.DIR/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.session.dir/notify is inherited from superclass HANDLE
+Help for ndi.session.dir/notify is inherited from superclass handle
 
-    Reference page in Doc Center
-       doc ndi.session.dir/notify
+    Documentation for ndi.session.dir/notify
+       doc handle/notify
 ```
 
 ---
@@ -715,7 +701,7 @@ SQ = SEARCHQUERY(NDI_SESSION_OBJ)
   
   Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
 
-Help for ndi.session.dir/searchquery is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/searchquery is inherited from superclass ndi.session
 ```
 
 ---
@@ -728,7 +714,7 @@ NDI_SESSION_OBJ = SYNCGRAPH_ADDRULE(NDI_SESSION_OBJ, RULE)
   Adds the ndi.time.syncrule RULE to the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
 
-Help for ndi.session.dir/syncgraph_addrule is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/syncgraph_addrule is inherited from superclass ndi.session
 ```
 
 ---
@@ -741,7 +727,7 @@ NDI_SESSION_OBJ = SYNCGRAPH_RMRULE(NDI_SESSION_OBJ, INDEX)
   Removes the INDEXth ndi.time.syncrule from the ndi.time.syncgraph of the ndi.session
   object NDI_SESSION_OBJ.
 
-Help for ndi.session.dir/syncgraph_rmrule is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/syncgraph_rmrule is inherited from superclass ndi.session
 ```
 
 ---
@@ -755,7 +741,7 @@ REFSTR = UNIQUE_REFERENCE_STRING(NDI_SESSION_OBJ)
   REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
   and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
 
-Help for ndi.session.dir/unique_reference_string is inherited from superclass NDI.SESSION
+Help for ndi.session.dir/unique_reference_string is inherited from superclass ndi.session
 ```
 
 ---

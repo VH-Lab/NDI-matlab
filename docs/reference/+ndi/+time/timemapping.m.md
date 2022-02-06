@@ -66,6 +66,9 @@ NDI_TIMEMAPPING_OBJ = ndi.time.timemapping()
   Typically, the mapping is linear, so that MAPPING = [scale shift].
  
   See also: POLYVAL
+
+    Documentation for ndi.time.timemapping/timemapping
+       doc ndi.time.timemapping
 ```
 
 ---

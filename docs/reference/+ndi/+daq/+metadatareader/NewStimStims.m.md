@@ -42,6 +42,9 @@ D = ndi.daq.metadatareader.NewStimStims()
    Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
    is given, it indicates a regular expression to use to search EPOCHFILES
    for a tab-separated-value text file that describes stimulus parameters.
+
+    Documentation for ndi.daq.metadatareader.NewStimStims/NewStimStims
+       doc ndi.daq.metadatareader.NewStimStims
 ```
 
 ---
@@ -54,7 +57,7 @@ TF = EQ(NDI_DAQMETADATAREADER_OBJ_A, NDI_DAQMETADATAREADER_OBJ_B)
   TF is 1 if the two objects are of the same class and have the same properties.
   TF is 0 otherwise.
 
-Help for ndi.daq.metadatareader.NewStimStims/eq is inherited from superclass NDI.DAQ.METADATAREADER
+Help for ndi.daq.metadatareader.NewStimStims/eq is inherited from superclass ndi.daq.metadatareader
 ```
 
 ---
@@ -66,7 +69,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.metadatareader.NewStimStims/id is inherited from superclass NDI.IDO
+Help for ndi.daq.metadatareader.NewStimStims/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -86,7 +89,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.metadatareader.NewStimStims.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.metadatareader.NewStimStims.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -99,7 +102,7 @@ DOC = NEWDOCUMENT(ndi.daq.metadatareader OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.daq.reader object.
 
-Help for ndi.daq.metadatareader.NewStimStims/newdocument is inherited from superclass NDI.DAQ.METADATAREADER
+Help for ndi.daq.metadatareader.NewStimStims/newdocument is inherited from superclass ndi.daq.metadatareader
 ```
 
 ---
@@ -128,7 +131,7 @@ Returns the parameters (cell array of structures) associated with the
  
   This function can be overridden in more specialized stimulus classes.
 
-Help for ndi.daq.metadatareader.NewStimStims/readmetadata is inherited from superclass NDI.DAQ.METADATAREADER
+Help for ndi.daq.metadatareader.NewStimStims/readmetadata is inherited from superclass ndi.daq.metadatareader
 ```
 
 ---
@@ -151,7 +154,7 @@ SQ = SEARCHQUERY(NDI_DAQMETADATAREADER_OBJ)
  
   Creates a search query for the ndi.daq.metadatareader object.
 
-Help for ndi.daq.metadatareader.NewStimStims/searchquery is inherited from superclass NDI.DAQ.METADATAREADER
+Help for ndi.daq.metadatareader.NewStimStims/searchquery is inherited from superclass ndi.daq.metadatareader
 ```
 
 ---

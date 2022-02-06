@@ -116,7 +116,7 @@
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.element.timeseries/EPOCHNODES
 
-Help for ndi.element.timeseries/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -140,7 +140,7 @@ ET = BUILDEPOCHTABLE(NDI_ELEMENT_OBJ)
   'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
                             |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-Help for ndi.element.timeseries/buildepochtable is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/buildepochtable is inherited from superclass ndi.element
 ```
 
 ---
@@ -158,7 +158,7 @@ Help for ndi.element.timeseries/buildepochtable is inherited from superclass NDI
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.element.timeseries/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -172,7 +172,7 @@ Help for ndi.element.timeseries/cached_epochgraph is inherited from superclass N
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.element.timeseries/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -185,7 +185,7 @@ UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then empty is returned.
 
-Help for ndi.element.timeseries/doc_unique_id is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/doc_unique_id is inherited from superclass ndi.element
 ```
 
 ---
@@ -199,7 +199,7 @@ ELEMENTSTR = ELEMENTSTRING(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is the string 'element: ' followed by its name
 
-Help for ndi.element.timeseries/elementstring is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/elementstring is inherited from superclass ndi.element
 ```
 
 ---
@@ -213,7 +213,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.element.timeseries/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -227,7 +227,7 @@ EC = EPOCHCLOCK(NDI_ELEMENT_OBJ, EPOCH_NUMBER)
  
   The ndi.element class always returns the clock type(s) of the element it is based on
 
-Help for ndi.element.timeseries/epochclock is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/epochclock is inherited from superclass ndi.element
 ```
 
 ---
@@ -245,7 +245,7 @@ Help for ndi.element.timeseries/epochclock is inherited from superclass NDI.ELEM
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.element.timeseries/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -263,7 +263,7 @@ ID = EPOCHID (NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
   Most classes that manage epochs themselves (ndi.file.navigator,
   ndi.daq.system) will override this method.
 
-Help for ndi.element.timeseries/epochid is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epochid is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -298,7 +298,7 @@ Help for ndi.element.timeseries/epochid is inherited from superclass NDI.EPOCH.E
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.element.timeseries/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -312,7 +312,7 @@ NAME = EPOCHSETNAME(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this is ndi.element/ELEMENTSTRING.
 
-Help for ndi.element.timeseries/epochsetname is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/epochsetname is inherited from superclass ndi.element
 ```
 
 ---
@@ -342,7 +342,7 @@ Help for ndi.element.timeseries/epochsetname is inherited from superclass NDI.EL
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.element.timeseries/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -356,7 +356,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.element.timeseries/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -373,7 +373,7 @@ Help for ndi.element.timeseries/epochtableentry is inherited from superclass NDI
  
   See also: ndi.file.navigator
 
-Help for ndi.element.timeseries/getcache is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/getcache is inherited from superclass ndi.element
 ```
 
 ---
@@ -386,7 +386,7 @@ UNIQUE_REF = ID(NDI_ELEMENT_OBJ)
   Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
   document for the element, then an error is returned.
 
-Help for ndi.element.timeseries/id is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/id is inherited from superclass ndi.element
 ```
 
 ---
@@ -401,7 +401,7 @@ B = ISSYNCGRAPHROOT(NDI_ELEMENT_OBJ)
  
   For ndi.element objects, this returns 0 so that underlying ndi.probe epochs are added.
 
-Help for ndi.element.timeseries/issyncgraphroot is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/issyncgraphroot is inherited from superclass ndi.element
 ```
 
 ---
@@ -414,7 +414,7 @@ ELEMENT_DOCS = LOAD_ALL_ELEMENT_DOCS(NDI_ELEMENT_OBJ)
   Loads the ndi.document that is based on the ndi.element object and any associated
   epoch documents.
 
-Help for ndi.element.timeseries/load_all_element_docs is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/load_all_element_docs is inherited from superclass ndi.element
 ```
 
 ---
@@ -428,7 +428,7 @@ ELEMENT_DOC = LOAD_ELEMENT_DOC(NDI_ELEMENT_OBJ)
  
   Returns empty if there is no such document.
 
-Help for ndi.element.timeseries/load_element_doc is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/load_element_doc is inherited from superclass ndi.element
 ```
 
 ---
@@ -441,7 +441,7 @@ Help for ndi.element.timeseries/load_element_doc is inherited from superclass ND
   Load the EPOCHTABLE that consists of added/registered epochs that provide information
   about the ndi.element.
 
-Help for ndi.element.timeseries/loadaddedepochs is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/loadaddedepochs is inherited from superclass ndi.element
 ```
 
 ---
@@ -454,7 +454,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.element.timeseries/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -474,7 +474,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.element.timeseries.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.element.timeseries.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -496,7 +496,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.element.timeseries/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -530,7 +530,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.element.timeseries/EPOCHTABLE
 
-Help for ndi.element.timeseries/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -545,7 +545,7 @@ SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
  
   If NDI_TIMESERIES_OBJ is not regularly sampled, then -1 is returned.
 
-Help for ndi.element.timeseries/samplerate is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.element.timeseries/samplerate is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -562,7 +562,7 @@ SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   
   TODO: convert times to dev_local_clock
 
-Help for ndi.element.timeseries/samples2times is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.element.timeseries/samples2times is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -591,7 +591,7 @@ T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
  
   TODO: this must be a bug, it's just self-referential
 
-Help for ndi.element.timeseries/t0_t1 is inherited from superclass NDI.ELEMENT
+Help for ndi.element.timeseries/t0_t1 is inherited from superclass ndi.element
 ```
 
 ---
@@ -606,7 +606,7 @@ SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
   The first sample in the epoch is 1.
   The TIMES requested might be out of bounds of the EPOCH; no checking is performed.
 
-Help for ndi.element.timeseries/times2samples is inherited from superclass NDI.TIME.TIMESERIES
+Help for ndi.element.timeseries/times2samples is inherited from superclass ndi.time.timeseries
 ```
 
 ---
@@ -614,7 +614,8 @@ Help for ndi.element.timeseries/times2samples is inherited from superclass NDI.T
 **timeseries** - *define or examine a element in the session*
 
 ```
-
+Documentation for ndi.element.timeseries/timeseries
+       doc ndi.element.timeseries
 ```
 
 ---
@@ -631,7 +632,7 @@ Help for ndi.element.timeseries/times2samples is inherited from superclass NDI.T
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.element.timeseries/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.element.timeseries/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

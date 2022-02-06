@@ -37,7 +37,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DOCUMENTSERVICE_OBJ)
  
   The base ndi.documentservice class returns empty.
 
-Help for ndi.time.timeseries/newdocument is inherited from superclass NDI.DOCUMENTSERVICE
+Help for ndi.time.timeseries/newdocument is inherited from superclass ndi.documentservice
 ```
 
 ---
@@ -98,7 +98,7 @@ SQ = SEARCHQUERY(NDI_DOCUMENTSERVICE_OBJ)
  
   The base class ndi.documentservice just returns empty.
 
-Help for ndi.time.timeseries/searchquery is inherited from superclass NDI.DOCUMENTSERVICE
+Help for ndi.time.timeseries/searchquery is inherited from superclass ndi.documentservice
 ```
 
 ---
@@ -124,6 +124,9 @@ NDI_TIMESERIES_OBJ = ndi.time.timeseries()
   This function creates an ndi.time.timeseries object, which is an
   abstract class that defines methods for other objects that deal with
   time series.
+
+    Documentation for ndi.time.timeseries/timeseries
+       doc ndi.time.timeseries
 ```
 
 ---

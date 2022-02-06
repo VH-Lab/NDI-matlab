@@ -85,7 +85,7 @@ ADDEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   already exist, they will be overwritten. If there is no epoch 
   EPOCHNUMBER, then an error is returned.
 
-Help for ndi.daq.system/addepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.daq.system/addepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -116,7 +116,7 @@ Help for ndi.daq.system/addepochtag is inherited from superclass NDI.EPOCH.EPOCH
   See also: ndi.time.clocktype, ndi.time.clocktype/ndi.time.clocktype, ndi.time.timemapping, ndi.time.timemapping/ndi.time.timemapping, 
   ndi.daq.system/EPOCHNODES
 
-Help for ndi.daq.system/buildepochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/buildepochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -144,7 +144,7 @@ ET = BUILDEPOCHTABLE(NDI_DAQSYSTEM_OBJ)
  
   See also: NDI_EPOCHSET_OBJ/EPOCHGRAPH, NDI_EPOCHSET_OBJ/BUILDEPOCHGRAPH
 
-Help for ndi.daq.system/cached_epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/cached_epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -158,7 +158,7 @@ Help for ndi.daq.system/cached_epochgraph is inherited from superclass NDI.EPOCH
   (a hash number generated from the table). If there is no cached version,
   ET and HASHVALUE will be empty.
 
-Help for ndi.daq.system/cached_epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/cached_epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -188,7 +188,7 @@ S = EPOCH2STR(NDI_EPOCHSET_OBJ, NUMBER)
   integer, then INT2STR is used to produce a string. If it is an epoch
   identifier string, then it is returned.
 
-Help for ndi.daq.system/epoch2str is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epoch2str is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -222,7 +222,7 @@ EC = EPOCHCLOCK(NDI_DAQSYSTEM_OBJ, EPOCH_NUMBER)
   The cost of each transformation is normally 1 operation. 
   MAPPING is the ndi.time.timemapping object that describes the mapping.
 
-Help for ndi.daq.system/epochgraph is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epochgraph is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -269,7 +269,7 @@ EID = EOPCHID(NDI_DAQSYSTEM_OBJ, EPOCH_NUMBER)
  
   UNDERLYINGNODES are nodes that are directly linked to this ndi.epoch.epochset's node via 'underlying' epochs.
 
-Help for ndi.daq.system/epochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -296,7 +296,7 @@ NAME = EPOCHSETNAME(NDI_EPOCHSET_OBJ)
   If the class has a 'name' property, that property is used.
   Otherwise, 'unknown' is used.
 
-Help for ndi.daq.system/epochsetname is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epochsetname is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -326,7 +326,7 @@ Help for ndi.daq.system/epochsetname is inherited from superclass NDI.EPOCH.EPOC
   After it is read from disk once, the ET is stored in memory and is not re-read from disk
   unless the user calls ndi.epoch.epochset/RESETEPOCHTABLE.
 
-Help for ndi.daq.system/epochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -340,7 +340,7 @@ ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
   that corresponds to EPOCH_NUMBER_OR_ID, which can be the number of the
   epoch or the EPOCHID of the epoch.
 
-Help for ndi.daq.system/epochtableentry is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/epochtableentry is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -412,7 +412,7 @@ TAG = GETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER)
   array with fields 'name' and 'value'. If there are no files in
   EPOCHNUMBER then an error is returned.
 
-Help for ndi.daq.system/getepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.daq.system/getepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -450,7 +450,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.daq.system/id is inherited from superclass NDI.IDO
+Help for ndi.daq.system/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -466,7 +466,7 @@ B = ISSYNCGRAPHROOT(NDI_EPOCHSET_OBJ)
   For ndi.epoch.epochset objects, this returns 1. For some object types (ndi.probe.*, for example)
   this will return 0 so that the underlying ndi.daq.system epochs are added.
 
-Help for ndi.daq.system/issyncgraphroot is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/issyncgraphroot is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -479,7 +479,7 @@ B = MATCHEDEPOCHTABLE(NDI_EPOCHSET_OBJ, HASHVALUE)
   Returns 1 if the current hashed value of the cached epochtable is identical to HASHVALUE.
   Otherwise, it returns 0.
 
-Help for ndi.daq.system/matchedepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/matchedepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -510,7 +510,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.daq.system.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.daq.system.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -534,7 +534,7 @@ N = NUMEPOCHS(NDI_EPOCHSET_OBJ)
  
   See also: EPOCHTABLE
 
-Help for ndi.daq.system/numepochs is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/numepochs is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -554,7 +554,7 @@ REMOVEEPOCHTAG(NDI_EPOCH_PARAM_OBJ, EPOCHNUMBER, NAME)
   NAME can be a single string, or it can be a cell array of strings
   (which will result in the removal of multiple tags).
 
-Help for ndi.daq.system/removeepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.daq.system/removeepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -569,7 +569,7 @@ NDI_EPOCHSET_OBJ = RESETEPOCHTABLE(NDI_EPOCHSET_OBJ)
  
   See also: ndi.daq.system/EPOCHTABLE
 
-Help for ndi.daq.system/resetepochtable is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/resetepochtable is inherited from superclass ndi.epoch.epochset
 ```
 
 ---
@@ -618,7 +618,7 @@ SETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, EPOCHPROBEMAP, NUMBER, [OVERWRITE])
  
   See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
 
-Help for ndi.daq.system/setepochprobemap is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.daq.system/setepochprobemap is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -633,7 +633,7 @@ SETEPOCHTAG(NDI_EPOCHSET_PARAM_OBJ, EPOCHNUMBER, TAG)
   tags in the epoch directory. If there is no epoch EPOCHNUMBER, then 
   an error is returned.
 
-Help for ndi.daq.system/setepochtag is inherited from superclass NDI.EPOCH.EPOCHSET.PARAM
+Help for ndi.daq.system/setepochtag is inherited from superclass ndi.epoch.epochset.param
 ```
 
 ---
@@ -660,6 +660,9 @@ OBJ = ndi.daq.system(NAME, THEFILENAVIGATOR, THEDAQREADER)
    on disk that are read by the ndi.daq.reader object.
  
    ndi.daq.system is an abstract class, and a specific implementation must be called.
+
+    Documentation for ndi.daq.system/system
+       doc ndi.daq.system
 ```
 
 ---
@@ -691,7 +694,7 @@ T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
  
   See also: ISSYNCGRAPHROOT
 
-Help for ndi.daq.system/underlyingepochnodes is inherited from superclass NDI.EPOCH.EPOCHSET
+Help for ndi.daq.system/underlyingepochnodes is inherited from superclass ndi.epoch.epochset
 ```
 
 ---

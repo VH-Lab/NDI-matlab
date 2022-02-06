@@ -96,6 +96,9 @@ NDI_APP_MARKGARBAGE_OBJ = ndi.app.markgarbage(SESSION)
  
   Creates a new ndi.app.markgarbage object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.markgarbage'.
+
+    Documentation for ndi.app.markgarbage/markgarbage
+       doc ndi.app.markgarbage
 ```
 
 ---
@@ -126,7 +129,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.app.markgarbage/newdocument is inherited from superclass NDI.APP
+Help for ndi.app.markgarbage/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -153,7 +156,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.app.markgarbage/searchquery is inherited from superclass NDI.APP
+Help for ndi.app.markgarbage/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -166,7 +169,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.app.markgarbage/varappname is inherited from superclass NDI.APP
+Help for ndi.app.markgarbage/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -183,7 +186,7 @@ Help for ndi.app.markgarbage/varappname is inherited from superclass NDI.APP
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.app.markgarbage/version_url is inherited from superclass NDI.APP
+Help for ndi.app.markgarbage/version_url is inherited from superclass ndi.app
 ```
 
 ---

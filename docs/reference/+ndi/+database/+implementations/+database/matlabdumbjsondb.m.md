@@ -60,7 +60,7 @@ NDI_DATABASE_OBJ = ADD(NDI_DATABASE_OBJ, NDI_DOCUMENT_OBJ, DBPATH, ...)
   
   See also: vlt.data.namevaluepair
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/add is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/add is inherited from superclass ndi.database
 ```
 
 ---
@@ -88,7 +88,7 @@ CLEAR(NDI_DATABASE_OBJ, [AREYOUSURE])
  
   See also: ndi.database.implementations.database.matlabdumbjsondb/REMOVE
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/clear is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/clear is inherited from superclass ndi.database
 ```
 
 ---
@@ -101,7 +101,7 @@ Help for ndi.database.implementations.database.matlabdumbjsondb/clear is inherit
   Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
   database, which is why it is necessary to call this function through the database.
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/closebinarydoc is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/closebinarydoc is inherited from superclass ndi.database
 ```
 
 ---
@@ -118,6 +118,9 @@ NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb
   should be stored on disk.
  
   See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
+
+    Documentation for ndi.database.implementations.database.matlabdumbjsondb/matlabdumbjsondb
+       doc ndi.database.implementations.database.matlabdumbjsondb
 ```
 
 ---
@@ -130,7 +133,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_DATABASE_OBJ [, DOCUMENT_TYPE])
   Creates a new/blank ndi.document document object that can be used with this
   ndi.database.
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/newdocument is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/newdocument is inherited from superclass ndi.database
 ```
 
 ---
@@ -148,7 +151,7 @@ Help for ndi.database.implementations.database.matlabdumbjsondb/newdocument is i
   The locked nature of the binary doc is a property of the database, not the document, which is why
   the database is needed.
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/openbinarydoc is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/openbinarydoc is inherited from superclass ndi.database
 ```
 
 ---
@@ -164,7 +167,7 @@ NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION])
  
   If there is no ndi.document object with that ID, then empty is returned ([]).
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/read is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/read is inherited from superclass ndi.database
 ```
 
 ---
@@ -186,7 +189,7 @@ NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID)
   ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
   all of the documents are removed.
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inherited from superclass ndi.database
 ```
 
 ---
@@ -205,7 +208,7 @@ Help for ndi.database.implementations.database.matlabdumbjsondb/remove is inheri
   query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
   of each ndi.document.
 
-Help for ndi.database.implementations.database.matlabdumbjsondb/search is inherited from superclass NDI.DATABASE
+Help for ndi.database.implementations.database.matlabdumbjsondb/search is inherited from superclass ndi.database
 ```
 
 ---

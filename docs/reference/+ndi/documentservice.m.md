@@ -28,6 +28,9 @@
 
 ```
 NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();
+
+    Documentation for ndi.documentservice/documentservice
+       doc ndi.documentservice
 ```
 
 ---

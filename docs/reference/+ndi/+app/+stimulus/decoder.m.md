@@ -42,6 +42,9 @@ NDI_APP_STIMULUS_DECODER_OBJ = ndi.app.stimulus.decoder(SESSION)
  
   Creates a new ndi_app_stimulus.decoder object that can operate on
   NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
+
+    Documentation for ndi.app.stimulus.decoder/decoder
+       doc ndi.app.stimulus.decoder
 ```
 
 ---
@@ -54,7 +57,7 @@ NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
   Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
   is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 
-Help for ndi.app.stimulus.decoder/newdocument is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.decoder/newdocument is inherited from superclass ndi.app
 ```
 
 ---
@@ -88,7 +91,7 @@ C = SEARCHQUERY(NDI_APP_OBJ)
   ndi.database document for this app with field 'app' that has subfield 'name' equal
   to the app's VARAPPNAME.
 
-Help for ndi.app.stimulus.decoder/searchquery is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.decoder/searchquery is inherited from superclass ndi.app
 ```
 
 ---
@@ -101,7 +104,7 @@ AN = VARAPPNAME(NDI_APP_OBJ)
   Returns the name of the app modified for use as a variable name, either as
   a Matlab variable or a name in a document.
 
-Help for ndi.app.stimulus.decoder/varappname is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.decoder/varappname is inherited from superclass ndi.app
 ```
 
 ---
@@ -118,7 +121,7 @@ Help for ndi.app.stimulus.decoder/varappname is inherited from superclass NDI.AP
   Developers should override this method in their own class if they use a 
   different version control system.
 
-Help for ndi.app.stimulus.decoder/version_url is inherited from superclass NDI.APP
+Help for ndi.app.stimulus.decoder/version_url is inherited from superclass ndi.app
 ```
 
 ---

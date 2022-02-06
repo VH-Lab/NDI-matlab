@@ -85,6 +85,9 @@ NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers()
   daqsystem2                   | The name of the second daq system
   channel_daq2                 | The channel on the second daq system
   number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
+
+    Documentation for ndi.time.syncrule.commontriggers/commontriggers
+       doc ndi.time.syncrule.commontriggers
 ```
 
 ---
@@ -104,7 +107,7 @@ EC = ELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   See also: ndi.time.syncrule.commontriggers/INELIGIBLECLOCKS
 
-Help for ndi.time.syncrule.commontriggers/eligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/eligibleclocks is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -136,7 +139,7 @@ B = EQ(NDI_SYNCRULE_OBJ_A, NDI_SYNCRULE_OBJ_B)
   Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
   Otherwise, 0 is returned.
 
-Help for ndi.time.syncrule.commontriggers/eq is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/eq is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -148,7 +151,7 @@ IDENTIFIER = ID(NDI_ID_OBJ)
  
   Returns the unique identifier of an ndi.ido object.
 
-Help for ndi.time.syncrule.commontriggers/id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule.commontriggers/id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -169,7 +172,7 @@ IC = INELIGIBLECLOCKS(NDI_SYNCRULE_OBJ)
  
   See also: ndi.time.syncrule.commontriggers/ELIGIBLECLOCKS
 
-Help for ndi.time.syncrule.commontriggers/ineligibleclocks is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/ineligibleclocks is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -230,7 +233,7 @@ ID = NDI_UNIQUE_ID
  
   See also: NUM2HEX, NOW, RAND
 
-Help for ndi.time.syncrule.commontriggers.ndi_unique_id is inherited from superclass NDI.IDO
+Help for ndi.time.syncrule.commontriggers.ndi_unique_id is inherited from superclass ndi.ido
 ```
 
 ---
@@ -243,7 +246,7 @@ DOC = NEWDOCUMENT(NDI_SYNCRULE_OBJ)
   Creates an ndi.document object DOC that represents the
      ndi.time.syncrule object.
 
-Help for ndi.time.syncrule.commontriggers/newdocument is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/newdocument is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -255,7 +258,7 @@ SQ = SEARCHQUERY(NDI_SYNCRULE_OBJ)
  
   Creates a search query for the ndi.time.syncgraph object.
 
-Help for ndi.time.syncrule.commontriggers/searchquery is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/searchquery is inherited from superclass ndi.time.syncrule
 ```
 
 ---
@@ -270,7 +273,7 @@ NDI_SYNCRULE_OBJ = SETPARAMETERS(NDI_SYNCRULE_OBJ, PARAMETERS)
  
   See also: ndi.time.syncrule.commontriggers/ISVALIDPARAMETERS
 
-Help for ndi.time.syncrule.commontriggers/setparameters is inherited from superclass NDI.TIME.SYNCRULE
+Help for ndi.time.syncrule.commontriggers/setparameters is inherited from superclass ndi.time.syncrule
 ```
 
 ---
