@@ -1,0 +1,10 @@
+By default, this ndi.calc.vis.speed object looks for stimulus_tuningcurve documents that have 'spatial_frequency' and 'temporal_frequency' as the independent_variable_label fields of the stimulus_tuningcurve with no other independent_variable_label entries. That is, this calculation object searches for stimulus_tuningcurve documents that have variation in both spatial and temporal frequency values and nothing more.
+
+If one wished to restrict this further, one might add an additional condition to the default query.
+
+Example:
+% Only perform the operation on the element called myelement
+
+DQ = c.default_search_for_input_parameters();
+DQ.query = DQ.query & ndi.query('','depends_on','element_id',myelement);
+c.run('Replace',DQ);
