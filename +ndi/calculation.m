@@ -543,19 +543,19 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						x = edge; y = top-row;
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
-							'string',{'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
+							'string',{'---', 'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
 						y = y - doc_height;
 						uicontrol(uid.txt,'position',[x y doc_width doc_height],...
-							'string',{'Documentation line 1', 'Documentation line 2','Documentation line 3'},...
+							'string','Please select one ducumentation type.',...
 							'tag','DocTxt','Max',2);
 						y = y - row;
 
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
-							'string',{'Default','---','replace','with','actual','examples'},'tag','ParameterCodePopup', 'callback',callbackstr);
+							'string',{'---','Example 1','Example 2','Example 3'},'tag','ParameterCodePopup', 'callback',callbackstr);
 						y = y - parameter_code_height;
 						uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
-							'string',ud.calc.parameter_code,'tag','ParameterCodeTxt','Max',2);
+							'string','Please select one parameter code.','tag','ParameterCodeTxt','Max',2);
 						y = y - row;
 						y = y - row;
 
@@ -578,22 +578,73 @@ classdef calculation < ndi.app & ndi.app.appdoc
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
 						docPopupObj = findobj(fig,'tag','DocPopup');
-						v = get(docPopupObj, 'value');
+						val = get(docPopupObj, 'value');
+                        str = get(docPopupObj, 'string');
+%                         disp(val);
+%                         disp(str);
 						docTextObj = findobj(fig,'tag','DocTxt');
 						% Step 2, take action
-						switch v,
-							case 1, % General documentation
+						switch val,
+							case 2, % General documentation
+                                disp(['Popup is ' str{val} '.']);
 								% do something to read the new string from the file
-								% set(docTextObj,'string',mynewstring);
-							case 2, % searching for inputs
-							
-							case 3, % output documentation
+								set(docTextObj,'string','Some General Document');
+							case 3, % searching for inputs
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Some Input Document');
+							case 4, % output documentation
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Some Output Document');
+                            otherwise,
+                                disp(['Popup ' val ' is out of bound.']);
 						end;
-
-					case 'SearchParametersBt',
-					case 'SearchOutputDocBt',
-					case 'PlotOutputDocBt',
-					case 'RunBt',
+                    case 'ParameterCodePopup',
+                        % Step 1: search for the objects you need to work with
+						docPopupObj = findobj(fig,'tag','ParameterCodePopup');
+						val = get(docPopupObj, 'value');
+                        str = get(docPopupObj, 'string');
+						docTextObj = findobj(fig,'tag','ParameterCodeTxt');
+						% Step 2, take action
+						switch val,
+							case 2, % example 1
+                                disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Some example 1');
+							case 3, % example 2
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Some example 2');
+							case 4, % example 3
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Some example 3');
+                            otherwise,
+                                disp(['Popup ' val ' is out of bound.']);
+						end;
+                    case 'CommandPopup',
+                        % Step 1: search for the objects you need to work with
+						docPopupObj = findobj(fig,'tag','CommandPopup');
+						val = get(docPopupObj, 'value');
+                        str = get(docPopupObj, 'string');
+						docTextObj = findobj(fig,'tag','CommandTxt');
+						% Step 2, take action
+						switch val,
+							case 2, % Try searching for inputs
+                                disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Try searching for inputs');
+							case 3, % Show existing outputs
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Show existing outputs');
+							case 4, % Plot existing outputs
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Plot existing outputs');
+                            case 5, % Run but don''t replace existing docs
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Run but don''t replace existing docs');
+                            case 6, % Run and replace existing docs
+                                disp(['Popup is ' str{val} '.']);
+                                set(docTextObj,'string','Run and replace existing docs');
+                            otherwise,
+                                disp(['Popup ' val ' is out of bound.']);
+						end;
+					case 'LoadBt',
 					case 'SaveBt',
 					case 'CancelBt',
 					otherwise,
