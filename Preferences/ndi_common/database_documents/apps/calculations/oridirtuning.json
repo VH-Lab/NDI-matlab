@@ -8,7 +8,6 @@
 		"superclasses": [
 			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
-			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning.json"}
 		]
 	},
 	"depends_on": [
