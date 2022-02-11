@@ -281,65 +281,56 @@ classdef oridirtuning < ndi.calculation
         end; %calculate_oridir_indexes()
     
 		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-        % PLOT - provide a diagnostic plot to show the results of the calculation
-        %
-        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
-        %
-        % Produce a plot of the tuning curve.
-        %
-        % Handles to the figure, the axes, and any objects created are returned in H.
-        %
-        % This function takes additional input arguments as name/value pairs.
-        % See ndi.calculation.plot_parameters for a description of those parameters.
+            % PLOT - provide a diagnostic plot to show the results of the calculation
+            %
+            % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+            %
+            % Produce a plot of the tuning curve.
+            %
+            % Handles to the figure, the axes, and any objects created are returned in H.
+            %
+            % This function takes additional input arguments as name/value pairs.
+            % See ndi.calculation.plot_parameters for a description of those parameters.
 
-            % call superclass plot method to set up axes
-            h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
-
-            if isa(doc_or_parameters,'ndi.document'),
-                doc = doc_or_parameters;
-            else,
-                error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
-            end;
-
-            ct = doc.document_properties.contrast_tuning; % shorten our typing
-            tc = ct.tuning_curve; % shorten our typing
-            ft = ct.fit;
-
-            % First plot responses
-            hold on;
-            h_baseline = plot([min(tc.contrast) max(tc.contrast)],...
-                [0 0],'k--','linewidth',1.0001);
-            h_baseline.Annotation.LegendInformation.IconDisplayStyle = 'off';
-            h.objects(end+1) = h_baseline;
-            [v,sortorder] = sort(tc.contrast);
-            h_errorbar = errorbar(tc.contrast(sortorder(:)),...
-                tc.mean(sortorder(:)),tc.stderr(sortorder(:)),tc.stderr(sortorder(:)));
-            set(h_errorbar,'color',[0 0 0],'linewidth',1,'linestyle','none');
-            h.objects = cat(2,h.objects,h_errorbar);
-				
-            % Second plot all fits
-
-            h.objects(end+1) = plot(ft.naka_rushton_RB_contrast,ft.naka_rushton_RB_values,'-','color',0.33*[1 0 1],...
-                'linewidth',1.5);
-            h.objects(end+1) = plot(ft.naka_rushton_RBN_contrast,ft.naka_rushton_RBN_values,'-','color',0.67*[1 0 1],...
-                'linewidth',1.5);
-            h.objects(end+1) = plot(ft.naka_rushton_RBNS_contrast,ft.naka_rushton_RBNS_values,'-','color',1*[1 0 1],...
-                'linewidth',1.5);
-
-            if ~h.params.suppress_x_label,
-                h.xlabel = xlabel('Contrast');
-            end;
-            if ~h.params.suppress_y_label,
-                h.ylabel = ylabel(['Response (' ct.properties.response_type ', ' ct.properties.response_units ')']);
-            end;
-
-            if 0, % when database is faster :-/
-                if ~h.params.suppress_title,
-                    element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('element_id'),ndi_calculation_obj.session);
-                    h.title = title(element.elementstring(), 'interp','none');
+            % Check doc parameters
+                if isa(doc_or_parameters,'ndi.document'),
+                    doc = doc_or_parameters;
+                else,
+                    error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
                 end;
-            end;
-            box off;
+           
+                ot = doc.document_properties.oridirtuning;  % set variable for less typing
+            
+            % Set up plot
+                h = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
+					ot.tuning_curve.mean, ...
+					ot.tuning_curve.stderr, ...
+					ot.tuning_curve.stderr);
+                
+                delete(h(2));
+                set(h(1), 'color', [0 0 0])
+                
+            % Plot responses
+                hold on;
+                h_baseline = plot([0 360], [0 0], 'k--');
+                h_fitline = plot(ot.fit.double_gaussian_fit_angles,...
+                    ot.fit.double_gaussian_fit.values,'k-');
+
+            % Set labels
+                if ~h.params.suppress_x_label,
+                    h.xlabel = xlabel('Direction (\circ)');
+                end;
+                if ~h.params.suppress_y_label,
+                    h.ylabel = ylabel(ot.properties.response_units);
+                end;
+
+                if 0, % when database is faster :-/
+                    if ~h.params.suppress_title,
+                        element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('stimulus_tuningcurve_id'),ndi_calculation_obj.session);
+                        h.title = title([element.elementstring() '.' element.type '; ' ot.properties.response_type]);
+                    end;
+                end;
+                box off;
 
 		end; % plot()
 		
