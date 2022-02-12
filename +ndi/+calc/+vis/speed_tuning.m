@@ -176,9 +176,19 @@ classdef speed_tuning < ndi.calculation
 				[SF,TF,MNs] = vlt.math.vector2mesh(tc.spatial_frequency,tc.temporal_frequency,tc.mean);
 
 				vlt.neuro.vision.speed.plottuning(SF,TF,MNs,'linestyle','-'); 
+				subplot(1,2,1);
+				A = axis; % get our X axis
 				
 				% Second plot all fits
 
+				[SFf,TFf,MNsf] = vlt.math.vector2mesh(ft.Priebe_fit_spatial_frequencies,...
+						ft.Priebe_fit_temporal_frequencies, ...
+						ft.Priebe_fit_values);
+
+				vlt.neuro.vision.speed.plottuning(SFf,TFf,MNsf,'linestyle','--','do_surf',0); 
+				subplot(1,2,1);
+				axis([A(1) A(2) A(3) A(4)]);
+				
 				if 0, % plot function already does this
 				if ~h.params.suppress_x_label,
 					h.xlabel = xlabel('Speed (deg/sec)');
