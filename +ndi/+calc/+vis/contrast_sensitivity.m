@@ -96,12 +96,10 @@ classdef contrast_sensitivity < ndi.calculation
 						
 						if ~isempty(stim_resp_index_value),
 							% Step 3: Search for contrast tuning curve objects that depend on this stimulus response document
-							q3a = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
-							q3b = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
-							q3c = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
+							q3 = ndi.query('tuning_curve.independent_variable_label','exact_string_anycase','Contrast','');
 							q4 = ndi.query('','depends_on','stimulus_response_scalar_id',stim_resp_scalar{stim_resp_index_value}.id());
 							q5 = ndi.query('','isa','stimulus_tuningcurve.json','');
-							tuning_curves = ndi_calculation_obj.session.database_search( (q3a|q3b|q3c) & q4 & q5);
+							tuning_curves = ndi_calculation_obj.session.database_search(q3 & q4 & q5);
 
 							spatial_frequencies = [];
 							sensitivity_RB = [];
@@ -111,7 +109,9 @@ classdef contrast_sensitivity < ndi.calculation
 
 							visual_response_p = [];
 							across_stims_p = [];
-							
+
+							all_contrast_tuning_curves_ids = {};
+                            							
 							for k=1:numel(tuning_curves),
 								q6 = ndi.query('','isa','contrast_tuning','');
 								q7 = ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_curves{k}.id());
@@ -125,7 +125,8 @@ classdef contrast_sensitivity < ndi.calculation
 								else,
 									contrast_tuning_props = contrast_tuning_props{1};
 								end;
-
+								all_contrast_tuning_curves_ids{end+1} = contrast_tuning_props.id();
+                                
 								stimid = tuning_curves{k}.document_properties.tuning_curve.stimid(1);
 								params_here = stim_pres_doc.document_properties.stimulus_presentation.stimuli(stimid).parameters;
 								if isfield(params_here,'sFrequency'),
@@ -162,7 +163,10 @@ classdef contrast_sensitivity < ndi.calculation
 								doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
 								doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
 								doc{end} = doc{end}.set_dependency_value('stimulus_response_scalar_id',...
-									stim_resp_scalar{stim_resp_index_value});
+									stim_resp_scalar{stim_resp_index_value}.id());
+								for q_=1:numel(all_contrast_tuning_curves_ids),
+									doc{end} = doc{end}.add_dependency_value_n('contrasttuning_id',all_contrast_tuning_curves_ids{q_});
+								end;
 							end;
 						end; % if stim_resp_index_value is not empty
 					end; % if good
