@@ -45,13 +45,14 @@ classdef oridir_tuning < ndi.calculation
 				% Step 3. Calculate oridir_tuning and direction indexes from
 				% stimulus responses and write output into an oridir_tuning document
 
-				doc = ndi_calculation_obj.calculate_oridir_indexes(tuning_doc);
+				oriapp = ndi.app.oridirtuning(ndi_calculation_obj.session);
+				doc = oriapp.calculate_oridir_indexes(tuning_doc,0,0);
 
 				% Step 4. Check if doc exists
 				if ~isempty(doc), 
 					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},...
 						'oridirtuning_calc',oridir_tuning) + doc;
-					doc = doc.set_dependency_value('stimulus_tuningcurve_id',tuning_response_doc.id());
+					doc = doc.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 				end;
 		end; % calculate
 
@@ -101,9 +102,9 @@ classdef oridir_tuning < ndi.calculation
 			%         
 				q1 = ndi.query('','isa','stimulus_tuningcurve.json','');
 			
-				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string','oridir_tuning','');
-				q3 = ndi.query('tuning_curve.independent_variable_label','exact_string','Oridirtuning','');
-				q4 = ndi.query('tuning_curve.independent_variable_label','exact_string','ORIDIRTUNING','');
+				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string_anycase','Orientation','');
+				q3 = ndi.query('tuning_curve.independent_variable_label','exact_string_anycase','Direction','');
+				q4 = ndi.query('tuning_curve.independent_variable_label','exact_string_anycase','angle','');
 				q234 = q2 | q3 | q4;
 				q_total = q1 & q234;
 			
@@ -265,6 +266,9 @@ classdef oridir_tuning < ndi.calculation
 			% This function takes additional input arguments as name/value pairs.
 			% See ndi.calculation.plot_parameters for a description of those parameters.
 
+				% call superclass plot method to set up axes
+				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+				
 				% Check doc parameters
 				if isa(doc_or_parameters,'ndi.document'),
 					doc = doc_or_parameters;
@@ -272,23 +276,26 @@ classdef oridir_tuning < ndi.calculation
 					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
 				end;
            
-				ot = doc.document_properties.oridir_tuning;  % set variable for less typing
+				ot = doc.document_properties.orientation_direction_tuning;  % set variable for less typing
             
 				% Set up plot
-				h = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
+				ha = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
 					ot.tuning_curve.mean, ...
 					ot.tuning_curve.stderr, ...
 					ot.tuning_curve.stderr);
                 
-				delete(h(2));
-				set(h(1), 'color', [0 0 0])
+				delete(ha(2));
+				set(ha(1), 'color', [0 0 0]);
+				h.objects(end+1) = ha(1);
                 
 				% Plot responses
 				hold on;
 				h_baseline = plot([0 360], [0 0], 'k--');
 				h_fitline = plot(ot.fit.double_gaussian_fit_angles,...
-				ot.fit.double_gaussian_fit.values,'k-');
-
+					ot.fit.double_gaussian_fit_values,'k-');
+				h.objects(end+1) = h_baseline;
+				h.objects(end+1) = h_fitline;
+			
 				% Set labels
 				if ~h.params.suppress_x_label,
 					h.xlabel = xlabel('Direction (\circ)');
