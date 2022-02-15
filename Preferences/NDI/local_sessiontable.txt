@@ -1,2 +1,0 @@
-session_id	path
-412687d3aac9b99c_c0cca19f666d4314	/Users/kelly/Documents/GitHub/NDI-matlab\ts_exper2
