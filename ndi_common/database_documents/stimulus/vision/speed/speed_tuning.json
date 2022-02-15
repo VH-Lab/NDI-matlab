@@ -1,0 +1,53 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/speed\/speed_tuning.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/speed\/speed_tuning_schema.json",
+		"class_name":						"ndi_document_stimulus_vision_speed_tuning",
+                "property_list_name":                                   "speed_tuning",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"depends_on": [
+		{
+			"name":		"element_id",
+			"value":	"" 
+		},
+	        {	"name":     "stimulus_tuningcurve_id",
+			"value":    ""
+		}
+	],
+	"speed_tuning":  {
+		"properties": {
+			"response_units":					0,
+			"response_type":					"mean"
+		},
+		"tuning_curve": {
+			"spatial_frequency":					0,
+			"temporal_frequency":					0,
+			"mean":							0,
+			"stddev":						0,
+			"stderr":						0,
+			"individual":	{
+			},
+			"raw_individual": {
+			},
+			"control_individual": {
+			}
+		},
+		"significance": {
+			"visual_response_anova_p":		 		1,
+			"across_stimuli_anova_p":				1
+		},
+		"fit": {
+			"Priebe_fit_parameters":				[0],
+			"Priebe_fit_spatial_frequencies":			[0],
+			"Priebe_fit_temporal_frequencies":			[0],
+			"Priebe_fit_values":					[0],
+			"Priebe_fit_speed_tuning_index":			[0],
+			"Priebe_fit_spatial_frequency_preference":		0,
+			"Priebe_fit_temporal_frequency_preference":		0
+		}
+	}
+}

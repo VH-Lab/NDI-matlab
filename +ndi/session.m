@@ -293,15 +293,27 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end;
 
 				if iscell(doc_unique_id),
-					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_unique_id{:});
-					if numel(dependent_docs)>1,
-						warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
-					end;
-					for i=1:numel(dependent_docs),
-						ndi_session_obj.database.remove(dependent_docs{i});
-					end;
-					for i=1:numel(doc_unique_id), 
-						ndi_session_obj.database.remove(doc_unique_id{i});
+					if numel(doc_unique_id)>50,
+						% many docs to delete; delete them and then check for orphans
+						for i=1:numel(doc_unique_id), 
+							ndi_session_obj.database.remove(doc_unique_id{i});
+						end;
+						d = ndi.database.fun.finddocs_missing_dependencies(ndi_session_obj);
+						if ~iscell(d), d = {d}; end;
+						for i=1:numel(d),
+							ndi_session_obj.database.remove(d{i}.id());
+						end;
+					else,
+						dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_unique_id{:});
+						if numel(dependent_docs)>1,
+							warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
+						end;
+						for i=1:numel(dependent_docs),
+							ndi_session_obj.database.remove(dependent_docs{i});
+						end;
+						for i=1:numel(doc_unique_id), 
+							ndi_session_obj.database.remove(doc_unique_id{i});
+						end;
 					end;
 				else,
 					error(['Did not think we could get here..notify steve.']);

@@ -1,0 +1,18 @@
+% takes a set of stimulus measurements where 'angle', 'sFrequency', and 'contrast'
+% were co-varied, and creates NDI documents of type tuningcurve_calc where
+% contrast is varied for a constant spatial frequency ('sFrequency'). Only the
+% orientations ('angle') values with the empirically best response are used.
+%
+
+parameters.input_parameters.independent_label='Contrast';
+parameters.input_parameters.independent_parameter = 'contrast';
+parameters.input_parameters.best_algorithm = 'empirical_maximum';
+parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value','');
+parameters.input_parameters.selection = struct('property','angle','operation','exact_number','value','best');
+parameters.input_parameters.selection(2) = struct('property','sFrequency','operation','exact_number','value','deal');
+parameters.input_parameters.selection(3) = struct('property','sFrequency','operation','hasfield','value','varies');
+parameters.input_parameters.selection(4) = struct('property','contrast','operation','hasfield','value','varies');
+parameters.input_parameters.selection(5) = struct('property','angle','operation','hasfield','value','varies');
+parameters.depends_on = vlt.data.emptystruct('name','value');
+
+

@@ -52,7 +52,7 @@ classdef tuning_response < ndi.app
 				sq_stimelement = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id()); 
 				sq_e = ndi.query(E.searchquery());
 				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
-				sq_tune = ndi.query('','isa','stimulus_tuningcurve.json','');
+				sq_tune = ndi.query('','isa','stimulus_tuningcurve.json',''); % steve thinks this is wrong, should be stimulus_response_scalar.json
 				doc_stim = E.database_search(sq_stim&sq_e&sq_stimelement);
 				doc_tune = E.database_search(sq_tune&sq_e&sq_stimelement&sq_nditimeseries);
 
@@ -324,6 +324,8 @@ classdef tuning_response < ndi.app
 			% constraint ([])             | Constraints in the form of a vlt.data.fieldsearch structure.
 			%                             |   Example: struct('field','sFrequency','operation',...
 			%                             |              'exact_number','param1',1,'param2','')
+			% doAdd (1)                   | 0/1 Should we actually add the tuning document to the session?
+			%
 			%
 			% See also: vlt.data.fieldsearch
 
@@ -331,6 +333,7 @@ classdef tuning_response < ndi.app
 
 				independent_parameter = {};
 				constraint = [];
+				doAdd = 1;
 
 				vlt.data.assign(varargin{:});
 
@@ -455,7 +458,9 @@ classdef tuning_response < ndi.app
 				tuning_doc = ndi.document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('element_id',stim_response_doc.dependency_value('element_id'));
-				E.database_add(tuning_doc);
+				if doAdd,
+					E.database_add(tuning_doc);
+				end;
 				
 
 		end; % tuning_curve()
@@ -717,4 +722,250 @@ classdef tuning_response < ndi.app
 		end; % make_1d_tuning
 
 	end; % methods
+
+	methods (Static)
+		function resp = tuningcurvedoc2vhlabrespstruct(tuning_doc)
+			% TUNINGCURVEDOC2VHLABRESPSTRUCT - convert between a tuning curve document and the VH lab response structure
+			%
+			% RESPSTRUCT = TUNINGCURVEDOC2VHLABRESPSTRUCT(TUNINGCURVE_DOC)
+			%
+			% Converts entries from an NDI TUNINGCURVE document to a VH-lab response structure.
+			% This function is generally used when one wants to call the VH lab libraries.
+			%
+			%   RESPSTRUCT is a structure  of response properties with fields:
+			%   curve    |    4xnumber of directions tested,
+			%            |      curve(1,:) is directions tested (degrees, compass coords.)
+			%            |      curve(2,:) is mean responses, with control subtracted
+			%            |      curve(3,:) is standard deviation
+			%            |      curve(4,:) is standard error
+			%   ind      |    cell list of individual trial responses for each direction
+			%   spont    |    control responses [mean stddev stderr]
+			%   spontind |    individual control responses
+			%   Optionally:
+			%   blankresp|    response to a control trial: [mean stddev stderr]
+			%   blankind |    individual responses to control
+
+				ind = {};
+				ind_real = {};
+				control_ind = {};
+				control_ind_real = {};
+				response_ind = {};
+				response_mean = [];
+				response_stddev = [];
+				response_stderr = [];
+
+				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+				tuning_doc = ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static(tuning_doc);
+
+				for i=1:numel(tuning_doc.document_properties.tuning_curve.individual_responses_real),
+					ind{i} = tuning_doc.document_properties.tuning_curve.individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.individual_responses_imaginary{i};
+					ind_real{i} = ind{i};
+					if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end;
+					control_ind{i} = tuning_doc.document_properties.tuning_curve.control_individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.control_individual_responses_imaginary{i};
+					control_ind_real{i} = control_ind{i};
+					if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end;
+					response_ind{i} = ind{i} - control_ind{i};
+					response_mean(i) = nanmean(response_ind{i});
+					if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end;
+					response_stddev(i) = nanstd(response_ind{i});
+					response_stderr(i) = vlt.data.nanstderr(response_ind{i});
+					if any(~isreal(response_ind{i})),
+						response_ind{i} = abs(response_ind{i});
+					end;
+				end;
+
+				resp.ind = ind_real;
+				resp.blankind = control_ind_real{1};
+				resp.spontind = resp.blankind;
+				resp.blankresp = [mean(resp.blankind(:)) std(resp.blankind(:)) vlt.stats.stderr(resp.blankind(:))];
+				resp.spont = resp.blankresp; 
+                
+                if size(tuning_doc.document_properties.tuning_curve.independent_variable_value,2)>1,
+                    tuning_axis = 1:numel(response_mean);
+                else,
+                    tuning_axis = tuning_doc.document_properties.tuning_curve.independent_variable_value(:)';
+                end;
+
+				resp.curve = ...
+					[ tuning_axis ; ...
+						response_mean ; ...
+						response_stddev ; ...
+						response_stderr; ];
+				resp.ind = response_ind;
+
+
+		end; % tuningcurvedoc2vhlabrespstruct()
+
+		function tc_doc = tuningdoc_fixcellarrays_static(tc_doc)
+			% TUNINGDOC_FIXCELLARRAYS_STATIC - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
+			%
+				document_properties = tc_doc.document_properties;
+
+				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+					document_properties.tuning_curve.individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_real);
+                                        document_properties.tuning_curve.individual_responses_imaginary= ...
+                                                        vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+					document_properties.tuning_curve.control_individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+					document_properties.tuning_curve.control_individual_responses_imaginary= ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+					document_properties.tuning_curve.stimulus_presentation_number = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+                                end;
+
+				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
+
+		end;  % fixcellarrays()
+
+		function [b,ratio,meanresponse,modulatedresponse,meandoc_i,moddoc_i] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
+			% MODULATED_OR_MEAN - is the response stronger in modulation or mean?
+			%
+			% [B,ratio,mean_response,modulated_response] = MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
+			% 
+			% Given a cell array of STIMULUS_RESPONSE_SCALAR documents that
+			% correspond to different response types to the same stimulus, this
+			% function examines whether the best modulated response
+			% is greater than the best mean response.
+			%
+			% B is 1 if the modulated response is greater, and 0 if the mean response is greater.
+			% If there is no basis for the comparison, then -1 is returned.
+			%
+			% MEAN_RESPONSE is the mean response for the stimulus that has the largest
+			% response (this largest response could be the mean or the modulated response).
+			% MODULATED_RESPONSE is the modulated response for the stimulus that has the largest
+			% response (this largest response could be the mean or the modulated response).
+			% RATIO is the ratio of these two values (MODULATED_RESPONSE / MEAN_RESPONSE).
+			% 
+			% This function examines the empirical responses and does not do any
+			% fitting.
+			%
+			% This function also takes name/value pairs that modify the default behavior.
+			%
+			% |--------------------------------------------------------------------------------| 
+			% | Parameter (default)          | Description                                     |
+			% |--------------------------------------------------------------------------------|
+			% |  modulated_response_names    | Possible matches for the modulated responses    |
+			% |  ({'F1','modulated'})        |   in the 'response_type' field of the           |
+			% |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+			% |  mean_response_names         | Possible matches for the mean responses         |
+			% |  ({'F0','mean'})             |   in the 'response_type' field of the           |
+                        % |                              |   STIMULUS_RESPONSE_SCALAR documents.           |
+			% |------------------------------|-------------------------------------------------|
+			%
+				% Step 0: initialize parameters
+
+				modulated_response_names = {'F1','modulated'};
+				mean_response_names = {'F0','mean'};
+
+				vlt.data.assign(varargin{:});
+
+				% Step 1: check the inputs
+				% Step 1a: do some sanity checking on inputs
+	
+				if ~iscell(stimulus_response_scalar_docs), 
+					error(['STIMULUS_RESPONSE_SCALAR_DOCS should be a cell array.']);
+				end;
+
+				% Step 1b: make sure stimulus_response_scalar documents depend on the same
+				%  stimulus. At the same time, grab some information out of the documents about
+				%  response types.
+
+				good = 1;
+
+				response_types = {};
+				matches_mean = [];
+				matches_modulation = [];
+				stimulus_presentation = dependency_value(stimulus_response_scalar_docs{1},'stimulus_presentation_id');
+
+				for i=1:numel(stimulus_response_scalar_docs),
+					if ~isa(stimulus_response_scalar_docs{i},'ndi.document'),
+						good = 0;
+						break; 
+					else,
+						if ~isfield(stimulus_response_scalar_docs{i}.document_properties,'stimulus_response_scalar'),
+							good = 0;
+							break;
+						else,
+							response_types{i} = stimulus_response_scalar_docs{i}.document_properties.stimulus_response_scalar.response_type;
+							matches_mean(i) = any(strcmpi(response_types{i},mean_response_names));
+							matches_modulation(i) = any(strcmpi(response_types{i},modulated_response_names));
+						end;
+					end;
+				end;
+				
+				if ~good,
+					error(['STIMULUS_RESPONSE_SCALAR_DOCS must be of type ''stimulus_response_scalar''']);
+				end;
+
+				% Step 1c: now see if we have a single mean response
+
+				b = -1;
+				ratio = NaN;
+				meanresponse = -Inf;
+				modulationresponse = -Inf;
+
+				if sum(matches_mean)==0 | sum(matches_modulation)==0, 
+					return; % nothing more to do
+				end;
+
+				if sum(matches_mean)>1,
+					error(['More than one mean response; do not know which to use.']);
+				end;
+				if sum(matches_modulation)>1,
+					error(['More than one modulated response; do not know which to use.']);
+				end;
+
+				mean_stim_response = find(matches_mean); % will be 1 element
+				meandoc_i = mean_stim_response;
+				modulation_stim_response = find(matches_modulation); % will be 1 element
+				moddoc_i = modulation_stim_response;
+
+				mean_resps = [];
+				modulation_resps = [];
+
+				R_mean = stimulus_response_scalar_docs{mean_stim_response}.document_properties.stimulus_response_scalar.responses;
+				R_mod = stimulus_response_scalar_docs{modulation_stim_response}.document_properties.stimulus_response_scalar.responses;
+				stimids_present = unique(R_mean.stimid);
+
+				for i=1:numel(stimids_present),
+					indexes = find(R_mean.stimid == stimids_present(i));
+					mean_resps_here = R_mean.response_real(indexes) + sqrt(-1)*R_mean.response_imaginary(indexes) - (R_mean.control_response_real(indexes)+sqrt(-1)*R_mean.control_response_imaginary(indexes));
+					mean_resps(i) = nanmean(mean_resps_here);
+					if imag(mean_resps(i))>1e-6,
+						mean_resps(i) = abs(mean_resps(i));
+					else,
+						mean_resps(i) = real(mean_resps(i));
+					end;
+					modulated_resps_here = R_mod.response_real(indexes) + sqrt(-1)*R_mod.response_imaginary(indexes) - (R_mod.control_response_real(indexes)+sqrt(-1)*R_mod.control_response_imaginary(indexes));
+					modulation_resps(i) = nanmean(modulated_resps_here);
+					if abs(imag(modulation_resps(i)))>1e-6,
+						modulation_resps(i) = abs(modulation_resps(i));
+					else,
+						modulation_resps(i) = real(modulation_resps(i));
+					end;
+				end;
+
+				[biggest_modulated,biggest_modulated_index] = max(modulation_resps);
+				[biggest_mean,biggest_mean_index] = max(mean_resps);
+
+				b = biggest_modulated > biggest_mean;
+
+				if b, % simple-like response
+					modulatedresponse = biggest_modulated;
+					meanresponse = mean_resps(biggest_modulated_index);
+				else,
+					modulatedresponse = modulation_resps(biggest_mean_index);
+					meanresponse = biggest_mean;
+				end;
+
+				ratio = modulatedresponse/meanresponse;
+
+		end; % modualated_or_mean
+
+	end; % static methods
+
 end % ndi_app_stimulus_response

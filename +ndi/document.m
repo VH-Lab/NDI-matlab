@@ -131,10 +131,20 @@ classdef document
 				if isfield(ndi_document_obj_out.document_properties,'depends_on') & ...
 					isfield(ndi_document_obj_b.document_properties,'depends_on'), 
 					% we need to merge dependencies
-					ndi_document_obj_out.document_properties.depends_on = cat(1,...
-						ndi_document_obj_out.document_properties.depends_on(:),...
-						ndi_document_obj_b.document_properties.depends_on(:));
-						otherproperties = rmfield(otherproperties,'depends_on');
+					for k=1:numel(ndi_document_obj_b.document_properties.depends_on),
+						tf = strcmp(ndi_document_obj_b.document_properties.depends_on(k).name,...
+							{ndi_document_obj_out.document_properties.depends_on.name});
+						if any(tf),
+							index = find(tf);
+							index = index(1);
+							ndi_document_obj_out.document_properties.depends_on(index) =  ...
+								ndi_document_obj_b.document_properties.depends_on(k);
+						else,
+							ndi_document_obj_out.document_properties.depends_on(end+1) = ...
+								ndi_document_obj_b.document_properties.depends_on(k);
+						end;
+					end;
+					otherproperties = rmfield(otherproperties,'depends_on');
 				end;
 
 				% Step 3): Merge the other fields

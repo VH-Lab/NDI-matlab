@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/contrasttuning_calc.json",
+		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/contrasttuning_calc.json",
+		"class_name":                       "ndi_calculation_contrasttuning",
+		"property_list_name":                   "contrasttuning_calc", 
+		"class_version":                    1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus\/vision\/contrast\/contrast_tuning.json"}
+		]
+	},
+	"contrasttuning_calc": {
+		"input_parameters": {
+		},
+		"depends_on": [
+			{
+				"name":				"stimulus_tuningcurve_id",
+				"value":			[]
+			}
+		]
+	}
+}
+

@@ -1,0 +1,27 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/neuro\/reverse_correlation.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/neuro\/reverse_correlation.json",
+		"class_name":						"ndi_document_stimulus_neuro_reverse_correlation",
+		"property_list_name":                                   "reverse_correlation",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/data\/ndi_document_ngrid.json"}
+		]
+	},
+	"depends_on": [
+		{
+			"name":		"element_id",
+			"value":	"" 
+		},
+		{	"name":     "stimulus_presentation_id",
+			"value":    ""
+		}
+	],
+	"reverse_correlation":  {
+		"method":		"",
+		"dimension_labels":	"Time, X, Y"
+	}
+}
+

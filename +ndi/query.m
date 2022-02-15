@@ -131,6 +131,17 @@ classdef query
 							ss_here(1).operation = 'or';
 							ss_here(1).param1 = findinsubfield;
 							ss_here(1).param2 = findinmainfield;
+						elseif strcmpi('~isa',ndi_query_obj(i).searchstructure(j).operation), % replace with search structures
+								% use one of DeMorgan's law: not(A or B) = not(A) AND not(B)
+							findinsubfield = struct('field','document_class.superclasses',...
+									'operation','~hasanysubfield_contains_string',...
+									'param1','definition');
+							findinsubfield.param2 = ndi_query_obj(i).searchstructure(j).param1;
+							findinmainfield = struct('field','document_class.definition', ...
+									'operation','~contains_string');
+							findinmainfield.param1 = ndi_query_obj(i).searchstructure(j).param1;
+							findinmainfield.param2 = '';
+							ss_here = cat(1, findinsubfield, findinmainfield);
 						elseif strcmpi('depends_on',ndi_query_obj(i).searchstructure(j).operation),
 							param1 = {'name','value'};
 							param2 = { ndi_query_obj(i).searchstructure(j).param1 ndi_query_obj(i).searchstructure(j).param2 };
@@ -139,6 +150,16 @@ classdef query
 								param2 = param2(2);
 							end;
 							ss_here = struct('field','depends_on','operation','hasanysubfield_exact_string');
+							ss_here(1).param1 = param1;
+							ss_here(1).param2 = param2;
+						elseif strcmpi('~depends_on',ndi_query_obj(i).searchstructure(j).operation),
+							param1 = {'name','value'};
+							param2 = { ndi_query_obj(i).searchstructure(j).param1 ndi_query_obj(i).searchstructure(j).param2 };
+							if strcmp(param2{1},'*'), % ignore the name
+								param1 = param1(2);
+								param2 = param2(2);
+							end;
+							ss_here = struct('field','depends_on','operation','~hasanysubfield_exact_string');
 							ss_here(1).param1 = param1;
 							ss_here(1).param2 = param2;
 						else, % regular case
@@ -154,7 +175,7 @@ classdef query
 								ss_here(1).param2 = ndi_query_obj(i).searchstructure(j).param2;
 							end;
 						end;
-						searchstructure(end+1) = ss_here;
+						searchstructure = cat(1,searchstructure,ss_here);
 					end;
 				end;
 		end; % to_searchstructure();

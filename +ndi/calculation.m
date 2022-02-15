@@ -51,6 +51,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% the caller, or defaults can be used
 
 				docs = {};
+				docs_tocat = {};
 
 				if nargin<3,
 					parameters = ndi_calculation_obj.default_search_for_input_parameters();
@@ -64,7 +65,13 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				% Step 3: check if we've already done the calculation for these parameters; if we have,
 				% take the appropriate action. If we need to, perform the calculation.
 
-				for i=1:numel(all_parameters),
+				ndi.globals();
+
+				mylog = ndi_globals.log;
+				mylog.msg('system',1,['Beginning calculation by class ' class(ndi_calculation_obj) '...']);
+
+				parfor i=1:numel(all_parameters),
+					mylog.msg('system',1,['Performing calculation ' int2str(i) ' of ' int2str(numel(all_parameters)) '.']);
 					previous_calculations_here = ndi_calculation_obj.search_for_calculation_docs(all_parameters{i});
 					do_calc = 0;
 					if ~isempty(previous_calculations_here),
@@ -72,7 +79,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 							case 'Error',
 								error(['Doc for input parameters already exists; error was requested.']);
 							case {'NoAction','ReplaceIfDifferent'},
-								docs = cat(2,docs,previous_calculations_here);
+								docs_tocat{i} = previous_calculations_here;
 								continue; % skip to the next calculation
 							case {'Replace'},
 								ndi_calculation_obj.session.database_rm(previous_calculations_here);
@@ -86,12 +93,16 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						if ~iscell(docs_out),
 							docs_out = {docs_out};
 						end;
-						docs = cat(2,docs,docs_out);
+						docs_tocat{i} = docs_out;
 					end;
+				end;
+				for i=1:numel(all_parameters),
+					docs = cat(2,docs,docs_tocat{i});
 				end;
 				if ~isempty(docs),
 					ndi_calculation_obj.session.database_add(docs);
 				end;
+				mylog.msg('system',1,'Concluding calculation.');
 		end; % run()
 
 		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
@@ -131,6 +142,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 			% |-----------------------|-----------------------------------------------
 			%
 			%
+				t_start = tic;
 				fixed_input_parameters = parameters_specification.input_parameters;
 				if isfield(parameters_specification,'depends_on'),
 					fixed_depends_on = parameters_specification.depends_on;
@@ -147,6 +159,10 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				end;
 
 				if ~isfield(parameters_specification,'query'),
+					parameters_specification.query = ndi_calculation_obj.default_parameters_query(parameters_specification);
+				end;
+
+				if numel(parameters_specification.query)==0,
 					% we are done, everything is fixed
 					parameters.input_parameters = fixed_input_parameters;
 					parameters.depends_on = fixed_depends_on;
@@ -182,6 +198,28 @@ classdef calculation < ndi.app & ndi.app.appdoc
 					end;
 				end;
 		end; % search_for_input_parameters()
+
+		function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
+			%
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			%
+			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
+			% select particular documents to be placed into the parameters 'depends_on' specification.
+			% If one does not provide any 'query' structure, then the default values here are used.
+			%
+			% The function returns:
+			% |-----------------------|----------------------------------------------|
+			% | query                 | A structure with 'name' and 'query' fields   |
+			% |                       |   that describes a search to be performed to |
+			% |                       |   identify inputs for the 'depends_on' field |
+			% |                       |   in the PARAMETERS output.                  |
+			% |-----------------------|-----------------------------------------------
+			%
+			% In the base class, this returns an empty structure.
+			%
+				query = vlt.data.emptystruct('name','query');
+		end; % default_parameters_query()
 
 		function docs = search_for_calculation_docs(ndi_calculation_obj, parameters)  % can call find_appdoc, most of the code should be put in find_appdoc
 			% SEARCH_FOR_CALCULATION_DOCS - search for previous calculations
@@ -247,32 +285,51 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				doc = {};
 		end; % calculate()
 
-		function diagnostic_plot(ndi_calculation_obj, doc_or_parameters, varargin)
-			% DIAGNOSTIC_PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
+		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
+			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
 			%
-			% DIAGNOSTIC_PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			% H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
 			%
 			% Produce a diagnostic plot that can indicate to a reader whether or not
 			% the calculation has been performed in a manner that makes sense with
 			% its input data. Useful for debugging / validating a calculation.
+			%
+			% Handles to the figure, the axes, and any objects created are returned in H.
 			% 
 			% By default, this plot is made in the current axes.
 			%
-			% This function takes additional input arguments as name/value pairs:
-			% |---------------------------|--------------------------------------|
-			% | Parameter (default)       | Description                          |
-			% |---------------------------|--------------------------------------|
-			% | newfigure (0)             | 0/1 Should we make a new figure?     |
-			% | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
-			% |                           |   state of the current axes?         |
-			% |---------------------------|--------------------------------------|
+			% This function takes additional input arguments as name/value pairs.
+			% See ndi.calculation.plot_parameters for a description of those parameters.
 			%
-				newfigure = 0;
-				holdstate = 0;
-				vlt.data.assign(varargin{:});
+				params = ndi.calculation.plot_parameters(varargin{:});
+				% base class does nothing except pop up figure and title after the doc name
+				h.axes = [];
+				h.figure = [];
+				h.objects = [];
+				h.params = params;
+				h.title = [];
+				h.xlabel = [];
+				h.ylabel = [];
+				h.zlabel = [];
+				if params.newfigure,
+					h.figure = figure;
+				else,
+					h.figure = gcf;
+				end;
+				h.axes = gca;
+				if ~params.suppress_title,
+					if isa(doc_or_parameters,'ndi.document'),
+						id = doc_or_parameters.id();
+						h.title = title([id],'interp','none');
+					end;
+				end;
+				if params.holdstate,
+					hold on;
+				else,
+					hold off;
+				end;
+		end; % plot()
 
-				% base class does nothing
-		end; % diagnostic_plot()
 
 		%%%% methods that override ndi.appdoc %%%%
 
@@ -349,5 +406,192 @@ classdef calculation < ndi.app & ndi.app.appdoc
 		end; % appdoc_description()
 
 	end; % methods
+
+	methods (Static)
+		function param = plot_parameters(varargin);
+			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
+			%
+			% PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			%
+			% Produce a diagnostic plot that can indicate to a reader whether or not
+			% the calculation has been performed in a manner that makes sense with
+			% its input data. Useful for debugging / validating a calculation.
+			%
+			% By default, this plot is made in the current axes.
+			%
+			% This function takes additional input arguments as name/value pairs:
+			% |---------------------------|--------------------------------------|
+			% | Parameter (default)       | Description                          |
+			% |---------------------------|--------------------------------------|
+			% | newfigure (0)             | 0/1 Should we make a new figure?     |
+			% | holdstate (0)             | 0/1 Should we preserve the 'hold'    |
+			% |                           |   state of the current axes?         |
+			% | suppress_x_label (0)      | 0/1 Should we suppress the x label?  |
+			% | suppress_y_label (0)      | 0/1 Should we suppress the y label?  |
+			% | suppress_z_label (0)      | 0/1 Should we suppress the z label?  |
+			% | suppress_title (0)        | 0/1 Should we suppress the title?    |
+			% |---------------------------|--------------------------------------|
+			%
+				newfigure = 0;
+				holdstate = 0;
+				suppress_x_label = 0;
+				suppress_y_label = 0;
+				suppress_z_label = 0;
+				suppress_title = 0;
+				vlt.data.assign(varargin{:});
+				param = vlt.data.workspace2struct();
+				param = rmfield(param,'varargin');
+		end;
+
+		function graphical_edit_calculation(varargin)
+			% GRAPHICAL_EDIT_CALCULATION - create and control a GUI to graphically edit an NDI calculation instance
+			%
+			% GRAPHICAL_EDIT_CALCULATION(...)
+			%
+			% Creates and controls a graphical user interface for creating an instance of
+			% an ndi.calculation object.
+			% 
+			% Usage by the user:
+			%
+			%   GRAPHICAL_EDIT_CALCULATION('command','NEW','type','ndi.calc.TYPE','filename',filename,'name',name)
+			%      or
+			%   GRAPHICAL_EDIT_CALCULATION('command','EDIT','filename',filename)
+			%
+			%
+				command = '';
+				window_params.height = 600;
+				window_params.width = 400;
+
+				name = '';
+				filename = '';
+				type = '';
+				calc.parameter_code_default = {'% Enter parameter code here, or start from a template'};
+				calc.parameter_code = calc.parameter_code_default; 
+
+				fig = []; % figure to use
+
+				vlt.data.assign(varargin{:});
+
+				calc.name = name;
+				calc.filename = filename;
+				calc.type = type;
+
+				varlist_ud = {'calc','window_params'};
+
+				if strcmpi(command,'new'),
+					% set up for new window
+					for i=1:numel(varlist_ud),
+						eval(['ud.' varlist_ud{i} '=' varlist_ud{i} ';']);
+					end;
+					if isempty(fig),
+						fig = figure;
+					end;
+					command = 'NewWindow';
+
+					% would check calc name and calc type and calc filename for validity here
+				elseif strcmpi(command,'edit'),
+					% set up for editing
+						% would read from file here
+					command = 'NewWindow';
+					if isempty(fig),
+						fig = figure;
+					end;
+					% would check calc name and calc type and calc filename for validity here
+				end;
+
+				if isempty(fig),
+					error(['Empty figure, do not know what to work on.']);
+				end;
+				disp(['Command is ' command '.']);
+				switch (command),
+					case 'NewWindow',
+						set(fig,'tag','ndi.calculation.graphical_edit_calculation');
+						set(fig,'userdata',ud); % set initial userdata variables
+						
+						% now build the window
+						uid = vlt.ui.basicuitools_defs;
+
+						callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);']; 
+
+						% Step 1: Establish window geometry
+
+						top = ud.window_params.height;
+						right = ud.window_params.width;
+						row = 25;
+						title_height = 25;
+						title_width = 200;
+						edge = 5;
+
+						doc_width = right - 2*edge;
+						doc_height = 200;
+						menu_width = right - 2*edge - title_width;
+						menu_height = title_height;
+						parameter_code_width = doc_width;
+						parameter_code_height = 150;
+						commands_popup_width = doc_width;
+						commands_popup_height = row;
+						button_width = 100;
+						button_height = row;
+						button_center = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
+
+						% Step 2 now build it
+					
+						set(fig,'position',[50 50 right top]);
+						set(fig,'NumberTitle','off');
+						set(fig,'Name',['Editing ' ud.calc.name ' of type ' ud.calc.type ]);
+
+						% Documentation portion of window
+						x = edge; y = top-row;
+						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
+						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
+							'string',{'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
+						y = y - doc_height;
+						uicontrol(uid.txt,'position',[x y doc_width doc_height],...
+							'string',{'Documentation line 1', 'Documentation line 2','Documentation line 3'},...
+							'tag','DocTxt','Max',2);
+						y = y - row;
+
+						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
+						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
+							'string',{'Default','---','replace','with','actual','examples'},'tag','ParameterCodePopup', 'callback',callbackstr);
+						y = y - parameter_code_height;
+						uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
+							'string',ud.calc.parameter_code,'tag','ParameterCodeTxt','Max',2);
+						y = y - row;
+						y = y - row;
+
+						uicontrol(uid.popup,'position',[x y commands_popup_width commands_popup_height],...
+							'string',{'Commands:','---','Try searching for inputs','Show existing outputs',...
+							'Plot existing outputs','Run but don''t replace existing docs','Run and replace existing docs'},...
+							'tag','CommandPopup','callback',callbackstr);
+						
+						y = y - row;
+						y = y - row;
+						uicontrol(uid.button,'position',[button_center(1)-0.5*button_width y button_width button_height],...
+							'string','Load','tag','LoadBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center(2)-0.5*button_width y button_width button_height],...
+							'string','Save','tag','SaveBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
+							'string','Cancel','tag','CancelBt','callback',callbackstr);
+
+
+					case 'UpdateWindow',
+
+					case 'SearchParametersBt',
+					case 'SearchOutputDocBt',
+					case 'PlotOutputDocBt',
+					case 'RunBt',
+					case 'SaveBt',
+					case 'CancelBt',
+					otherwise,
+						disp(['Unknown command ' command '.']);
+
+				end; % switch(command)
+				
+
+		end; % graphical_edit_calculation_instance
+
+	end; % Static methods
+
 end
 

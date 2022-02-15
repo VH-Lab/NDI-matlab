@@ -1,0 +1,73 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/contrast\/contrast_tuning.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/contrast\/contrast_tuning_schema.json",
+		"class_name":						"ndi_document_stimulus_vision_contrast_tuning",
+                "property_list_name":                                   "contrast_tuning",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+		]
+	},
+	"depends_on": [
+	        {	"name":     "element_id",
+			"value":    ""
+		},
+	        {	"name":     "stimulus_tuningcurve_id",
+			"value":    ""
+		}
+	],
+	"contrast_tuning":  {
+		"properties": {
+			"response_units":					0,
+			"response_type":					"mean"
+		},
+		"tuning_curve": {
+			"contrast":						0,
+			"mean":							0,
+			"stddev":						0,
+			"stderr":						0,
+			"individual":	{
+			},
+			"control_stddev":					0,
+			"control_stderr": 					0
+		},
+		"significance": {
+			"visual_response_anova_p":		 		1,
+			"across_stimuli_anova_p":				1
+		},
+		"fitless": {
+			"interpolated_c50":					0.5
+		},
+		"fit": {
+			"naka_rushton_RB_parameters":				[0],
+			"naka_rushton_RB_contrast":				[0],
+			"naka_rushton_RB_values":				[0],
+			"naka_rushton_RB_pref":					[0],
+			"naka_rushton_RB_empirical_c50":			[0],
+			"naka_rushton_RB_r2":					[0],
+			"naka_rushton_RB_relative_max_gain":			[0],
+			"naka_rushton_RB_saturation_index":			[0],
+			"naka_rushton_RB_sensitivity":				[0],
+			"naka_rushton_RBN_parameters":				[0],
+			"naka_rushton_RBN_contrast":				[0],
+			"naka_rushton_RBN_values":				[0],
+			"naka_rushton_RBN_pref":				[0],
+			"naka_rushton_RBN_empirical_c50":			[0],
+			"naka_rushton_RBN_r2":					[0],
+			"naka_rushton_RBN_relative_max_gain":			[0],
+			"naka_rushton_RBN_saturation_index":			[0],
+			"naka_rushton_RBN_sensitivity":				[0],
+			"naka_rushton_RBNS_parameters":				[0],
+			"naka_rushton_RBNS_contrast":				[0],
+			"naka_rushton_RBNS_values":				[0],
+			"naka_rushton_RBNS_pref":				[0],
+			"naka_rushton_RBNS_empirical_c50":			[0],
+			"naka_rushton_RBNS_r2":					[0],
+			"naka_rushton_RBNS_relative_max_gain":			[0],
+			"naka_rushton_RBNS_saturation_index":			[0],
+			"naka_rushton_RBNS_sensitivity":			[0]
+		}
+	}
+}
+

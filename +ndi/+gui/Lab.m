@@ -23,6 +23,10 @@ classdef Lab < handle
     end
     methods
         function obj = Lab()
+            
+            ndi.globals;
+            guipath = [ndi_globals.path.path filesep '+ndi' filesep '+gui'];
+            
             %Create lab
             obj.window = axes('position', [1/18 1/12 2/3 2/3], ...
                               'XLim', [0 24], 'YLim', [0 16]);
@@ -47,31 +51,31 @@ classdef Lab < handle
         
             %Create zoom
             obj.zIn = image(obj.window, [22.1 22.9], [15.1 15.9], ...
-                            flip(imread('zoomIn.png'), 1), ...
+                            flip(imread([guipath filesep 'zoomIn.png']), 1), ...
                             'ButtonDownFcn', {@obj.setZoom 2/3});
             obj.zOut = image(obj.window, [23.1 23.9], [15.1 15.9], ...
-                             flip(imread('zoomOut.png'), 1), ...
+                             flip(imread([guipath filesep 'zoomOut.png']), 1), ...
                              'ButtonDownFcn', {@obj.setZoom 3/2});
             colormap(flipud(gray(2)));
         end
         
         function addSubject(obj, subj)
             for i=1:numel(subj)
-                obj.subjects = [obj.subjects Icon(obj, numel(obj.subjects), ...
+                obj.subjects = [obj.subjects ndi.gui.Icon(obj, numel(obj.subjects), ...
                                 subj{i}, 1, 1, 4, 3, [0.2 0.4 1])];
             end
         end
         
         function addProbe(obj, prob)
             for i=1:numel(prob)
-                obj.probes = [obj.probes Icon(obj, numel(obj.probes), ...
+                obj.probes = [obj.probes ndi.gui.Icon(obj, numel(obj.probes), ...
                               prob{i}, 6, 6, 2, 3, [0 0.6 0])];
             end
         end
         
         function addDAQ(obj, daq)
             for i=1:numel(daq)
-                obj.DAQs = [obj.DAQs Icon(obj, numel(obj.DAQs), ...
+                obj.DAQs = [obj.DAQs ndi.gui.Icon(obj, numel(obj.DAQs), ...
                             daq{i}, 9, 12, 4, 2, [1 0.6 0])];
             end
             obj.connects = zeros(numel([obj.subjects obj.probes obj.DAQs]));
@@ -246,6 +250,9 @@ classdef Lab < handle
                 src = varargin{3};
                 obj.symbol(src);
             end
+            if isempty(src),
+                return;
+            end;
             ind = find([obj.subjects obj.probes obj.DAQs] == src, 1);
             if obj.transmitting
                 obj.row = ind;

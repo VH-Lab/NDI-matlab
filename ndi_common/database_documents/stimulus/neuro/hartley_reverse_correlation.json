@@ -1,0 +1,31 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/neuro\/hartley_reverse_correlation.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/neuro\/hartley_reverse_correlation.json",
+		"class_name":						"ndi_document_stimulus_neuro_hartley_reverse_correlation",
+		"property_list_name":                                   "hartley_reverse_correlation",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/neuro\/reverse_correlation.json"}
+		]
+	},
+	"hartley_reverse_correlation":  {
+		"stimulus_properties": {
+			"M":						0,
+			"L_max":					20,
+			"K_max":					20,
+			"sf_max":					2,
+			"fps":						10,
+			"color_high":					[255, 255, 255],
+			"color_low":					[0, 0, 0],
+			"rect":						[0, 0, 800, 600]
+		},
+		"reconstruction_properties": {
+			"T_coords":				[0, 0.1, 0.2],
+			"X_coords":				[0, 0.1, 0.2],
+			"Y_coords":				[0, 0.1, 0.2]
+		}
+	}
+}
+

@@ -81,11 +81,23 @@ classdef decoder < ndi.app
 					for k=1:numel(data.parameters),
 						mystim(k) = struct('parameters',data.parameters{k});
 					end;
-					presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
+					presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose','stimevents');
 					for z=1:numel(t.stimon),
 						timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
 							'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
 							'stimclose', t.stimopenclose(z,2) );
+						stimevents = [];
+						if isfield(t,'stimevents'),
+							for kk=1:numel(t.stimevents),
+								stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
+								stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
+								stimevents_indexes = find(t.stimevents{kk}>=stim_onset & t.stimevents{kk}<=stim_offset);
+								stimevents = cat(1,stimevents,[ vlt.data.colvec(t.stimevents{kk}(stimevents_indexes)) kk*ones(numel(stimevents_indexes),1)]);
+							end;
+							[dummy,sortorder] = sort(stimevents(:,1));
+							stimevents = stimevents(sortorder,:);
+						end;
+						timestruct.stimevents = stimevents;
 						presentation_time(end+1) = timestruct;
 					end;
 

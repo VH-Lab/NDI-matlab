@@ -27,8 +27,13 @@ classdef simple < ndi.calculation
 				if ~isfield(parameters,'input_parameters'), error(['parameters structure lacks ''input_parameters.''']); end;
 				if ~isfield(parameters,'depends_on'), error(['parameters structure lacks ''depends_on.''']); end;
 				
+				% Step 1: set up the output structure
 				simple = parameters;
+				
+				% Step 2: perform the calculation, which here is a simple one-line statement
 				simple.answer = parameters.input_parameters.answer;
+				
+				% Step 3: place the results of the calculation into an NDI document
 				doc = ndi.document(ndi_calculation_obj.doc_document_types{1},'simple',simple);
 				for i=1:numel(parameters.depends_on),
 					doc = doc.set_dependency_value(parameters.depends_on(i).name,parameters.depends_on(i).value);

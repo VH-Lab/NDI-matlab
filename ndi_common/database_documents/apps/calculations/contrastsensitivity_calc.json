@@ -1,0 +1,46 @@
+{
+	"document_class": {
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/contrastsensitivity_calc.json",
+		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/contrastsensitivity_calc.json",
+		"class_name":                       "ndi_calculation_contrastsensitivity",
+		"property_list_name":                   "contrastsensitivity_calc", 
+		"class_version":                    1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" }
+		]
+	},
+	"depends_on": [
+		{
+			"name":				"element_id",
+			"value":			[]
+		},
+		{	"name":				"stimulus_presentation_id",
+			"value":			[]
+		},
+		{
+			"name":				"stimulus_response_scalar_id",
+			"value":			[]
+		}
+	],
+	"contrastsensitivity_calc": {
+		"input_parameters": {
+		},
+		"depends_on": [
+			{
+				"name":				"element_id",
+				"value":			[]
+			}
+		],
+		"spatial_frequencies":				[],
+		"sensitivity_RB":				[],
+		"sensitivity_RBN":				[],
+		"sensitivity_RBNS":				[],
+		"is_modulated_response":			0,
+		"across_stimuli_varies_p_bonferroni":		[],
+		"visual_response_p_bonferroni":			[],
+		"response_varies_p_bonferroni":			[],
+		"response_type":				[]
+	}
+}
+
