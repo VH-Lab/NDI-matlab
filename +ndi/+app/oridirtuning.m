@@ -107,13 +107,16 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 
 		end; % calculate_all_oridir_indexes()
 
-		function oriprops = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tuning_doc, do_add)
+		function oriprops = calculate_oridir_indexes(ndi_app_oridirtuning_obj, tuning_doc, do_add, do_plot)
 			% CALCULATE_ORIDIR_INDEXES 
 			%
 			% 
 			%
 				if nargin < 3,
 					do_add = 1;
+				end;
+				if nargin < 4,
+					do_plot = 1;
 				end;
 				E = ndi_app_oridirtuning_obj.session;
 				tapp = ndi.app.stimulus.tuning_response(E);
@@ -211,8 +214,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					E.database_add(oriprops);
 				end;
 
-				figure;
-				ndi_app_oridirtuning_obj.plot_oridir_response(oriprops);
+				if do_plot == 1,
+					figure;
+					ndi_app_oridirtuning_obj.plot_oridir_response(oriprops);
+				end;
 
 		end; % calculate_oridir_indexes()
 
