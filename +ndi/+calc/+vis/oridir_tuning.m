@@ -1,27 +1,27 @@
-classdef oridir_calc < ndi.calculation
+classdef oridir_tuning < ndi.calculation
 
 	methods
-		function oridir_calc_obj = oridir_calc(session)
-			% oridir_calc - ndi.calculation object that
+		function oridir_tuning_obj = oridir_tuning(session)
+			% oridir_tuning - ndi.calculation object that
 			% calculates orientation and direction tuning curves from spike
 			% elements
 			%
 			% ORIDIRTUNING_OBJ = ORIDIRTUNING(SESSION)
 			%
-			% Creates a oridir_calc ndi.calculation object
+			% Creates a oridir_tuning ndi.calculation object
 			%
 				ndi.globals;
-				oridir_calc_obj = oridir_calc_obj@ndi.calculation(session,'oridir_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','oridir_calc.json'));
-		end; % oridir_calc() creator
+				oridir_tuning_obj = oridir_tuning_obj@ndi.calculation(session,'oridir_tuning',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculations','oridirtuning_calc.json'));
+		end; % oridir_tuning() creator
 
 		function doc = calculate(ndi_calculation_obj, parameters)
 			% CALCULATE - perform the calculation for
-			% ndi.calc.oridir_calc
+			% ndi.calc.oridir_tuning
 			%
 			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
 			%
-			% Creates a oridir_calc_direction_tuning_calc document given input parameters.
+			% Creates a oridir_tuning_direction_tuning_calc document given input parameters.
 			
 				% Step 1. Check inputs
 				if ~isfield(parameters,'input_parameters'),
@@ -32,7 +32,7 @@ classdef oridir_calc < ndi.calculation
 				end;
 						
 				% Step 2. Set up output structure
-				oridir_calc = parameters;
+				oridir_tuning = parameters;
 						
 				tuning_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id',...
 					'exact_number',...
@@ -42,18 +42,17 @@ classdef oridir_calc < ndi.calculation
 				end;
 				tuning_doc = tuning_doc{1};
 						
-				% Step 3. Calculate oridir_calc and direction indexes from
-				% stimulus responses and write output into an oridir_calc document
+				% Step 3. Calculate oridir_tuning and direction indexes from
+				% stimulus responses and write output into an oridir_tuning document
 
 				doc = ndi_calculation_obj.calculate_oridir_indexes(tuning_doc);
 
 				% Step 4. Check if doc exists
 				if ~isempty(doc), 
 					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},...
-						'oridir_calc',oridir_calc) + doc;
+						'oridirtuning_calc',oridir_tuning) + doc;
 					doc = doc.set_dependency_value('stimulus_tuningcurve_id',tuning_response_doc.id());
 				end;
-			
 		end; % calculate
 
 		function parameters = default_search_for_input_parameters(ndi_calculation_obj, varargin)
@@ -102,7 +101,7 @@ classdef oridir_calc < ndi.calculation
 			%         
 				q1 = ndi.query('','isa','stimulus_tuningcurve.json','');
 			
-				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string','oridir_calc','');
+				q2 = ndi.query('tuning_curve.independent_variable_label','exact_string','oridir_tuning','');
 				q3 = ndi.query('tuning_curve.independent_variable_label','exact_string','Oridirtuning','');
 				q4 = ndi.query('tuning_curve.independent_variable_label','exact_string','ORIDIRTUNING','');
 				q234 = q2 | q3 | q4;
@@ -147,7 +146,7 @@ classdef oridir_calc < ndi.calculation
 			% ORIDIR_DOC = CALCULATE_ORIDIR_INDEXES(NDI_ORIDIRTUNING_CALC_OBJ, TUNING_DOC)
 			%
 			% Given a 2-dimensional tuning curve document with measurements
-			% at orientation and direction frequencies, this function calculates oridir_calc
+			% at orientation and direction frequencies, this function calculates oridir_tuning
 			% parameters and stores them in ORIDIRTUNING document ORIDIR_DOC.
 			%
 			%
@@ -247,7 +246,7 @@ classdef oridir_calc < ndi.calculation
 					'direction_angle_preference', fi.dirpref, ...
 					'hwhh', fi.tuning_width);
 
-				% create document and store in oridir_calc
+				% create document and store in oridir_tuning
 				oriprops = ndi.document('stimulus/vision/oridir/orientation_direction_tuning',...
 					'orientation_direction_tuning',vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit'));
                                 oriprops = oriprops.set_dependency_value('element_id', stim_response_doc{1}.dependency_value('element_id'));
@@ -273,7 +272,7 @@ classdef oridir_calc < ndi.calculation
 					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
 				end;
            
-				ot = doc.document_properties.oridir_calc;  % set variable for less typing
+				ot = doc.document_properties.oridir_tuning;  % set variable for less typing
             
 				% Set up plot
 				h = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
@@ -316,16 +315,16 @@ classdef oridir_calc < ndi.calculation
 			%   | ORIDIRTUNING -- ABOUT |
 			%   ------------------------
 			%
-			%   ORIDIRTUNING is an ndi.calculation object that calculates the oridir_calc and direction tuning
+			%   ORIDIRTUNING is an ndi.calculation object that calculates the oridir_tuning and direction tuning
 			%   curves from spike elements.
 			%   
 			%   Each  document 'depends_on' an NDI daq system.
 			%
-			%   Definition: apps/calc/oridir_calc.json
+			%   Definition: apps/calc/oridir_tuning.json
 			%
-				eval(['help ndi.calc.vision.oridir_calc.doc_about']);
+				eval(['help ndi.calc.vision.oridir_tuning.doc_about']);
 		end; %doc_about()
 
     end; % methods()
 			
-end % oridir_calc
+end % oridir_tuning
