@@ -248,67 +248,66 @@ classdef oridir_calc < ndi.calculation
 					'hwhh', fi.tuning_width);
 
 				% create document and store in oridir_calc
-				oriprops = ndi.document('vision/oridir/orientation_direction_tuning',...
+				oriprops = ndi.document('stimulus/vision/oridir/orientation_direction_tuning',...
 					'orientation_direction_tuning',vlt.data.var2struct('properties', 'tuning_curve', 'significance', 'vector', 'fit'));
                                 oriprops = oriprops.set_dependency_value('element_id', stim_response_doc{1}.dependency_value('element_id'));
 				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 		end; %calculate_oridir_indexes()
     
 		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-            % PLOT - provide a diagnostic plot to show the results of the calculation
-            %
-            % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
-            %
-            % Produce a plot of the tuning curve.
-            %
-            % Handles to the figure, the axes, and any objects created are returned in H.
-            %
-            % This function takes additional input arguments as name/value pairs.
-            % See ndi.calculation.plot_parameters for a description of those parameters.
+			% PLOT - provide a diagnostic plot to show the results of the calculation
+			%
+			% H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+			%
+			% Produce a plot of the tuning curve.
+			%
+			% Handles to the figure, the axes, and any objects created are returned in H.
+			%
+			% This function takes additional input arguments as name/value pairs.
+			% See ndi.calculation.plot_parameters for a description of those parameters.
 
-            % Check doc parameters
-                if isa(doc_or_parameters,'ndi.document'),
-                    doc = doc_or_parameters;
-                else,
-                    error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
-                end;
+				% Check doc parameters
+				if isa(doc_or_parameters,'ndi.document'),
+					doc = doc_or_parameters;
+				else,
+					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
+				end;
            
-                ot = doc.document_properties.oridir_calc;  % set variable for less typing
+				ot = doc.document_properties.oridir_calc;  % set variable for less typing
             
-            % Set up plot
-                h = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
+				% Set up plot
+				h = vlt.plot.myerrorbar(ot.tuning_curve.direction, ...
 					ot.tuning_curve.mean, ...
 					ot.tuning_curve.stderr, ...
 					ot.tuning_curve.stderr);
                 
-                delete(h(2));
-                set(h(1), 'color', [0 0 0])
+				delete(h(2));
+				set(h(1), 'color', [0 0 0])
                 
-            % Plot responses
-                hold on;
-                h_baseline = plot([0 360], [0 0], 'k--');
-                h_fitline = plot(ot.fit.double_gaussian_fit_angles,...
-                    ot.fit.double_gaussian_fit.values,'k-');
+				% Plot responses
+				hold on;
+				h_baseline = plot([0 360], [0 0], 'k--');
+				h_fitline = plot(ot.fit.double_gaussian_fit_angles,...
+				ot.fit.double_gaussian_fit.values,'k-');
 
-            % Set labels
-                if ~h.params.suppress_x_label,
-                    h.xlabel = xlabel('Direction (\circ)');
-                end;
-                if ~h.params.suppress_y_label,
-                    h.ylabel = ylabel(ot.properties.response_units);
-                end;
+				% Set labels
+				if ~h.params.suppress_x_label,
+					h.xlabel = xlabel('Direction (\circ)');
+				end;
+				if ~h.params.suppress_y_label,
+					h.ylabel = ylabel(ot.properties.response_units);
+				end;
 
-                if 0, % when database is faster :-/
-                    if ~h.params.suppress_title,
-                        element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('stimulus_tuningcurve_id'),ndi_calculation_obj.session);
-                        h.title = title([element.elementstring() '.' element.type '; ' ot.properties.response_type]);
-                    end;
-                end;
-                box off;
-
+				if 0, % when database is faster :-/
+					if ~h.params.suppress_title,
+						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('stimulus_tuningcurve_id'),ndi_calculation_obj.session);
+						h.title = title([element.elementstring() '.' element.type '; ' ot.properties.response_type]);
+					end;
+				end;
+				box off;
 		end; % plot()
 		
-        function doc_about(ndi_calculation_obj)
+		function doc_about(ndi_calculation_obj)
 			% ----------------------------------------------------------------------------------------------
 			% NDI_CALCULATION: ORIDIRTUNING
 			% ----------------------------------------------------------------------------------------------
@@ -319,7 +318,7 @@ classdef oridir_calc < ndi.calculation
 			%
 			%   ORIDIRTUNING is an ndi.calculation object that calculates the oridir_calc and direction tuning
 			%   curves from spike elements.
-            %   
+			%   
 			%   Each  document 'depends_on' an NDI daq system.
 			%
 			%   Definition: apps/calc/oridir_calc.json
