@@ -600,9 +600,9 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						end;
                     case 'ParameterCodePopup',
                         % Step 1: search for the objects you need to work with
-						docPopupObj = findobj(fig,'tag','ParameterCodePopup');
-						val = get(docPopupObj, 'value');
-                        str = get(docPopupObj, 'string');
+						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+						val = get(paramPopupObj, 'value');
+                        str = get(paramPopupObj, 'string');
 						docTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						% Step 2, take action
 						switch val,
@@ -620,9 +620,9 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						end;
                     case 'CommandPopup',
                         % Step 1: search for the objects you need to work with
-						docPopupObj = findobj(fig,'tag','CommandPopup');
-						val = get(docPopupObj, 'value');
-                        str = get(docPopupObj, 'string');
+						cmdPopupObj = findobj(fig,'tag','CommandPopup');
+						val = get(cmdPopupObj, 'value');
+                        str = get(cmdPopupObj, 'string');
 						docTextObj = findobj(fig,'tag','CommandTxt');
 						% Step 2, take action
 						switch val,
@@ -645,7 +645,86 @@ classdef calculation < ndi.app & ndi.app.appdoc
                                 disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
+                        [file,path] = uigetfile('*.mat');
+                        if isequal(file,0)
+                           disp('User selected Cancel');
+                        else
+                           disp(['User selected ', fullfile(path,file)]);
+                        end
+                        
+                        file = load(fullfile(path,file));
+                        
+                        docPopupObj = findobj(fig,'tag','DocPopup');
+                        str = get(docPopupObj, 'string');
+                        val = 1;
+                        for i = 1:size(str,1)
+                            if strcmp(file.docstr, string(str{i}))
+                                val = i;
+                                break;
+                            end
+                        end
+                        set(docPopupObj, 'Value', val);
+                        docTextObj = findobj(fig,'tag','DocTxt');
+                        set(docTextObj,'string',file.doctext);
+                        
+                        paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+                        str = get(paramPopupObj, 'string');
+                        val = 1;
+                        for i = 1:size(str,1)
+                            if strcmp(file.paramstr, string(str{i}))
+                                val = i;
+                                break;
+                            end
+                        end
+                        set(paramPopupObj, 'Value', val);
+                        paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+                        set(paramTextObj,'string',file.paramtext);
+                        
 					case 'SaveBt',
+
+                        % save doc
+                        docPopupObj = findobj(fig,'tag','DocPopup');
+						docval = get(docPopupObj, 'value');
+                        docstrs = get(docPopupObj, 'string');
+                        docstr = docstrs{docval};
+                        doctext = get(findobj(fig,'tag','DocTxt'),'String');
+                        
+                        % save param
+                        paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+						paramval = get(paramPopupObj, 'value');
+                        paramstrs = get(paramPopupObj, 'string');
+                        paramstr = paramstrs{docval};
+                        paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
+                        
+                        if docval == 1 
+                            msgbox('Please select documentation.')
+                        elif paramval = 1
+                            msgbox('Please select parameter code')
+                        else 
+                            filename = 'untitled';
+                            prompt = {'File name:'};
+                            dlgtitle = 'Save As';
+                            dims = [1 50];
+                            definput = {'untitled'};
+                            filename = char(inputdlg(prompt,dlgtitle,dims,definput));
+                            while isfile(strcat(filename,'.mat'))
+                                % File exists
+                                promptMessage = sprintf('File exists, do you want to cover?');
+                                titleBarCaption = 'Yes or No';
+                                button = questdlg(promptMessage, titleBarCaption, 'Yes', 'No', 'Yes');
+                                if strcmpi(button, 'No')
+                                    prompt = {'File name:'};
+                                    dlgtitle = 'Save As';
+                                    dims = [1 50];
+                                    definput = {'untitle'};
+                                    filename = char(inputdlg(prompt,dlgtitle,dims,definput));
+                                else 
+                                    break;
+                                end
+                            end
+                            % File does not exist.
+                            save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
+                        end
 					case 'CancelBt',
 					otherwise,
 						disp(['Unknown command ' command '.']);
