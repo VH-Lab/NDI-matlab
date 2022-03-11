@@ -1,0 +1,21 @@
+This calculation object computes a fit of speed tuning given a set of stimulus responses at a range of spatial and temporal frequency values as described in Priebe et al. 2006.
+
+The fit function is a modified two-dimensional Gaussian function of the form
+
+R(sf,tf) = A * exp( (-(log(sf)-log(sf0)).^2) / (2*sigma_sf*sigma_sf) ) .* ( exp( -(log(tf)-logtfpsf).^2 ./ (2.*(sigma_tf+zeta*(log(tf)-logtfpsf)).^2) ) - exp(-1/(zeta.^2)))
+
+where
+
+logtfpsf = xi * (log(sf)-log(sf0)) + log(tf0)
+
+and the fit parameters wherein
+
+A is the peak response of the neuron,
+zeta is the skew of the temporal frequency tuning curve,
+xi is the speed parameter,
+sigma_sf is the tuning width of the neuron for spatial frequency,
+sigma_tf is the tuning width of the neuron for temporal frequency,
+sf0 is the preferred spatial frequency averaged across temporal frequencies, and
+tf0 is the preferred temporal frequency averaged across spatial frequencies
+
+are determined by performing a least squares fit.

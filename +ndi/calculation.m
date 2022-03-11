@@ -1,10 +1,11 @@
 classdef calculation < ndi.app & ndi.app.appdoc
-
+        
 	properties (SetAccess=protected,GetAccess=public)
+        fast_start = 'ndi.calculation.graphical_edit_calculation(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
 	end; % properties
 
 	methods
-
+        
 		function ndi_calculation_obj = calculation(varargin)
 			% CALCULATION - create an ndi.calculation object
 			%
@@ -541,13 +542,13 @@ classdef calculation < ndi.app & ndi.app.appdoc
 
 						% Documentation portion of window
 						x = edge; y = top-row;
-						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
+                        uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
 							'string',{'---', 'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
 						y = y - doc_height;
-						uicontrol(uid.txt,'position',[x y doc_width doc_height],...
+						uicontrol(uid.edit,'position',[x y doc_width doc_height],...
 							'string','Please select one ducumentation type.',...
-							'tag','DocTxt','Max',2);
+							'tag','DocTxt','min',0,'max',2,'enable','inactive');
 						y = y - row;
 
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
@@ -555,7 +556,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 							'string',{'---','Example 1','Example 2','Example 3'},'tag','ParameterCodePopup', 'callback',callbackstr);
 						y = y - parameter_code_height;
 						uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
-							'string','Please select one parameter code.','tag','ParameterCodeTxt','Max',2);
+							'string','Please select one parameter code.','tag','ParameterCodeTxt','min',0,'max',2,'enable','inactive');
 						y = y - row;
 						y = y - row;
 
@@ -587,37 +588,64 @@ classdef calculation < ndi.app & ndi.app.appdoc
 						switch val,
 							case 2, % General documentation
                                 disp(['Popup is ' str{val} '.']);
-								% do something to read the new string from the file
-								set(docTextObj,'string','Some General Document');
+                                type = 'general';
+% 								set(docTextObj,'string','Some General Document');
 							case 3, % searching for inputs
                                 disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Some Input Document');
+                                type = 'input';
+%                                 set(docTextObj,'string','Some Input Document');
 							case 4, % output documentation
                                 disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Some Output Document');
+                                type = 'output';
+%                                 set(docTextObj,'string','Some Output Document');
                             otherwise,
                                 disp(['Popup ' val ' is out of bound.']);
 						end;
+                        
+                        p = which('ndi.calc.vis.speed_tuning');
+                        [parentdir, appname] = fileparts(p);
+                        docfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
+                        if docfile_present
+                            mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
+                            set(docTextObj,'string',mytext);
+                        elseif val~=1
+                            msgbox('No documentation found.');
+                        end
+                                                
                     case 'ParameterCodePopup',
                         % Step 1: search for the objects you need to work with
 						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
 						val = get(paramPopupObj, 'value');
                         str = get(paramPopupObj, 'string');
-						docTextObj = findobj(fig,'tag','ParameterCodeTxt');
+						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						% Step 2, take action
 						switch val,
 							case 2, % example 1
                                 disp(['Popup is ' str{val} '.']);
-								set(docTextObj,'string','Some example 1');
+								%set(docTextObj,'string','Some example 1');
+                                type = 'example1';
 							case 3, % example 2
                                 disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Some example 2');
+                                %set(docTextObj,'string','Some example 2');
+                                type = 'example2';
 							case 4, % example 3
                                 disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Some example 3');
+                                %set(docTextObj,'string','Some example 3');
+                                type = 'example3';
                             otherwise,
                                 disp(['Popup ' val ' is out of bound.']);
 						end;
+                                                
+                        p = which('ndi.calc.vis.speed_tuning');
+                        [parentdir, appname] = fileparts(p);
+                        paramfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
+                        if paramfile_present
+                            mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
+                            set(paramTextObj,'string',mytext);
+                        elseif val~=1
+                            msgbox('No documentation found.');
+                        end
+                        
                     case 'CommandPopup',
                         % Step 1: search for the objects you need to work with
 						cmdPopupObj = findobj(fig,'tag','CommandPopup');
@@ -698,7 +726,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
                         
                         if docval == 1 
                             msgbox('Please select documentation.')
-                        elif paramval = 1
+                        elseif paramval == 1
                             msgbox('Please select parameter code')
                         else 
                             filename = 'untitled';
@@ -710,7 +738,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
                             while isfile(strcat(filename,'.mat'))
                                 % File exists
                                 promptMessage = sprintf('File exists, do you want to cover?');
-                                titleBarCaption = 'Yes or No';
+                                titleBarCaption = 'File existed';
                                 button = questdlg(promptMessage, titleBarCaption, 'Yes', 'No', 'Yes');
                                 if strcmpi(button, 'No')
                                     prompt = {'File name:'};
@@ -735,6 +763,8 @@ classdef calculation < ndi.app & ndi.app.appdoc
 		end; % graphical_edit_calculation_instance
 
 	end; % Static methods
+    
 
 end
 
+    
