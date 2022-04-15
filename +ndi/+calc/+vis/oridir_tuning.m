@@ -1,22 +1,22 @@
-classdef oridir_tuning < ndi.calculation
+classdef oridir_tuning < ndi.calculator
 
 	methods
 		function oridir_tuning_obj = oridir_tuning(session)
-			% oridir_tuning - ndi.calculation object that
+			% oridir_tuning - ndi.calculator object that
 			% calculates orientation and direction tuning curves from spike
 			% elements
 			%
 			% ORIDIRTUNING_OBJ = ORIDIRTUNING(SESSION)
 			%
-			% Creates a oridir_tuning ndi.calculation object
+			% Creates a oridir_tuning ndi.calculator object
 			%
 				ndi.globals;
-				oridir_tuning_obj = oridir_tuning_obj@ndi.calculation(session,'oridir_tuning',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','oridirtuning_calc.json'));
+				oridir_tuning_obj = oridir_tuning_obj@ndi.calculator(session,'oridir_tuning',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculators','oridirtuning_calc.json'));
 		end; % oridir_tuning() creator
 
-		function doc = calculate(ndi_calculation_obj, parameters)
-			% CALCULATE - perform the calculation for
+		function doc = calculate(ndi_calculator_obj, parameters)
+			% CALCULATE - perform the calculator for
 			% ndi.calc.oridir_tuning
 			%
 			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
@@ -34,7 +34,7 @@ classdef oridir_tuning < ndi.calculation
 				% Step 2. Set up output structure
 				oridir_tuning = parameters;
 						
-				tuning_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id',...
+				tuning_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id',...
 					'exact_number',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_tuningcurve_id'),''));
 				if numel(tuning_doc)~=1, 
@@ -45,24 +45,24 @@ classdef oridir_tuning < ndi.calculation
 				% Step 3. Calculate oridir_tuning and direction indexes from
 				% stimulus responses and write output into an oridir_tuning document
 
-				oriapp = ndi.app.oridirtuning(ndi_calculation_obj.session);
+				oriapp = ndi.app.oridirtuning(ndi_calculator_obj.session);
 				doc = oriapp.calculate_oridir_indexes(tuning_doc,0,0);
 
 				% Step 4. Check if doc exists
 				if ~isempty(doc), 
-					doc = ndi.document(ndi_calculation_obj.doc_document_types{1},...
+					doc = ndi.document(ndi_calculator_obj.doc_document_types{1},...
 						'oridirtuning_calc',oridir_tuning) + doc;
 					doc = doc.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 				end;
 		end; % calculate
 
-		function parameters = default_search_for_input_parameters(ndi_calculation_obj, varargin)
+		function parameters = default_search_for_input_parameters(ndi_calculator_obj, varargin)
 			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
 			%
 			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
 			%
 			% Returns a list of the default search parameters for finding appropriate inputs
-			% to the calculation.
+			% to the calculator.
 			%
 				% search for stimulus_tuningcurve_id
 				parameters.input_parameters = struct([]);
@@ -71,10 +71,10 @@ classdef oridir_tuning < ndi.calculation
 				% parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
 
 				parameters.depends_on = vlt.data.emptystruct('name','value');
-				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query = ndi_calculator_obj.default_parameters_query(parameters);
 		end; % default_search_for_input_parameters
 
-		function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+		function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
 			% DEFAULT_PARAMETERS_QUERY - what queries should be used to
 			% search for input parameters
 			%
@@ -112,21 +112,21 @@ classdef oridir_tuning < ndi.calculation
 		
 		end; % default_parameters_query()
 		
-		function b = is_valid_dependency_input(ndi_calculation_obj, name, value)
+		function b = is_valid_dependency_input(ndi_calculator_obj, name, value)
 			% IS_VALID_DEPENDENCY_INPUT - checks if a potential dependency input
-			% actually valid for this calculation
+			% actually valid for this calculator
 			% 
 			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATION_OBJ, NAME,
 			% VALUE)
 			%
-			% Tests whether a potential input to a calculation is valid.
+			% Tests whether a potential input to a calculator is valid.
 			% NAME - potential dependency name
 			% VALUE - ndi_document id of the potential dependency name
 			%
 			% The base class behavior of this function will return true.
 			% This is overridden if additional criteria beyond an ndi.query
 			% are needed to assess if a document is an appropriate input
-			% for the calculation.
+			% for the calculator.
 				b = 1;
 				return;
 
@@ -136,12 +136,12 @@ classdef oridir_tuning < ndi.calculation
 				switch lower(name),
 					case lower('stimulus_tuningcurve_id'),
 						q = ndi.query('ndi_document.id','exact_string',value,'');
-						d = ndi_calculation_obj.S.database_search(q);
+						d = ndi_calculator_obj.S.database_search(q);
 						b = (numel(d.document_properties.independent_variable_label) ==2);
 					end;
 		end; % is_valid_dependency_input()
 
-		function oridir_doc = calculate_oridir_indexes(ndi_calculation_obj, tuning_doc)
+		function oridir_doc = calculate_oridir_indexes(ndi_calculator_obj, tuning_doc)
 			% CALCULATE_ORIDIR_INDEXES - calculate orientation and direction index values from a tuning curve
 			%
 			% ORIDIR_DOC = CALCULATE_ORIDIR_INDEXES(NDI_ORIDIRTUNING_CALC_OBJ, TUNING_DOC)
@@ -161,7 +161,7 @@ classdef oridir_tuning < ndi.calculation
 				response_stderr = [];
                 
 				% stim_response_doc
-				stim_response_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id',...
+				stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id',...
 					'exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
 				if numel(stim_response_doc)~=1,
 					error(['Could not find stimulus response scalar document.']);
@@ -254,8 +254,8 @@ classdef oridir_tuning < ndi.calculation
 				oriprops = oriprops.set_dependency_value('stimulus_tuningcurve_id',tuning_doc.id());
 		end; %calculate_oridir_indexes()
     
-		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-			% PLOT - provide a diagnostic plot to show the results of the calculation
+		function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
+			% PLOT - provide a diagnostic plot to show the results of the calculator
 			%
 			% H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
 			%
@@ -264,10 +264,10 @@ classdef oridir_tuning < ndi.calculation
 			% Handles to the figure, the axes, and any objects created are returned in H.
 			%
 			% This function takes additional input arguments as name/value pairs.
-			% See ndi.calculation.plot_parameters for a description of those parameters.
+			% See ndi.calculator.plot_parameters for a description of those parameters.
 
 				% call superclass plot method to set up axes
-				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+				h=plot@ndi.calculator(ndi_calculator_obj, doc_or_parameters, varargin{:});
 				
 				% Check doc parameters
 				if isa(doc_or_parameters,'ndi.document'),
@@ -306,14 +306,14 @@ classdef oridir_tuning < ndi.calculation
 
 				if 0, % when database is faster :-/
 					if ~h.params.suppress_title,
-						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('stimulus_tuningcurve_id'),ndi_calculation_obj.session);
+						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('stimulus_tuningcurve_id'),ndi_calculator_obj.session);
 						h.title = title([element.elementstring() '.' element.type '; ' ot.properties.response_type]);
 					end;
 				end;
 				box off;
 		end; % plot()
 		
-		function doc_about(ndi_calculation_obj)
+		function doc_about(ndi_calculator_obj)
 			% ----------------------------------------------------------------------------------------------
 			% NDI_CALCULATION: ORIDIRTUNING
 			% ----------------------------------------------------------------------------------------------
@@ -322,7 +322,7 @@ classdef oridir_tuning < ndi.calculation
 			%   | ORIDIRTUNING -- ABOUT |
 			%   ------------------------
 			%
-			%   ORIDIRTUNING is an ndi.calculation object that calculates the oridir_tuning and direction tuning
+			%   ORIDIRTUNING is an ndi.calculator object that calculates the oridir_tuning and direction tuning
 			%   curves from spike elements.
 			%   
 			%   Each  document 'depends_on' an NDI daq system.

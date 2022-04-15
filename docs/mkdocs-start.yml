@@ -35,8 +35,8 @@ nav:
       - 2.5 Searching NDI databases: 'tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md'
     - 3 Tutorials for new coders or new Matlab users:
       - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
-    - 7 Writing your own apps and calculations:
-      - 7.2 Writing short calculations: 'tutorials/writing_own_app/2_ndi_calculations.md'
+    - 7 Writing your own apps and calculators:
+      - 7.2 Writing short calculations: 'tutorials/writing_own_app/2_ndi_calculators.md'
     - Planned:
       - 4. Case studies in reading data in NDI: 'tutorials/case_studies_reading_data.md'
       - 5. Making your own data pipeline in NDI: 'tutorials/data_pipeline.md'

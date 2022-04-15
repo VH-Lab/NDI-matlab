@@ -1,22 +1,22 @@
-classdef hartley_calc < ndi.calculation
+classdef hartley_calc < ndi.calculator
 
 	methods
 		function hartley_calc_obj = hartley_calc(session)
-			% HARTLEY_CALC - a hartley_calc demonstration of an ndi.calculation object
+			% HARTLEY_CALC - a hartley_calc demonstration of an ndi.calculator object
 			%
 			% HARTLEY_CALC_OBJ = HARTLEY_CALC(SESSION)
 			%
-			% Creates a HARTLEY_CALC ndi.calculation object
+			% Creates a HARTLEY_CALC ndi.calculator object
 			%
 				ndi.globals;
-				hartley_calc_obj = hartley_calc_obj@ndi.calculation(session,'hartley_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','hartley_calc.json'));
+				hartley_calc_obj = hartley_calc_obj@ndi.calculator(session,'hartley_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculators','hartley_calc.json'));
 		end; % hartley_calc()
 
-		function doc = calculate(ndi_calculation_obj, parameters)
-			% CALCULATE - perform the calculation for ndi.calc.example.hartley_calc
+		function doc = calculate(ndi_calculator_obj, parameters)
+			% CALCULATE - perform the calculator for ndi.calc.example.hartley_calc
 			%
-			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+			% DOC = CALCULATE(NDI_CALCULATOR_OBJ, PARAMETERS)
 			%
 			% Creates a hartley_calc_calc document given input parameters.
 			%
@@ -30,16 +30,16 @@ classdef hartley_calc < ndi.calculation
 				% Step 1: set up the output structure, and load the element_id and stimulus_presentation_doc
 				hartley_calc = parameters;
 
-				element_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
+				element_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'element_id'),''));
 				if numel(element_doc)~=1, 
 					error(['Could not find element doc..']);
 				end;
 				element_doc = element_doc{1};
-				element = ndi.database.fun.ndi_document2ndi_object(element_doc, ndi_calculation_obj.session);
+				element = ndi.database.fun.ndi_document2ndi_object(element_doc, ndi_calculator_obj.session);
 
 				q1 = ndi.query('','isa','stimulus_presentation','');
-				stimulus_presentation_docs = ndi_calculation_obj.session.database_search(q1);
+				stimulus_presentation_docs = ndi_calculator_obj.session.database_search(q1);
 
 				for i=1:numel(stimulus_presentation_docs),
 
@@ -48,7 +48,7 @@ classdef hartley_calc < ndi.calculation
 					if ~b, continue; end;
 
 					stimulus_element = ndi.database.fun.ndi_document2ndi_object(dependency_value(stimulus_presentation_docs{i},'stimulus_element_id'),...
-						ndi_calculation_obj.session);
+						ndi_calculator_obj.session);
 
 					% Step 2: do we have a stimulus presentation that has Hartley stims in it? Was it running at the same time as our element?
 
@@ -59,7 +59,7 @@ classdef hartley_calc < ndi.calculation
 						ndi.time.clocktype(stimulus_presentation_docs{i}.document_properties.stimulus_presentation.presentation_time(1).clocktype),...
 						stimulus_presentation_docs{i}.document_properties.epochid,...
 						stimulus_presentation_docs{i}.document_properties.stimulus_presentation.presentation_time(1).onset);
-					[ts_epoch_t0_out, ts_epoch_timeref, msg] = ndi_calculation_obj.session.syncgraph.time_convert(stim_timeref,...
+					[ts_epoch_t0_out, ts_epoch_timeref, msg] = ndi_calculator_obj.session.syncgraph.time_convert(stim_timeref,...
 						0, element, ndi.time.clocktype('dev_local_time'));
 					% time is 0 because stim_timeref is relative to 1st stim
 
@@ -106,7 +106,7 @@ classdef hartley_calc < ndi.calculation
 						% write JSON file here for now
 
 						mystring = vlt.data.jsonencodenan(hartley_reverse_correlation);
-						myfile = fullfile(ndi_calculation_obj.session.path,...
+						myfile = fullfile(ndi_calculator_obj.session.path,...
 							[stimulus_presentation_docs{i}.document_properties.epochid '_' ...
 								element.elementstring() '_hartley.json']);
 						mystring = char(vlt.data.prettyjson(mystring));
@@ -115,7 +115,7 @@ classdef hartley_calc < ndi.calculation
 						% Step 3c: actually make the document
 						if 0, % not doing this yet
 
-							doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'hartley_calc',parameters_here,...
+							doc{end+1} = ndi.document(ndi_calculator_obj.doc_document_types{1},'hartley_calc',parameters_here,...
 								'hartley_reverse_correlation',hartley_reverse_correlation,'reverse_correlation',reverse_correlation);
 							doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
 							doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
@@ -132,13 +132,13 @@ classdef hartley_calc < ndi.calculation
 				
 		end; % calculate
 
-		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+		function parameters = default_search_for_input_parameters(ndi_calculator_obj)
 			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
 			%
-			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ)
 			%
 			% Returns a list of the default search parameters for finding appropriate inputs
-			% to the calculation. For hartley_calc_calc, there is no appropriate default parameters
+			% to the calculator. For hartley_calc_calc, there is no appropriate default parameters
 			% so this search will yield empty.
 			%
 				parameters.input_parameters = struct(...
@@ -146,14 +146,14 @@ classdef hartley_calc < ndi.calculation
 					'X_sample', 1, ...
 					'Y_sample', 1);
 				parameters.depends_on = vlt.data.emptystruct('name','value');
-				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query = ndi_calculator_obj.default_parameters_query(parameters);
 					
 		end; % default_search_for_input_parameters
 
-                function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+                function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
 			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
 			%
-			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
 			%
 			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
 			% select particular documents to be placed into the parameters 'depends_on' specification.
@@ -177,9 +177,9 @@ classdef hartley_calc < ndi.calculation
 				query = struct('name','element_id','query',q_total);
 		end; % default_parameters_query()
 
-		function doc_about(ndi_calculation_obj)
+		function doc_about(ndi_calculator_obj)
 			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATION: HARTLEY_CALC
+			% NDI_CALCULATOR: HARTLEY_CALC
 			% ----------------------------------------------------------------------------------------------
 			%
 			%   ------------------------
@@ -195,20 +195,20 @@ classdef hartley_calc < ndi.calculation
 				eval(['help ndi.calc.example.hartley_calc.doc_about']);
 		end; %doc_about()
 
-		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-                        % PLOT - provide a diagnostic plot to show the results of the calculation
+		function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
+                        % PLOT - provide a diagnostic plot to show the results of the calculator
                         %
-                        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+                        % H=PLOT(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
                         %
                         % Produce a plot of the tuning curve.
 			%
                         % Handles to the figure, the axes, and any objects created are returned in H.
                         %
                         % This function takes additional input arguments as name/value pairs.
-                        % See ndi.calculation.plot_parameters for a description of those parameters.
+                        % See ndi.calculator.plot_parameters for a description of those parameters.
 
 				% call superclass plot method to set up axes
-				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+				h=plot@ndi.calculator(ndi_calculator_obj, doc_or_parameters, varargin{:});
 
 				if isa(doc_or_parameters,'ndi.document'),
 					doc = doc_or_parameters;
