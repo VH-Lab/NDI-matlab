@@ -164,7 +164,7 @@ classdef speed_tuning < ndi.calculation
 				tc = sp.tuning_curve; % shorten our typing
 				ft = sp.fit;
 
-				% First plot responses
+				% First plot fit
 				hold on;
 
 				%h_baseline = plot([min(tc.speed) max(tc.speed)],...
@@ -174,10 +174,23 @@ classdef speed_tuning < ndi.calculation
 				% now call the plot routine
 
 				[SF,TF,MNs] = vlt.math.vector2mesh(tc.spatial_frequency,tc.temporal_frequency,tc.mean);
+				MNs_fit = vlt.neuro.vision.speed.tuningfunc(SF,TF,ft.Priebe_fit_parameters);
 
-				vlt.neuro.vision.speed.plottuning(SF,TF,MNs,'linestyle','-'); 
-				
-				% Second plot all fits
+				significant = 0;
+				linestyle = '--';
+				if sp.significance.visual_response_anova_p<0.05,
+					significant = 1;
+					linestyle = '-';
+				end;
+				vlt.neuro.vision.speed.plottuning(SF,TF,MNs_fit,'marker','none','linestyle',linestyle);
+
+				% now plot raw responses
+				vlt.neuro.vision.speed.plottuning(SF,TF,MNs);
+
+                ch = get(gcf,'children');
+                currentaxes = gca;
+                axes(ch(1));
+                title(['Speed tuning:' num2str(ft.Priebe_fit_parameters(3))]);				
 
 				if 0, % plot function already does this
 				if ~h.params.suppress_x_label,

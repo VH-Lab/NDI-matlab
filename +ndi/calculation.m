@@ -1,7 +1,7 @@
 classdef calculation < ndi.app & ndi.app.appdoc
         
 	properties (SetAccess=protected,GetAccess=public)
-        fast_start = 'ndi.calculation.graphical_edit_calculation(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
+		fast_start = 'ndi.calculation.graphical_edit_calculation(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
 	end; % properties
 
 	methods
@@ -544,7 +544,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 
 						% Documentation portion of window
 						x = edge; y = top-row;
-                        uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
+						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
 							'string',{'---', 'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
 						y = y - doc_height;
@@ -575,193 +575,169 @@ classdef calculation < ndi.app & ndi.app.appdoc
 							'string','Save','tag','SaveBt','callback',callbackstr);
 						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
 							'string','Cancel','tag','CancelBt','callback',callbackstr);
-
-
 					case 'UpdateWindow',
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
 						docPopupObj = findobj(fig,'tag','DocPopup');
 						val = get(docPopupObj, 'value');
-                        str = get(docPopupObj, 'string');
-%                         disp(val);
-%                         disp(str);
+						str = get(docPopupObj, 'string');
+						%disp(val);
+						%disp(str);
 						docTextObj = findobj(fig,'tag','DocTxt');
 						% Step 2, take action
 						switch val,
 							case 2, % General documentation
-                                disp(['Popup is ' str{val} '.']);
-                                type = 'general';
-% 								set(docTextObj,'string','Some General Document');
+								disp(['Popup is ' str{val} '.']);
+								type = 'general';
+								%set(docTextObj,'string','Some General Document');
 							case 3, % searching for inputs
-                                disp(['Popup is ' str{val} '.']);
-                                type = 'input';
-%                                 set(docTextObj,'string','Some Input Document');
+								disp(['Popup is ' str{val} '.']);
+								type = 'input';
+								%set(docTextObj,'string','Some Input Document');
 							case 4, % output documentation
-                                disp(['Popup is ' str{val} '.']);
-                                type = 'output';
-%                                 set(docTextObj,'string','Some Output Document');
-                            otherwise,
-                                disp(['Popup ' val ' is out of bound.']);
+								disp(['Popup is ' str{val} '.']);
+								type = 'output';
+								%set(docTextObj,'string','Some Output Document');
+							otherwise,
+								disp(['Popup ' val ' is out of bound.']);
 						end;
-                        
-                        p = which('ndi.calc.vis.speed_tuning');
-                        [parentdir, appname] = fileparts(p);
-                        docfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
-                        if docfile_present
-                            mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
-                            set(docTextObj,'string',mytext);
-                        elseif val~=1
-                            msgbox('No documentation found.');
-                        end
-                                                
-                    case 'ParameterCodePopup',
-                        % Step 1: search for the objects you need to work with
+		
+						p = which('ndi.calc.vis.speed_tuning');
+						[parentdir, appname] = fileparts(p);
+						docfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
+						if docfile_present,
+							mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
+							set(docTextObj,'string',mytext);
+						elseif val~=1,
+							msgbox('No documentation found.');
+						end;
+					case 'ParameterCodePopup',
+						% Step 1: search for the objects you need to work with
 						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
 						val = get(paramPopupObj, 'value');
-                        str = get(paramPopupObj, 'string');
+						str = get(paramPopupObj, 'string');
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						% Step 2, take action
 						switch val,
 							case 2, % example 1
-                                disp(['Popup is ' str{val} '.']);
+								disp(['Popup is ' str{val} '.']);
 								%set(docTextObj,'string','Some example 1');
-                                type = 'example1';
+								type = 'example1';
 							case 3, % example 2
-                                disp(['Popup is ' str{val} '.']);
-                                %set(docTextObj,'string','Some example 2');
-                                type = 'example2';
+								disp(['Popup is ' str{val} '.']);
+								%set(docTextObj,'string','Some example 2');
+								type = 'example2';
 							case 4, % example 3
-                                disp(['Popup is ' str{val} '.']);
-                                %set(docTextObj,'string','Some example 3');
-                                type = 'example3';
-                            otherwise,
-                                disp(['Popup ' val ' is out of bound.']);
+								disp(['Popup is ' str{val} '.']);
+								%set(docTextObj,'string','Some example 3');
+								type = 'example3';
+							otherwise,
+								disp(['Popup ' val ' is out of bound.']);
+							end;
+					
+						p = which('ndi.calc.vis.speed_tuning');
+						[parentdir, appname] = fileparts(p);
+						paramfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
+						if paramfile_present,
+							mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
+							set(paramTextObj,'string',mytext);
+						elseif val~=1,
+							msgbox('No documentation found.');
 						end;
-                                                
-                        p = which('ndi.calc.vis.speed_tuning');
-                        [parentdir, appname] = fileparts(p);
-                        paramfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
-                        if paramfile_present
-                            mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
-                            set(paramTextObj,'string',mytext);
-                        elseif val~=1
-                            msgbox('No documentation found.');
-                        end
-                        
-                    case 'CommandPopup',
-                        % Step 1: search for the objects you need to work with
+		
+					case 'CommandPopup',
+						% Step 1: search for the objects you need to work with
 						cmdPopupObj = findobj(fig,'tag','CommandPopup');
 						val = get(cmdPopupObj, 'value');
-                        str = get(cmdPopupObj, 'string');
+						str = get(cmdPopupObj, 'string');
 						docTextObj = findobj(fig,'tag','CommandTxt');
 						% Step 2, take action
 						switch val,
 							case 2, % Try searching for inputs
-                                disp(['Popup is ' str{val} '.']);
+								disp(['Popup is ' str{val} '.']);
 								set(docTextObj,'string','Try searching for inputs');
 							case 3, % Show existing outputs
-                                disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Show existing outputs');
+								disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Show existing outputs');
 							case 4, % Plot existing outputs
-                                disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Plot existing outputs');
-                            case 5, % Run but don''t replace existing docs
-                                disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Run but don''t replace existing docs');
-                            case 6, % Run and replace existing docs
-                                disp(['Popup is ' str{val} '.']);
-                                set(docTextObj,'string','Run and replace existing docs');
-                            otherwise,
-                                disp(['Popup ' val ' is out of bound.']);
+								disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Plot existing outputs');
+							case 5, % Run but don''t replace existing docs
+								disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Run but don''t replace existing docs');
+							case 6, % Run and replace existing docs
+								disp(['Popup is ' str{val} '.']);
+								set(docTextObj,'string','Run and replace existing docs');
+							otherwise,
+								disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
-                        [file,path] = uigetfile('*.mat');
-                        if isequal(file,0)
-                           disp('User selected Cancel');
-                        else
-                           disp(['User selected ', fullfile(path,file)]);
-                        end
-                        
-                        file = load(fullfile(path,file));
-                        
-                        docPopupObj = findobj(fig,'tag','DocPopup');
-                        str = get(docPopupObj, 'string');
-                        val = 1;
-                        for i = 1:size(str,1)
-                            if strcmp(file.docstr, string(str{i}))
-                                val = i;
-                                break;
-                            end
-                        end
-                        set(docPopupObj, 'Value', val);
-                        docTextObj = findobj(fig,'tag','DocTxt');
-                        set(docTextObj,'string',file.doctext);
-                        
-                        paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                        str = get(paramPopupObj, 'string');
-                        val = 1;
-                        for i = 1:size(str,1)
-                            if strcmp(file.paramstr, string(str{i}))
-                                val = i;
-                                break;
-                            end
-                        end
-                        set(paramPopupObj, 'Value', val);
-                        paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
-                        set(paramTextObj,'string',file.paramtext);
-                        
+						[file,path] = uigetfile('*.mat');
+						if isequal(file,0)
+							disp('User selected Cancel');
+						else
+							disp(['User selected ', fullfile(path,file)]);
+						end
+						
+						file = load(fullfile(path,file));
+						
+						docPopupObj = findobj(fig,'tag','DocPopup');
+						str = get(docPopupObj, 'string');
+						val = 1;
+						for i = 1:size(str,1)
+							if strcmp(file.docstr, string(str{i}))
+								val = i;
+								break;
+							end
+						end
+						set(docPopupObj, 'Value', val);
+						docTextObj = findobj(fig,'tag','DocTxt');
+						set(docTextObj,'string',file.doctext);
+						
+						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+						str = get(paramPopupObj, 'string');
+						val = 1;
+						for i = 1:size(str,1)
+							if strcmp(file.paramstr, string(str{i}))
+								val = i;
+								break;
+							end
+						end
+						set(paramPopupObj, 'Value', val);
+						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
+						set(paramTextObj,'string',file.paramtext);
 					case 'SaveBt',
+						% what will we save?
+						% let's save the parameter code
+						% shall we save "preferences" for running? Let's not right now
+						% shall we save the view that the user had? let's not right now
+						
+						% save doc
+						%docPopupObj = findobj(fig,'tag','DocPopup');
+						%docval = get(docPopupObj, 'value');
+						%docstrs = get(docPopupObj, 'string');
+						%docstr = docstrs{docval};
+						%doctext = get(findobj(fig,'tag','DocTxt'),'String');
+						
+						% save param
+						%paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+						%paramval = get(paramPopupObj, 'value');
+						%paramstrs = get(paramPopupObj, 'string');
+						%paramstr = paramstrs{paramval};
+						paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
-                        % save doc
-                        docPopupObj = findobj(fig,'tag','DocPopup');
-						docval = get(docPopupObj, 'value');
-                        docstrs = get(docPopupObj, 'string');
-                        docstr = docstrs{docval};
-                        doctext = get(findobj(fig,'tag','DocTxt'),'String');
-                        
-                        % save param
-                        paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-						paramval = get(paramPopupObj, 'value');
-                        paramstrs = get(paramPopupObj, 'string');
-                        paramstr = paramstrs{docval};
-                        paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
-                        
-                        if docval == 1 
-                            msgbox('Please select documentation.')
-                        elseif paramval == 1
-                            msgbox('Please select parameter code')
-                        else 
-                            filename = 'untitled';
-                            prompt = {'File name:'};
-                            dlgtitle = 'Save As';
-                            dims = [1 50];
-                            definput = {'untitled'};
-                            filename = char(inputdlg(prompt,dlgtitle,dims,definput));
-                            while isfile(strcat(filename,'.mat'))
-                                % File exists
-                                promptMessage = sprintf('File exists, do you want to cover?');
-                                titleBarCaption = 'File existed';
-                                button = questdlg(promptMessage, titleBarCaption, 'Yes', 'No', 'Yes');
-                                if strcmpi(button, 'No')
-                                    prompt = {'File name:'};
-                                    dlgtitle = 'Save As';
-                                    dims = [1 50];
-                                    definput = {'untitle'};
-                                    filename = char(inputdlg(prompt,dlgtitle,dims,definput));
-                                else 
-                                    break;
-                                end
-                            end
-                            % File does not exist.
-                            save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
-                        end
+						% check filename
+						if isempty(ud.calc.filename),
+							ud.calc.filename = filename;
+						end;
+						
+
+							save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
 					case 'CancelBt',
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
 				end; % switch(command)
-				
-
 		end; % graphical_edit_calculation_instance
 
 	end; % Static methods
