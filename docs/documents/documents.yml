@@ -4,12 +4,20 @@
     - ndi_document_element : 'documents/ndi_document_element.md'
     - ndi_document_element_epoch : 'documents/ndi_document_element_epoch.md'
     - ndi_document_epochid : 'documents/ndi_document_epochid.md'
+    - ndi_document_mock : 'documents/ndi_document_mock.md'
     - ndi_document_projectvar : 'documents/ndi_document_projectvar.md'
     - ndi_document_subject : 'documents/ndi_document_subject.md'
     - ndi_document_subjectmeasurement : 'documents/ndi_document_subjectmeasurement.md'
     - apps:
-      - calculations:
-        - simple_calc : 'documents/apps/calculations/simple_calc.md'
+      - calculators:
+        - contrastsensitivity_calc : 'documents/apps/calculators/contrastsensitivity_calc.md'
+        - contrasttuning_calc : 'documents/apps/calculators/contrasttuning_calc.md'
+        - hartley_calc : 'documents/apps/calculators/hartley_calc.md'
+        - oridirtuning_calc : 'documents/apps/calculators/oridirtuning_calc.md'
+        - simple_calc : 'documents/apps/calculators/simple_calc.md'
+        - speedtuning_calc : 'documents/apps/calculators/speedtuning_calc.md'
+        - tuning_curve : 'documents/apps/calculators/tuning_curve.md'
+        - tuningcurve_calc : 'documents/apps/calculators/tuningcurve_calc.md'
       - jrclust:
         - jrclust_clusters : 'documents/apps/jrclust/jrclust_clusters.md'
       - markgarbage:
@@ -43,6 +51,7 @@
     - data:
       - fitcurve : 'documents/data/fitcurve.md'
       - ndi_document_binaryseries : 'documents/data/ndi_document_binaryseries.md'
+      - ndi_document_ndgrid : 'documents/data/ndi_document_ndgrid.md'
     - neuron:
       - neuron_extracellular : 'documents/neuron/neuron_extracellular.md'
     - newdoctemplate:
@@ -55,6 +64,13 @@
       - stimulus_response_scalar_parameters : 'documents/stimulus/stimulus_response_scalar_parameters.md'
       - stimulus_response_scalar_parameters_basic : 'documents/stimulus/stimulus_response_scalar_parameters_basic.md'
       - stimulus_tuningcurve : 'documents/stimulus/stimulus_tuningcurve.md'
+      - neuro:
+        - hartley_reverse_correlation : 'documents/stimulus/neuro/hartley_reverse_correlation.md'
+        - reverse_correlation : 'documents/stimulus/neuro/reverse_correlation.md'
       - vision:
+        - contrast:
+          - contrast_tuning : 'documents/stimulus/vision/contrast/contrast_tuning.md'
         - oridir:
           - orientation_direction_tuning : 'documents/stimulus/vision/oridir/orientation_direction_tuning.md'
+        - speed:
+          - speed_tuning : 'documents/stimulus/vision/speed/speed_tuning.md'

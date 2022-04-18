@@ -9,5 +9,20 @@ function d = find_calc_directories()
 %
 %
 
+ndi.globals();
+
+tool_path = fileparts(ndi_globals.path.path);
+
+d = dir([tool_path filesep 'NDIcalc*-matlab']);
+
+dirindexes = find([d.isdir]==1);
+
+d = d(dirindexes);
+
+d = {d.name};
+
+for i=1:numel(d),
+	d{i} = [tool_path filesep d{i}];
+end;
 
 

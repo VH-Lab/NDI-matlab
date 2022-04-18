@@ -3,7 +3,7 @@
     - ndi PACKAGE:
       - ndi.app: 'reference/+ndi/app.m.md'
       - ndi.cache: 'reference/+ndi/cache.m.md'
-      - ndi.calculation: 'reference/+ndi/calculation.m.md'
+      - ndi.calculator: 'reference/+ndi/calculator.m.md'
       - ndi.database: 'reference/+ndi/database.m.md'
       - ndi.document: 'reference/+ndi/document.m.md'
       - ndi.documentservice: 'reference/+ndi/documentservice.m.md'
@@ -12,6 +12,7 @@
       - ndi.globals: 'reference/+ndi/globals.m.md'
       - ndi.ido: 'reference/+ndi/ido.m.md'
       - ndi.neuron: 'reference/+ndi/neuron.m.md'
+      - ndi.pipeline: 'reference/+ndi/pipeline.m.md'
       - ndi.probe: 'reference/+ndi/probe.m.md'
       - ndi.query: 'reference/+ndi/query.m.md'
       - ndi.session: 'reference/+ndi/session.m.md'
@@ -31,6 +32,14 @@
       - calc PACKAGE:
         - example PACKAGE:
           - ndi.calc.example.simple: 'reference/+ndi/+calc/+example/simple.m.md'
+        - stimulus PACKAGE:
+          - ndi.calc.stimulus.tuningcurve: 'reference/+ndi/+calc/+stimulus/tuningcurve.m.md'
+        - vis PACKAGE:
+          - ndi.calc.vis.contrast_sensitivity: 'reference/+ndi/+calc/+vis/contrast_sensitivity.m.md'
+          - ndi.calc.vis.contrast_tuning: 'reference/+ndi/+calc/+vis/contrast_tuning.m.md'
+          - ndi.calc.vis.hartley_calc: 'reference/+ndi/+calc/+vis/hartley_calc.m.md'
+          - ndi.calc.vis.oridir_tuning: 'reference/+ndi/+calc/+vis/oridir_tuning.m.md'
+          - ndi.calc.vis.speed_tuning: 'reference/+ndi/+calc/+vis/speed_tuning.m.md'
       - daq PACKAGE:
         - ndi.daq.daqsystemstring: 'reference/+ndi/+daq/daqsystemstring.m.md'
         - ndi.daq.metadatareader: 'reference/+ndi/+daq/metadatareader.m.md'
@@ -47,6 +56,11 @@
             - ndi.daq.reader.mfdaq.spikegadgets: 'reference/+ndi/+daq/+reader/+mfdaq/spikegadgets.m.md'
         - system PACKAGE:
           - ndi.daq.system.mfdaq: 'reference/+ndi/+daq/+system/mfdaq.m.md'
+        - premature FOLDER:
+          - ndi.daq/premature.ndi_daqsystem_image: 'reference/+ndi/+daq/premature/ndi_daqsystem_image.m.md'
+          - ndi.daq/premature.ndi_daqsystem_image_tiffstack: 'reference/+ndi/+daq/premature/ndi_daqsystem_image_tiffstack.m.md'
+          - ndi.daq/premature.ndi_image: 'reference/+ndi/+daq/premature/ndi_image.m.md'
+          - ndi.daq/premature.ndi_image_tiffstack: 'reference/+ndi/+daq/premature/ndi_image_tiffstack.m.md'
       - data PACKAGE:
         - ndi.data.evaluate_fitcurve: 'reference/+ndi/+data/evaluate_fitcurve.m.md'
       - database PACKAGE:
@@ -73,6 +87,7 @@
       - docs PACKAGE:
         - ndi.docs.all_documents2markdown: 'reference/+ndi/+docs/all_documents2markdown.m.md'
         - ndi.docs.build: 'reference/+ndi/+docs/build.m.md'
+        - ndi.docs.calcbuild: 'reference/+ndi/+docs/calcbuild.m.md'
         - ndi.docs.document2markdown: 'reference/+ndi/+docs/document2markdown.m.md'
         - ndi.docs.schemastructure2docstructure: 'reference/+ndi/+docs/schemastructure2docstructure.m.md'
       - element PACKAGE:
@@ -96,6 +111,8 @@
       - fun PACKAGE:
         - ndi.fun.check_Matlab_toolboxes: 'reference/+ndi/+fun/check_Matlab_toolboxes.m.md'
         - ndi.fun.convertoldnsd2ndi: 'reference/+ndi/+fun/convertoldnsd2ndi.m.md'
+        - ndi.fun.find_calc_directories: 'reference/+ndi/+fun/find_calc_directories.m.md'
+        - ndi.fun.plot_extracellular_spikeshapes: 'reference/+ndi/+fun/plot_extracellular_spikeshapes.m.md'
         - ndi.fun.stimulustemporalfrequency: 'reference/+ndi/+fun/stimulustemporalfrequency.m.md'
       - globals PACKAGE:
         - ndi.globals.assert: 'reference/+ndi/+globals/assert.m.md'
@@ -174,6 +191,9 @@
         - filenavigator PACKAGE:
           - ndi.test.filenavigator.test_ndi_filenavigator: 'reference/+ndi/+test/+filenavigator/test_ndi_filenavigator.m.md'
           - ndi.test.filenavigator.test_ndi_filenavigator_fileIDfunction: 'reference/+ndi/+test/+filenavigator/test_ndi_filenavigator_fileIDfunction.m.md'
+        - misc PACKAGE:
+          - ndi.test.misc.bytestream_save: 'reference/+ndi/+test/+misc/bytestream_save.m.md'
+          - ndi.test.misc.bytestream_test: 'reference/+ndi/+test/+misc/bytestream_test.m.md'
         - probe PACKAGE:
           - ndi.test.probe.test_ndi_probe: 'reference/+ndi/+test/+probe/test_ndi_probe.m.md'
         - session PACKAGE:

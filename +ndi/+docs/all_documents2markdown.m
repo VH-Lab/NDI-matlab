@@ -68,5 +68,5 @@ for i=1:numel(folders),
 end;
 
 if write_yml,
-	vlt.file.str2text([ndi_globals.path.path filesep 'docs' filesep 'documents' filesep 'documents.yml'],t);
+	vlt.file.str2text([output_path filesep 'documents.yml'],t);
 end;

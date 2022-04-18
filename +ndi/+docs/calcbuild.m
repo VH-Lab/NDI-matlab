@@ -1,23 +1,20 @@
-function calcbuild(initializationFile)
+function calcbuild(ndicalc_path)
 % ndi.docs.calcbuild - build NDI calculator markdown documentation from Matlab source
 %
-% ndi.docs.calcbuild(INITFILE)
+% ndi.docs.calcbuild(DIRNAME)
 %
 % Builds the documentation locally in NDI calculator GitHub directories.
 %
 % **Example**:
-%   ndi.docs.calcbuild('ndicalc_vis_Init'); % builds documentation for NDIcalc-vis
+%   ndi.docs.calcbuild('/Users/myname/Documents/MATLAB/tools/NDIcalc-vis-matlab');
+%   % builds documentation for NDIcalc-vis
 %
 
 ndi.globals
 
-ndicalc_init_path = which(initializationFile);
-
-if isempty(ndicalc_init_path),
-	error(['Unknown function ' initializationFile '.']);
-end;
-
 [ndicalc_path] = fileparts(ndicalc_init_path); % get parent directory
+
+keyboard
 
 disp(['Writing NDI calculator document documentation...']);
 

@@ -6,7 +6,7 @@
         "property_list_name":               "tuning_curve",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"},
 			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
 		]
 	},
@@ -20,11 +20,11 @@
   		"input_parameters": {
             "independent_variable_label":				[[]],
             "independent_variable_value":				[],
-        "depends_on":
-          {
-            "name":		"stimulus_response_scalar_id",
-            "value":	"" 
-          }
+            "depends_on":
+            {
+               "name":		"stimulus_response_scalar_id",
+               "value":	"" 
+            }
         },
 		"stimid":                                       [],
 		"response_mean":					            [],
@@ -40,6 +40,5 @@
 		"control_individual_responses_real":			[[]],
 		"control_individual_responses_imaginary":		[[]],
 		"response_units":                               "Spikes/s"
-		}
 	}
 }
