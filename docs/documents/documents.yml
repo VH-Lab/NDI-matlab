@@ -10,6 +10,7 @@
     - apps:
       - calculations:
         - simple_calc : 'documents/apps/calculations/simple_calc.md'
+      - calculators:
       - jrclust:
         - jrclust_clusters : 'documents/apps/jrclust/jrclust_clusters.md'
       - markgarbage:

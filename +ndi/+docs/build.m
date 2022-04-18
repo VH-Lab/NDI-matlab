@@ -30,11 +30,13 @@ ymlpath = 'reference';
 
 disp(['Writing documents pass 1']);
 
-out1 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath);
+out1 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath,[],'','https://vh-lab.github.io/NDI-matlab/');
 os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
+save([ndi_path filesep 'docs' filesep 'documentation_structure.mat'],'os','-mat');
+
 disp(['Writing documents pass 2, with all links']);
-out2 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath, os);
+out2 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath, os,'','https://vh-lab.github.io/NDI-matlab/');
 
 T = vlt.docs.mkdocsnavtext(out2,4);
 

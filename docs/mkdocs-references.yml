@@ -183,6 +183,9 @@
         - filenavigator PACKAGE:
           - ndi.test.filenavigator.test_ndi_filenavigator: 'reference/+ndi/+test/+filenavigator/test_ndi_filenavigator.m.md'
           - ndi.test.filenavigator.test_ndi_filenavigator_fileIDfunction: 'reference/+ndi/+test/+filenavigator/test_ndi_filenavigator_fileIDfunction.m.md'
+        - misc PACKAGE:
+          - ndi.test.misc.bytestream_save: 'reference/+ndi/+test/+misc/bytestream_save.m.md'
+          - ndi.test.misc.bytestream_test: 'reference/+ndi/+test/+misc/bytestream_test.m.md'
         - probe PACKAGE:
           - ndi.test.probe.test_ndi_probe: 'reference/+ndi/+test/+probe/test_ndi_probe.m.md'
         - session PACKAGE:
