@@ -1,8 +1,25 @@
 function t = all_documents2markdown(varargin)
 % ALL_DOCUMENTS2MARKDOWN - write all NDI document types to documentation folder
 %
+% ndi.docs.all_documents2markdown(...)
+%
+% Writes the documentation information for NDI document types to the documentation
+% folder. 
 % 
-% 
+% This function takes name/value pairs that modify its behaviour:
+% |---------------------------------------------------------------------|
+% | Parameter (default)             | Description                       |
+% |---------------------------------|-----------------------------------|
+% | spaces (4)                      | Spaces to place in the table of   |
+% |                                 |   contents.                       |
+% | input_path                      | Location where documents are      |
+% | (ndi_globals.path.documentpath) |   stored.                         |
+% | output_path([ndi_globals.path...| Where should we write the markdown|
+% |  .path filesep 'docs' filesep...|   files?                          |
+% |  'documents' filesep])          |                                   |
+% | write_yml (1)                   | 0/1 Should we write the yml       |
+% |                                 |   information (table of contents) |
+% |---------------------------------------------------------------------|
 
 ndi.globals;
 

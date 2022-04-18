@@ -21,7 +21,10 @@ end;
 
 disp(['Writing NDI calculator document documentation...']);
 
-ndi.docs.all_documents2markdown(ndicalc_path);
+ndi.docs.all_documents2markdown('input_path', ...
+	[ndicalc_path filesep 'ndi_common' filesep 'database_documents'],...
+	'output_path',...
+	[ndicalc_path filesep 'docs' filesep 'documents' filesep]);
 
 disp(['Now writing function reference...']);
 
