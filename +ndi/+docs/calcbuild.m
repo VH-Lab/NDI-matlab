@@ -12,10 +12,6 @@ function calcbuild(ndicalc_path)
 
 ndi.globals
 
-[ndicalc_path] = fileparts(ndicalc_init_path); % get parent directory
-
-keyboard
-
 disp(['Writing NDI calculator document documentation...']);
 
 ndi.docs.all_documents2markdown('input_path', ...
@@ -28,13 +24,18 @@ disp(['Now writing function reference...']);
 ndi_docs = [ndicalc_path filesep 'docs' filesep 'reference']; % code reference path
 ymlpath = 'reference';
 
+url_prefix = vlt.file.textfile2char([ndicalc_path filesep 'docs' filesep 'url_prefix.txt']);
+
 disp(['Writing documents pass 1']);
 
-out1 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath);
+out1 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath,[],'',url_prefix);
 os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
+ndi_os = load([ndi_globals.path.path filesep 'docs' filesep 'documentation_structure.mat']);
+os = cat(2,os,ndi_os.os);
+
 disp(['Writing documents pass 2, with all links']);
-out2 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath, os);
+out2 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath, os,'',url_prefix);
 
 T = vlt.docs.mkdocsnavtext(out2,4);
 

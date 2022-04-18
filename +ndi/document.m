@@ -449,7 +449,7 @@ classdef document
 				end;
 		end % readblankdefinition() 
 
-		function t = readjsonfilelocation(jsonfilelocationstring)
+		function t = readjsonfilelocation_orig(jsonfilelocationstring)
 			% READJSONFILELOCATION - return the text from a json file location string in NDI
 			%
 			% T = READJSONFILELOCATION(JSONFILELOCATIONSTRING)
@@ -470,17 +470,17 @@ classdef document
 				else,
 					% first, guess that it is a complete path from $NDIDOCUMENTPATH
 					filename = [ndi_globals.path.documentpath filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi.filesep,filesep)];
-					if ~exist(filename,'file'),
+					if ~vlt.file.isfile(filename),
 						% try adding extension
 						filename = [filename '.json'];
 					end;
-					if ~exist(filename,'file'), 
+					if ~vlt.file.isfile(filename), 
 						filename = jsonfilelocationstring;
 						[p,n,e] = fileparts(filename);
 						if isempty(e),
 							filename = [filename '.json'];
 						end;
-						if ~exist(filename,'file'),
+						if ~vlt.file.isfile(filename),
 							filename2 = [ndi_globals.path.documentpath filesep filename];
 							if ~exist(filename2,'file'),
 								error(['Cannot find file ' filename '.']);
@@ -499,6 +499,127 @@ classdef document
 					t = vlt.file.textfile2char(filename);
 				end
 		end
+
+		function t = readjsonfilelocation(jsonfilelocationstring)
+			% READJSONFILELOCATION - return the text from a json file location string in NDI
+			%
+			% T = READJSONFILELOCATION(JSONFILELOCATIONSTRING)
+			%
+			% A JSONFILELOCATIONSTRING can be:
+			%      a) a url
+			%      b) a filename (full path)
+			%      c) a filename (full path) but referenced with respect to $NDIDOCUMENTPATH or $NDICALCDOCUMENTPATH
+			%      d) a filename without any path that sits beneath $NDIDOCUMENTPATH or $NDICALCDOCUMENTPATH
+			%      e) a relative path beneath $NDIDOCUMENTPATH (e.g., daq/ndi_document_filenavigator.json)
+			%
+				ndi.globals;
+
+				filename = '';
+
+				if vlt.file.isurl(jsonfilelocationstring),
+					filename = jsonfilelocationstring;
+				end;
+
+				if isempty(filename),
+					if vlt.file.isfile(jsonfilelocationstring),
+						filename = jsonfilelocationstring;
+					end;
+				end;
+
+				if isempty(filename),
+					searchString = '$NDIDOCUMENTPATH';
+					s = strfind(jsonfilelocationstring, searchString);
+					if ~isempty(s), % insert the location
+						filename = [ndi_globals.path.documentpath filesep ...
+							vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi.filesep, filesep)];
+					end;
+				end;
+
+				if isempty(filename), % we need to keep looking
+					searchString2 = '$NDICALCDOCUMENTPATH';
+					s = strfind(jsonfilelocationstring, searchString2);
+					if ~isempty(s), % we need to figure out WHICH $NDICALCDOCUMENT is intended
+						match = 0;
+						for i=1:numel(ndi_globals.path.calcdoc),
+							filename = [ndi_globals.path.calcdoc{i} filesep ...
+								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)]
+							if vlt.file.isfile(filename),
+								% we have a match
+								match = 1;
+								break;
+							end;
+						end;
+						if match==0, % we did not find a match
+							error(['Could not find any replacement for $NDICALCDOCUMENT.']);
+						end;
+					end;
+				end;
+
+				if isempty(filename), % could be a path relative to $NDIDOCUMENTPATH
+					putativefilename = jsonfilelocationstring;
+					% now search for filename.json
+					if ~endsWith(lower(putativefilename),'.json'),
+						putativefilename = [putativefilename '.json'];
+					end;
+					if vlt.file.isfile([ndi_globals.path.documentpath filesep putativefilename]),
+						filename = putativefilename;
+					end;
+				end;
+
+				if isempty(filename),
+					putativefilename = jsonfilelocationstring;
+					% now search for filename.json
+					if ~endsWith(lower(putativefilename),'.json'),
+						putativefilename = [putativefilename '.json'];
+					end;
+					% first try $NDIDOCUMENTPATH
+					filelist = vlt.file.getAllFiles(ndi_globals.path.documentpath);
+					for i=1:numel(filelist),
+						[parent,name,ext] = fileparts(filelist{i});
+						if strcmpi([name ext],[putativefilename]),
+							%  we have a match
+							filename = filelist{i};
+							break;
+						end;
+					end;
+				end;
+
+				if isempty(filename),
+					putativefilename = jsonfilelocationstring;
+					% now search for filename.json
+					if ~endsWith(lower(putativefilename),'.json'),
+						putativefilename = [putativefilename '.json'];
+					end;
+					% next try $NDICALCDOCUMENTPATH
+					for a=1:numel(ndi_globals.path.calcdoc),
+						filelist = vlt.file.getAllFiles(ndi_globals.path.calcdoc{a});
+						for i=1:numel(filelist),
+							[parent,name,ext] = fileparts(filelist{i});
+							if strcmpi([name ext],[putativefilename]),
+								%  we have a match
+								filename = filelist{i};
+								break;
+							end;
+						end;
+						if isempty(filename),
+							break;
+						end;
+					end;
+				end;
+
+				if isempty(filename),
+					error(['Cannot resolve file ' jsonfilelocationstring '.']);
+				end;
+
+				% filename could be url or filename
+
+				if vlt.file.isurl(filename),
+					t = urlread(filename);
+				else,
+					t = vlt.file.textfile2char(filename);
+				end
+		end
+
 
 	end % methods Static
 end % classdef
