@@ -15,7 +15,9 @@ current_depth = 1;
 urldocpath = '';
 giturl_path = 'https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/';
 gitvalurl_path = 'https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/';
-
+ndi_doc_path = 'https://vh-lab.github.io/NDI-matlab/documents/';
+writing_NDI = 1;
+package = '';
 
 vlt.data.assign(varargin{:});
 
@@ -23,22 +25,52 @@ if current_depth > max_depth,
 	error(['Maximum depth of ' int2str(max_depth) ' exceeded. Check for loops in schema definitions.']);
 end;
 
-info.class_name = ndi_document_obj.document_properties.document_class.class_name;
-info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
-[info.url, shortname, ext] = fileparts(info.url);
-if ~isempty(info.url),
-	info.url(end+1) = '/';
-end;
-info.shortname = shortname;
-info.url = [info.url info.shortname '.md'];
-info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
-info.localurl = [info.shortname '.md'];
+ % where should url path be? It's role is to tell subclasses where to find the documentation to each superclass
+ % If I am in the document set that is currently being written, then I should have a relative path.
+ % If I am elsewhere, then I should have an absolute path
+ % 
 
+info.class_name = ndi_document_obj.document_properties.document_class.class_name;
+
+if writing_NDI,
+	info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
+	[info.url, shortname, ext] = fileparts(info.url);
+	if ~isempty(info.url),
+		info.url(end+1) = '/';
+	end;
+	info.shortname = shortname;
+	info.url = [info.url info.shortname '.md'];
+	info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
+	info.i_am_absolute = 0;
+else, % we're writing another system
+	% we are writing about an NDI standard document
+	if ~isempty(strfind(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/')),
+		[info.url, shortname, ext] = fileparts(ndi_document_obj.document_properties.document_class.definition);
+		info.url = [ndi_doc_path];
+		info.shortname = shortname;
+		info.url = [info.url info.shortname]; % no '.md' here
+		info.my_path_to_root = '';
+		info.i_am_absolute = 1;
+		%disp(['I am ' ndi_document_obj.document_properties.document_class.definition ' and my info is ...']);
+	else,
+		%it's our own local one
+		info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDICALCDOCUMENTPATH/', urldocpath);
+		[info.url, shortname, ext] = fileparts(info.url);
+		if ~isempty(info.url),
+			info.url(end+1) = '/';
+		end;
+		info.shortname = shortname;
+		info.url = [info.url info.shortname '.md'];
+		info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
+		info.i_am_absolute = 0;
+	end;
+
+end;
+info.localurl = [info.shortname '.md'];
 
 md = '';
 
 md = cat(2,md,['# ' info.shortname ' (ndi.document class)' newline newline]);
-
 
 md = cat(2,md,['## Class definition' newline newline]);
 
@@ -57,8 +89,12 @@ if examine_superclasses,
 	else,
 		for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses),
 			d=ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
-			[blank,info_here] = ndi.docs.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1);
-			md=cat(2,md,['[' info_here.shortname '](' [info.my_path_to_root info_here.url] ')']);
+			[blank,info_here] = ndi.docs.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1,'writing_NDI',writing_NDI);
+			if info_here.i_am_absolute,
+				md=cat(2,md,['[' info_here.shortname '](' [info_here.url] ')']);
+			else, % i_am_relative!
+				md=cat(2,md,['[' info_here.shortname '](' [info.my_path_to_root info_here.url] ')']);
+			end;
 			superclass_info{end+1} = info_here;
 			if i~=numel(ndi_document_obj.document_properties.document_class.superclasses),
 				md = cat(2,md,', ');
@@ -72,11 +108,26 @@ info.superclass_info = superclass_info;
 
 
 info.definition = ndi_document_obj.document_properties.document_class.definition;
-info.definition_url = strrep(info.definition, '$NDIDOCUMENTPATH/', giturl_path);
+if writing_NDI,
+	info.definition_url = strrep(info.definition, '$NDIDOCUMENTPATH/', giturl_path);
+else,
+	giturl_path2 = strrep(giturl_path,'NDI-matlab',package);
+	giturl_path2 = strrep(giturl_path2,'master','main');
+	info.definition_url = strrep(info.definition, '$NDICALCDOCUMENTPATH/', giturl_path2);
+	info.definition_url = strrep(info.definition_url, '$NDIDOCUMENTPATH/', giturl_path); % if it is in NDI
+end;
 md = cat(2,md,['**Definition**: [' info.definition '](' info.definition_url ')<br>' newline]);
 info.validation = ndi_document_obj.document_properties.document_class.validation;
-info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
+if writing_NDI,
+	info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
+else,
+	gitvalurl_path2 = strrep(gitvalurl_path,'NDI-matlab',package);
+	gitvalurl_path2 = strrep(gitvalurl_path2,'master','main');
+	info.validation_url = strrep(info.validation, '$NDICALCSCHEMAPATH/', gitvalurl_path2);
+	info.validation_url = strrep(info.validation_url, '$NDISCHEMAPATH/', gitvalurl_path);
+end;
 ndi.globals;
+	% NEED EDIT HERE
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi_globals.path.documentschemapath);
 if ~exist(info.validation_path,'file'),
 	info.validation_json = struct('properties',vlt.data.emptystruct());

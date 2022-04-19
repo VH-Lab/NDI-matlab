@@ -14,10 +14,17 @@ ndi.globals
 
 disp(['Writing NDI calculator document documentation...']);
 
+i = 0;
+while (ndicalc_path(end-i)==filesep), i = i + 1; end;
+
+[par,packagename] = fileparts(ndicalc_path(1:end-i));
+
+
 ndi.docs.all_documents2markdown('input_path', ...
-	[ndicalc_path filesep 'ndi_common' filesep 'database_documents'],...
+	[ndicalc_path filesep 'ndi_common' filesep 'database_documents' filesep],...
 	'output_path',...
-	[ndicalc_path filesep 'docs' filesep 'documents' filesep]);
+	[ndicalc_path filesep 'docs' filesep 'documents' filesep],...
+	'writing_NDI',0,'package',packagename);
 
 disp(['Now writing function reference...']);
 

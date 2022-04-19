@@ -566,6 +566,21 @@ classdef document
 					end;
 				end;
 
+				if isempty(filename), % could be a path relative to $NDICALCDOCUMENTPATH
+					putativefilename = jsonfilelocationstring;
+					% now search for filename.json
+					if ~endsWith(lower(putativefilename),'.json'),
+						putativefilename = [putativefilename '.json'];
+					end;
+                    for i=1:numel(ndi_globals.path.calcdoc),
+					    if vlt.file.isfile([ndi_globals.path.calcdoc{i} filesep putativefilename]),
+						    filename = putativefilename;
+                            break;
+                        end;
+					end;
+				end;
+                
+
 				if isempty(filename),
 					putativefilename = jsonfilelocationstring;
 					% now search for filename.json

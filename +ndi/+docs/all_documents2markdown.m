@@ -19,6 +19,9 @@ function t = all_documents2markdown(varargin)
 % |  'documents' filesep])          |                                   |
 % | write_yml (1)                   | 0/1 Should we write the yml       |
 % |                                 |   information (table of contents) |
+% | writing_NDI (1)                 | 0/1 Are we writing the NDI        |
+% |                                 |   standard?                       |
+% | package ('')                    | String package name we are writing|
 % |---------------------------------------------------------------------|
 
 ndi.globals;
@@ -32,6 +35,8 @@ output_path=[ndi_globals.path.path filesep 'docs' filesep 'documents' filesep];
 doc_output_path = ['documents' filesep];
 doc_path = [''];
 write_yml = 1;
+writing_NDI=1;
+package = '';
 
 vlt.data.assign(varargin{:});
 
@@ -45,8 +50,7 @@ for i=1:numel(d),
 		continue;
 	end; % special file
 	doc = ndi.document([doc_path d(i).name]);
-	[md,info] = ndi.docs.document2markdown(doc);
-	[input_path filesep d(i).name],
+	[md,info] = ndi.docs.document2markdown(doc,'writing_NDI',writing_NDI,'package',package);
 	vlt.file.createpath([output_path info.localurl]);
 	vlt.file.str2text([output_path info.localurl],md);
 	t = cat(2,t,[repmat(' ',1,spaces) '- ' info.localurl(1:end-3) ...
@@ -63,7 +67,7 @@ for i=1:numel(folders),
 		'output_path',[output_path folders{i} filesep],...
 		'doc_output_path',[doc_output_path folders{i} filesep],...
 		'doc_path',[doc_path folders{i} filesep ],...
-		'write_yml',0);
+		'write_yml',0,'writing_NDI',writing_NDI,'package',package);
 	t = cat(2,t,tnew);
 end;
 
