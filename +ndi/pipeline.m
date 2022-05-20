@@ -64,9 +64,9 @@ classdef pipeline
 						doc_height = (window_params.height)/4*3;
 						menu_width = right - 2*edge;
 						menu_height = title_height;
-						button_width = 100;
+						button_width = 120;
                         button_height = 25;
-						button_y = [400-4*row 400-7*row 400-10*row];
+						button_y = [400-2*row 400-4.5*row 400-6*row 400-8.5*row 400-10*row 400-11.5*row];
 						button_center = right-(right-doc_width)/2;
 
 						% Step 2 now build it
@@ -86,37 +86,30 @@ classdef pipeline
 						uicontrol(uid.edit,'style','listbox','position',[x y-2*title_height doc_width doc_height],...
 							'string',{'Please select or create a pipeline.'},...
 							'tag','PipelineContent','min',0,'max',2,'callback',callbackstr);
-
-						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
-							'string','New','tag','NewBt','callback',callbackstr);
-						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
-							'string','Edit','tag','EditBt','callback',callbackstr);
-						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(3) button_width button_height],...
+                        
+                        uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
 							'string','Run','tag','RunBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
+							'string','Create New Pipeline','tag','NewPipelineBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(3) button_width button_height],...
+							'string','Delete Current Pipeline','tag','DltPipelineBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(4) button_width button_height],...
+							'string','Create New Calculator','tag','NewCalcBt','callback',callbackstr);
+                        uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(5) button_width button_height],...
+							'string','Delete Current Calculator','tag','DltCalcBt','callback',callbackstr);
+						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(6) button_width button_height],...
+							'string','Edit Current Calculator','tag','EditBt','callback',callbackstr);
+
 
 					case 'PipelinePopup',
 						% Step 1: search for the objects you need to work with
-						piplinePopupObj = findobj(fig,'tag','PipelinePopup');
-						val = get(piplinePopupObj, 'value');
-                        str = get(piplinePopupObj, 'string');
+						pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+						val = get(pipelinePopupObj, 'value')
+                        str = get(pipelinePopupObj, 'string')
 						% Step 2, take action
 						switch val,
 							case 1, 
-                                msgbox("Please select or create a pipeline.");
-							case length(str), 
-                                disp('New pipeline');
-                                read_dir = '+ndi/pipeline_storage/';
-                                defaultfilename = {['untitled']};
-                                prompt = {'File name:'};
-                                dlgtitle = 'Save As';
-                                extension_list = {['.mat']};
-                                content = {''};
-                                [success,filename,replaces] = choosefile(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
-                                if success
-                                    save(strcat(read_dir, '/', filename,'.mat'),'content');
-                                end
-                                piplinePopupObj = findobj(fig,'tag','PipelinePopup');
-                                set(piplinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'));
+                                msgbox("Please select or create a pipeline.");							
                             otherwise,
                                 pipeline_name = str{val};
                                 from_dir = '+ndi/pipeline_storage/';
@@ -125,26 +118,89 @@ classdef pipeline
                                 set(pipelineContentObj, 'string', calcs);
 						end;    
                         
-                    case 'PipelineContent',
-						% Step 1: search for the objects you need to work with
-						piplineContentObj = findobj(fig,'tag','PipelineContent');
-						val = get(piplineContentObj, 'value');
-                        str = get(piplineContentObj, 'string');
-                        return;
+                        
+					case 'NewPipelineBt',
+                        read_dir = '+ndi/pipeline_storage/';
+                        defaultfilename = {['untitled']};
+                        prompt = {'Pipeline name:'};
+                        dlgtitle = 'Save new pipeline';
+                        extension_list = {['.mat']};
+                        [success,filename,replaces] = choosefile(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
+                        if success
+                            prompt = {'Calculator name:'};
+                            dlgtitle = 'Create new calculator';
+                            dimentions = [1 50];
+                            defaultfilename = {['untitled']};
+                            calcname = char(inputdlg(prompt,dlgtitle,dimentions,defaultfilename));
+                            calcs = {calcname};
+                            save(strcat(read_dir, '/', filename,'.mat'),'calcs');
+                            pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                            set(pipelinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'),'Value',length(getPipelines('+ndi/pipeline_storage')));
+                            pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                            set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
+                        end
+					
+                    case 'DltPipelineBt',
+                        pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+						val = get(pipelinePopupObj, 'value');
+                        str = get(pipelinePopupObj, 'string');
+                        read_dir = '+ndi/pipeline_storage/';
+                        filename = str{val};
+                        msgBox = sprintf('Do you want to delete this pipeline?');
+                        title = 'Delete file';
+                        b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
+                        if strcmpi(b, 'Yes');
+                            delete(strcat(read_dir, filename,'.mat'));
+                        end
+                        pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                        set(pipelinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'),'Value',length(getPipelines('+ndi/pipeline_storage')));
+                        pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                        set(pipelineContentObj, 'string','Please select or create a pipeline.','Value',1);
+                    
+                    case 'NewCalcBt',
+                        pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+						val = get(pipelinePopupObj, 'value');
+                        str = get(pipelinePopupObj, 'string');
 						% Step 2, take action
 						switch val,
 							case 1, 
-                                disp(['Popup is ' str{val} '.']);
-							case 2, 
-                                disp(['Popup is ' str{val} '.']);
-							case 3,
-                                disp(['Popup is ' str{val} '.']);
+                                msgbox("Please select or create a pipeline.");							
                             otherwise,
-                                disp(['Popup ' val ' is out of bound.']);
-						end;
+                                pipeline_name = str{val};
+                                prompt = {'Calculator name:'};
+                                dlgtitle = 'Create new calculator';
+                                dimentions = [1 50];
+                                defaultfilename = {['untitled']};
+                                filename = inputdlg(prompt,dlgtitle,dimentions,defaultfilename);
+                                from_dir = '+ndi/pipeline_storage/';
+                                calcs = getCalcFromPipeline(from_dir, pipeline_name);
+                                calcs{end+1} = char(filename);
+                                save(strcat(from_dir, '/', pipeline_name,'.mat'),'calcs');
+                                pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                                set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
+						end;    
                         
-					case 'NewBt',
-					case 'EditBt',
+                    case 'DltCalcBt',
+                        msgBox = sprintf('Do you want to delete this calculator?');
+                        title = 'Delete calculator';
+                        b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
+                        if strcmpi(b, 'Yes');
+                            pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                            val = get(pipelinePopupObj, 'value');
+                            str = get(pipelinePopupObj, 'string');
+                            pipeline_name = str{val};
+                            piplineContentObj = findobj(fig,'tag','PipelineContent');
+                            val = get(piplineContentObj, 'value');
+                            str = get(piplineContentObj, 'string');
+                            calc_name = str{val};
+                            read_dir = '+ndi/pipeline_storage/';
+                            calcs = getCalcFromPipeline(read_dir, pipeline_name);
+                            calcs(ismember(calcs,calc_name)) = [];
+                            pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                            set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
+                            save(strcat(read_dir, '/', pipeline_name,'.mat'),'calcs');
+                        end
+                        
                     case 'RunBt'
 					otherwise,
 						disp(['Unknown command ' command '.']);
@@ -223,7 +279,7 @@ classdef pipeline
                     [p,f,e]=fileparts(pipelineList{i});
                     pipelineList{i} = fullfile(p,f);
                 end
-                pipelineList = ['---',pipelineList,'Create new pipeline'];
+                pipelineList = ['---',pipelineList];
             end % getPipeline end
             
             function calcList = getCalcFromPipeline(from_dir, pipeline_name)
