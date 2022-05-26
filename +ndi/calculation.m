@@ -405,7 +405,8 @@ classdef calculation < ndi.app & ndi.app.appdoc
 		end; % appdoc_description()
 
 	end; % methods
-
+    
+        
 	methods (Static)
 		function param = plot_parameters(varargin);
 			% PLOT - provide a diagnostic plot to show the results of the calculation, if appropriate
@@ -441,7 +442,7 @@ classdef calculation < ndi.app & ndi.app.appdoc
 				param = vlt.data.workspace2struct();
 				param = rmfield(param,'varargin');
 		end;
-
+                
 		function graphical_edit_calculation(varargin)
 			% GRAPHICAL_EDIT_CALCULATION - create and control a GUI to graphically edit an NDI calculation instance
 			%
@@ -729,38 +730,98 @@ classdef calculation < ndi.app & ndi.app.appdoc
                         elseif paramval == 1
                             msgbox('Please select parameter code')
                         else 
-                            filename = 'untitled';
+                            defaultfilename = {['untitled']};
                             prompt = {'File name:'};
                             dlgtitle = 'Save As';
-                            dims = [1 50];
-                            definput = {'untitled'};
-                            filename = char(inputdlg(prompt,dlgtitle,dims,definput));
-                            while isfile(strcat(filename,'.mat'))
-                                % File exists
-                                promptMessage = sprintf('File exists, do you want to cover?');
-                                titleBarCaption = 'File existed';
-                                button = questdlg(promptMessage, titleBarCaption, 'Yes', 'No', 'Yes');
-                                if strcmpi(button, 'No')
-                                    prompt = {'File name:'};
-                                    dlgtitle = 'Save As';
-                                    dims = [1 50];
-                                    definput = {'untitle'};
-                                    filename = char(inputdlg(prompt,dlgtitle,dims,definput));
-                                else 
-                                    break;
-                                end
+                            extension_list = {['.mat']};
+                            [success,filename,replaces] = choosefile(prompt, defaultfilename, dlgtitle, extension_list);
+                            % success: need to save
+                            % replaces: original file is covered
+                            % [0, filename, 0]: do nothing
+                            % [1, filename, 0]: save and not replace
+                            % [1, filename, 1]: save and replace
+                            
+                            % uncomment the following three lines to check 
+                            disp("success: "+success);
+                            disp("filename: "+filename);
+                            disp("replaces: "+replaces);
+                            if success
+                                save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
                             end
-                            % File does not exist.
-                            save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
                         end
 					case 'CancelBt',
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
 				end; % switch(command)
-				
+            
+            function [success,filename,replaces] = choosefile(prompt, defaultfilename, dlgtitle, extension_list)
+            % CHOOSEFILE - ask user to choose a file graphically
+            %
+            % [SUCCESS, FILENAME, REPLACES] = CHOOSEFILE(PROMPT, DEFAULTFILENAME, DLGTITLE, EXTENSION_LIST)
+            %
+            success = 0;
+            replaces = 0;
+            
+            % ask for file name
+            dims = [1 50];
+            filename = inputdlg(prompt,dlgtitle,dims,defaultfilename);
+            
+            if isempty(filename)
+                % user selects cancel, return
+                success = 0;
+                replaces = 0;
+                return;
+            else
+                filename = char(filename);
+            end
+            
+            % check for existence
+            exist = 0;
+            for s = extension_list
+                if isfile(strcat(filename,char(s)))
+                    exist = 1;
+                end;
+            end
+            
+            while exist
+                % while file exists
+                promptMessage = sprintf('File exists, do you want to cover?');
+                titleBarCaption = 'File existed';
+                button = questdlg(promptMessage, titleBarCaption, 'Yes', 'No', 'Yes');
+                if strcmpi(button, 'No')
+                    % user doesn't want to cover, keep asking
+                    filename = inputdlg(prompt,dlgtitle,dims,defaultfilename);
+                    if isempty(filename)
+                        % user selects cancel, return
+                        success = 0;
+                        replaces = 0;
+                        return;
+                    else
+                        filename = char(filename);
+                    end
+                else % user chooses to cover, return
+                    success = 1;
+                    replaces = 1;
+                    return;
+                end
+                % check for existence again, because we got a new filename
+                exist = 0;
+                for s = extension_list
+                    if isfile(strcat(filename,char(s)))
+                        exist = 1;
+                    end;
+                end
+            end
+            
+            % gets out from the while loop, which means file does not exist
+            % no need to replace
+            success = 1;
+            replaces = 0;
+        end % choosefile		
 
 		end; % graphical_edit_calculation_instance
+        
 
 	end; % Static methods
     
