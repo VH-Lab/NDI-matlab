@@ -115,7 +115,7 @@ classdef pipeline
                                 from_dir = '+ndi/pipeline_storage/';
                                 calcs = getCalcFromPipeline(from_dir, pipeline_name);
                                 pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                                set(pipelineContentObj, 'string', calcs);
+                                set(pipelineContentObj, 'string', calcs, 'Value', length(calcs));
 						end;    
                         
                         
@@ -137,7 +137,7 @@ classdef pipeline
                             pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                             set(pipelinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'),'Value',length(getPipelines('+ndi/pipeline_storage')));
                             pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                            set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
+                            set(pipelineContentObj, 'string',calcs,'Value',length(calcs));
                         end
 					
                     case 'DltPipelineBt',
@@ -177,7 +177,7 @@ classdef pipeline
                                 calcs{end+1} = char(filename);
                                 save(strcat(from_dir, '/', pipeline_name,'.mat'),'calcs');
                                 pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                                set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
+                                set(pipelineContentObj, 'string',calcs,'Value',length(calcs));
 						end;    
                         
                     case 'DltCalcBt',
@@ -186,13 +186,13 @@ classdef pipeline
                         b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
                         if strcmpi(b, 'Yes');
                             pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                            val = get(pipelinePopupObj, 'value');
-                            str = get(pipelinePopupObj, 'string');
-                            pipeline_name = str{val};
+                            pip_val = get(pipelinePopupObj, 'value');
+                            pip_str = get(pipelinePopupObj, 'string');
+                            pipeline_name = pip_str{pip_val};
                             piplineContentObj = findobj(fig,'tag','PipelineContent');
-                            val = get(piplineContentObj, 'value');
-                            str = get(piplineContentObj, 'string');
-                            calc_name = str{val};
+                            calc_val = get(piplineContentObj, 'value');
+                            calc_str = get(piplineContentObj, 'string');
+                            calc_name = calc_str{calc_val};
                             read_dir = '+ndi/pipeline_storage/';
                             calcs = getCalcFromPipeline(read_dir, pipeline_name);
                             calcs(ismember(calcs,calc_name)) = [];
