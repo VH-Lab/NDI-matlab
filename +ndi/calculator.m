@@ -331,6 +331,23 @@ classdef calculator < ndi.app & ndi.app.appdoc
 				end;
 		end; % plot()
 
+		function p = packagepath(ndi_calculation_obj)
+		% PACKAGEPATH - return the pathname of the package where the calculator is located
+		%
+		% P = PACKAGEPATH(NDI_CALCULATION_OBJ)
+		%
+		% Return the path of the package that contains the ndi.calculation.object.
+		%
+			p = '';
+			levels = sum( class(ndi_calculation_obj)=='.')+1;
+			p = which(class(ndi_calculation_obj));
+			try,
+				for i=1:levels,
+					p = fileparts(p);
+				end;
+			end;
+
+		end; % packagepath
 
 		%%%% methods that override ndi.appdoc %%%%
 

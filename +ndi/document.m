@@ -542,7 +542,7 @@ classdef document
 						match = 0;
 						for i=1:numel(ndi_globals.path.calcdoc),
 							filename = [ndi_globals.path.calcdoc{i} filesep ...
-								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)]
+								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)];
 							if vlt.file.isfile(filename),
 								% we have a match
 								match = 1;
