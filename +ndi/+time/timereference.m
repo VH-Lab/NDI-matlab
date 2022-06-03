@@ -35,7 +35,7 @@ classdef timereference
 			% be searched to find the live REFERENT to create OBJ.
 			%
 
-				if nargin==2,
+				if nargin==2 & ~isa(clocktype, 'ndi.time.clocktype'),
 					session = referent; % 1st argument
 					session_ID = session.id();
 					timeref_struct = clocktype; % 2nd argument
@@ -63,6 +63,14 @@ classdef timereference
 				if ~isa(clocktype,'ndi.time.clocktype'),
 					error(['clocktype must be a member or subclass of ndi.time.clocktype.']);
 				end
+
+				if nargin<3,
+					epoch = [];
+				end;
+
+				if nargin<4,
+					time = [];
+				end;
 
 				if clocktype.needsepoch(),
 					if isempty(epoch),
