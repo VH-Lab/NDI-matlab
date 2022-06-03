@@ -1,0 +1,3 @@
+By default, this ndi.calc.vis.contrast object looks for simulus_tuning curve documents that have 'contrast', 'Contrast', and 'CONTRAST', as the independent_variable_label fields of the stimulus_tuningcurve with no other independent_variable_lablel entries. That is, this calculation object searches for stimulus_tuningcurve documents that have variation in contrast values and nothing more.
+
+

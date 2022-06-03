@@ -1,0 +1,24 @@
+This calculation object computes three fits of contrast tuning given a set of stimulus responses at a range of contrast values as described in _____. 
+
+The three fit functions are modified Naka-Rushtan functions of the form 
+
+R(c) = Rm*c/(C50+c)
+R(c) = Rm*c^n/(C50+c^n)
+R(c) = Rm*c^n/(C50^(s*n)+c^(s*n))
+
+wherein the fit parameters 
+
+intit_rmax is the initial rmax search point
+min_rmax is the minimum rmax value 
+max_rmax is the maximum rmax value 
+initc50 is the initial C50 search point that is contrast value with the response closest to the empircal max/2 
+mi_c50 is the minimum C50 value 
+max_c50 is the maximum C50 value 
+init_N is the inital value for N
+min_N is the minimum value for N 
+max_N is the maximum value for N 
+init_S is the initial value for S 
+min_S is the minimum value for S 
+max_S is the maximum value for S 
+
+are provided by the user. 
