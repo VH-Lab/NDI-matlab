@@ -27,6 +27,7 @@ function S = vhlab(S, daqsystemname)
 % -----------------------------------------------------------------------
 %
 % See also: ndi.file.navigator.epochdir
+%
 
 if nargin == 0,
 	S = {'vhintan', 'vhspike2', 'vhvis_spike2'};
@@ -70,3 +71,5 @@ eval(['dr = ' readerobjectclass '();']);
 
 mydev = ndi.daq.system.mfdaq(daqsystemname, ft, dr, mdr); % create the daq system object
 S = S.daqsystem_add(mydev); % add the daq system object to our ndi.session
+
+
