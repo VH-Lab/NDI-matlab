@@ -34,8 +34,9 @@ classdef timereference
 			% returned by ndi.time.timereference/NDI_TIMEREFERENCE_STRUCT. The NDI_SESSION_OBJ fields will
 			% be searched to find the live REFERENT to create OBJ.
 			%
-
-				if nargin==2 & ~isa(clocktype, 'ndi.time.clocktype'),
+                struct_option = 0;
+				if nargin==2 & isstruct(clocktype),
+                    struct_option = 1;
 					session = referent; % 1st argument
 					session_ID = session.id();
 					timeref_struct = clocktype; % 2nd argument
@@ -64,11 +65,11 @@ classdef timereference
 					error(['clocktype must be a member or subclass of ndi.time.clocktype.']);
 				end
 
-				if nargin<3,
+				if nargin<3 & ~struct_option,
 					epoch = [];
 				end;
 
-				if nargin<4,
+				if nargin<4 & ~struct_option,
 					time = [];
 				end;
 
