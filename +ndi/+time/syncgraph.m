@@ -324,7 +324,7 @@ classdef syncgraph < ndi.ido
 
 					if isempty(index), % we don't have this one, we need to add it
 
-						underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
+						%underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
 						[u_nodes,u_cost,u_mapping] = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
@@ -443,7 +443,6 @@ classdef syncgraph < ndi.ido
 
 				% STEP 1: identify the source node
 
-				keyboard
 				sourcenodeindex = ndi.epoch.findepochnode(...
 					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
 					'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...

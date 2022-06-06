@@ -358,6 +358,23 @@ classdef epochset
 				trivial_map = ndi.time.timemapping([1 0]);
 				mapping = {trivial_map};  % we can get to ourself
 
+				utc = ndi.time.clocktype('utc');
+				if unodes(1).epoch_clock == utc,
+					% add a dev_local_time mapping
+					unode_here = unodes(1);
+					unode_here.t0_t1 = [0 diff(unodes(1).t0_t1)]; 
+					unode_here.epoch_clock = ndi.time.clocktype('dev_local_time');
+					unodes(2) = unode_here;
+					cost(1,2) = 1;
+					cost(2,1) = 1;
+					cost(2,2) = 1;
+					utc_2_local_map = nd.time.timemapping([1 -unodes(1).t0_t1(1)]);
+					local_map_2_utc = nd.time.timemapping([1 unodes(1).t0_t1(1)]);
+					mapping{1,2} = utc_2_local_map;
+					mapping{2,1} = local_map_2_utc;
+					mapping{2,2} = trivial_map;
+				end;
+
 				if ~issyncgraphroot(ndi_epochset_obj),
 					for i=1:numel(epochnode.underlying_epochs),
 						for j=1:numel(epochnode.underlying_epochs(i).epoch_clock),
