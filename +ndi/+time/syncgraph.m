@@ -426,7 +426,7 @@ classdef syncgraph < ndi.ido
 				% Step 0: check inputs
 
 				if isempty(timeref_in.epoch)
-					error(['Right now we do not support non-epoch input time...soon!']);
+					error(['At this time we do not support reading without an epoch reference.']);
 				end
 
 				if ~isempty(timeref_in.epoch),
@@ -443,6 +443,7 @@ classdef syncgraph < ndi.ido
 
 				% STEP 1: identify the source node
 
+				keyboard
 				sourcenodeindex = ndi.epoch.findepochnode(...
 					struct('objectname',epochsetname(timeref_in.referent), 'objectclass', class(timeref_in.referent),...
 					'epoch_id',in_epochid, 'epoch_session_id', ndi_syncgraph_obj.session.id(), ...
