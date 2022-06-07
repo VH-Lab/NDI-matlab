@@ -1,0 +1,11 @@
+{
+	"ndi_pipeline_element": {
+		"calculator":		"ndi.calc.vis.contrast_tuning",
+		"name":			"Naka Rushton Contrast Fits",
+		"parameter_code":	"",
+		"default_options": {
+			"if_document_exists_do":	"NoAction"
+		}
+	}
+
+}
