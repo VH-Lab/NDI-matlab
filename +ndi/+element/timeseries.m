@@ -35,7 +35,10 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 						timeref = timeref_or_epoch;
 					else,
 						timeref_or_epoch = ndi_element_timeseries_obj.epochid(timeref_or_epoch);
-						timeref = ndi.time.timereference(ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'), timeref_or_epoch, 0);
+						% find the first type of epochclock listed for this epoch
+						et_entry = ndi_element_timeseries_obj.epochtableentry(timeref_or_epoch);
+						timeref = ndi.time.timereference(ndi_element_timeseries_obj, ...
+							et_entry.epoch_clock{1}, timeref_or_epoch, 0);
 					end;
 
 					[epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
