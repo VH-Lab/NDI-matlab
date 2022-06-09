@@ -368,8 +368,8 @@ classdef epochset
 					cost(1,2) = 1;
 					cost(2,1) = 1;
 					cost(2,2) = 1;
-					utc_2_local_map = nd.time.timemapping([1 -unodes(1).t0_t1(1)]);
-					local_map_2_utc = nd.time.timemapping([1 unodes(1).t0_t1(1)]);
+					utc_2_local_map = ndi.time.timemapping([1 -unodes(1).t0_t1(1)]);
+					local_map_2_utc = ndi.time.timemapping([1 unodes(1).t0_t1(1)]);
 					mapping{1,2} = utc_2_local_map;
 					mapping{2,1} = local_map_2_utc;
 					mapping{2,2} = trivial_map;
