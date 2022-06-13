@@ -1,14 +1,6 @@
-% FINISHED
-% 1. Implementation of four middle buttons
-% 2. Implementation of switching popup menu
-% 3. Refined detailed such as when "---" is selected
-% 4. Added some comments
-% 5. Implementation of ud
-
 % TODO
 % 1. Get a calculation type list
-% 2. Create new calculator same name file exists
-% 3. What is the real name of calculator
+% 2. Pipeline editor & run button
 
 classdef pipeline
         
@@ -198,32 +190,38 @@ classdef pipeline
                         str = get(pipelinePopupObj, 'string');
                         pipeline_name = str{val};
                         
-                        % get calculator and name
+                        % get calculator type
                         calcTypeList = {'ndi.calc.not_finished_yet','ndi.calc.need_calculator_types','ndi.calc.this_is_a_placeholder'};
                         [calcTypeStr,calcTypeVal] = listdlg('PromptString','Choose a calculator type:',...
                                       'SelectionMode','single',...
                                       'ListString',calcTypeList);
                         calculator = calcTypeList{calcTypeStr};
+                        
+                        % ask for file name
+                        read_dir = ['+ndi' filesep 'my_pipelines' filesep pipeline_name filesep];
                         prompt = {'Calculator name:'};
                         dlgtitle = 'Create new calculator';
-                        dimentions = [1 50];
                         defaultfilename = {['untitled']};
-                        calcname = char(inputdlg(prompt,dlgtitle,dimentions,defaultfilename));
-                        % create and save newCalc
-                        newCalc = setDefaultCalc(calculator, calcname);
-                        read_dir = ['+ndi' filesep 'my_pipelines' filesep pipeline_name filesep];
-                        json_filename = char(strcat(read_dir,calcname,'.json'));
-                        fid = fopen(json_filename,'w');
-                        fprintf(fid,jsonencode(newCalc));
-                        fclose(fid);
-                        % update userdate
-                        ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
-                        ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
-                        calcList = getCalcFromPipeline(ud.pipelineList, pipeline_name);
-                        calcListChar = calculationsToChar(calcList);
-                        pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                        set(pipelineContentObj, 'string', calcListChar, 'Value', length(calcListChar)); 
-                        
+                        extension_list = {['.json']};
+                        [success,calcname,replaces] = choosefile(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
+                        if success % if success, create and save newCalc
+                            if replaces
+                                delete([read_dir filesep calcname '.json']);
+                            end
+                            newCalc = setDefaultCalc(calculator, calcname);
+                            json_filename = char(strcat(read_dir,calcname,'.json'));
+                            fid = fopen(json_filename,'w');
+                            fprintf(fid,jsonencode(newCalc));
+                            fclose(fid);
+                            % update userdata
+                            ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                            ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
+                            calcList = getCalcFromPipeline(ud.pipelineList, pipeline_name);
+                            calcListChar = calculationsToChar(calcList);
+                            pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                            set(pipelineContentObj, 'string', calcListChar, 'Value', length(calcListChar)); 
+                        end
+                                              
                     case 'DltCalcBt',
                         pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
                             pip_val = get(pipelinePopupObj, 'value');
@@ -252,7 +250,12 @@ classdef pipeline
                             set(pipelineContentObj, 'string', calcListChar, 'Value', length(calcListChar));
                         end
                         
+                    case 'EditBt'
+                        disp([command 'is not implemented yet.']);
                     case 'RunBt'
+                        disp([command 'is not implemented yet.']);
+                    case 'PipelineContent'
+                        disp([command 'is not supposed to do anything.'])
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
@@ -278,6 +281,9 @@ classdef pipeline
             else
                 filename = char(filename);
             end
+            
+            % replace illegal chars to underscore
+            filename = regexprep(filename,'[^a-zA-Z0-9]','_');
             
             % check for existence
             exist = 0;
