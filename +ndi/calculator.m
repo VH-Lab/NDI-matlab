@@ -407,7 +407,8 @@ classdef calculator < ndi.app & ndi.app.appdoc
 		end; % appdoc_description()
 
 	end; % methods
-
+    
+        
 	methods (Static)
 		function param = plot_parameters(varargin);
 			% PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
@@ -443,7 +444,6 @@ classdef calculator < ndi.app & ndi.app.appdoc
 				param = vlt.data.workspace2struct();
 				param = rmfield(param,'varargin');
 		end;
-
 		function graphical_edit_calculator(varargin)
 			% GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
 			%
@@ -732,14 +732,51 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						end;
 						
 
-							save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
+						% save doc
+						docPopupObj = findobj(fig,'tag','DocPopup');
+									docval = get(docPopupObj, 'value');
+						docstrs = get(docPopupObj, 'string');
+						docstr = docstrs{docval};
+						doctext = get(findobj(fig,'tag','DocTxt'),'String');
+						
+						% save param
+						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+									paramval = get(paramPopupObj, 'value');
+						paramstrs = get(paramPopupObj, 'string');
+						paramstr = paramstrs{docval};
+						paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
+						
+						if docval == 1 
+							msgbox('Please select documentation.')
+						elseif paramval == 1
+							msgbox('Please select parameter code')
+						else 
+							defaultfilename = {['untitled']};
+							prompt = {'File name:'};
+							dlgtitle = 'Save As';
+							extension_list = {['.mat']};
+							[success,filename,replaces] = ndi.util.choosefile(prompt, defaultfilename, dlgtitle, extension_list);
+							% success: need to save
+							% replaces: original file is covered
+							% [0, filename, 0]: do nothing
+							% [1, filename, 0]: save and not replace
+							% [1, filename, 1]: save and replace
+							    
+							% uncomment the following three lines to check 
+							disp("success: "+success);
+							disp("filename: "+filename);
+							disp("replaces: "+replaces);
+							if success
+								save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
+							end
+						end
 					case 'CancelBt',
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
 				end; % switch(command)
-		end; % graphical_edit_calculator_instance
-
+		end; % graphical_edit_calculation_instance
+            
 	end; % Static methods
     
 
