@@ -22,6 +22,8 @@
 % ndi_globals.path.temppath        | The path to a directory that may be used for
 %                                  |   temporary files (Initialized by ndi_Init.m)
 % ndi_globals.path.testpath        | A path to a safe place to run test code
+% ndi_globals.path.calcdoc         | A cell array of paths to NDI calculator document definitions
+% ndi_globals.path.calcdocschema   | A cell array of paths to NDI calculator document schemas
 % ndi_globals.probetype2object     | A structure with fields 'type' and 'classname'
 %                                  |   that describes the default ndi.probe classname
 %                                  |   to use to create a probe for a given type.

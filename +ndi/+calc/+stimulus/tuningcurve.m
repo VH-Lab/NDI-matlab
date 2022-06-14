@@ -1,22 +1,22 @@
-classdef tuningcurve < ndi.calculation
+classdef tuningcurve < ndi.calculator
 	methods
 
 		function tuningcurve_obj = tuningcurve(session)
-			% TUNINGCURVE - a tuningcurve demonstration of an ndi.calculation object
+			% TUNINGCURVE - a tuningcurve demonstration of an ndi.calculator object
 			%
 			% TUNINGCURVE_OBJ = TUNINGCURVE(SESSION)
 			%
-			% Creates a TUNINGCURVE ndi.calculation object
+			% Creates a TUNINGCURVE ndi.calculator object
 			%
 				ndi.globals;
-				tuningcurve_obj = tuningcurve_obj@ndi.calculation(session,'tuningcurve_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','tuningcurve_calc.json'));
+				tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculators','tuningcurve_calc.json'));
 		end; % tuningcurve()
 
-		function doc = calculate(ndi_calculation_obj, parameters)
-			% CALCULATE - perform the calculation for ndi.calc.example.tuningcurve
+		function doc = calculate(ndi_calculator_obj, parameters)
+			% CALCULATE - perform the calculator for ndi.calc.example.tuningcurve
 			%
-			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+			% DOC = CALCULATE(NDI_CALCULATOR_OBJ, PARAMETERS)
 			%
 			% Creates a tuningcurve_calc document given input parameters.
 			%
@@ -29,14 +29,14 @@ classdef tuningcurve < ndi.calculation
 				% Step 1: set up the output structure
 				tuningcurve_calc = parameters;
 
-				stim_response_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
+				stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_response_scalar_id'),''));
 				if numel(stim_response_doc)~=1, 
 					error(['Could not find stimulus response doc..']);
 				end;
 				stim_response_doc = stim_response_doc{1};
 			
-				% Step 2: perform the calculation, which here creates a tuning curve from instructions
+				% Step 2: perform the calculator, which here creates a tuning curve from instructions
 
 				% build input arguments for tuning curve app
 
@@ -57,13 +57,13 @@ classdef tuningcurve < ndi.calculation
 				for i=1:numel(parameters.input_parameters.selection),
 					if strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
 						% calculate best value
-						[n,v,stim_property_value] = ndi_calculation_obj.best_value(parameters.input_parameters.best_algorithm,...
+						[n,v,stim_property_value] = ndi_calculator_obj.best_value(parameters.input_parameters.best_algorithm,...
 							stim_response_doc, parameters.input_parameters.selection(i).property);
 						
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation','exact_number','param1',stim_property_value,'param2','');
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
-						pva = ndi_calculation_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
 						deal_constraints_group = vlt.data.emptystruct('field','operation','param1','param2');
 						for j=1:numel(pva),
 							deal_constraints_here.field = parameters.input_parameters.selection(i).property;
@@ -74,7 +74,7 @@ classdef tuningcurve < ndi.calculation
 						end;
 						deal_constraints{end+1} = deal_constraints_group;
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'varies'),
-						pva = ndi_calculation_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
 						if numel(pva)<2, % we don't have any variation in the parameter requested, quit
 							doc = {};
 							return;
@@ -102,8 +102,8 @@ classdef tuningcurve < ndi.calculation
 				end;
 				deal_str(end) = '';
 
-				% Step 3: place the results of the calculation into an NDI document
-				tapp = ndi.app.stimulus.tuning_response(ndi_calculation_obj.session);
+				% Step 3: place the results of the calculator into an NDI document
+				tapp = ndi.app.stimulus.tuning_response(ndi_calculator_obj.session);
 
 				doc = {};
 
@@ -120,7 +120,7 @@ classdef tuningcurve < ndi.calculation
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
 						'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
 					if ~isempty(doc_here), % if doc is actually created, that is, all stimuli were not excluded
-						doc_here = ndi.document(ndi_calculation_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
+						doc_here = ndi.document(ndi_calculator_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
 						doc{end+1} = doc_here;
 					end;
 				end;
@@ -129,28 +129,28 @@ classdef tuningcurve < ndi.calculation
 				end;
 		end; % calculate
 
-		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+		function parameters = default_search_for_input_parameters(ndi_calculator_obj)
 			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
 			%
-			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ)
 			%
 			% Returns a list of the default search parameters for finding appropriate inputs
-			% to the calculation. For tuningcurve_calc, there is no appropriate default parameters
+			% to the calculator. For tuningcurve_calc, there is no appropriate default parameters
 			% so this search will yield empty.
 			%
 				parameters.input_parameters = struct('independent_label','','independent_parameter','','best_algorithm','empirical_maximum');
 				parameters.input_parameters.selection = vlt.data.emptystruct('property','operation','value');
 				parameters.depends_on = vlt.data.emptystruct('name','value');
-				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query = ndi_calculator_obj.default_parameters_query(parameters);
 				parameters.query(end+1) = struct('name','will_fail','query',...
 					ndi.query('ndi_document.id','exact_string','123',''));
 					
 		end; % default_search_for_input_parameters
 
-                function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+                function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
 			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
 			%
-			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
 			%
 			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
 			% select particular documents to be placed into the parameters 'depends_on' specification.
@@ -178,18 +178,18 @@ classdef tuningcurve < ndi.calculation
 				query = struct('name','stimulus_response_scalar_id','query',q_total);
 		end; % default_parameters_query()
 
-		function b = is_valid_dependency_input(ndi_calculation_obj, name, value)
-			% IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculation?
+		function b = is_valid_dependency_input(ndi_calculator_obj, name, value)
+			% IS_VALID_DEPENDENCY_INPUT - is a potential dependency input actually valid for this calculator?
 			%
-			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATION_OBJ, NAME, VALUE)
+			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATOR_OBJ, NAME, VALUE)
 			%
-			% Tests whether a potential input to a calculation is valid.
+			% Tests whether a potential input to a calculator is valid.
 			% The potential dependency name is provided in NAME and its ndi_document id is
 			% provided in VALUE.
 			%
 			% The base class behavior of this function is simply to return true, but it
 			% can be overriden if additional criteria beyond an ndi.query are needed to
-			% assess if a document is an appropriate input for the calculation.
+			% assess if a document is an appropriate input for the calculator.
 			%
 				b = 1;
 				return;
@@ -197,12 +197,12 @@ classdef tuningcurve < ndi.calculation
 				q1 = ndi.query('ndi_document.id','exact_string',value,'');
 				q2 = ndi.query('','isa','tuningcurve_calc.json','');
 				% can't also be a tuningcurve_calc document or we could have infinite recursion
-				b = isempty(ndi_calculation_obj.session.database_search(q1&q2));
+				b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
 		end; % is_valid_dependency_input()
 
-		function doc_about(ndi_calculation_obj)
+		function doc_about(ndi_calculator_obj)
 			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATION: TUNINGCURVE_CALC
+			% NDI_CALCULATOR: TUNINGCURVE_CALC
 			% ----------------------------------------------------------------------------------------------
 			%
 			%   ------------------------
@@ -218,20 +218,20 @@ classdef tuningcurve < ndi.calculation
 				eval(['help ndi.calc.example.tuningcurve.doc_about']);
 		end; %doc_about()
 
-		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-                        % PLOT - provide a diagnostic plot to show the results of the calculation
+		function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
+                        % PLOT - provide a diagnostic plot to show the results of the calculator
                         %
-                        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+                        % H=PLOT(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
                         %
                         % Produce a plot of the tuning curve.
 			%
                         % Handles to the figure, the axes, and any objects created are returned in H.
                         %
                         % This function takes additional input arguments as name/value pairs.
-                        % See ndi.calculation.plot_parameters for a description of those parameters.
+                        % See ndi.calculator.plot_parameters for a description of those parameters.
 
 				% call superclass plot method to set up axes
-				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+				h=plot@ndi.calculator(ndi_calculator_obj, doc_or_parameters, varargin{:});
 
 				if isa(doc_or_parameters,'ndi.document'),
 					doc = doc_or_parameters;
@@ -303,7 +303,7 @@ classdef tuningcurve < ndi.calculation
 
 		% NEW functions in tuningcurve_calc that are not overriding any superclass functions
 
-		function [n,v,property_value] = best_value(ndi_calculation_obj, algorithm, stim_response_doc, property)
+		function [n,v,property_value] = best_value(ndi_calculator_obj, algorithm, stim_response_doc, property)
 			% BEST_VALUE - calculate the stimulus with the "best" response
 			%
 			% [N,V,PROPERTY_VALUE] = ndi.calc.stimulus.tuningcurve.best_value(NDI_CALC_STIMULUS_TUNINGCURVE, ALGORITHM, ...
@@ -324,13 +324,13 @@ classdef tuningcurve < ndi.calculation
 				v = -Inf;
 				switch lower(algorithm),
 					case 'empirical_maximum',
-						[n,v,property_value] = ndi_calculation_obj.best_value_empirical(stim_response_doc,property);
+						[n,v,property_value] = ndi_calculator_obj.best_value_empirical(stim_response_doc,property);
 					otherwise,
 						error(['Unknown algorithm ' algorithm '.']);
 				end;
 		end; % best_value
 
-		function [n,v,property_value] = best_value_empirical(ndi_calculation_obj, stim_response_doc, property)
+		function [n,v,property_value] = best_value_empirical(ndi_calculator_obj, stim_response_doc, property)
 			% BEST_VALUE_EMPIRICAL - find the best response value for a given stimulus property
 			%
 			% [N, V, PROPERTY_VALUE] = ndi.calc.stimulus.tuningcurve.best_value_empirical(NDI_CALC_STIMULUS_TUNINGCURVE_OBJ, STIM_RESPONSE_DOC, PROPERTY)
@@ -345,7 +345,7 @@ classdef tuningcurve < ndi.calculation
 			% If this function cannot find a stimulus presentation document for the STIM_RESPONSE_DOC, it produces
 			% an error.
 			%
-				stim_pres_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
                                         stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
 				if numel(stim_pres_doc)~=1, 
@@ -393,7 +393,7 @@ classdef tuningcurve < ndi.calculation
 
 		end; % best_value_empirical()
 
-		function [pva] = property_value_array(ndi_calculation_obj, stim_response_doc, property)
+		function [pva] = property_value_array(ndi_calculator_obj, stim_response_doc, property)
 			% PROPERTY_VALUE_ARRAY - find all values of a stimulus property
 			%
 			% [PVA] = ndi.calc.stimulus.tuningcurve.property_value_array(NDI_CALC_STIMULUS_TUNINGCURVE_OBJ, STIM_RESPONSE_DOC, PROPERTY)
@@ -406,7 +406,7 @@ classdef tuningcurve < ndi.calculation
 			% If this function cannot find a stimulus presentation document for the STIM_RESPONSE_DOC, it produces
 			% an error.
 			%
-				stim_pres_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
                                         stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
 				if numel(stim_pres_doc)~=1, 

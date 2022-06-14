@@ -1,22 +1,22 @@
-classdef contrast_sensitivity < ndi.calculation
+classdef contrast_sensitivity < ndi.calculator
 
 	methods
 		function contrast_sensitivity_obj = contrast_sensitivity(session)
-			% CONTRAST_TUNING - a contrast_sensitivity demonstration of an ndi.calculation object
+			% CONTRAST_TUNING - a contrast_sensitivity demonstration of an ndi.calculator object
 			%
 			% CONTRAST_TUNING_OBJ = CONTRAST_TUNING(SESSION)
 			%
-			% Creates a CONTRAST_TUNING ndi.calculation object
+			% Creates a CONTRAST_TUNING ndi.calculator object
 			%
 				ndi.globals;
-				contrast_sensitivity_obj = contrast_sensitivity_obj@ndi.calculation(session,'contrastsensitivity_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculations','contrastsensitivity_calc.json'));
+				contrast_sensitivity_obj = contrast_sensitivity_obj@ndi.calculator(session,'contrastsensitivity_calc',...
+					fullfile(ndi_globals.path.documentpath,'apps','calculators','contrastsensitivity_calc.json'));
 		end; % contrast_sensitivity()
 
-		function doc = calculate(ndi_calculation_obj, parameters)
-			% CALCULATE - perform the calculation for ndi.calc.example.contrast_sensitivity
+		function doc = calculate(ndi_calculator_obj, parameters)
+			% CALCULATE - perform the calculator for ndi.calc.example.contrast_sensitivity
 			%
-			% DOC = CALCULATE(NDI_CALCULATION_OBJ, PARAMETERS)
+			% DOC = CALCULATE(NDI_CALCULATOR_OBJ, PARAMETERS)
 			%
 			% Creates a contrast_sensitivity_calc document given input parameters.
 			%
@@ -29,7 +29,7 @@ classdef contrast_sensitivity < ndi.calculation
 				% Step 1: set up the output structure
 				contrastsensitivity_calc = parameters;
 
-				element_doc = ndi_calculation_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
+				element_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'element_id'),''));
 				if numel(element_doc)~=1, 
 					error(['Could not find element doc..']);
@@ -40,9 +40,9 @@ classdef contrast_sensitivity < ndi.calculation
 
 				q1a = ndi.query('','depends_on','element_id',element_doc.id());
 				q1b = ndi.query('','isa','stimulus_response_scalar','');
-				stim_resp_scalar = ndi_calculation_obj.session.database_search(q1a&q1b);
+				stim_resp_scalar = ndi_calculator_obj.session.database_search(q1a&q1b);
 
-				tuning_curve_app = ndi.calc.stimulus.tuningcurve(ndi_calculation_obj.session);
+				tuning_curve_app = ndi.calc.stimulus.tuningcurve(ndi_calculator_obj.session);
 
 				% Step 3: find out how many stimulus presentations we have here; could be several
 				stim_pres_ids_all = {};
@@ -60,7 +60,7 @@ classdef contrast_sensitivity < ndi.calculation
 				for i=1:numel(stim_pres_id),
 					% now see if the stimulus presentations vary in contrast and spatial frequency
 					q2 = ndi.query('ndi_document.id','exact_string',stim_pres_id{i},'');
-					stim_pres_doc = ndi_calculation_obj.session.database_search(q2);
+					stim_pres_doc = ndi_calculator_obj.session.database_search(q2);
 					if numel(stim_pres_doc) ~=1,
 						error(['Missing stimulus presentation document for ' stim_pres_id{i} '. (Should not happen).']);
 					end;
@@ -96,12 +96,10 @@ classdef contrast_sensitivity < ndi.calculation
 						
 						if ~isempty(stim_resp_index_value),
 							% Step 3: Search for contrast tuning curve objects that depend on this stimulus response document
-							q3a = ndi.query('tuning_curve.independent_variable_label','exact_string','Contrast','');
-							q3b = ndi.query('tuning_curve.independent_variable_label','exact_string','contrast','');
-							q3c = ndi.query('tuning_curve.independent_variable_label','exact_string','CONTRAST','');
+							q3 = ndi.query('tuning_curve.independent_variable_label','exact_string_anycase','Contrast','');
 							q4 = ndi.query('','depends_on','stimulus_response_scalar_id',stim_resp_scalar{stim_resp_index_value}.id());
 							q5 = ndi.query('','isa','stimulus_tuningcurve.json','');
-							tuning_curves = ndi_calculation_obj.session.database_search( (q3a|q3b|q3c) & q4 & q5);
+							tuning_curves = ndi_calculator_obj.session.database_search(q3 & q4 & q5);
 
 							spatial_frequencies = [];
 							sensitivity_RB = [];
@@ -111,12 +109,14 @@ classdef contrast_sensitivity < ndi.calculation
 
 							visual_response_p = [];
 							across_stims_p = [];
-							
+
+							all_contrast_tuning_curves_ids = {};
+                            							
 							for k=1:numel(tuning_curves),
 								q6 = ndi.query('','isa','contrast_tuning','');
 								q7 = ndi.query('','depends_on','stimulus_tuningcurve_id',tuning_curves{k}.id());
 								
-								contrast_tuning_props = ndi_calculation_obj.session.database_search(q6&q7);
+								contrast_tuning_props = ndi_calculator_obj.session.database_search(q6&q7);
 
 								if numel(contrast_tuning_props)>1,
 									error(['Found multiple contrast tuning property records for a single tuning curve.']);
@@ -125,7 +125,8 @@ classdef contrast_sensitivity < ndi.calculation
 								else,
 									contrast_tuning_props = contrast_tuning_props{1};
 								end;
-
+								all_contrast_tuning_curves_ids{end+1} = contrast_tuning_props.id();
+                                
 								stimid = tuning_curves{k}.document_properties.tuning_curve.stimid(1);
 								params_here = stim_pres_doc.document_properties.stimulus_presentation.stimuli(stimid).parameters;
 								if isfield(params_here,'sFrequency'),
@@ -158,11 +159,14 @@ classdef contrast_sensitivity < ndi.calculation
 							parameters_here.response_varies_p_bonferroni = nanmin(across_stims_p)*numel(across_stims_p);
 						
 							if numel(tuning_curves)>0,	
-								doc{end+1} = ndi.document(ndi_calculation_obj.doc_document_types{1},'contrastsensitivity_calc',parameters_here);
+								doc{end+1} = ndi.document(ndi_calculator_obj.doc_document_types{1},'contrastsensitivity_calc',parameters_here);
 								doc{end} = doc{end}.set_dependency_value('element_id',element_doc.id());
 								doc{end} = doc{end}.set_dependency_value('stimulus_presentation_id', stim_pres_id{i});
 								doc{end} = doc{end}.set_dependency_value('stimulus_response_scalar_id',...
-									stim_resp_scalar{stim_resp_index_value});
+									stim_resp_scalar{stim_resp_index_value}.id());
+								for q_=1:numel(all_contrast_tuning_curves_ids),
+									doc{end} = doc{end}.add_dependency_value_n('contrasttuning_id',all_contrast_tuning_curves_ids{q_});
+								end;
 							end;
 						end; % if stim_resp_index_value is not empty
 					end; % if good
@@ -170,25 +174,25 @@ classdef contrast_sensitivity < ndi.calculation
 				
 		end; % calculate
 
-		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
+		function parameters = default_search_for_input_parameters(ndi_calculator_obj)
 			% DEFAULT_SEARCH_FOR_INPUT_PARAMETERS - default parameters for searching for inputs
 			%
-			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATION_OBJ)
+			% PARAMETERS = DEFAULT_SEARCH_FOR_INPUT_PARAMETERS(NDI_CALCULATOR_OBJ)
 			%
 			% Returns a list of the default search parameters for finding appropriate inputs
-			% to the calculation. For contrast_sensitivity_calc, there is no appropriate default parameters
+			% to the calculator. For contrast_sensitivity_calc, there is no appropriate default parameters
 			% so this search will yield empty.
 			%
 				parameters.input_parameters = struct([]);
 				parameters.depends_on = vlt.data.emptystruct('name','value');
-				parameters.query = ndi_calculation_obj.default_parameters_query(parameters);
+				parameters.query = ndi_calculator_obj.default_parameters_query(parameters);
 					
 		end; % default_search_for_input_parameters
 
-                function query = default_parameters_query(ndi_calculation_obj, parameters_specification)
+                function query = default_parameters_query(ndi_calculator_obj, parameters_specification)
 			% DEFAULT_PARAMETERS_QUERY - what queries should be used to search for input parameters if none are provided?
 			%
-			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATION_OBJ, PARAMETERS_SPECIFICATION)
+			% QUERY = DEFAULT_PARAMETERS_QUERY(NDI_CALCULATOR_OBJ, PARAMETERS_SPECIFICATION)
 			%
 			% When one calls SEARCH_FOR_INPUT_PARAMETERS, it is possible to specify a 'query' structure to
 			% select particular documents to be placed into the parameters 'depends_on' specification.
@@ -212,9 +216,9 @@ classdef contrast_sensitivity < ndi.calculation
 				query = struct('name','element_id','query',q_total);
 		end; % default_parameters_query()
 
-		function doc_about(ndi_calculation_obj)
+		function doc_about(ndi_calculator_obj)
 			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATION: CONTRAST_SENSITIVITY_CALC
+			% NDI_CALCULATOR: CONTRAST_SENSITIVITY_CALC
 			% ----------------------------------------------------------------------------------------------
 			%
 			%   ------------------------
@@ -230,20 +234,20 @@ classdef contrast_sensitivity < ndi.calculation
 				eval(['help ndi.calc.example.contrast_sensitivity.doc_about']);
 		end; %doc_about()
 
-		function h=plot(ndi_calculation_obj, doc_or_parameters, varargin)
-                        % PLOT - provide a diagnostic plot to show the results of the calculation
+		function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
+                        % PLOT - provide a diagnostic plot to show the results of the calculator
                         %
-                        % H=PLOT(NDI_CALCULATION_OBJ, DOC_OR_PARAMETERS, ...)
+                        % H=PLOT(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
                         %
                         % Produce a plot of the tuning curve.
 			%
                         % Handles to the figure, the axes, and any objects created are returned in H.
                         %
                         % This function takes additional input arguments as name/value pairs.
-                        % See ndi.calculation.plot_parameters for a description of those parameters.
+                        % See ndi.calculator.plot_parameters for a description of those parameters.
 
 				% call superclass plot method to set up axes
-				h=plot@ndi.calculation(ndi_calculation_obj, doc_or_parameters, varargin{:});
+				h=plot@ndi.calculator(ndi_calculator_obj, doc_or_parameters, varargin{:});
 
 				if isa(doc_or_parameters,'ndi.document'),
 					doc = doc_or_parameters;
@@ -288,7 +292,7 @@ classdef contrast_sensitivity < ndi.calculation
 
 				if 0, % when database is faster :-/
 					if ~h.params.suppress_title,
-						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('element_id'),ndi_calculation_obj.session);
+						element = ndi.database.fun.ndi_document2ndi_object(doc.dependency_value('element_id'),ndi_calculator_obj.session);
 						h.title = title(element.elementstring(), 'interp','none');
 					end;
 				end;

@@ -1,7 +1,8 @@
 # CLASS ndi.gui.Lab
 
 ```
- Create lab
+ndi.gui.Lab is a class.
+    obj = ndi.gui.Lab
 
 
 ```
@@ -38,7 +39,7 @@
 
 | Method | Description |
 | --- | --- |
-| *Lab* | Create lab |
+| *Lab* | ndi.gui.Lab/Lab is a constructor. |
 | *addDAQ* | ndi.gui.Lab/addDAQ is a function. |
 | *addProbe* | ndi.gui.Lab/addProbe is a function. |
 | *addSubject* | ndi.gui.Lab/addSubject is a function. |
@@ -70,10 +71,13 @@
 
 ### Methods help 
 
-**Lab** - *Create lab*
+**Lab** - *ndi.gui.Lab/Lab is a constructor.*
 
 ```
+obj = Lab
 
+    Documentation for ndi.gui.Lab/Lab
+       doc ndi.gui.Lab
 ```
 
 ---
@@ -135,10 +139,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.GUI.LAB, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Lab/addlistener is inherited from superclass HANDLE
+Help for ndi.gui.Lab/addlistener is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/addlistener
-       doc handle.addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -257,10 +261,10 @@ DELETE(H) deletes all handle objects in array H. After the delete
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/ISVALID, CLEAR
 
-Help for ndi.gui.Lab/delete is inherited from superclass HANDLE
+Help for ndi.gui.Lab/delete is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/delete
-       doc handle.delete
+       doc handle/delete
 ```
 
 ---
@@ -305,10 +309,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/GE, NDI.GUI.LAB/GT, NDI.GUI.LAB/LE, NDI.GUI.LAB/LT, NDI.GUI.LAB/NE
 
-Help for ndi.gui.Lab/eq is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/eq
-       doc handle.eq
+Help for ndi.gui.Lab/eq is inherited from superclass handle
 ```
 
 ---
@@ -327,10 +328,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.GUI.LAB
 
-Help for ndi.gui.Lab/findobj is inherited from superclass HANDLE
+Help for ndi.gui.Lab/findobj is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/findobj
-       doc handle.findobj
+       doc handle/findobj
 ```
 
 ---
@@ -349,10 +350,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.gui.Lab/findprop is inherited from superclass HANDLE
+Help for ndi.gui.Lab/findprop is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/findprop
-       doc handle.findprop
+       doc handle/findprop
 ```
 
 ---
@@ -373,10 +374,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/EQ, NDI.GUI.LAB/GT, NDI.GUI.LAB/LE, NDI.GUI.LAB/LT, NDI.GUI.LAB/NE
 
-Help for ndi.gui.Lab/ge is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/ge
-       doc handle.ge
+Help for ndi.gui.Lab/ge is inherited from superclass handle
 ```
 
 ---
@@ -418,10 +416,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/EQ, NDI.GUI.LAB/GE, NDI.GUI.LAB/LE, NDI.GUI.LAB/LT, NDI.GUI.LAB/NE
 
-Help for ndi.gui.Lab/gt is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/gt
-       doc handle.gt
+Help for ndi.gui.Lab/gt is inherited from superclass handle
 ```
 
 ---
@@ -447,10 +442,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/DELETE
 
-Help for ndi.gui.Lab/isvalid is inherited from superclass HANDLE
+Help for ndi.gui.Lab/isvalid is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/isvalid
-       doc handle.isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -479,10 +474,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/EQ, NDI.GUI.LAB/GE, NDI.GUI.LAB/GT, NDI.GUI.LAB/LT, NDI.GUI.LAB/NE
 
-Help for ndi.gui.Lab/le is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/le
-       doc handle.le
+Help for ndi.gui.Lab/le is inherited from superclass handle
 ```
 
 ---
@@ -525,10 +517,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.GUI.LAB, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.gui.Lab/listener is inherited from superclass HANDLE
+Help for ndi.gui.Lab/listener is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/listener
-       doc handle.listener
+       doc handle/listener
 ```
 
 ---
@@ -549,10 +541,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/EQ, NDI.GUI.LAB/GE, NDI.GUI.LAB/GT, NDI.GUI.LAB/LE, NDI.GUI.LAB/NE
 
-Help for ndi.gui.Lab/lt is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/lt
-       doc handle.lt
+Help for ndi.gui.Lab/lt is inherited from superclass handle
 ```
 
 ---
@@ -584,10 +573,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/EQ, NDI.GUI.LAB/GE, NDI.GUI.LAB/GT, NDI.GUI.LAB/LE, NDI.GUI.LAB/LT
 
-Help for ndi.gui.Lab/ne is inherited from superclass HANDLE
-
-    Documentation for ndi.gui.Lab/ne
-       doc handle.ne
+Help for ndi.gui.Lab/ne is inherited from superclass handle
 ```
 
 ---
@@ -607,10 +593,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.GUI.LAB, NDI.GUI.LAB/ADDLISTENER, NDI.GUI.LAB/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.gui.Lab/notify is inherited from superclass HANDLE
+Help for ndi.gui.Lab/notify is inherited from superclass handle
 
     Documentation for ndi.gui.Lab/notify
-       doc handle.notify
+       doc handle/notify
 ```
 
 ---

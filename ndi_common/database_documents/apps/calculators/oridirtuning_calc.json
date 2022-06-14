@@ -1,0 +1,25 @@
+{
+	"document_class": {
+		"definition":                       "$NDIDOCUMENTPATH\/apps\/calculations\/oridirtuning_calc.json",
+		"validation":                       "$NDISCHEMAPATH\/apps\/calculations\/oridirtuning_calc.json",
+		"class_name":                       "ndi_calculation_oridirtuning",
+		"property_list_name":                   "oridirtuning_calc", 
+		"class_version":                    1,
+		"superclasses": [
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document_app.json" },
+			{ "definition":                 "$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning.json"}
+		]
+	},
+	"oridirtuning_calc": {
+		"input_parameters": {
+		},
+		"depends_on": [
+			{
+				"name":				"stimulus_tuningcurve_id",
+				"value":			[]
+			}
+		]
+	}
+}
+

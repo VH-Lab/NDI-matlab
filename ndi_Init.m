@@ -40,6 +40,19 @@ ndi_globals.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' fil
 ndi_globals.path.logpath = [userpath filesep 'Documents' filesep 'NDI' filesep 'Logs'];
 ndi_globals.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
 
+
+ % initialize any NDIcalc-x-matlab directories
+ndi_globals.path.calcdoc = {};
+ndi_globals.path.calcdocschema = {};
+
+d = ndi.fun.find_calc_directories();
+
+for i=1:numel(d),
+	ndi_globals.path.calcdoc{end+1} = [d{i} filesep 'ndi_common' filesep 'database_documents'];
+	ndi_globals.path.calcdocschema{end+1} = [d{i} filesep 'ndi_common' filesep 'schema_documents'];
+	addpath(d{i});
+end;
+
 if ~exist(ndi_globals.path.temppath,'dir'),
 	mkdir(ndi_globals.path.temppath);
 end;

@@ -7,7 +7,7 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/neuro\/ndi_document_reverse_correlation.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/neuro\/reverse_correlation.json"}
 		]
 	},
 	"hartley_reverse_correlation":  {
@@ -16,15 +16,15 @@
 			"L_max":					20,
 			"K_max":					20,
 			"sf_max":					2,
-			"fps":						10
-			"color_high":					[255 255 255],
-			"color_low":					[0 0 0],
-			"rect":						[0 0 800 600]
+			"fps":						10,
+			"color_high":					[255, 255, 255],
+			"color_low":					[0, 0, 0],
+			"rect":						[0, 0, 800, 600]
 		},
-		"reconstruction_properties:" {
-			"T_coords":				[0 0.1 0.2],
-			"X_coords":				[0 0.1 0.2],
-			"Y_coords":				[0 0.1 0.2]
+		"reconstruction_properties": {
+			"T_coords":				[0, 0.1, 0.2],
+			"X_coords":				[0, 0.1, 0.2],
+			"Y_coords":				[0, 0.1, 0.2]
 		}
 	}
 }

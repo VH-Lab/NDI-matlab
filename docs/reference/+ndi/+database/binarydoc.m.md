@@ -75,10 +75,10 @@ el = ADDLISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also LISTENER, EVENT.LISTENER, NDI.DATABASE.BINARYDOC, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.database.binarydoc/addlistener is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/addlistener is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/addlistener
-       doc handle.addlistener
+       doc handle/addlistener
 ```
 
 ---
@@ -86,7 +86,8 @@ Help for ndi.database.binarydoc/addlistener is inherited from superclass HANDLE
 **binarydoc** - *a binary file class that handles reading/writing*
 
 ```
-
+Documentation for ndi.database.binarydoc/binarydoc
+       doc ndi.database.binarydoc
 ```
 
 ---
@@ -119,10 +120,7 @@ Handles are equal if they are handles for the same object.
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/GE, NDI.DATABASE.BINARYDOC/GT, NDI.DATABASE.BINARYDOC/LE, NDI.DATABASE.BINARYDOC/LT, NDI.DATABASE.BINARYDOC/NE
 
-Help for ndi.database.binarydoc/eq is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/eq
-       doc handle.eq
+Help for ndi.database.binarydoc/eq is inherited from superclass handle
 ```
 
 ---
@@ -170,10 +168,10 @@ The FINDOBJ method of the HANDLE class follows the same syntax as the
  
     See also FINDOBJ, NDI.DATABASE.BINARYDOC
 
-Help for ndi.database.binarydoc/findobj is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/findobj is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/findobj
-       doc handle.findobj
+       doc handle/findobj
 ```
 
 ---
@@ -192,10 +190,10 @@ p = FINDPROP(H,PROPNAME) finds and returns the META.PROPERTY object
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/FINDOBJ, DYNAMICPROPS, META.PROPERTY
 
-Help for ndi.database.binarydoc/findprop is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/findprop is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/findprop
-       doc handle.findprop
+       doc handle/findprop
 ```
 
 ---
@@ -211,6 +209,14 @@ FID = FOPEN(FILENAME) opens the file FILENAME for read access. FILENAME is the
     path. On UNIX systems, FILENAME may also start with a "~/" or a "~username/",
     which FOPEN expands to the current user's home directory or the specified user's
     home directory, respectively.
+ 
+    FID = FOPEN(URL) opens the file at a remote location specified via the URL
+    (uniform resource locator) for read access. The URL must be specified as a
+    full path. For example, to read a binary file from Amazon S3 cloud specify the
+    full URL for the file:
+        s3://bucketname/path_to_file/example.bin
+    For more information on accessing remote data, see "Work with Remote Data"
+    in the documentation.
  
     FID is a scalar MATLAB integer valued double, called a file identifier. You use
     FID as the first argument to other file input/output routines, such as FREAD and
@@ -560,10 +566,7 @@ H1 >= H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/EQ, NDI.DATABASE.BINARYDOC/GT, NDI.DATABASE.BINARYDOC/LE, NDI.DATABASE.BINARYDOC/LT, NDI.DATABASE.BINARYDOC/NE
 
-Help for ndi.database.binarydoc/ge is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/ge
-       doc handle.ge
+Help for ndi.database.binarydoc/ge is inherited from superclass handle
 ```
 
 ---
@@ -584,10 +587,7 @@ H1 > H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/EQ, NDI.DATABASE.BINARYDOC/GE, NDI.DATABASE.BINARYDOC/LE, NDI.DATABASE.BINARYDOC/LT, NDI.DATABASE.BINARYDOC/NE
 
-Help for ndi.database.binarydoc/gt is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/gt
-       doc handle.gt
+Help for ndi.database.binarydoc/gt is inherited from superclass handle
 ```
 
 ---
@@ -605,10 +605,10 @@ TF = ISVALID(H) performs an element-wise check for validity on the
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/DELETE
 
-Help for ndi.database.binarydoc/isvalid is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/isvalid is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/isvalid
-       doc handle.isvalid
+       doc handle/isvalid
 ```
 
 ---
@@ -637,10 +637,7 @@ Handles are equal if they are handles for the same object.  All
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/EQ, NDI.DATABASE.BINARYDOC/GE, NDI.DATABASE.BINARYDOC/GT, NDI.DATABASE.BINARYDOC/LT, NDI.DATABASE.BINARYDOC/NE
 
-Help for ndi.database.binarydoc/le is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/le
-       doc handle.le
+Help for ndi.database.binarydoc/le is inherited from superclass handle
 ```
 
 ---
@@ -683,10 +680,10 @@ el = LISTENER(hSource, Eventname, callbackFcn) creates a listener
  
     See also ADDLISTENER, EVENT.LISTENER, NDI.DATABASE.BINARYDOC, NOTIFY, DELETE, META.PROPERTY, EVENTS
 
-Help for ndi.database.binarydoc/listener is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/listener is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/listener
-       doc handle.listener
+       doc handle/listener
 ```
 
 ---
@@ -707,10 +704,7 @@ H1 < H2 performs element-wise comparisons between handle arrays H1 and
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/EQ, NDI.DATABASE.BINARYDOC/GE, NDI.DATABASE.BINARYDOC/GT, NDI.DATABASE.BINARYDOC/LE, NDI.DATABASE.BINARYDOC/NE
 
-Help for ndi.database.binarydoc/lt is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/lt
-       doc handle.lt
+Help for ndi.database.binarydoc/lt is inherited from superclass handle
 ```
 
 ---
@@ -734,10 +728,7 @@ Handles are equal if they are handles for the same object and are
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/EQ, NDI.DATABASE.BINARYDOC/GE, NDI.DATABASE.BINARYDOC/GT, NDI.DATABASE.BINARYDOC/LE, NDI.DATABASE.BINARYDOC/LT
 
-Help for ndi.database.binarydoc/ne is inherited from superclass HANDLE
-
-    Documentation for ndi.database.binarydoc/ne
-       doc handle.ne
+Help for ndi.database.binarydoc/ne is inherited from superclass handle
 ```
 
 ---
@@ -757,10 +748,10 @@ NOTIFY(H, eventname) notifies listeners added to the event named
  
     See also NDI.DATABASE.BINARYDOC, NDI.DATABASE.BINARYDOC/ADDLISTENER, NDI.DATABASE.BINARYDOC/LISTENER, EVENT.EVENTDATA, EVENTS
 
-Help for ndi.database.binarydoc/notify is inherited from superclass HANDLE
+Help for ndi.database.binarydoc/notify is inherited from superclass handle
 
     Documentation for ndi.database.binarydoc/notify
-       doc handle.notify
+       doc handle/notify
 ```
 
 ---
