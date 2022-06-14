@@ -1,3 +1,7 @@
+% TODO
+% 1. Get a calculation type list
+% 2. Pipeline editor & run button
+
 classdef pipeline
         
 	properties (SetAccess=protected,GetAccess=public)
@@ -29,24 +33,32 @@ classdef pipeline
 				window_params.width = 400;
                 fig = []; % figure to use
 
-				if strcmpi(command,'new'),
+				if strcmpi(command,'new'), 
 					if isempty(fig),
 						fig = figure;
 					end;
 					command = 'NewWindow';
+                    % new window, set userdata
+                    ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                    ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
+                    set(fig,'userdata',ud);
                 else 
                     fig = gcf;
+                    % not new window, get userdata
+                    ud = get(fig,'userdata');
 				end;
-
+                
 				if isempty(fig),
 					error(['Empty figure, do not know what to work on.']);
 				end;
                 
 				disp(['Command is ' command '.']);
                 
+                               
 				switch (command),
 					case 'NewWindow',
-                        set(fig,'tag','ndi.pipeline.pipeline_edit');    
+                        set(fig,'tag','ndi.pipeline.pipeline_edit');  
+
                         uid = vlt.ui.basicuitools_defs;
                         
 						callbackstr = [  'eval([get(gcbf,''Tag'') ''(''''command'''','''''' get(gcbo,''Tag'') '''''' ,''''fig'''',gcbf);'']);']; 
@@ -76,11 +88,10 @@ classdef pipeline
 						set(fig,'Name',['Editing ' name]);
                             
 						% Pipeline selection portion of window
-                        pipelineList = getPipelines('+ndi/pipeline_storage');
-						x = edge; y = top-row;
+                        x = edge; y = top-row;
                         uicontrol(uid.txt,'position',[x y title_width title_height],'string','Select pipeline:','tag','PipelineTitleTxt');
 						uicontrol(uid.popup,'position',[x y-title_height menu_width menu_height],...
-							'string',pipelineList,'tag','PipelinePopup','callback',callbackstr);
+							'string',ud.pipelineListChar,'tag','PipelinePopup','callback',callbackstr);
 						y = y - doc_height;
                         
 						uicontrol(uid.edit,'style','listbox','position',[x y-2*title_height doc_width doc_height],...
@@ -104,104 +115,147 @@ classdef pipeline
 					case 'PipelinePopup',
 						% Step 1: search for the objects you need to work with
 						pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-						val = get(pipelinePopupObj, 'value')
-                        str = get(pipelinePopupObj, 'string')
-						% Step 2, take action
-						switch val,
-							case 1, 
-                                msgbox("Please select or create a pipeline.");							
-                            otherwise,
-                                pipeline_name = str{val};
-                                from_dir = '+ndi/pipeline_storage/';
-                                calcs = getCalcFromPipeline(from_dir, pipeline_name);
-                                pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                                set(pipelineContentObj, 'string', calcs, 'Value', length(calcs));
-						end;    
-                        
+						val = get(pipelinePopupObj, 'value');
+                        str = get(pipelinePopupObj, 'string');
+						% Step 2, check not the "---" one and display
+                        if val == 1
+                            msgbox('Please select or create a pipeline.');
+                        end
+                        pipeline_name = str{val};
+                        calcList = getCalcFromPipeline(ud.pipelineList, pipeline_name);
+                        calcListChar = calculationsToChar(calcList);
+                        pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                        set(pipelineContentObj, 'string', calcListChar, 'Value', 1);
+                       
                         
 					case 'NewPipelineBt',
-                        read_dir = '+ndi/pipeline_storage/';
+                        % get dir
+                        read_dir = ['+ndi' filesep 'my_pipelines' filesep];
+                        % create dialog box
                         defaultfilename = {['untitled']};
                         prompt = {'Pipeline name:'};
                         dlgtitle = 'Save new pipeline';
-                        extension_list = {['.mat']};
+                        extension_list = {['']};
+                        % check if the user want to create/replace
                         [success,filename,replaces] = choosefile(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
-                        if success
-                            prompt = {'Calculator name:'};
-                            dlgtitle = 'Create new calculator';
-                            dimentions = [1 50];
-                            defaultfilename = {['untitled']};
-                            calcname = char(inputdlg(prompt,dlgtitle,dimentions,defaultfilename));
-                            calcs = {calcname};
-                            save(strcat(read_dir, '/', filename,'.mat'),'calcs');
+                        if success % if success, add pipeline
+                            if replaces
+                                rmdir([read_dir filesep filename], 's');
+                            end
+                            mkdir(read_dir,filename);
+                            % update userdata
+                            ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                            ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
                             pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                            set(pipelinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'),'Value',length(getPipelines('+ndi/pipeline_storage')));
+                            set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',length(ud.pipelineListChar));
                             pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                            set(pipelineContentObj, 'string',calcs,'Value',length(calcs));
+                            set(pipelineContentObj, 'string', [], 'Value', 0);
                         end
 					
                     case 'DltPipelineBt',
                         pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
 						val = get(pipelinePopupObj, 'value');
+                        % check not the "---" 
+                        if val == 1
+                            msgbox('Please select a pipeline to delete.');
+                            return;
+                        end
                         str = get(pipelinePopupObj, 'string');
-                        read_dir = '+ndi/pipeline_storage/';
+                        % get dir
+                        read_dir = ['+ndi' filesep 'my_pipelines' filesep];
                         filename = str{val};
+                        % ask and delete
                         msgBox = sprintf('Do you want to delete this pipeline?');
                         title = 'Delete file';
                         b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
                         if strcmpi(b, 'Yes');
-                            delete(strcat(read_dir, filename,'.mat'));
+                            rmdir([read_dir filesep filename], 's');
                         end
+                        % update userdata
+                        ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                        ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
                         pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                        set(pipelinePopupObj, 'string',getPipelines('+ndi/pipeline_storage'),'Value',length(getPipelines('+ndi/pipeline_storage')));
+                        set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',1);                        
                         pipelineContentObj = findobj(fig,'tag','PipelineContent');
                         set(pipelineContentObj, 'string','Please select or create a pipeline.','Value',1);
                     
                     case 'NewCalcBt',
                         pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
 						val = get(pipelinePopupObj, 'value');
+                        % check not the "---" 
+                        if val == 1
+                            msgbox('Please select or create a pipeline.');
+                            return;
+                        end
                         str = get(pipelinePopupObj, 'string');
-						% Step 2, take action
-						switch val,
-							case 1, 
-                                msgbox("Please select or create a pipeline.");							
-                            otherwise,
-                                pipeline_name = str{val};
-                                prompt = {'Calculator name:'};
-                                dlgtitle = 'Create new calculator';
-                                dimentions = [1 50];
-                                defaultfilename = {['untitled']};
-                                filename = inputdlg(prompt,dlgtitle,dimentions,defaultfilename);
-                                from_dir = '+ndi/pipeline_storage/';
-                                calcs = getCalcFromPipeline(from_dir, pipeline_name);
-                                calcs{end+1} = char(filename);
-                                save(strcat(from_dir, '/', pipeline_name,'.mat'),'calcs');
-                                pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                                set(pipelineContentObj, 'string',calcs,'Value',length(calcs));
-						end;    
+                        pipeline_name = str{val};
                         
+                        % get calculator type
+                        calcTypeList = {'ndi.calc.not_finished_yet','ndi.calc.need_calculator_types','ndi.calc.this_is_a_placeholder'};
+                        [calcTypeStr,calcTypeVal] = listdlg('PromptString','Choose a calculator type:',...
+                                      'SelectionMode','single',...
+                                      'ListString',calcTypeList);
+                        calculator = calcTypeList{calcTypeStr};
+                        
+                        % ask for file name
+                        read_dir = ['+ndi' filesep 'my_pipelines' filesep pipeline_name filesep];
+                        prompt = {'Calculator name:'};
+                        dlgtitle = 'Create new calculator';
+                        defaultfilename = {['untitled']};
+                        extension_list = {['.json']};
+                        [success,calcname,replaces] = choosefile(read_dir, prompt, defaultfilename, dlgtitle, extension_list);
+                        if success % if success, create and save newCalc
+                            if replaces
+                                delete([read_dir filesep calcname '.json']);
+                            end
+                            newCalc = setDefaultCalc(calculator, calcname);
+                            json_filename = char(strcat(read_dir,calcname,'.json'));
+                            fid = fopen(json_filename,'w');
+                            fprintf(fid,jsonencode(newCalc));
+                            fclose(fid);
+                            % update userdata
+                            ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                            ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
+                            calcList = getCalcFromPipeline(ud.pipelineList, pipeline_name);
+                            calcListChar = calculationsToChar(calcList);
+                            pipelineContentObj = findobj(fig,'tag','PipelineContent');
+                            set(pipelineContentObj, 'string', calcListChar, 'Value', length(calcListChar)); 
+                        end
+                                              
                     case 'DltCalcBt',
+                        pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+                            pip_val = get(pipelinePopupObj, 'value');
+                            % check not the "---" 
+                            if pip_val == 1
+                                msgbox('Please select or create a pipeline.');
+                                return;
+                            end
+                            pip_str = get(pipelinePopupObj, 'string');
                         msgBox = sprintf('Do you want to delete this calculator?');
                         title = 'Delete calculator';
                         b = questdlg(msgBox, title, 'Yes', 'No', 'Yes');
                         if strcmpi(b, 'Yes');
-                            pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-                            pip_val = get(pipelinePopupObj, 'value');
-                            pip_str = get(pipelinePopupObj, 'string');
                             pipeline_name = pip_str{pip_val};
                             piplineContentObj = findobj(fig,'tag','PipelineContent');
                             calc_val = get(piplineContentObj, 'value');
                             calc_str = get(piplineContentObj, 'string');
                             calc_name = calc_str{calc_val};
-                            read_dir = '+ndi/pipeline_storage/';
-                            calcs = getCalcFromPipeline(read_dir, pipeline_name);
-                            calcs(ismember(calcs,calc_name)) = [];
+                            filename = ['+ndi' filesep 'my_pipelines' filesep pipeline_name filesep calc_name '.json'];
+                            delete(filename);
+                            ud.pipelineList = getPipelines(['+ndi' filesep 'my_pipelines']);
+                            ud.pipelineListChar = pipelineListToChar(ud.pipelineList);
+                            calcList = getCalcFromPipeline(ud.pipelineList, pipeline_name);
+                            calcListChar = calculationsToChar(calcList);
                             pipelineContentObj = findobj(fig,'tag','PipelineContent');
-                            set(pipelineContentObj, 'string',char(calcs),'Value',length(calcs));
-                            save(strcat(read_dir, '/', pipeline_name,'.mat'),'calcs');
+                            set(pipelineContentObj, 'string', calcListChar, 'Value', length(calcListChar));
                         end
                         
+                    case 'EditBt'
+                        disp([command 'is not implemented yet.']);
                     case 'RunBt'
+                        disp([command 'is not implemented yet.']);
+                    case 'PipelineContent'
+                        disp([command 'is not supposed to do anything.'])
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
@@ -228,10 +282,13 @@ classdef pipeline
                 filename = char(filename);
             end
             
+            % replace illegal chars to underscore
+            filename = regexprep(filename,'[^a-zA-Z0-9]','_');
+            
             % check for existence
             exist = 0;
             for s = extension_list
-                if isfile(strcat(dir,filename,char(s)))
+                if isfolder(strcat(dir,filename,char(s))) | isfile(strcat(dir,filename,char(s)))
                     exist = 1;
                 end;
             end
@@ -272,20 +329,52 @@ classdef pipeline
             replaces = 0;
         end % choosefile		
             
-            function pipelineList = getPipelines(from_dir)
-                fileList = dir(fullfile(from_dir, '*.mat'));
-                pipelineList = {fileList.name};
-                for i = 1:length(pipelineList)
-                    [p,f,e]=fileparts(pipelineList{i});
-                    pipelineList{i} = fullfile(p,f);
+            function pipelineList = getPipelines(read_dir)
+                d = dir(read_dir);
+                isub = [d(:).isdir]; 
+                nameList = {d(isub).name}';
+                nameList(ismember(nameList,{'.','..'})) = [];
+                pipelineList{1}.pipeline_name = '---';
+                pipelineList{1}.calculations = {};
+                for i = 2:(length(nameList)+1)
+                    pipelineList{i}.pipeline_name = nameList{i-1};
+                    pipelineList{i}.calculations = {};
+                    D = dir([read_dir filesep char(pipelineList{i}.pipeline_name) filesep '*.json']);
+                    for d = 1:numel(D),
+                        %D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
+                        pipelineList{i}.calculations{d} = jsondecode(vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d).name]));
+                    end
                 end
-                pipelineList = ['---',pipelineList];
             end % getPipeline end
             
-            function calcList = getCalcFromPipeline(from_dir, pipeline_name)
-                calcList = load(strcat(from_dir,pipeline_name,'.mat'));
-                calcList = struct2cell(calcList);
-                calcList = calcList{:};
+            function pipelineListChar = pipelineListToChar(pipelineList)
+                pipelineListChar = [];
+                for i = 1:length(pipelineList)
+                    pipelineListChar{i} = pipelineList{i}.pipeline_name;
+                end
+            end
+                        
+            function calcList = getCalcFromPipeline(pipelineList, pipeline_name)
+                calcList = [];
+                for i = 1:length(pipelineList)
+                    if strcmp(pipelineList{i}.pipeline_name, pipeline_name)
+                        calcList = pipelineList{i}.calculations;
+                    end
+                end
+            end
+            
+            function calcListChar = calculationsToChar(calcList)
+                calcListChar = [];
+                for i = 1:length(calcList)
+                    calcListChar{i} = calcList{i}.ndi_pipeline_element.name;
+                end
+            end
+            
+            function newCalc = setDefaultCalc(calculator, name)
+                newCalc.ndi_pipeline_element.calculator = calculator;
+                newCalc.ndi_pipeline_element.name = name;
+                newCalc.ndi_pipeline_element.parameter_code = '';
+                newCalc.ndi_pipeline_element.default_options = 'NoAction';
             end
             
 		end; % pipeline_edit instance
