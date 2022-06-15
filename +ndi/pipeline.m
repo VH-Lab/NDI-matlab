@@ -5,7 +5,7 @@
 % TODO
 % 1. (Done) Reduce the repetitiveness in the callback code
 % 2. (Done) Put the filepath in userdata instead of hard coding
-% 3. Write documentation for the helper functions and for the main functions
+% 3. (Done) Write documentation for the helper functions and for the main functions
 
 % To fix:
 % 1. Should not always goes back to '---' after creating a new pipeline (not user friendly)
@@ -281,23 +281,36 @@ classdef pipeline
         
         
 		function calcList = getCalcFromPipeline(pipelineList, pipeline_name)
-			% ndi.pipeline.getCalcFromPipeline - DOCS HERE
 			%
-			% CALCLIST = ndi.pipeline.getCalcFromPipeline(PIPELINE_LIST, PIPELINE_NAME)
+			% ndi.pipeline.getCalcFromPipeline - read a CALCLIST from PIPELINELIST
 			%
-			%  TODO: add docs
+			% CALCLIST = ndi.pipeline.getCalcFromPipeline(PIPELINELIST, PIPELINE_NAME)
 			%
+            % Input: 
+            %   PIPELINELIST: a list of pipelines
+            %   PIPELINE_NAME: a name string of a specific pipeline in this pipeline list
+            % Output: 
+            %   CALCLIST: a list of calculators
+            % 
 				calcList = [];
 				for i = 1:length(pipelineList)
 					if strcmp(pipelineList{i}.pipeline_name, pipeline_name)
 						calcList = pipelineList{i}.calculations;
 					end
 				end
-		end
+        end % getCalcFromPipeline
             
 		function calcListChar = calculationsToChar(calcList)
-			% TODO: DOCS HERE
 			%
+			% ndi.pipeline.calculationsToChar - read names of a CALCLIST as a list of strings
+			%
+			% CALCLISTCHAR = ndi.pipeline.calculationsToChar(CALCLIST)
+            % 
+            % Input: 
+            %   CALCLIST: a list of calculators
+			% Output: 
+            %   CALCLISTCHAR: a list of strings, representing names of calculators in CALCLIST
+            % 
 
 				calcListChar = [];
 				for i = 1:length(calcList)
@@ -306,16 +319,34 @@ classdef pipeline
 		end % calculationsToChar
             
 		function newCalc = setDefaultCalc(calculator, name)
-			% TODO: DOCS HERE
+			%
+			% ndi.pipeline.setDefaultCalc - set default parameters for a new calculator
+			%
+			% NEWCALC = ndi.pipeline.setDefaultCalc(CALCULATOR, NAME)
+			% 
+            % Input
+            %   CALCULATOR: a type of calculator (EXAMPLE: ndi.calc.stimulus.tuningcurve)
+            %   NAME: a name string of calculator
+            % Output: 
+            %   NEWCALC: a new calculator created by this function
+            % 
 				newCalc.ndi_pipeline_element.calculator = calculator;
 				newCalc.ndi_pipeline_element.name = name;
 				newCalc.ndi_pipeline_element.parameter_code = '';
 				newCalc.ndi_pipeline_element.default_options = 'NoAction';
-		end
+        end % setDefaultCalc
             
 		function pipelineList = getPipelines(read_dir)
-			% TODO: DOCS HERE
 			%
+			% ndi.pipeline.getPipelines - read a PIPELINE_LIST from directory READ_DIR
+			%
+			% PIPELINELIST = ndi.pipeline.getPipelines(READ_DIR)
+			% 
+            % Input: 
+            %   READ_DIR: a directory where the pipelines are stored as a PIPELINE_LIST
+            % Output: 
+            %   PIPELINELIST: a list of pipelines
+            % 
 			d = dir(read_dir);
 			isub = [d(:).isdir]; 
 			nameList = {d(isub).name}';
@@ -334,7 +365,16 @@ classdef pipeline
 		end % getPipeline
 
 		function pipelineListChar = pipelineListToChar(pipelineList)
-			% TODO: DOCS
+			%
+			% ndi.pipeline.pipelineListToChar - read names of a PIPELINELIST as a list of strings
+			%
+			% PIPELINELISTCHAR = ndi.pipeline.pipelineListToChar(PIPELINELIST)
+			% 
+            % Input: 
+            %   PIPELINELIST: a list of pipelines
+            % Output: 
+            %   PIPELINELISTCHAR: a list of strings, representing names of pipelines in PIPELINELIST
+            % 
 			pipelineListChar = [];
 			for i = 1:length(pipelineList)
 			    pipelineListChar{i} = pipelineList{i}.pipeline_name;
