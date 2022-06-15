@@ -212,6 +212,9 @@ classdef pipeline
 						calcTypeList = {'ndi.calc.not_finished_yet','ndi.calc.need_calculator_types','ndi.calc.this_is_a_placeholder'};
 						[calcTypeStr,calcTypeVal] = listdlg('PromptString','Choose a calculator type:',...
 							'SelectionMode','single','ListString',calcTypeList);
+                        if (calcTypeVal == 0) % check selection
+                            return
+                        end
 						calculator = calcTypeList{calcTypeStr};
 						
 						% ask for file name
