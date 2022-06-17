@@ -2,14 +2,6 @@
 % 1. Get a calculation type list
 % 2. Pipeline edit & run button (edit: ndi.calculator.graphical_edit_calculator, waiting for updates)
 
-% TODO
-% 1. (Done) Reduce the repetitiveness in the callback code
-% 2. (Done) Put the filepath in userdata instead of hard coding
-% 3. (Done) Write documentation for the helper functions and for the main functions
-
-% To fix:
-% 1. Should not always goes back to '---' after creating a new pipeline (not user friendly)
-
 classdef pipeline
         
 	properties (SetAccess=protected,GetAccess=public)
@@ -103,7 +95,7 @@ classdef pipeline
                         
 						uicontrol(uid.edit,'style','listbox','position',[x y-2*title_height doc_width doc_height],...
 							'string',{'Please select or create a pipeline.'},...
-							'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr); % I like to include the type in the tag, helps me remember what it is months later
+							'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr); 
                         
 						uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
 							'string','Run','tag','RunBt','callback',callbackstr);
@@ -131,9 +123,20 @@ classdef pipeline
 						ud.pipelineListChar = ndi.pipeline.pipelineListToChar(ud.pipelineList);
 						set(fig,'userdata',ud);
 						pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
-						set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',1);
+                        index = 1;
+                        if exist('selectedPipeline','var')
+                            index = find(strcmp(selectedPipeline,ud.pipelineListChar));
+                        end
+						set(pipelinePopupObj, 'string',ud.pipelineListChar,'Value',index);
                         pipelineContentObj = findobj(fig,'tag','PipelineContentList');
-                        set(pipelineContentObj, 'string', [], 'Value', 1);
+                        if index == 1
+                            set(pipelineContentObj, 'string', [], 'Value', 1);
+                        else
+                            calcList = ndi.pipeline.getCalcFromPipeline(ud.pipelineList, ud.pipelineListChar{index});
+                            calcListChar = ndi.pipeline.calculationsToChar(calcList);
+                            pipelineContentObj = findobj(fig,'tag','PipelineContentList');
+                            set(pipelineContentObj, 'string', calcListChar, 'Value', min(numel(calcListChar),1));
+                        end
                         
 					case 'UpdateCalculatorList', % invented command that is not a callback
 						calcList = ndi.pipeline.getCalcFromPipeline(ud.pipelineList, pipeline_name);
@@ -172,7 +175,7 @@ classdef pipeline
 							end
 							mkdir(read_dir,filename);
 							% update and load pipelines
-                            ndi.pipeline.pipeline_edit('command','LoadPipelines');
+                            ndi.pipeline.pipeline_edit('command','LoadPipelines','selectedPipeline',filename);
 						end
 					
 					case 'DltPipelineBt',
@@ -185,7 +188,7 @@ classdef pipeline
 						end
 						str = get(pipelinePopupObj, 'string');
 						% get dir
-						read_dir = [ud.pipelinePath filesep];  % TODO: use userdata
+						read_dir = [ud.pipelinePath filesep];  
 						filename = str{val};
 						% ask and delete
 						msgBox = sprintf('Do you want to delete this pipeline?');
@@ -235,7 +238,7 @@ classdef pipeline
 							fclose(fid);
 							% update and load calculator
                             ndi.pipeline.pipeline_edit('command','UpdatePipelines');
-							ndi.pipeline.pipeline_edit('command','UpdateCalculatorList','pipeline_name',pipeline_name); % here we invent a command that's not a callback
+							ndi.pipeline.pipeline_edit('command','UpdateCalculatorList','pipeline_name',pipeline_name);
                         end
                         
 					case 'DltCalcBt',
@@ -260,11 +263,15 @@ classdef pipeline
 							delete(filename);
                             % update and load pipelines
                             ndi.pipeline.pipeline_edit('command','UpdatePipelines');
-							ndi.pipeline.pipeline_edit('command','UpdateCalculatorList','pipeline_name',pipeline_name); % here we invent a command that's not a callback						
+							ndi.pipeline.pipeline_edit('command','UpdateCalculatorList','pipeline_name',pipeline_name); 						
                         end
                         
 					case 'EditBt'
-						ndi.calculator.graphical_edit_calculator('command','NEW'); % need more inputs here, can you figure them out?
+                        piplineContentObj = findobj(fig,'tag','PipelineContentList')
+                        calc_val = get(piplineContentObj, 'value')
+                        calc_str = get(piplineContentObj, 'string')
+                        calc_name = calc_str{calc_val};
+						ndi.calculator.graphical_edit_calculator('command','EDIT','filename',calc_name); % need more inputs here
 						disp([command 'is not implemented yet.']);
                         
 					case 'RunBt'

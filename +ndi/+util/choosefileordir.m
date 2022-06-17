@@ -54,7 +54,7 @@ while exist
 	% check for existence again, because we got a new filename
 	exist = 0;
 	for s = extension_list
-		if isfile(strcat(dir,filename,char(s)))
+		if isfolder(strcat(dir,filename,char(s))) | isfile(strcat(dir,filename,char(s)))
 			exist = 1;
 		end;
 	end
