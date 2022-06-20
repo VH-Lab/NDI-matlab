@@ -492,13 +492,13 @@ classdef calculator < ndi.app & ndi.app.appdoc
 					% would check calc name and calc type and calc filename for validity here
 				elseif strcmpi(command,'edit'),
 					% set up for editing
-						% would read from file here
+					% read from file here
+%                     disp(filename);
+                    ud = jsondecode(vlt.file.textfile2char(filename));
 					command = 'NewWindow';
 					if isempty(fig),
 						fig = figure;
 					end;
-					% would check calc name and calc type and calc filename for validity here
-					ud = get(fig,'userdata');
 				end;
 
 				if isempty(fig),

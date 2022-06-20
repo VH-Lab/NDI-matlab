@@ -1,0 +1,24 @@
+{
+	"ndi_pipeline_element": {
+		"calculator":		"ndi.calc.vis.contrast_tuning",
+		"name":			"Naka Rushton Contrast Fits",
+		"parameter_code":	"",
+		"default_options": {
+			"if_document_exists_do":	"NoAction"
+		}
+	},
+
+    "calc": {
+		"parameter_code_default": ["% Enter parameter code here, or start from a template"],
+		"parameter_code": ["% Enter parameter code here, or start from a template"],
+		"name": "mycalc",
+		"filename": "",
+		"type": "ndi.calc.vis.contrast"
+	},
+
+	"window_params": {
+		"height": 600,
+		"width": 400
+	}
+
+}

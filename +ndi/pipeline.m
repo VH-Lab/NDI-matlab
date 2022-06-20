@@ -267,12 +267,23 @@ classdef pipeline
                         end
                         
 					case 'EditBt'
+                        pipelinePopupObj = findobj(fig,'tag','PipelinePopup');
+						pip_val = get(pipelinePopupObj, 'value');
+						% check not the "---" 
+						if pip_val == 1
+							msgbox('Please select or create a pipeline.');
+							return;
+						end
+						pip_str = get(pipelinePopupObj, 'string');
+                        pipeline_name = pip_str{pip_val};
                         piplineContentObj = findobj(fig,'tag','PipelineContentList')
-                        calc_val = get(piplineContentObj, 'value')
-                        calc_str = get(piplineContentObj, 'string')
+                        calc_val = get(piplineContentObj, 'value');
+                        calc_str = get(piplineContentObj, 'string');
                         calc_name = calc_str{calc_val};
-						ndi.calculator.graphical_edit_calculator('command','EDIT','filename',calc_name); % need more inputs here
-						disp([command 'is not implemented yet.']);
+                        % replace illegal chars to underscore
+                        calc_name = regexprep(calc_name,'[^a-zA-Z0-9]','_');
+                        full_calc_name = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
+						ndi.calculator.graphical_edit_calculator('command','EDIT','filename',full_calc_name); 
                         
 					case 'RunBt'
 						disp([command 'is not implemented yet.']);
