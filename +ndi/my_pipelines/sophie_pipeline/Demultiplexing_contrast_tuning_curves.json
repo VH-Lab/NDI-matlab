@@ -2,6 +2,7 @@
 	"ndi_pipeline_element": {
 		"calculator":		"ndi.calc.stimulus.tuningcurve",
 		"name":	"Demultiplexing contrast tuning curves",
+        "filename": "Demultiplexing_contrast_tuning_curves",
 		"parameter_code":	
             "parameters.input_parameters.independent_label='Contrast';
             parameters.input_parameters.independent_parameter = 'contrast';
@@ -16,19 +17,5 @@
 		"default_options": {
 			"if_document_exists_do":	"NoAction"
 		}
-	},
-    
-    "calc": {
-		"parameter_code_default": ["% Enter parameter code here, or start from a template"],
-		"parameter_code": ["% Enter parameter code here, or start from a template"],
-		"name": "mycalc",
-		"filename": "",
-		"type": "ndi.calc.vis.contrast"
-	},
-
-	"window_params": {
-		"height": 600,
-		"width": 400
 	}
-
 }

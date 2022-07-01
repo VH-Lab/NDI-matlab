@@ -495,6 +495,17 @@ classdef calculator < ndi.app & ndi.app.appdoc
 					% read from file here
 %                     disp(filename);
                     ud = jsondecode(vlt.file.textfile2char(filename));
+                    if ~exist('ud.calc','var')
+                        ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
+                        ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
+                        ud.calc.name = ud.ndi_pipeline_element.name;
+                        ud.calc.filename = ud.ndi_pipeline_element.filename;
+                        ud.calc.type = ud.ndi_pipeline_element.calculator;
+                    end
+                    if ~exist('ud.window_params','var')
+                        ud.window_params.height = 600;
+                        ud.window_params.width = 400;
+                    end
 					command = 'NewWindow';
 					if isempty(fig),
 						fig = figure;
@@ -707,6 +718,9 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						set(paramTextObj,'string',file.paramtext);
 					case 'SaveBt',
+                        fig = gcf;
+                        % not new window, get userdata
+                        ud = get(fig,'userdata');
 						% what will we save?
 						% let's save the parameter code
 						% shall we save "preferences" for running? Let's not right now

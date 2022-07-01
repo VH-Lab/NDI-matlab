@@ -276,7 +276,7 @@ classdef pipeline
 						end
 						pip_str = get(pipelinePopupObj, 'string');
                         pipeline_name = pip_str{pip_val};
-                        piplineContentObj = findobj(fig,'tag','PipelineContentList')
+                        piplineContentObj = findobj(fig,'tag','PipelineContentList');
                         calc_val = get(piplineContentObj, 'value');
                         calc_str = get(piplineContentObj, 'string');
                         calc_name = calc_str{calc_val};
@@ -350,8 +350,9 @@ classdef pipeline
             % 
 				newCalc.ndi_pipeline_element.calculator = calculator;
 				newCalc.ndi_pipeline_element.name = name;
+                newCalc.ndi_pipeline_element.filename = name;
 				newCalc.ndi_pipeline_element.parameter_code = '';
-				newCalc.ndi_pipeline_element.default_options = 'NoAction';
+				newCalc.ndi_pipeline_element.default_options = {"if_document_exists_do":"NoAction"};
         end % setDefaultCalc
             
 		function pipelineList = getPipelines(read_dir)
