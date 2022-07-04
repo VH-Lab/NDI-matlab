@@ -67,6 +67,7 @@ The `ls` command (short for *list*), lists all the files in a designated folder.
 ```matlab
 my_smr_file = fullfile(prefix,'ts_exper1','t00001','spike2data.smr')
 ndi.example.tutorial.plottreeshrewdata(my_smr_file); 
+```
 
 In this block, we again assign a path to a variable. In this case, we use the fullfile function, which builds a path to a single file instead of an entire folder. This particular function uses commas rather than filesep between each subfolder/file; this is used whenever separating arguments in a method or function. Note that we reuse prefix, the variable that we defined earlier, in order to create our path more simply.
 
