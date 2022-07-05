@@ -352,7 +352,7 @@ classdef pipeline
 				newCalc.ndi_pipeline_element.name = name;
                 newCalc.ndi_pipeline_element.filename = name;
 				newCalc.ndi_pipeline_element.parameter_code = '';
-				newCalc.ndi_pipeline_element.default_options = {"if_document_exists_do":"NoAction"};
+				newCalc.ndi_pipeline_element.default_options = containers.Map("if_document_exists_do","NoAction");
         end % setDefaultCalc
             
 		function pipelineList = getPipelines(read_dir)

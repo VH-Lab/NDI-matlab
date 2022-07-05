@@ -478,7 +478,8 @@ classdef calculator < ndi.app & ndi.app.appdoc
 				calc.type = type;
 
 				varlist_ud = {'calc','window_params'};
-
+                edit = false;
+                
 				if strcmpi(command,'new'),
 					% set up for new window
 					for i=1:numel(varlist_ud),
@@ -488,18 +489,18 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						fig = figure;
 					end;
 					command = 'NewWindow';
-
 					% would check calc name and calc type and calc filename for validity here
 				elseif strcmpi(command,'edit'),
 					% set up for editing
 					% read from file here
 %                     disp(filename);
+                    edit = true;
                     ud = jsondecode(vlt.file.textfile2char(filename));
                     if ~exist('ud.calc','var')
                         ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
                         ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
                         ud.calc.name = ud.ndi_pipeline_element.name;
-                        ud.calc.filename = ud.ndi_pipeline_element.filename;
+                        ud.calc.filename = filename;
                         ud.calc.type = ud.ndi_pipeline_element.calculator;
                     end
                     if ~exist('ud.window_params','var')
@@ -586,6 +587,20 @@ classdef calculator < ndi.app & ndi.app.appdoc
 							'string','Save','tag','SaveBt','callback',callbackstr);
 						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
 							'string','Cancel','tag','CancelBt','callback',callbackstr);
+                        if edit
+                            if exist('ud.paramval','var') && exist('ud.paramtext','var')
+                                % load param
+                                paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+                                set(paramPopupObj,'Value',ud.paramval);
+                                set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
+                            end
+                            if exist('ud.docval','var') && exist('ud.doctext','var')
+                            % load doc
+                                docPopupObj = findobj(fig,'tag','DocPopup');
+                                set(docPopupObj,'Value',ud.docval);
+                                set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
+                            end
+                        end
 					case 'UpdateWindow',
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
@@ -683,15 +698,19 @@ classdef calculator < ndi.app & ndi.app.appdoc
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
-						[file,path] = uigetfile('*.mat');
+% 						[file,path] = uigetfile('*.mat');
+                        [file,path] = uigetfile('*.json');
 						if isequal(file,0)
 							disp('User selected Cancel');
 						else
 							disp(['User selected ', fullfile(path,file)]);
 						end
 						
-						file = load(fullfile(path,file));
-						
+% 						file = load(fullfile(path,file));
+                        file = jsondecode(vlt.file.textfile2char([path filesep file]));
+                        ud = file;
+                        set(fig,'userdata',ud);
+						                        
 						docPopupObj = findobj(fig,'tag','DocPopup');
 						str = get(docPopupObj, 'string');
 						val = 1;
@@ -718,6 +737,14 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						set(paramTextObj,'string',file.paramtext);
 					case 'SaveBt',
+%                         w = which('ndi.calc.vis.contrast_tuning')
+%                         parentdirectory = fileparts(w)
+%                         general = [parentdirectory filesep 'docs' filesep contrast_tuning.docs.general.txt’]
+%                         output = [parentdirectory filesep 'docs' filesep ‘contrast_tuning.docs.output.txt’]
+%                         general = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.general.txt’]           
+%                         searching = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.searching.txt’]
+%                         st = vlt.file.text2char(general)
+
                         fig = gcf;
                         % not new window, get userdata
                         ud = get(fig,'userdata');
@@ -741,10 +768,13 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
 						% check filename
-						if isempty(ud.calc.filename),
-							ud.calc.filename = filename;
+                        filepath = '';
+                        filename = 'untitled';
+                        ext = '.json';
+						if ~isempty(ud.calc.filename),
+% 							ud.calc.filename = filename;
+                            [filepath,filename,ext] = fileparts(ud.calc.filename)
 						end;
-						
 
 						% save doc
 						docPopupObj = findobj(fig,'tag','DocPopup');
@@ -764,12 +794,18 @@ classdef calculator < ndi.app & ndi.app.appdoc
 							msgbox('Please select documentation.')
 						elseif paramval == 1
 							msgbox('Please select parameter code')
-						else 
-							defaultfilename = {['untitled']};
+                        else
+							defaultfilename = {[filename]};
 							prompt = {'File name:'};
 							dlgtitle = 'Save As';
-							extension_list = {['.mat']};
-							[success,filename,replaces] = ndi.util.choosefile(prompt, defaultfilename, dlgtitle, extension_list);
+                            extension_list = {[ext]};
+% 							extension_list = {['.mat']};
+%                             dir = ['+ndi' filesep 'my_pipelines'];
+                            dir = filepath;
+                            dir
+                            defaultfilename
+                            ext
+							[success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
 							% success: need to save
 							% replaces: original file is covered
 							% [0, filename, 0]: do nothing
@@ -780,9 +816,24 @@ classdef calculator < ndi.app & ndi.app.appdoc
 							disp("success: "+success);
 							disp("filename: "+filename);
 							disp("replaces: "+replaces);
-							if success
-								save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
-							end
+% 							if success
+% 								save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
+% 							end
+                            json_filename = char(strcat(filename,'.json'));
+                            if success
+                                if replaces
+                                    delete(json_filename);
+                                end
+                                saveTo.docval = docval;
+                                saveTo.docstr = docstr;
+                                saveTo.doctext = doctext;
+                                saveTo.paramval = paramval;
+                                saveTo.paramstr = paramstr;
+                                saveTo.paramtext = paramtext;
+                                fid = fopen(json_filename,'w');
+                                fprintf(fid,jsonencode(saveTo));
+                                fclose(fid);
+                            end
 						end
 					case 'CancelBt',
 					otherwise,
