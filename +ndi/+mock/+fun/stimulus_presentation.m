@@ -1,7 +1,7 @@
 function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id, parameter_struct, independent_variables, X, R, noise, reps, varargin)
-% ndi.test.mock.stimulus_presentation - make a mock stimulus presentation document base
+% ndi.mock.fun.stimulus_presentation - make a mock stimulus presentation document base
 %
-% [STIM_PRES_DOC,SPIKETIMES] = ndi.test.mock.stimulus_presentation(parameter_struct_array, ...
+% [STIM_PRES_DOC,SPIKETIMES] = ndi.mock.fun..stimulus_presentation(parameter_struct_array, ...
 %    independent_variables, X, R, control, noise, reps, ...)
 %
 % Create a mock stimulus presentation document and spike times that approximate the
@@ -44,9 +44,9 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id,
 %    R = [ 0 ; 2 ; 4]; % spikes/sec
 %    noise = 0;
 %    reps = 1;
-%    stim_pres_doc = ndi.test.mock.stimulus_presentation(stimulator_id,param_struct,independent_variable,X,R,noise,reps);
+%    stim_pres_doc = ndi.mock.fun.stimulus_presentation(stimulator_id,param_struct,independent_variable,X,R,noise,reps);
 %    disp(['Displaying stimulus parameters']);
-%    for i=1:size(X,2), stim_pres_doc.document_properties.stimulus_presentation.stimuli(1).parameters, end;
+%    for i=1:size(X,1), stim_pres_doc.document_properties.stimulus_presentation.stimuli(i).parameters, end;
 %
 % 
 
