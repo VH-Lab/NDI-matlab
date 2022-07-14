@@ -37,14 +37,23 @@ classdef ctest
 			% 
 
 				% Step 1: generate_mock_docs
-				[docs,doc_output,doc_expected_output] = generate_mock_docs(scope);
+				[docs,doc_output,doc_expected_output] = ctest_obj.generate_mock_docs(scope, number_of_tests);
 
 				% Step 2:
 	
-				[doesitmatch,errormsg] = compare_mock_docs(doc_expected_output, doc_output); 
+				b = 1;
+				errormsg = {};
+				for i=1:numel(doc_output),
+					[doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i}, ...
+						doc_output{i}, scope); 
+					b = b & doesitmatch;
+					errormsg = cat(1,errormsg,{doesitmatch});
+				end;
 
 				if plot_it,
-					ctest_obj.plot(doc_output);
+					for i=1:numel(doc_output),
+						ctest_obj.plot(doc_output);
+					end;
 				end;
 		end;
 
@@ -59,15 +68,20 @@ classdef ctest
 
 		end; % plot()
 
+
 			% need modify this:
-		function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope)
+
+		function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope, number_of_tests)
 
 			% randomly generating parameters and then creating mock stimulus and response documents
 
+			docs = {};
+			doc_output = {};
+			doc_expected_output = {};
+
 			switch (scope),
 
-				case 'exact',
-					
+				case 'standard',
 
 				case 'low-noise',
 	

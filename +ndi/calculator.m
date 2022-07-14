@@ -1,4 +1,4 @@
-classdef calculator < ndi.app & ndi.app.appdoc
+classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         
 	properties (SetAccess=protected,GetAccess=public)
 		fast_start = 'ndi.calculator.graphical_edit_calculator(''command'',''new'',''type'',''ndi.calc.vis.contrast'',''name'',''mycalc'')';
