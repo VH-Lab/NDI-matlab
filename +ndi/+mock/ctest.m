@@ -37,22 +37,27 @@ classdef ctest
 			% 
 
 				% Step 1: generate_mock_docs
-			[docs,doc_output,doc_expected_output] = generate_mock_docs(scope);
+				[docs,doc_output,doc_expected_output] = generate_mock_docs(scope);
 
-			% Step 2:
+				% Step 2:
+	
+				[doesitmatch,errormsg] = compare_mock_docs(doc_expected_output, doc_output); 
 
-			[doesitmatch,errormsg] = compare_mock_docs(doc_expected_output, doc_output); 
-
-			if plot_it,
-				ctest_obj.plot(doc_output);
-			end;
+				if plot_it,
+					ctest_obj.plot(doc_output);
+				end;
 		end;
 
-		function plot(ctest_obj, document)
+		function h = plot(ctest_obj, document)
+			% PLOT - plot a calculation test document
+			%
+			% H = PLOT(CTEST_OBJ, DOCUMENT)
+			%
+			% Plot the ndi.document DOCUMENT in the current axes.
+			%
+			% In the abstract class, nothing is done.
 
-
-		end;
-
+		end; % plot()
 
 			% need modify this:
 		function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope)
