@@ -1,3 +1,7 @@
+% TODO
+% 1. LoadBt should change title
+% 2. Make variable same for calculator and pipeline
+
 classdef calculator < ndi.app & ndi.app.appdoc
         
 	properties (SetAccess=protected,GetAccess=public)
@@ -492,8 +496,7 @@ classdef calculator < ndi.app & ndi.app.appdoc
 					% would check calc name and calc type and calc filename for validity here
 				elseif strcmpi(command,'edit'),
 					% set up for editing
-					% read from file here
-%                     disp(filename);
+					% read from file
                     edit = true;
                     ud = jsondecode(vlt.file.textfile2char(filename));
                     if ~exist('ud.calc','var')
@@ -588,13 +591,13 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
 							'string','Cancel','tag','CancelBt','callback',callbackstr);
                         if edit
-                            if exist('ud.paramval','var') && exist('ud.paramtext','var')
+                            if isfield(ud,'paramstrs') && isfield(ud,'paramval') && isfield(ud,'paramtext')
                                 % load param
                                 paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
                                 set(paramPopupObj,'Value',ud.paramval);
                                 set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
                             end
-                            if exist('ud.docval','var') && exist('ud.doctext','var')
+                            if isfield(ud,'docstrs') && isfield(ud,'docval') && isfield(ud,'doctext')
                             % load doc
                                 docPopupObj = findobj(fig,'tag','DocPopup');
                                 set(docPopupObj,'Value',ud.docval);
@@ -698,15 +701,13 @@ classdef calculator < ndi.app & ndi.app.appdoc
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
-% 						[file,path] = uigetfile('*.mat');
                         [file,path] = uigetfile('*.json');
 						if isequal(file,0)
 							disp('User selected Cancel');
 						else
 							disp(['User selected ', fullfile(path,file)]);
-						end
-						
-% 						file = load(fullfile(path,file));
+                        end
+
                         file = jsondecode(vlt.file.textfile2char([path filesep file]));
                         ud = file;
                         set(fig,'userdata',ud);
@@ -771,9 +772,9 @@ classdef calculator < ndi.app & ndi.app.appdoc
                         filepath = '';
                         filename = 'untitled';
                         ext = '.json';
-						if ~isempty(ud.calc.filename),
-% 							ud.calc.filename = filename;
-                            [filepath,filename,ext] = fileparts(ud.calc.filename)
+						if exist('ud','var') && isfield(ud,'calc') && isfield(ud.calc, 'filename'),
+                            [filepath,filename,ext] = fileparts(ud.calc.filename);
+                            filepath = strcat(filepath, filesep);
 						end;
 
 						% save doc
@@ -799,37 +800,23 @@ classdef calculator < ndi.app & ndi.app.appdoc
 							prompt = {'File name:'};
 							dlgtitle = 'Save As';
                             extension_list = {[ext]};
-% 							extension_list = {['.mat']};
-%                             dir = ['+ndi' filesep 'my_pipelines'];
                             dir = filepath;
-                            dir
-                            defaultfilename
-                            ext
 							[success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
-							% success: need to save
-							% replaces: original file is covered
-							% [0, filename, 0]: do nothing
-							% [1, filename, 0]: save and not replace
-							% [1, filename, 1]: save and replace
-							    
-							% uncomment the following three lines to check 
-							disp("success: "+success);
-							disp("filename: "+filename);
-							disp("replaces: "+replaces);
-% 							if success
-% 								save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
-% 							end
-                            json_filename = char(strcat(filename,'.json'));
+
+                            json_filename = char(strcat(filepath, filesep, filename,'.json'));
                             if success
                                 if replaces
-                                    delete(json_filename);
+                                    origin_file = fileread(json_filename);
+                                    saveTo = jsondecode(origin_file);
                                 end
                                 saveTo.docval = docval;
                                 saveTo.docstr = docstr;
                                 saveTo.doctext = doctext;
+                                saveTo.docstrs = docstrs;
                                 saveTo.paramval = paramval;
                                 saveTo.paramstr = paramstr;
                                 saveTo.paramtext = paramtext;
+                                saveTo.paramstrs = paramstrs;
                                 fid = fopen(json_filename,'w');
                                 fprintf(fid,jsonencode(saveTo));
                                 fclose(fid);
