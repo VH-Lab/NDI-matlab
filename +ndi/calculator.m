@@ -1,7 +1,3 @@
-% TODO
-% 1. LoadBt should change title
-% 2. Make variable same for calculator and pipeline
-
 classdef calculator < ndi.app & ndi.app.appdoc
         
 	properties (SetAccess=protected,GetAccess=public)
@@ -766,7 +762,7 @@ classdef calculator < ndi.app & ndi.app.appdoc
 						%paramval = get(paramPopupObj, 'value');
 						%paramstrs = get(paramPopupObj, 'string');
 						%paramstr = paramstrs{paramval};
-						paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
+						%paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
 						% check filename
                         filepath = '';
