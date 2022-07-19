@@ -58,4 +58,10 @@ while exist
 	end
 end % while
 
+% gets out from the while loop, which means file does not exist
+% no need to replace
+success = 1;
+replaces = 0;
+end % choosefileordir
+
 

@@ -478,7 +478,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				calc.type = type;
 
 				varlist_ud = {'calc','window_params'};
-
+                edit = false;
+                
 				if strcmpi(command,'new'),
 					% set up for new window
 					for i=1:numel(varlist_ud),
@@ -488,17 +489,27 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						fig = figure;
 					end;
 					command = 'NewWindow';
-
 					% would check calc name and calc type and calc filename for validity here
 				elseif strcmpi(command,'edit'),
 					% set up for editing
-						% would read from file here
+					% read from file
+                    edit = true;
+                    ud = jsondecode(vlt.file.textfile2char(filename));
+                    if ~exist('ud.calc','var')
+                        ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
+                        ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
+                        ud.calc.name = ud.ndi_pipeline_element.name;
+                        ud.calc.filename = filename;
+                        ud.calc.type = ud.ndi_pipeline_element.calculator;
+                    end
+                    if ~exist('ud.window_params','var')
+                        ud.window_params.height = 600;
+                        ud.window_params.width = 400;
+                    end
 					command = 'NewWindow';
 					if isempty(fig),
 						fig = figure;
 					end;
-					% would check calc name and calc type and calc filename for validity here
-					ud = get(fig,'userdata');
 				end;
 
 				if isempty(fig),
@@ -575,6 +586,20 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 							'string','Save','tag','SaveBt','callback',callbackstr);
 						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
 							'string','Cancel','tag','CancelBt','callback',callbackstr);
+                        if edit
+                            if isfield(ud,'paramstrs') && isfield(ud,'paramval') && isfield(ud,'paramtext')
+                                % load param
+                                paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+                                set(paramPopupObj,'Value',ud.paramval);
+                                set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
+                            end
+                            if isfield(ud,'docstrs') && isfield(ud,'docval') && isfield(ud,'doctext')
+                            % load doc
+                                docPopupObj = findobj(fig,'tag','DocPopup');
+                                set(docPopupObj,'Value',ud.docval);
+                                set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
+                            end
+                        end
 					case 'UpdateWindow',
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
@@ -672,15 +697,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
-						[file,path] = uigetfile('*.mat');
+                        [file,path] = uigetfile('*.json');
 						if isequal(file,0)
 							disp('User selected Cancel');
 						else
 							disp(['User selected ', fullfile(path,file)]);
-						end
-						
-						file = load(fullfile(path,file));
-						
+                        end
+
+                        file = jsondecode(vlt.file.textfile2char([path filesep file]));
+                        ud = file;
+                        set(fig,'userdata',ud);
+						                        
 						docPopupObj = findobj(fig,'tag','DocPopup');
 						str = get(docPopupObj, 'string');
 						val = 1;
@@ -707,6 +734,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						set(paramTextObj,'string',file.paramtext);
 					case 'SaveBt',
+%                         w = which('ndi.calc.vis.contrast_tuning')
+%                         parentdirectory = fileparts(w)
+%                         general = [parentdirectory filesep 'docs' filesep contrast_tuning.docs.general.txt’]
+%                         output = [parentdirectory filesep 'docs' filesep ‘contrast_tuning.docs.output.txt’]
+%                         general = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.general.txt’]           
+%                         searching = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.searching.txt’]
+%                         st = vlt.file.text2char(general)
+
+                        fig = gcf;
+                        % not new window, get userdata
+                        ud = get(fig,'userdata');
 						% what will we save?
 						% let's save the parameter code
 						% shall we save "preferences" for running? Let's not right now
@@ -724,13 +762,16 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						%paramval = get(paramPopupObj, 'value');
 						%paramstrs = get(paramPopupObj, 'string');
 						%paramstr = paramstrs{paramval};
-						paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
+						%paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
 						% check filename
-						if isempty(ud.calc.filename),
-							ud.calc.filename = filename;
+                        filepath = '';
+                        filename = 'untitled';
+                        ext = '.json';
+						if exist('ud','var') && isfield(ud,'calc') && isfield(ud.calc, 'filename'),
+                            [filepath,filename,ext] = fileparts(ud.calc.filename);
+                            filepath = strcat(filepath, filesep);
 						end;
-						
 
 						% save doc
 						docPopupObj = findobj(fig,'tag','DocPopup');
@@ -750,25 +791,32 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 							msgbox('Please select documentation.')
 						elseif paramval == 1
 							msgbox('Please select parameter code')
-						else 
-							defaultfilename = {['untitled']};
+                        else
+							defaultfilename = {[filename]};
 							prompt = {'File name:'};
 							dlgtitle = 'Save As';
-							extension_list = {['.mat']};
-							[success,filename,replaces] = ndi.util.choosefile(prompt, defaultfilename, dlgtitle, extension_list);
-							% success: need to save
-							% replaces: original file is covered
-							% [0, filename, 0]: do nothing
-							% [1, filename, 0]: save and not replace
-							% [1, filename, 1]: save and replace
-							    
-							% uncomment the following three lines to check 
-							disp("success: "+success);
-							disp("filename: "+filename);
-							disp("replaces: "+replaces);
-							if success
-								save(filename,'docval','docstr','doctext','paramval','paramstr','paramtext');
-							end
+                            extension_list = {[ext]};
+                            dir = filepath;
+							[success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
+
+                            json_filename = char(strcat(filepath, filesep, filename,'.json'));
+                            if success
+                                if replaces
+                                    origin_file = fileread(json_filename);
+                                    saveTo = jsondecode(origin_file);
+                                end
+                                saveTo.docval = docval;
+                                saveTo.docstr = docstr;
+                                saveTo.doctext = doctext;
+                                saveTo.docstrs = docstrs;
+                                saveTo.paramval = paramval;
+                                saveTo.paramstr = paramstr;
+                                saveTo.paramtext = paramtext;
+                                saveTo.paramstrs = paramstrs;
+                                fid = fopen(json_filename,'w');
+                                fprintf(fid,jsonencode(saveTo));
+                                fclose(fid);
+                            end
 						end
 					case 'CancelBt',
 					otherwise,
