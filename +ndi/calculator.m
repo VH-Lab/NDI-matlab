@@ -468,9 +468,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				name = '';
 				filename = '';
 				type = '';
-				calc.parameter_code_default = {'% Enter parameter code here, or start from a template'};
-				calc.parameter_code = calc.parameter_code_default; 
-
 				fig = []; % figure to use
 
 				vlt.data.assign(varargin{:});
@@ -478,6 +475,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				calc.name = name;
 				calc.filename = filename;
 				calc.type = type;
+				if ~isempty(type),
+					calc.parameter_code_default = ndi.calculator.parameter_default(calc.type); 
+					calc.parameter_code = calc.parameter_code_default; 
+					[calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
+				end;
+
 
 				varlist_ud = {'calc','window_params'};
 				edit = false;
@@ -496,13 +499,15 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 					% set up for editing
 					% read from file
 					edit = true;
-					ud = jsondecode(vlt.file.textfile2char(filename));
+					ud = jsondecode(vlt.file.textfile2char(filename))
 					if ~exist('ud.calc','var')
-						ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
+						ud.calc.type = ud.ndi_pipeline_element.calculator;
+						ud.calc.parameter_code_default = ndi.calculator.parameter_default(ud.calc.type);
 						ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
+						ud.calc.parameter_code_old = ud.ndi_pipeline_element.parameter_code;
 						ud.calc.name = ud.ndi_pipeline_element.name;
 						ud.calc.filename = filename;
-						ud.calc.type = ud.ndi_pipeline_element.calculator;
+						[ud.calc.parameter_example_names,ud.calc.parameter_example_code] = ndi.calculator.parameter_examples(ud.calc.type);
 					end
 					if ~exist('ud.window_params','var')
 						ud.window_params.height = 600;
@@ -560,7 +565,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						x = edge; y = top-row;
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
-							'string',{'---', 'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr);
+							'string',{'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr,...
+							'value',1);
 						y = y - doc_height;
 						uicontrol(uid.edit,'position',[x y doc_width doc_height],...
 							'string','Please select one ducumentation type.',...
@@ -569,10 +575,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
-							'string',{'---','Example 1','Example 2','Example 3'},'tag','ParameterCodePopup', 'callback',callbackstr);
+							'string',{'User parameter code', '---', 'default', '---',ud.calc.parameter_example_names{:}},...
+							'tag','ParameterCodePopup', 'callback',callbackstr,'userdata',1);
 						y = y - parameter_code_height;
 						uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
-							'string','Please select one parameter code.','tag','ParameterCodeTxt','min',0,'max',2,'enable','inactive');
+							'string',ud.calc.parameter_code,'tag','ParameterCodeTxt','min',0,'max',2); 
 						y = y - row;
 						y = y - row;
 
@@ -603,6 +610,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
 							end
 						end
+						ndi.calculator.graphical_edit_calculator('command','DocPopup','fig',fig);
 					case 'UpdateWindow',
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
@@ -615,15 +623,15 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						docTextObj = findobj(fig,'tag','DocTxt');
 						% Step 2, take action
 						switch val,
-							case 2, % General documentation
+							case 1, % General documentation
 								disp(['Popup is ' str{val} '.']);
 								type = 'general';
 								%set(docTextObj,'string','Some General Document');
-							case 3, % searching for inputs
+							case 2, % searching for inputs
 								disp(['Popup is ' str{val} '.']);
 								type = 'searching for inputs';
 								%set(docTextObj,'string','Some Input Document');
-							case 4, % output documentation
+							case 3, % output documentation
 								disp(['Popup is ' str{val} '.']);
 								type = 'output';
 								%set(docTextObj,'string','Some Output Document');
@@ -634,39 +642,29 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						mytext = ndi.calculator.docfilename(ud.ndi_pipeline_element.calculator,type);
 						set(docTextObj,'string',mytext);
 					case 'ParameterCodePopup',
+						ud = get(fig,'userdata');
 						% Step 1: search for the objects you need to work with
 						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
 						val = get(paramPopupObj, 'value');
 						str = get(paramPopupObj, 'string');
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
-						% Step 2, take action
-						switch val,
-							case 2, % example 1
-								disp(['Popup is ' str{val} '.']);
-								%set(docTextObj,'string','Some example 1');
-								type = 'example1';
-							case 3, % example 2
-								disp(['Popup is ' str{val} '.']);
-								%set(docTextObj,'string','Some example 2');
-								type = 'example2';
-							case 4, % example 3
-								disp(['Popup is ' str{val} '.']);
-								%set(docTextObj,'string','Some example 3');
-								type = 'example3';
-							otherwise,
-								disp(['Popup ' val ' is out of bound.']);
-							end;
-					
-						p = which('ndi.calc.vis.speed_tuning');
-						[parentdir, appname] = fileparts(p);
-						paramfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
-						if paramfile_present,
-							mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
-							set(paramTextObj,'string',mytext);
-						elseif val~=1,
-							msgbox('No documentation found.');
+						lastval = get(paramPopupObj,'userdata');
+						if lastval == 1 & val ~=1, % if we are switching away from user code, save it
+							ud.calc.parameter_code = get(paramTextObj,'string');
+							set(fig,'userdata',ud);
 						end;
-		
+						% Step 2, take action
+						if val==1, % this is the users's code
+							set(paramTextObj,'string',ud.calc.parameter_code);
+						elseif val==3,
+							% view the default code
+							set(paramTextObj,'string',ud.calc.parameter_code_default);
+						elseif val>=5, % this is an example
+							set(paramTextObj,'string',ud.calc.parameter_example_code{val-4});
+						end;
+						if ~any(val==[2 4]), % if it's not a spacer
+							set(paramPopupObj,'userdata',val); % store the last menu setting in userdata
+						end;
 					case 'CommandPopup',
 						% Step 1: search for the objects you need to work with
 						cmdPopupObj = findobj(fig,'tag','CommandPopup');
@@ -800,6 +798,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 							end
 						end
 					case 'CancelBt',
+						close(fig);
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
@@ -809,13 +808,16 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 		function text = docfilename(calculator_type, doc_type)
 			% ndi.calculator.docfilename - return the text in the requested documentation file
 			%
-			% TEXT = DOCFILENAME(CALCULATOR_TYPE, DOC_TYPE)
+			% TEXT = ndi.calculator.docfilename(CALCULATOR_TYPE, DOC_TYPE)
 			%
 			% Returns the text of the documentation files.
 			% CALCULATOR_TYPE should be the full object name of the calculator of interest.
 			%  (for example: 'ndi.calc.stimulus.tuningcurve' or 'ndi.calc.vis.contrasttuning')
 			% DOC_TYPE should be the type of document requested ('general', 'output', 'searching for inputs')
 			%
+			% Example:
+			%    text = ndi.calculator.docfilename('ndi.calc.stimulus.tuningcurve','general');
+			% 
 
 				switch (lower(doc_type)),
 					case 'general',
@@ -842,7 +844,68 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 					error(['No such file ' filename '.']);
 				end;
 		end; 
-            
+
+		function [names, contents] = parameter_examples(calculator_type)
+			% ndi.calculator.parameter_examples - return the parameter code examples for a given calculator_type
+			%
+			% [NAMES, CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
+			%
+			% Return the example NAMES and parameter example code CONTENTS for a given CALCULATOR_TYPE.
+			%
+			% NAMES is a cell array of strings with the code example names. CONTENTS is a cell array of strings with
+			% the contents of the code examples.
+			%
+			% Example: 
+			%   [names,contents] = ndi.calculator.parameter_examples('ndi.calc.stimulus.tuningcurve');
+			%
+
+				w = which(calculator_type);
+				if isempty(w),
+					error(['No known calculator on the path called ' calculator_type '.']);
+				end;
+				[parentdir, appname] = fileparts(w);
+
+				dirname = [parentdir filesep 'docs' filesep appname '.docs.parameter.examples']
+
+				d = dir([dirname filesep '*.txt'])
+
+				contents = {};
+				names = {};
+
+				for i=1:numel(d),
+					names{end+1} = d(i).name;
+					contents{end+1} = vlt.file.textfile2char([dirname filesep d(i).name]);
+				end;
+
+		end;
+
+ 		function [contents] = parameter_default(calculator_type)
+			% ndi.calculator.parameter_default - return the default parameter code for a given calculator_type
+			%
+			% [CONTENTS] = ndi.calculator.parameter_examples(CALCULATOR_TYPE)
+			%
+			% Return the default parameter code CONTENTS for a given CALCULATOR_TYPE. CONTENTS is a 
+			% character string.
+			%
+			% Example: 
+			%   [contents] = ndi.calculator.parameter_default('ndi.calc.stimulus.tuningcurve');
+			%
+
+				w = which(calculator_type);
+				if isempty(w),
+					error(['No known calculator on the path called ' calculator_type '.']);
+				end;
+				[parentdir, appname] = fileparts(w);
+
+				filename = [parentdir filesep 'docs' filesep appname '.docs.parameter.default.txt'];
+				if isfile(filename),
+					contents = vlt.file.textfile2char(filename);
+				else,
+					warning(['No default parameter code file ' filename ' found.']);
+					contents = '';
+				end;
+		end;
+               
 	end; % Static methods
 end
 
