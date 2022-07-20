@@ -410,6 +410,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     
         
 	methods (Static)
+
 		function param = plot_parameters(varargin);
 			% PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
 			%
@@ -444,6 +445,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				param = vlt.data.workspace2struct();
 				param = rmfield(param,'varargin');
 		end;
+
 		function graphical_edit_calculator(varargin)
 			% GRAPHICAL_EDIT_CALCULATOR - create and control a GUI to graphically edit an NDI calculator instance
 			%
@@ -478,7 +480,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				calc.type = type;
 
 				varlist_ud = {'calc','window_params'};
-                edit = false;
+				edit = false;
                 
 				if strcmpi(command,'new'),
 					% set up for new window
@@ -493,19 +495,19 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				elseif strcmpi(command,'edit'),
 					% set up for editing
 					% read from file
-                    edit = true;
-                    ud = jsondecode(vlt.file.textfile2char(filename));
-                    if ~exist('ud.calc','var')
-                        ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
-                        ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
-                        ud.calc.name = ud.ndi_pipeline_element.name;
-                        ud.calc.filename = filename;
-                        ud.calc.type = ud.ndi_pipeline_element.calculator;
-                    end
-                    if ~exist('ud.window_params','var')
-                        ud.window_params.height = 600;
-                        ud.window_params.width = 400;
-                    end
+					edit = true;
+					ud = jsondecode(vlt.file.textfile2char(filename));
+					if ~exist('ud.calc','var')
+						ud.calc.parameter_code_default = ud.ndi_pipeline_element.default_options;
+						ud.calc.parameter_code = ud.ndi_pipeline_element.parameter_code;
+						ud.calc.name = ud.ndi_pipeline_element.name;
+						ud.calc.filename = filename;
+						ud.calc.type = ud.ndi_pipeline_element.calculator;
+					end
+					if ~exist('ud.window_params','var')
+						ud.window_params.height = 600;
+						ud.window_params.width = 400;
+					end
 					command = 'NewWindow';
 					if isempty(fig),
 						fig = figure;
@@ -515,6 +517,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				if isempty(fig),
 					error(['Empty figure, do not know what to work on.']);
 				end;
+
 				disp(['Command is ' command '.']);
 				switch (command),
 					case 'NewWindow',
@@ -586,24 +589,25 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 							'string','Save','tag','SaveBt','callback',callbackstr);
 						uicontrol(uid.button,'position',[button_center(3)-0.5*button_width y button_width button_height],...
 							'string','Cancel','tag','CancelBt','callback',callbackstr);
-                        if edit
-                            if isfield(ud,'paramstrs') && isfield(ud,'paramval') && isfield(ud,'paramtext')
-                                % load param
-                                paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                                set(paramPopupObj,'Value',ud.paramval);
-                                set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
-                            end
-                            if isfield(ud,'docstrs') && isfield(ud,'docval') && isfield(ud,'doctext')
-                            % load doc
-                                docPopupObj = findobj(fig,'tag','DocPopup');
-                                set(docPopupObj,'Value',ud.docval);
-                                set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
-                            end
-                        end
+						if edit
+							if isfield(ud,'paramstrs') && isfield(ud,'paramval') && isfield(ud,'paramtext')
+								% load param
+								paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+								set(paramPopupObj,'Value',ud.paramval);
+								set(findobj(fig,'tag','ParameterCodeTxt'),'String',ud.paramtext);
+							end
+							if isfield(ud,'docstrs') && isfield(ud,'docval') && isfield(ud,'doctext')
+								% load doc
+								docPopupObj = findobj(fig,'tag','DocPopup');
+								set(docPopupObj,'Value',ud.docval);
+								set(findobj(fig,'tag','DocTxt'),'String',ud.doctext);
+							end
+						end
 					case 'UpdateWindow',
 					case 'DocPopup',
 						% Step 1: search for the objects you need to work with
 						docPopupObj = findobj(fig,'tag','DocPopup');
+						ud = get(fig,'userdata')
 						val = get(docPopupObj, 'value');
 						str = get(docPopupObj, 'string');
 						%disp(val);
@@ -617,7 +621,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								%set(docTextObj,'string','Some General Document');
 							case 3, % searching for inputs
 								disp(['Popup is ' str{val} '.']);
-								type = 'input';
+								type = 'searching for inputs';
 								%set(docTextObj,'string','Some Input Document');
 							case 4, % output documentation
 								disp(['Popup is ' str{val} '.']);
@@ -627,15 +631,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 		
-						p = which('ndi.calc.vis.speed_tuning');
-						[parentdir, appname] = fileparts(p);
-						docfile_present = isfile([parentdir filesep appname '.docs.' type '.txt']);
-						if docfile_present,
-							mytext = vlt.file.text2cellstr([parentdir filesep appname '.docs.' type '.txt']);
-							set(docTextObj,'string',mytext);
-						elseif val~=1,
-							msgbox('No documentation found.');
-						end;
+						mytext = ndi.calculator.docfilename(ud.ndi_pipeline_element.calculator,type);
+						set(docTextObj,'string',mytext);
 					case 'ParameterCodePopup',
 						% Step 1: search for the objects you need to work with
 						paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
@@ -697,16 +694,16 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 					case 'LoadBt',
-                        [file,path] = uigetfile('*.json');
+						[file,path] = uigetfile('*.json');
 						if isequal(file,0)
 							disp('User selected Cancel');
 						else
 							disp(['User selected ', fullfile(path,file)]);
-                        end
+						end
 
-                        file = jsondecode(vlt.file.textfile2char([path filesep file]));
-                        ud = file;
-                        set(fig,'userdata',ud);
+						file = jsondecode(vlt.file.textfile2char([path filesep file]));
+						ud = file;
+						set(fig,'userdata',ud);
 						                        
 						docPopupObj = findobj(fig,'tag','DocPopup');
 						str = get(docPopupObj, 'string');
@@ -734,28 +731,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						paramTextObj = findobj(fig,'tag','ParameterCodeTxt');
 						set(paramTextObj,'string',file.paramtext);
 					case 'SaveBt',
-%                         w = which('ndi.calc.vis.contrast_tuning')
-%                         parentdirectory = fileparts(w)
-%                         general = [parentdirectory filesep 'docs' filesep contrast_tuning.docs.general.txt’]
-%                         output = [parentdirectory filesep 'docs' filesep ‘contrast_tuning.docs.output.txt’]
-%                         general = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.general.txt’]           
-%                         searching = [parentdirectory filesep 'docs' filesep 'contrast_tuning.docs.searching.txt’]
-%                         st = vlt.file.text2char(general)
-
-                        fig = gcf;
-                        % not new window, get userdata
-                        ud = get(fig,'userdata');
+						fig = gcf;
+						% not new window, get userdata
+						ud = get(fig,'userdata');
 						% what will we save?
 						% let's save the parameter code
 						% shall we save "preferences" for running? Let's not right now
 						% shall we save the view that the user had? let's not right now
-						
-						% save doc
-						%docPopupObj = findobj(fig,'tag','DocPopup');
-						%docval = get(docPopupObj, 'value');
-						%docstrs = get(docPopupObj, 'string');
-						%docstr = docstrs{docval};
-						%doctext = get(findobj(fig,'tag','DocTxt'),'String');
 						
 						% save param
 						%paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
@@ -765,12 +747,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						%paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
 						% check filename
-                        filepath = '';
-                        filename = 'untitled';
-                        ext = '.json';
+						filepath = '';
+						filename = 'untitled';
+						ext = '.json';
 						if exist('ud','var') && isfield(ud,'calc') && isfield(ud.calc, 'filename'),
-                            [filepath,filename,ext] = fileparts(ud.calc.filename);
-                            filepath = strcat(filepath, filesep);
+							[filepath,filename,ext] = fileparts(ud.calc.filename);
+							filepath = strcat(filepath, filesep);
 						end;
 
 						% save doc
@@ -791,43 +773,77 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 							msgbox('Please select documentation.')
 						elseif paramval == 1
 							msgbox('Please select parameter code')
-                        else
+						else
 							defaultfilename = {[filename]};
 							prompt = {'File name:'};
 							dlgtitle = 'Save As';
-                            extension_list = {[ext]};
-                            dir = filepath;
+							extension_list = {[ext]};
+							dir = filepath;
 							[success,filename,replaces] = ndi.util.choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list);
-
-                            json_filename = char(strcat(filepath, filesep, filename,'.json'));
-                            if success
-                                if replaces
-                                    origin_file = fileread(json_filename);
-                                    saveTo = jsondecode(origin_file);
-                                end
-                                saveTo.docval = docval;
-                                saveTo.docstr = docstr;
-                                saveTo.doctext = doctext;
-                                saveTo.docstrs = docstrs;
-                                saveTo.paramval = paramval;
-                                saveTo.paramstr = paramstr;
-                                saveTo.paramtext = paramtext;
-                                saveTo.paramstrs = paramstrs;
-                                fid = fopen(json_filename,'w');
-                                fprintf(fid,jsonencode(saveTo));
-                                fclose(fid);
-                            end
+							json_filename = char(strcat(filepath, filesep, filename,'.json'));
+							if success
+								if replaces
+									origin_file = fileread(json_filename);
+									saveTo = jsondecode(origin_file);
+								end
+								saveTo.docval = docval;
+								saveTo.docstr = docstr;
+								saveTo.doctext = doctext;
+								saveTo.docstrs = docstrs;
+								saveTo.paramval = paramval;
+								saveTo.paramstr = paramstr;
+								saveTo.paramtext = paramtext;
+								saveTo.paramstrs = paramstrs;
+								fid = fopen(json_filename,'w');
+								fprintf(fid,jsonencode(saveTo));
+								fclose(fid);
+							end
 						end
 					case 'CancelBt',
 					otherwise,
 						disp(['Unknown command ' command '.']);
 
 				end; % switch(command)
-		end; % graphical_edit_calculation_instance
+		end; % graphical_edit_calculation ()
+
+		function text = docfilename(calculator_type, doc_type)
+			% ndi.calculator.docfilename - return the text in the requested documentation file
+			%
+			% TEXT = DOCFILENAME(CALCULATOR_TYPE, DOC_TYPE)
+			%
+			% Returns the text of the documentation files.
+			% CALCULATOR_TYPE should be the full object name of the calculator of interest.
+			%  (for example: 'ndi.calc.stimulus.tuningcurve' or 'ndi.calc.vis.contrasttuning')
+			% DOC_TYPE should be the type of document requested ('general', 'output', 'searching for inputs')
+			%
+
+				switch (lower(doc_type)),
+					case 'general',
+						doctype = 'general';
+					case 'searching for inputs',
+						doctype = 'searching';
+					case 'output',
+						doctype = 'output';
+					otherwise,
+						error(['Unknown document type ' doc_type '.']);
+				end;
+					
+				w = which(calculator_type);
+				if isempty(w),
+					error(['No known calculator on the path called ' calculator_type '.']);
+				end;
+				[parentdir, appname] = fileparts(w);
+				filename = [parentdir filesep 'docs' filesep appname '.docs.' doctype '.txt'];
+
+				paramfile_present = isfile(filename);
+				if paramfile_present,
+					text = vlt.file.text2cellstr(filename);
+				else,
+					error(['No such file ' filename '.']);
+				end;
+		end; 
             
 	end; % Static methods
-    
-
 end
 
     
