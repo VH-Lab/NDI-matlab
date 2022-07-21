@@ -571,6 +571,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						uicontrol(uid.edit,'position',[x y doc_width doc_height],...
 							'string','Please select one ducumentation type.',...
 							'tag','DocTxt','min',0,'max',2,'enable','inactive');
+						set(findobj(fig,'tag','DocTxt'),'units','normalized');
 						y = y - row;
 
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Parameter code:','tag','ParameterCodeTitleTxt');
@@ -580,6 +581,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						y = y - parameter_code_height;
 						uicontrol(uid.edit,'position',[x y parameter_code_width parameter_code_height],...
 							'string',ud.calc.parameter_code,'tag','ParameterCodeTxt','min',0,'max',2); 
+						set(findobj(fig,'tag','ParameterCodeTxt'),'units','normalized');
 						y = y - row;
 						y = y - row;
 
