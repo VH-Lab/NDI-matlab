@@ -30,13 +30,15 @@ classdef pipeline
 				% 
 				% Usage by the user:
 				%
-				%   ndi.pipeline.edit('command','new','pipelinePath',fullfile(userpath,'tools','NDI-matlab','+ndi','+test','+pipeline','test_pipeline'));
+				%   S = []; % use an empty session for now
+				%   ndi.pipeline.edit('command','new','pipelinePath',fullfile(userpath,'tools','NDI-matlab','+ndi','+test','+pipeline','test_pipeline'),'session',S);
 				%
 				%
 					vlt.data.assign(varargin{:});
 			
 					window_params.height = 500;
 					window_params.width = 400;
+					session = []; % start with a blank session
 					fig = []; % figure to use
 
 					if strcmpi(command,'new'), 
@@ -51,6 +53,7 @@ classdef pipeline
 								ud.pipelinePath = pipelinePath;
 								ud.pipelineList = []; % initially empty
 								ud.pipelineListChar = []; % initally empty
+								ud.session = session;
 								set(fig,'userdata',ud);
 							else,
 								error(['The provided pipeline path does not exist: ' pipelinePath '.']);

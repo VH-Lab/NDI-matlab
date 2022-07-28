@@ -10,7 +10,9 @@ function edit()
 % to test the pipeline graphical editor.
 %
 
+S = []; % empty session
+
 ndi.pipeline.edit('command','new','pipelinePath',...
 	fullfile(userpath,'tools','NDI-matlab','+ndi','+test','+pipeline',...
-	'test_pipeline'));
+	'test_pipeline'),'session',S);
 

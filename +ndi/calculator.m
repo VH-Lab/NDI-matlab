@@ -464,6 +464,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				command = '';
 				window_params.height = 600;
 				window_params.width = 400;
+				session = [];
 
 				name = '';
 				filename = '';
@@ -482,7 +483,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				end;
 
 
-				varlist_ud = {'calc','window_params'};
+				varlist_ud = {'calc','window_params','session'};
 				edit = false;
                 
 				if strcmpi(command,'new'),
@@ -508,6 +509,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						ud.calc.name = ud.ndi_pipeline_element.name;
 						ud.calc.filename = filename;
 						[ud.calc.parameter_example_names,ud.calc.parameter_example_code] = ndi.calculator.parameter_examples(ud.calc.type);
+						ud.session = session;
 					end
 					if ~exist('ud.window_params','var')
 						ud.window_params.height = 600;
@@ -555,14 +557,27 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						button_height = row;
 						button_center = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
 
+
 						% Step 2 now build it
 					
 						set(fig,'position',[50 50 right top]);
 						set(fig,'NumberTitle','off');
 						set(fig,'Name',['Editing ' ud.calc.name ' of type ' ud.calc.type ]);
 
+						session_title = ['Empty session'];
+						if isa(ud.session,'ndi.session'),
+							session_title = session.reference;
+						end;
+
+						x = edge;
+						y = top-row;
+						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Session:','tag','sessionTxt');
+						uicontrol(uid.txt,'position',[x+title_width+edge y title_width menu_height],'string',session_title,'tag','sessionTitleTxt');
+
 						% Documentation portion of window
-						x = edge; y = top-row;
+						y = top - row;
+						x = edge;
+						y = y-row;
 						uicontrol(uid.txt,'position',[x y title_width title_height],'string','Documentation','tag','DocTitleTxt');
 						uicontrol(uid.popup,'position',[x+title_width+edge y menu_width menu_height],...
 							'string',{'General','Searching for inputs','Output document'},'tag','DocPopup','callback',callbackstr,...
