@@ -34,11 +34,11 @@ classdef pipeline
 				%   ndi.pipeline.edit('command','new','pipelinePath',fullfile(userpath,'tools','NDI-matlab','+ndi','+test','+pipeline','test_pipeline'),'session',S);
 				%
 				%
+					session = []; % start with a blank session
 					vlt.data.assign(varargin{:});
 			
 					window_params.height = 500;
 					window_params.width = 400;
-					session = []; % start with a blank session
 					fig = []; % figure to use
 
 					if strcmpi(command,'new'), 
@@ -301,7 +301,7 @@ classdef pipeline
 							% replace illegal chars to underscore
 							calc_name = regexprep(calc_name,'[^a-zA-Z0-9]','_');
 							full_calc_name = [ud.pipelinePath filesep pipeline_name filesep calc_name '.json'];
-							ndi.calculator.graphical_edit_calculator('command','EDIT','filename',full_calc_name); 
+							ndi.calculator.graphical_edit_calculator('command','EDIT','filename',full_calc_name,'session',ud.session); 
 						case 'RunBt'
 							disp([command 'is not implemented yet.']);
 						case 'PipelineContentList'
