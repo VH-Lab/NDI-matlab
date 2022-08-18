@@ -324,7 +324,7 @@ classdef syncgraph < ndi.ido
 
 					if isempty(index), % we don't have this one, we need to add it
 
-						underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
+						%underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
 						[u_nodes,u_cost,u_mapping] = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
@@ -359,6 +359,20 @@ classdef syncgraph < ndi.ido
 
 					end
 				end
+
+				% make sure all utc and exp_global_time clocks map onto one another
+				c_utc = ndi.time.clocktype('utc');
+				c_exp_global_time = ndi.time.clocktype('exp_global_time');
+				equivalent_clock_list = {c_utc, c_exp_global_time};
+				for i=1:numel(equivalent_clock_list),
+					matches = find(cellfun(@(x) eq(x,equivalent_clock_list{i}),{ginfo.nodes.epoch_clock}));
+					for j=1:numel(matches),
+						for k=1:numel(matches),
+							ginfo.G(matches(j),matches(k)) = 1;
+							ginfo.mapping{matches(j),matches(k)} = ndi.time.timemapping([1 0]);
+						end;
+					end;
+				end;
 
 				Gtable = ginfo.G;
 				Gtable(find(isinf(Gtable))) = 0;
@@ -412,7 +426,7 @@ classdef syncgraph < ndi.ido
 				% Step 0: check inputs
 
 				if isempty(timeref_in.epoch)
-					error(['Right now we do not support non-epoch input time...soon!']);
+					error(['At this time we do not support reading without an epoch reference.']);
 				end
 
 				if ~isempty(timeref_in.epoch),

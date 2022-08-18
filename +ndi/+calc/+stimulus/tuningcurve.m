@@ -62,6 +62,7 @@ classdef tuningcurve < ndi.calculator
 						
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation','exact_number','param1',stim_property_value,'param2','');
+						constraint(end+1) = constraint_here;
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
 						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
 						deal_constraints_group = vlt.data.emptystruct('field','operation','param1','param2');
@@ -86,8 +87,8 @@ classdef tuningcurve < ndi.calculator
 							'operation',parameters.input_parameters.selection(i).operation,...
 							'param1',parameters.input_parameters.selection(i).value,...
 							'param2','');
+						constraint(end+1) = constraint_here;
 					end;
-					constraint(end+1) = constraint_here;
 				end;
 
 				if numel(deal_constraints)==0,
@@ -164,16 +165,26 @@ classdef tuningcurve < ndi.calculator
 			% |                       |   in the PARAMETERS output.                  |
 			% |-----------------------|-----------------------------------------------
 			%
-			% For the ndi.calc.stimulus.tuningcurve_calc class, this looks for 
+			% For the ndi.calc.stimulus.tuningcurve_calc class, this first checks to see if 
+			% fixed dependencies are already specified. If not, then it looks for 
 			% documents of type 'stimulus_response_scalar.json' with 'response_type' fields
-			% the contain 'mean' or 'F1'.
+			% the contain 'mean' or 'F1' or 'F2'.
 			%
 			%
+
+				q_default = default_parameters_query@ndi.calculator(ndi_calculator_obj, parameters_specification);
+
+				if ~isempty(q_default),
+					query = q_default;
+					return;
+				end;
+
 				q1 = ndi.query('','isa','stimulus_response_scalar.json','');
 				q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
 				q3 = ndi.query('stimulus_response_scalar.response_type','contains_string','F1','');
-				q23 = q2 | q3;
-				q_total = q1 & q23;
+				q4 = ndi.query('stimulus_response_scalar.response_type','contains_string','F2','');
+				q234 = q2 | q3 | a4;
+				q_total = q1 & q234;
 
 				query = struct('name','stimulus_response_scalar_id','query',q_total);
 		end; % default_parameters_query()

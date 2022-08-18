@@ -48,15 +48,42 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
 %
 
 mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
-[stim_pres_doc,spiketimes] = ndi.mock.fun.stimulus_presentation(mock_output.mock_subject.id(),...
+[stim_pres_doc,spiketimes] = ndi.mock.fun.stimulus_presentation(S,mock_output.mock_stimulator.id(),...
 	parameter_struct, independent_variables, X, R, noise, reps);
+
+S.database_add(stim_pres_doc);
 
 end_time = stim_pres_doc.document_properties.stimulus_presentation.presentation_time(end).stimclose + 5;
 
 mock_output.mock_spikes.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
 	spiketimes, ones(size(spiketimes)) );
 
+ % add a blank epoch so that the stimulator has an epoch to connect with stim_pres_doc
+mock_output.mock_stimulator.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
+	[], [] );
+
 stimulator_doc = mock_output.mock_stimulator.load_element_doc();
 spikes_doc = mock_output.mock_spikes.load_element_doc();
 
-docs = { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc };
+r_app = ndi.app.stimulus.tuning_response(S);
+
+control_stim_doc = r_app.label_control_stimuli(mock_output.mock_stimulator);
+stim_response_doc = r_app.stimulus_responses(mock_output.mock_stimulator, mock_output.mock_spikes,0,1);
+
+tc = ndi.calc.stimulus.tuningcurve(S);
+tc_docs = {};
+
+parameters.input_parameters.independent_label = independent_variables;
+parameters.input_parameters.independent_parameter = independent_variables;
+parameters.input_parameters.best_algorithm = 'empirical_maximum';
+parameters.input_parameters.selection = struct('property','angle','operation','hasfield','value','varies');
+
+for i=1:numel(stim_response_doc),
+	for j=1:numel(stim_response_doc{i}),
+		parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{i}{j}.id());
+		tc_docs{end+1} = tc.run('NoAction',parameters);
+	end;
+end;
+
+docs = { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc control_stim_doc stim_response_doc{1}{:} tc_docs{1}{:} };
+

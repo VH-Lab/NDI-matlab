@@ -1,7 +1,7 @@
-function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id, parameter_struct, independent_variables, X, R, noise, reps, varargin)
+function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_id, parameter_struct, independent_variables, X, R, noise, reps, varargin)
 % ndi.mock.fun.stimulus_presentation - make a mock stimulus presentation document base
 %
-% [STIM_PRES_DOC,SPIKETIMES] = ndi.mock.fun.stimulus_presentation(parameter_struct_array, ...
+% [STIM_PRES_DOC,SPIKETIMES] = ndi.mock.fun.stimulus_presentation(S, stimulus_element_id, parameter_struct_array, ...
 %    independent_variables, X, R, control, noise, reps, ...)
 %
 % Create a mock stimulus presentation document and spike times that approximate the
@@ -9,6 +9,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id,
 % If necessary, the time of each stimulus presentation is adjusted to allow a more
 % accurate representation of the requested firing rate.
 %
+% S is the NDI session that the stimulator is a part of
 % STIMULUS_ELEMENT_ID is the id of a mock stimulator element.
 % PARAMETER_STRUCT should be a structure that has the base parameters
 %   that are common to all of the stimuli in the group.
@@ -34,6 +35,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id,
 % | stim_duration_min (0.2)            | Minumum duration of a mock stimulus presentation        |
 % |                                    |   (set so that firing rate can be matched)              |
 % | interstimulus_interval(3)          | Interstimulus interval                                  |
+% | epochid ('mockepoch')              | The name of the stimulator epoch that is created.       |
 % |------------------------------------|---------------------------------------------------------|
 %
 % Example:
@@ -53,6 +55,9 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(stimulus_element_id,
 stim_duration = 2;
 interstimulus_interval = 3;
 stim_duration_min = 0.2;
+epochid = 'mockepoch';
+
+vlt.data.assign(varargin{:});
 
 
 stimulus_N = size(X,1);
@@ -67,7 +72,7 @@ for i=1:stimulus_N,
 
 	for j=1:size(X,2), % go over each column
 		if isnan(X(i,j)),
-			stim_params_here = setfield(stim_params_here,'is_blank',1);
+			stim_params_here = setfield(stim_params_here,'isblank',1);
 		else,
 			stim_params_here = setfield(stim_params_here,independent_variables{j},X(i,j));
 		end;
@@ -112,7 +117,7 @@ for i=1:numel(stim_pres_struct.presentation_order),
 	stim_pres_struct.presentation_time(i,1) = pt_here;
 end;
 
-stim_pres_doc = ndi.document('stimulus_presentation','stimulus_presentation',stim_pres_struct);
+stim_pres_doc = ndi.document('stimulus_presentation','stimulus_presentation',stim_pres_struct,'epochid',epochid) + S.newdocument();
 stim_pres_doc = stim_pres_doc.set_dependency_value('stimulus_element_id',stimulus_element_id);
 
 

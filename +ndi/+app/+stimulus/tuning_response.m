@@ -23,10 +23,10 @@ classdef tuning_response < ndi.app
 
 		end % ndi.app.stimulus.tuning_response() creator
 
-		function rdocs = stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
+		function rdocs = stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset, do_mean_only)
 			% STIMULUS_RESPONSES - write stimulus records for all stimulus epochs of an ndi.element stimulus object
 			%
-			% [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
+			% [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET], DO_MEAN_ONLY)
 			%
 			% Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR and STIMULUS/STIMULUS_TUNINGCURVE
@@ -38,11 +38,17 @@ classdef tuning_response < ndi.app
 			% If the input argument RESET is given and is 1, then all existing tuning curve documents for this
 			% NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).
 			%
+			% If the input argument DO_MEAN_ONLY is given and is 1, then the function only computes the mean responses.
+			% No F1 or F2 responses will be calculated.
+			%
 			% Note that this function DOES add the new documents RDOCS to the database.
 			%
 				rdocs = {};
 				if nargin<4, 
 					reset = 0;
+				end;
+				if nargin<5,
+					do_mean_only = 0;
 				end;
 					
 				E = ndi_app_tuning_response_obj.session;
@@ -84,6 +90,12 @@ classdef tuning_response < ndi.app
 					end;
 				end;
 
+				if do_mean_only == 1,
+					freq_response = 0;
+				else,
+					freq_response = [];
+				end;
+
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
 						ctrl_search = ndi.query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
@@ -104,7 +116,7 @@ classdef tuning_response < ndi.app
 								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
 							rdocs{end+1} = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
-								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
+								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j},'freq_response',freq_response);
 						end;
 
 					end
