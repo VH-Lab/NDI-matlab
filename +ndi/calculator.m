@@ -301,8 +301,12 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 			% It is necessary to "columnize" the substructures because Matlab does not not necessarily preserve that
 			% orientation when data is written to or read from JSON.
 			% 
-				input_parameters1 = vlt.data.columnize_struct(input_parameters1);
-				input_parameters2 = vlt.data.columnize_struct(input_parameters2);
+				if ~isempty(input_parameters1),
+					input_parameters1 = vlt.data.columnize_struct(input_parameters1);
+				end;
+				if ~isempty(input_parameters2),
+					input_parameters2 = vlt.data.columnize_struct(input_parameters2);
+				end;
 				b = eqlen(input_parameters1, input_parameters2);
 		end;
 

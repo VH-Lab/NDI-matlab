@@ -127,9 +127,9 @@ classdef ctest
 			%
 			% Return the path of an ndi.calculator object.
 			%
-				w = which(classname(ctest_obj));
-				parent = fileparts(w);
-				path = [parent filesep classname(ctest_obj) filesep];
+				w = which(class(ctest_obj));
+				[parent,classname,ext] = fileparts(w);
+				path = [parent filesep];
 		end; % calc_path
 
 		function mp = mock_path(ctest_obj)
@@ -140,7 +140,9 @@ classdef ctest
 			% Returns the path to the mock document example outputs.
 			% The returned path ends in a file separator.
 			%
-				mp = [ctest_obj.calc_path() '.mock' filesep];
+				w = which(class(ctest_obj));
+				[parent,classname,ext] = fileparts(w);
+				mp = [ctest_obj.calc_path() filesep classname '.mock' filesep];
 		end; % mock_path
 
 		function doc = load_mock_expected_output(ctest_obj, number)
@@ -151,15 +153,49 @@ classdef ctest
 			% Load the Nth stored ndi.document that contains the expected answer for the
 			% Nth standard mock test.
 			%
-				fname = [ctest_obj.mock_path '.' int2str(number) '.json'];
+				fname = ctest_obj.mock_expected_filename(number);
 				if vlt.file.isfile(fname),
-					json_data = vlt.file.text2char(fname);
-					doc = jsondecode(json_data);
+					json_data = vlt.file.textfile2char(fname);
+					doc = ndi.document(jsondecode(json_data));
 				else,
 					error(['File ' fname ' does not exist.']);
 				end;
 
 		end; % load_mock_expected_output()
+
+		function fname = mock_expected_filename(ctest_obj, number)
+			% MOCK_EXPECTED_FILENAME - return the filename of an expected NDI document answer for a calculation
+			%
+			% FNAME = MOCK_EXPECTED_FILENAME(CTEST_OBJ, N)
+			% 
+			% Return the filename for the Nth stored ndi.document that contains the expected answer
+			% for the Nth standard mock test.
+			%
+				fname = [ctest_obj.mock_path 'mock.' int2str(number) '.json'];
+		end; % mock_expected_filename()
+
+		function b = write_mock_expected_output(ctest_obj, number, doc)
+			% WRITE_MOCK_EXPECTED_OUTPUT - write 
+			%
+			% B = WRITE_MOCK_EXPECTED_OUTPUT(CTEST_OBJ, NUMBER, DOC)
+			%
+			% Set the expected mock document for mock calculation NUMBER to
+			% be the ndi.document DOC.
+			%
+			% This function will not overwrite an existing expected mock document. 
+			% It must be deleted manually to ensure the programmer really wants to overwrite it.
+			%
+				fname = ctest_obj.mock_expected_filename(number);
+				json_output = char(vlt.data.prettyjson(vlt.data.jsonencodenan(doc.document_properties)));
+				if isfile(fname),
+					error(['File ' fname ' already exists. Delete to overwrite.']);
+				end;
+				parentdir = fileparts(fname);
+				if ~isfolder(parentdir),
+					mkdir(parentdir);
+				end;
+				vlt.file.str2text(fname,json_output);
+		end; % write_mock_expected_output()
 
 	end;
 
