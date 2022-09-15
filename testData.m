@@ -12,52 +12,61 @@ classdef testData < handle
         table; % left table
         panel; % right panel
         info; % data for function details
+        docs; % original docs file
     end
     
     methods
         function obj = testData()
+            % table2list 
             obj.table = uitable('units', 'normalized', 'Position', [2/36 2/24 20/36 18/24], ...
-                                'ColumnName', {'Name'; 'ID'; 'Type'; 'Date' ; 'Content'}, ...
-                                'ColumnWidth', {100, 100, 100, 100, 100}, ...
+                                'ColumnName', {'Name'; 'ID'; 'Type'; 'Date'}, ...
+                                'ColumnWidth', {100, 100, 100, 100}, ...
                                 'Data', {}, 'CellSelectionCallback', @obj.details);
                             
             obj.panel = uipanel('Position', [20/36 2/24 14/36 20/24], 'BackgroundColor', 'white');
             
             obj.search = [uicontrol('units', 'normalized', 'Style', 'popupmenu', 'FontSize', 10.25, ...
-                                    'Position', [2/36 20/24 4/36 2/24], 'String', {'Select' 'Name' 'ID' 'Type' 'Date','Content'}, ...
+                                    'Position', [2/36 20/24 5/36 2/24], 'String', {'Select' 'Name' 'ID' 'Type' 'Date'}, ...
                                     'BackgroundColor', [0.9 0.9 0.9]) ...
                           uicontrol('units', 'normalized', 'Style', 'popupmenu', 'FontSize', 10.25, ...
-                                    'Position', [6/36 20/24 6/36 2/24], 'String', {'Filter options' 'contains' 'begins with' 'ends with'}, ...
+                                    'Position', [2/36 19/24 5/36 2/24], 'String', {'Filter options' 'contains' 'begins with' 'ends with'}, ...
                                     'BackgroundColor', [0.9 0.9 0.9]) ...
                           uicontrol('units', 'normalized', 'Style', 'edit', ...
-                                    'Position', [12/36 20/24 5/36 2/24], 'String', '', ...
+                                    'Position', [7/36 20/24 5/36 2/24], 'String', '', ...
                                     'BackgroundColor', [1 1 1]) ...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
-                                    'Position', [17/36 21/24 3/36 1/24], 'String', 'Search', ...
+                                    'Position', [12/36 20/24 4/36 1/24], 'String', 'Advanced search', ...
+                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.contentSearch) ...
+                          uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
+                                    'Position', [12/36 21/24 4/36 1/24], 'String', 'Search by filter', ...
                                     'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.filter) ...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
-                          'Position', [17/36 20/24 3/36 1/24], 'String', 'Clear', ...
-                          'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.clear)];
+                                    'Position', [16/36 20/24 4/36 1/24], 'String', 'Clear table', ...
+                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.clear)...
+                          uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
+                                    'Position', [16/36 21/24 4/36 1/24], 'String', 'Restore', ...
+                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.restore)];
         end
         
         function addDoc(obj,docs)
             for i=1:numel(docs)
-                obj.fullDocuments = [obj.fullDocuments; docs{i}];
                 d = docs{i}.document_properties.ndi_document;
-                
-                % Encoding the JSON data
-                jsonDetails = docs{i}.document_properties;
-                jsonDetails = jsonencode(jsonDetails, "PrettyPrint", true);
-                obj.fullTable(end+1,:) = {d.name d.id d.type d.datestamp jsonDetails};
+                obj.fullTable(end+1,:) = {d.name d.id d.type d.datestamp};
             end
+            obj.fullDocuments = transpose([docs{:}]);
             obj.tempTable = obj.fullTable;
             obj.tempDocuments = obj.fullDocuments;
             obj.table.Data = obj.fullTable;
+            obj.docs = docs;
         end
         
         function details(obj, ~, event)
             if ~isempty(event.Indices)
                 id = obj.table.Data(event.Indices(1),:);
+                % add jsonDetails to id
+                jsonDetails = obj.fullDocuments([event.Indices(1)]).document_properties;
+                jsonDetails = jsonencode(jsonDetails, "PrettyPrint", true);
+                id{end+1} = jsonDetails;
                 delete(obj.info);
                 obj.info = [uicontrol(obj.panel, 'units', 'normalized', 'Style', 'text', ...
                                       'Position', [0 15/16 1 1/16], 'String', 'Name:', ...
@@ -82,42 +91,94 @@ classdef testData < handle
             if obj.search(1).Value == 1 || obj.search(2).Value == 1
                 msgbox(["Please choose a column name and condition to search.";"The table is set back to full table now."]);
                 obj.tempTable = obj.fullTable;
-                return;
             end
             numRows = size(obj.fullTable,1);
-            if obj.search(2).Value == 2
-                obj.tempTable = {};
-                obj.tempDocuments = [];
-                for i = 1:numRows
-                    if contains(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
-                        obj.tempTable(end+1,:) = obj.fullTable(i,:);
-                        obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+            if obj.search(1).Value <= 5
+                if obj.search(2).Value == 2
+                    obj.tempTable = {};
+                    obj.tempDocuments = [];
+                    for i = 1:numRows
+                        if contains(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
+                            obj.tempTable(end+1,:) = obj.fullTable(i,:);
+                            obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+                        end
+                    end
+                elseif obj.search(2).Value == 3
+                    obj.tempTable = {};
+                    obj.tempDocuments = [];
+                    for i = 1:numRows
+                        if startsWith(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
+                            obj.tempTable(end+1,:) = obj.fullTable(i,:);
+                            obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+                        end
+                    end
+                elseif obj.search(2).Value == 4
+                    obj.tempTable = {};
+                    obj.tempDocuments = [];
+                    for i = 1:numRows
+                        if endsWith(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
+                            obj.tempTable(end+1,:) = obj.fullTable(i,:);
+                            obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+                        end
                     end
                 end
-            elseif obj.search(2).Value == 3
-                obj.tempTable = {};
-                obj.tempDocuments = [];
-                for i = 1:numRows
-                    if startsWith(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
-                        obj.tempTable(end+1,:) = obj.fullTable(i,:);
-                        obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
-                    end
-                end
-            elseif obj.search(2).Value == 4
-                obj.tempTable = {};
-                obj.tempDocuments = [];
-                for i = 1:numRows
-                    if endsWith(lower(obj.fullTable{i,obj.search(1).Value-1}), lower(obj.search(3).String))
-                        obj.tempTable(end+1,:) = obj.fullTable(i,:);
-                        obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
-                    end
+            else 
+                % add content search
+            end
+            obj.table.Data = obj.tempTable;
+        end
+        
+        function contentSearch(obj, ~, ~)
+%             prompt = {'Field name:','Field value:'};
+            prompt = {'Field name:'};
+            dlgtitle = 'Advanced search';
+            dims = [1 35];
+            definput = {''};
+            answer = inputdlg(prompt,dlgtitle,dims,definput);
+            fieldName = answer{1,1}
+%             fieldValue = answer{2,1};
+            obj.tempTable = {};
+            obj.tempDocuments = [];
+            numRows = size(obj.fullTable,1);
+            for i = 1:numRows
+                parent = obj.docs{i}.document_properties;
+                if vlt.data.fieldsearch(parent, ...
+                    struct('field',fieldName,'operation','hasfield','param1','','param2',''))
+                    obj.tempTable(end+1,:) = obj.fullTable(i,:);
+                    obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
                 end
             end
+%                 else
+%                     child = fieldnames(obj.docs{i}.document_properties);
+%                     for j = 1:length(child)
+%                         if vlt.data.fieldsearch(parent.(child{j}), ...
+%                             struct('field',fieldName,'operation','contains_string','param1','','param2',''))
+%                             obj.tempTable(end+1,:) = obj.fullTable(i,:);
+%                             obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+%                         end
+%                     grandchild{j} = fieldnames(obj.docs{i}.document_properties.(child{j}))
+%                     end
+%                 end
+%                 child = fieldnames(obj.docs{i}.document_properties);
+%                 grandchild = {}
+
+%                 for h = 
+%                 if vlt.data.fieldsearch(parent, ...
+%                         struct('field','ndi_document','operation','contains_string','param1',obj.search(3).String,'param2',''))
+%                     obj.tempTable(end+1,:) = obj.fullTable(i,:);
+%                     obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+%                 end
+%             end
+%             length(obj.tempTable)
             obj.table.Data = obj.tempTable;
         end
         
         function clear(obj, ~, ~)
             obj.table.Data = {};
+        end
+        
+        function restore(obj, ~, ~)
+            obj.table.Data = obj.fullTable;
         end
         
         function graph(obj, ~, ~, ind)
