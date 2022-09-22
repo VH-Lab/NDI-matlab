@@ -26,7 +26,7 @@ classdef testData < handle
             obj.panel = uipanel('Position', [20/36 2/24 14/36 20/24], 'BackgroundColor', 'white');
             
             obj.search = [uicontrol('units', 'normalized', 'Style', 'popupmenu', 'FontSize', 10.25, ...
-                                    'Position', [2/36 20/24 5/36 2/24], 'String', {'Select' 'Name' 'ID' 'Type' 'Date'}, ...
+                                    'Position', [2/36 20/24 5/36 2/24], 'String', {'Select' 'Name' 'ID' 'Type' 'Date' 'Other'}, ...
                                     'BackgroundColor', [0.9 0.9 0.9]) ...
                           uicontrol('units', 'normalized', 'Style', 'popupmenu', 'FontSize', 10.25, ...
                                     'Position', [2/36 19/24 5/36 2/24], 'String', {'Filter options' 'contains' 'begins with' 'ends with'}, ...
@@ -35,8 +35,8 @@ classdef testData < handle
                                     'Position', [7/36 20/24 5/36 2/24], 'String', '', ...
                                     'BackgroundColor', [1 1 1]) ...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
-                                    'Position', [12/36 20/24 4/36 1/24], 'String', 'Advanced search', ...
-                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.contentSearch) ...
+                                    'Position', [12/36 20/24 4/36 1/24], 'String', 'Search field name', ...
+                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.searchFieldName) ...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
                                     'Position', [12/36 21/24 4/36 1/24], 'String', 'Search by filter', ...
                                     'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.filter) ...
@@ -88,9 +88,13 @@ classdef testData < handle
         end
         
         function filter(obj, ~, ~)
-            if obj.search(1).Value == 1 || obj.search(2).Value == 1
-                msgbox(["Please choose a column name and condition to search.";"The table is set back to full table now."]);
-                obj.tempTable = obj.fullTable;
+            if (obj.search(1).Value == 1 || obj.search(2).Value == 1) && obj.search(1).Value <= 5
+                msgbox(["Please choose a column name and condition to search."]);
+                return
+            end
+            if isempty(obj.search(3).String)
+                msgbox("Please enter a string")
+                return
             end
             numRows = size(obj.fullTable,1);
             if obj.search(1).Value <= 5
@@ -123,20 +127,46 @@ classdef testData < handle
                     end
                 end
             else 
-                % add content search
+                contentSearch(obj, lower(obj.search(3).String), obj.table.Data)
             end
             obj.table.Data = obj.tempTable;
         end
         
-        function contentSearch(obj, ~, ~)
-%             prompt = {'Field name:','Field value:'};
+        function contentSearch(obj, fieldValue, data)
             prompt = {'Field name:'};
             dlgtitle = 'Advanced search';
-            dims = [1 35];
+            dims = [1 50];
             definput = {''};
             answer = inputdlg(prompt,dlgtitle,dims,definput);
-            fieldName = answer{1,1}
-%             fieldValue = answer{2,1};
+            if isempty(answer)
+                obj.table.Data = data;
+                return
+            end
+            fieldName = lower(answer{1,1});
+            obj.tempTable = {};
+            obj.tempDocuments = [];
+            numRows = size(obj.fullTable,1);
+            for i = 1:numRows
+                parent = obj.docs{i}.document_properties;
+                if vlt.data.fieldsearch(parent, ...
+                    struct('field',fieldName,'operation','contains_string','param1',fieldValue,'param2',''))
+                    obj.tempTable(end+1,:) = obj.fullTable(i,:);
+                    obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
+                end
+            end
+            obj.table.Data = obj.tempTable;
+        end
+                
+        function searchFieldName(obj, ~, ~)
+            prompt = {'Field name:'};
+            dlgtitle = 'Search field name';
+            dims = [1 50];
+            definput = {''};
+            answer = inputdlg(prompt,dlgtitle,dims,definput);
+            if isempty(answer)
+                return
+            end
+            fieldName = lower(answer{1,1});
             obj.tempTable = {};
             obj.tempDocuments = [];
             numRows = size(obj.fullTable,1);
@@ -148,28 +178,6 @@ classdef testData < handle
                     obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
                 end
             end
-%                 else
-%                     child = fieldnames(obj.docs{i}.document_properties);
-%                     for j = 1:length(child)
-%                         if vlt.data.fieldsearch(parent.(child{j}), ...
-%                             struct('field',fieldName,'operation','contains_string','param1','','param2',''))
-%                             obj.tempTable(end+1,:) = obj.fullTable(i,:);
-%                             obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
-%                         end
-%                     grandchild{j} = fieldnames(obj.docs{i}.document_properties.(child{j}))
-%                     end
-%                 end
-%                 child = fieldnames(obj.docs{i}.document_properties);
-%                 grandchild = {}
-
-%                 for h = 
-%                 if vlt.data.fieldsearch(parent, ...
-%                         struct('field','ndi_document','operation','contains_string','param1',obj.search(3).String,'param2',''))
-%                     obj.tempTable(end+1,:) = obj.fullTable(i,:);
-%                     obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(i)];
-%                 end
-%             end
-%             length(obj.tempTable)
             obj.table.Data = obj.tempTable;
         end
         
