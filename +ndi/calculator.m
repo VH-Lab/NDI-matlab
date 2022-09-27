@@ -23,7 +23,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				if nargin>0,
 					session = varargin{1};
 				end;
-				ndi_calculator_obj = ndi_calculator_obj@ndi.app(session,'calculator');
+				ndi_calculator_obj = ndi_calculator_obj@ndi.app(session);
 				if nargin>1,
 					document_type = varargin{2};
 				else,
@@ -36,6 +36,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				end;
 				ndi_calculator_obj = ndi_calculator_obj@ndi.app.appdoc({document_type}, ...
 					{path_to_doc_type},session);
+				ndi_calculator_obj.name = class(ndi_calculator_obj);
 		end; % calculator creator
 
 		function docs = run(ndi_calculator_obj, docExistsAction, parameters)
@@ -99,6 +100,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				end;
 				for i=1:numel(all_parameters),
 					docs = cat(2,docs,docs_tocat{i});
+				end;
+				app_doc = ndi_calculator_obj.newdocument();
+				keyboard;
+				for i=1:numel(docs),
+					docs{i} = app_doc + docs{i};
 				end;
 				if ~isempty(docs),
 					ndi_calculator_obj.session.database_add(docs);
@@ -402,59 +408,26 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				b = vlt.data.partial_struct_match(appdoc_struct1, appdoc_struct2);
 		end; % isequal_appdoc_struct()
 
-		function doc_about(ndi_calculator_obj)
-			% ----------------------------------------------------------------------------------------------
-			% NDI_CALCULATOR: DOCTYPE1 (in subclasses, change this to your document type)
-			% ----------------------------------------------------------------------------------------------
+		function text = doc_about(ndi_calculator_obj)
+			% DOC_ABOUT - return the about information for an NDI calculator
 			%
-			%   ---------------------
-			%   | DOCTYPE1 -- ABOUT |
-			%   ---------------------
+			% TEXT = DOC_ABOUT(NDI_CALCULATOR_OBJ)
 			%
-			%   DOCTYPE documents store X. It DEPENDS ON documents Y and Z. (Edit in subclasses.)
+			% Returns the help information for the document type for an NDI
+			% calculator object.
 			%
-			%   Definition: app/myapp/doctype1 (Edit in subclasses.)
-			%
-				eval(['help ndi.calculator.doc_about']);
+				text = ndi.calculator.docfiletext(class(ndi_calculator_obj), 'output');
 		end; %doc_about()
 	
-		function appdoc_description(ndi_calculator_obj)
-			% ----------------------------------------------------------------------------------------------
-			% DOCUMENT INFO:
-			% ----------------------------------------------------------------------------------------------
+		function text = appdoc_description(ndi_calculator_obj)
+			% APPDOC_DESCRIPTION - return documentation for the type of document that is created by this calculator.
 			%
-			%   ---------
-			%   | ABOUT |
-			%   ---------
+			% TEXT = APP_DOC_DESCRIPTION(NDI_CALCULATOR_OBJ)
 			%
-			%   To see the ABOUT information for the document that is created by this calculator,
-			%   see 'help ndi.calculator/doc_about'
+			% Returns the help information for the document type for an NDI
+			% calculator object.
 			%
-			%   ------------
-			%   | CREATION |
-			%   ------------
-			%
-			%   DOC = CALCULATE(NDI_CALCULATOR_OBJ, PARAMETERS)
-			%
-			%   PARAMETERS should contain the following fields:
-			%   Fieldname                 | Description
-			%   -------------------------------------------------------------------------
-			%   input_parameters          | field1 description
-			%   depends_on                | field2 description
-			%
-			%   -----------
-			%   | FINDING |
-			%   -----------
-			%
-			%   [DOC] = SEARCH_FOR_CALCULATOR_DOCS(NDI_CALCULATOR_OBJ, PARAMETERS)
-			%
-			%   PARAMETERS should contain the following fields:
-			%   Fieldname                 | Description
-			%   -------------------------------------------------------------------------
-			%   input_parameters          | field1 description
-			%   depends_on                | field2 description
-			%
-				eval(['help ndi.calculator/appdoc_description']);
+				text = ndi_calculator_obj.doc_about();
 		end; % appdoc_description()
 
 	end; % methods
@@ -707,7 +680,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								disp(['Popup ' val ' is out of bound.']);
 						end;
 		
-						mytext = ndi.calculator.docfilename(ud.ndi_pipeline_element.calculator,type);
+						mytext = ndi.calculator.docfiletext(ud.ndi_pipeline_element.calculator,type);
 						set(docTextObj,'string',mytext);
 					case 'ParameterCodePopup',
 						ud = get(fig,'userdata');
@@ -940,10 +913,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				end; % switch(command)
 		end; % graphical_edit_calculation ()
 
-		function text = docfilename(calculator_type, doc_type)
-			% ndi.calculator.docfilename - return the text in the requested documentation file
+		function text = docfiletext(calculator_type, doc_type)
+			% ndi.calculator.docfiletext - return the text in the requested documentation file
 			%
-			% TEXT = ndi.calculator.docfilename(CALCULATOR_TYPE, DOC_TYPE)
+			% TEXT = ndi.calculator.docfiletext(CALCULATOR_TYPE, DOC_TYPE)
 			%
 			% Returns the text of the documentation files.
 			% CALCULATOR_TYPE should be the full object name of the calculator of interest.
@@ -951,7 +924,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 			% DOC_TYPE should be the type of document requested ('general', 'output', 'searching for inputs')
 			%
 			% Example:
-			%    text = ndi.calculator.docfilename('ndi.calc.stimulus.tuningcurve','general');
+			%    text = ndi.calculator.docfiletext('ndi.calc.stimulus.tuningcurve','general');
 			% 
 
 				switch (lower(doc_type)),

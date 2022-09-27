@@ -61,7 +61,6 @@ classdef tuning_response < ndi.app
 				sq_tune = ndi.query('','isa','stimulus_tuningcurve.json',''); % steve thinks this is wrong, should be stimulus_response_scalar.json
 				doc_stim = E.database_search(sq_stim&sq_e&sq_stimelement);
 				doc_tune = E.database_search(sq_tune&sq_e&sq_stimelement&sq_nditimeseries);
-
 				if reset,
 					E.database_rm(doc_tune);
 				end;
@@ -118,7 +117,6 @@ classdef tuning_response < ndi.app
 							rdocs{end+1} = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
 								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j},'freq_response',freq_response);
 						end;
-
 					end
 				end
 		end % 

@@ -148,7 +148,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				header = read_CED_SOMSMR_header(filename);
 
 				t0 = 0;  % developer note: the time of the first sample in spike2 is not 0 but 0 + 1/4 * sample interval; might be more correct to use this
-				t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
+                t1 = header.fileinfo.dTimeBase * header.fileinfo.maxFTime * header.fileinfo.usPerTime;
 				t0t1 = {[t0 t1]};
 		end % t0t1
 

@@ -6,8 +6,7 @@
         "property_list_name":               "tuning_curve",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"},
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json"}
 		]
 	},
 	"depends_on": [

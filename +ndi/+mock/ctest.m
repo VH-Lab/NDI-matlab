@@ -142,7 +142,7 @@ classdef ctest
 			%
 				w = which(class(ctest_obj));
 				[parent,classname,ext] = fileparts(w);
-				mp = [ctest_obj.calc_path() filesep classname '.mock' filesep];
+				mp = [ctest_obj.calc_path() filesep 'mock' filesep classname filesep];
 		end; % mock_path
 
 		function doc = load_mock_expected_output(ctest_obj, number)
@@ -171,7 +171,7 @@ classdef ctest
 			% Return the filename for the Nth stored ndi.document that contains the expected answer
 			% for the Nth standard mock test.
 			%
-				fname = [ctest_obj.mock_path 'mock.' int2str(number) '.json'];
+				fname = [ctest_obj.mock_path() 'mock.' int2str(number) '.json'];
 		end; % mock_expected_filename()
 
 		function b = write_mock_expected_output(ctest_obj, number, doc)

@@ -25,10 +25,11 @@
 				"stimopen" : "number",
 				"onset" : "number",
 				"offset" : "number",
-				"stimclose" : "number"
+				"stimclose" : "number",
+                "stimevents": "number"
 			},
 			"doc_default_value": "",
-			"doc_data_type": "Structure with fields clocktype, stimopen, onset, offset, stimclose",
+			"doc_data_type": "Structure with fields clocktype, stimopen, onset, offset, stimclose, stimevents",
 			"doc_description": "clocktype is the string describing the type of clock (from ndi.time.clocktime)"
 		},
 		"stimuli": {

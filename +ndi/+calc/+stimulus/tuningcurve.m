@@ -55,11 +55,25 @@ classdef tuningcurve < ndi.calculator
 				deal_constraints = {};
 
 				for i=1:numel(parameters.input_parameters.selection),
-					if strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
+					if strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue'),
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						match = 0;
+						for j=1:numel(pva),
+							if pva{j}==parameters.input_parameters.selection(i).value,
+								match = 1;
+								break;
+							end;
+						end;
+						pva,
+						match,
+						if match==0, %if it doesn't have it, then quit
+							doc = {};
+							return;
+						end;
+					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
 						% calculate best value
 						[n,v,stim_property_value] = ndi_calculator_obj.best_value(parameters.input_parameters.best_algorithm,...
 							stim_response_doc, parameters.input_parameters.selection(i).property);
-						
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation','exact_number','param1',stim_property_value,'param2','');
 						constraint(end+1) = constraint_here;
@@ -183,7 +197,7 @@ classdef tuningcurve < ndi.calculator
 				q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
 				q3 = ndi.query('stimulus_response_scalar.response_type','contains_string','F1','');
 				q4 = ndi.query('stimulus_response_scalar.response_type','contains_string','F2','');
-				q234 = q2 | q3 | a4;
+				q234 = q2 | q3 | q4;
 				q_total = q1 & q234;
 
 				query = struct('name','stimulus_response_scalar_id','query',q_total);
