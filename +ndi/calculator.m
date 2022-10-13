@@ -102,9 +102,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 					docs = cat(2,docs,docs_tocat{i});
 				end;
 				app_doc = ndi_calculator_obj.newdocument();
-				keyboard;
 				for i=1:numel(docs),
-					docs{i} = app_doc + docs{i};
+					docs{i} = docs{i}.setproperties('app',app_doc.document_properties.app);
 				end;
 				if ~isempty(docs),
 					ndi_calculator_obj.session.database_add(docs);

@@ -15,7 +15,7 @@ classdef tuning_response < ndi.app
 			% NDI_SESSIONS. The app is named 'ndi_app_stimulus_response'.
 			%
 				session = [];
-				name = 'ndi_app_tuning_response';
+				name = 'ndi.app.stimulus.tuning_response';
 				if numel(varargin)>0,
 					session = varargin{1};
 				end
