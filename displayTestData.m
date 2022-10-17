@@ -6,4 +6,20 @@ function displayTestData()
     data = testData();
     docs = load('SomeDocuments.mat');
     data.addDoc(docs.documents);
+    
+%   These 2 can be used directly:
+%     data.clear();
+%     data.restore();
+
+%   searchFieldName needs some user input:
+%     data.searchFieldName('', '', 'depends_on');
+    
+%   filter needs a helper:
+%     data.filterHelper(6, 2, 'a'); 
+%   parameterinputs: search(1), search(2), search(3).String
+%   search(1): {'Select' 'Name' 'ID' 'Type' 'Date' 'Other'}
+%   search(2): {'Filter options' 'contains' 'begins with' 'ends with'}
+
+%   details, graph and subgraph are a bit tricky, but I am not sure if we
+%   want these functions...
 end

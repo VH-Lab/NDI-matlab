@@ -1,6 +1,3 @@
-% Progress: reused most codes, made some small fix to get code working
-% add function for "Select" and "Filter Options"
-
 classdef testData < handle
     
     properties
@@ -132,6 +129,13 @@ classdef testData < handle
             obj.table.Data = obj.tempTable;
         end
         
+        function filterHelper(obj, search1, search2, searchStr)
+            obj.search(1).Value = search1
+            obj.search(2).Value = search2
+            obj.search(3).String = searchStr
+            obj.filter()
+        end
+        
         function contentSearch(obj, fieldValue, data)
             prompt = {'Field name:'};
             dlgtitle = 'Advanced search';
@@ -157,16 +161,19 @@ classdef testData < handle
             obj.table.Data = obj.tempTable;
         end
                 
-        function searchFieldName(obj, ~, ~)
-            prompt = {'Field name:'};
-            dlgtitle = 'Search field name';
-            dims = [1 50];
-            definput = {''};
-            answer = inputdlg(prompt,dlgtitle,dims,definput);
-            if isempty(answer)
-                return
+        function searchFieldName(obj, ~, ~, fieldName)
+            if nargin < 4
+                prompt = {'Field name:'};
+                dlgtitle = 'Search field name';
+                dims = [1 50];
+                definput = {''};
+                answer = inputdlg(prompt,dlgtitle,dims,definput);
+                if isempty(answer)
+                    return
+                end
+                fieldName = lower(answer{1,1});
             end
-            fieldName = lower(answer{1,1});
+            
             obj.tempTable = {};
             obj.tempDocuments = [];
             numRows = size(obj.fullTable,1);
