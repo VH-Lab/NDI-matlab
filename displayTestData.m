@@ -8,7 +8,7 @@ function displayTestData()
     data.addDoc(docs.documents);
     
 %   These 2 can be used directly:
-%     data.clear();
+%     data.clearView();
 %     data.restore();
 
 %   searchFieldName needs some user input:
@@ -19,6 +19,11 @@ function displayTestData()
 %   parameterinputs: search(1), search(2), search(3).String
 %   search(1): {'Select' 'Name' 'ID' 'Type' 'Date' 'Other'}
 %   search(2): {'Filter options' 'contains' 'begins with' 'ends with'}
+
+    search_ID = ["41268a0b47c03d8d_40d047ed663bbf5e", "41268a0b47c0c811_c0c46785271c26d2"];
+    data.searchID(search_ID);
+
+% TODO: take in an array, show documents with IDs in array
 
 %   details, graph and subgraph are a bit tricky, but I am not sure if we
 %   want these functions...

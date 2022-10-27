@@ -39,7 +39,7 @@ classdef testData < handle
                                     'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.filter) ...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
                                     'Position', [16/36 20/24 4/36 1/24], 'String', 'Clear table', ...
-                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.clear)...
+                                    'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.clearView)...
                           uicontrol('units', 'normalized', 'Style', 'pushbutton', ...
                                     'Position', [16/36 21/24 4/36 1/24], 'String', 'Restore', ...
                                     'BackgroundColor', [0.9 0.9 0.9], 'Callback', @obj.restore)];
@@ -136,6 +136,24 @@ classdef testData < handle
             obj.filter()
         end
         
+        function searchID(obj, list_ID)
+            obj.search(1).Value = 3
+            obj.search(2).Value = 2
+            obj.tempTable = {};
+            obj.tempDocuments = [];
+            numRows = size(obj.fullTable,1);
+            for i = 1:length(list_ID)
+                curr_ID = list_ID(i);
+                for j = 1:numRows
+                    if contains(lower(obj.fullTable{j,2}), lower(curr_ID))
+                        obj.tempTable(end+1,:) = obj.fullTable(j,:);
+                        obj.tempDocuments = [obj.tempDocuments obj.fullDocuments(j)];
+                    end
+                end
+            end
+            obj.table.Data = obj.tempTable;
+        end
+        
         function contentSearch(obj, fieldValue, data)
             prompt = {'Field name:'};
             dlgtitle = 'Advanced search';
@@ -188,7 +206,7 @@ classdef testData < handle
             obj.table.Data = obj.tempTable;
         end
         
-        function clear(obj, ~, ~)
+        function clearView(obj, ~, ~)
             obj.table.Data = {};
         end
         
