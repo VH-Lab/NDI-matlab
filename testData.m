@@ -130,15 +130,15 @@ classdef testData < handle
         end
         
         function filterHelper(obj, search1, search2, searchStr)
-            obj.search(1).Value = search1
-            obj.search(2).Value = search2
-            obj.search(3).String = searchStr
+            obj.search(1).Value = search1;
+            obj.search(2).Value = search2;
+            obj.search(3).String = searchStr;
             obj.filter()
         end
         
         function searchID(obj, list_ID)
-            obj.search(1).Value = 3
-            obj.search(2).Value = 2
+            obj.search(1).Value = 3;
+            obj.search(2).Value = 2;
             obj.tempTable = {};
             obj.tempDocuments = [];
             numRows = size(obj.fullTable,1);
