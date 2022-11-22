@@ -465,7 +465,7 @@ classdef tuning_response < ndi.app
 					end;
 				end;
 
-				tuning_doc = ndi.document('stimulus/stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
+				tuning_doc = ndi.document('stimulus_tuningcurve.json','tuning_curve',tuning_curve) + E.newdocument();
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('element_id',stim_response_doc.dependency_value('element_id'));
 				if doAdd,

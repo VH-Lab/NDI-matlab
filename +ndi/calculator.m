@@ -713,7 +713,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						str = get(cmdPopupObj, 'string');
 						docTextObj = findobj(fig,'tag','CommandTxt');
 						% Step 2, take action
-						val,
 						switch val,
 							case 3, % Try searching for inputs
 								disp(['Popup is ' str{val} '.']);
@@ -726,7 +725,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								param_code = ud.calc.parameter_code;
 								evalin('base',param_code);
 								disp(['About to search for inputs. Variable IP will have input combinations that were found.']);
-								search_code = ['thecalc=' ud.calc.type '(pipeline_session); IP=thecalc.search_for_input_parameters(parameters);'];
+								search_code = ['thecalc=' ud.calc.type '(pipeline_session); if ~exist(''parameters'',''var''), parameters=thecalc.default_search_for_input_parameters(); end; IP=thecalc.search_for_input_parameters(parameters);'];
 								evalin('base',search_code);
 								disp(['Search done, variable IP now has input combinations found.']);
 							case 4, % Show existing outputs
@@ -736,6 +735,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 									error('No session is linked to the calculator editor.');
 								end;
 								assignin('base','pipeline_session',ud.session);
+								evalin('base','clear parameters;');
 								disp(['About to evaluate parameter code on the main workspace.']);
 								param_code = ud.calc.parameter_code;
 								evalin('base',param_code);
@@ -744,6 +744,16 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								search_code = ['thecalc=' ud.calc.type '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
 								evalin('base',search_code);
 								disp(['Search done, variable ED now has existing calculation documents found.']);
+								ED = evalin('base','ED');
+								if ~isempty(ED),
+									if isfield(ud,'docViewer'),
+										figure(ud.docViewer.fig); % bring to front
+									else, % we need to build it
+										ud.docViewer = ndi.gui.docViewer();
+										set(fig,'userdata',ud);
+									end;
+									ud.docViewer.addDoc(ED);
+								end;
 							case 5, % Plot existing outputs
 								disp(['Popup is ' str{val} '.']);
 								set(docTextObj,'string','Plot existing outputs');
@@ -760,7 +770,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 								search_code = ['thecalc=' ud.calc.type '(pipeline_session); ED=thecalc.search_for_calculator_docs(parameters);'];
 								evalin('base',search_code);
 								disp(['Search done, variable ED now has existing calculation documents found.']);
-								disp(['Now will plot all of these ' int2str(numel(ED)) ' documents.']);
+								disp(['Now will plot all of these ' int2str(evalin('base','numel(ED)')) ' documents.']);
 								evalin('base',['for i=1:numel(ED), figure; thecalc.plot(ED{i}); end;']);
 								disp(['Finished plotting.']);
 							case 6, % Run but don''t replace existing docs

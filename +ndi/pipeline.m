@@ -117,18 +117,20 @@ classdef pipeline
 								'tag','PipelineContentList','min',0,'max',2,'callback',callbackstr); 
 				
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(1) button_width button_height],...
-								'string','Run','tag','RunBt','callback',callbackstr);
+								'string','->','tag','RunBt','callback',callbackstr,'Tooltipstring','Run pipeline calculations in order');
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(2) button_width button_height],...
-								'string','Create New Pipeline','tag','NewPipelineBt','callback',callbackstr);
+								'string','+','tag','NewPipelineBt','Tooltipstring','Create new pipeline',...
+								'callback',callbackstr);
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(3) button_width button_height],...
-								'string','Delete Current Pipeline','tag','DltPipelineBt','callback',callbackstr);
+								'string','-','Tooltipstring','Delete Current Pipeline','tag','DltPipelineBt',...
+								'callback',callbackstr);
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(4) button_width button_height],...
-								'string','Create New Calculator','tag','NewCalcBt','callback',callbackstr);
+								'string','+','Tooltipstring','Create New Calculator','tag','NewCalcBt',...
+								'callback',callbackstr);
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(5) button_width button_height],...
-								'string','Delete Current Calculator','tag','DltCalcBt','callback',callbackstr);
+								'string','-','Tooltipstring','Delete Current Calculator','tag','DltCalcBt','callback',callbackstr);
 							uicontrol(uid.button,'position',[button_center-0.5*button_width button_y(6) button_width button_height],...
-								'string','Edit Current Calculator','tag','EditBt','callback',callbackstr);
-
+								'string','Edit','tooltipstring','Edit selected calculator','tag','EditBt','callback',callbackstr);
 							ndi.pipeline.edit('command','LoadPipelines'); % load the pipelines from disk
 				
 						case 'UpdatePipelines', % invented command that is not a callback
@@ -419,3 +421,4 @@ classdef pipeline
  
 	end % static methods
 end % class
+

@@ -94,8 +94,6 @@ classdef tuningcurve < ndi.calculator
 							doc = {};
 							return;
 						end;
-					elseif isempty(parameters.input_parameters.selection(i).operation),
-						error(['Empty operation for constraint.']);
 					else,
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation',parameters.input_parameters.selection(i).operation,...
