@@ -5,6 +5,10 @@ docs_dir: 'docs'
 google_analytics:
   - UA-91714905-5
   - auto
+extra:
+  analytics:
+    provider: google
+    property: G-9SPRKF3BW3  
 theme:
   name: 'material'
   palette:
