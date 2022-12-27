@@ -26,9 +26,9 @@ A version of NDI is available in [Matlab](https://github.com/VH-Lab/NDI-matlab) 
 
 Check out the [Installation Guide](https://vh-lab.github.io/NDI-matlab/installation/).
 
-## Pre-print
+## Publication
 
-Check out the [NDI pre-print](https://www.biorxiv.org/content/10.1101/2020.05.13.093542v2) available on [biorxiv](http://biorxiv.org/). 
+Check out the [NDI publication](https://www.eneuro.org/content/9/1/ENEURO.0073-21.2022.long).
 
 ## Help and Support
 
