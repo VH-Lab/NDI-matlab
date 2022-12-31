@@ -12,12 +12,12 @@ Where are
 a)
 
 ndi.session:
-	line 337, documentation update
+	line 337, documentation update  *
 
-ndi.app.spikeextractor:
-	line 186
-	line 188
-	check lines 437, 458; these might just be reading
+ndi.app.spikeextractor: 
+	line 186 *
+	line 188 *
+	check lines 437, 458  * (reading)
 
 ndi.app.spikesorter:
 	line 231
@@ -30,6 +30,8 @@ ndi.test.database.test_ndi_document:
 
 
 
+
+need to make 
 
 
 c) update ndi.document so merges file names

@@ -16,7 +16,6 @@ classdef document
 			% NDI_DOCUMENT_OBJ = ndi.document(MATLAB_STRUCT)
 			%
 			%
-
 				if nargin<1,
 					document_type = 'ndi_document';
 				end
@@ -25,7 +24,8 @@ classdef document
 					document_properties = document_type;
 				else,  % create blank from definitions
 					document_properties = ndi.document.readblankdefinition(document_type);
-					document_properties.ndi_document.id = ndi.ido.ndi_unique_id();
+					ndiido = ndi.ido();
+					document_properties.ndi_document.id = ndiido.id();
 					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array

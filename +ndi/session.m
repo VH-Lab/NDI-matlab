@@ -1,4 +1,4 @@
-classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not allow these subclasses because they are not handle2
+classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not allow these subclasses because they are not handle
 	% NDI.SESSION - NDI.SESSION object class
 
 	properties (GetAccess=public, SetAccess = protected)
@@ -27,7 +27,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
 				ndi_session_obj.reference = reference;
 				ndi_session_obj.database = [];
-				ndi_session_obj.identifier = ndi.ido.ndi_unique_id();
+				ndiido = ndi.ido();
+				ndi_session_obj.identifier = ndiido.id();
 				ndi_session_obj.syncgraph = ndi.time.syncgraph(ndi_session_obj);
 				ndi_session_obj.cache = ndi.cache();
 		end
@@ -339,12 +340,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
 			%
-			%   Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
-			%   NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+			%  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
+			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+			%  The document is opened for reading only. Document binary streams may not be edited once the
+			%  document is added to the database.
 			% 
-			%  Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.session/CLOSEBINARYDOC.
-			%  The locked nature of the binary doc is a property of the database, not the document, which is why
-			%  the database is needed in the method.
+			%  Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC.
 			% 
 				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id);
 		end; % database_openbinarydoc

@@ -45,7 +45,7 @@ classdef dir < ndi.session
 					ndi_session_dir_obj.identifier = strtrim(vlt.file.textfile2char(...
 						[ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
-					ndi_session_dir_obj.identifier = ndi.ido.ndi_unique_id();
+					ndi_session_dir_obj.identifier = ndi.ido.unique_id();
 				end
 
 				ndi_session_dir_obj.database = ndi.database.fun.opendatabase(ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
