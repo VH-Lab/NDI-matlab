@@ -230,7 +230,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				[spike_cluster_binarydoc,spike_cluster_binarydoc_filename] = ndi.file.temp_fid();
 				fwrite(spike_cluster_binarydoc,uint16(clusterids),'uint16');
 				fclose(spike_cluster_binarydoc);
-				spike_cluster_doc = spike_cluster_doc.addfile('spike_cluster.bin',spike_cluster_binarydoc_filename);
+				spike_cluster_doc = spike_cluster_doc.add_file('spike_cluster.bin',spike_cluster_binarydoc_filename);
 				ndi_app_spikesorter_obj.session.database_add(spike_cluster_doc);
 
 		end % spike_sort()
