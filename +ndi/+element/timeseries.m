@@ -99,12 +99,16 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 				if ndi_element_timeseries_obj.direct,
 					error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
 				end;
-				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
-					
-				E = ndi_element_timeseries_obj.session;
-				f = E.database_openbinarydoc(epochdoc);
+				add_to_db = 0;
+				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, add_to_db);
+
+				[f,filename] = ndi.file.temp_fid();
 				vlt.file.custom_file_formats.vhsb_write(f,timepoints,datapoints,'use_filelock',0);
-				E.database_closebinarydoc(f);
+				fclose(f);
+				epochdoc = epochdoc.add_file('epoch_binary_data.bin');
+				
+				E = ndi_element_timeseries_obj.session;
+				E.database_add(epochdoc);
 		end; % addepoch()
 
 		function sr = samplerate(ndi_element_timeseries_obj, epoch)

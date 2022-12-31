@@ -288,10 +288,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
 		end; %elementstring() 
 
-		function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1)
+		function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db)
 			% ADDEPOCH - add an epoch to the ndi.element
 			%
-			% [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1)
+			% [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, [ADD_TO_DB])
 			%
 			% Registers the data for an epoch with the NDI_ELEMENT_OBJ.
 			%
@@ -302,7 +302,11 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%                     of the probe
 			%   T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
 			%                     the probe, in units of the epock clock
+			%   ADD_TO_DB:     0/1 Should we actually add the epoch document to the database? Default 1.
 			%   
+				if nargin < 5,
+					add_to_db = 1;
+				end;
 				epochdoc = [];
 				if ndi_element_obj.direct,
 					error(['Cannot add external observations to an ndi.element that is directly based on ndi.probe.*']);
@@ -321,7 +325,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 						'element_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
 						'element_epoch.t0_t1', t0_t1, 'epochid',epochid);
 					epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
-					E.database_add(epochdoc);
+					if add_to_db,
+						E.database_add(epochdoc);
+					end;
 				end
 		end; % addepoch()
 

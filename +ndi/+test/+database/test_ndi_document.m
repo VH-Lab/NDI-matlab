@@ -41,14 +41,16 @@ doc = E.newdocument('ndi_document_subjectmeasurement',...
 	'subjectmeasurement.datestamp','2017-03-17T19:53:57.066Z'...
 	);
 
- % add it here
-E.database_add(doc);
 
   % store some data in the binary portion of the file
-binarydoc = E.database_openbinarydoc(doc);
+[binarydoc,binarydoc_filename] = ndi.file.temp_fid();
 disp(['Storing ' mat2str(0:9) '...'])
-binarydoc.fwrite(char([0:9]),'char');
-binarydoc = E.database_closebinarydoc(binarydoc);
+fwrite(binarydoc,char([0:9]),'char');
+fclose(binarydoc);
+doc = doc.add_file('test.bin',binarydoc_filename);
+
+ % add it here
+E.database_add(doc);
 
  % now read the object back
 
@@ -72,7 +74,7 @@ end;
 doc = doc{1}, % should be only one match
 
  % read the binary data
-binarydoc = E.database_openbinarydoc(doc);
+binarydoc = E.database_openbinarydoc(doc,'test.bin');
 disp('About to read stored data: ');
 data = double(binarydoc.fread(10,'char'))',
 binarydoc = E.database_closebinarydoc(binarydoc);
