@@ -115,6 +115,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 					mapping = load(mappingfile2,'-ascii');
 					mti = mti(vlt.data.dropnan(mapping));
 				end
+
 				stimofftimes = [];
 				stimsetuptimes = [];
 				stimcleartimes = [];
@@ -125,6 +126,10 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 				end
 
 				for i=1:numel(mti),
+					if stimid(i)~=mod(mti{i}.stimid,256),
+						error(['Stimulus number ' int2str(i) ' does not line up between Spike2 and stimulus computer record: Spike2 says ' int2str(stimid(i)) ' while stimulus computer says ' int2str(mti{i}.stimid) '.']);
+					end;
+					stimid(i) = mti{i}.stimid; % needed because now we only know stims on Spike2 up to mod 256
 					% spike2time = mactime + timeshift
 					timeshift = stimtimes(i) - mti{i}.startStopTimes(2);
 					stimofftimes(i) = mti{i}.startStopTimes(3) + timeshift;
