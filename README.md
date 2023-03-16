@@ -12,3 +12,5 @@ Neuroscience Data Interface - A means of specifying and accessing neuroscience d
   - It is assumed that the function `ndi_Init.m` is run at startup. Please add this to your `startup.m` file. (If you use the http://github.com/VH-Lab/vhlab_vhtools distribution, it will be run automatically.)
 
 Please post issues to [the issues page on GitHub](https://github.com/VH-Lab/NDI-matlab/issues)
+
+We have an RRID now: RRID:SCR_023368
