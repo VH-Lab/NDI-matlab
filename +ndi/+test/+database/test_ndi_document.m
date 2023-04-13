@@ -32,7 +32,7 @@ if ~isempty(doc),
 	end;
 end;
 
-doc = E.newdocument('ndi_document_subjectmeasurement',...
+doc = E.newdocument('subjectmeasurement',...
 	'ndi_document.name','Animal statistics',...
 	'subject.id','vhlab12345', ...
 	'subject.species','Mus musculus',...
@@ -67,7 +67,7 @@ if numel(doc)~=1,
 end;
 doc = doc{1}, % should be only one match
 
-doc = E.database_search(ndi.query('','isa','ndi_document_subjectmeasurement.json',''));
+doc = E.database_search(ndi.query('','isa','subjectmeasurement.json',''));
 if numel(doc)~=1,
 	error(['Found <1 or >1 document with subject.id vhlab12345; this means there is a database problem.']);
 end;
