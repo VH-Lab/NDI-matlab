@@ -561,7 +561,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_FILENAVIGATOR_OBJ)
 			%
-			% Creates an ndi.document of type 'ndi_document_filenavigator.json'
+			% Creates an ndi.document of type 'filenavigator.json'
 			%
 				filenavigator_structure.ndi_filenavigator_class = class(ndi_filenavigator_obj);
 				if ~isempty(ndi_filenavigator_obj.fileparameters),
@@ -579,7 +579,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				end;
 				filenavigator_structure.session_id = ndi_filenavigator_obj.session.id();
 				
-				ndi_document_obj = ndi.document('daq/ndi_document_filenavigator.json',...
+				ndi_document_obj = ndi.document('daq/filenavigator.json',...
 					'filenavigator',filenavigator_structure,...
 					'ndi_document.id', ndi_filenavigator_obj.id(),...
 					'ndi_document.session_id', ndi_filenavigator_obj.session.id());

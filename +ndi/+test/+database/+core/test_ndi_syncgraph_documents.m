@@ -19,7 +19,7 @@ function test_ndi_syncgraph_documents
 
 	E = ndi.session.dir('exp1',dirname);
 	 % remove any existing syncrules
-	doc = E.database_search(ndi.query('','isa','ndi_document_syncgraph',''));
+	doc = E.database_search(ndi.query('','isa','syncgraph',''));
 	E.database_rm(doc);
 
 	sg = {};

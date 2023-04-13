@@ -19,7 +19,7 @@ function test_ndi_syncrule_documents
 
 	E = ndi.session.dir('exp1',dirname);
 	 % remove any existing syncrules
-	doc = E.database_search(ndi.query('','isa','ndi_document_syncrule.json',''));
+	doc = E.database_search(ndi.query('','isa','syncrule.json',''));
 	E.database_rm(doc);
 
 	object_list = { ...

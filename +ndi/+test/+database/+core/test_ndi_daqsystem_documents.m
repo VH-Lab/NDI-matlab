@@ -22,7 +22,7 @@ function test_ndi_daqsystem_documents
 	% First, delete any daq systems that are there from the dbleaf system
 	E.daqsystem_clear();
 	% Second, delete any existing daqsystem documents
-	doc = E.database_search(ndi.query('','isa','ndi_document_daqsystem.json',''));
+	doc = E.database_search(ndi.query('','isa','daqsystem.json',''));
 	E.database_rm(doc);
 
 	% we will create one of all types returned by ndi.setup.daq.system.vhlab
