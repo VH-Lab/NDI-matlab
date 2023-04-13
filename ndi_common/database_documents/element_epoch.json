@@ -16,11 +16,11 @@
 			"value": "" 
 		}
 	],
-        "files": [
+        "files": {
                 "file_list": [
-                        "epoch_binary_data.bin"
+                        "epoch_binary_data.bin"        
                 ]
-        ],
+        },
 	"element_epoch": {
 		"epoch_clock":						"",
 		"t0_t1":						""

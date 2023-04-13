@@ -19,7 +19,7 @@ classdef syncgraph < ndi.ido
 			%
 			% This function can be called in another form:
 			% NDI_SYNCGRAPH_OBJ = ndi.time.syncgraph(SESSION, NDI_DOCUMENT_OBJ)
-			% where NDI_DOCUMENT_OBJ is an ndi.document of class ndi_document_syncgraph.
+			% where NDI_DOCUMENT_OBJ is an ndi.document of class syncgraph.
 			%
 			
 			%need to be tested after ndi.time.syncrule creator is done
@@ -548,10 +548,10 @@ classdef syncgraph < ndi.ido
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.time.syncrule object.
-				ndi_document_obj_set{1} = ndi.document('ndi_document_syncgraph.json',...
+				ndi_document_obj_set{1} = ndi.document('daq/syncgraph',...
 					'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
-					'ndi_document.id', ndi_syncgraph_obj.id(),...
-					'ndi_document.session_id', ndi_syncgraph_obj.session.id());
+					'base.id', ndi_syncgraph_obj.id(),...
+					'base.session_id', ndi_syncgraph_obj.session.id());
 				for i=1:numel(ndi_syncgraph_obj.rules),
 					ndi_document_obj_set{end+1} = ndi_syncgraph_obj.rules{i}.newdocument();
 					ndi_document_obj_set{1} = ndi_document_obj_set{1}.add_dependency_value_n('syncrule_id',ndi_syncgraph_obj.rules{i}.id());
@@ -565,8 +565,8 @@ classdef syncgraph < ndi.ido
 			%
 			% Creates a search query for the ndi.time.syncgraph object.
 			%
-				sq = {'ndi_document.id', ndi_syncgraph_obj.id() , ...
-					'ndi_document.session_id', ndi_syncgraph_obj.session.id() };
+				sq = {'base.id', ndi_syncgraph_obj.id() , ...
+					'base.session_id', ndi_syncgraph_obj.session.id() };
 		end; % searchquery()
 
 
@@ -584,7 +584,7 @@ classdef syncgraph < ndi.ido
 			% the documents of its SYNCRULES (cell array of NDI_DOCUMENTS in SYNCRULES_DOC).
 			%
 				syncrule_docs = {};
-				syncgraph_doc = ndi_session_obj.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				syncgraph_doc = ndi_session_obj.database_search(ndi.query('base.id', 'exact_string', ...
 					syncgraph_doc_id,''));
 				switch numel(syncgraph_doc),
 					case 0,
@@ -593,14 +593,14 @@ classdef syncgraph < ndi.ido
 					case 1,
 						syncgraph_doc = syncgraph_doc{1};
 					otherwise,
-						error(['More than 1 document with ndi_document.id value of ' ...
+						error(['More than 1 document with base.id value of ' ...
 							syncgraph_doc_id '. Do not know what to do.']);
 				end;
 
 				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
 				for i=1:numel(rules_id_list),
 					rules_doc = ndi_session_obj.database_search(ndi.query(...
-						'ndi_document.id','exact_string',rules_id_list{i},''));
+						'base.id','exact_string',rules_id_list{i},''));
 					if numel(rules_doc)~=1,
 						error(['Could not find syncrule with id ' rules_id_list{i} ...
 							'; found ' int2str(numel(rules_doc)) ' occurrences']);

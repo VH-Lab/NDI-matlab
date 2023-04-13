@@ -25,7 +25,7 @@ E = ndi.session.dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 
-doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
+doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());
@@ -79,7 +79,7 @@ box off;
 
 % remove the element documents
 
-doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
+doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());

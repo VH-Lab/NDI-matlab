@@ -19,12 +19,12 @@
 			"value": "" 
 		}
 	],
-        "files": [
+        "files": {
                 "file_list": [
                         "spikewaves.vsw", 
 			"spiketimes.bin"
                 ]
-        ],
+        },
 	"spikewaves": {
 		"extraction_name": ""
 	}

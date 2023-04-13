@@ -293,7 +293,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 					doc = ndi.document('apps/spikeextractor/spike_extraction_parameters',...
 						'spike_extraction_parameters',appdoc_struct) + ...
 						ndi_app_spikeextractor_obj.newdocument() + ...
-						ndi.document('ndi_document','ndi_document.name',extraction_name);
+						ndi.document('base','base.name',extraction_name);
 				elseif strcmpi(appdoc_type,'extraction_parameters_modification'),
 					ndi_timeseries_obj = varargin{1};
 					epochid = varargin{2};
@@ -309,7 +309,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 					doc = ndi.document('apps/spikeextractor/spike_extraction_parameters_modification',...
 						'spike_extraction_parameters_modification',appdoc_struct,'epochid',epoch_string) + ...
-						ndi_app_spikeextractor_obj.newdocument() + ndi.document('ndi_document','ndi_document.name',extraction_name);
+						ndi_app_spikeextractor_obj.newdocument() + ndi.document('base','base.name',extraction_name);
 					doc = doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
 					doc = doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
 				elseif strcmpi(appdoc_type,'spikewaves'),
@@ -370,7 +370,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 						end;
 						extraction_parameters_name = varargin{1};
 		
-						extract_searchq = ndi.query('ndi_document.name','exact_string',extraction_parameters_name,'') & ...
+						extract_searchq = ndi.query('base.name','exact_string',extraction_parameters_name,'') & ...
 							ndi.query('','isa','spike_extraction_parameters','');
 						doc = ndi_app_spikeextractor_obj.session.database_search(extract_searchq);
 

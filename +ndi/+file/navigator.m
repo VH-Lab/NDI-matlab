@@ -47,7 +47,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				else,
 					epochprobemap_fileparameters_ = [];
 				end;
-				obj.identifier = filenavdoc.document_properties.ndi_document.id;
+				obj.identifier = filenavdoc.document_properties.base.id;
 			else,
 				if nargin<4,
 					epochprobemap_fileparameters_ = [];
@@ -581,8 +581,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				
 				ndi_document_obj = ndi.document('daq/filenavigator.json',...
 					'filenavigator',filenavigator_structure,...
-					'ndi_document.id', ndi_filenavigator_obj.id(),...
-					'ndi_document.session_id', ndi_filenavigator_obj.session.id());
+					'base.id', ndi_filenavigator_obj.id(),...
+					'base.session_id', ndi_filenavigator_obj.session.id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_filenavigator_obj)
@@ -592,8 +592,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			%
 			% Returns a database search query for this ndi.file.navigator object.
 			%
-				sq = {'ndi_document.id', ndi_filenavigator_obj.id(), ...
-					'ndi_document.session_id', ndi_filenavigator_obj.session.id() };
+				sq = {'base.id', ndi_filenavigator_obj.id(), ...
+					'base.session_id', ndi_filenavigator_obj.session.id() };
 		end; % 
 	end % methods
 

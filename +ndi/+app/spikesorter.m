@@ -249,7 +249,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					extraction_parameters_name, sorting_parameters_name);
 
 				q_E = ndi.query(ndi_app_spikesorter_obj.session.searchquery());
-				q_t = q_E & ndi.query('ndi_document.type','exact_string','ndi_element','') & ...
+				q_t = q_E & ndi.query('','isa','element','') & ...
 					ndi.query('element.type','exact_string','spikes','') & ...
 					ndi.query('','depends_on','spike_clusters_id',spike_clusters_doc.id());
 				anyneurons = ndi_app_spikesorter_obj.session.database_search(q_t);
@@ -346,7 +346,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					doc = ndi.document('apps/spikesorter/sorting_parameters',...
 						'sorting_parameters',appdoc_struct) + ...
 						ndi_app_spikesorter_obj.newdocument() + ...
-						ndi.document('ndi_document','ndi_document.name',sorting_name);
+						ndi.document('base','base.name',sorting_name);
 				elseif strcmpi(appdoc_type,'spike_clusters'),
 					error(['spike_clusters documents are created internally.']);
 				else
@@ -397,7 +397,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					case 'sorting_parameters'
 						sorting_parameters_name = varargin{1};
                     
-						sorting_search = ndi.query('ndi_document.name','exact_string',sorting_parameters_name,'') & ...
+						sorting_search = ndi.query('base.name','exact_string',sorting_parameters_name,'') & ...
 						ndi.query('','isa','sorting_parameters', '');
 						doc = ndi_app_spikesorter_obj.session.database_search(sorting_search);
                 

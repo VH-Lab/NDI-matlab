@@ -43,7 +43,7 @@ classdef database
 			% ndi.database.
 			%
 				if nargin<2,
-					document_type = 'ndi_document';
+					document_type = 'base';
 				end;
 				ndi_document_obj = ndi.document(document_type, ...
 						'session_unique_refrence', ndi_database_obj.session_unique_reference);

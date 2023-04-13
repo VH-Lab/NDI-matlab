@@ -126,7 +126,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				response_stddev = [];
 				response_stderr = [];
 
-				stim_response_doc = E.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
+				stim_response_doc = E.database_search(ndi.query('base.id','exact_string',tuning_doc.dependency_value('stimulus_response_scalar_id'),''));
 
 				if isempty(stim_response_doc),
 					error(['cannot find stimulus response document. Do not know what to do.']);
@@ -220,7 +220,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			%
 				E = ndi_app_oridirtuning_obj.session;
 					% does this stimulus vary in orientation or direction tuning?
-				stim_pres_doc = E.database_search(ndi.query('ndi_document.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
+				stim_pres_doc = E.database_search(ndi.query('base.id', 'exact_string', dependency_value(response_doc, 'stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
 					error(['empty stimulus response doc, do not know what to do.']);
 				end;
@@ -256,7 +256,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					oriprops_doc.document_properties.orientation_direction_tuning.fit.double_gaussian_fit_values,'k-');
 				box off;
 
-				element_doc = E.database_search(ndi.query('ndi_document.id','exact_string',dependency_value(oriprops_doc,'element_id'),'')); 
+				element_doc = E.database_search(ndi.query('base.id','exact_string',dependency_value(oriprops_doc,'element_id'),'')); 
 				if isempty(element_doc),
 					error(['Empty element document, don''t know what to do.']);
 				end;
@@ -286,7 +286,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 			% 
 				if strcmpi(appdoc_type,'orientation_direction_tuning'),
 					tuning_doc_id = appdoc_struct.tuning_doc_id;
-					td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',tuning_doc_id,''));
+					td = ndi_app_oridirtuning_obj.session.database_search(ndi.query('base.id','exact_string',tuning_doc_id,''));
 					if numel(td)==1, 
 						td = td{1};
 					elseif numel(td)>1,
@@ -297,7 +297,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					doc = ndi_app_oridirtuning_obj.calculate_oridir_indexes(td, 0);            
 				elseif strcmpi(appdoc_type,'stimulus_tuningcurve'),
 					element_id = appdoc_struct.element_id;
-					response_doc = ndi_app_oridirtuning_obj.session.database_search(ndi.query('ndi_document.id','exact_string',appdoc_struct.response_doc_id,''));
+					response_doc = ndi_app_oridirtuning_obj.session.database_search(ndi.query('base.id','exact_string',appdoc_struct.response_doc_id,''));
 					if numel(response_doc)==1, 
 						response_doc = response_doc{1};
 					elseif numel(response_doc)>1,

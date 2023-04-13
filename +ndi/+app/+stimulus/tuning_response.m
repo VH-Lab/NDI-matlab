@@ -116,10 +116,10 @@ classdef tuning_response < ndi.app
 			%
 			% RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
 			%
-			% Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'ndi_document_stimulus_presentation'), and a
-			% CONTROL_DOC (an ndi.document of class 'ndi_document_control_stimulus_ids'), this
+			% Given an NDI_TIMESERIES_OBJ, a STIM_DOC (an ndi.document of class 'stimulus_presentation'), and a
+			% CONTROL_DOC (an ndi.document of class 'control_stimulus_ids'), this
 			% function computes the stimulus responses of NDI_TIMESERIES_OBJ and stores the results as an
-			% ndi.document of class 'ndi_stimulus_response_scalar'. In this app, by default, mean responses and responses at the
+			% ndi.document of class 'stimulus_response_scalar'. In this app, by default, mean responses and responses at the
 			% fundamental stimulus frequency are calculated. Note that this function may generate multiple documents (for mean responses,
 			% F1, F2).
 			%
@@ -358,7 +358,7 @@ classdef tuning_response < ndi.app
 				% Step 3:
 
 				% load stimulus information 
-				stim_pres_doc = E.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = E.database_search(ndi.query('base.id', 'exact_string', ...
 					stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
 					error(['Could not load stimulus presentation document ' ...
@@ -465,7 +465,7 @@ classdef tuning_response < ndi.app
 			%
 			% CS_DOC = LABEL_CONTROL_STIMULI(NDI_APP_TUNING_RESPONSE_OBJ, STIMULUS_ELEMENT_OBJ, RESET, ...)
 			%
-			% Thus function will look for all 'ndi_document_stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
+			% Thus function will look for all 'stimulus_presentation' documents for STIMULUS_PROBE_OBJ,
 			% compute the corresponding control stimuli, and save them as an 'control_stimulus_ids' 
 			% document that is also returned as a cell list in CS_DOC.
 			%
@@ -505,9 +505,9 @@ classdef tuning_response < ndi.app
 			%
 			% [CS_IDS, CS_DOC] = CONTROL_STIMULUS(NDI_APP_TUNING_RESPONSE_OBJ, STIM_DOC, ...)
 			%
-			% For a given set of stimuli described in ndi.document of type 'ndi_document_stimulus',
+			% For a given set of stimuli described in ndi.document of type 'stimulus',
 			% this function returns the control stimulus ID for each stimulus in the vector CS_IDS 
-			% and a corresponding ndi.document of type ndi_document_control_stimulus_ids that describes this relationship.
+			% and a corresponding ndi.document of type control_stimulus_ids that describes this relationship.
 			%
 			%
 			% This function accepts parameters in the form of NAME/VALUE pairs:
@@ -621,7 +621,7 @@ classdef tuning_response < ndi.app
 				srs = {};
 
 				for i=1:numel(tc_doc_matches),
-					q_stimresponsescalar = ndi.query('ndi_document.id','exact_string',...
+					q_stimresponsescalar = ndi.query('base.id','exact_string',...
 						tc_doc_matches{i}.dependency_value('stimulus_response_scalar_id'),'');
 					srs{i} = E.database_search(q_e&q_stimresponsescalar);
 					if ~isempty(srs),
@@ -682,7 +682,7 @@ classdef tuning_response < ndi.app
 
 				S = ndi_app_tuning_response_obj.session;
 
-				stim_pres_doc = S.database_search(ndi.query('ndi_document.id','exact_string', ...
+				stim_pres_doc = S.database_search(ndi.query('base.id','exact_string', ...
 					dependency_value(stim_response_doc,'stimulus_presentation_id'),''));
 				if isempty(stim_pres_doc),
 					error(['Could not find stimulus presentation doc for stimulus response doc.']);

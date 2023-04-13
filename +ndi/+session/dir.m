@@ -50,8 +50,8 @@ classdef dir < ndi.session
 
 				ndi_session_dir_obj.database = ndi.database.fun.opendatabase(ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
 
-				syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','ndi_document_syncgraph','') & ...
-					ndi.query('ndi_document.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
+				syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
+					ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));
 
 				if isempty(syncgraph_doc),
 					ndi_session_dir_obj.syncgraph = ndi.time.syncgraph(ndi_session_dir_obj);

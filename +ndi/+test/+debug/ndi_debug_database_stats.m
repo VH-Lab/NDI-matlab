@@ -8,7 +8,7 @@ function out = ndi_globals.debug_database_stats(E)
 
 Dmissing = ndi.database.fun.finddocs.missing.dependencies(E);
 Dall = E.database_search({'document_class.class_name','(.*)'});
-Dall2 = E.database_search({'ndi_document.id','(.*)'}); 
+Dall2 = E.database_search({'base.id','(.*)'}); 
 
 sq_stim = ndi.query('','isa','stimulus_presentation.json','');
 stim_doc = E.database_search(sq_stim);

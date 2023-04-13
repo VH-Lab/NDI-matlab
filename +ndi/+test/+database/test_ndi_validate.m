@@ -8,6 +8,10 @@ function test_ndi_validate()
 % corresponding schema
 %
 
+
+error('this function is out of date.');
+
+
 ndi.globals;
 
 % validate classes that don't have depnds-on and have relatively few super-classes

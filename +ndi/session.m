@@ -83,8 +83,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 
 				sq = dev.searchquery();
 				search_result = ndi_session_obj.database_search(sq);
-				sq1 = ndi.query('','isa','ndi_document_daqsystem','') & ...
-					ndi.query('ndi_document.name','exact_string',dev.name,'');
+				sq1 = ndi.query('','isa','daqsystem','') & ...
+					ndi.query('base.name','exact_string',dev.name,'');
 				search_result1 = ndi_session_obj.database_search(sq1);
 				if (numel(search_result) == 0) & (numel(search_result1) == 0)
 					% no match was found, can add to the database
@@ -116,7 +116,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					for k=1:numel(docs), % should be 1 only, but keep deleting even if not
 						for i=1:numel(docs{k}.document_properties.depends_on),
 							dochere = ndi_session_obj.database_search(...
-								ndi.query('ndi_document.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
+								ndi.query('base.id', 'exact_string', docs{k}.document_properties.depends_on(i).value, ''));
 							ndi_session_obj.database_rm(dochere);
 						end;
 						ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
@@ -137,19 +137,19 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% VALUE1, PARAMS2 that matches VALUE2, etc.
 			%
 			% One can also search for 'name' as a parameter; this will be automatically changed to search
-			% for database documents with fields 'ndi_document.name' equal to the corresponding value.
+			% for database documents with fields 'base.name' equal to the corresponding value.
 			%
 			% If more than one object is requested, then DEV will be a cell list of matching objects.
 			% Otherwise, the object will be a single element. If there are no matches, empty ([]) is returned.
 			%
 				dev = {};
-				q1 = ndi.query('','isa','ndi_document_daqsystem','');
-				q2 = ndi.query('ndi_document.session_id','exact_string',ndi_session_obj.id(),'');
+				q1 = ndi.query('','isa','daqsystem','');
+				q2 = ndi.query('base.session_id','exact_string',ndi_session_obj.id(),'');
 				q = q1 & q2;
 				if numel(varargin)>0,
 					for i=1:2:numel(varargin),
 						if strcmpi(varargin{i},'name'),
-							varargin{i} = 'ndi_document.name'; % case matters here
+							varargin{i} = 'base.name'; % case matters here
 						end;
 					end;
 					q = q & ndi.query(varargin);
@@ -195,16 +195,16 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% an optional argument and can be any type that confirms to the .json
 			% files in $NDI_COMMON/database_documents/*, a URL to such a file, or
 			% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
-			% to be 'ndi_document.json'.
+			% to be 'base.json'.
 			%
 			% If additional PROPERTY values are specified, they are set to the VALUES indicated.
 			%
-			% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
+			% Example: mydoc = ndi_session_obj.newdocument('base','base.name','myname');
 			%
 				if nargin<2,
-					document_type = 'ndi_document.json';
+					document_type = 'base.json';
 				end
-				inputs = cat(2,varargin,{'ndi_document.session_id', ndi_session_obj.id()});
+				inputs = cat(2,varargin,{'base.session_id', ndi_session_obj.id()});
 				ndi_document_obj = ndi.document(document_type, inputs);
 		end; %newdocument()
 
@@ -216,11 +216,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% Returns a search query that will match all ndi.document objects that were generated
 			% by this session.
 			%
-			% SQ = {'ndi_document.session_id', ndi_session_obj.id()};
+			% SQ = {'base.session_id', ndi_session_obj.id()};
 			% 
-			% Example: mydoc = ndi_session_obj.newdocument('ndi_document','ndi_document.name','myname');
+			% Example: mydoc = ndi_session_obj.newdocument('base','base.name','myname');
 			%
-				sq = {'ndi_document.session_id', ndi_session_obj.id()};
+				sq = {'base.session_id', ndi_session_obj.id()};
 		end; %searchquery()
 
 		% ndi.database / ndi.document methods
@@ -277,10 +277,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
 				if ~iscell(doc_unique_id),
 					if ischar(doc_unique_id), % it is a single doc id
-						mydoc = ndi_session_obj.database_search(ndi.query('ndi_document.id','exact_string',doc_unique_id,''));
+						mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',doc_unique_id,''));
 						if isempty(mydoc), % 
 							if ErrIfNotFound,
-								error(['Looked for an ndi_document matching ID ' doc_unique_id ' but found none.']);
+								error(['Looked for an base document matching ID ' doc_unique_id ' but found none.']);
 							else,
 								return; % nothing to do
 							end;
@@ -537,7 +537,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% 'element.direct', and 'probe.name', 'probe.type', and 'probe.reference'.
 			% 
 				q_E = ndi.query(ndi_session_obj.searchquery());
-				q_t = ndi.query('ndi_document.type','exact_string','ndi_element','');
+				q_t = ndi.query('','isa','element',''); 
 				for i=1:2:numel(varargin),
 					if strfind(varargin{i},'reference'),
 						q_t = q_t & ndi.query(varargin{i},'exact_number',varargin{i+1},'');

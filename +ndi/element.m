@@ -66,7 +66,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					element_doc = [];
 					if ~isa(varargin{2},'ndi.document'),
 						% might be id
-						element_search = element_session.database_search(ndi.query('ndi_document.id','exact_string',varargin{2},''));
+						element_search = element_session.database_search(ndi.query('base.id','exact_string',varargin{2},''));
 						if numel(element_search)~=1,
 							error(['When 2 input arguments are given, 2nd input argument must be an ndi.document or document ID.']);
 						else,
@@ -443,7 +443,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ and the 
 			% 'name', 'type', and 'reference' fields of its underlying NDI_PROBE_OBJ. 
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
-			% in accordance to 'ndi_document_epochid'.
+			% in accordance to 'epochid'.
 			%
 			% When the document is created, it is automatically added to the session.
 			%
@@ -456,7 +456,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 						'element.type',ndi_element_obj.type, ...
 						'element.direct',ndi_element_obj.direct);
 					ndi_document_obj = ndi_document_obj + ...
-						newdocument(ndi_element_obj.session, 'ndi_document', 'ndi_document.type','ndi_element');
+						newdocument(ndi_element_obj.session);
 					underlying_id = [];
 					if ~isempty(ndi_element_obj.underlying_element),
 						underlying_id = ndi_element_obj.underlying_element.id();
@@ -488,7 +488,6 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				sq = sq & ndi.query('element.type','exact_string',ndi_element_obj.type,'');
 				sq = sq & ndi.query('element.ndi_element_class','exact_string',class(ndi_element_obj),'');
 				sq = sq & ndi.query('element.reference','exact_number',ndi_element_obj.reference',''); 
-				sq = sq & ndi.query('ndi_document.type','exact_string','ndi_element',''); 
 
 				if nargin>1,
 					sq = sq & ndi.query('epochid','exact_string',epochid,'');

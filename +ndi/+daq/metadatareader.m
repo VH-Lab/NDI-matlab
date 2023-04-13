@@ -123,7 +123,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				ndi_document_obj = ndi.document('daqmetadatareader.json',...
 					'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
 					'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
-					'ndi_document.id', ndi_daqmetadatareader_obj.id());
+					'base.id', ndi_daqmetadatareader_obj.id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_daqmetadatareader_obj)
@@ -133,7 +133,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.daq.metadatareader object.
 			%
-				sq = {'ndi_document.id', ndi_daqmetadatareader_obj.id() };
+				sq = {'base.id', ndi_daqmetadatareader_obj.id() };
 		end; % searchquery()
 
 	end; % methods

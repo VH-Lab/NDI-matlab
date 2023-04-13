@@ -19,7 +19,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
 				parameters = [];
 				if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
 					parameters = varargin{2}.document_properties.syncrule.parameters;
-					ndi_syncrule_obj.identifier = varargin{2}.document_properties.ndi_document.id;
+					ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
 				elseif nargin >0,
 					parameters = varargin{1};
 				end;
@@ -178,9 +178,9 @@ classdef syncrule < ndi.ido & ndi.documentservice
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.time.syncrule object.
-				ndi_document_obj = ndi.document('ndi_document_syncrule.json',...
+				ndi_document_obj = ndi.document('daq/syncrule',...
 					'syncrule.ndi_syncrule_class',class(ndi_syncrule_obj),...
-					'ndi_document.id', ndi_syncrule_obj.id(),...
+					'base.id', ndi_syncrule_obj.id(),...
 					'syncrule.parameters', ndi_syncrule_obj.parameters);
 		end; % newdocument()
 
@@ -191,7 +191,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.time.syncgraph object.
 			%
-				sq = {'ndi_document.id', ndi_syncrule_obj.id() };
+				sq = {'base.id', ndi_syncrule_obj.id() };
 		end; % searchquery()
 
 	end % methods

@@ -17,7 +17,7 @@ classdef document
 			%
 			%
 				if nargin<1,
-					document_type = 'ndi_document';
+					document_type = 'base';
 				end
 
 				if isstruct(document_type),
@@ -25,8 +25,8 @@ classdef document
 				else,  % create blank from definitions
 					document_properties = ndi.document.readblankdefinition(document_type);
 					ndiido = ndi.ido();
-					document_properties.ndi_document.id = ndiido.id();
-					document_properties.ndi_document.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
+					document_properties.base.id = ndiido.id();
+					document_properties.base.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 					if numel(varargin)==1, % see if user put it all as one cell array
 						if iscell(varargin{1}),
@@ -67,10 +67,10 @@ classdef document
 			% UID = DOC_UNIQUE_ID(NDI_DOCUMENT_OBJ)
 			%
 			% Returns the unique id of an ndi.document
-			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.base.id)
 			%
 				warning('depricated..use ID() instead')
-				uid = ndi_document_obj.document_properties.ndi_document.id;
+				uid = ndi_document_obj.document_properties.base.id;
 		end % doc_unique_id()
 
 		function uid = id(ndi_document_obj)
@@ -79,9 +79,9 @@ classdef document
 			% UID = ID (NDI_DOCUMENT_OBJ)
 			%
 			% Returns the unique id of an ndi.document
-			% (Found at NDI_DOCUMENT_OBJ.documentproperties.ndi_document.id)
+			% (Found at NDI_DOCUMENT_OBJ.documentproperties.base.id)
 			%
-				uid = ndi_document_obj.document_properties.ndi_document.id;
+				uid = ndi_document_obj.document_properties.base.id;
 		end; % id()
 
 		function ndi_document_obj = setproperties(ndi_document_obj, varargin)
@@ -95,7 +95,7 @@ classdef document
 			% See also: ndi.document, ndi.document/ndi.document		
 			%
 			% Example:
-			%   mydoc = mydoc.setproperties('ndi_document.name','mydoc name');
+			%   mydoc = mydoc.setproperties('base.name','mydoc name');
 
 				newproperties = ndi_document_obj.document_properties;
 				for i=1:2:numel(varargin),
@@ -361,11 +361,11 @@ classdef document
 			%
 			% B = EQ(NDI_DOCUMENT_OBJ1, NDI_DOCUMENT_OBJ2)
 			%
-			% Returns 1 if and only if the objects have identical document_properties.ndi_document.id
+			% Returns 1 if and only if the objects have identical document_properties.base.id
 			% fields.
 			%
-				b = strcmp(ndi_document_obj1.document_properties.ndi_document.id,...
-					ndi_document_obj2.document_properties.ndi_document.id);
+				b = strcmp(ndi_document_obj1.document_properties.base.id,...
+					ndi_document_obj2.document_properties.base.id);
 		end; % eq()
 
 	end % methods

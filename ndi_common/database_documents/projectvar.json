@@ -16,6 +16,7 @@
 	],
 	"projectvar": {
 		"project":						"",
+		"type":							"",
 		"user":							"",
 		"lab":							"",
 		"description":						"",

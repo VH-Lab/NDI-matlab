@@ -25,7 +25,7 @@ classdef reader < ndi.ido & ndi.documentservice
 			loadfromfile = 0;
 
 			if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
-				obj.identifier = varargin{2}.document_properties.ndi_document.id;
+				obj.identifier = varargin{2}.document_properties.base.id;
 			elseif nargin>=2,
 				if ischar(varargin{2}), % it is a command
 					loadfromfile = 1;
@@ -125,7 +125,7 @@ classdef reader < ndi.ido & ndi.documentservice
 			%    ndi.daq.reader object. 
 				ndi_document_obj = ndi.document('daqreader.json',...
 					'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
-					'ndi_document.id', ndi_daqreader_obj.id());
+					'base.id', ndi_daqreader_obj.id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_daqreader_obj)
@@ -135,7 +135,7 @@ classdef reader < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.daq.reader object. 
 			% 
-				sq = {'ndi_document.id', ndi_daqreader_obj.id() };
+				sq = {'base.id', ndi_daqreader_obj.id() };
 		end; % searchquery()
 
 	end % methods

@@ -10,6 +10,6 @@
 		]
         },
 	"animalsubject": {
-		"node_at_ontology":					"node@ontology",
+		"node_at_ontology":					"node@ontology"
 	}
 }

@@ -57,7 +57,7 @@ classdef subject < ndi.ido & ndi.documentservice
 							error(['First input argument must be an ndi.session input']);
 						end;
 						if ~isa(varargin{2},'ndi.document'),
-							subject_search = E.database_search(ndi.query('ndi_document.id',...
+							subject_search = E.database_search(ndi.query('base.id',...
 								'exact_string',varargin{2},''));
 							if numel(subject_search)~=1,
 								error(['When 2 input arguments are given, 2nd input must be an ndi.document or document ID.']);
@@ -86,7 +86,7 @@ classdef subject < ndi.ido & ndi.documentservice
 				ndi_document_obj = ndi.document('subject',...
 					'subject.local_identifier', ndi_subject_obj.local_identifier,...
 					'subject.description', ndi_subject_obj.description,...
-					'ndi_document.id', ndi_subject_obj.id());
+					'base.id', ndi_subject_obj.id());
 
 		end; % newdocument()
 
@@ -149,10 +149,10 @@ classdef subject < ndi.ido & ndi.documentservice
 						ndi.query('subject.local_identifier','exact_string',subjectstring,''));
 				else,
 					subject_doc = ndi_session_obj.database_search(...
-						ndi.query('ndi_document.id','exact_string',subjectstring,''));
+						ndi.query('base.id','exact_string',subjectstring,''));
 				end;
 				if numel(subject_doc)==1,
-					subject_id = subject_doc{1}.document_properties.ndi_document.id;
+					subject_id = subject_doc{1}.document_properties.base.id;
 					b = 1;
 					return;
 				elseif numel(subject_doc)==0,
@@ -160,7 +160,7 @@ classdef subject < ndi.ido & ndi.documentservice
 						newsubject = ndi.subject(subjectstring,'');
 						subject_doc = newsubject.newdocument();
 						ndi_session_obj.database_add(subject_doc);
-						subject_id = subject_doc.document_properties.ndi_document.id;
+						subject_id = subject_doc.document_properties.base.id;
 						b = 1;
 					else,
 						return;

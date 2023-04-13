@@ -179,8 +179,8 @@ switch command
 %         name_list = {};
 %         doc_ref = {};
 %         for i=1:numel(daq_list)
-%             name_list{i} = [doc_list{i}.document_properties.document_class.class_name ' | ' doc_list{i}.document_properties.ndi_document.name];
-%             doc_ref{i} = [doc_list{i}.document_properties.ndi_document.document_unique_reference];
+%             name_list{i} = [doc_list{i}.document_properties.document_class.class_name ' | ' doc_list{i}.document_properties.base.name];
+%             doc_ref{i} = [doc_list{i}.document_properties.base.id];
 %         end
 %         name_list;
 % 		set(findobj(fig,'tag','DBList'),'string',name_list,'value',[],'userdata',doc_ref);
@@ -193,7 +193,7 @@ switch command
 		ref_list = get(findobj(fig,'tag','DBList'),'userdata'); 
 		value = get(findobj(fig,'tag','DBList'),'value');
 		if ~isempty(value)
-		    mydaq = ud.ndi_session_obj.database_search({'ndi_document.id',ref_list{value}});
+		    mydaq = ud.ndi_session_obj.database_search({'base.id',ref_list{value}});
 		    j_pretty = vlt.data.prettyjson(vlt.data.jsonencodenan(mydaq{1}.document_properties));
 		    j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
 		    %j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
@@ -207,8 +207,8 @@ switch command
 		name_list = {};
 		doc_ref = {};
 		for i=1:numel(doc_list)
-		    name_list{i} = [doc_list{i}.document_properties.document_class.class_name ' | ' doc_list{i}.document_properties.ndi_document.name];
-		    doc_ref{i} = [doc_list{i}.document_properties.ndi_document.id()];
+		    name_list{i} = [doc_list{i}.document_properties.document_class.class_name ' | ' doc_list{i}.document_properties.base.name];
+		    doc_ref{i} = [doc_list{i}.document_properties.base.id()];
 		end
 		name_list;
 		set(findobj(fig,'tag','DBList'),'string',name_list,'value',[],'userdata',doc_ref);

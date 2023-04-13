@@ -24,11 +24,11 @@
 			"value": ""
 		}
 	],
-	"files": [
+	"files": {
 		"file_list": [
 			"spike_cluster.bin"
 		]
-	],
+	},
 	"spike_clusters": {
 		"epoch_info": "",
 		"clusterinfo": [],
