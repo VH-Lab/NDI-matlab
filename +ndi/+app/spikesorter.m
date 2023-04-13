@@ -227,11 +227,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					spike_cluster_doc = spike_cluster_doc.add_dependency_value_n('spikewaves_doc_id',waveform_docs{i}.id()); 
 				end;
 				% Add doc to database
-				[spike_cluster_binarydoc,spike_cluster_binarydoc_filename] = ndi.file.temp_fid();
-				fwrite(spike_cluster_binarydoc,uint16(clusterids),'uint16');
-				fclose(spike_cluster_binarydoc);
-				spike_cluster_doc = spike_cluster_doc.add_file('spike_cluster.bin',spike_cluster_binarydoc_filename);
 				ndi_app_spikesorter_obj.session.database_add(spike_cluster_doc);
+				spike_cluster_binarydoc = ndi_app_spikesorter_obj.session.database_openbinarydoc(spike_cluster_doc);
+				spike_cluster_binarydoc.fwrite(uint16(clusterids),'uint16');
+				ndi_app_spikesorter_obj.session.database_closebinarydoc(spike_cluster_binarydoc);
 
 		end % spike_sort()
 
