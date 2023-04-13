@@ -22,7 +22,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_DOCUMENT)
 			%
 			% Creates an ndi.element object, either from a name and and associated ndi.probe object,
-			% or builds the ndi.element in memory from an ndi.document of type 'ndi_document_element'.
+			% or builds the ndi.element in memory from an ndi.document of type 'element'.
 			%
 			% If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
 			% element.
@@ -439,7 +439,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_ELEMENT_OBJ)
 			%
-			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
+			% Fill out the fields of an NDI_DOCUMENT_OBJ of type 'element'
 			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ and the 
 			% 'name', 'type', and 'reference' fields of its underlying NDI_PROBE_OBJ. 
 			% If EPOCHID is provided, then an EPOCHID field is filled out as well
@@ -449,7 +449,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%
 				ndi_document_obj = ndi_element_obj.load_element_doc();
 				if isempty(ndi_document_obj),
-					ndi_document_obj = ndi.document('ndi_document_element',...
+					ndi_document_obj = ndi.document('element',...
 						'element.ndi_element_class', class(ndi_element_obj), ...
 						'element.name',ndi_element_obj.name,...
 						'element.reference', ndi_element_obj.reference, ...
@@ -480,7 +480,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%
 			% SQ = SEARCHQUERY(NDI_ELEMENT_OBJ, [EPOCHID])
 			%
-			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'ndi_document_element'
+			% Returns a search query for the fields of an NDI_DOCUMENT_OBJ of type 'element'
 			% with the corresponding 'name' and 'type' fields of the element NDI_ELEMENT_OBJ.
 			%
 				sq = ndi.query(ndi_element_obj.session.searchquery());
