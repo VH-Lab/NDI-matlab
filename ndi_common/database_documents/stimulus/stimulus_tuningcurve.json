@@ -2,11 +2,11 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_tuningcurve.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_tuningcurve_schema.json",
-		"class_name":						"ndi_document_stimulus_stimulus_tuningcurve",
+		"class_name":						"stimulus_tuningcurve",
 		"property_list_name":				"tuning_curve",
 		"class_version":					1,
 		"superclasses": [ 
-			{ "definition":                 "$NDIDOCUMENTPATH\/ndi_document.json" }
+			{ "definition":                 "$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
 	"depends_on": [

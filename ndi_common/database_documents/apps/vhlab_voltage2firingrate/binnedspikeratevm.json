@@ -2,13 +2,13 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/binnedspikeratevm.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/binnedspikeratevm_schema.json",
-		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_binnedspikeratevm",
+		"class_name":						"binnedspikeratevm",
 		"property_list_name":					"binnedspikeratevm",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [

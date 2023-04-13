@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/markgarbage\/valid_interval.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/markgarbage\/valid_interval_schema.json",
-		"class_name":						"ndi_document_apps_markgarbage_valid_interval",
+		"class_name":						"valid_interval",
 		"property_list_name":					"valid_interval",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [

@@ -1,12 +1,12 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/daq\/ndi_document_filenavigator.json",
-		"validation":						"$NDISCHEMAPATH\/daq\/ndi_document_filenavigator_schema.json",
-		"class_name":						"ndi_document_filenavigator",
+		"definition":						"$NDIDOCUMENTPATH\/daq\/filenavigator.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/filenavigator_schema.json",
+		"class_name":						"filenavigator",
 		"property_list_name":					"filenavigator",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
 		]
         },
 	"filenavigator": {

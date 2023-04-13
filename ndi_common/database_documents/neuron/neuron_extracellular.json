@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/neuron\/neuron_extracellular.json",
 		"validation":						"$NDISCHEMAPATH\/neuron\/neuron_extracellular.json",
-		"class_name":						"ndi_document_neuron_extracellular",
+		"class_name":						"neuron_extracellular",
 		"property_list_name":					"neuron_extracellular",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [

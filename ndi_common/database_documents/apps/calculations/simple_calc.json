@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/calculations\/simple_calc.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/calculations\/simple_calc_schema.json",
-		"class_name":						"ndi_calculation_simple_simple_calc",
+		"class_name":						"simple_calc",
 		"property_list_name":					"simple",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [

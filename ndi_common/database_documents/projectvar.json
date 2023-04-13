@@ -1,12 +1,12 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/ndi_document_projectvar.json",
-		"validation":						"$NDISCHEMAPATH\/ndi_document_projectvar_schema.json",
-		"class_name":						"ndi_document_projectvar",
+		"definition":						"$NDIDOCUMENTPATH\/projectvar.json",
+		"validation":						"$NDISCHEMAPATH\/projectvar_schema.json",
+		"class_name":						"projectvar",
 		"property_list_name":					"projectvar",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
 		]
     },
 	"depends_on": [

@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/daqreader.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/daqreader_schema.json",
+		"class_name":						"daqreader",
+		"property_list_name":					"daqreader",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"daqreader": {
+		"ndi_daqreader_class":					"ndi_daqreader"
+	}
+}

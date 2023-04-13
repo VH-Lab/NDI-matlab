@@ -2,11 +2,11 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/control_stimulus_ids.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/control_stimulus_ids.json",
-		"class_name":						"ndi_document_stimulus_control_stimulus_ids",
+		"class_name":						"control_stimulus_ids",
 		"property_list_name":					"control_stimulus_ids",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"}
 		]
 	},
 	"depends_on": [

@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/subjectmeasurement.json",
+		"validation":						"$NDISCHEMAPATH\/subjectmeasurement_schema.json",
+		"class_name":						"subjectmeasurement",
+		"property_list_name":					"subjectmeasurement",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/subject.json" }
+		]
+        },
+	"subjectmeasurement": {
+		"measurement":						"",
+		"value":						"",
+		"datestamp":						""
+	}
+}
+

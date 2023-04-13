@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/syncrule.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/syncrule_schema.json",
+		"class_name":						"syncrule",
+		"property_list_name":					"syncrule",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"syncrule": {
+		"ndi_syncrule_class":					"ndi_syncrule",
+		"parameters":                           []
+	}
+}
+

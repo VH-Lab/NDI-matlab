@@ -2,11 +2,11 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning_schema.json",
-		"class_name":						"ndi_document_stimulus_vision_orientation_direction_tuning",
+		"class_name":						"orientation_direction_tuning",
                 "property_list_name":                                   "orientation_direction_tuning",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"}
 		]
 	},
 	"depends_on": [

@@ -1,12 +1,12 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/ndi_document_element.json",
-		"validation":						"$NDISCHEMAPATH\/ndi_document_element_schema.json",
-		"class_name":						"ndi_document_element",
+		"definition":						"$NDIDOCUMENTPATH\/element.json",
+		"validation":						"$NDISCHEMAPATH\/element_schema.json",
+		"class_name":						"element",
 		"property_list_name":					"element",
 		"class_version":					1,
 		"superclasses": [
-			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
 	"depends_on": [

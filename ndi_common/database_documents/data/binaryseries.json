@@ -1,12 +1,12 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/data\/ndi_document_binaryseries.json",
-		"validation":						"$NDISCHEMAPATH\/data\/ndi_document_binaryseries_schema.json",
-		"class_name":						"ndi_document_data_binaryseries",
+		"definition":						"$NDIDOCUMENTPATH\/data\/binaryseries_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/data\/binaryseries_parameters_schema.json",
+		"class_name":						"binaryseries_parameters",
 		"property_list_name":					"binary_series_parameters",
 		"class_version":					1,
 		"superclasses": [
-			{  "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" }
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
 		]
 	},
 	"binary_series_parameters" : {
