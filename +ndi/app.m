@@ -83,7 +83,7 @@ classdef app < ndi.documentservice
 			%
 			% NDI_DOCUMENT_OBJ = NEWDOCUMENT(NDI_APP_OBJ)
 			%
-			% Creates a blank ndi.document object of type 'ndi_document_app'. The 'app.name' field
+			% Creates a blank ndi.document object of type 'app'. The 'app.name' field
 			% is filled out with the name of NDI_APP_OBJ.VARAPPNAME().
 			%
 				[~,osversion] = detectOS;
@@ -106,7 +106,7 @@ classdef app < ndi.documentservice
 					'app.interpreter','MATLAB',...
 					'app.interpreter_version',matlab_version ...
 				};
-				ndi_document_obj = ndi_app_obj.session.newdocument('ndi_document_app', c{:});
+				ndi_document_obj = ndi_app_obj.session.newdocument('app', c{:});
 		end;
 	end; % methods
 end
