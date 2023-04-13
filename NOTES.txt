@@ -33,3 +33,15 @@ ndi.test.database.test_ndi_document:
 c) update ndi.document so merges file names
 
 
+
+
+
+To update other stuff:
+
+
+
+grep "ndi_document\." */*/*.m
+
+also grep "\'ndi_document_"
+
+

@@ -15,6 +15,8 @@ function tutorial_02_set()
 %   https://drive.google.com/file/d/1j7IAeMSrH64-qIDLB5EJYUofJSdinwuU/view?usp=sharing
 % and 'ts_exper2' is available at
 %   https://drive.google.com/file/d/1otNMkVgZ6KBIn2Y-W2oYVj2DgSOgV-xE/view?usp=sharing
+% 'ts_exper2' updated for the new database (2023-04) is here:
+%   https://drive.google.com/file/d/1D756b6_n6f0wrBqN4cJOuHOs_46YN_xy/view?usp=sharing
 %   
 %
 % Note that this function requires some user intervention.
