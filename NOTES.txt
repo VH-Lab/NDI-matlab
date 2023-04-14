@@ -24,9 +24,6 @@ Some notes:
 
 a)
 
-ndi.session:
-	line 337, documentation update  *
-
 ndi.app.spikeextractor: 
 	line 186 *
 	line 188 *
@@ -35,17 +32,7 @@ ndi.app.spikeextractor:
 ndi.app.spikesorter: 
 	line 231 *
 
-ndi.element.timeseries:  * 
-	line 102 (needs to write timepoints, datapoints before adding to database; element epoch schema needs to be updated for file)
-
-ndi.test.database.test_ndi_document:
-	line 48 * but will fail when schema validation turned on; would have
-		failed anyway, needs new document type
-
-
 c) update ndi.document so merges file names
-
-
 
 
 
