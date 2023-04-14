@@ -368,7 +368,257 @@ classdef document
 					ndi_document_obj2.document_properties.base.id);
 		end; % eq()
 
+		function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
+			% ADD_FILE - add a file to a ndi.document
+			%
+			% DID_DOCUMENT_OBJ = ADD_FILE(NDI_DOCUMENT_OBJ, NAME, LOCATION, ...)
+			%
+			% Adds a file's information to a ndi.document, for later ingestion into
+			% the database. NAME is the name of the file record for the document.
+			% LOCATION is a string that identifies the file or URL location on the
+			% internet.
+			%
+			% Note: NAME must not include any file separator characters on any
+			% platform (':','\','/') and may not have leading or trailing spaces.
+			% Leading or trailing spaces will be trimmed.
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ingest (1 or 0)          | 0/1 Should the file be copied into the local
+			%                          |   database by ndi.database.add_doc() ?
+			%                          |   If LOCATION does not begin with 'http://' or
+			%                          |   'https://', then ingest is 1 by default.
+			%                          |   If LOCATION begins with 'http(s)://', then
+			%                          |   ingest is 0 by default. Note that the file
+			%                          |   is only copied upon the later call to
+			%                          |   ndi.database.add_doc(), not at the call to
+			%                          |   ndi.document.add_file().
+			% delete_original (1 or 0) | 0/1 Should we delete the file after ingestion?
+			%                          |   If LOCATION does not begin with 'http://' or
+			%                          |   'https://', then delete_original is 1 by default.
+			%                          |   If LOCATION begins with 'http(s)://', then
+			%                          |   delete_original is 0 by default. Note that the
+			%                          |   file is only deleted upon the later call to
+			%                          |   ndi.database.add_doc(), not at the call to
+			%                          |   ndi.document.add_file().
+			% location_type ('file' or | Can be 'file' or 'url'. By default, it is set
+			%   'url')                 |   to 'file' if LOCATION does not begin with
+			%                          |   'http://' or 'https://', and 'url' otherwise.
+			%
+				ingest = NaN;
+				delete_original = NaN;
+				location_type = NaN;
+
+				did.datastructures.assign(varargin{:});
+				
+				% Step 1: make sure that the did_document_obj has a 'files' portion
+				% and that name is one of the listed files.
+
+				[b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
+				if ~b,
+					error(msg);
+				end;
+	
+				% Step 2: detect the default property values, if necessary, and build the structure
+				detected_location_type = 'file'; % default
+				location = strip(location);  % remove whitespace
+				if (startsWith(location,'https://','IgnoreCase',true) | startsWith(location,'http://','IgnoreCase',true)),
+					detected_location_type = 'url';
+				end;
+
+				if isnan(ingest), % assign default value
+					switch detected_location_type,
+						case 'url',
+							ingest = 0;
+						case 'file',
+							ingest = 1;
+						otherwise,
+							error(['Unknown detected_location_type ' detected_location_type '.']);
+					end;
+				end;
+				if isnan(delete_original), % assign default value
+					switch detected_location_type,
+						case 'url',
+							delete_original = 0;
+						case 'file',
+							delete_original = 1;
+						otherwise,
+							error(['Unknown detected_location_type ' detected_location_type '.']);
+					end;
+				end;
+				if isnan(location_type), % assign default value
+					location_type = detected_location_type;
+				end;
+
+				% Step 2b: build the structure to add
+				uid = did.ido.unique_id();
+				parameters = '';
+
+				location_here = did.datastructures.var2struct('delete_original','uid','location',...
+					'parameters','location_type','ingest');
+
+				% Step 3: Add the file to the list
+
+				if isempty(fI_index), 
+					file_info_here = struct('name',name,'locations',location_here);
+					if ~isfield(ndi_document_obj.document_properties.files,'file_info'),
+						ndi_document_obj.document_properties.files.file_info = file_info_here;
+					else,
+						fI_index = numel(ndi_document_obj.document_properties.files.file_info)+1;
+						ndi_document_obj.document_properties.files.file_info(fI_index) = file_info_here;
+					end;
+				else,
+					ndi_document_obj.document_properties.files.file_info(fI_index).locations(end+1) = location_here; 
+				end;
+				
+		end; % add_file
+
+		function ndi_document_obj = remove_file(ndi_document_obj, name, location, varargin)
+			% REMOVE_FILE - remove file information from a did.document
+			%
+			% DID_DOCUMENT_OBJ = REMOVE_FILE(NDI_DOCUMENT_OBJ, NAME, [LOCATION], ...)
+			%
+			% Removes the file information for a name or a name and location 
+			% combination from a did.document() object.
+			%
+			% If LOCATION is not specified or is empty, then all locations are removed.
+			%
+			% If NDI_DOCUMENT_OBJ does not have a file NAME in its file_list, then an erorr is
+			% generated. 
+			%
+			% This function accepts name/value pairs that alter its default behavior:
+			% Parameter (default)      | Description
+			% -----------------------------------------------------------------
+			% ErrorIfNoFileInfo (0)    | 0/1 If a name is specified and the
+			%                          |   file info is already empty, should we
+			%                          |   produce an error?
+
+				if nargin<3,
+					location = [];
+				end;
+
+				ErrorIfNoFileInfo = 0;
+				did.datastructures.assign(varargin{:});
+				
+				[b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
+				if ~b,
+					error(msg);
+				end;
+
+				if isempty(fI_index),
+					if ErrorIfNoFileInfo,
+						error(['No file_info for name ' name ' .']);
+					end;
+				end;
+
+				if isempty(location),
+					ndi_document_obj.document_properties.files.file_info(fI_index) = [];
+					return;
+				end;
+
+				location_match_index = find(strcmpi(location,{ndi_document_obj.document_properties.files.file_info(fI_index).locations.location}));
+
+				if isempty(location_match_index),
+					if ErrorIfNoFileInfo,
+						error(['No match found for file ' name ' with location ' location '.']);
+					end;
+				else,
+					ndi_document_obj.document_properties.files.file_info(fI_index).locations = ...
+						ndi_document_obj.document_properties.files.file_info(fI_index).locations([1:location_match_index-1 location_match_index+1:end]);
+				end;
+
+		end; % remove_file
+
+		function [b, msg, fI_index] = is_in_file_list(ndi_document_obj, name)
+			% IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
+			%
+			% [B, MSG, FI_INDEX] = IS_IN_FILE_LIST(NDI_DOCUMENT_OBJ, NAME)
+			%
+			% Is the file NAME a valid named binary file for the ndi.document
+			% NDI_DOCUMENT_OBJ? If so, B is 1; else, B is 0.
+			%
+			% A name is a valid name if it appears in NDI_DOCUMENT_OBJ....
+			% document_properties.files.file_list or if it is a numbered
+			% file with an entry in document_properties.files.file_list
+			% as 'filename.ext_#'. (For example, 'filename.ext_1' would
+			% be valid if 'filename.ext_# is in the file_list.)
+			%
+			% If the file NAME is not valid, a reason is returned in MSG.
+			%
+			% If it is a valid file NAME, then the index value of NAME
+			% in NDI_DOCUMENT_OBJ.DOCUMENT_PROPERTIES.FILES.FILE_INFO is also
+			% returned.
+			% 
+				b = 1;
+				msg = '';
+				fI_index = [];
+
+				% Step 1: does this did.document have 'files' at all?
+
+				if ~isfield(ndi_document_obj.document_properties,'files'),
+					b = 0;
+					msg = 'This type of document does not accept files; it has no ''files'' field';
+					return;
+				end;
+
+				% Step 2: is it a valid filename for this document? It must appear in files.file_list
+				%   or be a proper numbered file if files.file_list{i} has has the form 'filename.ext_#'.
+
+				% Step 2a: see if name ends in '_#', where # is a non-negative integer.
+				
+				search_name = name;
+				ends_with_number = 0; % assume not at first
+				number = NaN;
+				underscores = find(name=='_');
+				if ~isempty(underscores),
+					n = str2num(name(underscores(end)+1:end));
+					if ~isempty(n), % we have a number
+						number = n;
+						ends_with_number = 1;
+						search_name = [name(1:underscores(end)) '#'];
+					end;
+				end;
+
+				% Step 2b: now we have the name to search for; make sure it is in the file list
+				
+				I = find(strcmpi(search_name,ndi_document_obj.document_properties.files.file_list));
+				if isempty(I),
+					b = 0;
+					msg = ['No such file ' name ' in file_list of ndi.document; file must match an expected name.'];
+					return;
+				end;
+
+				% Step 3: now, find which file_info corresponds to search_name, if any
+				
+				if isfield(ndi_document_obj.document_properties.files,'file_info'),
+					fI_index = find(strcmpi(name,{ndi_document_obj.document_properties.files.file_info.name}));
+				end;
+		end; % is_in_file_list() 
+
+		function ndi_document_obj = reset_file_info(did_document_obj)
+			% RESET_FILE_INFO - reset the file information parameters for a new did.document
+			%
+			% NDI_DOCUMENT_OBJ = RESET_FILE_INFO(NDI_DOCUMENT_OBJ)
+			%
+			% Reset (make empty) all file info structures for a new did.document object.
+			%
+			% Sets document_properties.files.file_info to an empty structure
+			%
+				
+				% First, check if we even have file info
+				if ~isfield(did_document_obj.document_properties,'files'), 
+					return;
+				end;
+
+				% Now, clear it out:
+				did_document_obj.document_properties.files.file_info = ...
+					did.datastructures.emptystruct('name','locations');
+
+		end; % reset_file_info()
+
 	end % methods
+
 
 	methods (Static)
 		function s = readblankdefinition(jsonfilelocationstring, s)

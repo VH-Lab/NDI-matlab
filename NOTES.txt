@@ -1,13 +1,26 @@
-Need to do these things to support new DID database:
 
-a) modify use of writing to binary files so the binary files are made before
+Where we are:
+
+a) modify schema so they conform to DID-database and use base instead of ndi_document
+b) modify ndi.document so it operates with base instead of ndi_document
+c) test the code to make sure all test cases pass
+
+
+What is next:
+
+a) make a new version of the dumbjsondb implementation that
+  1) stores the binary files somewhere else and handles the file copying on loading
+  2) allows the name of the binary file to be specified
+b) modify use of writing to binary files so the binary files are made before
    the documents are added to the database
-b) modify schema so they conform to DID-database and use base instead of ndi_document
-c) modify ndi.document so it operates with base instead of ndi_document
-d) modify ndi.database implementations so it uses did sql
-e) test the code to make sure all test cases pass
+c) test the code to make sure all test cases pass
 
-Where are 
+Then, finally:
+
+a) modify ndi.database implementations so it uses did did sql
+b) test the code to make sure all test cases pass
+
+Some notes:
 
 a)
 
