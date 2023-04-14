@@ -12,6 +12,11 @@ function [b,msg] = expell(to_delete_list)
 %
 
 b = 1;
+msg = '';
+
+if isempty(to_delete_list),
+    return;
+end;
 
 for i=1:numel(to_delete_list),
 	try,

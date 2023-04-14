@@ -16,6 +16,7 @@ function [b,msg] = ingest(source_filename_list, destination_filename_list, to_de
 %
 
 b = 1;
+msg = '';
 
 for i=1:numel(source_filename_list),
 	try,

@@ -64,7 +64,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 					end;
 					epochdoc = epochdoc{1};
 
-					f = E.database_openbinarydoc(epochdoc);
+					f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
 					[data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
 					E.database_closebinarydoc(f);
 					
@@ -102,12 +102,16 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 				if ndi_element_timeseries_obj.direct,
 					error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
 				end;
-				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1);
-					
-				E = ndi_element_timeseries_obj.session;
-				f = E.database_openbinarydoc(epochdoc);
-				vlt.file.custom_file_formats.vhsb_write(f,timepoints,datapoints,'use_filelock',0);
-				E.database_closebinarydoc(f);
+				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
+                ndi.globals;
+
+				fname = [ndi_globals.path.temppath filesep epochdoc.id() '.vhsb'];
+				vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
+                epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
+                if nargout<2,
+                    ndi_element_timeseries_obj.session.database_add(epochdoc);
+                end;
+
 		end; % addepoch()
 
 		function sr = samplerate(ndi_element_timeseries_obj, epoch)

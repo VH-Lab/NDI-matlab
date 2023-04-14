@@ -69,7 +69,7 @@ classdef database
 				ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters);
 		end % add()
 
-		function [ndi_document_obj, version] = read(ndi_database_obj, ndi_document_id, version )
+		function [ndi_document_obj] = read(ndi_database_obj, ndi_document_id)
 			% READ - read an ndi.document from an ndi.database at a given db path
 			%
 			% NDI_DOCUMENT_OBJ = READ(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, [VERSION]) 
@@ -80,17 +80,13 @@ classdef database
 			%
 			% If there is no ndi.document object with that ID, then empty is returned ([]).
 			%
-				if nargin<3,
-					[ndi_document_obj, version] = do_read(ndi_database_obj, ndi_document_id);
-				else,
-					[ndi_document_obj, version] = do_read(ndi_database_obj, ndi_document_id, version);
-				end
+				[ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id);
 		end % read()
 
-		function [ndi_binarydoc_obj, version] = openbinarydoc(ndi_database_obj, ndi_document_or_id, version)
+		function [ndi_binarydoc_obj] = openbinarydoc(ndi_database_obj, ndi_document_or_id, filename)
 			% OPENBINARYDOC - open and lock an ndi.database.binarydoc that corresponds to a document id
 			%
-			% [NDI_BINARYDOC_OBJ, VERSION] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, [VERSION])
+			% [NDI_BINARYDOC_OBJ] = OPENBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, FILENAME])
 			%
 			% Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
 			% the requested version (the latest version is used if the argument is omitted).
@@ -105,12 +101,8 @@ classdef database
 				else,
 					ndi_document_id = ndi_document_or_id;
 				end;
-				if nargin<3,
-					[ndi_document_obj,version] = ndi_database_obj.read(ndi_document_id);
-				else,
-					[ndi_document_obj,version] = ndi_database_obj.read(ndi_document_id, version);
-				end;
-				ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, version);
+				[ndi_document_obj] = ndi_database_obj.read(ndi_document_id);
+				ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, filename);
 		end; % openbinarydoc
 
 		function [ndi_binarydoc_obj] = closebinarydoc(ndi_database_obj, ndi_binarydoc_obj)
@@ -124,18 +116,15 @@ classdef database
 				ndi_binarydoc_obj = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj);
 		end; % closebinarydoc
 
-		function ndi_database_obj = remove(ndi_database_obj, ndi_document_id, versions)
+		function ndi_database_obj = remove(ndi_database_obj, ndi_document_id)
 			% REMOVE - remove a document from an ndi.database
 			%
 			% NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID) 
 			%     or
-			% NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT_ID, VERSIONS)
-			%     or 
 			% NDI_DATABASE_OBJ = REMOVE(NDI_DATABASE_OBJ, NDI_DOCUMENT) 
 			%
 			% Removes the ndi.document object with the 'document unique reference' equal
-			% to NDI_DOCUMENT_OBJ_ID.  If VERSIONS is specified, then only the versions that match
-			% the entries in VERSIONS are removed.
+			% to NDI_DOCUMENT_OBJ_ID. 
 			%
 			% If an ndi.document is passed, then the NDI_DOCUMENT_ID is extracted using
 			% ndi.document/DOC_UNIQUE_ID. If a cell array of ndi.document is passed instead, then
@@ -160,11 +149,7 @@ classdef database
 				end;
 
 				for i=1:numel(ndi_document_id_list),
-					if nargin<3,
-						do_remove(ndi_database_obj, ndi_document_id_list{i});
-					else,
-						do_remove(ndi_database_obj, ndi_document_id{i}, versions);
-					end;
+					do_remove(ndi_database_obj, ndi_document_id_list{i});
 				end;
 		end % remove()
 
@@ -204,10 +189,10 @@ classdef database
 				end;
 		end % clear
 
-		function [ndi_document_objs,versions] = search(ndi_database_obj, searchparams)
+		function [ndi_document_objs] = search(ndi_database_obj, searchparams)
 			% SEARCH - search for an ndi.document from an ndi.database
 			%
-			% [DOCUMENT_OBJS,VERSIONS] = SEARCH(NDI_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
+			% [DOCUMENT_OBJS] = SEARCH(NDI_DATABASE_OBJ, {'PARAM1', VALUE1, 'PARAM2', VALUE2, ... })
 			%
 			% Searches metadata parameters PARAM1, PARAM2, etc of NDS_DOCUMENT entries within an NDI_DATABASE_OBJ.
 			% If VALUEN is a string, then a regular expression is evaluated to determine the match. If VALUEN is not
@@ -215,11 +200,10 @@ classdef database
 			% If PARAMN1 begins with a dash, then VALUEN indicates the value of one of these special parameters:
 			%
 			% This function returns a cell array of ndi.document objects. If no documents match the
-			% query, then an empty cell array ({}) is returned. An array VERSIONS contains the document version of
-			% of each ndi.document.
+			% query, then an empty cell array ({}) is returned.  
 			% 
 				searchOptions = {};
-				[ndi_document_objs, versions] = ndi_database_obj.do_search(searchOptions,searchparams);
+				[ndi_document_objs] = ndi_database_obj.do_search(searchOptions,searchparams);
 		end % search()
 
 	end % methods ndi.database
@@ -227,13 +211,13 @@ classdef database
 	methods (Access=protected)
 		function ndi_database_obj = do_add(ndi_database_obj, ndi_document_obj, add_parameters)
 		end % do_add
-		function [ndi_document_obj, version] = do_read(ndi_database_obj, ndi_document_id, version);
+		function [ndi_document_obj] = do_read(ndi_database_obj, ndi_document_id);
 		end % do_read
-		function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id, versions)
+		function ndi_document_obj = do_remove(ndi_database_obj, ndi_document_id)
 		end % do_remove
-		function [ndi_document_objs,versions] = do_search(ndi_database_obj, searchoptions, searchparams) 
+		function [ndi_document_objs] = do_search(ndi_database_obj, searchoptions, searchparams) 
 		end % do_search()
-		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_database_obj, ndi_document_id, version) 
+		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_database_obj, ndi_document_id) 
 		end % do_openbinarydoc()
 		function [ndi_binarydoc_obj] = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj) 
 		end % do_closebinarydoc()

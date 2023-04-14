@@ -302,10 +302,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			%                     of the probe
 			%   T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
 			%                     the probe, in units of the epock clock
-			%   ADD_TO_DB:     0/1 Should we actually add the epoch document to the database? Default 1.
+			%   ADD_TO_DB:     0/1 Should we actually add the epoch document to the database? Default 0.
 			%   
 				if nargin < 5,
-					add_to_db = 1;
+					add_to_db = 0;
 				end;
 				epochdoc = [];
 				if ndi_element_obj.direct,

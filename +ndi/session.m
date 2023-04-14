@@ -122,7 +122,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 						ndi_session_obj.database_rm(docs); % database_rm can process single or a cell list of ndi_document_obj(s)
 					end;
 				else
-					error(['No daqsystem named ' dev{j}.name ' found.']);
+					error(['No daqsystem named ' dev.name ' found.']);
 				end;
 		end; % daqsystem_rm()
 
@@ -335,10 +335,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				ndi_session_obj.database.clear(areyousure);
 		end; % database_clear()
         
-		function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id)
+		function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
 			% DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
 			%
-			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID)
+			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
 			%
 			%  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
 			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
@@ -347,7 +347,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% 
 			%  Note that this NDI_BINARYDOC_OBJ must be closed with ndi.session/CLOSEBINARYDOC.
 			% 
-				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id);
+				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
