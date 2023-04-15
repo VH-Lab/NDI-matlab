@@ -161,10 +161,13 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 							+ ndi_app_spikeextractor_obj.newdocument();
 					spikes_doc = spikes_doc.set_dependency_value('extraction_parameters_id',extraction_doc.id());
 					spikes_doc = spikes_doc.set_dependency_value('element_id',ndi_timeseries_obj.id());
-					[spikewaves_binarydoc,spikewaves_binarydoc_fname] = ndi.file.temp_fid();
-					[spiketimes_binarydoc,spiketimes_binarydoc_fname] = ndi.file.temp_fid();
+					[spikewaves_binarydoc,spikewaves_binarydoc_filename] = ndi.file.temp_fid();
+					[spiketimes_binarydoc,spiketimes_binarydoc_filename] = ndi.file.temp_fid();
 					spikes_doc = spikes_doc.add_file('spikewaves.vsw',spikewaves_binarydoc_filename);
 					spikes_doc = spikes_doc.add_file('spiketimes.bin',spiketimes_binarydoc_filename);
+						%convert to fileobj
+					spikewaves_binarydoc = vlt.file.fileobj('permission','w','fullpathfilename',spikewaves_binarydoc_filename,...
+						'machineformat','l','fid',spikewaves_binarydoc);
 
 					% add header to spikes_doc
 					fileparameters.numchannels = size(data_example,2);
@@ -175,7 +178,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 					fileparameters.comment = epoch_string; %epoch 
 					fileparameters.samplingrate = double(sample_rate);
 
-					vlt.file.custom_file_formats.newvhlspikewaveformfile(spikewaves_binarydoc, fileparameters); 
+					vlt.file.custom_file_formats.newvhlspikewaveformfile(spikewaves_binarydoc_filename, fileparameters); 
 
 					epochtic = tic; % Timer variable to measure duration of epoch extraction
 					ndi_globals.log.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
@@ -257,14 +260,14 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 					  
 						% Store epoch spike times in file
 						center_time_in_samples = spike_sample_selection(round(numel(spike_sample_selection)/2));
-						spiketimes_binarydoc.fwrite(ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs(:)-sampleshifts(:)+center_time_in_samples),'float32');
+						fwrite(spiketimes_binarydoc,ndi_timeseries_obj.samples2times(epoch{n},read_start_sample-1+locs(:)-sampleshifts(:)+center_time_in_samples),'float32');
 						read_start_sample = round(read_start_sample + ...
 								extraction_doc.document_properties.spike_extraction_parameters.read_time * sample_rate - ...
 								extraction_doc.document_properties.spike_extraction_parameters.overlap * sample_rate);
 					end % while ~endReached
 
-					fclose(spikewaves_binarydoc);
 					fclose(spiketimes_binarydoc);
+					fclose(spikewaves_binarydoc);
 
 					ndi_app_spikeextractor_obj.session.database_add(spikes_doc);
 
@@ -422,11 +425,11 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 						if numel(spikewaves_doc)==1,
 							spikewaves_doc = spikewaves_doc{1};
-							spikewaves_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikewaves_doc);
+							spikewaves_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikewaves_doc,'spikewaves.vsw');
 							[waveforms,waveparameters] = vlt.file.custom_file_formats.readvhlspikewaveformfile(spikewaves_binarydoc);
 							waveparameters.samplerate = waveparameters.samplingrate;
 							ndi_app_spikeextractor_obj.session.database_closebinarydoc(spikewaves_binarydoc);
-							spiketimes_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spiketimes_doc);
+							spiketimes_binarydoc = ndi_app_spikeextractor_obj.session.database_openbinarydoc(spikewaves_doc,'spiketimes.bin');
 							times = fread(spiketimes_binarydoc,Inf,'float32');
 							ndi_app_spikeextractor_obj.session.database_closebinarydoc(spiketimes_binarydoc);
 						elseif numel(spikewaves_doc)>1,

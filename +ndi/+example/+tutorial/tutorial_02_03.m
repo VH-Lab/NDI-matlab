@@ -79,7 +79,7 @@ disp(['Code block 2.3.2.2:']);
 % now let's take a look at what we got for the first probe, first epoch
 epoch_id = 't00001';
 
-[spikes,waveparameters,spikewaves_doc] = se.loaddata_appdoc('spikewaves',p{1},epoch_id,my_extraction_name{1});
+[spikes,waveparameters,spiketimes,spikewaves_doc] = se.loaddata_appdoc('spikewaves',p{1},epoch_id,my_extraction_name{1});
 
 % let's plot these waveforms
 
@@ -98,8 +98,6 @@ ylabel('Voltage');
 box off;
 
 % We can see how we did by plotting the spike times back with the raw data:
-
-[spiketimes,spiketimes_doc] = se.loaddata_appdoc('spiketimes',p{1},epoch_id,my_extraction_name{1});
 
 [d,t] = readtimeseries(p{1},epoch_id,-Inf,Inf);
 figure(102);
