@@ -323,7 +323,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					end;
 					epochdoc = E.newdocument('element_epoch', ...
 						'element_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
-						'element_epoch.t0_t1', t0_t1, 'epochid',epochid);
+						'element_epoch.t0_t1', t0_t1, 'epochid.epochid',epochid);
 					epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
 					if add_to_db,
 						E.database_add(epochdoc);
@@ -352,7 +352,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					if isfield(potential_epochdocs{i}.document_properties,'element_epoch');
 						clear newet;
 						newet.epoch_number = i;
-						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid;
+						newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
 						newet.epochprobemap = '';
 						newet.epoch_clock = {ndi.time.clocktype(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock)};
 						newet.t0_t1 = {potential_epochdocs{i}.document_properties.element_epoch.t0_t1};
@@ -490,7 +490,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				sq = sq & ndi.query('element.reference','exact_number',ndi_element_obj.reference',''); 
 
 				if nargin>1,
-					sq = sq & ndi.query('epochid','exact_string',epochid,'');
+					sq = sq & ndi.query('epochid.epochid','exact_string',epochid,'');
 				end;
 				
 		end; % searchquery()

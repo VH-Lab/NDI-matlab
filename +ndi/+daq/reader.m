@@ -135,7 +135,7 @@ classdef reader < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.daq.reader object. 
 			% 
-				sq = {'base.id', ndi_daqreader_obj.id() };
+				sq = ndi.query('base.id','exact_string', ndi_daqreader_obj.id(), '');
 		end; % searchquery()
 
 	end % methods

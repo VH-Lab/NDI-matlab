@@ -103,9 +103,9 @@ stim_pres_doc{1}.document_properties.document_class.superclasses(3)
 disp(['Code block 2.5.3.1:']);
 
 % search for document classes that contain the string 'stim'
-q_stim = ndi.query('document_class.class_name','contains_string','stim',''); 
+q_stim = ndi.query('base.id','hasfield','',''); 
 stim_docs = S.database_search(q_stim)
-  % returns 35 matches for me
+  % returns 113 matches for me
 
 % now suppose we also want to search for documents that were made by 
 % our app ndi_app_stimulus_decoder:

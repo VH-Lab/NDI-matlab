@@ -22,6 +22,8 @@ classdef document
 
 				if isstruct(document_type),
 					document_properties = document_type;
+				elseif isa(document_type,'did.document'),
+					document_properties = document_type.document_properties; % directly compatible
 				else,  % create blank from definitions
 					document_properties = ndi.document.readblankdefinition(document_type);
 					ndiido = ndi.ido();

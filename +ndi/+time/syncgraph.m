@@ -565,8 +565,8 @@ classdef syncgraph < ndi.ido
 			%
 			% Creates a search query for the ndi.time.syncgraph object.
 			%
-				sq = {'base.id', ndi_syncgraph_obj.id() , ...
-					'base.session_id', ndi_syncgraph_obj.session.id() };
+				sq = ndi.query({'base.id', ndi_syncgraph_obj.id() , ...
+					'base.session_id', ndi_syncgraph_obj.session.id() });
 		end; % searchquery()
 
 

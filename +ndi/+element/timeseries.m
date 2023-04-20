@@ -55,12 +55,16 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 
 					element_doc = ndi_element_timeseries_obj.load_element_doc();
 					sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
-						ndi.query('','isa','element_epoch.json','') & ...
-						ndi.query('epochid','exact_string',epoch_timeref.epoch,'');
+						ndi.query('','isa','element_epoch','') & ...
+						ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_element_timeseries_obj.session;
 					epochdoc = E.database_search(sq);
-					if numel(epochdoc)~=1,
-						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch ', or found too many.']);
+					if numel(epochdoc)==0,
+                        keyboard
+						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
+					end;
+					if numel(epochdoc)>1,
+						error(['Found too many epochdoc for epoch ' epoch_timeref.epoch '.']);
 					end;
 					epochdoc = epochdoc{1};
 

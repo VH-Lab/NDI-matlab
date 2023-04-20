@@ -10,7 +10,7 @@ Dmissing = ndi.database.fun.finddocs.missing.dependencies(E);
 Dall = E.database_search({'document_class.class_name','(.*)'});
 Dall2 = E.database_search({'base.id','(.*)'}); 
 
-sq_stim = ndi.query('','isa','stimulus_presentation.json','');
+sq_stim = ndi.query('','isa','stimulus_presentation','');
 stim_doc = E.database_search(sq_stim);
 if ~isempty(stim_doc),
 	d_dep = ndi.database.fun.findalldependencies(E,[],stim_doc{1});

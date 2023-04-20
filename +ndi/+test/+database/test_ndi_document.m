@@ -74,6 +74,10 @@ disp('About to read stored data: ');
 data = double(binarydoc.fread(10,'char'))',
 binarydoc = E.database_closebinarydoc(binarydoc);
 
+if ~vlt.data.eqlen(0:9,data),
+    error(['Data does not match.']);
+end;
+
 % remove the document
 
 doc = E.database_search(ndi.query('','isa','demoNDI',''));

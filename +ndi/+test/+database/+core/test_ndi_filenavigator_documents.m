@@ -24,7 +24,7 @@ function test_ndi_filenavigator_documents(dirname)
 	fn{2} = ndi.file.navigator.epochdir(E, '.*\.rhd\>');
 
 	%Delete any demo ndi.document stored in the session
-	doc = E.database_search(ndi.query('','isa','filenavigator.json',''));
+	doc = E.database_search(ndi.query('','isa','filenavigator',''));
 	E.database_rm(doc);
 
 	% Step a)

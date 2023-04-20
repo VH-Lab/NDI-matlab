@@ -63,7 +63,6 @@ E.database_add(doc);
   % Now let's print some statistics
 
 disp(['The channels we have on this device are the following:']);
-
 disp ( struct2table(getchannels(dev1)) );
 
 sr_d = samplerate(dev1,1,{'digital_in'},1);

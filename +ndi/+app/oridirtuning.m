@@ -35,7 +35,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				E = ndi_app_oridirtuning_obj.session;
 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
+				q_rdoc = ndi.query('','isa','stimulus_response_scalar','');
 				rdoc = E.database_search(q_rdoc&q_relement);
 
 				for r=1:numel(rdoc),
@@ -69,7 +69,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					independent_label = {'direction'};
 					constraint = struct('field','sFrequency','operation','hasfield','param1','','param2','');
 					tuning_doc = rapp.tuning_curve(rdoc,'independent_parameter',independent_parameter,...
-						'independent_label',independent_label,'constraint',constraint);
+						'independent_label',independent_label,'constraint',constraint,'do_Add',0);
 					tuning_doc = tuning_doc.set_dependency_value('element_id',ndi_element_obj.id());
 					tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',rdoc.id());
 					if do_add == 1,
@@ -86,14 +86,14 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				E = ndi_app_oridirtuning_obj.session;
                 
 				q_relement = ndi.query('depends_on','depends_on','element_id',ndi_element_obj.id());
-				q_rdoc = ndi.query('','isa','stimulus_response_scalar.json','');
+				q_rdoc = ndi.query('','isa','stimulus_response_scalar','');
 				rdoc = E.database_search(q_rdoc&q_relement);
 
 
 				for r=1:numel(rdoc),
 					if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
 						% find the tuning curve doc
-						q_tdoc = ndi.query('','isa','stimulus_tuningcurve.json','');
+						q_tdoc = ndi.query('','isa','stimulus_tuningcurve','');
 						q_tdocrdoc = ndi.query('','depends_on','stimulus_response_scalar_id',rdoc{r}.id());
 						tdoc = E.database_search(q_tdoc&q_tdocrdoc&q_relement);
 						for t=1:numel(tdoc),

@@ -50,7 +50,7 @@ classdef decoder < ndi.app
 
 				sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
 				sq_e = ndi.query(E.searchquery());
-				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
+				sq_stim = ndi.query('','isa','stimulus_presentation',''); % presentation
 
 				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
 
@@ -92,9 +92,9 @@ classdef decoder < ndi.app
 					stimulus_presentation = struct('presentation_order', data.stimid,...
 						'presentation_time', presentation_time, ...
 						'stimuli', mystim);
-					nd = E.newdocument('stimulus/stimulus_presentation.json',...
+					nd = E.newdocument('stimulus/stimulus_presentation',...
 						'stimulus_presentation', stimulus_presentation, ...
-						'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+						'epochid.epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
 					newdocs{end+1} = nd;
 				end;

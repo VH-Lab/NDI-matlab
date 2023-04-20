@@ -191,7 +191,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.time.syncgraph object.
 			%
-				sq = {'base.id', ndi_syncrule_obj.id() };
+				sq = ndi.query({'base.id', ndi_syncrule_obj.id() });
 		end; % searchquery()
 
 	end % methods

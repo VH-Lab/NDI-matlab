@@ -51,7 +51,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 					for i=1:numel(D),
 						metadatadocs{i} = session.database_search(ndi.query('base.id','exact_string',D{i},''));
 						if numel(metadatadocs{i})~=1,
-							error(['Could ont find daqmetadatareader document with id ' D{i} '.']);
+							error(['Could not find daqmetadatareader document with id ' D{i} '.']);
 						end;
 						metadatadocs{i} = metadatadocs{i}{1};
 						thedaqmetadatareader{i} = ndi.database.fun.ndi_document2ndi_object(metadatadocs{i},session);
@@ -410,7 +410,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			
 				ndi_document_obj_set{1} = ndi_daqsystem_obj.filenavigator.newdocument();
 				ndi_document_obj_set{2} = ndi_daqsystem_obj.daqreader.newdocument();
-				ndi_document_obj_set{3} = ndi.document('daq/daqsystem.json',...
+				ndi_document_obj_set{3} = ndi.document('daq/daqsystem',...
 					'daqsystem.ndi_daqsystem_class', class(ndi_daqsystem_obj),...
 					'base.id', ndi_daqsystem_obj.id(),...
 					'base.name', ndi_daqsystem_obj.name,...

@@ -592,8 +592,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			%
 			% Returns a database search query for this ndi.file.navigator object.
 			%
-				sq = {'base.id', ndi_filenavigator_obj.id(), ...
-					'base.session_id', ndi_filenavigator_obj.session.id() };
+				sq = ndi.query('base.id','exact_string',ndi_filenavigator_obj.id(),'') & ...
+					ndi.query('base.session_id', 'exact_string', ndi_filenavigator_obj.session.id(), '');
 		end; % 
 	end % methods
 

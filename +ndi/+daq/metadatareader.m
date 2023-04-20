@@ -31,6 +31,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 
 				if (nargin==2) & (isa(varargin{1},'ndi.session')) & (isa(varargin{2},'ndi.document')),
+                                	obj.identifier = varargin{2}.document_properties.base.id;
 					if isfield(varargin{2}.document_properties,'daqmetadatareader'),
 						tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
 					end;
@@ -120,7 +121,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.daq.reader object.
-				ndi_document_obj = ndi.document('daq/daqmetadatareader.json',...
+				ndi_document_obj = ndi.document('daq/daqmetadatareader',...
 					'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
 					'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
 					'base.id', ndi_daqmetadatareader_obj.id());
@@ -133,7 +134,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% Creates a search query for the ndi.daq.metadatareader object.
 			%
-				sq = {'base.id', ndi_daqmetadatareader_obj.id() };
+				sq = ndi.query('base.id','exact_string',ndi_daqmetadatareader_obj.id(),'');
 		end; % searchquery()
 
 	end; % methods
