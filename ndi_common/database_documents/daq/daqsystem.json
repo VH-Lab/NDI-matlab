@@ -15,6 +15,9 @@
 		},
 		{	"name": "daqreader_id",
 			"value": "" 
+		},
+		{	"name": "daqmetadatareader_id",
+			"value": ""
 		}
 	],
 	"daqsystem": {

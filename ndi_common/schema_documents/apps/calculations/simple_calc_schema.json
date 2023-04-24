@@ -1,0 +1,26 @@
+{
+	"classname": "simple_calc",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [
+		{ "name": "probe_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"simple_calc": [
+		{
+			"name": "input_parameters",
+			"type": "struct",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The input structure."
+		},
+		{
+			"name": "answer",
+			"type": "double",
+			"default_value": 1,
+			"parameters": [-Inf,Inf,0],
+			"queryable": 1,
+			"documentation": "The value for this example calculation."
+		}
+	]
+}

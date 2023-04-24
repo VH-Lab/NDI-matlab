@@ -10,7 +10,9 @@
 		]
         },
 	"daqmetadatareader": {
-		"ndi_daqmetadatareader_class":				"ndi_daqmetadatareader",
+		"ndi_daqmetadatareader_class":				"ndi.daq.metadatareader",
 		"tab_separated_file_parameter":				""
 	}
 }
+
+

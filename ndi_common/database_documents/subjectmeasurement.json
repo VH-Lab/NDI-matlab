@@ -6,10 +6,14 @@
 		"property_list_name":					"subjectmeasurement",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/subject.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
 		]
         },
+	"depends_on": [
+		{	"name": "subject_id",
+			"value": ""
+		}
+	],
 	"subjectmeasurement": {
 		"measurement":						"",
 		"value":						"",

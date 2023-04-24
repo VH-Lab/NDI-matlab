@@ -1,0 +1,63 @@
+{
+	"classname":	"app",
+	"superclasses": ["base"],
+	"app": [
+		{
+			"name": "name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Name of the application"
+		},
+		{
+			"name": "version",
+			"type": "string",
+			"default_value": "-",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The version of the app according to the app's own version schedule; often this is a Git commit identifier"
+		},
+		{
+			"name": "url",
+			"type" : "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The home page of the application"
+		},
+		{
+			"name": "os",
+			"type" : "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The operating system that ran the application"
+		},
+		{
+			"name": "os_version",
+			"type" : "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The operating system version"
+		},
+		{
+			"name": "interpreter",
+			"type" : "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "If applicable, the name of the interpreter (Matlab, python3, etc)"
+		},
+		{
+			"name": "interpreter_version",
+			"type" : "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "If applicable, the version of the interpreter"
+		}
+	]
+}
+

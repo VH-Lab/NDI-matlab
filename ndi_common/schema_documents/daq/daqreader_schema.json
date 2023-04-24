@@ -1,0 +1,16 @@
+{
+	"classname": "daqreader",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"file": [ ],
+	"daqreader": [
+		{
+			"name": "ndi_daqreader_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ndi.daqreader class type that is stored here."
+		}
+	]
+}

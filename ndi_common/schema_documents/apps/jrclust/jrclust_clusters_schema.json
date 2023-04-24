@@ -1,0 +1,18 @@
+{
+	"classname": "jrclust_clusters",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"jrclust_clusters": [
+		{
+			"name": "res_mat_MD5_checksum",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The checksum of the res.mat file."
+		}
+	]
+}

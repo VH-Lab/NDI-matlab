@@ -370,7 +370,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% object NDI_SESSION_OBJ. 
 			%
 				ndi_session_obj.syncgraph = ndi_session_obj.syncgraph.addrule(rule);
-				update_syncgraph_in_db(ndi_session_obj);
+				ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
 		end; % syncgraph_addrule
 
 		function ndi_session_obj = syncgraph_rmrule(ndi_session_obj, index)
@@ -382,7 +382,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% object NDI_SESSION_OBJ. 
 			%
 				ndi_session_obj.syncgraph = ndi_session_obj.syncgraph.removerule(index);
-				update_syncgraph_in_db(ndi_session_obj);
+				ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
 		end; % syncgraph_rmrule
 
 		%%%%%% PATH methods
@@ -568,7 +568,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 	end; % methods
 
 	methods (Access=protected)
-		function b = update_syncgraph_in_db(ndi_session_obj)
+		function syncgraph = update_syncgraph_in_db(ndi_session_obj)
 			% UPDATE_SYNCGRAPH_IN_DB - remove and re-install ndi.time.syncgraph methods in an ndi.database
 			%
 			% B = UPDATE_SYNCGRAPH_IN_DB(NDI_SESSION_OBJ)
@@ -581,6 +581,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
 				[syncgraph_doc,syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(ndi_session_obj, ...
 					ndi_session_obj.syncgraph.id());
+
+				newsyncgraph = ndi.time.syncgraph(ndi_session_obj);
+				for i=1:numel(ndi_session_obj.syncgraph.rules),
+					newsyncgraph = newsyncgraph.addrule(ndi_session_obj.syncgraph.rules{i});
+				end;
+
+				syncgraph = newsyncgraph;
+				ndi_session_obj.syncgraph = syncgraph;
 
 				newdocs = ndi_session_obj.syncgraph.newdocument(); % generate new documents
 

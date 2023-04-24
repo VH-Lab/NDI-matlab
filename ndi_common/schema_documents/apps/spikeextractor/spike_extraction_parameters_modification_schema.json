@@ -1,0 +1,132 @@
+{
+	"classname": "spike_extraction_parameters_modification",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [ 
+		{"name": "extraction_parameters_id", "mustbenotempty": 1},
+		{"name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"spike_extraction_parameters_modification": [
+		{
+			"name": "center_range_time",
+			"type": "double",
+			"default_value": 0.0005,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "The center range time in seconds."
+		},
+		{
+			"name": "overlap",
+			"type": "double",
+			"default_value": 0.5,
+			"parameters": [0,1000,0],
+			"queryable": 1,
+			"documentation": "The overlap between successive reads of the data (to make sure spikes at the edges of data reads are caught)."
+		},
+		{
+			"name": "read_time",
+			"type": "double",
+			"default_value": 30,
+			"parameters": [0.1,100000,0],
+			"queryable": 1,
+			"documentation": "The amount of data to read in at each time (use smaller amounts to ensure the computer can handle all of each read in memory)." 
+		},
+		{
+			"name": "refractory_time",
+			"type": "double",
+			"default_value": 0.001,
+			"parameters": [0.00000001,100000,0],
+			"queryable": 1,
+			"documentation": "The refractory time period that must be met in order to consider two waveforms to be separate events." 
+		},
+		{
+			"name": "spike_start_time",
+			"type": "double",
+			"default_value": -0.00045,
+			"parameters": [-10,10,0],
+			"queryable": 1,
+			"documentation": "The amount of time before each spike to read into each waveform (negative means before the peak)." 
+		},
+		{
+			"name": "spike_end_time",
+			"type": "double",
+			"default_value": 0.001,
+			"parameters": [-10,10,0],
+			"queryable": 1,
+			"documentation": "The amount of time after each spike to read into each waveform (positive means after the peak)." 
+		},
+		{
+			"name": "do_filter",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "0/1 Should we perform a filtering of the data?" 
+		},
+		{
+			"name": "filter_type",
+			"type": "string",
+			"default_value": "cheby1high",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Name of filter, such as cheby1high" 
+		},
+		{
+			"name": "filter_low",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,1000000,0],
+			"queryable": 1,
+			"documentation": "Low frequency cut off of the filter" 
+		},
+		{
+			"name": "filter_high",
+			"type": "double",
+			"default_value": 300,
+			"parameters": [0,1000000,0],
+			"queryable": 1,
+			"documentation": "High frequency cut off of the filter" 
+		},
+		{
+			"name": "filter_order",
+			"type": "integer",
+			"default_value": 4,
+			"parameters": [1,100000,0],
+			"queryable": 1,
+			"documentation": "Filter order" 
+		},
+		{
+			"name": "filter_ripple",
+			"type": "double",
+			"default_value": 0.8,
+			"parameters": [0,2,0],
+			"queryable": 1,
+			"documentation": "Filter ripple parameter" 
+		},
+		{
+			"name": "threshold_method",
+			"type": "string",
+			"default_value": "standard_deviation",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Threshold method" 
+		},
+		{
+			"name": "threshold_parameter",
+			"type": "double",
+			"default_value": -4,
+			"parameters": [-100000,100000,0],
+			"queryable": 1,
+			"documentation": "Threshold parameter" 
+		},
+		{
+			"name": "threshold_sign",
+			"type": "integer",
+			"default_value": -1,
+			"parameters": [-1,1,0],
+			"queryable": 1,
+			"documentation": "Threshold sign parameter (-1 negative, 1 positive, 0 either)" 
+		}
+	]
+}
+

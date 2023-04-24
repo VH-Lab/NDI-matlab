@@ -1,64 +1,39 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/apps\/spikesorter\/spike_clusters_schema.json",
-	"title": "ndi_document_apps_spikesorter_spikesorter_spike_clusters",
-	"type": "object",
-	"properties": {
-		"epoch_info": {
-			"type": "object",
-			"doc_default_value": "-",
-			"doc_data_type": "Structure with fields 'EpochStartSamples' and 'EpochNames'",
-			"doc_description": "EpochStartSamples is a vector that contains the sample number of the clusterid that begins each epoch. For example, if the second epoch begins with spike wave number 123, then EpochStartSamples(2) is 123."
+	"classname": "spike_clusters",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [
+		{ "name": "sorting_parameters_id", "mustbenotempty": 1},
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "extraction_parameters_id", "mustbenotempty": 1},
+		{ "name": "spikewaves_doc_id", "mustbenotempty": 0}
+	],
+	"file": [
+		{"name": "spike_cluster.bin", "mustbenotempty": 1}
+	],
+	"spike_clusters": [
+		{
+			"name": "epoch_info",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": ""
 		},
-		"clusterinfo": {
-			"type": "object",
-			"doc_default_value": "-",
-			"doc_data_type": "Structure with fields 'number', 'qualitylabel', 'number_of_spikes', 'meanshape', 'EpochStart', 'EpochStop'",
-			"doc_description": "The 'number' field is the cluster number (an integer in 1...N); the 'qualitylabel' field is a character string that is one of 'Unselected', 'Not useable', 'Multi-unit', 'Good', 'Excellent'; the 'number_of_spikes' field is the number of spikes assigned to this cluster; the 'meanshape' field is the mean of all waveforms assigned to this cluster -- this is a 2-dimensional matrix with size NumSamples x NumChannels; the 'EpochStart' field is the epoch ID / name where the cluster first appears; the 'EpochStop' field is the epoch ID / name where the cluster last appears"
+		{
+			"name": "clusterinfo",
+			"type": "structure",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "The structure with the cluster info"
 		},
-		"waveform_sample_times":  {
-			"type": "number",
-			"doc_default_value": [],
-			"doc_data_type": "Array of numbers",
-			"doc_description": "The sample times of each spike waveforms, after oversampling (interpolation)"
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "sorting_parameters_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},	
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "element_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},
-				{
-					"type": "object",
-					"properties" : {
-						"name" : {
-							"const" : "extraction_parameters_id"
-						},
-						"value": {
-							"type": "string"
-						}
-					}
-				}
-			]
+		{
+			"name": "waveform_sample_times",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,1],
+			"queryable": 1,
+			"documentation": "The sample times for the spike waveforms"
 		}
-	}
+	]
 }

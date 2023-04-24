@@ -1,0 +1,16 @@
+{
+	"classname": "epochid",
+	"superclasses":  [ "base"],
+	"depends_on": [
+	],
+	"epochid": [
+		{
+			"name": "epochid",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epochid to be stored"
+		}
+	]
+}

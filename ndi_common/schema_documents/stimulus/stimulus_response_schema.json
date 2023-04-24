@@ -1,69 +1,28 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/stimulus\/stimulus_response_schema.json",
-	"title": "ndi_document_stimulus_stimulus_response",
-	"type": "object",
-	"properties": {
-		"stimulator_epochid" : {
-			"type" : "array",
-			"item" : {
-				"type" : "string"
-			}
+	"classname": "stimulus_response",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "stimulator_id", "mustbenotempty": 1},
+		{ "name": "stimulus_presentation_id", "mustbenotempty": 1},
+		{ "name": "stimulus_control_id", "mustbenotempty": 1}
+	],
+	"stimulus_response": [
+		{
+			"name": "stimulator_epochid",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epochid of the stimulator."
 		},
-		"element_epochid" : {
-			"type" : "array",
-			"item" : {
-				"type" : "string"
-			}
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "element_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},	
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulator_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulus_presentation_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulus_control_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				}															
-			]
-		}		
-	}
+		{
+			"name": "element_epochid",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epochid of the element."
+		}
+	]
 }

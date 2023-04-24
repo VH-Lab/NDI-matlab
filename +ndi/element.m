@@ -323,7 +323,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					end;
 					epochdoc = E.newdocument('element_epoch', ...
 						'element_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
-						'element_epoch.t0_t1', t0_t1, 'epochid.epochid',epochid);
+						'element_epoch.t0_t1', vlt.data.colvec(t0_t1), 'epochid.epochid',epochid);
 					epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
 					if add_to_db,
 						E.database_add(epochdoc);

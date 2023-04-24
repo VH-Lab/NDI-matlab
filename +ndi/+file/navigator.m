@@ -577,7 +577,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				else,
 					filenavigator_structure.epochprobemap_fileparameters = '';
 				end;
-				filenavigator_structure.session_id = ndi_filenavigator_obj.session.id();
 				
 				ndi_document_obj = ndi.document('daq/filenavigator.json',...
 					'filenavigator',filenavigator_structure,...

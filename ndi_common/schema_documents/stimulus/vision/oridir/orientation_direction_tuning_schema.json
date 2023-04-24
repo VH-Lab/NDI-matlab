@@ -1,240 +1,53 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/stimulus\/vision\/oridir\/orientation_direction_tuning_schema.json",
-	"title": "orientation_direction_tuning",
-	"type": "object",
-	"properties": {
-		"properties" : {
-			"type" : "object",
-			"properties": {
-				"coordinates": {
-					"type" : "string"
-				},
-				"response_units" : {
-					"type" : "number"
-				},
-				"response_type" : {
-					"type" : "string"
-				}
-			}
+	"classname": "orientation_direction_tuning",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "stimulus_tuningcurve_id", "mustbenotempty": 1}
+	],
+	"file": [
+	],
+	"orientation_direction_tuning": [
+		{
+			"name": "properties",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Unit properties."
 		},
-		"tuning_curve" : {
-			"type" : "object",
-			"properties" : {
-				"direction": {
-					"type": "number"
-				},
-				"mean": {
-					"type": "number"
-				},
-				"stddev" : {
-					"type" : "number"
-				},
-				"stderr" : {
-					"type" : "number"
-				},
-				"individual" : {
-					"type" : "string"
-				},
-				"raw_individual" : {
-					"type" : "string"
-				},
-				"control_individual" : {
-					"type" : "string"
-				}
-			}
+		{
+			"name": "tuning_curve",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Tuning curve properties."
 		},
-		"significance" : {
-			"type" : "object",
-			"doc_default_value": "-",
-			"doc_data_type": "structure",
-			"doc_description": "Structure with information about the significance of response variation across stimuli",
-			"properties" : {
-				"visual_response_anova_p": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "P-value of ANOVA test across all stimuli and control stimuli; indicates if there is any evidence of a significant visual response"
-				},
-				"across_stimuli_anova_p" : {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "P-value of ANOVA test across all stimuli but excluding the blank; indicates if there is any evidence of a significant response variation across the stimuli"
-				}
-			}
+		{
+			"name": "significance",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Significance properties."
 		},
-		"vector" : {
-			"type" : "object",
-			"doc_default_value": "-",
-			"doc_data_type": "structure",
-			"doc_description": "Structure with information about vector analyses of orientation / direction data",
-			"properties" : {
-				"circular_variance": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "Circular variance: see [pubmed 12097515](https://pubmed.ncbi.nlm.nih.gov/12097515/)"
-				},
-				"direction_circular_variance": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "Circular variance in direction space: see [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},
-				"hotelling2test": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "P-value of Hotelling T2 test of whether the cloud of points determined by the trial-by-trial orientation vectors differs significantly from the point 0,0 (a test of significant orientation selectivity): see [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},
-				"orientation_preference": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The angle (in orientation space, [0,180)) of the mean response vector; this is a vector-based definition of orientation preference; see [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},				
-				"direction_preference": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The angle (in direction space, [0,360)) of the mean response vector; this is a vector-based definition of direction preference (which can be noisy); see [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},
-				"direction_hotelling2test": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "P-value of Hotelling T2 test of whether the cloud of points determined by the trial-by-trial orientation vectors differs significantly from the point 0,0 (a test of significant orientation selectivity): see [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},
-				"dot_direction_significance": {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "P-value of test of whether trial-by-trial vectors have a statistically signifant tendency to point in one of the two opposite directions defined by the preferred orientation; defined in [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				}
-			}
+		{
+			"name": "vector",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Vector orientation/direction tuning properties."
 		},
-		"fit" : {
-			"type" : "object", 
-			"doc_default_value": "-",
-			"doc_data_type": "structure",
-			"doc_description": "Structure with information about double gaussian fit analyses of orientation / direction data",
-			"properties" : {
-				"double_gaussian_parameters" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "1x5 float",
-					"doc_description": "Fit parameters of double gaussian fit: [offset Rp Op sigm Rn]; the fit function is R(theta) = offset + Rp*exp(-(angdiff(theta-OpP).^2))+Rn*exp(-(angdiff(theta-Op+180).^2)). See [pubmed 10627623](https://pubmed.ncbi.nlm.nih.gov/10627623/) and [pubmed 25147504](https://pubmed.ncbi.nlm.nih.gov/25147504/)"
-				},
-				"double_gaussian_fit_angles" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "1x360 float",
-					"doc_description": "Angle values for plotting the double gaussian direction fit"
-				},
-				"double_gaussian_fit_values" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "1x360 float",
-					"doc_description": "Fit response values for plotting the double gaussian direction fit"
-				},
-				"orientation_preferred_orthogonal_ratio" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred to orthogonal ratio"
-				},
-				"direction_preferred_null_ratio" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred to opposite ratio"
-				},
-				"orientation_preferred_orthogonal_ratio_rectified" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred to orthogonal ratio, where each response is rectified to be not less than 0"
-				},
-				"direction_preferred_null_ratio_rectified" : {
-					"type" : "array",
-					"items" : {
-						"type" : "number"
-					},
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred to null ratio, where each response is rectified to be not less than 0"
-				},
-				"orientation_angle_preference" : {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred orientation as determined by the double gaussian fit, in [0,180)"
-				},
-				"direction_angle_preference" : {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The preferred direction as determined by the double gaussian fit, in [0,360)"
-				},		
-				"hwhh" : {
-					"type" : "number",
-					"doc_default_value": "-",
-					"doc_data_type": "float",
-					"doc_description": "The half width at half height from the double gaussian fit, calculated as ln(4) * sigm, see [pubmed 10627623](https://pubmed.ncbi.nlm.nih.gov/10627623/"
-				}														
-			}
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "element_id"
-						},
-						"value" : {
-							"type" : "string"
-						},
-						"doc_default_value": "-",
-						"doc_data_type": "NDI document ID of an ndi_document_element object",
-						"doc_description": "The element from which the responses are derived"
-					}
-				},	
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulus_tuningcurve_id"
-						},
-						"value" : {
-							"type" : "string"
-						},
-						"doc_default_value": "-",
-						"doc_data_type": "NDI document ID of an ndi_document_stimulus_stimulus_tuningcurve object",
-						"doc_description": "The tuning curve from which the responses are derived"
-					}
-				}							
-			]
-		}		
-	}
+		{
+			"name": "fit",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Orientation/direction fit tuning properties."
+		}
+	]
 }
+

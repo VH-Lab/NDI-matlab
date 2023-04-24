@@ -7,8 +7,7 @@
 		"class_version":					1,
 		"superclasses": [
 			{  "definition":				"$NDIDOCUMENTPATH\/base.json" },
-			{  "definition":				"$NDIDOCUMENTPATH\/epochid.json" },
-			{  "definition":				"$NDIDOCUMENTPATH\/data\/binaryseries.json" }
+			{  "definition":				"$NDIDOCUMENTPATH\/epochid.json" }
 		]
 	},
 	"depends_on": [

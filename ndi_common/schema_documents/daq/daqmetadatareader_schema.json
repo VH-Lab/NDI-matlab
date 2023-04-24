@@ -1,0 +1,26 @@
+{
+	"classname": "daqmetadatareader",
+	"superclasses":  [ "base"],
+	"depends_on": [
+	],
+	"file": [
+	],
+	"daqmetadatareader": [
+		{
+			"name": "ndi_daqmetadatareader_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ndi class name of the ndi.daq.metadatareader being stored."
+		},
+		{
+			"name": "tab_separated_file_parameter",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A tab-separated file parameter for identifying the file in the epoch to be read"
+		}
+	]
+}

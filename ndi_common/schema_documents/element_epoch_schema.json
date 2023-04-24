@@ -1,0 +1,28 @@
+{
+	"classname": "element_epoch",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [
+		{"name": "epoch_binary_data.vhsb", "mustbenotempty": 1}
+	],
+	"element_epoch": [
+		{
+			"name": "epoch_clock",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epoch clock type of the epoch data."
+		},
+		{
+			"name": "t0_t1",
+			"type": "matrix",
+			"default_value": [0,0],
+			"parameters": [2,1],
+			"queryable": 1,
+			"documentation": "The beginning and end of the epoch, in epoch clock time units."
+		}
+	]
+}

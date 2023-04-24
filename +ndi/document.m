@@ -239,6 +239,9 @@ classdef document
 				notfound = 1;
 
 				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				if hasdependencies, 
+					hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
+				end;
 				d_struct = struct('name',dependency_name,'value',value);
 
 				if hasdependencies,
@@ -282,6 +285,9 @@ classdef document
 				notfound = 1;
 
 				hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
+				if hasdependencies, 
+					hasdependencies = numel(ndi_document_obj.document_properties.depends_on)>=1;
+				end;
 
 				if hasdependencies,
 					finished = 0;
@@ -310,7 +316,7 @@ classdef document
 			% Examines the 'depends_on' field (if it is present) for a given NDI_DOCUMENT_OBJ
 			% and adds a dependency name 'dependency_name_(n+1)', where n is the number of entries with
 			% the form 'depenency_name_i' that exist presently. If there is no dependency field with that, then
-			% an entry is added.
+			% an entry is added and i is 1.
 			%
 			% This function accepts name/value pairs that alter its default behavior:
 			% Parameter (default)      | Description

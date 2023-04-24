@@ -178,7 +178,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 
 				spike_clusters.epoch_info = epochinfo;
 				spike_clusters.clusterinfo = clusterinfo;
-				spike_clusters.waveform_sample_times = wavesamples;
+				spike_clusters.waveform_sample_times = vlt.data.colvec(wavesamples);
 				spike_cluster_doc = ndi_app_spikesorter_obj.session.newdocument('apps/spikesorter/spike_clusters', ...
 					'spike_clusters', spike_clusters) ...
 					+ ndi_app_spikesorter_obj.newdocument();
@@ -214,18 +214,26 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					extraction_parameters_name, sorting_parameters_name);
 
 				q_E = ndi.query(ndi_app_spikesorter_obj.session.searchquery());
-				q_t = q_E & ndi.query('','isa','element','') & ...
-					ndi.query('element.type','exact_string','spikes','') & ...
-					ndi.query('','depends_on','spike_clusters_id',spike_clusters_doc.id());
-				anyneurons = ndi_app_spikesorter_obj.session.database_search(q_t);
+				q_n = ndi.query('','isa','neuron_extracellular','') & ndi.query('','depends_on','spike_clusters_id',spike_clusters_doc.id());
+				anyneurons = ndi_app_spikesorter_obj.session.database_search(q_n);
 				if ~redo & ~isempty(anyneurons),
 					return; % we are done
 				elseif redo & ~isempty(anyneurons),
-					ndi_app_spikesorter_obj.session.database_rm(anyneurons);
+					for n=1:numel(anyneurons),
+						e_here = anyneurons{n}.dependency_value('element_id');
+						q_here = ndi.query('base.id','exact_string',e_here,'');
+						if n==1,
+							q_ne = q_here;
+						else,
+							q_ne = q_ne | q_here;
+						end;
+					end;
+					anyneuronelements = ndi_app_spikesorter_obj.session.database_search(q_ne);
+					ndi_app_spikesorter_obj.session.database_rm(anyneuronelements);
 				end;
 
-                [waveforms, waveformparams, spiketimes, epochinfo, extraction_params_doc, waveform_docs] = ...
-                    ndi_app_spikesorter_obj.loadwaveforms(ndi_timeseries_obj, extraction_parameters_name);
+				[waveforms, waveformparams, spiketimes, epochinfo, extraction_params_doc, waveform_docs] = ...
+					ndi_app_spikesorter_obj.loadwaveforms(ndi_timeseries_obj, extraction_parameters_name);
 				et = ndi_timeseries_obj.epochtable();
 
 				include = [];
@@ -239,7 +247,6 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				appstruct = ndidocapp.document_properties.app;
 				EpochStartStopSamples = [ epochinfo.EpochStartSamples numel(spiketimes)-1 ];
 
-				dependency = struct('name','spike_clusters_id', 'value', spike_clusters_doc.id());
 				for n=1:numel(include),
 					clusternum = include(n);
 					neuron_extracellular.number_of_samples_per_channel = size(clusterinfo(clusternum).meanshape,1);
@@ -266,9 +273,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					if value >0 & value <=4, % only add reasonable neurons
 						element_neuron = ndi.neuron(ndi_app_spikesorter_obj.session, ...
 							[ndi_timeseries_obj.name '_' num2str(clusternum)], ndi_timeseries_obj.reference, 'spikes', ...
-							ndi_timeseries_obj, 0, [], dependency);
-						neuron_doc = ndi.document('neuron/neuron_extracellular.json','neuron_extracellular',neuron_extracellular,'app',appstruct);
+							ndi_timeseries_obj, 0, []);
+						neuron_doc = ndi.document('neuron/neuron_extracellular.json','neuron_extracellular',neuron_extracellular,'app',appstruct,'base.session_id',ndi_app_spikesorter_obj.session.id());
 						neuron_doc = neuron_doc.set_dependency_value('element_id',element_neuron.id());
+						neuron_doc = neuron_doc.set_dependency_value('spike_clusters_id',spike_clusters_doc.id())
 						ndi_app_spikesorter_obj.session.database_add(neuron_doc);
 						epoch_start_index = find(strcmp(clusterinfo(clusternum).EpochStart, {et.epoch_id}));
 						epoch_stop_index = find(strcmp(clusterinfo(clusternum).EpochStop, {et.epoch_id}));

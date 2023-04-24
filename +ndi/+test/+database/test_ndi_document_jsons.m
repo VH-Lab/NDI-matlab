@@ -20,6 +20,7 @@ successes = {};
 failures = {};
 
 ndi.globals;
+error_msg = {};
 
 json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,{'.*\.json\>'});
 
@@ -34,6 +35,7 @@ for i=1:numel(json_docs),
 		mydoc = ndi.document(ndidoc);
 		successes{end+1} = ndidoc;
 	catch,
+        error_msg{end+1} = lasterr;
 		failures{end+1} = ndidoc;
 	end;
 end;
@@ -43,7 +45,8 @@ b = isempty(failures);
 if generate_error & ~b,
 	disp(['ndi.document definitions failed']);
 	failures'
-	error(['At least one ndi.document failed to be built from its definition.']);
+    error_msg'
+	error(['At least one ndi.document failed to be built from its definition:']);
 end;
 
 

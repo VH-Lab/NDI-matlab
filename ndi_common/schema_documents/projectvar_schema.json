@@ -1,0 +1,58 @@
+{
+	"classname": "projectvar",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"projectvar": [
+		{
+			"name": "project",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the project."
+		},
+		{
+			"name": "type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string that is free for the user to choose."
+		},
+		{
+			"name": "user",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string that is free for the user to choose."
+		},
+		{
+			"name": "lab",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string that is free for the user to choose that should reflect the lab where the work was done."
+		},
+		{
+			"name": "description",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string that is free for the user to choose that should describe the work that was done."
+		},
+		{
+			"name": "date",
+			"type": "timestamp",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A time stamp of the measurement."
+		}
+	]
+}

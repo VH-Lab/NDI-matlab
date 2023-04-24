@@ -1,0 +1,50 @@
+{
+	"classname": "element",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "underlying_element_id", "mustbenotempty": 0},
+		{ "name": "subject_id", "mustbenotempty": 1}
+	],
+	"element": [
+		{
+			"name": "ndi_element_class",
+			"type": "string",
+			"default_value": "ndi.element",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.element class that is stored."
+		},
+		{
+			"name": "name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of element. Elements are uniquely defined by a name, reference, and type."
+		},
+		{
+			"name": "reference",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [0,100000,0],
+			"queryable": 1,
+			"documentation": "The reference number of the element. Elements are uniquely defined by a name, reference, and type."
+		},
+		{
+			"name": "type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The type of the element. Common probe types are in probetype2object.json"
+		},
+		{
+			"name": "direct",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "Does this element directly feed data from an underlying element?"
+		}
+	]
+}

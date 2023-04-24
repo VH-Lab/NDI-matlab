@@ -97,7 +97,6 @@ classdef syncgraph < ndi.ido
 						error('Input not of type ndi.time.syncrule.');
 					end
 				end
-
 		end % addrule()
 
 		function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
@@ -597,7 +596,7 @@ classdef syncgraph < ndi.ido
 							syncgraph_doc_id '. Do not know what to do.']);
 				end;
 
-				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id');
+				rules_id_list = syncgraph_doc.dependency_value_n('syncrule_id','ErrorIfNotFound',0);
 				for i=1:numel(rules_id_list),
 					rules_doc = ndi_session_obj.database_search(ndi.query(...
 						'base.id','exact_string',rules_id_list{i},''));

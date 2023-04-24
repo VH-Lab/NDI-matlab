@@ -1,0 +1,56 @@
+{
+	"classname": "stimulus_response_scalar_parameters_basic",
+	"superclasses":  [ "base", "stimulus_response_scalar_parameters" ],
+	"depends_on": [
+	],
+	"stimulus_response_scalar_parameters_basic": [
+		{
+			"name": "temporalfreqfunc",
+			"type": "string",
+			"default_value": "ndi_stimulustemporalfrequency",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The function to determine temporal frequency of a stimulus."
+		},
+		{
+			"name": "freq_response",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [-10000,10000,1],
+			"queryable": 1,
+			"documentation": "The frequency response to analyze (0, 8, etc, units in Hz)"
+		},
+		{
+			"name": "prestimulus_time",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [-10000,10000,0,1],
+			"queryable": 1,
+			"documentation": "How long before the stimulus should we consider? Use negative numbers to indicate time before the stimulus (seconds)"
+		},
+		{
+			"name": "prestimulus_normalization",
+			"type": "double",
+			"default_value": 0,
+			"parameters": [0,3,0,1],
+			"queryable": 1,
+			"documentation": "What prestimulus normalization should we do? 0=none, 1=subtract, 2=fractional change, 3=divide"
+		},
+		{
+			"name": "isspike",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "0/1 Is this a spiking process that we are analyzing? 0=no, 1=yes."
+		},
+		{
+			"name": "spiketrain_dt",
+			"type": "double",
+			"default_value": 0.001,
+			"parameters": [0,1000,1],
+			"queryable": 1,
+			"documentation": "Spike train dt if it is a spiking process and if the spike analysis process is restricted to finding spikes in a time interval (use NaN for none). Units in seconds."
+		}
+	]
+}

@@ -93,3 +93,13 @@ ndi.fun.check_Matlab_toolboxes
 
  % run any warnings on various architectures
 ndi.fun.run_Linux_checks
+
+did.globals;
+if isempty(find(strcmp('$NDIDOCUMENTPATH',did_globals.path.definition_names))),
+    did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDIDOCUMENTPATH','$NDISCHEMAPATH'})
+    did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.documentpath ndi_globals.path.documentschemapath});
+end;
+%ndi_globals.path.documentpath = [ndi_globals.path.commonpath filesep 'database_documents'];
+%ndi_globals.path.documentschemapath = [ndi_globals.path.commonpath filesep 'schema_documents'];
+
+

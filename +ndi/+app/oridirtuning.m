@@ -42,7 +42,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 					if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
 						appdoc_struct.element_id = ndi_element_obj.id();
 						appdoc_struct.response_doc_id = rdoc{r}.id();
-						% call add_appdoc
+						% call add_appdoc'=
 						tuning_doc{end+1} = ndi_app_oridirtuning_obj.add_appdoc('stimulus_tuningcurve',appdoc_struct,docexistsaction,ndi_element_obj,rdoc{r});
 					end;
 				end;
@@ -135,13 +135,13 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
 				tuning_doc = tapp.tuningdoc_fixcellarrays(tuning_doc);
 
-				for i=1:numel(tuning_doc.document_properties.tuning_curve.individual_responses_real),
-					ind{i} = tuning_doc.document_properties.tuning_curve.individual_responses_real{i} + ...
-						sqrt(-1)*tuning_doc.document_properties.tuning_curve.individual_responses_imaginary{i};
+				for i=1:numel(tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_real),
+					ind{i} = tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_imaginary{i};
 					ind_real{i} = ind{i};
 					if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end;
-					control_ind{i} = tuning_doc.document_properties.tuning_curve.control_individual_responses_real{i} + ...
-						sqrt(-1)*tuning_doc.document_properties.tuning_curve.control_individual_responses_imaginary{i};
+					control_ind{i} = tuning_doc.document_properties.stimulus_tuningcurve.control_individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.stimulus_tuningcurve.control_individual_responses_imaginary{i};
 					control_ind_real{i} = control_ind{i};
 					if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end;
 					response_ind{i} = ind{i} - control_ind{i};
@@ -159,7 +159,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				[anova_across_stims, anova_across_stims_blank] = neural_response_significance(resp);
 
 				response.curve = ...
-					[ tuning_doc.document_properties.tuning_curve.independent_variable_value(:)' ; ...
+					[ tuning_doc.document_properties.stimulus_tuningcurve.independent_variable_value(:)' ; ...
 						response_mean ; ...
 						response_stddev ; ...
 						response_stderr; ];
@@ -169,10 +169,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				fi = vlt.neuro.vision.oridir.index.oridir_fitindexes(response);
 
 				properties.coordinates = 'compass';
-				properties.response_units = tuning_doc.document_properties.tuning_curve.response_units;
+				properties.response_units = tuning_doc.document_properties.stimulus_tuningcurve.response_units;
 				properties.response_type = stim_response_doc{1}.document_properties.stimulus_response_scalar.response_type;
 
-				tuning_curve = struct('direction', vlt.data.rowvec(tuning_doc.document_properties.tuning_curve.independent_variable_value), ...
+				tuning_curve = struct('direction', vlt.data.rowvec(tuning_doc.document_properties.stimulus_tuningcurve.independent_variable_value), ...
 					'mean', response_mean, ...
 					'stddev', response_stddev, ...
 					'stderr', response_stderr, ...

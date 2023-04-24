@@ -3,14 +3,14 @@
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikesorter\/spike_clusters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikesorter\/spike_clusters_schema.json",
 		"class_name":						"spike_clusters",
-		"property_list_name":				"spike_clusters",
+		"property_list_name":					"spike_clusters",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
 			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
-	"depends_on":[
+	"depends_on": [
 		{	
 			"name": "sorting_parameters_id",
 			"value": "" 
@@ -21,6 +21,10 @@
 		}, 
 		{
 			"name": "extraction_parameters_id",
+			"value": ""
+		},
+		{
+			"name": "spikewaves_doc_id",
 			"value": ""
 		}
 	],

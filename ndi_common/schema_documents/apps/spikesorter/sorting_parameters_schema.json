@@ -1,66 +1,56 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/apps\/spikesorter\/sorting_parameters_schema.json",
-	"title": "ndi_document_apps_spikesorter_sorting_parameters",
-	"type": "object",
-	"properties": {
-		"graphical_mode": {
-			"description": "0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes)",
-			"type": "number",
-			"doc_default_value": "1",
-			"doc_data_type": "Integer",
-			"doc_description": "0/1 Should we bring up the graphical user interface to let the user manually specify the clusters? (0=no, 1=yes)"
+	"classname": "sorting_parameters",
+	"superclasses":  [ "base", "app"],
+	"depends_on": [ ],
+	"file": [ ],
+	"sorting_parameters": [
+		{
+			"name": "graphical_mode",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "0/1 Should we use graphical/interactive methods?"
 		},
-		"num_pca_features": {
-			"description": "Number of principle component analysis features to use for sorting in automatic mode",
-			"type": "number",
-			"doc_default_value": "10",
-			"doc_data_type": "Integer",
-			"doc_description": "Number of principle component analysis features to use for sorting in automatic mode"
+		{
+			"name": "num_pca_features",
+			"type": "integer",
+			"default_value": 10,
+			"parameters": [1,10000,0],
+			"queryable": 1,
+			"documentation": "The number of PCA features to use in clustering."
 		},
-		"interpolation": {
-			"description": "The number of times to oversample the spike with cubic splines (minimum 1, maximum 10, must be an integer)",
-			"type": "number",
-			"doc_default_value": "3",
-			"doc_data_type": "Integer",
-			"doc_description": "The number of times to oversample each spike waveform with cubic splines (minimum 1, maximum 10; must be an integer)"
+		{
+			"name": "interpolation",
+			"type": "double",
+			"default_value": 3,
+			"parameters": [1,10000,0],
+			"queryable": 1,
+			"documentation": "Should we use interpolation? (>1) If so, by how many times should we increase the sampling resolution using interpolation?."
 		},
-		"min_clusters": {
-			"description": "Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik)",
-			"type": "Integer",
-			"doc_default_value": "3",
-			"doc_data_type": "Integer",
-			"doc_description": "Minimum number of clusters to find when using automatic mode (this is passed to KlustaKwik)"
+		{
+			"name": "min_clusters",
+			"type": "integer",
+			"default_value": 3,
+			"parameters": [1,10000,0],
+			"queryable": 1,
+			"documentation": "How many clusters should we find at a minimum?"
 		},
-		"max_clusters": {
-			"description": "Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik)",
-			"type": "Integer",
-			"doc_default_value": "10",
-			"doc_data_type": "Integer",
-			"doc_description": "Maximum number of clusters to find when using automatic mode (this is passed to KlustaKwik)"
+		{
+			"name": "max_clusters",
+			"type": "integer",
+			"default_value": 10,
+			"parameters": [1,10000,0],
+			"queryable": 1,
+			"documentation": "How many clusters should we find at maximum?"
 		},
-		"num_start": {
-			"description": "Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik)",
-			"type": "Integer",
-			"doc_default_value": "5",
-			"doc_data_type": "Integer",
-			"doc_description": "Number of random starting positions to try when using automatic mode (this is passed to KlustaKwik)"
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "element_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				}							
-			]
-		}		
-	}
+		{
+			"name": "num_start",
+			"type": "integer",
+			"default_value": 5,
+			"parameters": [1,10000,0],
+			"queryable": 1,
+			"documentation": "How many random starting locations should we start searching from?"
+		}
+	]
 }

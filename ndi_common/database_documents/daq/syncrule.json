@@ -10,7 +10,7 @@
 		]
 	},
 	"syncrule": {
-		"ndi_syncrule_class":					"ndi_syncrule",
+		"ndi_syncrule_class":					"ndi.time.syncrule",
 		"parameters":                           []
 	}
 }

@@ -8,11 +8,8 @@
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
 		]
-    },
+	},
 	"depends_on": [
-		{	"name": "placeholder",
-			"value": "" 
-		}
 	],
 	"syncgraph": {
 		"ndi_syncgraph_class":					"ndi_syncgraph"
