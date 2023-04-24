@@ -52,7 +52,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
 				[parentpath, localdirname] = fileparts(filepath);
 				subjectfile = [parentpath filesep 'subject.txt'];
-				if vlt.file.isfile(subjectfile,'file'),
+				if vlt.file.isfile(subjectfile),
 					subjecttext = vlt.file.textfile2char(subjectfile);
 					subject_id = vlt.string.trimws(vlt.string.line_n(subjecttext,1));
 				else,
