@@ -164,6 +164,7 @@ classdef filefind < ndi.time.syncrule
 								return;
 							end;
 						end;
+						error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
 					end;
 
 					% here is b->a
@@ -181,6 +182,7 @@ classdef filefind < ndi.time.syncrule
 								return;
 							end;
 						end;
+						error(['No file matched ' ndi_syncrule_filefind_obj.parameters.syncfilename '.']);
 					end;
 				end
 		end % apply

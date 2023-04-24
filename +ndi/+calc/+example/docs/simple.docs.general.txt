@@ -1,0 +1,21 @@
+The simple calculator is a demonstration calculator that does a silly operation to illustrate how to code a calculator.
+
+It simply takes an input parameter called 'answer' and sets its output document property "answer" to that value. This is a very simple f(x)=x operation just for coding demonstration.
+
+This documentation might serve as a template to be copied for creating new calculators. If the calculator did something interesting, we might write about it here, like this:
+
+The data are fit to a double Gaussian function of the form:
+
+R(theta) = C + Rp * exp(-(ang_dir(theta - theta_pref)^2) / (2*sigma^2)) + ...
+    Rn * exp(-(ang_dir(theta + 180 - theta_pref)^2) / (2*sigma^2))
+
+where the fit parameters are 
+         Rsp       - the untuned responseof the neuron
+         Rp        - the above-offset response to the preferred orientation
+         thetaPref - the stimulus angle that evokes the maximum response
+         sigma     - the tuning width parameter
+         Rn        - the above-offset response to the null direction
+         C         - the offset constant
+	 exp(x)    - the exponential function exp(x) = e^x
+         ang_dir(x)- the angular difference function ang_dir(x) = min(x, x-360, x+360)
+   

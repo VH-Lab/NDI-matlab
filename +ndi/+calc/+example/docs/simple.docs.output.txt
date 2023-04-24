@@ -1,0 +1,9 @@
+The simple_calc output document has the following fields:
+
+depends_on:
+    probe_id:               The ID of the probe to which the output document is linked
+simple:
+    input_parameters:       
+         answer:            The answer to be applied to the output
+    answer:                 The answer of the document. It should match the value requested for the input.
+

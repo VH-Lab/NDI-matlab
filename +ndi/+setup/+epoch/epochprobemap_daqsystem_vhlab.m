@@ -52,7 +52,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 
 				[parentpath, localdirname] = fileparts(filepath);
 				subjectfile = [parentpath filesep 'subject.txt'];
-				if exist(subjectfile,'file'),
+				if vlt.file.isfile(subjectfile,'file'),
 					subjecttext = vlt.file.textfile2char(subjectfile);
 					subject_id = vlt.string.trimws(vlt.string.line_n(subjecttext,1));
 				else,
@@ -76,6 +76,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 					end
 					return;
 				end
+
+				if ~contains([localfile],'channelgrouping'),
+					error(['Expected file ' [localfile ] ' to include the string channelgrouping. Maybe unintended files in epoch?']);
+				end;
+
 				vhdevice_string = regexp(lower([localfile ext]),'(\w*)_channelgrouping.txt','tokens');
 				if isempty(vhdevice_string),
 					error(['File name not of expected form VHDEVICENAME_channelgrouping.txt']);

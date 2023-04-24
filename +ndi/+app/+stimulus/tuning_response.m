@@ -23,10 +23,10 @@ classdef tuning_response < ndi.app
 
 		end % ndi.app.stimulus.tuning_response() creator
 
-		function rdocs = stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset)
+		function rdocs = stimulus_responses(ndi_app_tuning_response_obj, ndi_element_stim, ndi_timeseries_obj, reset, do_mean_only)
 			% STIMULUS_RESPONSES - write stimulus records for all stimulus epochs of an ndi.element stimulus object
 			%
-			% [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET])
+			% [RDOCS] = STIMULUS_RESPONSES(NDI_APP_TUNING_RESPONSE_OBJ, NDI_ELEMENT_STIM, NDI_TIMESERIES_OBJ, [RESET], DO_MEAN_ONLY)
 			%
 			% Examines a the ndi.session associated with NDI_APP_TUNING_RESPONSE_OBJ and the stimulus
 			% probe NDI_STIM_PROBE, and creates documents of type STIMULUS/STIMULUS_RESPONSE_SCALAR for all
@@ -39,13 +39,20 @@ classdef tuning_response < ndi.app
 			% If the input argument RESET is given and is 1, then all existing tuning curve documents for this
 			% NDI_TIMESERIES_OBJ are removed. The default for RESET is 0 (if it is not provided).
 			%
+			% If the input argument DO_MEAN_ONLY is given and is 1, then the function only computes the mean responses.
+			% No F1 or F2 responses will be calculated.
+			%
+			%
 			% Note that this function DOES add the new documents RDOCS to the database.
 			%
 				rdocs = {};
 				if nargin<4, 
 					reset = 0;
 				end;
-					
+				if nargin<5,
+					do_mean_only = 0;
+				end;
+				
 				E = ndi_app_tuning_response_obj.session;
 
 				% find all stimulus records from the stimulus element
@@ -94,6 +101,12 @@ classdef tuning_response < ndi.app
 					end;
 				end;
 
+				if do_mean_only == 1,
+					freq_response = 0;
+				else,
+					freq_response = [];
+				end;
+
 				for i=1:numel(doc_stim),
 					if ~isempty(ndi_ts_epochs{i}),
 						ctrl_search = ndi.query('','depends_on', 'stimulus_presentation_id', doc_stim{i}.id()) & ...
@@ -114,7 +127,7 @@ classdef tuning_response < ndi.app
 								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
 							rdocs{end+1} = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
-								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j});
+								ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j},'freq_response',freq_response);
 						end;
 
 					end
@@ -467,8 +480,8 @@ classdef tuning_response < ndi.app
 				tuning_doc = tuning_doc.set_dependency_value('stimulus_response_scalar_id',stim_response_doc.id());
 				tuning_doc = tuning_doc.set_dependency_value('element_id',stim_response_doc.dependency_value('element_id'));
 				if do_Add,
-                    E.database_add(tuning_doc);
-                end;
+					E.database_add(tuning_doc);
+				end;
 				
 
 		end; % tuning_curve()
@@ -731,6 +744,104 @@ classdef tuning_response < ndi.app
 	end; % methods
 
 	methods (Static)
+
+		function resp = tuningcurvedoc2vhlabrespstruct(tuning_doc)
+			% TUNINGCURVEDOC2VHLABRESPSTRUCT - convert between a tuning curve document and the VH lab response structure
+			%
+			% RESPSTRUCT = TUNINGCURVEDOC2VHLABRESPSTRUCT(TUNINGCURVE_DOC)
+			%
+			% Converts entries from an NDI TUNINGCURVE document to a VH-lab response structure.
+			% This function is generally used when one wants to call the VH lab libraries.
+			%
+			%   RESPSTRUCT is a structure  of response properties with fields:
+			%   curve    |    4xnumber of directions tested,
+			%            |      curve(1,:) is directions tested (degrees, compass coords.)
+			%            |      curve(2,:) is mean responses, with control subtracted
+			%            |      curve(3,:) is standard deviation
+			%            |      curve(4,:) is standard error
+			%   ind      |    cell list of individual trial responses for each direction
+			%   spont    |    control responses [mean stddev stderr]
+			%   spontind |    individual control responses
+			%   Optionally:
+			%   blankresp|    response to a control trial: [mean stddev stderr]
+			%   blankind |    individual responses to control
+
+				ind = {};
+				ind_real = {};
+				control_ind = {};
+				control_ind_real = {};
+				response_ind = {};
+				response_mean = [];
+				response_stddev = [];
+				response_stderr = [];
+
+				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+				tuning_doc = ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static(tuning_doc);
+
+				for i=1:numel(tuning_doc.document_properties.tuning_curve.individual_responses_real),
+					ind{i} = tuning_doc.document_properties.tuning_curve.individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.individual_responses_imaginary{i};
+					ind_real{i} = ind{i};
+					if any(~isreal(ind_real{i})), ind_real{i} = abs(ind_real{i}); end;
+					control_ind{i} = tuning_doc.document_properties.tuning_curve.control_individual_responses_real{i} + ...
+						sqrt(-1)*tuning_doc.document_properties.tuning_curve.control_individual_responses_imaginary{i};
+					control_ind_real{i} = control_ind{i};
+					if any(~isreal(control_ind_real{i})), control_ind_real{i} = abs(control_ind_real{i}); end;
+					response_ind{i} = ind{i} - control_ind{i};
+					response_mean(i) = nanmean(response_ind{i});
+					if ~isreal(response_mean(i)), response_mean(i) = abs(response_mean(i)); end;
+					response_stddev(i) = nanstd(response_ind{i});
+					response_stderr(i) = vlt.data.nanstderr(response_ind{i});
+					if any(~isreal(response_ind{i})),
+						response_ind{i} = abs(response_ind{i});
+					end;
+				end;
+
+				resp.ind = ind_real;
+				resp.blankind = control_ind_real{1};
+				resp.spontind = resp.blankind;
+				resp.blankresp = [mean(resp.blankind(:)) std(resp.blankind(:)) vlt.stats.stderr(resp.blankind(:))];
+				resp.spont = resp.blankresp; 
+
+                if size(tuning_doc.document_properties.tuning_curve.independent_variable_value,2)>1,
+                    tuning_axis = 1:numel(response_mean);
+                else,
+                    tuning_axis = tuning_doc.document_properties.tuning_curve.independent_variable_value(:)';
+                end;
+
+				resp.curve = ...
+					[ tuning_axis ; ...
+						response_mean ; ...
+						response_stddev ; ...
+						response_stderr; ];
+				resp.ind = response_ind;
+
+
+		end; % tuningcurvedoc2vhlabrespstruct()
+
+		function tc_doc = tuningdoc_fixcellarrays_static(tc_doc)
+			% TUNINGDOC_FIXCELLARRAYS_STATIC - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
+			%
+				document_properties = tc_doc.document_properties;
+
+				for i=1:numel(document_properties.tuning_curve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+					document_properties.tuning_curve.individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_real);
+                                        document_properties.tuning_curve.individual_responses_imaginary= ...
+                                                        vlt.data.matrow2cell(document_properties.tuning_curve.individual_responses_imaginary);
+					document_properties.tuning_curve.control_individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_real);
+					document_properties.tuning_curve.control_individual_responses_imaginary= ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.control_individual_responses_imaginary);
+					document_properties.tuning_curve.stimulus_presentation_number = ...
+							vlt.data.matrow2cell(document_properties.tuning_curve.stimulus_presentation_number);
+                                end;
+
+				tc_doc = setproperties(tc_doc, 'tuning_curve',document_properties.tuning_curve);
+
+		end;  % fixcellarrays()
+
 		function [b,ratio,meanresponse,modulatedresponse] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
 			% MODULATED_OR_MEAN - is the response stronger in modulation or mean?
 			%

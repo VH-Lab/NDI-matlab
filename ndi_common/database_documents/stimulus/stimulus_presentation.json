@@ -22,7 +22,8 @@
 				"stimopen":						0,
 				"onset":						0,
 				"offset":						1,
-				"stimclose":						1
+				"stimclose":						1,
+				"stimevents":						[]
 		},
 		"stimuli": {
 			"parameters": {

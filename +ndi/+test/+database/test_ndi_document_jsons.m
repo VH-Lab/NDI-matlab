@@ -24,6 +24,11 @@ error_msg = {};
 
 json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,{'.*\.json\>'});
 
+for i=1:numel(ndi_globals.path.calcdoc),
+	more_json_docs = vlt.file.findfilegroups(ndi_globals.path.calcdoc{i},{'.*\.json\>'});
+	json_docs = cat(1,json_docs,more_json_docs);
+end;
+
 for i=1:numel(json_docs),
 	[parentdir,filename,ext] = fileparts(json_docs{i}{1});
 	ndidoc = [filename ext];

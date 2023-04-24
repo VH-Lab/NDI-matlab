@@ -1,0 +1,2 @@
+% there is no default parameter code for ndi.calc.stimulus.tuningcurve 
+

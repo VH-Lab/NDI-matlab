@@ -1,0 +1,10 @@
+By default, this ndi.calc.example.simple object looks for all probes in the experiment, and creates an output document that depends on that probe with the answer value requested.
+
+If one wished to restrict this further, one might add an additional condition to the default query.
+
+Example:
+% Only perform the operation on the probe called 'myprobe'
+
+DQ = c.default_search_for_input_parameters();
+DQ.query = DQ.query & ndi.query('element.name','exact_string','myprobe','');
+c.run('Replace',DQ);
