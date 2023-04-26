@@ -262,7 +262,7 @@ classdef tuningcurve < ndi.calculator
 					error(['Do not know how to proceed without an ndi document for doc_or_parameters.']);
 				end;
 
-				tc = doc.document_properties.tuning_curve; % shorten our typing
+				tc = doc.document_properties.stimulus_tuningcurve; % shorten our typing
 
 				% if more than 2-d, complain
 				

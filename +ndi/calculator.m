@@ -72,7 +72,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				mylog = ndi_globals.log;
 				mylog.msg('system',1,['Beginning calculator by class ' class(ndi_calculator_obj) '...']);
 
-				parfor i=1:numel(all_parameters),
+				for i=1:numel(all_parameters),
 					mylog.msg('system',1,['Performing calculator ' int2str(i) ' of ' int2str(numel(all_parameters)) '.']);
 					previous_calculators_here = ndi_calculator_obj.search_for_calculator_docs(all_parameters{i});
 					do_calc = 0;
