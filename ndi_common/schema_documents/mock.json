@@ -1,0 +1,39 @@
+{
+	"classname": "mock",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"mock": [
+		{
+			"name": "ismock",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [1,1,0,0],
+			"queryable": 1,
+			"documentation": "A parameter that denotes the document as a mock document"
+		}
+		{
+			"name": "reference",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [0,100000,0],
+			"queryable": 1,
+			"documentation": "The reference number of the element. Elements are uniquely defined by a name, reference, and type."
+		},
+		{
+			"name": "type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The type of the element. Common probe types are in probetype2object.json"
+		},
+		{
+			"name": "direct",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "Does this element directly feed data from an underlying element?"
+		}
+	]
+}

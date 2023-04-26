@@ -111,6 +111,15 @@ if isempty(find(strcmp('$NDIDOCUMENTPATH',did_globals.path.definition_names))),
     did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDIDOCUMENTPATH','$NDISCHEMAPATH'})
     did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.documentpath ndi_globals.path.documentschemapath});
 end;
+if isempty(find(strcmp('$NDICALCDOCUMENTPATH',did_globals.path.definition_names))),
+    for i=1:numel(ndi_globals.path.calcdoc)
+        did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDICALCDOCUMENTPATH'});
+        did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDICALCSCHEMAPATH'});
+        did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.calcdoc{i} ndi_globals.path.calcdocschema{i}});
+    end;
+end;
+
+
 %ndi_globals.path.documentpath = [ndi_globals.path.commonpath filesep 'database_documents'];
 %ndi_globals.path.documentschemapath = [ndi_globals.path.commonpath filesep 'schema_documents'];
 

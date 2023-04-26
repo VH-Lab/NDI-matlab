@@ -1,0 +1,16 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/mock.json",
+		"validation":						"$NDISCHEMAPATH\/mock_schema.json",
+		"class_name":						"mock",
+		"property_list_name":					"mock",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"mock": {
+		"ismock":		1
+	}
+}
+

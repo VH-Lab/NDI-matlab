@@ -1,0 +1,24 @@
+{
+	"classname": "tuningcurve_calc",
+	"superclasses":  [ "base", "stimulus_tuningcurve"],
+	"depends_on": [ ],
+	"file": [ ],
+	"tuningcurve_calc": [
+		{
+			"name": "input_parameters",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Input parameter structure"
+		},
+		{
+			"name": "depends_on",
+			"type": "structure",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Depends on field"
+		}
+	]
+}

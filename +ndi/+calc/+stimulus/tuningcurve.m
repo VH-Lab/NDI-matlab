@@ -29,7 +29,7 @@ classdef tuningcurve < ndi.calculator
 				% Step 1: set up the output structure
 				tuningcurve_calc = parameters;
 
-				stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id','exact_number',...
+				stim_response_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id','exact_string',...
 					vlt.db.struct_name_value_search(parameters.depends_on,'stimulus_response_scalar_id'),''));
 				if numel(stim_response_doc)~=1, 
 					error(['Could not find stimulus response doc..']);
@@ -131,7 +131,7 @@ classdef tuningcurve < ndi.calculator
 					end;
 					% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
-						'independent_parameter',independent_parameter,'constraint',constraints_mod,'doAdd',0);
+						'independent_parameter',independent_parameter,'constraint',constraints_mod,'do_Add',0);
 					if ~isempty(doc_here), % if doc is actually created, that is, all stimuli were not excluded
 						doc_here = ndi.document(ndi_calculator_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
 						doc{end+1} = doc_here;
@@ -156,7 +156,7 @@ classdef tuningcurve < ndi.calculator
 				parameters.depends_on = vlt.data.emptystruct('name','value');
 				parameters.query = ndi_calculator_obj.default_parameters_query(parameters);
 				parameters.query(end+1) = struct('name','will_fail','query',...
-					ndi.query('ndi_document.id','exact_string','123',''));
+					ndi.query('base.id','exact_string','123',''));
 					
 		end; % default_search_for_input_parameters
 
@@ -191,7 +191,7 @@ classdef tuningcurve < ndi.calculator
 					return;
 				end;
 
-				q1 = ndi.query('','isa','stimulus_response_scalar.json','');
+				q1 = ndi.query('','isa','stimulus_response_scalar','');
 				q2 = ndi.query('stimulus_response_scalar.response_type','contains_string','mean','');
 				q3 = ndi.query('stimulus_response_scalar.response_type','contains_string','F1','');
 				q4 = ndi.query('stimulus_response_scalar.response_type','contains_string','F2','');
@@ -207,7 +207,7 @@ classdef tuningcurve < ndi.calculator
 			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATOR_OBJ, NAME, VALUE)
 			%
 			% Tests whether a potential input to a calculator is valid.
-			% The potential dependency name is provided in NAME and its ndi_document id is
+			% The potential dependency name is provided in NAME and its base id is
 			% provided in VALUE.
 			%
 			% The base class behavior of this function is simply to return true, but it
@@ -217,7 +217,7 @@ classdef tuningcurve < ndi.calculator
 				b = 1;
 				return;
 				% the below is wrong..this function does not take tuningcurves or tuningcurve_calc objects as inputs
-				q1 = ndi.query('ndi_document.id','exact_string',value,'');
+				q1 = ndi.query('base.id','exact_string',value,'');
 				q2 = ndi.query('','isa','tuningcurve_calc.json','');
 				% can't also be a tuningcurve_calc document or we could have infinite recursion
 				b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
@@ -368,7 +368,7 @@ classdef tuningcurve < ndi.calculator
 			% If this function cannot find a stimulus presentation document for the STIM_RESPONSE_DOC, it produces
 			% an error.
 			%
-				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id', 'exact_string', ...
                                         stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
 				if numel(stim_pres_doc)~=1, 
@@ -429,7 +429,7 @@ classdef tuningcurve < ndi.calculator
 			% If this function cannot find a stimulus presentation document for the STIM_RESPONSE_DOC, it produces
 			% an error.
 			%
-				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('ndi_document.id', 'exact_string', ...
+				stim_pres_doc = ndi_calculator_obj.session.database_search(ndi.query('base.id', 'exact_string', ...
                                         stim_response_doc.dependency_value('stimulus_presentation_id'),''));
 
 				if numel(stim_pres_doc)~=1, 
