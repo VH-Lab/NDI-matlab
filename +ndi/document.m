@@ -28,7 +28,7 @@ classdef document
 					document_properties = ndi.document.readblankdefinition(document_type);
 					ndiido = ndi.ido();
 					document_properties.base.id = ndiido.id();
-					document_properties.base.datestamp = char(datetime('now','TimeZone','UTCLeapSeconds'));
+					document_properties.base.datestamp = ndi.fun.timestamp();
 
 					if numel(varargin)==1, % see if user put it all as one cell array
 						if iscell(varargin{1}),
@@ -820,7 +820,7 @@ classdef document
 						match = 0;
 						for i=1:numel(ndi_globals.path.calcdoc),
 							filename = [ndi_globals.path.calcdoc{i} filesep ...
-								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)]
+								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)];
 							if vlt.file.isfile(filename),
 								% we have a match
 								match = 1;

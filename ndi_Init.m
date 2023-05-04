@@ -108,7 +108,7 @@ ndi.fun.run_Linux_checks
 
 did.globals;
 if isempty(find(strcmp('$NDIDOCUMENTPATH',did_globals.path.definition_names))),
-    did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDIDOCUMENTPATH','$NDISCHEMAPATH'})
+    did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDIDOCUMENTPATH','$NDISCHEMAPATH'});
     did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.documentpath ndi_globals.path.documentschemapath});
 end;
 if isempty(find(strcmp('$NDICALCDOCUMENTPATH',did_globals.path.definition_names))),
