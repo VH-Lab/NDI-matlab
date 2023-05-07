@@ -107,18 +107,20 @@ if isempty(info.prop_list), % reading from schema did not succeed
 			phere.doc_default_value = '';
 			phere.doc_data_type = '';
 			phere.doc_description = '';
-			if isfield(info.validation_json.properties,fn{i}),
-				v=getfield(info.validation_json.properties,fn{i});
-				if isfield(v,'doc_description'),
-					phere.doc_description = getfield(v,'doc_description');
-				end;
-				if isfield(v,'doc_data_type'),
-					phere.doc_data_type = getfield(v,'doc_data_type');
-				end;
-				if isfield(v,'doc_default_value'),
-					phere.doc_default_value = getfield(v,'doc_default_value');
-				end;
-			end;
+            if isfield(info.validation_json,'properties'),
+			    if isfield(info.validation_json.properties,fn{i}),
+				    v=getfield(info.validation_json.properties,fn{i});
+				    if isfield(v,'doc_description'),
+					    phere.doc_description = getfield(v,'doc_description');
+				    end;
+				    if isfield(v,'doc_data_type'),
+					    phere.doc_data_type = getfield(v,'doc_data_type');
+				    end;
+				    if isfield(v,'doc_default_value'),
+					    phere.doc_default_value = getfield(v,'doc_default_value');
+				    end;
+			    end;
+            end;
 			info.prop_list(end+1) = phere;
 		end;
 	end;
