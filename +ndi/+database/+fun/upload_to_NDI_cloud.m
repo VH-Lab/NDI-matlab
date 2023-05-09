@@ -21,9 +21,19 @@ d = S.database_search(ndi.query('','isa','base'));
 
 
   % Step 3: loop over all the documents, uploading them to NDI Cloud
+ % q: do we do this all together, or one at a time?
+ % here is all together
+if 0,
+    all_json = {};
+    for i=1:numel(d),
+        all_json{i} = did.datastructures.jsonencodenan(d{i}.document_properties);
+    end;
+end;
 
+ % or one at a time?
 for i=1:numel(d),
    % upload instruction - need to learn
+   json_code = did.datastructures.jsonencodenan(d{i}.document_properties);
 
    file_list_here = [];
    if isfield(d{i}.document_properties.files),
