@@ -13,14 +13,15 @@ function [b, msg] = upload_to_NDI_cloud(S, email, password, database_name)
 %
 
   % Step 1: find all the documents
+  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
 
 d = S.database_search(ndi.query('','isa','base'));
 
   % Step 2: make a connection to the NDI Cloud server
   % we will learn this from Tonic
 
-[authToken, organizationId] = ndi.database.fun.Login(email, password);
-databaseId = create_database(organizationId, database_name, authToken);
+[authToken, organizationId] = ndi.cloud.auth_login(email, password);
+databaseId = ndi.cloud.datasets_datasetId(organizationId, database_name, authToken);
 
 
   % Step 3: loop over all the documents, uploading them to NDI Cloud

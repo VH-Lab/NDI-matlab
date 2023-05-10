@@ -1,4 +1,4 @@
-function databaseId = create_database(organizationId, name, authToken)
+function databaseId = datasets_datasetId(organizationId, name, authToken)
     % Prepare the JSON data to be sent in the POST request
     json = struct('name', name);
     jsonStr = jsonencode(json);

@@ -1,4 +1,4 @@
-function [authToken, organizationId] = Login(email, password)
+function [authToken, organizationId] = auth_login(email, password)
     % Prepare the JSON data to be sent in the POST request
     json = struct('email', email, 'password', password);
     jsonStr = jsonencode(json);
