@@ -447,9 +447,9 @@ classdef document
 				ingest = NaN;
 				delete_original = NaN;
 				location_type = NaN;
+                uid = did.ido.unique_id();
 
 				did.datastructures.assign(varargin{:});
-				
 				% Step 1: make sure that the did_document_obj has a 'files' portion
 				% and that name is one of the listed files.
 
@@ -490,7 +490,7 @@ classdef document
 				end;
 
 				% Step 2b: build the structure to add
-				uid = did.ido.unique_id();
+				
 				parameters = '';
 
 				location_here = did.datastructures.var2struct('delete_original','uid','location',...

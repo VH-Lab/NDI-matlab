@@ -52,6 +52,8 @@ classdef tuningcurve < ndi.calculator
 				
 				constraint = vlt.data.emptystruct('field','operation','param1','param2');
 
+				log_str = '';
+
 				deal_constraints = {};
 
 				for i=1:numel(parameters.input_parameters.selection),
@@ -64,8 +66,32 @@ classdef tuningcurve < ndi.calculator
 								break;
 							end;
 						end;
-						pva,
-						match,
+						if match==0, %if it doesn't have it, then quit
+							doc = {};
+							return;
+						end;
+					elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue>'),
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						match = 0;
+						for j=1:numel(pva),
+							if pva{j}>parameters.input_parameters.selection(i).value,
+								match = 1;
+								break;
+							end;
+						end;
+						if match==0, %if it doesn't have it, then quit
+							doc = {};
+							return;
+						end;
+					elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue<'),
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						match = 0;
+						for j=1:numel(pva),
+							if pva{j}<parameters.input_parameters.selection(i).value,
+								match = 1;
+								break;
+							end;
+						end;
 						if match==0, %if it doesn't have it, then quit
 							doc = {};
 							return;
@@ -77,6 +103,7 @@ classdef tuningcurve < ndi.calculator
 						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
 							'operation','exact_number','param1',stim_property_value,'param2','');
 						constraint(end+1) = constraint_here;
+						log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' best value is ' num2str(stim_property_value) ',']);
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
 						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
 						deal_constraints_group = vlt.data.emptystruct('field','operation','param1','param2');
@@ -118,22 +145,36 @@ classdef tuningcurve < ndi.calculator
 				% Step 3: place the results of the calculator into an NDI document
 				tapp = ndi.app.stimulus.tuning_response(ndi_calculator_obj.session);
 
+				if numel(log_str)>1,
+					if log_str(end)==',',
+						log_str(end) = '.';
+					end;
+				end;
+				tuningcurve_calc.log = log_str;
+
 				doc = {};
 
 				for i=1:N_deal,
+					deal_log_str = '';
+
 					constraints_mod = constraint;
 					eval(['[' deal_str ']=ind2sub(size(deal_constraints),i);']);
 					for j=1:numel(deal_constraints),
 						deal_here = deal_constraints{j}(sz_{j});
 						if isstruct(deal_here),
 							constraints_mod(end+1) = deal_here;
+							deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.value) ',']);
 						end;
 					end;
+
+					tuningcurve_calc_here = tuningcurve_calc;
+					tuningcurve_calc_here.log = cat(2,tuningcurve_calc_here.log,deal_log_str);
+
 					% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...
 						'independent_parameter',independent_parameter,'constraint',constraints_mod,'do_Add',0);
 					if ~isempty(doc_here), % if doc is actually created, that is, all stimuli were not excluded
-						doc_here = ndi.document(ndi_calculator_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc) + doc_here;
+						doc_here = ndi.document(ndi_calculator_obj.doc_document_types{1},'tuningcurve_calc',tuningcurve_calc_here) + doc_here;
 						doc{end+1} = doc_here;
 					end;
 				end;
@@ -281,7 +322,7 @@ classdef tuningcurve < ndi.calculator
 					net_responses = tc.response_mean - tc.control_response_mean;
 					[v,sortorder] = sort(tc.independent_variable_value);
 					h_errorbar = errorbar(tc.independent_variable_value(sortorder(:)),...
-						tc.response_mean(sortorder(:)),tc.response_stderr(sortorder(:)),tc.response_stderr(sortorder(:)));
+						net_responses(sortorder(:)),tc.response_stderr(sortorder(:)),tc.response_stderr(sortorder(:)));
 					set(h_errorbar,'color',[0 0 0],'linewidth',1);
 					h.objects = cat(2,h.objects,h_errorbar);
 					if ~h.params.suppress_x_label,

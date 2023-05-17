@@ -23,6 +23,7 @@
 				}
 			]
 		},
+		"log":	[],
 		"depends_on": [
 			{
 				"name":				"stimulus_response_scalar_id",
