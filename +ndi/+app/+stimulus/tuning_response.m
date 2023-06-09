@@ -689,8 +689,6 @@ classdef tuning_response < ndi.app
                                 end;
 
 				tc_doc = setproperties(tc_doc, 'stimulus_tuningcurve',document_properties.stimulus_tuningcurve);
-		
-
 		end;  % fixcellarrays()
 
 		function tuning_docs = make_1d_tuning(ndi_app_tuning_response_obj, stim_response_doc, param_to_vary, param_to_vary_label, param_to_fix, varargin)
@@ -842,11 +840,11 @@ classdef tuning_response < ndi.app
 
 		end;  % fixcellarrays()
 
-        function [b,ratio,meanresponse,modulatedresponse,mean_index,modulated_index] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
+		        function [b,ratio,meanresponse,modulatedresponse,mean_index,modulated_index] = modulated_or_mean(stimulus_response_scalar_docs, varargin)
 			% MODULATED_OR_MEAN - is the response stronger in modulation or mean?
 			%
 			% [B,ratio,mean_response,modulated_response,mean_index,modulated_index] = ...
-            %     MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
+			%     MODULATED_OR_MEAN(STIMULUS_RESPONSE_SCALAR_DOCS, ...)
 			% 
 			% Given a cell array of STIMULUS_RESPONSE_SCALAR documents that
 			% correspond to different response types to the same stimulus, this
@@ -862,10 +860,10 @@ classdef tuning_response < ndi.app
 			% response (this largest response could be the mean or the modulated response).
 			% RATIO is the ratio of these two values (MODULATED_RESPONSE / MEAN_RESPONSE).
 			% 
-            % MEAN_INDEX is the index number of the stimulus response scalar document with the
-            % mean response. MODULATED_INDEX is the index number of the stimulus
-            % response scalar document with the modulated response.
-            %
+			% MEAN_INDEX is the index number of the stimulus response scalar document with the
+			% mean response. MODULATED_INDEX is the index number of the stimulus
+			% response scalar document with the modulated response.
+			%
 			% This function examines the empirical responses and does not do any
 			% fitting.
 			%
@@ -946,9 +944,9 @@ classdef tuning_response < ndi.app
 				end;
 
 				mean_stim_response = find(matches_mean); % will be 1 element
-                mean_index = mean_stim_response;
+				mean_index = mean_stim_response;
 				modulation_stim_response = find(matches_modulation); % will be 1 element
-                modulated_index = modulation_stim_response;
+				modulated_index = modulation_stim_response;
 
 				mean_resps = [];
 				modulation_resps = [];

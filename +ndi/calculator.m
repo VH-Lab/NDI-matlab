@@ -228,15 +228,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 			% must match the specified name and value.
 			%
 				query = vlt.data.emptystruct('name','query');
-				for i=1:numel(parameters_specification.input_parameters.depends_on),
-					if ~isempty(parameters_specification.input_parameters.depends_on(i).value) & ...
-						~isempty(parameters_specification.input_parameters.depends_on(i).name),
-						query_here = struct('name',parameters_specification.input_parameters.depends_on(i).name,...
-							'query',...
-							ndi.query('ndi_document.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
-						query(end+1) = query_here;
-					end;
-				end;
+                if isfield(parameters_specification.input_parameters,'depends_on')
+				    for i=1:numel(parameters_specification.input_parameters.depends_on),
+					    if ~isempty(parameters_specification.input_parameters.depends_on(i).value) & ...
+						    ~isempty(parameters_specification.input_parameters.depends_on(i).name),
+						    query_here = struct('name',parameters_specification.input_parameters.depends_on(i).name,...
+							    'query',...
+							    ndi.query('ndi_document.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
+						    query(end+1) = query_here;
+					    end;
+				    end;
+                end;
 		end; % default_parameters_query()
 
 		function docs = search_for_calculator_docs(ndi_calculator_obj, parameters)  % can call find_appdoc, most of the code should be put in find_appdoc

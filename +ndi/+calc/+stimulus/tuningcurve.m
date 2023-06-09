@@ -220,7 +220,7 @@ classdef tuningcurve < ndi.calculator
 			%
 			% For the ndi.calc.stimulus.tuningcurve_calc class, this first checks to see if 
 			% fixed dependencies are already specified. If not, then it looks for 
-			% documents of type 'stimulus_response_scalar.json' with 'response_type' fields
+			% documents of type 'stimulus_response_scalar' with 'response_type' fields
 			% the contain 'mean' or 'F1' or 'F2'.
 			%
 			%
@@ -259,7 +259,7 @@ classdef tuningcurve < ndi.calculator
 				return;
 				% the below is wrong..this function does not take tuningcurves or tuningcurve_calc objects as inputs
 				q1 = ndi.query('base.id','exact_string',value,'');
-				q2 = ndi.query('','isa','tuningcurve_calc.json','');
+				q2 = ndi.query('','isa','tuningcurve_calc','');
 				% can't also be a tuningcurve_calc document or we could have infinite recursion
 				b = isempty(ndi_calculator_obj.session.database_search(q1&q2));
 		end; % is_valid_dependency_input()
