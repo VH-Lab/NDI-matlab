@@ -1,0 +1,24 @@
+{
+  "base": {
+    "id": "41268d7e0d217006_40d99cbf7cbc9607",
+    "session_id": "41268d7e0d1d0a5e_c0d0edda2284494d",
+    "name": "",
+    "datestamp": "2023-05-01T00:36:56.025Z"
+  },
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/daq/filenavigator.json",
+    "validation": "$NDISCHEMAPATH/daq/filenavigator_schema.json",
+    "class_name": "filenavigator",
+    "property_list_name": "filenavigator",
+    "class_version": 1,
+    "superclasses": {
+      "definition": "$NDIDOCUMENTPATH/base.json"
+    }
+  },
+  "filenavigator": {
+    "ndi_filenavigator_class": "ndi.file.navigator.epochdir",
+    "fileparameters": "{ 'reference.txt', '.*\\.rhd\\>', 'vhintan_channelgrouping.txt', 'vhintan_intan2spike2time.txt' }",
+    "epochprobemap_class": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+    "epochprobemap_fileparameters": "{ 'vhintan_channelgrouping.txt' }"
+  }
+}

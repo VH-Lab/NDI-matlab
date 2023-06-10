@@ -1,7 +1,7 @@
 function [status,response] = password_forgot(email)
 % PASSWORD - sends a password reset e-mail
 %
-% [STATUS,RESPONSE] = ndi.cloud.auth.PASSWORD_FORGOT(EMAIL)
+% [STATUS,RESPONSE] = ndi.cloud.auth.password_forgot(EMAIL)
 %
 % Inputs:
 %   EMAIL - a string representing the email address used to send the

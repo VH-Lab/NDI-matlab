@@ -1,0 +1,53 @@
+{
+  "base": {
+    "id": "41268d7e0d7a3d86_c0d7e2ce1ad7d0af",
+    "session_id": "41268d7e0d1d0a5e_c0d0edda2284494d",
+    "name": "",
+    "datestamp": "2023-05-01T00:37:54.329Z"
+  },
+  "depends_on": {
+    "name": "element_id",
+    "value": "41268d7e0d78775e_c0da424ad11f008d"
+  },
+  "document_class": {
+    "definition": "$NDIDOCUMENTPATH/element_epoch.json",
+    "validation": "$NDISCHEMAPATH/element_epoch_schema.json",
+    "class_name": "element_epoch",
+    "property_list_name": "element_epoch",
+    "class_version": 1,
+    "superclasses": [
+      {
+        "definition": "$NDIDOCUMENTPATH/base.json"
+      },
+      {
+        "definition": "$NDIDOCUMENTPATH/epochid.json"
+      }
+    ]
+  },
+  "element_epoch": {
+    "epoch_clock": "dev_local_time",
+    "t0_t1": [
+      0,
+      5301.41095
+    ]
+  },
+  "epochid": {
+    "epochid": "t00002"
+  },
+  "files": {
+    "file_list": [
+      "epoch_binary_data.vhsb"
+    ],
+    "file_info": {
+      "name": "epoch_binary_data.vhsb",
+      "locations": {
+        "delete_original": 0,
+        "uid": "41268d7e0d7a972b_c0c66ea66e3f90ae",
+        "location": "41268d7e0d7a972b_c0c66ea66e3f90ae",
+        "parameters": "",
+        "location_type": "file",
+        "ingest": 1
+      }
+    }
+  }
+}

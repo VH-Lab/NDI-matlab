@@ -1,4 +1,4 @@
-function [status, response] = post_organization(organization_id, dataset, auth_token)
+function [status, response, dataset_id] = post_organization(organization_id, dataset, auth_token)
 % POST_ORGANIZATIONS - Create a new dataset
 %
 % [STATUS,RESPONSE] = ndi.cloud.datasets.post_organizations(ORGANIZATION_ID, DATASET, AUTH_TOKEN)
@@ -10,8 +10,8 @@ function [status, response] = post_organization(organization_id, dataset, auth_t
 %
 % Outputs:
 %   STATUS - did post request work? 1 for no, 0 for yes
-%   RESPONSE - the updated dataset summary
-%
+%   RESPONSE - the new dataset summary
+%   DATASET_ID - the id of the newly created dataset
 
 % Prepare the JSON data to be sent in the POST request
 dataset_str = jsonencode(dataset);
@@ -37,4 +37,5 @@ response = jsondecode(output);
 if isfield(response, 'error')
     error(response.error);
 end
+dataset_id = response.id;
 end

@@ -1,17 +1,17 @@
-function [status,response] = verify(email, confirmationCode)
+function [status,response] = verify(email, confirmation_code)
 % VERIFY - verifies a user via the confirmation code sent in e-mail
-% [STATUS,RESPONSE] = ndi.cloud.auth.verify(EMAIL, CONFIRMATIONCODE)
+% [STATUS,RESPONSE] = ndi.cloud.auth.verify(EMAIL, CONFIRMATION_CODE)
 %
 % Inputs:
 %   EMAIL - a string representing the email address used to verify
-%   CONFIRMATIONCODE - the code send to the email
+%   CONFIRMATION_CODE - the code send to the email
 %
 % Outputs:
 %   STATUS - is the confirmation code correct? 1 for no, 0 for yes
 %   RESPONSE - the response summary
 %
  % Prepare the JSON data to be sent in the POST request
-json = struct('email', email, 'confirmationCode', confirmationCode);
+json = struct('email', email, 'confirmationCode', confirmation_code);
 jsonStr = jsonencode(json);
 url = 'https://dev-api.ndi-cloud.com/v1/auth/verify';
 

@@ -1,4 +1,4 @@
-function [status, response] = get_unpublished(page, page_size, auth_token)
+function [status, response, datasets] = get_unpublished(page, page_size, auth_token)
 % GET_UNPUBLISHED - get all submitted but unpublished datasets
 %
 % [STATUS,RESPONSE] = ndi.cloud.datasets.get_unpublished(PAGE, PAGE_SIZE, AUTH_TOKEN)
@@ -11,7 +11,8 @@ function [status, response] = get_unpublished(page, page_size, auth_token)
 % Outputs:
 %   STATUS - did get request work? 1 for no, 0 for yes
 %   RESPONSE - the updated dataset summary
-%
+%   DATASETS - a high level summary of all unpublished datasets
+
 
 % Construct the curl command with the organization ID and authentication token
 page = int2str(page);
@@ -34,4 +35,5 @@ response = jsondecode(output);
 if isfield(response, 'error')
     error(response.error);
 end
+datasets = response.datasets;
 end

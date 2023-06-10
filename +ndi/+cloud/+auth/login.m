@@ -36,7 +36,7 @@ response = jsondecode(output);
 if isfield(response, 'error')
     error(response.error);
 end
-
+disp(response);
 % Extract the authentication token from the response
 auth_token = response.token;
 organization_id = response.user.organizations.id;

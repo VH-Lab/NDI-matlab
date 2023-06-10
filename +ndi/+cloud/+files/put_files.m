@@ -1,7 +1,7 @@
-function [status, response, document] = get_documents(dataset_id, document_id, auth_token)
+function [status, output] = put_files(presigned_url, file_path, auth_token)
 % GET_DOCUMENTS - get a document
 %
-% [STATUS,RESPONSE,DOCUMENT] = ndi.cloud.documents.get_documents(DATASET_ID, DOCUMENT_ID, AUTH_TOKEN)
+% [STATUS,RESPONSE,DOCUMENT] = ndi.cloud.files.put_files(DATASET_ID, DOCUMENT_ID, AUTH_TOKEN)
 %
 % Inputs:
 %   DATASET_ID - a string representing the dataset id
@@ -15,14 +15,20 @@ function [status, response, document] = get_documents(dataset_id, document_id, a
 %
 
 % Construct the curl command with the organization ID and authentication token
+% curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://presigned-url"
+% curl -X PUT -H "Authorization: Bearer YOUR_TOKEN" -H "Content-Type: YOUR_CONTENT_TYPE" --upload-file /path/to/local/file.jpg "https://presigned-url"
 
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/documents/%s', dataset_id, document_id);
-cmd = sprintf("curl -X 'GET' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' ", url, auth_token);
+% curl url --upload-file file_name
+
+cmd = sprintf("curl '%s' --upload-file '%s'", presigned_url, file_path);
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);
+
+disp(file_path);
+disp(presigned_url);
+disp(output);
+disp(cmd);
 
 % Check the status code and handle any errors
 if status ~= 0
@@ -30,10 +36,8 @@ if status ~= 0
 end
 
 % Process the JSON response
-disp(output);
-response = jsondecode(output);
-if isfield(response, 'error')
-    error(response.error);
-end
-document = response;
+% response = jsondecode(output);
+% if isfield(response, 'error')
+%     error(response.error);
+% end
 end

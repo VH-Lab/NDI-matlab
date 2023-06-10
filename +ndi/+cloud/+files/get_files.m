@@ -20,12 +20,11 @@ function [status, response, upload_url] = get_files(dataset_id, uid, auth_token)
 
 url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/files/%s', dataset_id, uid);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
-    "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);
-
+disp(cmd);
 % Run the curl command and capture the output
 [status, output] = system(cmd);
-
+disp(output);
 % Check the status code and handle any errors
 if status ~= 0
     error('Failed to run curl command: %s', output);

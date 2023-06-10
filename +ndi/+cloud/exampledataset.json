@@ -1,0 +1,30 @@
+{
+  "name": "ndi session test",
+  "branchName": "main",
+  "contributors": [
+    {
+      "firstName": "k",
+      "lastName": "c",
+      "orchid": "string"
+    }
+  ],
+  "doi": "string",
+  "funding": [
+    {
+      "source": "string"
+    }
+  ],
+  "abstract": "string",
+  "license": "string",
+  "species": "string",
+  "neurons": 0,
+  "numberOfSubjects": 0,
+  "brainRegions": "string",
+  "correspondingAuthors": [
+    {
+      "firstName": "string",
+      "lastName": "string",
+      "orchid": "string"
+    }
+  ]
+}

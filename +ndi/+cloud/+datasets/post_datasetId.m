@@ -12,6 +12,9 @@ function [status, response] = post_datasetId(dataset_id, dataset, auth_token)
 %   STATUS - did the post request work? 1 for no, 0 for yes
 %   RESPONSE - the updated dataset summary
 %
+
+% Prepare the JSON data to be sent in the POST request
+dataset_str = jsonencode(dataset);
     
 % Construct the curl command with the organization ID and authentication token
 url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s', dataset_id);
@@ -19,7 +22,7 @@ cmd = sprintf("curl -X 'POST' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' " +...
     "-H 'Content-Type: application/json' " + ...
-    "-d '%s'", url, auth_token, dataset);
+    "-d '%s'", url, auth_token, dataset_str);
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);
