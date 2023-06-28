@@ -163,7 +163,7 @@ classdef tuningcurve < ndi.calculator
 						deal_here = deal_constraints{j}(sz_{j});
 						if isstruct(deal_here),
 							constraints_mod(end+1) = deal_here;
-							deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.value) ',']);
+							deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.param1) ',']);
 						end;
 					end;
 
