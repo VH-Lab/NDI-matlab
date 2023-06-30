@@ -1,4 +1,4 @@
-classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
+classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & ndi.database.ingestion_help
 	% ndi.file.navigator - object class for accessing files on disk
 
 	properties (GetAccess=public, SetAccess=protected)
@@ -554,6 +554,22 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			%
 				ndi_filenavigator_obj.session = session;
 		end; % setsession()
+
+		%% functions that override ndi.database.ingestion_helper
+
+
+                function cname = ingestion_class(ingestion_help_obj)
+ 			% INGESTION_CLASS - the name of the ingestion class for this object
+			%
+			% CNAME = INGESTION_CLASS(INGESTION_HELP_OBJ)
+			%
+			% Returns the class name of the object that should be created if this
+			% object class is ingested into the database (and won't have access to any raw
+			% data).
+			%
+				cname = 'ndi.file.navigator.ingest';
+                end; % ingestion_class()
+
 
 		%% functions that override ndi.documentservice
 		function ndi_document_obj = newdocument(ndi_filenavigator_obj)

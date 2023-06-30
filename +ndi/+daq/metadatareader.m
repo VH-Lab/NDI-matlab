@@ -65,7 +65,9 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 				parameters = {};
 				if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter),
-					tf = regexpi(epochfiles, ndi_daqmetadatareader_obj.tab_separated_file_parameter, 'forceCellOutput');
+					tf = regexpi(epochfiles, ...
+						ndi_daqmetadatareader_obj.tab_separated_file_parameter,...
+						'forceCellOutput');
 					tf = find(~cellfun(@isempty,tf));
 					if numel(tf)>1,
 						error(['More than one epochfile matches regular expression ' ...
