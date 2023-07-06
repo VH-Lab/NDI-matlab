@@ -50,7 +50,7 @@ disp(cmd);
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);
-if exist(file_path, 'file')==2
+if exist(file_path, 'file')==2,
   delete(file_path);
 end
 
@@ -59,8 +59,12 @@ if status ~= 0
     error('Failed to run curl command: %s', output);
 end
 
-% Process the JSON response
-response = jsondecode(output);
+% Process the JSON response; if the command failed, it might be a plain text error message
+try,
+	response = jsondecode(output);
+catch,
+	error(['Command failed with message: ' output ]);
+end;
 if isfield(response, 'error')
     error(response.error);
 end
