@@ -32,7 +32,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 		%
 		% See also: ndi.session
 		%
-
 			if nargin==2 & isa(session_,'ndi.session') & isa(fileparameters_,'ndi.document'),
 				filenavdoc = fileparameters_;
 				% extract parameters from the document
@@ -521,7 +520,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			% Returns a string that is based on a hash function that is computed on 
 			% the concatenated text of the 'filematch' field of the 'fileparameters' property.
 			%
-			% Note: the function used is 'crc' (see PM_HASH)
+			% Note: the function used is 'MD5' (see DataHash)
 
 				algo = 'crc';
 				algo = 'MD5';
@@ -557,7 +556,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 		%% functions that override ndi.database.ingestion_helper
 
-
                 function cname = ingestion_class(ingestion_help_obj)
  			% INGESTION_CLASS - the name of the ingestion class for this object
 			%
@@ -570,6 +568,28 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				cname = 'ndi.file.navigator.ingest';
                 end; % ingestion_class()
 
+		function [docs_out, doc_ids_remove] = ingest(ndi_filenavigator_obj)
+			% INGEST - create new documents that produce the ingestion of an ingestion_help_obj
+			%  
+			% [DOCS_OUT, DOC_IDS_REMOVE] = INGEST(NDI_FILENAVIGATOR_OBJ)
+			%
+			% Creates documents to specify an ingested ndi.file.navigator object.
+			% 
+			% Creates an ndi.file.navigator.ingest document, and, for each epoch, creates
+			% a file_navigator_ingest_epoch document.
+			% 
+
+			
+
+			  % create the new object
+			  fN = ndi.file.navigator.ingest(ndi_filenavigator_obj.session, ...
+				ndi_filenavigator_obj.fileparameters, ndi_filenavigator_obj.epochprobemap_class, ...
+				ndi_filenavigator_obj.epochprobemap_fileparameters);
+
+			
+			
+
+		end;
 
 		%% functions that override ndi.documentservice
 		function ndi_document_obj = newdocument(ndi_filenavigator_obj)

@@ -1,4 +1,4 @@
-class ingestion_help
+classdef ingestion_help
 % A class that provides helper methods for ingesting raw data files into the database
 % 
 % 
@@ -8,6 +8,7 @@ class ingestion_help
 			%
 			% OBJ = ndi.database.ingestion_help()
 			%
+
 		end; % ingestion_help() creator
 
 		function cname = ingestion_class(ingestion_help_obj)
