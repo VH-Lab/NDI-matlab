@@ -1,4 +1,21 @@
 function [header, presentation_time] = read_presentation_time_structure(filename, N0, N1)
+
+% READ_PRESENTATION_TIME_STRUCTURE - read the binary file from N0 to N1 that contains
+% presentation time structure information and output it to a struct. If N0
+% and N1 are not provided, return all the entries.
+%
+% [HEADER,PRESENTATION_TIME] = ndi.database.fun.read_presentation_time_structure(FILENAME, N0, N1)
+%
+% Inputs:
+%   FILENAME - a string representing the file name of the binary file
+%   N0 -  an integer representing the starting entry to read the data
+%   N1 - an integer representing the ending entry to read the data
+%
+% Outputs:
+%   HEADER - description of the data
+%   PRESENTATION_TIME - presentation time structure data
+%
+
 fid = fopen(filename, 'rb','ieee-le');
 
 % Read the header information
@@ -20,7 +37,7 @@ N1 = min(N1, num_entries);
 presentation_time = struct('clocktype', {}, 'stimopen', {}, ...
     'onset', {}, 'offset', {}, 'stimclose', {}, 'stimevents', {});
 
-for i = N0:N1
+for i = 1:N1
     presentation_time(i).clocktype = fgetl(fid);
     presentation_time(i).stimopen = fread(fid, 1, 'float64');
     presentation_time(i).onset = fread(fid, 1, 'float64');
@@ -36,4 +53,5 @@ fclose(fid);
 
 num_elements = numel(presentation_time);
 presentation_time = reshape(presentation_time, num_elements, 1);
+presentation_time = presentation_time(N0:N1);
 end
