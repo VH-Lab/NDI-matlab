@@ -1,6 +1,6 @@
 Functions in these object files or scripts need to change how they import the presentation_time structure
 
-+app/+stimulus/tuning_response.m
++app/+stimulus/tuning_response.m  ** done, not checked
 example/+tutorial/tutorial_02_04
 +example/+tutorial/tutorial_02_05
 +mock/+fun/subject_stimulator_neuron.m
