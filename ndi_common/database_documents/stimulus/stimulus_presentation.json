@@ -15,6 +15,11 @@
 			"value": "" 
 		}
 	],
+        "files": {
+                "file_list": [
+                        "presentation_time.bin"
+                ]
+        },
 	"stimulus_presentation": {
 		"presentation_order":							[],
 		"presentation_time": {

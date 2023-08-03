@@ -1,5 +1,5 @@
 function [header, presentation_time] = read_presentation_time_structure(filename, N0, N1)
-fid = fopen(filename, 'rb');
+fid = fopen(filename, 'rb','ieee-le');
 
 % Read the header information
 header = fgetl(fid); % Read the first line as the header

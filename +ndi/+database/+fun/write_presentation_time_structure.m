@@ -1,5 +1,5 @@
 function write_presentation_time_structure(filename, presentation_time)
-fid = fopen(filename, 'wb');
+fid = fopen(filename, 'wb','ieee-le');
 
 % Write the header information
 fprintf(fid, 'presentation_time structure\n');

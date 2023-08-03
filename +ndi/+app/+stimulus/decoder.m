@@ -101,17 +101,42 @@ classdef decoder < ndi.app
 						presentation_time(end+1) = timestruct;
 					end;
 
+					%  make a file and write the presentation_time structure
+					presentation_time_filename = ndi.file.temp_name();
+					ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
+						presentation_time);
+
 					stimulus_presentation = struct('presentation_order', data.stimid(:),...
-						'presentation_time', presentation_time, ...
+						... % 'presentation_time', presentation_time, ... % we now put this in a file
 						'stimuli', mystim);
 					nd = E.newdocument('stimulus/stimulus_presentation',...
 						'stimulus_presentation', stimulus_presentation, ...
 						'epochid.epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
+					nd = nd.add_file('presentation_time.bin',presentation_time_filename);
 					newdocs{end+1} = nd;
 				end;
 				E.database_add(newdocs);
 		end % 
+
 	end; % methods
+
+	methods (Static)
+		function presentation_time = load_presentation_time(ndi_app_stimulus_decoder_obj, stimulus_presentation_doc)
+			% LOAD_PRESENTATION_TIME - read the presentation_time structure from binary portion	
+			%
+			% PRESENTATION_TIME = LOAD_PRESENTATION_TIME(NDI_APP_STIMULUS_DECODER_OBJ, ...
+			%      STIMULUS_PRESENTATION_DOC)
+			%
+			% Given a 'stimulus_presentation' type ndi.document, loads the presentation_time data from
+			% the binary portion.
+			%
+	
+				fobj = ndi_calculator_obj.session.database_openbinarydoc(doc,'presentation_time.bin');
+				[header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
+				fobj.fclose();
+
+		end; % load_presentation_time
+	end;
 end % ndi.app.stimulus.decoder
 

@@ -4,6 +4,9 @@
 	"depends_on": [
 		{ "name": "stimulus_element_id", "mustbenotempty": 1}
 	],
+        "file": [
+                {"name": "presentation_time.bin", "mustbenotempty": 1}
+	],
 	"stimulus_presentation": [
 		{
 			"name": "presentation_order",
@@ -12,14 +15,6 @@
 			"parameters": [NaN,1],
 			"queryable": 1,
 			"documentation": "An array of the order of stimulus presentation (each stimulus has an integer ID)"
-		},
-		{
-			"name": "presentation_time",
-			"type": "structure",
-			"default_value": [],
-			"parameters": "",
-			"queryable": 1,
-			"documentation": "UPDATE THIS TO STRUCTURE"
 		},
 		{
 			"name": "stimuli",
