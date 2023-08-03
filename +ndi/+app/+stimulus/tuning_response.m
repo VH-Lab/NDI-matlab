@@ -55,6 +55,8 @@ classdef tuning_response < ndi.app
 				
 				E = ndi_app_tuning_response_obj.session;
 
+				ndi_decoder = ndi.app.stimulus.decoder(ndi_app_tuning_response_obj.session);
+
 				% find all stimulus records from the stimulus element
 				sq_nditimeseries = ndi.query('','depends_on','element_id',ndi_timeseries_obj.id());
 				sq_stimelement = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id()); 
@@ -82,14 +84,15 @@ classdef tuning_response < ndi.app
 				% find all the epochs of overlap between stimulus element and ndi_timeseries_obj
 
 				for i=1:numel(doc_stim),
+					presentation_time = ndi_decoder.load_presentation_time(doc_stim{i});
 					%disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
 					% ASSUMPTION: each stimulus element epoch will overlap a single ndi_timeseries_obj epoch
 					%   therefore, we can use the first stimulus as a proxy for them all
-					if numel(doc_stim{i}.document_properties.stimulus_presentation.presentation_time)>0, % make sure there is at least 1 stimulus 
+					if numel(presentation_time)>0, % make sure there is at least 1 stimulus 
 						stim_timeref = ndi.time.timereference(ndi_element_stim, ...
-							ndi.time.clocktype(doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
+							ndi.time.clocktype(presentation_time(1).clocktype), ...
 							doc_stim{i}.document_properties.epochid.epochid, ...
-							doc_stim{i}.document_properties.stimulus_presentation.presentation_time(1).onset);
+							presentation_time(1).onset);
 						[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
 							0, ndi_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 							% time is 0 because stim_timeref is relative to 1st stim
@@ -113,6 +116,7 @@ classdef tuning_response < ndi.app
 							ndi.query('','isa','control_stimulus_ids','');
 						control_stim_doc = E.database_search(ctrl_search);
 						for j=1:numel(control_stim_doc)
+							presentation_time = ndi_decoder.load_presentation_time(doc_stim{i});
 							% okay, now how to analyze these stims?
 							% 
 							% want to calculate F0, F1, F2
@@ -122,7 +126,7 @@ classdef tuning_response < ndi.app
 								doc_stim{i}.document_properties
 								doc_stim{i}.document_properties.stimulus_presentation.stimuli(1).parameters
 								doc_stim{i}.document_properties.stimulus_presentation.presentation_order
-								doc_stim{i}.document_properties.stimulus_presentation.presentation_time
+								presentation_time
 								control_stim_doc{j}.document_properties.control_stimulus_ids
 								control_stim_doc{j}.document_properties.control_stimulus_ids.control_stimulus_ids
 							end;
@@ -165,6 +169,7 @@ classdef tuning_response < ndi.app
 			% isspike (0)                          | 0/1 Is the signal a spike process? If so, timestamps correspond to spike events.
 			% spiketrain_dt (0.001)                | Resolution to use for spike train reconstruction if computing Fourier transform
 			%
+				ndi_decoder = ndi.app.stimulus.decoder(ndi_app_tuning_response_obj.session);
 				temporalfreqfunc = 'ndi.fun.stimulustemporalfrequency';
 				freq_response = [];
 				prestimulus_time = [];
@@ -229,12 +234,13 @@ classdef tuning_response < ndi.app
 
 				% load the data, get the stimulus times				
 
-				stim_stim_onsetoffsetid=[vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.onset]) ...
-						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_time.offset]) ...
+				presentation_time = ndi_decoder.load_presentation_time(stim_doc);
+				stim_stim_onsetoffsetid=[vlt.data.colvec([presentation_time.onset]) ...
+						vlt.data.colvec([presentation_time.offset]) ...
 						vlt.data.colvec([stim_doc.document_properties.stimulus_presentation.presentation_order])];
 
 				stim_timeref = ndi.time.timereference(ndi_stim_obj, ...
-					ndi.time.clocktype(stim_doc.document_properties.stimulus_presentation.presentation_time(1).clocktype), ...
+					ndi.time.clocktype(presentation_time(1).clocktype), ...
 					stim_doc.document_properties.epochid.epochid, 0);
 
 				[ts_epoch_t0_out, ts_epoch_timeref, msg] = E.syncgraph.time_convert(stim_timeref,...
@@ -558,6 +564,8 @@ classdef tuning_response < ndi.app
 				control_stim_method = 'psuedorandom';
 				controlid = 'isblank';
 				controlid_value = 1;
+				ndi_decoder = ndi.app.stimulus.decoder(ndi_app_tuning_response_obj.session);
+				presentation_time = ndi_decoder.load_presentation_time(stim_doc);
 			
 				vlt.data.assign(varargin{:});
 
@@ -603,7 +611,7 @@ classdef tuning_response < ndi.app
 							else,
 								cs_ids = [];
 								% slow
-								presentation_onsets = [stim_doc.document_properties.stimulus_presentation.presentation_time.onset];
+								presentation_onsets = [presentation_time.onset];
 								for n=1:numel(stimids),
 									i=vlt.data.findclosest(presentation_onsets(control_stim_indexes), presentation_onsets(n));
 									cs_ids(n) = control_stim_indexes(i);
