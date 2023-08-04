@@ -64,7 +64,7 @@ stimulus_N = size(X,1);
 stims = vlt.data.colvec(1:stimulus_N);
 
 stim_pres_struct.presentation_order = [ repmat([stims],reps,1) ];
-stim_pres_struct.presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
+presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
 stim_pres_struct.stimuli = vlt.data.emptystruct('parameters');
 
 for i=1:stimulus_N,
@@ -83,7 +83,7 @@ end;
 spiketimes = [];
 
 for i=1:numel(stim_pres_struct.presentation_order),
-	pt_here = vlt.data.emptystruct(fieldnames(stim_pres_struct.presentation_time));
+	pt_here = vlt.data.emptystruct(fieldnames(presentation_time));
 	pt_here(1).clocktype = 'utc';
 	pt_here(1).stimopen = i * (stim_duration+interstimulus_interval);
 	pt_here(1).onset    = pt_here(1).stimopen;
@@ -114,10 +114,13 @@ for i=1:numel(stim_pres_struct.presentation_order),
 
 	pt_here(1).offset   = pt_here(1).onset + stim_duration_here;
 	pt_here(1).stimclose = pt_here(1).offset;
-	stim_pres_struct.presentation_time(i,1) = pt_here;
+	presentation_time(i,1) = pt_here;
 end;
 
 stim_pres_doc = ndi.document('stimulus_presentation','stimulus_presentation',stim_pres_struct,'epochid',epochid) + S.newdocument();
 stim_pres_doc = stim_pres_doc.set_dependency_value('stimulus_element_id',stimulus_element_id);
 
+presentation_time_filename = ndi.file.temp_name();
+ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
+	presentation_time);
 

@@ -57,7 +57,7 @@ stimulus_N = size(X,2);
 stims = 1:stimulus_N;
 
 stim_pres_struct.presentation_order = [ repmat([stims]',n_reps,1) ];
-stim_pres_struct.presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
+presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
 stim_pres_struct.stimuli = emptystruct('parameters');
 
 
@@ -85,7 +85,7 @@ values{1} = [0.1:0.1:1 ];
 add_blank = 1;
 
 stim_pres_struct.presentation_order = [ repmat([stims]',n_reps,1) ];
-stim_pres_struct.presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
+presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
 stim_pres_struct.stimuli = emptystruct('parameters');
 
 for i=1:numel(stim_pres_struct.presentation_order),
@@ -95,7 +95,7 @@ for i=1:numel(stim_pres_struct.presentation_order),
 	pt_here(1).onset    = pt_here(1).stimopen;
 	pt_here(1).offset   = pt_here(1).onset + stim_duration;
 	pt_here(1).stimclose = pt_here(1).offset;
-	stim_pres_struct.presentation_time(i,1) = pt_here;
+	presentation_time(i,1) = pt_here;
 end;
 
 for i=1:numel(values{1}),
@@ -109,5 +109,4 @@ end;
 if add_blank,
 	stim_pres_struct.stimuli(end+1,1) = struct('parameters',struct('isblank',1));
 end;
-
 

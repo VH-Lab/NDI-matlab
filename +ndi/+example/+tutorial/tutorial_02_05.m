@@ -68,6 +68,8 @@ stim_pres_doc{1}.document_properties
   %                epochid_fix: [1x1 struct]
   %               ndi_document: [1x1 struct]
   %      stimulus_presentation: [1x1 struct]
+  %                      files: [1x1 struct]
+
   
  % Code block 2.5.2.1
 disp(['Code block 2.5.2.1:']);
@@ -155,7 +157,6 @@ q_stim_and_stim_decoder_docs{1}.document_properties.stimulus_presentation
  % ans = 
  %   struct with fields:
  %     presentation_order: [85x1 double]
- %      presentation_time: [85x1 struct]
  %                stimuli: [17x1 struct]
  
  
