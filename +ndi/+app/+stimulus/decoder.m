@@ -119,9 +119,6 @@ classdef decoder < ndi.app
 				E.database_add(newdocs);
 		end % 
 
-	end; % methods
-
-	methods (Static)
 		function presentation_time = load_presentation_time(ndi_app_stimulus_decoder_obj, stimulus_presentation_doc)
 			% LOAD_PRESENTATION_TIME - read the presentation_time structure from binary portion	
 			%
@@ -132,11 +129,11 @@ classdef decoder < ndi.app
 			% the binary portion.
 			%
 	
-				fobj = ndi_calculator_obj.session.database_openbinarydoc(doc,'presentation_time.bin');
+				fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
 				[header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
 				fobj.fclose();
 
 		end; % load_presentation_time
-	end;
+    end; %methods
 end % ndi.app.stimulus.decoder
 
