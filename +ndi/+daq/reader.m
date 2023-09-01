@@ -125,7 +125,8 @@ classdef reader < ndi.ido & ndi.documentservice
 			%    ndi.daq.reader object. 
 				ndi_document_obj = ndi.document('daq/daqreader.json',...
 					'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
-					'base.id', ndi_daqreader_obj.id());
+					'base.id', ndi_daqreader_obj.id(),...
+					'base.session_id',ndi.session.empty_id());
 		end; % newdocument()
 
 		function sq = searchquery(ndi_daqreader_obj)

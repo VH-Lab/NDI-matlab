@@ -8,7 +8,7 @@
 			"name": "session_id",
 			"type": "did_uid",
 			"default_value": "",
-			"parameters": "", 
+			"parameters": 33, 
 			"queryable": 1,
 			"documentation": "Session ID for base document class."
 		},
@@ -16,7 +16,7 @@
 			"name": "id",
 			"type": "did_uid",
 			"default_value": "",
-			"parameters": "", 
+			"parameters": 33, 
 			"queryable": 1,
 			"documentation": "Unique ID for base document class."
 		},

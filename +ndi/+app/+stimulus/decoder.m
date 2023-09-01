@@ -134,6 +134,7 @@ classdef decoder < ndi.app
 				fobj.fclose();
 
 		end; % load_presentation_time
-    end; %methods
+	end; % methods
+
 end % ndi.app.stimulus.decoder
 
