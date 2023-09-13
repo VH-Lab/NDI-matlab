@@ -201,4 +201,5 @@ bug_document = jsondecode(str_doc);
 %%
 
 [B,MSG] = ndi.database.fun.upload_to_NDI_cloud(S, email, password, dataset_id);
-
+%%
+prefix = [filesep 'Users' filesep 'cxy' filesep 'Documents' filesep 'MATLAB' filesep 'data' filesep '2021-04-01'];

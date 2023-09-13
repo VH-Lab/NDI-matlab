@@ -65,6 +65,7 @@ try,
 catch,
 	error(['Command failed with message: ' output ]);
 end;
+
 if isfield(response, 'error')
     error(response.error);
 end

@@ -35,7 +35,8 @@ if verbose, disp(['Getting list of previously uploaded documents...']); end;
 
 [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id,auth_token);
 
-already_uploaded_docs = {doc_resp.documents.ndiId};
+already_uploaded_docs = {};
+if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
 
 all_docs = {};
 for i=1:numel(d),
@@ -51,9 +52,11 @@ if verbose, disp(['Will upload ' int2str(numel(document_indexes_to_upload)) ' do
 msg = '';
 b = 1;
 for i=1:numel(document_indexes_to_upload),
+% for i=1:numel(document_indexes_to_upload),
     % upload instruction - need to learn
     index = document_indexes_to_upload(i);
     document = did.datastructures.jsonencodenan(d{index}.document_properties);
+%     document = jsonencode(d{index}.document_properties);
     global ndi_globals;
     temp_dir = ndi_globals.path.temppath;
     ido_ = ndi.ido;
@@ -76,7 +79,7 @@ for i=1:numel(document_indexes_to_upload),
         for f = 1:numel(d{index}.document_properties.files.file_list)
             file_name = d{index}.document_properties.files.file_list{f};
             if verbose, 
-               disp(['Uploading ' int2str(f) ' of ' int2str(d{index}.document_properties.files.file_list) ' binary files (' file_name ')']);
+               disp(['Uploading ' int2str(f) ' of ' int2str(numel(d{index}.document_properties.files.file_list)) ' binary files (' file_name ')']);
             end;
             file_obj = S.database_openbinarydoc(ndi_doc_id, file_name);
             [~,uid,~] = fileparts(file_obj.fullpathfilename);
