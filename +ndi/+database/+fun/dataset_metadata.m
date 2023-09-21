@@ -7,102 +7,132 @@ res = 0;
 if nargin == 1
     disp("opening app");
     a = app1();
-    % a = app3v1_4();
 
 else
     vlt.data.assign(varargin{:});
-    disp(steps)
-    switch (steps)
-        case 1
-            disp('first step')
-            switch (action)
-                case 'save'
-                    disp(data)
+    switch (action)
+        case 'check'
+            
+        case 'submit'
+            additionalDetails = data.additionalDetails;
+            authorRole = data.authorRole;
+            relatedPublications = data.relatedPublications;
+            
+            %% Person document
+            custodians ={};
+            ppl = {};
+            orgs = {};
+            afs = {};
+            contacts = {};
+            for i= 1:data.numAuthors
+                disp(i)
+                ror = openminds.core.RORID('identifier',data.digitalIdentifier{i});
+                org = openminds.core.Organization('digitalIdentifier', ror,...
+                    'fullName',data.institutes{i});
+                orgs(i) = {org};
+                af = openminds.core.Affiliation('memberOf', org);
+                afs(i) = {af};
+                contact = openminds.core.ContactInformation('email',...
+                    data.authorEmail{i});
+                contacts(i) = {contact};
+                p = openminds.core.Person('familyName',data.familyName{i},'givenName',data.givenName{i},...
+                    'affiliation',af, 'contactInformation',contact);
+                ppl(i) = {p};
             end
-        case 2
-            switch (action)
-                case 'open'
-                    a = app3v1_4();
-                case 'save'
-                    disp(data)
+             S = ndi.database.fun.openMINDSobj2struct(ppl);
+            treenodes = data.authorRole{1,1};
+            for i = 1:numel(treenodes)
+                if strcmp(treenodes(i).Text, "Custodian")
+                    custodians(end+1) = ppl(i);
+                end
             end
-        case 3
-            disp('3rd step')
-            switch (action)
-                case 'open'
-                    a = app2AltView();
-                case 'save'
-                    disp(data.expApproach);
-                    disp(data);
-                    res = data;
-                case 'submit'
-                    disp(data)
-                case 'initiate'
-                    disp("initiating authors..There are ")
-                    numAuthors = str2double(numAuthors);
-                    disp(numAuthors + " authors")
 
-                    institutes = cell(1, numAuthors);
-                    givenName = cell(1, numAuthors);
-                    familyName = cell(1, numAuthors);
-                    authorEmail = cell(1, numAuthors);
-                    digitalIdentifier = cell(1, numAuthors);
-                    additionalDetails = cell(1, numAuthors);
-                    authorRole = cell(1, numAuthors);
-                    relatedPublications = cell(1, numAuthors);
+            %% Dataset document
+            ndiido = ndi.ido();
+             % Required = ["identifier", "NDI Cloud"]
+              % Required = ["type"]
+            % dataset = openminds.core.Dataset('author',ppl,'custodian',custodians,...
+            %         'description',data.abstractInput, 'digitalIdentifier',ndiido.identifier, ...
+            %         'fullName', data.datasetBranchTitleInput, ...
+            %         'hasVersion', "", 'shortName', "");
+            
+            %% Dataset version
+            
 
-                    authorArray = cell(1, numAuthors);
-
-                    for i = 1:numAuthors
-                        institutes{i} = '';
-                        givenName{i} = 'Author';
-                        familyName{i} = num2str(i);
-                        authorEmail{i} = '';
-                        digitalIdentifier{i} = '';
-                        additionalDetails{i} = '';
-                        authorRole{i} = '';
-                        relatedPublications{i} = '';
-                        authorArray{i} = sprintf('Author %d', i); % Create author names
-                    end
-                    disp(authorArray)
-                    
-                    res = authorArray;
-                case 'update institution'
-                    authorIdx = str2double(authorIdx);
-                    institutes{authorIdx} = updatedInstitutes;
-                    res = institutes;
-                case 'update given name'
-                    authorIdx = str2double(authorIdx);
-                    givenName{authorIdx} = updatedGivenName;
-                    res = givenName;
-                case 'update family name'
-                    authorIdx = str2double(authorIdx);
-                    familyName{authorIdx} = updatedFamilyName;
-                    res = familyName;
-                case 'update author Email'
-                    authorIdx = str2double(authorIdx);
-                    authorEmail{authorIdx} = updatedAuthorEmail;
-                    res = authorEmail;
-                case 'update digital identifier'
-                    authorIdx = str2double(authorIdx);
-                    digitalIdentifier{authorIdx} = updatedDigitalIdentifier;
-                    res = digitalIdentifier;
-                case 'update additional details'
-                    authorIdx = str2double(authorIdx);
-                    additionalDetails{authorIdx} = updatedAdditionalDetails;
-                    res = additionalDetails;
-                case 'update author role'
-                    authorIdx = str2double(authorIdx);
-                    authorRole{authorIdx} = updatedAuthorRole;
-                    res = authorRole;
-                case 'update related publications'
-                    authorIdx = str2double(authorIdx);
-                    relatedPublications{authorIdx} = updatedRelatedPublications;
-                    res = relatedPublications;
-
-                case 'retrieve'
-                    authorIdx = str2double(authorIdx);
-                    res = givenName{authorIdx};
+        % case 1
+        %     disp('first step')
+        %     switch (action)
+        %         case 'save'
+        %             disp(data)
+        %     end
+        % case 2
+        %     switch (action)
+        %         case 'open'
+        %             a = app3v1_4();
+        %         case 'save'
+        %             disp(data)
+        %             numAuthors = data.numAuthors;
+        %             institutes = data.institutes;
+        %             givenName = data.givenName;
+        %             familyName = data.familyName;
+        %             authorEmail = data.authorEmail;
+        %             digitalIdentifier = data.digitalIdentifier;
+        %             additionalDetails = data.additionalDetails;
+        %             authorRole = data.authorRole;
+        %             disp(authorRole)
+        %             relatedPublications = data.relatedPublications;
+        % 
+        %             custodian =[];
+        %             ppl = [];
+        %             orgs =[];
+        %             afs = [];
+        %             contacts = [];
+        %             for i= 1:numAuthors
+        %                 disp(i)
+        %                 ror = openminds.core.RORID('identifier',digitalIdentifier{i});
+        %                 org = openminds.core.Organization('digitalIdentifier', ror,...
+        %                     'fullName',institutes{i});
+        %                 orgs = [orgs org];
+        %                 af = openminds.core.Affiliation('memberOf', org);
+        %                 afs = [afs af];
+        %                 % orcid = openminds.core.ORCID('identifier',...
+        %                 %     'https://orcid.org/0000-0000-0000-0000');
+        %                 contact = openminds.core.ContactInformation('email',...
+        %                     authorEmail{i});
+        %                 contacts = [contacts contact];
+        %                 p = openminds.core.Person('familyName',familyName{i},'givenName',givenName{i},...
+        %                     'affiliation',af, 'contactInformation',contact);
+        %                 ppl =[ppl p];
+        %             end
+        %             treenodes = authorRole{1,1};
+        % 
+        %             for i = 1:numel(treenodes)
+        %                 if strcmp(treenodes(i).Text, "Custodian")
+        %                     isCustodian = true;
+        %                     break; % Exit the loop if a "Custodian" node is found
+        %                 end
+        %             end
+        % 
+        %             if isCustodian
+        %                 disp("There is a 'Custodian' node in the array.");
+        %             else
+        %                 disp("There is no 'Custodian' node in the array.");
+        %             end
+        %             disp(ppl)
+        % 
+        %     end
+        % 
+        % case 3
+        %     disp('3rd step')
+        %     switch (action)
+        %         case 'open'
+        %             a = app2AltView();
+        %         case 'save'
+        %             disp(data.expApproach);
+        %             disp(data);
+        %             res = data;
+        %         case 'submit'
+        %             disp(data)
     end
 
     % disp("getting user input...");
