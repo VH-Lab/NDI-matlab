@@ -55,6 +55,7 @@ classdef tuningcurve < ndi.calculator
 				log_str = '';
 
 				deal_constraints = {};
+				stim_property_list = {};
 
 				for i=1:numel(parameters.input_parameters.selection),
 					if strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'hasnumericvalue'),
@@ -105,6 +106,7 @@ classdef tuningcurve < ndi.calculator
 						constraint(end+1) = constraint_here;
 						log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' best value is ' num2str(stim_property_value) ',']);
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
+						stim_property_list{end+1} = parameters.input_parameters.selection(i).property;
 						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
 						deal_constraints_group = vlt.data.emptystruct('field','operation','param1','param2');
 						for j=1:numel(pva),
@@ -156,6 +158,7 @@ classdef tuningcurve < ndi.calculator
 
 				for i=1:N_deal,
 					deal_log_str = '';
+					stim_property_list_values = [];
 
 					constraints_mod = constraint;
 					eval(['[' deal_str ']=ind2sub(size(deal_constraints),i);']);
@@ -164,11 +167,15 @@ classdef tuningcurve < ndi.calculator
 						if isstruct(deal_here),
 							constraints_mod(end+1) = deal_here;
 							deal_log_str = cat(2,deal_str,['dealing ' deal_here.field ' = ' num2str(deal_here.param1) ',']);
+							stim_prop_index = find(strcmp(deal_here.field,stim_property_list));
+							% has to be a match, all dealt properties are in stim_property_list
+							stim_property_list_values(stim_prop_index) = deal_here.param1;
 						end;
 					end;
 
 					tuningcurve_calc_here = tuningcurve_calc;
 					tuningcurve_calc_here.log = cat(2,tuningcurve_calc_here.log,deal_log_str);
+					tuningcurve_calc_here.stim_property_list = struct('names',stim_property_list(:)','values',stim_property_list_values(:)');
 
 					% we use the ndi.app.stimulus.tuning_response app to actually make the tuning curve
 					doc_here = tapp.tuning_curve(stim_response_doc,'independent_label',independent_label,...

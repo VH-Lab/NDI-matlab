@@ -27,6 +27,14 @@
 			"parameters": [],
 			"queryable": 1,
 			"documentation": "Depends on field"
+		},
+		{
+			"name": "stim_property_list",
+			"type": "structure",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Description of the stimuli placed in the tuning curve"
 		}
 	]
 }
