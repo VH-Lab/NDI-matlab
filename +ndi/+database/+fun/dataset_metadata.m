@@ -14,38 +14,41 @@ else
         case 'check'
             
         case 'submit'
-            additionalDetails = data.additionalDetails;
-            authorRole = data.authorRole;
-            relatedPublications = data.relatedPublications;
-            
-            %% Person document
-            custodians ={};
-            ppl = {};
-            orgs = {};
-            afs = {};
-            contacts = {};
-            for i= 1:data.numAuthors
-                disp(i)
-                ror = openminds.core.RORID('identifier',data.digitalIdentifier{i});
-                org = openminds.core.Organization('digitalIdentifier', ror,...
-                    'fullName',data.institutes{i});
-                orgs(i) = {org};
-                af = openminds.core.Affiliation('memberOf', org);
-                afs(i) = {af};
-                contact = openminds.core.ContactInformation('email',...
-                    data.authorEmail{i});
-                contacts(i) = {contact};
-                p = openminds.core.Person('familyName',data.familyName{i},'givenName',data.givenName{i},...
-                    'affiliation',af, 'contactInformation',contact);
-                ppl(i) = {p};
-            end
-             S = ndi.database.fun.openMINDSobj2struct(ppl);
-            treenodes = data.authorRole{1,1};
-            for i = 1:numel(treenodes)
-                if strcmp(treenodes(i).Text, "Custodian")
-                    custodians(end+1) = ppl(i);
-                end
-            end
+            disp(data)
+%             \A[\w!#$%&'*+/=?`{|}~^-]+(?:\.[\w!#$%&'*+/=?`{|}~^-]+)*@↵
+% (?:[A-Z0-9-]+\.)+[A-Z]{2,6}\Z
+            % additionalDetails = data.additionalDetails;
+            % authorRole = data.authorRole;
+            % relatedPublications = data.relatedPublications;
+            % 
+            % %% Person document
+            % custodians ={};
+            % ppl = {};
+            % orgs = {};
+            % afs = {};
+            % contacts = {};
+            % for i= 1:data.numAuthors
+            %     disp(i)
+            %     ror = openminds.core.RORID('identifier',data.digitalIdentifier{i});
+            %     org = openminds.core.Organization('digitalIdentifier', ror,...
+            %         'fullName',data.institutes{i});
+            %     orgs(i) = {org};
+            %     af = openminds.core.Affiliation('memberOf', org);
+            %     afs(i) = {af};
+            %     contact = openminds.core.ContactInformation('email',...
+            %         data.authorEmail{i});
+            %     contacts(i) = {contact};
+            %     p = openminds.core.Person('familyName',data.familyName{i},'givenName',data.givenName{i},...
+            %         'affiliation',af, 'contactInformation',contact);
+            %     ppl(i) = {p};
+            % end
+            %  S = ndi.database.fun.openMINDSobj2struct(ppl);
+            % treenodes = data.authorRole{1,1};
+            % for i = 1:numel(treenodes)
+            %     if strcmp(treenodes(i).Text, "Custodian")
+            %         custodians(end+1) = ppl(i);
+            %     end
+            % end
 
             %% Dataset document
             ndiido = ndi.ido();
@@ -58,7 +61,7 @@ else
             
             %% Dataset version
             
-
+            % techApproach = data.techApproach.Text;
         % case 1
         %     disp('first step')
         %     switch (action)
