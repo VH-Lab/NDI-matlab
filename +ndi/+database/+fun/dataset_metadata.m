@@ -1,22 +1,51 @@
-function res = dataset_metadata(varargin)
-%DATASET_METADATA Summary of this function goes here
-%   Detailed explanation goes here
+function res = dataset_metadata(S, new, varargin)
+% DATASET_METADATA - opens a MATLAB app for users to enter metadata
+% information
+%
+% RES = ndi.database.fun.dataset_metadata(S, NEW)
+%
+% Inputs:
+%   S - an ndi.session object
+%   NEW - create a new metadata form enter 1. Otherwise enter 0.
+%   
+%
+
 
 disp("dataset_metadata is being called");
-res = 0;
-if nargin == 1
-    disp("opening app");
-    a = app1();
 
+if nargin == 2
+    disp("opening app");
+    if (new)
+        directory = S.path + "/.ndi";
+        ido_ = ndi.ido;
+        rand_num = ido_.identifier;
+        temp_filename = sprintf("metadata_%s.mat", rand_num);
+        path = fullfile(directory, temp_filename);
+        a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,path, {});
+    else
+        directory = S.path + "/.ndi";
+        file_list = dir(fullfile(directory, 'metadata_*.mat'));
+        for i = 1:numel(file_list)
+            full_file_path = fullfile(directory, file_list(i).name);
+            stored_data = load(full_file_path);
+            a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,full_file_path, stored_data.data);
+        end
+    end
+ 
 else
     vlt.data.assign(varargin{:});
     switch (action)
+        case 'load'
+            [status] = ndi.database.fun.load_metadata_to_GUI(app, s);
+        case 'save'
+            save(metadata_file_name, 'data');
         case 'check'
-            
+            [submit, errorStep] = ndi.database.fun.check_metadata_inputs(app);
+            res.submit = submit;
+            res.errorStep = errorStep;
         case 'submit'
             disp(data)
-%             \A[\w!#$%&'*+/=?`{|}~^-]+(?:\.[\w!#$%&'*+/=?`{|}~^-]+)*@↵
-% (?:[A-Z0-9-]+\.)+[A-Z]{2,6}\Z
+            
             % additionalDetails = data.additionalDetails;
             % authorRole = data.authorRole;
             % relatedPublications = data.relatedPublications;
