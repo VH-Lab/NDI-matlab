@@ -16,19 +16,19 @@ disp("dataset_metadata is being called");
 if nargin == 2
     disp("opening app");
     if (new)
-        directory = S.path + "/.ndi";
+        savePath = S.path + "/.ndi/NDIDatasetUpload";
+        if ~isfolder(savePath); mkdir(savePath); end
         ido_ = ndi.ido;
         rand_num = ido_.identifier;
         temp_filename = sprintf("metadata_%s.mat", rand_num);
-        path = fullfile(directory, temp_filename);
-        a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,path, {});
+        path = fullfile(savePath, temp_filename);
+        a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,path);
     else
-        directory = S.path + "/.ndi";
-        file_list = dir(fullfile(directory, 'metadata_*.mat'));
+        savePath = S.path + "/.ndi/NDIDatasetUpload";
+        file_list = dir(fullfile(savePath, 'metadata_*.mat'));
         for i = 1:numel(file_list)
-            full_file_path = fullfile(directory, file_list(i).name);
-            stored_data = load(full_file_path);
-            a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,full_file_path, stored_data.data);
+            full_file_path = fullfile(savePath, file_list(i).name);
+            a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,full_file_path);
         end
     end
  
@@ -44,7 +44,7 @@ else
             res.submit = submit;
             res.errorStep = errorStep;
         case 'submit'
-            disp(data)
+            disp(AuthorData)
             
             % additionalDetails = data.additionalDetails;
             % authorRole = data.authorRole;
