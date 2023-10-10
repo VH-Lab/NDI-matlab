@@ -1,4 +1,4 @@
-function orcid = getOrcid(name)
+function orcid = getOrcId(name)
     
     %name = 'stephen van hooser';
     baseUrl = 'https://pub.orcid.org';

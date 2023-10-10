@@ -68,6 +68,18 @@ classdef AuthorData < handle
             obj.AuthorList = S;
         end
 
+        function addAffiliation(obj, authorIndex,S)
+            if isempty(obj.AuthorList(authorIndex).Affiliation)
+                obj.AuthorList(authorIndex).Affiliation = S;
+            else
+                size = numel(obj.AuthorList(authorIndex).Affiliation);
+                obj.AuthorList(authorIndex).Affiliation(size + 1) = S;         
+            end
+        end
+
+        function removeAffiliation(obj, authorIndex, affiliationIndex)
+            obj.AuthorList(authorIndex).Affiliation(affiliationIndex) = [];  
+        end
     end
 
     

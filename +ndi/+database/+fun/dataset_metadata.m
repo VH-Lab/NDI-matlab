@@ -22,13 +22,13 @@ if nargin == 2
         rand_num = ido_.identifier;
         temp_filename = sprintf("metadata_%s.mat", rand_num);
         path = fullfile(savePath, temp_filename);
-        a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,path);
+        a = ndi.database.metadata_app.Apps.tabExp_EH(S,path);
     else
         savePath = S.path + "/.ndi/NDIDatasetUpload";
         file_list = dir(fullfile(savePath, 'metadata_*.mat'));
         for i = 1:numel(file_list)
             full_file_path = fullfile(savePath, file_list(i).name);
-            a = ndi.database.NDI_Cloud_Upload_App_EH.tabExp_EH(S,full_file_path);
+            a = ndi.database.metadata_app.Apps.tabExp_EH(S,full_file_path);
         end
     end
  

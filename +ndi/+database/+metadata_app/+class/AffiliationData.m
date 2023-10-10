@@ -61,6 +61,10 @@ classdef AffiliationData < handle
             obj.AffiliationList = S;
         end
 
+        function checkName(obj, ror, affiliationIndex)
+            [name, ~] = ndi.database.metadata_app.fun.checkValidRORID(ror);
+            obj.updateProperty(AffiliationName, name, affiliationIndex);
+        end
     end
 
     
@@ -72,8 +76,6 @@ classdef AffiliationData < handle
             S = struct;
             S.AffiliationName = '';
             S.RORId = '';
-            S.StartDate = '';
-            S.EndDate = '';
         end
 
     end
