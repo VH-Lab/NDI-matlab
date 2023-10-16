@@ -58,9 +58,41 @@ case is a simple field "answer".
 An openminds link to subjects:
 
 ```json
+{
+        "document_class": {
+                "definition":                                           "$NDIDOCUMENTPATH\/metadata\/openminds_subject.json",
+                "validation":                                           "$NDISCHEMAPATH\/metadata\/openminds_subject.json",
+                "class_name":                                           "openminds_subject",
+                "property_list_name":                                   "openminds_subject",
+                "class_version":                                        1,
+                "superclasses": [
+                        { "definition":                                 "$NDIDOCUMENTPATH\/base.json",
+                          "definition":                                 "$NDIDOCUMENTPATH\/metadata\/openminds.json" }
+                ]
+        },
+        "depends_on": [
+                {       "name": "subject_id",
+                        "value": ""
+                }
+        ],
+        "openminds_subject": {
+        }
+}
+```
 
+This document class needs a schema that says what fields are required:
 
-
+```json
+{
+        "classname": "openminds_subject",
+        "superclasses":  [ "base", "openminds" ],
+        "depends_on": [
+                { "name": "subject_id", "mustbenotempty": 1}
+        ],
+        "file": [ ],
+        "openminds_subject": [
+        ]
+}
 ```
 
 
