@@ -55,11 +55,17 @@ case is a simple field "answer".
 
 ### 8.1.2 Another example:
 
+An openminds link to subjects:
+
+```json
 
 
 
+```
 
-### 8.1.6 Discussion/Feedback
+
+
+### 8.1.3 Discussion/Feedback
 
 This concludes our tutorial on writing NDI documents.
 

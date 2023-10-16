@@ -1,9 +1,9 @@
 {
 	"document_class": {
-		"definition":						"$NDIDOCUMENTPATH\/metadata\/openminds_species.json",
-		"validation":						"$NDISCHEMAPATH\/metadata\/openminds_species.json",
-		"class_name":						"openminds_species",
-		"property_list_name":					"openminds_species",
+		"definition":						"$NDIDOCUMENTPATH\/metadata\/openminds_subject.json",
+		"validation":						"$NDISCHEMAPATH\/metadata\/openminds_subject.json",
+		"class_name":						"openminds_subject",
+		"property_list_name":					"openminds_subject",
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":					"$NDIDOCUMENTPATH\/base.json",
@@ -15,7 +15,7 @@
 			"value": ""
 		}
 	],
-	"openminds_species": {
+	"openminds_subject": {
 	}
 }
 

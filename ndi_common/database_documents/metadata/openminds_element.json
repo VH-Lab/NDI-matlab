@@ -1,0 +1,21 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/metadata\/openminds_element.json",
+		"validation":						"$NDISCHEMAPATH\/metadata\/openminds_element.json",
+		"class_name":						"openminds_element",
+		"property_list_name":					"openminds_element",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json",
+			  "definition":					"$NDIDOCUMENTPATH\/metadata\/openminds.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "element_id",
+			"value": ""
+		}
+	],
+	"openminds_element": {
+	}
+}
+
