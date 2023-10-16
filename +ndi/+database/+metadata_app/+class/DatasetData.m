@@ -3,7 +3,7 @@ classdef DatasetData < handle
     
     properties 
         % A struct array holding information for dataset. See
-        % DatasetData.getDefaultAuthorItem for the fields contained in the 
+        % DatasetData.getDefaultDatasetItem for the fields contained in the 
         % struct
         DatasetInfo (:,1) struct
     end
@@ -48,8 +48,6 @@ classdef DatasetData < handle
             S.Author = '';
             S.Description = ''; %Abstract
             S.FullName = ''; %Dataset Branch Title
-            S.Custodian = '';
-            S.DigitalIdentifier = ''; %Dataset_DOI
             S.HasVersion = '';
             S.ShortName = '';
         end
