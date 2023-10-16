@@ -52,11 +52,9 @@ if verbose, disp(['Will upload ' int2str(numel(document_indexes_to_upload)) ' do
 msg = '';
 b = 1;
 for i=1:numel(document_indexes_to_upload),
-% for i=1:numel(document_indexes_to_upload),
     % upload instruction - need to learn
     index = document_indexes_to_upload(i);
     document = did.datastructures.jsonencodenan(d{index}.document_properties);
-%     document = jsonencode(d{index}.document_properties);
     global ndi_globals;
     temp_dir = ndi_globals.path.temppath;
     ido_ = ndi.ido;
