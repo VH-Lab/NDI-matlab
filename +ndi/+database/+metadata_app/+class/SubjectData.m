@@ -38,7 +38,7 @@ classdef SubjectData < handle
         function idx = getIndex(obj, subjectName)
             idx = -1;
             for i = 1:numel(obj.SubjectList)
-                name = obj.SubjectList(1).SubjectNameList;
+                name = obj.SubjectList(i).SubjectNameList;
                 name = name{1};
                 if strcmp(name,subjectName)
                     idx = i;
@@ -60,6 +60,17 @@ classdef SubjectData < handle
         function setSubjectList(obj, S)
         %setAuthorList Same as authorData.AuthorList = S
             obj.SubjectList = S;
+        end
+
+        function selected = biologicalSexSelected(obj)
+            selected = 1;
+            for i = 1:numel(obj.SubjectList)
+                sex = obj.SubjectList(i).BiologicalSexList;
+                if isempty(sex)
+                    selected = -1;
+                    break;
+                end
+            end
         end
 
         function data = formatTable(obj)
