@@ -1,0 +1,11 @@
+{
+	"classname": "openminds_subject",
+	"superclasses":  [ "base", "openminds" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"openminds_subject": [
+	]
+}
+
