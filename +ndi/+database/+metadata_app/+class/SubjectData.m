@@ -62,14 +62,12 @@ classdef SubjectData < handle
             obj.SubjectList = S;
         end
 
-        function selected = biologicalSexSelected(obj)
+        function selected = biologicalSexSelected(obj, subjectName)
+            idx = obj.getIndex(subjectName);
             selected = 1;
-            for i = 1:numel(obj.SubjectList)
-                sex = obj.SubjectList(i).BiologicalSexList;
-                if isempty(sex)
-                    selected = -1;
-                    break;
-                end
+            sex = obj.SubjectList(idx).BiologicalSexList;
+            if isempty(sex)
+                selected = 0;
             end
         end
 

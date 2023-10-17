@@ -3,7 +3,7 @@ classdef SpeciesData < handle
     
     properties 
         % A struct array holding information for each species. 
-        SpeciesList (:,1) struct
+        SpeciesList (1,:) ndi.database.metadata_app.class.Species
     end
 
     methods
@@ -33,23 +33,25 @@ classdef SpeciesData < handle
         end
 
         function addItem(obj, name, synonym, ontologyIdentifier)
-            S = struct;
-            S.Name = name;
-            S.Synonym = synonym;
-            S.OntologyIdentifier = ontologyIdentifier;
-            
+            species = ndi.database.metadata_app.class.Species(name,ontologyIdentifier,synonym);
+           
             if (numel(obj.SpeciesList) == 0)
-                obj.SpeciesList = S;
+                obj.SpeciesList = species;
             else
-                obj.SpeciesList(end + 1) = S;
+                obj.SpeciesList(end + 1) = species;
             end
 
         end
    
-        function S = getItem(obj, speciesIndex)
-        %getItem Get a struct with species details for the given index
-            if numel( obj.SpeciesList ) >= speciesIndex
-                S = obj.SpeciesList(speciesIndex);                
+        function S = getItem(obj, speciesName)
+        %getItem Get a struct with species details for the given name
+            S = {};
+            for i = 1:numel(obj.SpeciesList)
+                name = obj.SpeciesList(i).Name;
+                name = name{1};
+                if strcmp(name,speciesName)
+                    S = obj.SpeciesList(i);
+                end
             end
         end
 
