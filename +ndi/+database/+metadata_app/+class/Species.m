@@ -5,6 +5,7 @@ classdef Species < handle
         Name
         Synonym
         OntologyIdentifier
+        uuid
         
     end
 
@@ -35,7 +36,7 @@ classdef Species < handle
         function str = toString(obj)
             str = obj.Name;
         end
-        
+
         function properties = toStruct(obj)
             properties = struct(...
                 'Name', obj.Name, ...
