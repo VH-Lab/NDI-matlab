@@ -38,9 +38,15 @@ classdef Subject < handle
         end
 
         function strArr = toStringArr(obj, name)
-            strArr = {};
-            for i = 1:numel(obj.(name))
-                strArr{end + 1} = obj.(name)(i).toString();
+            if numel(obj.(name)) == 0
+                strArr = [""];
+            else
+                cellArr = obj.(name)(1).toString();
+                strArr = [string(cellArr{1})];
+                for i = 2:numel(obj.(name))
+                    cellArr = obj.(name)(i).toString();
+                    strArr(i) = [string(cellArr{1})];
+                end
             end
         end
 
@@ -50,9 +56,18 @@ classdef Subject < handle
             paddedLists{1} = obj.padList(obj.SubjectNameList, maxLen, '');
             paddedLists{2} = obj.padList(obj.BiologicalSexList, maxLen, '');
             speciesList = obj.toStringArr("SpeciesList");
+            % speciesList = speciesList{1};
             paddedLists{3} = obj.padList(speciesList, maxLen, '');
             strainList = obj.toStringArr("StrainList");
             paddedLists{4} = obj.padList(strainList, maxLen, '');
+            
+            paddedLists{1} = paddedLists{1}';
+            paddedLists{2} = paddedLists{2}';
+            paddedLists{3} = paddedLists{3}';
+            paddedLists{4} = paddedLists{4}';
+
+            placeholder = '';
+            paddedLists(cellfun('isempty', paddedLists)) = {placeholder};
             formattedStruct = struct(...
                 'Subject', paddedLists{1}, ...
                 'BiologicalSex', paddedLists{2}, ...

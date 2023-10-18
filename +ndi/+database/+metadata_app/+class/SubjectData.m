@@ -71,11 +71,20 @@ classdef SubjectData < handle
             end
         end
 
+        function selected = SpeciesSelected(obj, subjectName)
+            idx = obj.getIndex(subjectName);
+            selected = 1;
+            species = obj.SubjectList(idx).SpeciesList;
+            if isempty(species)
+                selected = 0;
+            end
+        end
+
         function data = formatTable(obj)
             data = [];
             subjectList = obj.getSubjectList();
             for i = 1:numel(subjectList)
-                data = [data, subjectList(i).formatTable];
+                data = vertcat(data, subjectList(i).formatTable);
             end
         end
 
