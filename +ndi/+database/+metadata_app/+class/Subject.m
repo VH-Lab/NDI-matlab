@@ -37,37 +37,44 @@ classdef Subject < handle
             sortedSpeciesList = speciesList(sortedIndices);    
         end
 
-        function strArr = toStringArr(obj, name)
+        function str = toStringArr(obj, name)
             if numel(obj.(name)) == 0
-                strArr = [""];
+                str = "";
             else
-                cellArr = obj.(name)(1).toString();
-                strArr = [string(cellArr{1})];
+                str1 = obj.(name)(1).toString();
+                str = str1;
                 for i = 2:numel(obj.(name))
-                    cellArr = obj.(name)(i).toString();
-                    strArr(i) = [string(cellArr{1})];
+                    str1 = obj.(name)(i).toString();
+                    str = str + ", ";
+                    str = str + str1;
                 end
             end
         end
 
+        function str = biologicalSexToString(obj)
+            if numel(obj.BiologicalSexList) == 0
+                str = "";
+            else
+                str = obj.BiologicalSexList;
+            end
+        end
+
         function formattedStruct = formatTable(obj)
-            maxLen = max([numel(obj.BiologicalSexList) numel(obj.SpeciesList) numel(obj.StrainList) numel(obj.SubjectNameList)]);
-            paddedLists = cell(1, 4);
-            paddedLists{1} = obj.padList(obj.SubjectNameList, maxLen, '');
-            paddedLists{2} = obj.padList(obj.BiologicalSexList, maxLen, '');
+            paddedLists{1} = obj.SubjectNameList;
+            paddedLists{2} = obj.biologicalSexToString();
             speciesList = obj.toStringArr("SpeciesList");
             % speciesList = speciesList{1};
-            paddedLists{3} = obj.padList(speciesList, maxLen, '');
+            paddedLists{3} = speciesList;
             strainList = obj.toStringArr("StrainList");
-            paddedLists{4} = obj.padList(strainList, maxLen, '');
-            
-            paddedLists{1} = paddedLists{1}';
-            paddedLists{2} = paddedLists{2}';
-            paddedLists{3} = paddedLists{3}';
-            paddedLists{4} = paddedLists{4}';
+            paddedLists{4} = strainList;
+            % 
+            % paddedLists{1} = paddedLists{1}';
+            % paddedLists{2} = paddedLists{2}';
+            % paddedLists{3} = paddedLists{3}';
+            % paddedLists{4} = paddedLists{4}';
 
-            placeholder = '';
-            paddedLists(cellfun('isempty', paddedLists)) = {placeholder};
+            % placeholder = '';
+            % paddedLists(cellfun('isempty', paddedLists)) = {placeholder};
             formattedStruct = struct(...
                 'Subject', paddedLists{1}, ...
                 'BiologicalSex', paddedLists{2}, ...
