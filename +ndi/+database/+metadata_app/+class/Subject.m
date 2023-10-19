@@ -7,9 +7,13 @@ classdef Subject < handle
         BiologicalSexList (1,:)
         SpeciesList (1,:) ndi.database.metadata_app.class.Species
         StrainList (1,:) ndi.database.metadata_app.class.Strain
+        StrainMap
     end
     
     methods
+        function obj = Subject()
+            obj.StrainMap = containers.Map;
+        end
         
         function updateProperty(obj, name, idx, value)
             obj.(name)(idx)=value;
@@ -19,12 +23,33 @@ classdef Subject < handle
             obj.(name)(end+1) = value;
         end
 
+        function addStrain(obj, strainName)
+            if ~isKey(obj.StrainMap, strainName)
+                obj.StrainMap(strainName) = true;
+                strain = ndi.database.metadata_app.class.Strain(strainName);
+                obj.addItem("StrainList",strain);
+            end
+        end
+
         function speciesList = getSpeciesList(obj)
             speciesList = obj.SpeciesList;
         end
 
-        function deleteItem(obj, name, idx)
-            obj.(name)(idx)=[];
+        function deleteItem(obj, name)
+            obj.(name)=[];
+        end
+
+        function deleteSpeciesList(obj)
+            obj.SpeciesList = ndi.database.metadata_app.class.Species.empty();
+        end
+
+        function deleteStrainList(obj)
+            obj.StrainList = ndi.database.metadata_app.class.Strain.empty();
+            obj.StrainMap = containers.Map;
+        end
+
+        function deleteBiologicalSex(obj)
+            obj.BiologicalSexList = [];
         end
 
         function sortedSpeciesList = sortSpeciesList(obj)
