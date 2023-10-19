@@ -1,4 +1,4 @@
-classdef ProbeList < handle
+classdef ProbeData < handle
     properties
         pipetteList (1,:) ndi.database.metadata_app.class.Pipette
     end
