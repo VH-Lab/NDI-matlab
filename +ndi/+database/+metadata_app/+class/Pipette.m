@@ -1,22 +1,21 @@
 classdef Pipette < ndi.database.metadata_app.class.Probe
     properties
-        DigitalIdentifier
-        Manufacturer
-        Description
         ExternalDiameter
         InternalDiameter
+        Material
     end
     
     methods
-        function obj = Pipette(name, deviceType, digitalIdentifier, manufacturer, description, externalDiameter, internalDiameter)
-            obj@ndi.database.metadata_app.class.Probe(name, deviceType);
-            % obj.Description = description;
-            % obj.ExternalDiameter = externalDiameter;
-            % obj.InternalDiameter = internalDiameter;
-            % obj.DigitalIdentifier = digitalIdentifier;
-            % obj.Manufacturer = manufacturer;
+        function obj = Pipette(varargin)
+            obj.checkAndAssign("Name", varargin);
+            obj.checkAndAssign("deviceType", varargin);
+            obj.checkAndAssign("Description", varargin);
+            obj.checkAndAssign("DigitalIdentifier", varargin);
+            obj.checkAndAssign("Manufacturer", varargin);
+            obj.checkAndAssign("ExternalDiameter", varargin);
+            obj.checkAndAssign("InternalDiameter", varargin);
+            obj.checkAndAssign("Material", varargin);
         end
-
        
     end
 end
