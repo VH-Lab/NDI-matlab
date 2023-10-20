@@ -1,24 +1,39 @@
-classdef (Abstract) Probe < handle
+classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
     properties
         Name
         DeviceType
+        Description
+        DigitalIdentifier
+        Manufacturer
+        Complete
     end
     
     methods
-        % Constructor
-        function obj = Probe(name, deviceType)
-            if nargin > 0
-                obj.Name = name;
-                obj.DeviceType = deviceType;
-            end
-        end
-        
+       
         function updateProperty(obj, name, value)
             obj.(name)=value;
+            obj.checkComplete();
         end
 
         function property = getProperty(obj, name)
             property = obj.(name);
+        end
+
+        function checkAndAssign(obj, name, varargin)
+            vlt.data.assign(varargin{:});
+            if exist(name,'var') == 1
+                obj.(name) = eval(name);
+            end
+            obj.checkComplete();
+        end
+
+        function complete = checkComplete(obj)
+            if ~isempty(obj.Name) && ~isempty(obj.DeviceType)
+                obj.Complete = true;
+            else
+                obj.Complete = false;
+            end
+            complete = obj.Complete;
         end
         
         function properties = getProperties(obj)
