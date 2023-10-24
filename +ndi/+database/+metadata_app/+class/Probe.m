@@ -12,6 +12,10 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
     
     methods
        
+        function obj = Probe()
+            obj.DeviceType = " ";
+        end
+
         function updateProperty(obj, name, value)
             obj.(name)=value;
         end
@@ -20,29 +24,9 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
             property = obj.(name);
         end
 
-        function checkAndAssign(obj, name, varargin)
-            vlt.data.assign(varargin{:});
-            if exist(name,'var') == 1
-                obj.(name) = eval(name);
-            end
-        end
-
-        % function complete = checkComplete(obj)
-        %     if ~isempty(obj.Name) && ~isempty(obj.DeviceType)
-        %         obj.Complete = true;
-        %     else
-        %         obj.Complete = false;
-        %     end
-        %     complete = obj.Complete;
-        % end
-
-        function s = toTableStruct(obj, probeType, probeIndex)
+        function s = toTableStruct(obj)
             s = struct();
-            if isempty(obj.Name)
-                s.ProbeName = sprintf("Probe%d", probeIndex);
-            else
-                s.ProbeName = obj.Name;
-            end
+            s.ProbeName = obj.Name;
             s.ProbeType = obj.ProbeType;
             if obj.Complete
                 s.Status = 'Complete';

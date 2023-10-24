@@ -2,8 +2,12 @@ function startupFcn(app, varargin)
             
     if nargin >= 2
         vlt.data.assign(varargin{:})
-        app.Session = session;
-        app.FilePath = filepath;
+        if exist('session', 'var')
+            app.Session = session;
+        end
+        if exist('filepath', 'var')
+            app.FilePath = filepath;
+        end
     end
 
     % app.setFigureMinSize()
@@ -21,9 +25,10 @@ function startupFcn(app, varargin)
     app.UITableSubject.Data = struct2table(data, 'AsArray', true);
 
     %check if app has a Session field
-    if isfield(app, 'Session')
+    if exist('session', 'var')
         probeData = ndi.database.metadata_app.fun.loadProbes(app.Session);
         probeTableData = probeData.formtaTable();
+        app.UITableProbe.Data = table2cell(probeTableData);
     end
 
     probeTableData = {'Probe1' 'Double-click to select' 'Incomplete'; ...

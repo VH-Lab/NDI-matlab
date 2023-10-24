@@ -26,16 +26,14 @@ function probeData = loadProbes(S)
     %N-trodes, electrode-$, are electrodes
     probeTypeMap('n-trode') = 'Electrode';
 
-    idx = 0;
     for i = 1:numel(probes)
-        idx = idx + 1;
         type = '';
         if isKey(probeTypeMap, lower(probes{i}.type))
             type = probeTypeMap(probes{i}.type);
         end
         % if probe{i}.type is electrode followed by any number then set probe{i}.type to electrode
         if regexp(probes{i}.type, 'electrode-\d')
-            type = 'electrode';
+            type = 'Electrode';
         end
     
         switch type
@@ -46,10 +44,10 @@ function probeData = loadProbes(S)
                 probe_obj = ndi.database.metadata_app.class.Electrode();
                 probe_obj.ClassType = 'Electrode';
             otherwise
-               idx = idx - 1;
         end
-        probe_obj.Name = probes{idx}.elementstring();
-        probe_obj.ProbeType = probes{idx}.type;
-        probeData.addnewProbe(idx, probe_obj);
+        probe_obj.Name = probes{i}.elementstring();
+        probe_obj.ProbeType = probes{i}.type;
+        probe_obj.Complete = 0;
+        probeData.addNewProbe(probe_obj);
     end
 end
