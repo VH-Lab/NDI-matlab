@@ -23,13 +23,14 @@ classdef ProbeData < matlab.mixin.Heterogeneous & handle
                 % case "Miscellaneous"
                 %     probe = ndi.database.metadata_app.class.MiscellaneousProbe();
             end
-            obj.addnewProbe(index, probe);
+            obj.addNewProbe(index, probe);
         end
 
-        function addnewProbe(obj, index, probe)
-            if numel(obj.ProbeList) + 1 < index
-                obj.ProbeList(end+1:index - 1) = {''};                
-            end
+        function addNewProbe(obj, probe)
+            obj.ProbeList(end + 1) = {probe};
+        end
+
+        function replaceProbe(obj, index, probe)
             obj.ProbeList(index) = {probe};
         end
 
