@@ -2,6 +2,8 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
     properties
         Name
         DeviceType
+        ProbeType
+        ClassType
         Description
         DigitalIdentifier
         Manufacturer
@@ -12,7 +14,6 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
        
         function updateProperty(obj, name, value)
             obj.(name)=value;
-            obj.checkComplete();
         end
 
         function property = getProperty(obj, name)
@@ -24,16 +25,30 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
             if exist(name,'var') == 1
                 obj.(name) = eval(name);
             end
-            obj.checkComplete();
         end
 
-        function complete = checkComplete(obj)
-            if ~isempty(obj.Name) && ~isempty(obj.DeviceType)
-                obj.Complete = true;
+        % function complete = checkComplete(obj)
+        %     if ~isempty(obj.Name) && ~isempty(obj.DeviceType)
+        %         obj.Complete = true;
+        %     else
+        %         obj.Complete = false;
+        %     end
+        %     complete = obj.Complete;
+        % end
+
+        function s = toTableStruct(obj, probeType, probeIndex)
+            s = struct();
+            if isempty(obj.Name)
+                s.ProbeName = sprintf("Probe%d", probeIndex);
             else
-                obj.Complete = false;
+                s.ProbeName = obj.Name;
             end
-            complete = obj.Complete;
+            s.ProbeType = obj.ProbeType;
+            if obj.Complete
+                s.Status = 'Complete';
+            else
+                s.Status = 'Incomplete';
+            end
         end
         
         function properties = getProperties(obj)

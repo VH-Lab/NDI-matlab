@@ -1,7 +1,7 @@
 classdef ElectrodeArray < ndi.database.metadata_app.class.Probe
     properties
         ElectrodeIdentifier
-        NumofElectrodes
+        NoofElectrodes
     end
     
     methods
