@@ -96,6 +96,7 @@ classdef AuthorData < handle
             S.Role = '';
             S.Affiliation = '';
             S.Additional = '';
+            
         end
 
     end
