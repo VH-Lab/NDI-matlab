@@ -47,6 +47,12 @@ classdef DatasetVersionData < handle
             S = struct;
             S.DigitalIdentifier = ''; %Dataset_DOI
             S.License = ndi.database.metadata_app.class.License();
+            S.Authors = '';
+            S.Funding = '';
+            S.FullName = '';
+            S.OtherContribution = '';
+            S.RelatedPublication = '';
+            S.SupportChannel = '';
             S.DataType = '';
             S.ExperimentalApproach = ''; 
             S.ReleaseDate = '';
@@ -55,6 +61,8 @@ classdef DatasetVersionData < handle
             S.Technique = '';
             S.VersionIdentifier = '';
             S.VersionInnovation = '';
+            S.Accessbility = '';
+            S.EthicsAssessment = '';
         end
 
     end
