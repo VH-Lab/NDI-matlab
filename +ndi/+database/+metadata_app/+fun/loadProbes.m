@@ -44,9 +44,11 @@ function probeData = loadProbes(S)
                 probe_obj = ndi.database.metadata_app.class.Electrode();
                 probe_obj.ClassType = 'Electrode';
             otherwise
+                continue;
         end
         probe_obj.Name = probes{i}.elementstring();
         probe_obj.ProbeType = probes{i}.type;
+        probe_obj.ClassType = probes{i}.type;
         probe_obj.Complete = 0;
         probeData.addNewProbe(probe_obj);
     end
