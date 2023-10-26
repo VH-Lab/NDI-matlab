@@ -1,4 +1,4 @@
 function apiQueryUrl = getOrcIdSearchUrl(name)
     name = urlencode(name);
-    apiQueryUrl = sprintf('https://ror.org/search?query=%s', name);
+    apiQueryUrl = sprintf('https://orcid.org/orcid-search/search?searchQuery=%s', name);
 end

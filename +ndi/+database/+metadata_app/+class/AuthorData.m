@@ -80,6 +80,14 @@ classdef AuthorData < handle
         function removeAffiliation(obj, authorIndex, affiliationIndex)
             obj.AuthorList(authorIndex).Affiliation(affiliationIndex) = [];  
         end
+
+        function strCell = getAuthorRoleData(obj, authorIndex)
+            strCell = {};
+            checkedNodes = obj.AuthorList(authorIndex).AuthorRole;
+            for i = 1:numel(checkedNodes)
+                strCell{i} = checkedNodes(i).Text;
+            end
+        end
     end
 
     
@@ -93,10 +101,9 @@ classdef AuthorData < handle
             S.FamilyName = '';
             S.ContactInformation = '';
             S.DigitalIdentifier = '';
-            S.Role = '';
             S.Affiliation = '';
             S.Additional = '';
-            
+            S.AuthorRole = '';
         end
 
     end
