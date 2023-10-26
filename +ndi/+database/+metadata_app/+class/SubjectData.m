@@ -18,14 +18,14 @@ classdef SubjectData < handle
             obj.SubjectList(subjectIndex) = [];
         end
         
-        function addItem(obj)
+        function newSubject = addItem(obj)
         %removeItem Remove the specified subject form the list.
         %
         %   Usage: 
         %   subjectData.removeItem(subjectIndex) removes the author from the
         %   list where subjectIndex is the index in the struct.
-
-            obj.SubjectList(end+1) = ndi.database.metadata_app.class.Subject;
+            newSubject = ndi.database.metadata_app.class.Subject;
+            obj.SubjectList(end+1) = newSubject;
         end
 
         function assignName(obj)
