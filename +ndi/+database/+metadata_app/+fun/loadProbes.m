@@ -48,7 +48,6 @@ function probeData = loadProbes(S)
         end
         probe_obj.Name = probes{i}.elementstring();
         probe_obj.ProbeType = probes{i}.type;
-        probe_obj.ClassType = probes{i}.type;
         probe_obj.Complete = 0;
         probeData.addNewProbe(probe_obj);
     end
