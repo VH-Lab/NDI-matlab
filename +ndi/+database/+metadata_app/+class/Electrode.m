@@ -10,6 +10,14 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
             obj.IntrinsicResistanceUnit = {};
         end
 
+        function unit = getUnit(obj)
+            if isempty(obj.IntrinsicResistanceUnit)
+                unit = '';
+            else
+                unit = obj.IntrinsicResistanceUnit;
+            end
+        end
+
         function openminds_obj = makeOpenMindsObj(obj)
             if isempty(obj.Name)
                 error('Electrode name is required')
