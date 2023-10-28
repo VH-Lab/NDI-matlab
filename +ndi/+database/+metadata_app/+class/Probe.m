@@ -34,6 +34,29 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
                 s.Status = 'Incomplete';
             end
         end
+
+        function manufacturerName = getManufacturerName(obj)
+            if isfield(obj.Manufacturer, 'Name')
+                manufacturerName = obj.Manufacturer.Name;
+            else
+                manufacturerName = ' ';
+            end
+        end
+
+        function [digitalIdentifier, digitalIdentifierType] = getDigitalIdentifier(obj)
+            if ~isfield(obj.DigitalIdentifier, 'Type')
+                digitalIdentifierType = 'Select type';
+                digitalIdentifier = '';
+            else
+                digitalIdentifierType = obj.DigitalIdentifier.Type;
+                digitalIdentifier = obj.DigitalIdentifier.Value;
+            end
+        end
+
+        function [digitalIdentifier, digitalIdentifierType] = setDigitalIdentifier(obj, digitalIdentifierType, digitalIdentifier)
+            obj.DigitalIdentifier.Type = digitalIdentifierType;
+            obj.DigitalIdentifier.Value = digitalIdentifier;
+        end
         
         function properties = getProperties(obj)
             properties = struct(...
