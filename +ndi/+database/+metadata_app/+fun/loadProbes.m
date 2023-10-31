@@ -47,6 +47,7 @@ function probeData = loadProbes(S)
                 continue;
         end
         probe_obj.Name = probes{i}.elementstring();
+        probe_obj.DeviceType = probes{i}.type;
         probe_obj.ProbeType = probes{i}.type;
         probe_obj.Complete = 0;
         probeData.addNewProbe(probe_obj);

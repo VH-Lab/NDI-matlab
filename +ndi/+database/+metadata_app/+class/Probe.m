@@ -13,7 +13,10 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
     methods
        
         function obj = Probe()
-            obj.DeviceType = " ";
+            obj.Description = '';
+            obj.DigitalIdentifier = struct('Type', 'Select type', 'Value', '');
+            obj.Manufacturer = struct('AffiliationName', '', 'RORId', '');
+            obj.Complete = 0;
         end
 
         function updateProperty(obj, name, value)
@@ -36,14 +39,14 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         end
 
         function manufacturerName = getManufacturerName(obj)
-            if isfield(obj.Manufacturer, 'Name')
-                manufacturerName = obj.Manufacturer.Name;
+            if isfield(obj.Manufacturer, 'AffiliationName')
+                manufacturerName = obj.Manufacturer.AffiliationName;
             else
                 manufacturerName = ' ';
             end
         end
 
-        function [digitalIdentifier, digitalIdentifierType] = getDigitalIdentifier(obj)
+        function [digitalIdentifierType, digitalIdentifier] = getDigitalIdentifier(obj)
             if ~isfield(obj.DigitalIdentifier, 'Type')
                 digitalIdentifierType = 'Select type';
                 digitalIdentifier = '';
@@ -56,6 +59,10 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         function [digitalIdentifier, digitalIdentifierType] = setDigitalIdentifier(obj, digitalIdentifierType, digitalIdentifier)
             obj.DigitalIdentifier.Type = digitalIdentifierType;
             obj.DigitalIdentifier.Value = digitalIdentifier;
+        end
+
+        function selected = digitalIdentifierTypeSelected(obj)
+            selected = ~strcmp(obj.DigitalIdentifier.Type, 'Select type');
         end
         
         function properties = getProperties(obj)
