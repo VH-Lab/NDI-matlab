@@ -7,14 +7,15 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
     methods
         function obj = Electrode(varargin)
             obj.ClassType = "Electrode";
-            obj.IntrinsicResistanceUnit = {};
+            obj.IntrinsicResistanceUnit = 'not selected';
+            obj.IntrinsicResistance = '';
         end
 
-        function unit = getUnit(obj)
-            if isempty(obj.IntrinsicResistanceUnit)
-                unit = '';
+        function selected = intrinsicResistanceUnitSelected(obj)
+            if strcmp(obj.IntrinsicResistanceUnit, 'not selected')
+                selected = 0;
             else
-                unit = obj.IntrinsicResistanceUnit;
+                selected = 1;
             end
         end
 
@@ -26,37 +27,26 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
             if isempty(obj.DeviceType)
                 error('Electrode device type is required')
             end
-                
-            if ~isempty(obj.DigitalIdentifier)
-                rrid = openminds.core.RRID('identifier', obj.DigitalIdentifier);
-            else
-                rrid = '';
-            end
 
-            if ~isempty(obj.DeviceType) 
-                devType = openminds.controlledterms.DeviceType('name', obj.DeviceType, 'description', obj.Description);
+            if ~obj.digitalIdentifierTypeSelected()
+                digitalIdentifier = openminds.core.RRID('identifier', '');
             else
-                devType = '';
+                command = sprintf("openminds.core.%s('identifier', '%s')", digitalIdentifierType, digitalIdentifierStr);
+                digitalIdentifier = eval(command);
             end
+            devType = openminds.controlledterms.DeviceType('name', obj.DeviceType, 'description', obj.Description);
 
-            if (~isempty(obj.IntrinsicResistance)) && (~isempty(obj.IntrinsicResistanceUnit))
-                %splite obj.IntrinsicResistance into value and unit by space
-                rst = openminds.core.QuantitativeValue('value', obj.IntrinsicResistance, 'unit', obj.IntrinsicResistanceUnit);
+            if obj.intrinsicResistanceUnitSelected()
+                units = openminds.controlledterms.UnitOfMeasurement('name', obj.IntrinsicResistanceUnit); 
+                rst = openminds.core.QuantitativeValue('value',  str2double(obj.IntrinsicResistance), 'unit', units);
             else
-                rst = '';
+                units = openminds.controlledterms.UnitOfMeasurement('name', ''); 
+                rst = openminds.core.QuantitativeValue('value', str2double(obj.IntrinsicResistance), 'unit', units);
             end
+            ror = openminds.core.RORID('identifier', obj.Manufacturer.RORId);
+            orgC = openminds.core.Organization('digitalIdentifier', ror, 'fullName', obj.Manufacturer.AffiliationName);
             
-            doi = openminds.core.DOI('identifier', 'https://doi.org/10.1016/j.cub.2023.08.095'); %%'https://doi.org/' + DOI
-            rrid = openminds.core.RRID('identifier', 'https://scicrunch.org/resolver/RRID:SCR_016109');
-            devType = openminds.controlledterms.DeviceType('name', 'ndi probe type', 'description', 'user-defined description?');
-            units = openminds.controlledterms.UnitOfMeasurement('name', 'megaohm'); % controlled instance
-            rst = openminds.core.QuantitativeValue('value', 5, 'unit', units)
-            
-            ror = openminds.core.RORID('identifier', 'https://ror.org/03z5xhq25');
-            orgC = openminds.core.Organization('digitalIdentifier', ror, 'fullName', 'FHC');
-
-            electrode = openminds.ephys.Electrode('name', 'electrode001', 'description', 'catalogue number', 'deviceType', devType, 'digitalIdentifier', rrid, 'intrinsicResistance', rst, 'manufacturer', orgC);
-                    openminds_obj = [];
+            openminds_obj = openminds.ephys.Electrode('name', obj.Name, 'description',obj.Description, 'deviceType', devType, 'digitalIdentifier', digitalIdentifier, 'intrinsicResistance', rst, 'manufacturer', orgC);
         end
     end
 

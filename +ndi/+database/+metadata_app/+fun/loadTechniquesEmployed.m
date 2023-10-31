@@ -1,38 +1,21 @@
-function cbt = loadTechniquesEmployed(tree, filePath)
-    % loadTechniquesEmployed loads the techniques from the given path
+function cbt = loadTechniquesEmployed(tree)
+    % loadTechniquesEmployed loads the techniques employed 
     % and returns it as a checkList nodes.
     %
-    % Input:
-    %   filePath - path to the TechniquesEmployed
     %
     % Output:
     %   cbt - checkList nodes containing the TechniquesEmployed
     %
-
-    % Define the file path
-    if nargin < 2
-        filePath = fullfile(fileparts(mfilename('fullpath')), 'TechniquesEmployed.txt');
-    end
     
     treeNodes = [];
-    
-    % Check if the file exists
-    if exist(filePath, 'file') == 2
-        % Read the text file
-        fileID = fopen(filePath, 'r');
-        nodeTexts = textscan(fileID, '%s', 'Delimiter', '\n');
-        fclose(fileID);
-    
-
-        % Create the tree nodes
-        for i = 1:length(nodeTexts{1})
-            % node = uitreenode('Text', nodeTexts{1}{i}, 'CheckBox', true);
-            % tree.addNode(node);
-            node = uitreenode(tree);
-            node.Text = nodeTexts{1}{i};
-        end
-        cbt = tree;
-    else
-        disp('File TechniquesEmployed.txt not found.');
+    technique = openminds.controlledterms.Technique.CONTROLLED_INSTANCES;
+    % Create the tree nodes
+    for i = 1:length(technique)
+        % node = uitreenode('Text', nodeTexts{1}{i}, 'CheckBox', true);
+        % tree.addNode(node);
+        node = uitreenode(tree);
+        node.Text = technique{i};
     end
+    cbt = tree;
+    
 end
