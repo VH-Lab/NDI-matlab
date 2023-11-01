@@ -113,6 +113,12 @@ classdef AuthorData < handle
         function removeAffiliation(obj, authorIndex, affiliationIndex)
             obj.AuthorList(authorIndex).affiliation.removeItem(affiliationIndex);  
         end
+    
+        function reorderItems(obj, newIndex, oldIndex)
+            obj.AuthorList([newIndex, oldIndex]) = ...
+                obj.AuthorList([oldIndex, newIndex]);
+        end
+
     end
 
     
