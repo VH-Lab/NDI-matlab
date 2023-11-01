@@ -18,6 +18,15 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
                 selected = 1;
             end
         end
+        %check if intrinsic resistance is filled and if unit is selected
+        %return false if value is filled but unit is not selected
+        function filled = intrinsicResistanceCheck(obj)
+            if ~isempty(obj.IntrinsicResistance) && ~obj.intrinsicResistanceUnitSelected()
+                filled = 0;
+            else
+                filled = 1;
+            end
+        end
 
         function openminds_obj = makeOpenMindsObj(obj)
             if isempty(obj.Name)
