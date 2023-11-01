@@ -45,11 +45,11 @@ classdef DatasetData < handle
             % Todo: Consider using camelcase (i.e givenName) to conform
             % with openMINDS
             S = struct;
-            S.Author = '';
-            S.Description = ''; %Abstract
-            S.FullName = ''; %Dataset Branch Title
-            S.HasVersion = '';
-            S.ShortName = '';
+            S.author = '';
+            S.description = ''; %Abstract
+            S.fullName = ''; %Dataset Branch Title
+            S.hasVersion = '';
+            S.shortName = '';
         end
 
     end

@@ -45,24 +45,18 @@ classdef DatasetVersionData < handle
             % Todo: Consider using camelcase (i.e givenName) to conform
             % with openMINDS
             S = struct;
-            S.DigitalIdentifier = ''; %Dataset_DOI
-            S.License = ndi.database.metadata_app.class.License();
-            S.Authors = '';
-            S.Funding = '';
-            S.FullName = '';
-            S.OtherContribution = '';
-            S.RelatedPublication = '';
-            S.SupportChannel = '';
-            S.DataType = '';
-            S.ExperimentalApproach = ''; 
-            S.ReleaseDate = '';
-            S.FullDocumentation = '';
-            S.ShortName = "original submission";
-            S.Technique = '';
-            S.VersionIdentifier = '';
-            S.VersionInnovation = '';
-            S.Accessbility = '';
-            S.EthicsAssessment = '';
+            S.accessibility = '';
+            S.dataType = '';
+            S.digitalIdentifier = '';
+            S.ethicsAssessment = '';
+            S.experimentalApproach = '';
+            S.license = ndi.database.metadata_app.class.License();
+            S.releaseDate = '';
+            S.shortName = 'original submission';
+            S.technique = '';
+            S.versionIdentifier = '';
+            S.versionInnovation = '';
+            S.funding = '';          
         end
 
     end
