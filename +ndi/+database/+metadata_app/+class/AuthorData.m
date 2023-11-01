@@ -32,14 +32,38 @@ classdef AuthorData < handle
                     obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
                 end
             end
-            obj.AuthorList(authorIndex).(name)=value;
-        end
 
+            author = obj.AuthorList(authorIndex);
+
+            if isfield(author, name)
+                author.(name) = value;
+            else
+                names = strsplit(name, '.');
+                nestedField = author;
+                for i = 1:length(names)
+                    if ~isfield(nestedField, names{i})
+                        error('Invalid field name');
+                    end
+                    if i == length(names)
+                        nestedField.(names{i}) = value;
+                        author.(names{1}) = nestedField;
+                    else
+                        nestedField = nestedField.(names{i});
+                    end
+                end
+            end
+
+        % Update the authorData with the modified author
+        obj.AuthorList(authorIndex) = author;
+
+            % obj.AuthorList(authorIndex).(name) = value;
+        end
+        
         function fullName = getAuthorName(obj, authorIndex)
         %getAuthorName Get the full name for the given author
 
-            givenName = obj.AuthorList(authorIndex).GivenName;
-            familyName = obj.AuthorList(authorIndex).FamilyName;
+            givenName = obj.AuthorList(authorIndex).givenName;
+            familyName = obj.AuthorList(authorIndex).familyName;
 
             fullName = strjoin({givenName, familyName}, ' ');
             fullName = strtrim(fullName);
@@ -69,24 +93,16 @@ classdef AuthorData < handle
         end
 
         function addAffiliation(obj, authorIndex,S)
-            if isempty(obj.AuthorList(authorIndex).Affiliation)
-                obj.AuthorList(authorIndex).Affiliation = S;
+            if isempty(obj.AuthorList(authorIndex).affiliation)
+                obj.AuthorList(authorIndex).affiliation = S;
             else
-                size = numel(obj.AuthorList(authorIndex).Affiliation);
-                obj.AuthorList(authorIndex).Affiliation(size + 1) = S;         
+                size = numel(obj.AuthorList(authorIndex).affiliation);
+                obj.AuthorList(authorIndex).affiliation(size + 1) = S;         
             end
         end
 
         function removeAffiliation(obj, authorIndex, affiliationIndex)
-            obj.AuthorList(authorIndex).Affiliation(affiliationIndex) = [];  
-        end
-
-        function strCell = getAuthorRoleData(obj, authorIndex)
-            strCell = {};
-            checkedNodes = obj.AuthorList(authorIndex).AuthorRole;
-            for i = 1:numel(checkedNodes)
-                strCell{i} = checkedNodes(i).Text;
-            end
+            obj.AuthorList(authorIndex).affiliation(affiliationIndex) = [];  
         end
     end
 
@@ -97,13 +113,11 @@ classdef AuthorData < handle
             % Todo: Consider using camelcase (i.e givenName) to conform
             % with openMINDS
             S = struct;
-            S.GivenName = '';
-            S.FamilyName = '';
-            S.ContactInformation = '';
-            S.DigitalIdentifier = '';
-            S.Affiliation = '';
-            S.Additional = '';
-            S.AuthorRole = '';
+            S.affiliation = '';
+            S.contactInformation.email = '';
+            S.digitalIdentifier.identifier = '';
+            S.familyName = '';
+            S.givenName = '';
         end
 
     end
