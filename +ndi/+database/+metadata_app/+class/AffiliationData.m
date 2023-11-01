@@ -5,7 +5,7 @@ classdef AffiliationData < handle
         % A struct array holding affiliation information for each author. See
         % AffiliationData.getDefaultAffiliationItem for the fields contained in the 
         % struct
-        AffiliationList (:,1) struct
+        AffiliationList (1,:) ndi.database.metadata_app.class.Affiliation
     end
 
     methods
@@ -18,6 +18,10 @@ classdef AffiliationData < handle
         %   list where affiliationIndex is the index in the struct.
 
             obj.AffiliationList(affiliationIndex) = [];
+        end
+
+        function addItem(obj, af)    
+                obj.AffiliationList(end + 1) = af;
         end
         
         function updateProperty(obj, name, value, affiliationIndex)
@@ -35,10 +39,34 @@ classdef AffiliationData < handle
             obj.AffiliationList(affiliationIndex).(name)=value;
         end
 
+        function obj = updateName(obj, value, affiliationIndex)
+            %updateProperty Update the value in a field 
+            if numel( obj.AffiliationList ) < affiliationIndex
+                if numel(obj.AffiliationList) == 0
+                    obj.AffiliationList = obj.getDefaultAffiliationItem();
+                else
+                    obj.AffiliationList(end+1:affiliationIndex) = deal(obj.getDefaultAffiliationItem());
+                end
+            end
+            obj.AffiliationList(affiliationIndex).updateName(value);    
+        end
+    
+        function obj = updateIdentifier(obj, value, affiliationIndex)
+        %updateProperty Update the value in a field 
+            if numel( obj.AffiliationList ) < affiliationIndex
+                if numel(obj.AffiliationList) == 0
+                    obj.AffiliationList = obj.getDefaultAffiliationItem();
+                else
+                    obj.AffiliationList(end+1:affiliationIndex) = deal(obj.getDefaultAffiliationItem());
+                end
+            end
+            obj.AffiliationList(affiliationIndex).updateIdentifier(value);      
+        end
+
         function affiliationName = getAffiliationName(obj, affiliationIndex)
         %getAffiliationName Get the full name for the given affiliation
 
-            affiliationName = obj.AffiliationList(affiliationIndex).AffiliationName;
+            affiliationName = obj.AffiliationList(affiliationIndex).getName();
            
         end
 
@@ -63,7 +91,11 @@ classdef AffiliationData < handle
 
         function checkName(obj, ror, affiliationIndex)
             [name, ~] = ndi.database.metadata_app.fun.checkValidRORID(ror);
-            obj.updateProperty(AffiliationName, name, affiliationIndex);
+            obj.updateName(name, affiliationIndex);
+        end
+
+        function size = getSize(obj)
+            size = numel(obj.AffiliationList);
         end
     end
 
@@ -73,9 +105,7 @@ classdef AffiliationData < handle
         function S = getDefaultAffiliationItem()
             % Todo: Consider using camelcase (i.e givenName) to conform
             % with openMINDS
-            S = struct;
-            S.AffiliationName = '';
-            S.RORId = '';
+            S = ndi.database.metadata_app.class.Affiliation();
         end
 
     end
