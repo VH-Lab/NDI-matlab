@@ -18,5 +18,15 @@ classdef Pipette < ndi.database.metadata_app.class.Probe
                 selected = 1;
             end
        end
+
+        %check if intrinsic diameter is filled and if unit is selected
+        %return false if value is filled but unit is not selected
+        function filled = intrinsicDiameterCheck(obj)
+            if ~isempty(obj.InternalDiameter) && ~obj.InternalDiameterUnitSelected()
+                filled = 0;
+            else
+                filled = 1;
+            end
+        end
     end
 end
