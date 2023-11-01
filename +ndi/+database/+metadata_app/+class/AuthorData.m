@@ -19,7 +19,7 @@ classdef AuthorData < handle
 
             obj.AuthorList(authorIndex) = [];
         end
-        
+
         function updateProperty(obj, name, value, authorIndex)
         %updateProperty Update the value in a field for the given
         %authorIndex
@@ -32,33 +32,39 @@ classdef AuthorData < handle
                     obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
                 end
             end
+            obj.AuthorList(authorIndex).(name)=value;
+        end
 
-            author = obj.AuthorList(authorIndex);
+        function updateIdentifier(obj, value, authorIndex)
+        %updateProperty Update the digital identifier for the given
+        %authorIndex
 
-            if isfield(author, name)
-                author.(name) = value;
-            else
-                names = strsplit(name, '.');
-                nestedField = author;
-                for i = 1:length(names)
-                    if ~isfield(nestedField, names{i})
-                        error('Invalid field name');
-                    end
-                    if i == length(names)
-                        nestedField.(names{i}) = value;
-                        author.(names{1}) = nestedField;
-                    else
-                        nestedField = nestedField.(names{i});
-                    end
+            % Expand the AuthorList with the default struct if necessary
+            if numel( obj.AuthorList ) < authorIndex
+                if numel(obj.AuthorList) == 0
+                    obj.AuthorList = obj.getDefaultAuthorItem();
+                else
+                    obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
                 end
             end
-
-        % Update the authorData with the modified author
-        obj.AuthorList(authorIndex) = author;
-
-            % obj.AuthorList(authorIndex).(name) = value;
+            obj.AuthorList(authorIndex).digitalIdentifier.identifier = value;
         end
-        
+
+        function updateEmail(obj, value, authorIndex)
+        %updateProperty Update the email for the given
+        %authorIndex
+
+            % Expand the AuthorList with the default struct if necessary
+            if numel( obj.AuthorList ) < authorIndex
+                if numel(obj.AuthorList) == 0
+                    obj.AuthorList = obj.getDefaultAuthorItem();
+                else
+                    obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
+                end
+            end
+            obj.AuthorList(authorIndex).contactInformation.email = value;
+        end
+
         function fullName = getAuthorName(obj, authorIndex)
         %getAuthorName Get the full name for the given author
 
@@ -118,6 +124,8 @@ classdef AuthorData < handle
             S.digitalIdentifier.identifier = '';
             S.familyName = '';
             S.givenName = '';
+            S.authorRole = '';
+            S.additional = '';
         end
 
     end
