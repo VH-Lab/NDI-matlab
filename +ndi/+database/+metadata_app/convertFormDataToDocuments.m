@@ -7,30 +7,63 @@ function documentList = convertFormDataToDocuments(formDataStruct)
         formDataStruct (1,1) struct % A struct with form data
     end
 
+    % Organizations ("references") which are added in the app is saved to 
+    % MATLAB's userpath. Load them here.
     loadPath = fullfile(userpath, 'NDIDatasetUpload', 'organization_instances.mat');
     if isfile(loadPath)
         S = load(loadPath);
         organizations = S.organizationInstances;
     end
 
+    % Create organization instances:
     createOrganization = getFactoryFunction('openminds.core.Organization');
     organizationInstances = arrayfun( @(s) createOrganization(s), organizations);
+    organizationNames = [organizationInstances.fullName];
 
-
-    % Create authors:
+    % Create author instances:
     authorStructArray = formDataStruct.Author;
     createAuthor = getFactoryFunction('openminds.core.Person');
     authorInstances = arrayfun( @(s) createAuthor(s), authorStructArray);
 
-    % Todo: Update affiliations based on the reference organization list.
+    % Update affiliations based on the reference organization list. This is
+    % done because the organizations in the author's affiliation only
+    % contains the fullName of an organizations, while the "reference"
+    % organization will also contain the digitalIdentifier
+    for i = 1:numel(authorInstances)
+        thisAuthor = authorInstances(i);
+        for j = 1:numel(thisAuthor.affiliation)
+            thisAffiliation = thisAuthor.affiliation(j);
+            thisOrganizationName = thisAffiliation.memberOf(1).fullName;
+            % This statement does not work because of bug in
+            % openminds_MATLAB (fix on the way):
+            %thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
+            isMatch = strcmp(thisOrganizationName, organizationNames);
+            thisAuthor.affiliation(j).memberOf = organizationInstances(isMatch);
+        end
+    end
 
+    % Create a dataset version instance:
 
-    % Create a dataset document:
+    createDatasetVersion = getFactoryFunction('openminds.core.DatasetVersion');
+
+    % Remove this field as it will be handled as special case
+    formDataStruct.DatasetVersion = rmfield(formDataStruct.DatasetVersion, 'Author');
+    datasetVersion = createDatasetVersion( formDataStruct.DatasetVersion );
+    datasetVersion.author = authorInstances;
+
+    % Create a dataset instance:
     createDataset = getFactoryFunction('openminds.core.Dataset');
-    dataset = createDataset(struct);
+       
+    % Remove author field as it will be handled as special case
+    formDataStruct.DatasetVersion = rmfield(formDataStruct.Dataset, 'author');
+    formDataStruct.DatasetVersion = rmfield(formDataStruct.Dataset, 'Author');
 
-    % Create a dataset version document:
-    datasetVersion = openminds.core.DatasetVersion();
+    dataset = createDataset(formDataStruct.Dataset);
+    dataset.author = authorInstances;
+    dataset.hasVersion = datasetVersion;
+
+    % Generate the ndi documents.
+    documentList = ndi.database.fun.openMINDSobj2ndi_document(dataset);
 end
 
 
@@ -57,9 +90,13 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
         if isfield( conversionFunctionMap, propName )
                
             conversionFcn = conversionFunctionMap.(propName);
-
-            if numel(value) > 1 % array conversion
+            
+            if iscell(value)
+                value = cellfun(@(s) conversionFcn(s), value);
+            
+            elseif numel(value) > 1 % array conversion
                 value = arrayfun(@(s) conversionFcn(s), value);
+            
             else
                 value = conversionFcn(value);
             end
@@ -115,8 +152,28 @@ function conversionMap = createConversionMap()
     conversionMap("openminds.core.Dataset") = ...
         struct();
 
+
+    conversionMap("openminds.core.DatasetVersion") = ...
+        struct(...
+        'dataType', @(value) openminds.controlledterms.SemanticDataType(value), ...
+        'experimentalApproach', @(value) openminds.controlledterms.ExperimentalApproach(value), ...
+        'technique', @(value) createTechnique(value) );
+
 end
 
 function factoryFcn = getFactoryFunction(openMindsType)
     factoryFcn = @(data) instanceFactory(data, openMindsType);
+end
+
+function instance = createTechnique(value)
+
+    splitStr = strsplit(value, '(');
+    instanceName = strtrim(splitStr{1});
+    schemaName = strtrim(splitStr{2});
+    schemaName = strrep(schemaName, ')', '');
+
+    fcn = sprintf('openminds.controlledterms.%s', schemaName);
+    instance = feval(fcn, instanceName);
+
+
 end
