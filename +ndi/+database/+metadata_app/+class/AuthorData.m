@@ -8,10 +8,19 @@ classdef AuthorData < handle
         AuthorList (:,1) struct
     end
 
-    methods
-        
+    methods % Public methods for interacting with author items
+           
+        function S = getItem(obj, authorIndex)
+        %getAuthorName Get a struct with author details for the given index
+            if numel( obj.AuthorList ) < authorIndex
+                S = obj.getDefaultAuthorItem();
+            else
+                S = obj.AuthorList(authorIndex);
+            end
+        end
+
         function removeItem(obj, authorIndex)
-        %removeItem Remove the specified author form the list.
+        %removeItem Remove the specified author from the list.
         %
         %   Usage: 
         %   authorData.removeItem(authorIndex) removes the author from the
@@ -20,51 +29,51 @@ classdef AuthorData < handle
             obj.AuthorList(authorIndex) = [];
         end
 
+        function reorderItems(obj, newIndex, oldIndex)
+            obj.AuthorList([newIndex, oldIndex]) = ...
+                obj.AuthorList([oldIndex, newIndex]);
+        end
+
+        function S = getAuthorList(obj)
+        %getAuthorList Same as S = authorData.AuthorList
+            S = obj.AuthorList;
+        end
+
+        function setAuthorList(obj, S)
+        %setAuthorList Same as authorData.AuthorList = S
+            obj.AuthorList = S;
+        end
+
+    end
+
+    methods % Public methods for setting or getting author details
+
         function updateProperty(obj, name, value, authorIndex)
         %updateProperty Update the value in a field for the given
         %authorIndex
-
+    
             % Expand the AuthorList with the default struct if necessary
-            if numel( obj.AuthorList ) < authorIndex
-                if numel(obj.AuthorList) == 0
+            numAuthors = numel( obj.AuthorList );
+            if numAuthors < authorIndex
+                if numAuthors == 0
                     obj.AuthorList = obj.getDefaultAuthorItem();
+                    if authorIndex > 1
+                        obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
+                    end
                 else
                     obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
                 end
             end
-            obj.AuthorList(authorIndex).(name)=value;
-        end
 
-        function updateIdentifier(obj, value, authorIndex)
-        %updateProperty Update the digital identifier for the given
-        %authorIndex
-
-            % Expand the AuthorList with the default struct if necessary
-            if numel( obj.AuthorList ) < authorIndex
-                if numel(obj.AuthorList) == 0
-                    obj.AuthorList = obj.getDefaultAuthorItem();
-                else
-                    obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
-                end
+            if strcmp(name, 'digitalIdentifier')
+                value = struct('identifier', value);
+            elseif strcmp(name, 'contactInformation')
+                value = struct('email', value);
             end
-            obj.AuthorList(authorIndex).digitalIdentifier.identifier = value;
+
+            obj.AuthorList(authorIndex).(name) = value;
         end
-
-        function updateEmail(obj, value, authorIndex)
-        %updateProperty Update the email for the given
-        %authorIndex
-
-            % Expand the AuthorList with the default struct if necessary
-            if numel( obj.AuthorList ) < authorIndex
-                if numel(obj.AuthorList) == 0
-                    obj.AuthorList = obj.getDefaultAuthorItem();
-                else
-                    obj.AuthorList(end+1:authorIndex) = deal(obj.getDefaultAuthorItem());
-                end
-            end
-            obj.AuthorList(authorIndex).contactInformation.email = value;
-        end
-
+        
         function fullName = getAuthorName(obj, authorIndex)
         %getAuthorName Get the full name for the given author
 
@@ -79,45 +88,42 @@ classdef AuthorData < handle
             end
         end
 
-        function S = getItem(obj, authorIndex)
-        %getAuthorName Get a struct with author details for the given index
-            if numel( obj.AuthorList ) < authorIndex
-                S = obj.getDefaultAuthorItem();
+        function addAffiliation(obj, organizationName, authorIndex)
+            
+            affiliationStruct = struct('memberOf', struct('fullName', organizationName));
+        
+            numAuthors = numel( obj.AuthorList );
+            if numAuthors < authorIndex
+                obj.updateProperty('affiliation', affiliationStruct, authorIndex)
             else
-                S = obj.AuthorList(authorIndex);
-            end
-        end
-
-        function S = getAuthorList(obj)
-        %getAuthorList Same as S = authorData.AuthorList
-            S = obj.AuthorList;
-        end
-
-        function setAuthorList(obj, S)
-        %setAuthorList Same as authorData.AuthorList = S
-            obj.AuthorList = S;
-        end
-
-        function addAffiliation(obj, authorIndex, name, identifier)
-            if isempty(obj.AuthorList(authorIndex).affiliation)
-                obj.AuthorList(authorIndex).affiliation = ndi.database.metadata_app.class.AffiliationData();
-            else
-                size = obj.AuthorList(authorIndex).affiliation.getSize();
-                af = ndi.database.metadata_app.class.Affiliation();
-                af.memberOf.fullName = name;
-                af.memberOf.digitalIdentifier.identifier = identifier;
-                obj.AuthorList(authorIndex).affiliation.addItem(af);         
+                if isempty(obj.AuthorList(authorIndex).affiliation)
+                    obj.AuthorList(authorIndex).affiliation = affiliationStruct;
+                else
+                    obj.AuthorList(authorIndex).affiliation(end+1) = affiliationStruct;
+                end
             end
         end
 
         function removeAffiliation(obj, authorIndex, affiliationIndex)
-            obj.AuthorList(authorIndex).affiliation.removeItem(affiliationIndex);  
+            obj.AuthorList(authorIndex).affiliation(affiliationIndex)=[];  
         end
-    
-        function reorderItems(obj, newIndex, oldIndex)
-            obj.AuthorList([newIndex, oldIndex]) = ...
-                obj.AuthorList([oldIndex, newIndex]);
-        end
+
+
+% % %         function addAffiliation(obj, authorIndex, name, identifier)
+% % %             if isempty(obj.AuthorList(authorIndex).affiliation)
+% % %                 obj.AuthorList(authorIndex).affiliation = ndi.database.metadata_app.class.AffiliationData();
+% % %             else
+% % %                 size = obj.AuthorList(authorIndex).affiliation.getSize();
+% % %                 af = ndi.database.metadata_app.class.Affiliation();
+% % %                 af.memberOf.fullName = name;
+% % %                 af.memberOf.digitalIdentifier.identifier = identifier;
+% % %                 obj.AuthorList(authorIndex).affiliation.addItem(af);         
+% % %             end
+% % %         end
+% % % 
+% % %         function removeAffiliation(obj, authorIndex, affiliationIndex)
+% % %             obj.AuthorList(authorIndex).affiliation.removeItem(affiliationIndex);  
+% % %         end
 
     end
 
@@ -128,7 +134,7 @@ classdef AuthorData < handle
             % Todo: Consider using camelcase (i.e givenName) to conform
             % with openMINDS
             S = struct;
-            S.affiliation = ndi.database.metadata_app.class.AffiliationData;
+            S.affiliation = struct.empty;
             S.contactInformation.email = '';
             S.digitalIdentifier.identifier = '';
             S.familyName = '';
