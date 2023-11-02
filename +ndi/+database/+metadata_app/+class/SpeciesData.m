@@ -32,9 +32,12 @@ classdef SpeciesData < handle
             obj.SpeciesList(speciesIndex).(name) = value;
         end
 
-        function addItem(obj, name, synonym, ontologyIdentifier)
-            species = ndi.database.metadata_app.class.Species(name,ontologyIdentifier,synonym);
-           
+        function addItem(obj, varargin)
+            if nargin == 3
+                species = ndi.database.metadata_app.class.Species(varargin{1}, varargin{2});
+            else
+                species = ndi.database.metadata_app.class.Species(varargin{1}, varargin{2}, varargin{3});
+            end
             if (numel(obj.SpeciesList) == 0)
                 obj.SpeciesList = species;
             else
@@ -48,8 +51,11 @@ classdef SpeciesData < handle
             S = {};
             for i = 1:numel(obj.SpeciesList)
                 name = obj.SpeciesList(i).Name;
-                name = name{1};
-                if strcmp(name,speciesName)
+                %if name is a cell array, get the first element, if not, just use the string
+                if iscell(name)
+                    name = name{1};
+                end
+                if strcmp(lower(name),lower(speciesName))
                     S = obj.SpeciesList(i);
                 end
             end
