@@ -1,4 +1,4 @@
-function cbt = loadInstancesToListBox(listBox, name, terms)
+function listBox = loadInstancesToListBox(listBox, name, terms)
     %loadInstancesToListBox Load the instances of a controlled term into a list box
     %
     % Inputs
@@ -7,7 +7,6 @@ function cbt = loadInstancesToListBox(listBox, name, terms)
     %   terms: The term to be filtered
     %
     
-treeNodes = [];
 command = sprintf('openminds.controlledterms.%s.CONTROLLED_INSTANCES', name);
 instances = eval(command);
 allInstancesCellArray = cellstr(instances);

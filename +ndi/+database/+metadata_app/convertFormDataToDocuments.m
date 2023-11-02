@@ -16,10 +16,9 @@ function documentList = convertFormDataToDocuments(formDataStruct)
     % Create a dataset document:
     createDataset = getFactoryFunction('openminds.core.Dataset');
     dataset = createDataset(struct);
-    
+
     % Create a dataset version document:
     datasetVersion = openminds.core.DatasetVersion();
-
 end
 
 

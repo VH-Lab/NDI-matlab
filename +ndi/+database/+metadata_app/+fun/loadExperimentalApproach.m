@@ -7,7 +7,6 @@ function cbt = loadExperimentalApproach(tree)
     %
 
   
-    treeNodes = [];
     experimentalApproach = openminds.controlledterms.ExperimentalApproach.CONTROLLED_INSTANCES;
     % Create the tree nodes
     for i = 1:length(experimentalApproach)

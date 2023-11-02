@@ -6,7 +6,8 @@ classdef Species < handle
         Synonym
         OntologyIdentifier
         uuid
-        
+        Definition
+        Description
     end
 
     methods
