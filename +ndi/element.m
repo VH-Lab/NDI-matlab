@@ -27,6 +27,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% If the UNDERLYING_EPOCHSET has a subject_id, then that subject ID is used for the new
 			% element.
 			%
+				set_identifier = 0;
+				
 				if numel(varargin)>=6,
 					% first type
 					ndi_element_class = 'ndi.element';
@@ -98,6 +100,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					[dependency_names,dependencies] = element_doc.dependency();
 					[dependency_names_here,ia] = setdiff(dependency_names,{'subject_id','underlying_element_id'});
 					dependencies = dependencies(ia);
+					set_identifier = 1;
+					identifier_value = element_doc.id();
 				elseif numel(varargin)==0,
 					element_session='';
 					element_name = '';
@@ -110,6 +114,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					error(['Improper number of input arguments']);
 				end;
 
+				if (set_identifier),
+					ndi_element_obj.identifier = identifier_value;
+				end;
 				ndi_element_obj.session = element_session;
 				ndi_element_obj.name = element_name;
 				ndi_element_obj.reference = element_reference;

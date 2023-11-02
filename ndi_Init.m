@@ -123,4 +123,7 @@ end;
 %ndi_globals.path.documentpath = [ndi_globals.path.commonpath filesep 'database_documents'];
 %ndi_globals.path.documentschemapath = [ndi_globals.path.commonpath filesep 'schema_documents'];
 
+if ~isfield(ndi_globals,'cache'),
+	ndi_globals.cache = ndi.cache();
+end;
 

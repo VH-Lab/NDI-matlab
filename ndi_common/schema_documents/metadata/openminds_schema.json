@@ -1,0 +1,43 @@
+{
+	"classname": "openminds",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "openminds", "mustbenotempty": 0}
+	],
+	"file": [ ],
+	"openminds": [
+		{
+			"name": "openminds_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "[1,255]",
+			"queryable": 1,
+			"documentation": "The openminds data type."
+		},
+		{
+			"name": "matlab_type",
+			"type": "string",
+			"default_value": 1,
+			"parameters": [1,255],
+			"queryable": 1,
+			"documentation": "The same datatype in Matlab."
+		},
+		{
+			"name": "openminds_id",
+			"type": "string",
+			"default_value": 1,
+			"parameters": [1,255],
+			"queryable": 1,
+			"documentation": "The unique identifier for the openminds version of the document."
+		},
+		{
+			"name": "fields",
+			"type": "string",
+			"default_value": 1,
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The fields of the opemminds document."
+		}
+	]
+}
+
