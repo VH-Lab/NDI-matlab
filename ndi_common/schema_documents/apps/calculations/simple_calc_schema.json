@@ -8,7 +8,7 @@
 	"simple_calc": [
 		{
 			"name": "input_parameters",
-			"type": "struct",
+			"type": "structure",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
