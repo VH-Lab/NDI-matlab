@@ -20,6 +20,15 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
 %   d = ndi.database.fun.openMINDSobj2ndi_document(s, session_id, 'subject', subject_docs{1}.id());
 % 
 
+
+if ~iscell(openmindsObj),
+    newcell = {};
+    for i=1:numel(openmindsObj)
+        newcell{i} = openmindsObj(i);
+    end;
+    openmindsObj = newcell;
+end;
+
 s = ndi.database.fun.openMINDSobj2struct(openmindsObj);
 
 if nargin<3,
@@ -54,10 +63,13 @@ d = {};
 
 for i=1:numel(s),
 	openminds_struct = rmfield(s(i),'complete');
-	d{i} = ndi.document(docName,'base.id',openminds_struct.ndi_id,...
-		'base.session_id','session_id',...
+    ndi_id_here = openminds_struct.ndi_id;
+    openminds_struct = rmfield(openminds_struct,'ndi_id');
+	d{i} = ndi.document(docName,'base.id',ndi_id_here,...
+		'base.session_id',session_id,...
 		'openminds',openminds_struct);
 	fn = fieldnames(openminds_struct.fields);
+    added_dependency = 0;
 	for j=1:numel(fn),
 		g = getfield(openminds_struct.fields,fn{j});
 		if iscell(g),
@@ -68,11 +80,15 @@ for i=1:numel(s),
 						d{i} = add_dependency_value_n(d{i},...
 							'openminds',id_here,...
 							'ErrorIfNotFound',0);
+                        added_dependency = 1;
 					end;
 				end;
 			end;
 		end;
 	end;
+    if ~added_dependency,
+        d{i} = set_dependency_value(d{i},'openminds','','ErrorIfNotFound',0);
+    end;
 	if ~isempty(dependency_name),
 		d{i} = d{i}.set_dependency_value(dependency_name,dependency_value);
 	end;

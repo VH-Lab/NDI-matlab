@@ -35,14 +35,18 @@ else,
 end;
 
 if ~iscell(openmindsObj),
-	openmindsObj = {openmindsObj}; % make it a cell no matter what
+    newcell = {};
+    for i=1:numel(openmindsObj),
+        newcell{i} = openmindsObj(i);
+    end;
+	openmindsObj = newcell; % make it a cell no matter what
 end;
 
 for i=1:numel(openmindsObj),
 
 	% fill out preliminary entry
 
-	s_here.openminds_type = openmindsObj{i}.X_TYPE;
+	s_here.openminds_type = char(openmindsObj{i}.X_TYPE);
 	s_here.matlab_type = class(openmindsObj{i});
 	s_here.openminds_id = openmindsObj{i}.id;
 	newid = ndi.ido();
@@ -74,6 +78,12 @@ for i=1:numel(openmindsObj),
 
 	for j=1:numel(fn),
 		f = getfield(openmindsObj{i},fn{j});
+        if strcmp(class(f),'string'), 
+            f = char(f); % we have to insert character arrays into the sql database
+        end;
+        if strcmp(class(f),'datetime'),
+            f = char(f);
+        end;
 		mt = startsWith(class(f),'openminds.internal.mixedtype');
 		if isa(f,'openminds.abstract.Schema') | mt,
 			fields_here = {};
