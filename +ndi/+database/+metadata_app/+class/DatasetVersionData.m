@@ -56,7 +56,8 @@ classdef DatasetVersionData < handle
             S.technique = '';
             S.versionIdentifier = '';
             S.versionInnovation = '';
-            S.funding = '';          
+            S.funding = '';
+            S.Author = '';
         end
 
     end
