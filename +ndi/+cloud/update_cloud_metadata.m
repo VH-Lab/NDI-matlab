@@ -15,11 +15,16 @@ function [b, msg] = update_cloud_metadata(datasetid, auth_token, S)
 
 % loops over all the metadata fields and posts an updated value to the cloud API
 
-d = S.database_search(ndi.query('openMinds.fields.datasetInformation.abstract','hasfield'));
+all_fields = {'name','branchName','contributors','doi','funding','abstract','license','species','neurons','numberOfSubjects','brainRegions','correspondingAuthors'};
+d_datasetVersion = S.database_search(ndi.query('openminds.openminds_type','contains_string', 'DatasetVersion'));
+d_authors = S.database_search(ndi.query('openminds.openminds_type','contains_string', 'Author'));
 clear dataset_update;
 
-dataset_update.abstract = d{1}.document_properties.openMINDS.fields.datasetinformation.abstract;
+dataset_update.abstract = d_datasetVersion{1}.document_properties.openminds.fields.description;
+dataset_update.name = d_datasetVersion{1}.document_properties.openminds.fields.shortName;
+dataset_update.branchName = d_datasetVersion{1}.document_properties.openminds.fields.fullName;
 
-ndi.cloud.post_datasetid(datasetid,dataset_update,auth_token);
+ 
+ndi.cloud.datasets.post_datasetId(datasetid,dataset_update,auth_token);
 end
 
