@@ -6,11 +6,12 @@ function cbt = loadInstancesToTreeCheckbox(tree, name)
     %   name: A string representing the name of the openminds controlledterms to load
     %
 
-command = sprintf('openminds.controlledterms.%s.CONTROLLED_INSTANCES', name);
-instances = eval(command);
-for i = 1:numel(instances)
+[names, options] = ndi.database.metadata_app.fun.getOpenMindsInstances(name);
+
+for i = 1:numel(names)
     node = uitreenode(tree);
-    node.Text = instances{i};
+    node.Text = options{i};
+    node.NodeData = names{i};
 end
 cbt = tree;
 end
