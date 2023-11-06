@@ -32,7 +32,7 @@ response = jsondecode(output);
 if isfield(response, 'error')
     error(response.error);
 end
-end
+
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);
