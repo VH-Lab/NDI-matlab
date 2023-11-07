@@ -1,4 +1,4 @@
-function [auth_token, organization_id] = login(email, password)
+function [status, auth_token, organization_id] = login(email, password)
 % LOGIN - logs in a user
 %
 % [AUTH_TOKEN,ORGANIZATION_ID] = ndi.cloud.auth.LOGIN(EMAIL, PASSWORD)
@@ -9,7 +9,8 @@ function [auth_token, organization_id] = login(email, password)
 %
 % Outputs:
 %   STATUS - did the user logs in successfully? 1 for no, 0 for yes
-%   RESPONSE - the response summary
+%   AUTH_TOKEN - bearer token
+%   ORGANIZATION_ID - the organization id that the user belongs to
 %
 
 % Prepare the JSON data to be sent in the POST request
@@ -26,18 +27,18 @@ cmd = sprintf("curl -X 'POST' '%s' " + ...
 % Run the curl command and capture the output
 [status, output] = system(cmd);
 
-% Check the status code and handle any errors
+% Check the status code
 if status ~= 0
     error('Failed to run curl command: %s', output);
 end
 
 % Process the JSON response
 response = jsondecode(output);
-if isfield(response, 'error')
-    error(response.error);
+if isfield(response, 'errors')
+    auth_token = response.errors;
+    organization_id = response.errors;
+else
+    auth_token = response.token;
+    organization_id = response.user.organizations.id;
 end
-disp(response);
-% Extract the authentication token from the response
-auth_token = response.token;
-organization_id = response.user.organizations.id;
 end

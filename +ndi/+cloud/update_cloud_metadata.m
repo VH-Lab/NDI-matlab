@@ -1,7 +1,7 @@
 function [status, dataset] = update_cloud_metadata(datasetid, auth_token, S)
 % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [B,MSG] = ndi.cloud.UPDATE_CLOUD_METADATA(DATASETID, AUTH_TOKEN, S)
+% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA(DATASETID, AUTH_TOKEN, S)
 %
 % Inputs:
 %   DATASETID - the dataset ID to update
@@ -9,8 +9,8 @@ function [status, dataset] = update_cloud_metadata(datasetid, auth_token, S)
 %   S - an ndi.session object with the metadata to upload
 %
 % Outputs:
-%   B - did the upload work? 0 for no, 1 for yes
-%   MSG - An error message if the upload failed; otherwise ''
+%   STATUS - did the upload work? 0 for no, 1 for yes
+%   DATASET - The updated dataset
 %
 
 % loops over all the metadata fields and posts an updated value to the cloud API

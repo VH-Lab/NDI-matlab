@@ -24,7 +24,7 @@ if verbose, disp(['Loading documents...']); end;
 d = S.database_search(ndi.query('','isa','base'));
 
 if verbose, disp(['Logging in...']); end;
-[auth_token, organization_id] = ndi.cloud.auth.login(email, password);
+[status, auth_token, organization_id] = ndi.cloud.auth.login(email, password);
 
 if verbose, disp(['Working on documents...']); end;
 

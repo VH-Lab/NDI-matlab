@@ -30,8 +30,9 @@ end
 
 % Process the JSON response
 response = jsondecode(output);
-if isfield(response, 'error')
-    error(response.error);
+if isfield(response, 'errors')
+    datasets = response.errors;
+else
+    datasets = response.datasets;
 end
-datasets = response.datasets;
 end

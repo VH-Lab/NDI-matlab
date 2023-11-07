@@ -44,14 +44,10 @@ else
             res.submit = submit;
             res.errorStep = errorStep;
         case 'submit'
-            disp(AuthorData)
-            AuthorList = AuthorData.AuthorList;
-            for i = 1:numel(AuthorList)
-                ror = openminds.core.RORID('identifier',AuthorList(i).DigitalIdentifier);
-                org = openminds.core.Organization('digitalIdentifier', ror,...
-                    'fullName',AuthorList(i).Affiliation);
-            end
-           
+            [status, auth_token, organization_id] = ndi.cloud.auth.login(login.email, login.password);
+            appUserData = load(path);
+            documentList = ndi.database.metadata_app.convertFormDataToDocuments(appUserData, S.identifier);
+            
     end
 end
 end
