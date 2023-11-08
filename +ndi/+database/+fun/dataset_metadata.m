@@ -47,7 +47,9 @@ else
             [status, auth_token, organization_id] = ndi.cloud.auth.login(login.email, login.password);
             appUserData = load(path);
             documentList = ndi.database.metadata_app.convertFormDataToDocuments(appUserData, S.identifier);
-            
+            S = S.database_add(documentList);
+            [status, dataset] =  ndi.cloud.update_cloud_metadata(login.dataset_id, auth_token, S);
+            [b, msg] = ndi.database.fun.upload_to_NDI_cloud(S, login.email, login.password, login.dataset_id);
     end
 end
 end
