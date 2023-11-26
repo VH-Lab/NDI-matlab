@@ -36,7 +36,7 @@ else,
 		if numel(newdoc)~=1,
 			error(['Could not find dependent doc ' d '.']);
 		end;
-		tc_doc = newdoc;
+		tc_doc = newdoc{1};
 	else,
 		error(['DOC is not a stimulus_tuningcurve AND it does not have a dependency of ''stimulus_tuningcurve_id''.']);
 	end;
