@@ -21,7 +21,7 @@ if nargin<3,
 	response_index = [];
 end;
 
-[rt,stim_resp_scalar] = ndi.fun.stimulus.tuning_curve_to_response_type(S,doc);
+[rt,stim_resp_scalar_doc] = ndi.fun.stimulus.tuning_curve_to_response_type(S,doc);
 
  % pass 1: find the tuning curve associated with the doc we are given
 
@@ -29,7 +29,7 @@ if doc.doc_isa('stimulus_tuningcurve'),
 	% we have a tuning curve
 	tc_doc = doc;
 else,
-	d = doc.dependency_value('stimulus_tuningcurve_id,'ErrorIfNotFound',0);
+	d = doc.dependency_value('stimulus_tuningcurve_id','ErrorIfNotFound',0);
 	if ~isempty(d),
 		q_doc = ndi.query('base.id','exact_string',d);
 		newdoc = S.database_search(q_doc);
@@ -43,11 +43,11 @@ else,
 end;
 
 switch lower(rt),
-	case 'mean':
+	case 'mean',
 		f0_tuning_curve = tc_doc;
 		target_response_type = 'F1';
 		
-	case 'f1':
+	case 'f1',
 		f1_tuning_curve = tc_doc;
 		target_response_type = 'mean';
 
@@ -61,9 +61,9 @@ element_id = tc_doc.dependency_value('element_id');
 q1 = ndi.query('','depends_on','element_id',element_id);
 q2 = ndi.query('','isa','stimulus_response_scalar');
 q3 = ndi.query('stimulus_response.stimulator_epochid','exact_string', ...
-	stim_resp_doc.document_properties.stimulus_response.stimulator_epochid);
+	stim_resp_scalar_doc.document_properties.stimulus_response.stimulator_epochid);
 q4 = ndi.query('stimulus_response.element_epochid','exact_string', ...
-	stim_resp_doc.document_properties.stimulus_response.element_epochid);
+	stim_resp_scalar_doc.document_properties.stimulus_response.element_epochid);
 q5 = ndi.query('stimulus_response_scalar.response_type','exact_string',target_response_type);
 
 candidate_stim_resp_scalars = S.database_search(q1&q2&q3&q4&q5);
@@ -83,7 +83,7 @@ tc_candidates = S.database_search(q_tc_r&ndi.query('','isa','stimulus_tuningcurv
 matches = [];
 for i=1:numel(tc_candidates),
 	if vlt.data.eqlen(tc_candidates{i}.document_properties.stimulus_tuningcurve.independent_variable_label, ...
-		tc_doc.document_properties.stimulus_properties.independent_variable_label),
+		tc_doc.document_properties.stimulus_tuningcurve.independent_variable_label),
 		matches(end+1) = i;
 	end;
 end;
@@ -94,9 +94,9 @@ elseif numel(matches)>1,
 	error(['Too many ' target_response_type ' found (' int2str(numel(matches))   ').']);
 else,
 	switch (rt),
-		case 'mean':
+		case 'mean',
 			f1_tuning_curve = tc_candidates{matches};
-		case 'F1':
+		case 'F1',
 			f0_tuning_curve = tc_candidates{matches};
 	end;
 end;
