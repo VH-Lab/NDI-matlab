@@ -13,14 +13,11 @@ function [status, response] = delete_documents(dataset_id, document_id, auth_tok
 %   RESPONSE - a message saying if the document was deleted or not 
 %
 
-% Prepare the JSON data to be sent in the POST request
-document_str = jsonencode(document);
-
 % Construct the curl command with the organization ID and authentication token
 url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/documents/%s', dataset_id, document_id);
 cmd = sprintf("curl -X 'DELETE' '%s' " + ...
     "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' ", url, auth_token, document_str);
+    "-H 'Authorization: Bearer %s' ", url, auth_token);
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);

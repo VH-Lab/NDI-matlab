@@ -48,3 +48,6 @@ docName = 'exampledocument.json';
 str_doc = fileread(docName); 
 example_document = jsondecode(str_doc); 
 [status, response] = ndi.cloud.documents.post_documents(dataset_id, example_document, auth_token);
+
+[status, response] = ndi.cloud.datasets.post_unpublish(dataset_id, auth_token);
+[status, response] = ndi.cloud.datasets.post_publish(dataset_id, auth_token);

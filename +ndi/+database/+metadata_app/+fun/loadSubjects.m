@@ -1,11 +1,11 @@
 function subjectData = loadSubjects(S)
-    % LOADSUBJECTS loads the probe data from ndi session
+    % LOADSUBJECTS loads the subject data from ndi session
     %
-    %  ndi.database.metadat_app.fun.loadSubjects(S)
+    %  ndi.database.metadata_app.fun.loadSubjects(S)
     % Inputs:
     %  S - ndi.session.dir object
     % Output:
-    %  PROBEDATA - a ndi.database.metadat_app.class.ProbeData object that contains all the probe data in session S
+    %  SUBJECTDATA - a ndi.database.metadata_app.class.SubjectData object that contains all the subject data in session S
         
         if ~isa(S,'ndi.session.dir')
            error('METADATA_APP:loadSubjects:InvalidSession',...

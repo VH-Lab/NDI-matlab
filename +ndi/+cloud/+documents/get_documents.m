@@ -30,7 +30,6 @@ if status ~= 0
 end
 
 % Process the JSON response
-disp(output);
 response = jsondecode(output);
 if isfield(response, 'error')
     error(response.error);
