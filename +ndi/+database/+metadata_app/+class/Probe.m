@@ -15,7 +15,7 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         function obj = Probe()
             obj.Description = '';
             obj.DigitalIdentifier = struct('Type', 'Select type', 'Value', '');
-            obj.Manufacturer = struct('AffiliationName', '', 'RORId', '');
+            obj.Manufacturer = struct('fullName', '', 'digitalIdentifier', '');
             obj.Complete = 0;
         end
 
@@ -39,8 +39,8 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         end
 
         function manufacturerName = getManufacturerName(obj)
-            if isfield(obj.Manufacturer, 'AffiliationName')
-                manufacturerName = obj.Manufacturer.AffiliationName;
+            if isfield(obj.Manufacturer, 'fullName')
+                manufacturerName = obj.Manufacturer.fullName;
             else
                 manufacturerName = ' ';
             end
