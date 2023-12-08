@@ -88,6 +88,11 @@ for i=1:numel(tc_candidates),
 	end;
 end;
 
+if numel(matches)>1,
+    warning(['Too many ' target_response_type ' found (' int2str(numel(matches))   ').']);
+    matches = matches(1);
+end;
+
 if numel(matches)==0,
 	error(['No corresponding ' target_response_type ' found.']);
 elseif numel(matches)>1,
