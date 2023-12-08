@@ -197,6 +197,13 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 					epochfiles = getepochfiles(ndi_filenavigator_obj,epoch_number);
 				end
 
+				if numel(epochfiles)>=2, % if ingested
+					if startsWith(epochfiles{2},'epochid:'),
+						id = epochfiles{2}(9:end);
+						return;
+					end;
+				end;
+
 				eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
 
 				if exist(eidfname,'file'),
@@ -409,8 +416,44 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			%
 			% See also: ndi.file.navigator/SETFILEPARAMETERS
 			%
+				% Step 1: find epochs on disk
+
 				exp_path = ndi_filenavigator_obj.path();
-				epochfiles = findfilegroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
+				epochfiles_disk = findfilegroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
+
+				% Step 2: see if we have any ingested epochs
+
+				epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
+					ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
+					ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
+				d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
+
+				if isempty(d_ingested), % nothing ingested,
+					epochfiles = epochfiles_disk;
+					return;
+				end;
+
+				% Step 3: reconcile epochs on disk and those that are ingested
+
+				epoch_id_disk = {};
+				for i=1:numel(epochfiles_disk),
+					epoch_id_disk{i} = ndi_filenavigator_obj.epoch_id(i,epochfiles_disk);
+				end;
+				epoch_id_ingested = {};
+				for i=1:numel(d),
+					epoch_id_ingested{i} = d{i}.document_properties.epochfiles_ingested.epoch_id;
+				end;
+
+				[c,ia] = unique(epoch_id_ingested,epoch_id_disk);
+				epochfiles = {};
+				for i=1:numel(c),
+					if ia(i)<=numel(epoch_id_ingested),
+						epochfiles{i} = d{ia(i)}.document_properties.epochfiles_ingested.files;
+					else,
+						epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
+					end;
+				end;
+
 		end % selectfilegroups
 
 		function [fullpathfilenames, epochid] = getepochfiles(ndi_filenavigator_obj, epoch_number_or_id)
@@ -565,7 +608,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			% object class is ingested into the database (and won't have access to any raw
 			% data).
 			%
-				cname = 'ndi.file.navigator.ingest';
+				cname = 'ndi.file.navigator';
                 end; % ingestion_class()
 
 		function [docs_out, doc_ids_remove] = ingest(ndi_filenavigator_obj)

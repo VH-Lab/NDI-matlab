@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/epochfiles_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/epochfiles_ingested_schema.json",
+		"class_name":						"epochfiles_ingested",
+		"property_list_name":					"epochfiles_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "filenavigator_id",
+			"value": "" 
+		}
+	],
+	"epochfiles_ingested": {
+		"epoch_id":				"",
+		"files": 				[ "filename1", "filename2" ]
+	}
+}
+

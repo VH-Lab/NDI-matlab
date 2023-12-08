@@ -1,0 +1,27 @@
+{
+	"classname": "epochfiles_ingested",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "filenavigator_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"epochfiles_ingested": [
+		{
+			"name": "epoch_id",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epoch_id of for the set of epoch files being stored"
+		},
+		{
+			"name": "files",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string array of filenames for the ingested epoch"
+		}
+
+	]
+}
