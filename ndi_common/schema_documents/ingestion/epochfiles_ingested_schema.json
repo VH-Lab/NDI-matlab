@@ -21,7 +21,14 @@
 			"parameters": "",
 			"queryable": 1,
 			"documentation": "A string array of filenames for the ingested epoch"
+		},
+		{
+			"name": "epochprobemap",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The epochprobemap for the epoch"
 		}
-
 	]
 }

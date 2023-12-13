@@ -16,7 +16,8 @@
 	],
 	"epochfiles_ingested": {
 		"epoch_id":				"",
-		"files": 				[ "filename1", "filename2" ]
+		"files": 				[ "filename1", "filename2" ],
+		"epochprobemap":                        ""
 	}
 }
 
