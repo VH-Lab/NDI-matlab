@@ -609,16 +609,26 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 		%% functions that override ndi.database.ingestion_helper
 
-		function [docs_out, doc_ids_remove] = ingest(ndi_filenavigator_obj)
+		function [docs_out] = ingest(ndi_filenavigator_obj)
 			% INGEST - create new documents that produce the ingestion of an ingestion_help_obj
 			%  
-			% [DOCS_OUT, DOC_IDS_REMOVE] = INGEST(NDI_FILENAVIGATOR_OBJ)
+			% [DOCS_OUT] = INGEST(NDI_FILENAVIGATOR_OBJ)
 			%
 			% Creates documents to specify the epochs of an ndi.file.navigator object.
 			%
-
-				% question: does it replace? 
-
+				docs_out = {};
+				et = ndi_filenavigator_obj.epochtable();
+				for i=1:numel(et),
+					files = et(i).underlying_epochs.underlying;
+					if ~ndi_filenavigator_obj.isingested(files),
+						epochfiles_ingested_struct = struct;
+						epochfiles_ingested_struct.epoch_id = et(i).epoch_id;
+						files = cat(1,{['epochid://' et(i).epoch_id]},files);
+						epochfiles_ingested_struct.files = files;
+						epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
+						docs_out{end+1} = ndi.document('epochfiles_ingested','epochfiles_ingested',epochfiles_ingested_struct);
+					end;
+				end;
 		end;
 
 		function [d_ingested] = find_ingested_documents(ndi_filenavigator_obj)
