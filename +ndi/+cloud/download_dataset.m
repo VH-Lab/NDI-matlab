@@ -39,6 +39,11 @@ d = dataset.documents;
 for i = 1:numel(d)
     if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
     document_id = d{i};
+    json_file = [output_path filesep document_id '.json'];
+    if exist(json_file, 'file')
+        if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
+        continue;
+    end
     [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
     if status 
         b = 0;
@@ -48,12 +53,28 @@ for i = 1:numel(d)
     if verbose, disp(['Saving document ' int2str(i) '...']); end
 
     %save the document in .json file
-    json_file = [output_path filesep document_id '.json'];
     fid = fopen(json_file, 'w');
     fprintf(fid, '%s', did.datastructures.jsonencodenan(document));
     fclose(fid);
 end
 
+files = dataset.files;
+if verbose, disp(['Will download ' int2str(numel(files)) ' files...']); end
+
+for i = 1:numel(files)
+    if verbose, disp(['Downloading file ' int2str(i) ' of ' int2str(numel(files))  ' (' num2str(100*(i)/numel(files))  '%)' '...']); end
+    file_uid = files(i).uid;
+    file_path = [output_path filesep file_uid];
+    if exist(file_path, 'file')
+        if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
+        continue;
+    end
+    downloadURL = dataset.files(i).downloadUrl;
+    if verbose, disp(['Saving file ' int2str(i) '...']); end
+
+    %save the file
+    websave(file_path, downloadURL);
+end
 if verbose, disp(['Download complete.']); end
 end
 
