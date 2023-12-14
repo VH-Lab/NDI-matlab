@@ -10,27 +10,29 @@ classdef epochprobemap
 			% Creates a new ndi.epoch.epochprobemap object. This is an abstract
 			% base class so it has no inputs.
 			%
-			% The function has an alternative form:
-			%
-			%   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(FILENAME)
-			%
-			% Here, FILENAME is assumed to be a tab-delimitted text file with a header row
-			% that has entries 'name<tab>reference<tab>type<tab>devicestring<tab>', with
-			% one line per ndi.epoch.epochprobemap_daqsystem entry.
-
-
 		end % creator
 
-		function savetofile(ndi_epochprobemap_obj, filename)
-			%  SAVETOFILE - Write ndi.epoch.epochprobemap object array to disk
+		function s = serialize(ndi_epochprobemap_obj)
+			% SERIALIZE - Turn the ndi.epoch.epochprobemap object into a string
 			%
-			%  SAVETOFILE(NDI_EPOCHCONENTS_OBJ, FILENAME)
+			% S = SERIALIZE(NDI_EPOCHPROBEMAP_OBJ)
 			%
-			%  Writes the ndi.epoch.epochprobemap object to disk in filename FILENAME (full path).
+			% Create a charater array representation of an ndi.epoch.epochprobemap object
 			%
-			%  In this abstract class, no action is taken.
-		end;
-
+				s = ''; % abstract class returns nothing
+		end; % serialize()
 
 	end  % methods
+	methods (Static)
+		function st = decode(s)
+			% DECODE - decode table information for an ndi.epoch.epochprobemap object from a serialized string
+			%
+			% ST = DECODE(S)
+			%
+			% Return a structure ST that contains decoded information to
+			% build an ndi.epoch.epochprobemap object from a string
+			% 
+				st = struct([]); % abstract class returns nothing
+		end; % decode()
+	end
 end

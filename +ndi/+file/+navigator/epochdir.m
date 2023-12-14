@@ -62,16 +62,21 @@ classdef epochdir < ndi.file.navigator
 			if nargin < 3,
 				epochfiles = getepochfiles(ndi_filenavigator_epochdir_obj, epoch_number);
 			end
-			[pathdir,filename] = fileparts(epochfiles{1});
-			[abovepath, id] = fileparts(pathdir);
+			if ndi_filenavigator_epochdir_obj.isingested(epochfiles),
+				search_place = numel('epoch://');
+				id = epochfiles{1}(search_place+1:end);
+			else,
+				[pathdir,filename] = fileparts(epochfiles{1});
+				[abovepath, id] = fileparts(pathdir);
+			end;
 		end % epochid
 
 		%% methods overriding ndi.file.navigator
 	
-		function [epochfiles] = selectfilegroups(ndi_filenavigator_epochdir_obj)
-			% SELECTFILEGROUPS - Return groups of files that will comprise epochs
+		function [epochfiles_disk] = selectfilegroups_disk(ndi_filenavigator_epochdir_obj)
+			% SELECTFILEGROUPS_DISK - Return groups of files that will comprise epochs
 			%
-			% EPOCHFILES = SELECTFILEGROUPS(NDI_FILENAVIGATOR_EPOCHDIR_OBJ)
+			% EPOCHFILES = SELECTFILEGROUPS_DISK(NDI_FILENAVIGATOR_EPOCHDIR_OBJ)
 			%
 			% Return the files that comprise epochs.
 			%
@@ -84,9 +89,9 @@ classdef epochdir < ndi.file.navigator
 			% See also: ndi.file.navigator/SETFILEPARAMETERS
 			%
 				exp_path = ndi_filenavigator_epochdir_obj.path();
-				epochfiles = findfilegroups(exp_path, ndi_filenavigator_epochdir_obj.fileparameters.filematch,...
+				epochfiles_disk = findfilegroups(exp_path, ndi_filenavigator_epochdir_obj.fileparameters.filematch,...
 					'SearchParent',0,'SearchDepth',1);
-		end % selectfilegroups
+		end % selectfilegroups_disk
 
 	end % methods
 end
