@@ -12,7 +12,7 @@ fileName = 'exampledataset.json';
 str = fileread(fileName); 
 example_dataset = jsondecode(str); 
 
-[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organizationId, example_dataset, auth_token);
+[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, example_dataset, auth_token);
 
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";

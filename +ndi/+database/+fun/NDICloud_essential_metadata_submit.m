@@ -1,7 +1,7 @@
 function [dataset, dataset_id] = NDICloud_essential_metadata_submit(email, password, location, dataIdentifier, datasetInformation)
     % NDICLOUD_ESSENTIAL_METADATA_SUBMIT - submit or update metadata in the cloud
     %
-    % ndi.database.fun.NDICloud_essential_metadata_submit(EMAIL, PASSWORD, LOCATION, DATAIDENTIFIER, DATASETINFORMATION)
+    % [DATASET, DATASET_ID] = ndi.database.fun.NDICloud_essential_metadata_submit(EMAIL, PASSWORD, LOCATION, DATAIDENTIFIER, DATASETINFORMATION)
     %
     % Inputs:
     %   EMAIL - a string with the email address
