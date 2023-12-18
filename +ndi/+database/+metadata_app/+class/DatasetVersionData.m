@@ -54,7 +54,7 @@ classdef DatasetVersionData < handle
             S.releaseDate = '';
             S.shortName = 'original submission';
             S.technique = '';
-            S.versionIdentifier = '';
+            S.versionIdentifier = '1.0.0';
             S.versionInnovation = '';
             S.funding = '';
             S.Author = '';

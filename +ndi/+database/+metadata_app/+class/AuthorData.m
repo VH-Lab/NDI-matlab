@@ -140,7 +140,6 @@ classdef AuthorData < handle
             S.familyName = '';
             S.givenName = '';
             S.authorRole = '';
-            S.additional = '';
         end
 
     end
