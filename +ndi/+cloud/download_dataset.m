@@ -23,6 +23,7 @@ if status
     msg = response;
     error(msg);
 end
+
 if verbose, disp(['Retrieving dataset...']); end
 
 [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
@@ -32,9 +33,43 @@ if status
     error(msg);
 end
 
-if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
-
 d = dataset.documents;
+
+[status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
+session_id = document.document_properties.base.session_id;  
+
+%%Construct a new ndi.session
+mkdir([output_path filesep '.ndi']);
+%%create a txt file with the session id
+fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
+fprintf(fid, '%s', session_id);
+fclose(fid);
+S = ndi.session.dir(output_path);
+if verbose, disp(['Created new session ' S.identifier ' in ' output_path]); end
+
+%%download the files
+files = dataset.files;
+file_to_document_map = containers.Map();
+
+if verbose, disp(['Will download ' int2str(numel(files)) ' files...']); end
+
+for i = 1:numel(files)
+    if verbose, disp(['Downloading file ' int2str(i) ' of ' int2str(numel(files))  ' (' num2str(100*(i)/numel(files))  '%)' '...']); end
+    file_uid = files(i).uid;
+    file_path = [output_path filesep file_uid];
+    if exist(file_path, 'file')
+        if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
+        continue;
+    end
+    downloadURL = dataset.files(i).downloadUrl;
+    if verbose, disp(['Saving file ' int2str(i) '...']); end
+
+    %save the file
+    websave(file_path, downloadURL);
+end
+if verbose, disp(['Download complete.']); end
+
+if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
 
 for i = 1:numel(d)
     if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
@@ -58,23 +93,6 @@ for i = 1:numel(d)
     fclose(fid);
 end
 
-files = dataset.files;
-if verbose, disp(['Will download ' int2str(numel(files)) ' files...']); end
 
-for i = 1:numel(files)
-    if verbose, disp(['Downloading file ' int2str(i) ' of ' int2str(numel(files))  ' (' num2str(100*(i)/numel(files))  '%)' '...']); end
-    file_uid = files(i).uid;
-    file_path = [output_path filesep file_uid];
-    if exist(file_path, 'file')
-        if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
-        continue;
-    end
-    downloadURL = dataset.files(i).downloadUrl;
-    if verbose, disp(['Saving file ' int2str(i) '...']); end
-
-    %save the file
-    websave(file_path, downloadURL);
-end
-if verbose, disp(['Download complete.']); end
 end
 
