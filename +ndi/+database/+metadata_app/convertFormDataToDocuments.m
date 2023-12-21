@@ -75,6 +75,21 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     isCustodian = cellfun(@(c) any(strcmp(c, 'Custodian')), authorRoles);
     dataset.custodian = authorInstances(isCustodian);
 
+    % Resolve otherContributions:
+    is1stAuthor = cellfun(@(c) any(strcmp(c, '1st Author')), authorRoles);
+    firstAuthor = authorInstances(is1stAuthor);
+    if ~iscell(firstAuthor)
+        firstAuthor = {firstAuthor};
+    end
+    firstAuthorDoc = cellfun(@(p) openminds.core.Contribution('contributor', p, 'type', openminds.controlledterms.ContributionType('name', '1st Author')), firstAuthor);
+
+    isCorresponding = cellfun(@(c) any(strcmp(c, 'Corresponding')), authorRoles);
+    correspondingAuthor = authorInstances(isCorresponding);
+    if ~iscell(correspondingAuthor)
+        correspondingAuthor = {correspondingAuthor};
+    end
+    corresondingAuthorDoc = cellfun(@(p) openminds.core.Contribution('contributor', p, 'type', openminds.controlledterms.ContributionType('name', 'point of contact')), correspondingAuthor);
+
     datasetVersion = openminds.core.DatasetVersion();
     datasetVersion.fullName = appUserData.DatasetFullName;
     datasetVersion.shortName = appUserData.DatasetShortName;
@@ -82,6 +97,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.author = authorInstances;
     datasetVersion.custodian = authorInstances(isCustodian);
     datasetVersion.funding = fundingInstances;
+    datasetVersion.otherContribution = [firstAuthorDoc, corresondingAuthorDoc];
 
     S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
     datasetVersion.license = openminds.core.License().fromStruct(S);

@@ -51,6 +51,8 @@ if numel(dataset_version_doc) > 0
     funding_id = dv_f.funding;
     studiedSpecimen_id = dv_f.studiedSpecimen;
     license_id = dv_f.license;
+    otherContribution_id = dv_f.otherContribution;
+    custodian_id = dv_f.custodian;
 end
 
 for i = 1:numel(author_doc_id)
@@ -61,9 +63,17 @@ for i = 1:numel(author_doc_id)
         end
     end
 end
-author = ndi.cloud.fun.load_author_from_cloud(author_doc,openminds_documents);
 
+for i = 1:numel(otherContribution_id)
+    otherContribution_docs = ndi.cloud.fun.search_id(otherContribution_id{i},openminds_documents);
+end
 
+for i = 1:numel(custodian_id)
+    custodian_docs = ndi.cloud.fun.search_id(custodian_id{i},openminds_documents);
+end
+
+author = ndi.cloud.fun.load_author_from_cloud(author_doc,otherContribution_docs, custodian_docs, openminds_documents);
+datasetInformation.Author = author;
 for i = 1:numel(dataType_id)
     dataType = ndi.cloud.fun.search_id(dataType_id{i},openminds_documents);
     dataType_name{i} = dataType.document_properties.openminds.fields.name;
