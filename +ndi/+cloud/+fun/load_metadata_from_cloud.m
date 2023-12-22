@@ -65,11 +65,11 @@ for i = 1:numel(author_doc_id)
 end
 
 for i = 1:numel(otherContribution_id)
-    otherContribution_docs = ndi.cloud.fun.search_id(otherContribution_id{i},openminds_documents);
+    otherContribution_docs{i} = ndi.cloud.fun.search_id(otherContribution_id{i},openminds_documents);
 end
 
 for i = 1:numel(custodian_id)
-    custodian_docs = ndi.cloud.fun.search_id(custodian_id{i},openminds_documents);
+    custodian_docs{i} = ndi.cloud.fun.search_id(custodian_id{i},openminds_documents);
 end
 
 author = ndi.cloud.fun.load_author_from_cloud(author_doc,otherContribution_docs, custodian_docs, openminds_documents);

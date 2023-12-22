@@ -36,28 +36,54 @@ end
 d = dataset.documents;
 
 [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
-session_id = document.document_properties.base.session_id;  
+session_id = document.base.session_id;  
 
 %%Construct a new ndi.session
-mkdir([output_path filesep '.ndi']);
+if ~isfolder(output_path)
+    mkdir(output_path);
+end
+
+%Check if folder already exists
+if ~isfolder([output_path filesep '.ndi'])
+    mkdir([output_path filesep '.ndi']);
+end
 %%create a txt file with the session id
-fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
-fprintf(fid, '%s', session_id);
-fclose(fid);
+%check if file exist
+if ~isfile([output_path filesep '.ndi' filesep 'reference.txt'])
+    fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
+    fprintf(fid, '%s', session_id);
+    fclose(fid);
+end
+
+if ~isfolder([output_path filesep '.ndi' filesep 'json'])
+    mkdir([output_path filesep '.ndi' filesep 'json']);
+end
+
+if ~isfolder([output_path filesep '.ndi' filesep 'files'])
+    mkdir([output_path filesep '.ndi' filesep 'files']);
+end
+
 S = ndi.session.dir(output_path);
 if verbose, disp(['Created new session ' S.identifier ' in ' output_path]); end
 
 %%download the files
 files = dataset.files;
-file_to_document_map = containers.Map();
 
 if verbose, disp(['Will download ' int2str(numel(files)) ' files...']); end
+
+files_map = containers.Map();
 
 for i = 1:numel(files)
     if verbose, disp(['Downloading file ' int2str(i) ' of ' int2str(numel(files))  ' (' num2str(100*(i)/numel(files))  '%)' '...']); end
     file_uid = files(i).uid;
-    file_path = [output_path filesep file_uid];
-    if exist(file_path, 'file')
+    uploaded = files(i).uploaded;
+    files_map(file_uid) = uploaded;
+    if ~uploaded
+        disp('not uploaded to the cloud. Skipping...')
+        continue;
+    end
+    file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
+    if isfile(file_path)
         if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
         continue;
     end
@@ -67,18 +93,18 @@ for i = 1:numel(files)
     %save the file
     websave(file_path, downloadURL);
 end
-if verbose, disp(['Download complete.']); end
+if verbose, disp(['File Downloading complete.']); end
 
 if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
 
 for i = 1:numel(d)
     if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
     document_id = d{i};
-    json_file = [output_path filesep document_id '.json'];
-    if exist(json_file, 'file')
-        if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
-        continue;
-    end
+    json_file_path = [output_path filesep '.ndi' filesep 'json' filesep document_id '.json'];
+    % if isfile(json_file_path)
+    %     if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
+    %     continue;
+    % end
     [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
     if status 
         b = 0;
@@ -86,11 +112,25 @@ for i = 1:numel(d)
         error(msg);
     end
     if verbose, disp(['Saving document ' int2str(i) '...']); end
-
+    document_obj = ndi.document(document);
     %save the document in .json file
-    fid = fopen(json_file, 'w');
-    fprintf(fid, '%s', did.datastructures.jsonencodenan(document));
+    fid = fopen(json_file_path, 'w');
+    fprintf(fid, '%s', did.datastructures.jsonencodenan(document_obj));
     fclose(fid);
+
+    if isfield(document, 'files')
+        for j = 1:numel(document.files)
+            file_uid = document.files.file_info(i).locations(1).uid;
+            uploaded = files_map(file_uid);
+            if ~uploaded
+                continue;
+            end
+            file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
+            file_name = document.files.file_list(i);
+            document = document.add_file(file_name, file_path);
+        end
+    end
+    S = S.database_add(document_obj);
 end
 
 

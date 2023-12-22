@@ -15,9 +15,9 @@ if ~iscell(custodian_docs)
 end
 type_ids = cellfun(@(x) x.document_properties.openminds.fields.type{1}, otherContribution_docs, 'UniformOutput', false);
 type_doc = cellfun(@(x) ndi.cloud.fun.search_id(x, all_docs), type_ids);
-if ~iscell(type_doc)
-    type_doc = {type_doc};
-end
+% if ~iscell(type_doc)
+%     type_doc = {type_doc};
+% end
 
 author_openminds_ids = cellfun(@(x) x.document_properties.openminds.openminds_id, author_doc, 'UniformOutput', false);
 author_ids = cellfun(@(x) x.document_properties.base.id, author_doc, 'UniformOutput', false);
@@ -42,10 +42,8 @@ for i = 1:numel(author_doc)
     email_doc = ndi.cloud.fun.search_id(author_doc{1, i}.document_properties.openminds.fields.contactInformation{1,1}, all_docs);
     author(i).contactInformation.email = email_doc.document_properties.openminds.fields.email;
     author_role = {};
-    for j = 1:numel(custodian_indices)
-        if custodian_indices(j) == i
-            author_role{end+1} = 'custodian';
-        end
+    if custodian_indices(i)
+        author_role{end+1} = 'Custodian';
     end
     % if any(cellfun(@(x) x == i, {custodian_indices}, 'UniformOutput', false))
     %     author_role{end+1} = 'custodian';
@@ -59,10 +57,11 @@ for i = 1:numel(otherContribution_docs)
     otherContribution_docs_p_id = otherContribution_docs{1, i}.document_properties.openminds.fields.contributor{1};
     for j = 1:numel(author)
         if contains(otherContribution_docs_p_id, author(j).id)
-            if strcmp(type_doc{1, i}.document_properties.openminds.fields.name, 'point of contact')
+            if strcmp(type_doc(1, i).document_properties.openminds.fields.name, 'point of contact')
                 author(j).authorRole{end+1} = 'Corresponding';
+            else
+                author(j).authorRole{end+1} = type_doc(1, i).document_properties.openminds.fields.name;
             end
-            author(j).authorRole{end+1} = type_doc{1, i}.document_properties.openminds.fields.name;
         end
     end
 end
