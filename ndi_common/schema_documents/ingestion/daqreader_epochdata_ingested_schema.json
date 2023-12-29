@@ -1,0 +1,10 @@
+{
+	"classname": "daqreader_epochdata_ingested",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "daqreader_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"daqreader_epochdata_ingested": [
+	]
+}

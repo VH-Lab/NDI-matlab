@@ -1,0 +1,20 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/daqreader_epochdata_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/daqreader_epochdata_ingested_schema.json",
+		"class_name":						"daqreader_epochdata_ingested",
+		"property_list_name":					"daqreader_epochdata_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "daqreader_id",
+			"value": "" 
+		}
+	],
+	"daqreader_epochdata_ingested": {
+	}
+}
+

@@ -103,6 +103,22 @@ classdef reader < ndi.ido & ndi.documentservice
                                 end
 		end % verifyepochprobemap
 
+		function d = ingest_epochfiles(ndi_daqreader_obj, epochfiles)
+			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.reader
+			%
+			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES)
+			%
+			% Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
+			% for an ndi.daq.reader object. The document D is not added to any database.
+			%
+			% Example:
+			%    D = mydaqreader.ingest_epochfiles(epochfiles);
+			
+				d = ndi.document('daqreader_epochdata_ingested');
+				d = d.set_dependency_value('daqreader_id',ndi_daqreader_obj.id());
+
+		end; % ingest_epochfiles()
+
 		function b = eq(ndi_daqreader_obj1, ndi_daqreader_obj2)
 			% EQ - tests whether 2 ndi.daq.reader objects are equal
 			%
