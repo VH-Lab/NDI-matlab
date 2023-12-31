@@ -1,0 +1,38 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/daqreader_mfdaq_epochdata_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/daqreader_mfdaq_epochdata_ingested_schema.json",
+		"class_name":						"daqreader_mfdaq_epochdata_ingested",
+		"property_list_name":					"daqreader_mfdaq_epochdata_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/ingestion\/daqreader_epochdata_ingested.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "daqreader_id",
+			"value": "" 
+		}
+	],
+	"files": {
+		"file_list": [
+			"channel_list.bin", 
+			"ai_group1_seg#.nbf", "ai_group2_seg#.nbf", "ai_group3_seg#.nbf", "ai_group4_seg#.nbf", "ai_group5_seg#.nbf", 
+			"ai_group6_seg#.nbf", "ai_group7_seg#.nbf", "ai_group8_seg#.nbf", "ai_group9_seg#.nbf", "ai_group10_seg#.nbf", 
+			"ao_group1_seg#.nbf", "ao_group2_seg#.nbf", "ao_group3_seg#.nbf", "ao_group4_seg#.nbf", "ao_group5_seg#.nbf", 
+			"ao_group6_seg#.nbf", "ao_group7_seg#.nbf", "ao_group8_seg#.nbf", "ao_group9_seg#.nbf", "ao_group10_seg#.nbf", 
+			"di_group1_seg#.nbf", "di_group2_seg#.nbf", "di_group3_seg#.nbf", "di_group4_seg#.nbf", "di_group5_seg#.nbf", 
+			"di_group6_seg#.nbf", "di_group7_seg#.nbf", "di_group8_seg#.nbf", "di_group9_seg#.nbf", "di_group10_seg#.nbf", 
+			"do_group1_seg#.nbf", "do_group2_seg#.nbf", "do_group3_seg#.nbf", "do_group4_seg#.nbf", "do_group5_seg#.nbf", 
+			"do_group6_seg#.nbf", "do_group7_seg#.nbf", "do_group8_seg#.nbf", "do_group9_seg#.nbf", "do_group10_seg#.nbf", 
+			"ev_group1_seg#.nbf", "ev_group2_seg#.nbf", "ev_group3_seg#.nbf", "ev_group4_seg#.nbf", "ev_group5_seg#.nbf", 
+			"ev_group6_seg#.nbf", "ev_group7_seg#.nbf", "ev_group8_seg#.nbf", "ev_group9_seg#.nbf", "ev_group10_seg#.nbf", 
+			"mk_group1_seg#.nbf", "mk_group2_seg#.nbf", "mk_group3_seg#.nbf", "mk_group4_seg#.nbf", "mk_group5_seg#.nbf", 
+			"mk_group6_seg#.nbf", "mk_group7_seg#.nbf", "mk_group8_seg#.nbf", "mk_group9_seg#.nbf", "mk_group10_seg#.nbf"
+                ]
+	},    
+	"daqreader_mfdaq_epochdata_ingested": {
+	}
+}
+

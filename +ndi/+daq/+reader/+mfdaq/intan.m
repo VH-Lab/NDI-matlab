@@ -304,8 +304,19 @@ classdef intan < ndi.daq.reader.mfdaq
 		% produces an ndi.daq.reader.mfdaq channel name (e.g., 'ai1').
 		%  
 			sep = find(name=='-');
+			isaux = 0;
+			if numel(name)>=sep+4,
+				if strcmpi(name(sep+1:sep+3),'aux'), % aux channels
+					sep = sep+3;
+					isaux = 1;
+				end;
+			end;
 			chan_intan = str2num(name(sep+1:end));
-			chan = chan_intan + 1; % intan numbers from 0
+			if ~isaux,
+				chan = chan_intan + 1; % intan numbers from 0
+			else,
+				chan = chan_intan;
+			end;
 			channame = [ndi.daq.system.mfdaq.mfdaq_prefix(type) int2str(chan)];
 
 		end % intanname2mfdaqname()

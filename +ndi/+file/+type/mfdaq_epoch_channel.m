@@ -62,24 +62,31 @@ classdef mfdaq_epoch_channel
 			% | analog_out_channels_per_group   | Number of channels per group |
 			% |   (400)                         |  for analog output channels  |
 			% | ditial_in_channels_per_group    | Number of channels per group |
-			% |   (400)                         |  for digital input channels  |
+			% |   (512)                         |  for digital input channels  |
 			% | digital_out_channels_per_group  | Number of channels per group |
-			% |   (400)                         |  for digital output channels |
+			% |   (512)                         |  for digital output channels |
 			% 
 
 				analog_in_channels_per_group = 400;
 				analog_out_channels_per_group = 400;
 				auxiliary_in_channels_per_group = 400;
 				auxiliary_out_channels_per_group = 400;
-				digital_in_channels_per_group = 400;
-				digital_out_channels_per_group = 400;
+				digital_in_channels_per_group = 512;
+				digital_out_channels_per_group = 512;
+
+                analog_in_dataclass = 'ephys';
+                analog_out_dataclass = 'ephys';
+                auxiliary_in_dataclass = 'ephys';
+                auxiliary_out_dataclass = 'ephys';
+                digital_in_dataclass = 'digital';
+                digital_in_dataclass = 'digital';
 				
 				did.datastructures.assign(varargin{:});
 
 				[dummy,indexes_sorted] = sort({channel_structure.type});
 				channel_structure = channel_structure(indexes_sorted);
 
-				channel_information = vlt.data.emptystruct('name','type','number','group');
+				channel_information = vlt.data.emptystruct('name','type','number','group','dataclass');
 
 				types_available = unique({channel_structure.type});
 
@@ -95,6 +102,7 @@ classdef mfdaq_epoch_channel
 						channel_info_here.type = channels_here(j).type;
 						[dummy,channel_info_here.number] = ndi.fun.channelname2prefixnumber(channels_here(j).name);
 						channel_info_here.group = 1+floor( channel_info_here.number / channels_per_group);
+                        channel_info_here.dataclass = eval([channels_here(1).type '_dataclass;']);
 						channel_information(end+1) = channel_info_here;
 					end;
 				end;

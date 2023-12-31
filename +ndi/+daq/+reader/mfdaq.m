@@ -224,6 +224,153 @@ classdef mfdaq < ndi.daq.reader
 				sr = []; % abstract class;
 		end;
 
+                function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
+			% UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
+			%
+			% [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
+			%
+			% Return the underlying datatype for the requested channel.
+			%
+			% DATATYPE is a type that is suitable for passing to FREAD or FWRITE
+			%  (e.g., 'float64', 'uint16', etc. See help fread.)
+			%
+			% P is a polynomial that converts between the double data that is returned by
+			% READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
+			%
+			% DATASIZE is the sample size in bits.
+			%
+			% CHANNELTYPE can be either a string or a cell array of
+			% strings the same length as the vector CHANNEL.
+			% If CHANNELTYPE is a single string, then it is assumed that
+			% that CHANNELTYPE applies to every entry of CHANNEL.
+
+				% For the abstract class, keep the data in doubles. This will always work but may not
+				% allow for optimal compression if not overridden
+				P = [0 1];
+				datatype = 'float64';
+				datasize = 64;
+		end;
+
+		function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles)
+			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.reader
+			%
+			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES)
+			%
+			% Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
+			% for an ndi.daq.reader object. The document D is not added to any database.
+			%
+			% Example:
+			%    D = mydaqreader.ingest_epochfiles(epochfiles);
+
+				d = ndi.document('daqreader_mfdaq_epochdata_ingested');
+				d = d.set_dependency_value('daqreader_id',ndi_daqreader_mfdaq_obj.id());
+
+				filenames_we_made = {};
+
+				% Step 1: add channel list
+				ch = ndi_daqreader_mfdaq_obj.getchannelsepoch(epochfiles);
+				mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(ch);
+				channel_file_name = ndi.file.temp_name();
+				[b,errmsg] = mfdaq_epoch_channel_obj.writeToFile(channel_file_name);
+				if ~b,
+					error(errmsg);
+				end;
+				filenames_we_made{end+1} = channel_file_name;
+
+				ci = mfdaq_epoch_channel_obj.channel_information;
+				% Step 2: loop over channels with rigid samples
+				types = ndi.daq.reader.mfdaq.channel_types(); 
+
+				sample_segment = 500000;
+
+				for i = numel(types),
+					chan_entries_indexes = find(strcmp(types{i},{ci.type})); % maybe not ci.type
+					% now find the groups
+					groups = unique([ci(chan_entries_indexes).group]);
+					for g = 1:numel(groups),
+						group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
+
+						% Step 2b: check to make sure all channels have the same sampling rate
+						[underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
+							types{i},ci(chan_entries_indexes(group_indexes)).number);
+						sample_rates_here = [];
+						for k=1:numel(group_indexes),
+							sample_rates_here(k) = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, ...
+								ci(chan_entries_indexes(group_indexes(k))).type,...
+								ci(chan_entries_indexes(group_indexes(k))).number);
+						end;
+
+						if numel(unique(sample_rates_here))~=1,
+							error(['Sample rates are not all identical for ' types{i} ' group ' int2str(groups(g)) '.']);
+						end;
+
+						% Step 2c: read in the data and convert it to its lowest form
+					
+						channels_here = [ci(chan_entries_indexes(group_indexes)).number];
+						t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
+						S0 = 1;
+						S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here);
+
+						s_starts = [S0:sample_segment:S1];
+						for s=1:numel(s_starts),
+							s0 = s_starts(s);
+							s1 + min(s0+sample_segment-1,S1);
+							data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+							data = data/mypoly(2) + mypoly(1);
+
+							% need output_bit_size
+
+							filename_here = ndi.file.temp_name();
+							output_bit_size = datasize;
+							switch ci(chan_entries_indexes(group_indexes(1)).dataclass),
+								case 'ephys',
+									[ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here);
+								case 'digital',
+								case 'event',
+								case 'mark',
+								case 'text',
+								case 'time',
+							end;
+				
+							d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
+							filenames_we_made{end+1} = filename_here;
+						end;
+					end;
+				end;
+		end; % ingest_epochfiles()
 	end; % methods
+
+	methods(Static)
+		function [types,abbrev] = channel_types()
+			% CHANNEL_TYPES - what channel types are possible in an ndi.daq.reader.mfdaq ? 
+			%
+			% [TYPES, ABBREV] = ndi.daq.reader.mfdaq.channel_types()
+			%
+			%  Returns a cell array of possible channel types in TYPES, and a corresponding
+			%  short abbreviation in the cell array ABBREV.
+			%
+			% ----------------------------------------------------------------------------
+			% | CHANNEL TYPE       | ABBREV  | Description                               |
+			% |--------------------|---------|-------------------------------------------|
+			% | 'analog_in'        | 'ai'    | Analog input                              |
+			% | 'analog_out'       | 'ao'    | Analog output                             | 
+			% | 'auxiliary_in'     | 'ax'    | Auxiliary channels                        |
+			% | 'digital_in'       | 'di'    | Digital input                             | 
+			% | 'digital_out'      | 'do'    | Digital output                            | 
+			% | 'event'            | 'e'     | Event trigger (returns times, codes of    |
+			% |                    |         |    event trigger activation)              |
+			% | 'mark'             | 'mk'    | Mark channel (contains value at specified |
+			% |                    |         |    times)                                 |
+			% | 'text'             | 'tx'    | Text channel (contains text at specified  |
+			% |                    |         |    times)
+			% | 'time'             | 't'     | Time samples                              |
+			% |--------------------|---------|-------------------------------------------|
+			%
+				types =  {'analog_in','analog_out','auxiliary_in','digital_in','digital_out','event','mark','text','time'}; 
+				abbrev = {'ai'      , 'ao',        'ax',          'di',        'do',         'e',    'mk',  'tx',  't'   };
+
+		end; % channelTypes
+
+	end % methods(Static)
 end % classdef
 
