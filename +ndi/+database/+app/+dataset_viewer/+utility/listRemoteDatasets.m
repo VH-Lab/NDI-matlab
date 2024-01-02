@@ -1,7 +1,11 @@
 function datasets = listRemoteDatasets()
-
+    
+    % Note: Function is not complete
+    
     % Todo: Get username/password from environment variables?
-    [~, token, ~] = ndi.cloud.auth.login('eivind@walthamdatascience.com', 'nYqpad-7nygfe-pavqeq');
+    % Todo: Make loop and retrieve all available dataset pages
+    
+    token = ndi.cloud.uilogin();
 
     [~, response, dataset] = ndi.cloud.datasets.get_published(1, 10, token);
 
