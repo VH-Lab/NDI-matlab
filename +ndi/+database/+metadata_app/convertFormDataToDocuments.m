@@ -23,6 +23,11 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     organizations = [organizations, fundingOrganizations];
 
+    % Make sure we dont have any duplicates
+    organizationIds = unique({organizations.digitalIdentifier});
+    [~, keep] = unique(organizationIds);
+    organizations = organizations(keep);
+
     % Create organization instances:
     createOrganization = getFactoryFunction('openminds.core.Organization');
     organizationInstances = arrayfun( @(s) createOrganization(s), organizations);
@@ -38,15 +43,15 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     % contains the fullName of an organizations, while the "reference"
     % organization will also contain the digitalIdentifier
     for i = 1:numel(authorInstances)
-        thisFunding = authorInstances(i);
-        for j = 1:numel(thisFunding.affiliation)
-            thisAffiliation = thisFunding.affiliation(j);
+        thisAuthor = authorInstances(i);
+        for j = 1:numel(thisAuthor.affiliation)
+            thisAffiliation = thisAuthor.affiliation(j);
             thisOrganizationName = thisAffiliation.memberOf(1).fullName;
             % This statement does not work because of bug in
             % openminds_MATLAB (fix on the way):
             %thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
             isMatch = strcmp(thisOrganizationName, organizationNames);
-            thisFunding.affiliation(j).memberOf = organizationInstances(isMatch);
+            thisAuthor.affiliation(j).memberOf = organizationInstances(isMatch);
         end
     end
 
