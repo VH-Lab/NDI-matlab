@@ -101,7 +101,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
     datasetVersion.license = openminds.core.License().fromStruct(S);
-    % TODO: fullDocumentation
+    % TODO: fullDocumentation. Need to validate the input as DOI or Webresource 
     %datasetVersion.fullDocumentation = appUserData.FullDocumentation;
     datasetVersion.releaseDate = appUserData.ReleaseDate;
     datasetVersion.versionIdentifier = appUserData.VersionIdentifier;
@@ -118,7 +118,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         appUserData.ExperimentalApproach );
 
     datasetVersion.technique = cellfun(@(value) convertTechnique(value), ...
-        appUserData.TechniquesEmployed );
+        appUserData.TechniquesEmployed, 'UniformOutput', false );
 
     % Create subjects
     subjects = cell(1, numel(appUserData.Subjects));
