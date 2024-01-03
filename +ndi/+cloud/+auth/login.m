@@ -35,6 +35,7 @@ end
 % Process the JSON response
 response = jsondecode(output);
 if isfield(response, 'errors')
+    status = 1;
     auth_token = response.errors;
     organization_id = response.errors;
 else
