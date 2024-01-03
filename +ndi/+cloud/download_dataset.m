@@ -101,10 +101,10 @@ for i = 1:numel(d)
     if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
     document_id = d{i};
     json_file_path = [output_path filesep '.ndi' filesep 'json' filesep document_id '.json'];
-    % if isfile(json_file_path)
-    %     if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
-    %     continue;
-    % end
+    if isfile(json_file_path)
+        if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
+        continue;
+    end
     [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
     if status 
         b = 0;
@@ -112,6 +112,8 @@ for i = 1:numel(d)
         error(msg);
     end
     if verbose, disp(['Saving document ' int2str(i) '...']); end
+
+    document = rmfield(document, 'id');
     document_obj = ndi.document(document);
     %save the document in .json file
     fid = fopen(json_file_path, 'w');
@@ -130,7 +132,13 @@ for i = 1:numel(d)
             document = document.add_file(file_name, file_path);
         end
     end
-    S = S.database_add(document_obj);
+    
+    exist = S.database_search( ndi.query('base.id', 'exact_string', document_obj.document_properties.base.id) );
+    if numel(exist) > 0
+        S = S.database_add(document_obj);
+    else
+        disp(['Document ' document_obj.document_properties.base.id ' already exists in the database. Skipping...'])
+    end
 end
 
 
