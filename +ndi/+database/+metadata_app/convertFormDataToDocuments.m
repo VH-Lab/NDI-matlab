@@ -106,8 +106,17 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
     datasetVersion.license = openminds.core.License().fromStruct(S);
-    % TODO: fullDocumentation. Need to validate the input as DOI or Webresource 
-    %datasetVersion.fullDocumentation = appUserData.FullDocumentation;
+
+    % Try to create a DOI from the given value. If that fails, the value
+    % should be a URL and we create a WebResource instead.
+    try 
+        doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
+        datasetVersion.fullDocumentation = doi;
+    catch
+        webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
+        datasetVersion.fullDocumentation = webResource;
+    end
+
     datasetVersion.releaseDate = appUserData.ReleaseDate;
     datasetVersion.versionIdentifier = appUserData.VersionIdentifier;
     datasetVersion.versionInnovation = appUserData.VersionInnovation;
