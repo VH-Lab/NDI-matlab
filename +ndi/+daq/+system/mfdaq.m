@@ -174,7 +174,7 @@ classdef mfdaq < ndi.daq.system
 		function [timestamps,data] = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
 			%  FUNCTION READEVENTS - read events or markers of specified channels
 			%
-			%  DATA = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
+			%  [TIMESTAMPS,DATA] = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
@@ -204,7 +204,7 @@ classdef mfdaq < ndi.daq.system
 		function [timestamps,data,timeref] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
-			%  [DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
+			%  [TIMESTAMPS, DATA, TIMEREF] = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH, T0, T1)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%  ('event','marker', etc)
@@ -213,9 +213,11 @@ classdef mfdaq < ndi.daq.system
 			%  
 			%  EPOCH is the epoch number or epochID
 			%
-			%  DATA is a two-column vector; the first column has the time of the event. The second
-			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
-			%  is requested, DATA is returned as a cell array, one entry per channel.
+			%  TIMESTAMPS is an array of the timestamps read. If more than one channel is requested, then TIMESTAMPS
+			%  will be a cell array of timestamp arrays, one per channel.
+            %
+			%  DATA is an is an array of the event data. For events, values are always 1. If more than one channel
+            %  is requested, then DATA will be a cell array of data arrays, one per channel.
 			%
 			%  TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
