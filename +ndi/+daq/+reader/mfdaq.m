@@ -15,7 +15,8 @@
 % 'time'        or 't'        | Time
 % 'auxiliary_in','aux' or 'ax'| Auxiliary channels
 % 'event', or 'e'             | Event trigger (returns times of event trigger activation)
-% 'mark', or 'mk'             | Mark channel (contains value at specified times)
+% 'mark', or 'mk'             | Mark channel (contains int16 value at specified times)
+% 'text', or 'tx'             | Text mark channel (contains character string at specified time)
 % 
 %
 % See also: ndi.daq.reader.mfdaq/ndi.daq.reader.mfdaq
@@ -277,16 +278,21 @@ classdef mfdaq < ndi.daq.reader
 				end;
 				filenames_we_made{end+1} = channel_file_name;
 
-				ci = mfdaq_epoch_channel_obj.channel_information;
+				ci = mfdaq_epoch_channel_obj.channel_information;  %% need to update to combine eventmarktext
 				% Step 2: loop over channels with rigid samples
-				types = ndi.daq.reader.mfdaq.channel_types(); 
-
-				sample_segment = 500000;
+				types = ndi.daq.reader.mfdaq.channel_types();
+				% we will treat event,mark,text with the same file
+				index_emt = find( strcmp('event',types) | strcmp('mark',types) | strcmp('text',types) );
+				types(index_emt) = [];
+				types{end+1} = 'eventmarktext';
+				 
+				sample_analog_segment = 5e5; %(50,000)
+				sample_digital_segment = 1e7; % 10M
 
 				for i = numel(types),
-					chan_entries_indexes = find(strcmp(types{i},{ci.type})); % maybe not ci.type
+					chan_entries_indexes = find(strcmp(types{i},{ci.type})); 
 					% now find the groups
-					groups = unique([ci(chan_entries_indexes).group]);
+					groups = unique([ci(chan_entries_indexes).group]); 
 					for g = 1:numel(groups),
 						group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
 
@@ -300,40 +306,76 @@ classdef mfdaq < ndi.daq.reader
 								ci(chan_entries_indexes(group_indexes(k))).number);
 						end;
 
-						if numel(unique(sample_rates_here))~=1,
+						sample_rates_here_unique = unique(sample_rates_here);
+						indexes_nan = find(isnan(sample_rates_here_unique));
+						if numel(indexes_nan)>1,
+							sample_rates_here_unique(indexes_nan(2:end)) = [];
+						end;
+						if numel(unique(sample_rates_here_unique))~=1,
 							error(['Sample rates are not all identical for ' types{i} ' group ' int2str(groups(g)) '.']);
 						end;
 
-						% Step 2c: read in the data and convert it to its lowest form
+						% now, do different things depending upon the underlying data types
+
+						switch ci(chan_entries_indexes(group_indexes(1))).dataclass,
+							case 'ephys',
+								% read in the data and convert it to its underlying data type 
+								%   (e.g., convert from double to uint16 if that's the underlying form)
 					
-						channels_here = [ci(chan_entries_indexes(group_indexes)).number];
-						t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
-						S0 = 1;
-						S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here);
+								if isnan(sample_rates_here_unique),
+									error(['Analog records have a NaN sample rate.']);
+								end;
 
-						s_starts = [S0:sample_segment:S1];
-						for s=1:numel(s_starts),
-							s0 = s_starts(s);
-							s1 + min(s0+sample_segment-1,S1);
-							data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
-							data = data/mypoly(2) + mypoly(1);
+								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
+								t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
+								S0 = 1;
+								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 
-							% need output_bit_size
-
-							filename_here = ndi.file.temp_name();
-							output_bit_size = datasize;
-							switch ci(chan_entries_indexes(group_indexes(1)).dataclass),
-								case 'ephys',
+								s_starts = [S0:sample_analog_segment:S1];
+								for s=1:numel(s_starts),
+									s0 = s_starts(s);
+									s1 + min(s0+sample_segment-1,S1);
+									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+									data = data/mypoly(2) + mypoly(1);
+									output_bit_size = datasize;
+									filename_here = ndi.file.temp_name();
 									[ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here);
-								case 'digital',
-								case 'event',
-								case 'mark',
-								case 'text',
-								case 'time',
-							end;
-				
-							d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
-							filenames_we_made{end+1} = filename_here;
+									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
+									filenames_we_made{end+1} = filename_here;
+								end;
+							case 'digital',
+								% do prep
+								if isnan(sample_rates_here_unique),
+									error(['Analog records have a NaN sample rate.']);
+								end;
+
+								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
+								t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
+								S0 = 1;
+								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+								s_starts = [S0:sample_digital_segment:S1];
+								for s=1:numel(s_starts),
+									s0 = s_starts(s);
+									s1 + min(s0+sample_segment-1,S1);
+									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+									data = data/mypoly(2) + mypoly(1);
+									output_bit_size = datasize;
+									filename_here = ndi.file.temp_name();
+									[ratio] = ndi.compress.compress_digital(data,filename_here);
+									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
+									filenames_we_made{end+1} = filename_here;
+								end;
+							case 'eventmarktext',
+								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
+								channeltype = {};
+								for i=1:numel(channels_here),
+									channeltype{end+1} = ci(chan_entries_indexes(group_indexes(i))).type;
+								end;
+								[T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf); 
+								ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D);
+
+							case 'time',
+								[ratio] = ndi.compress.compress_time(data,filename_here);
 						end;
 					end;
 				end;

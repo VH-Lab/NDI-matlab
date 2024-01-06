@@ -67,19 +67,23 @@ classdef mfdaq_epoch_channel
 			% |   (512)                         |  for digital output channels |
 			% 
 
+				% next, need to test with multiple daq systems
+
 				analog_in_channels_per_group = 400;
 				analog_out_channels_per_group = 400;
 				auxiliary_in_channels_per_group = 400;
 				auxiliary_out_channels_per_group = 400;
 				digital_in_channels_per_group = 512;
 				digital_out_channels_per_group = 512;
+				eventmarktext_channels_per_group = 100000;
 
-                analog_in_dataclass = 'ephys';
-                analog_out_dataclass = 'ephys';
-                auxiliary_in_dataclass = 'ephys';
-                auxiliary_out_dataclass = 'ephys';
-                digital_in_dataclass = 'digital';
-                digital_in_dataclass = 'digital';
+				analog_in_dataclass = 'ephys';
+				analog_out_dataclass = 'ephys';
+				auxiliary_in_dataclass = 'ephys';
+				auxiliary_out_dataclass = 'ephys';
+				digital_in_dataclass = 'digital';
+				digital_in_dataclass = 'digital';
+				eventmarktext_dataclass = 'eventmarktext';
 				
 				did.datastructures.assign(varargin{:});
 
@@ -89,20 +93,33 @@ classdef mfdaq_epoch_channel
 				channel_information = vlt.data.emptystruct('name','type','number','group','dataclass');
 
 				types_available = unique({channel_structure.type});
+				index_emt = find( strcmp('event',types_available) | strcmp('marker',types_available) | strcmp('text',types_available) );
+                                types_available(index_emt) = [];
+                                types_available{end+1} = 'eventmarktext';
+
 
 				for i=1:numel(types_available),
-					indexes = find(strcmp(types_available{i},{channel_structure.type}));
-					[dummy,indexes_sorted_type] = sort({channel_structure(indexes).name});
+					if ~strcmp(types_available{i},'eventmarktext'),
+						indexes = find(strcmp(types_available{i},{channel_structure.type}));
+					else,
+						indexes = find(strcmp('event',{channel_structure.type}) | ...
+							strcmp('marker',{channel_structure.type}) | strcmp('text',{channel_structure.type}));
+					end;
+					numbers_here = [];
+					for j=1:numel(indexes),
+						[prefix,numbers_here(j)] = ndi.fun.channelname2prefixnumber(channel_structure(indexes(j)).name);
+					end;
+					[dummy,indexes_sorted_type] = sort(numbers_here);
 					channels_here = channel_structure(indexes(indexes_sorted_type));
 
-					channels_per_group = eval([channels_here(1).type '_channels_per_group;']);
+					channels_per_group = eval([types_available{i} '_channels_per_group;']);
 					for j=1:numel(channels_here),
 						channel_info_here = [];
 						channel_info_here.name = channels_here(j).name;
 						channel_info_here.type = channels_here(j).type;
 						[dummy,channel_info_here.number] = ndi.fun.channelname2prefixnumber(channels_here(j).name);
 						channel_info_here.group = 1+floor( channel_info_here.number / channels_per_group);
-                        channel_info_here.dataclass = eval([channels_here(1).type '_dataclass;']);
+						channel_info_here.dataclass = eval([types_available{i} '_dataclass;']);
 						channel_information(end+1) = channel_info_here;
 					end;
 				end;
