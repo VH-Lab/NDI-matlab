@@ -42,7 +42,7 @@ classdef ProbeData < matlab.mixin.Heterogeneous & handle
             end
         end
 
-        function t = formtaTable(obj)
+        function t = formatTable(obj)
             t = [];
             for i = 1:numel(obj.ProbeList)
                 if ~isempty(obj.ProbeList{i})

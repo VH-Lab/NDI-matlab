@@ -1,10 +1,8 @@
 function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     % Todo:
-    %  [ ] fullDocumentation
     %  [ ] RelatedPublications
-    %  [ ] Species/strain
-    %  [ ] Biological sex
+    %  [ ] Probes
     %  [ ] Link subjects to ndi subjects using dependency_type?
     %  [ ] Any other dependency_type?
 
@@ -140,17 +138,37 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         subjectItem = appUserData.Subjects(i);
         
         subjects{i} = openminds.core.Subject();
-        %subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
-        %subjects{i}.species = openminds.controlledterms.Species(struct(subjectItem.SpeciesList));
+        subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
+        
+        speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
+        isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
+        if any( isMatchedInstance )
+            speciesName = openminds.controlledterms.Species.CONTROLLED_INSTANCES(isMatchedInstance);
+            speciesInstance = openminds.controlledterms.Species(speciesName);
+        else
+            speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
+        end
 
-        %spec = openminds.controlledterms.Species('name','Mustela putorius furo','preferredOntologyIdentifier','NCBI:txid9669'); % openMinds has a limited list of species instances with ontolgy identifiers
+        if isempty( subjectItem.StrainList )
+            subjects{i}.species = speciesInstance;
+        else
+            strainInstance = openminds.core.Strain();
+            strainInstance.species = speciesInstance;
+            
+            % Todo: handle arrays????
+            geneticStrainTypeName = subjectItem.StrainList(1).Name;
+            geneticStrainTypeInstance = openminds.controlledterms.GeneticStrainType(geneticStrainTypeName);
+            strainInstance.geneticStrainType = geneticStrainTypeInstance;
+            % Todo: add backgroundStrain, digitalIdentifier, stockNumber??
 
-	    %strnType = openminds.controlledterms.GeneticStrainType('name', 'knockout');
-	    %strn = openminds.core.Strain('geneticStrainType', strnType, 'name', 'name of strain', 'species', spec, 'ontologyIdentifier', 'array of strain IRIs')
+            % Todo: Create name? Combine species and backgrund strain?
+            strainInstance.name = strainInstance.species.name;
+            subjects{i}.species = strainInstance;
+        end
 
+        % Add internal identifier and lookup label
         subjectName = subjectItem.SubjectName;
         subjectNameSplit = strsplit(subjectName, '@');
-
         subjects{i}.internalIdentifier = subjectNameSplit{1};
         subjects{i}.lookupLabel = subjectName;
     end

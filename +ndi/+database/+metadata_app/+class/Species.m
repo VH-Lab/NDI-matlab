@@ -11,7 +11,7 @@ classdef Species < handle
     end
 
     methods
-        function obj = Species(name,ontologyIdentifier,synonym)
+        function obj = Species(name, ontologyIdentifier, synonym)
             obj.Name = name;
             obj.OntologyIdentifier = ontologyIdentifier;
             if nargin > 2
@@ -52,6 +52,20 @@ classdef Species < handle
             else
                 equal = 0;
             end
+        end
+
+        function instances = convertToOpenMinds(obj)
+            instances = openminds.controlledterms.Species.empty;
+            for i = 1:numel(obj)
+                instance = openminds.controlledterms.Species();
+                instance.name = obj.Name;
+                instance.synonym = obj.Synonym;
+                instance.definition = obj.Definition;
+                instance.description = obj.Description;
+                instance.preferredOntologyIdentifier = obj.OntologyIdentifier;
+                instances = [instances, instance]; %#ok<AGROW>
+            end
+
         end
     end    
 end
