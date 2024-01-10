@@ -11,11 +11,12 @@ function subjectData = loadSubjects(S)
            error('METADATA_APP:loadSubjects:InvalidSession',...
               'Input must be an ndi.session object.'); 
         end
+
         subjects = S.database_search(ndi.query('','isa','subject'));
         subjectData = ndi.database.metadata_app.class.SubjectData();
-       
+
         for i = 1:numel(subjects)
             subject_obj = subjectData.addItem();
-            subject_obj.SubjectNameList{i} = subjects{i}.document_properties.subject.local_identifier;
+            subject_obj.SubjectName = subjects{i}.document_properties.subject.local_identifier;
         end
     end

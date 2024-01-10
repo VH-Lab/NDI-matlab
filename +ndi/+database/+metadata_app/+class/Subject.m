@@ -3,7 +3,7 @@ classdef Subject < handle
     %   Detailed explanation goes here
     
     properties
-        SubjectNameList (1,:)
+        SubjectName (1,1) string = missing
         BiologicalSexList (1,:)
         SpeciesList (1,:) ndi.database.metadata_app.class.Species
         StrainList (1,:) ndi.database.metadata_app.class.Strain
@@ -85,7 +85,7 @@ classdef Subject < handle
         end
 
         function formattedStruct = formatTable(obj)
-            paddedLists{1} = obj.SubjectNameList;
+            paddedLists{1} = obj.SubjectName;
             paddedLists{2} = obj.biologicalSexToString();
             speciesList = obj.toStringArr("SpeciesList");
             % speciesList = speciesList{1};
@@ -133,6 +133,21 @@ classdef Subject < handle
                 padding = cell(1, targetLength - length(list));
                 padding(:) = {placeholder};
                 paddedList = [list, padding];
+            end
+        end
+    end
+
+    methods (Static)
+        function b = loadobj(a)
+            if isa(a, 'struct')
+                b = ndi.database.metadata_app.class.Subject();
+                b.SubjectName = a.SubjectNameList{1};
+                b.BiologicalSexList = a.BiologicalSexList;
+                b.SpeciesList = a.SpeciesList;
+                b.StrainList = a.StrainList;
+                b.StrainMap = a.StrainMap;
+            else
+                b=a;
             end
         end
     end

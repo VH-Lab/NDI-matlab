@@ -148,7 +148,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 	    %strnType = openminds.controlledterms.GeneticStrainType('name', 'knockout');
 	    %strn = openminds.core.Strain('geneticStrainType', strnType, 'name', 'name of strain', 'species', spec, 'ontologyIdentifier', 'array of strain IRIs')
 
-        subjectName = subjectItem.SubjectNameList{1};
+        subjectName = subjectItem.SubjectName;
         subjectNameSplit = strsplit(subjectName, '@');
 
         subjects{i}.internalIdentifier = subjectNameSplit{1};

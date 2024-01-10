@@ -31,15 +31,14 @@ classdef SubjectData < handle
         function assignName(obj)
             for i = 1:numel(obj.SubjectList)
                 name = sprintf("subject%d", i);
-                obj.SubjectList(i).SubjectNameList = {name};
+                obj.SubjectList(i).SubjectName = name;
             end
         end
 
         function idx = getIndex(obj, subjectName)
             idx = -1;
             for i = 1:numel(obj.SubjectList)
-                name = obj.SubjectList(i).SubjectNameList;
-                name = name{1};
+                name = obj.SubjectList(i).SubjectName;
                 if strcmp(name,subjectName)
                     idx = i;
                     break;
