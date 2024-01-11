@@ -1,4 +1,4 @@
-function publicationTitle = getPublicationTitleFromDoi(doi)
+function [publicationTitle, doi] = getPublicationTitleFromDoi(doi)
 
     arguments
         doi (1,1) string {mustBeValidDoi(doi)}
@@ -14,12 +14,13 @@ function publicationTitle = getPublicationTitleFromDoi(doi)
     xmlResponse = webread(BASE_URL + searchUrl);
     searchResult = xml2struct(xmlResponse); % Local function
 
-    if isempty(searchResult.IdList)
+    if isempty(searchResult.IdList) || (isstring(searchResult.IdList) && searchResult.IdList == "")
         error('NDI:PublicationTitleNotFound', 'Could not find any publication title for the provided doi (%s)', doi)
     end
 
     % Make sure we got exactly one result it and retrieve it
     assert( numel(searchResult.IdList)==1, 'Expected exactly one match for a valid DOI') 
+    
     searchResultId = searchResult.IdList.Id;
 
     % Download the document associated with the result ID
@@ -30,6 +31,13 @@ function publicationTitle = getPublicationTitleFromDoi(doi)
     documentResult = xml2struct(xmlResponse);
     isTitleItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "Title" );
     publicationTitle = documentResult.DocSum.Item( isTitleItem ).Text;
+
+    %isDoiItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "DOI" );
+    %doi = documentResult.DocSum.Item( isDoiItem ).Text;
+
+    if nargout == 1
+        clear doi
+    end
 end
 
 function S = xml2struct(xmlString)
