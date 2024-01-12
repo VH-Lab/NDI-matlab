@@ -25,19 +25,9 @@ cmd = sprintf("curl '%s' --upload-file '%s'", presigned_url, file_path);
 % Run the curl command and capture the output
 [status, output] = system(cmd);
 
-disp(file_path);
-disp(presigned_url);
-disp(output);
-disp(cmd);
-
 % Check the status code and handle any errors
 if status ~= 0
     error('Failed to run curl command: %s', output);
 end
 
-% Process the JSON response
-% response = jsondecode(output);
-% if isfield(response, 'error')
-%     error(response.error);
-% end
 end

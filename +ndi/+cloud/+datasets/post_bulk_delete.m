@@ -32,8 +32,12 @@ response = output;
 if status
     error('Failed to run curl command: %s', output);
 else
-    % Process the JSON response
-    response = jsondecode(output);
+    % Process the JSON response; if the command failed, it might be a plain text error message
+    try,
+	    response = jsondecode(output);
+    catch,
+	    error(['Command failed with message: ' output ]);
+    end;
     if isfield(response, 'error')
         error(response.error);
     end

@@ -26,7 +26,12 @@ dataset = '';
 if status
     error('Failed to run curl command: %s', output);
 else
-    dataset = jsondecode(output);
+        % Process the JSON response; if the command failed, it might be a plain text error message
+    try,
+	    dataset = jsondecode(output);
+    catch,
+	    error(['Command failed with message: ' output ]);
+    end;
     if isfield(dataset, 'error')
         error(dataset.error);
     end

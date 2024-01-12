@@ -1,4 +1,4 @@
-function [status, output] = logout(auth_token)
+function [status, response] = logout(auth_token)
 % LOGOUT - logs a user out and invalidates their token
 %
 % [STATUS,RESPONSE] = ndi.cloud.auth.LOGOUT(AUTH_TOKEN)
@@ -25,6 +25,13 @@ cmd = sprintf("curl -X 'POST' '%s' " + ...
 if status ~= 0
     error('Failed to run curl command: %s', output);
 end
+
+% Process the JSON response; if the command failed, it might be a plain text error message
+try,
+	response = jsondecode(output);
+catch,
+	error(['Command failed with message: ' output ]);
+end;
 
 disp('Logout successful!');
 end
