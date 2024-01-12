@@ -30,7 +30,7 @@ for i=1:numel(documents_summary.documents)
 end
 disp(['There are ' numel(openminds_documents_id) ' openminds documents in the dataset' ])
 disp(['Deleting ' num2str(size/1024) ' kilobytes of documents' ])
-[statu, response, dataset] = ndi.cloud.datasets.post_bulk_delete(dataset_id, openminds_documents_id, auth_token);
+[statu, dataset] = ndi.cloud.datasets.post_bulk_delete(dataset_id, openminds_documents_id, auth_token);
 
 size = size/1024;
 [status, response, documents_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
