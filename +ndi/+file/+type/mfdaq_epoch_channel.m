@@ -158,6 +158,7 @@ classdef mfdaq_epoch_channel
 			%
 
 				b = 0;
+				errmsg = '';
 				try,
 					vlt.file.saveStructArray(filename,obj.channel_information);
 					b = 1;

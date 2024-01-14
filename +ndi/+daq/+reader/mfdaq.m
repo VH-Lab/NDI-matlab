@@ -117,7 +117,7 @@ classdef mfdaq < ndi.daq.reader
 		function [timestamps, data] = readevents_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
                         %  READEVENTS_EPOCHSAMPLES - read events, markers, and digital events of specified channels for a specified epoch
                         %
-                        %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHSTREAMS, EPOCH_SELECT, T0, T1)
+                        %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(NDR_READER_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
                         %
                         %  Returns TIMESTAMPS and DATA corresponding to event or marker channels. If the number of CHANNEL entries is 1, then TIMESTAMPS
                         %  is a column vector of type double, and DATA is also a column of a type that depends on the type of event that is read.
@@ -183,8 +183,8 @@ classdef mfdaq < ndi.daq.reader
 					end;
 				else,
 					% if the user doesn't want a derived channel, we need to read it from the file natively (using the class's reader function)
-					[timestamps, data] = ndr_reader_obj.readevents_epochsamples_native(channeltype, ...
-						channel, epochstreams, epoch_select, t0, t1); % abstract class
+					[timestamps, data] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype, ...
+						channel, epochfiles, t0, t1); % abstract class
 				end;
 
 		end; % readevents_epochsamples
@@ -240,16 +240,28 @@ classdef mfdaq < ndi.daq.reader
 			%
 			% DATASIZE is the sample size in bits.
 			%
-			% CHANNELTYPE can be either a string or a cell array of
-			% strings the same length as the vector CHANNEL.
-			% If CHANNELTYPE is a single string, then it is assumed that
+			% CHANNELTYPE must be a string. It is assumed that
 			% that CHANNELTYPE applies to every entry of CHANNEL.
+			%
 
-				% For the abstract class, keep the data in doubles. This will always work but may not
-				% allow for optimal compression if not overridden
-				P = [0 1];
-				datatype = 'float64';
-				datasize = 64;
+				switch(channeltype),
+					case {'analog_in','analog_out','auxiliary_in','time'},
+						% For the abstract class, keep the data in doubles. This will always work but may not
+						% allow for optimal compression if not overridden
+						datatype = 'float64';
+						datasize = 64;
+						p = [0 1];
+					case {'didigtal_in','digital_out'},
+						datatype = 'char';
+						datasize = 8;
+						p = [0 1];
+					case {'eventmarktext','event','marker','text'},
+						datatype = 'float64';
+						datasize = 64;
+						p = [0 1];
+					otherwise,
+						error(['Unknown channel type ' channeltype '.']);
+				end; % 
 		end;
 
 		function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles)
@@ -277,6 +289,7 @@ classdef mfdaq < ndi.daq.reader
 					error(errmsg);
 				end;
 				filenames_we_made{end+1} = channel_file_name;
+				d = d.add_file('channel_list.bin',channel_file_name);
 
 				ci = mfdaq_epoch_channel_obj.channel_information;  %% need to update to combine eventmarktext
 				% Step 2: loop over channels with rigid samples
@@ -286,19 +299,24 @@ classdef mfdaq < ndi.daq.reader
 				types(index_emt) = [];
 				types{end+1} = 'eventmarktext';
 				 
-				sample_analog_segment = 5e5; %(50,000)
+				sample_analog_segment = 5e5; %(50,000)  % this is a dumb place to have this constant
 				sample_digital_segment = 1e7; % 10M
 
-				for i = numel(types),
-					chan_entries_indexes = find(strcmp(types{i},{ci.type})); 
+				for i = 1:numel(types),
+					if strcmp(types{i},'eventmarktext'),
+						chan_entries_indexes = find(strcmp('event',{ci.type}) | strcmp('marker',{ci.type}) | strcmp('text',{ci.type}) ); 
+					else,
+						chan_entries_indexes = find(strcmp(types{i},{ci.type})); 
+					end;
 					% now find the groups
 					groups = unique([ci(chan_entries_indexes).group]); 
 					for g = 1:numel(groups),
 						group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
 
 						% Step 2b: check to make sure all channels have the same sampling rate
+							% will this work for all channel types? Probably not
 						[underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
-							types{i},ci(chan_entries_indexes(group_indexes)).number);
+							types{i},[ci(chan_entries_indexes(group_indexes)).number]);
 						sample_rates_here = [];
 						for k=1:numel(group_indexes),
 							sample_rates_here(k) = ndi_daqreader_mfdaq_obj.samplerate(epochfiles, ...
@@ -372,10 +390,25 @@ classdef mfdaq < ndi.daq.reader
 									channeltype{end+1} = ci(chan_entries_indexes(group_indexes(i))).type;
 								end;
 								[T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf); 
-								ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D);
+								filename_here = ndi.file.temp_name();
+								filenames_we_made{end+1} = filename_here;
+								ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D,filename_here);
+								d = d.add_file(['evmktx_group' int2str(groups(g)) '_seg.nbf_1'],filename_here);
 
 							case 'time',
-								[ratio] = ndi.compress.compress_time(data,filename_here);
+								s_starts = [S0:sample_analog_segment:S1];
+								for s=1:numel(s_starts),
+									s0 = s_starts(s);
+									s1 + min(s0+sample_segment-1,S1);
+									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+									filename_here = ndi.file.temp_name();
+									[ratio] = ndi.compress.compress_time(data,filename_here);
+									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
+									filenames_we_made{end+1} = filename_here;
+								end;
+
+							otherwise,
+								error(['Unknown channel type ' types{i} '.']);
 						end;
 					end;
 				end;
