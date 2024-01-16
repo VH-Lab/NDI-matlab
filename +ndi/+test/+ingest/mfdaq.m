@@ -5,15 +5,21 @@ S = ndi.setup.vhlab('2019-11-19','/Users/vanhoosr/Desktop/2019-11-19');
 ds_v = S.daqsystem_load('name','vhvis_spike2');
 ds_i = S.daqsystem_load('name','vhintan');
 
-
 drv = ds_v.daqreader;
 fnv = ds_v.filenavigator;
+mdrv = ds_v.daqmetadatareader{1};
 
 et = fnv.epochtable()
-
-
 ef = et(1).underlying_epochs.underlying;
-
 d_ingest = drv.ingest_epochfiles(ef)
+md_ingest = mdrv.ingest_epochfiles(ef);
+
+dri = ds_i.daqreader;
+fni = ds_i.filenavigator;
+
+eti = fni.epochtable();
+efi = eti(1).underlying_epochs.underlying;
+
+di_ingest = dri.ingest_epochfiles(efi);
 
 

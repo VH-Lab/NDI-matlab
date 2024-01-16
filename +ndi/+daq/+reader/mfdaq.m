@@ -251,7 +251,7 @@ classdef mfdaq < ndi.daq.reader
 						datatype = 'float64';
 						datasize = 64;
 						p = [0 1];
-					case {'didigtal_in','digital_out'},
+					case {'digital_in','digital_out'},
 						datatype = 'char';
 						datasize = 8;
 						p = [0 1];
@@ -299,7 +299,7 @@ classdef mfdaq < ndi.daq.reader
 				types(index_emt) = [];
 				types{end+1} = 'eventmarktext';
 				 
-				sample_analog_segment = 5e5; %(50,000)  % this is a dumb place to have this constant
+				sample_analog_segment = 1e6; %(1M)  % this is a dumb place to have this constant
 				sample_digital_segment = 1e7; % 10M
 
 				for i = 1:numel(types),
@@ -308,6 +308,25 @@ classdef mfdaq < ndi.daq.reader
 					else,
 						chan_entries_indexes = find(strcmp(types{i},{ci.type})); 
 					end;
+
+					fileprefix = 'ai';
+					switch(types{i}),
+						case 'analog_in',
+							fileprefix = 'ai';
+						case 'analog_out',
+							fileprefix = 'ao';
+						case 'auxiliary_in',
+							fileprefix = 'ax';
+						case 'digital_in',
+							fileprefix = 'di';
+						case 'digital_out',
+							fileprefix = 'di';
+						case 'eventmarktext',
+							fileprefix = 'evmktx';
+						case 'time',
+							fileprefix = 'ti';
+					end;
+
 					% now find the groups
 					groups = unique([ci(chan_entries_indexes).group]); 
 					for g = 1:numel(groups),
@@ -345,21 +364,24 @@ classdef mfdaq < ndi.daq.reader
 								end;
 
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
-								t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
+								t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
 								S0 = 1;
 								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
+									disp(['Working on ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
-									s1 + min(s0+sample_segment-1,S1);
-									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+									s1 = min(s0+sample_analog_segment-1,S1);
+									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
+										channels_here, epochfiles, s0, s1);
 									data = data/mypoly(2) + mypoly(1);
 									output_bit_size = datasize;
 									filename_here = ndi.file.temp_name();
 									[ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here);
-									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
-									filenames_we_made{end+1} = filename_here;
+									d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
+										[filename_here '.nbf.tgz']);
+									filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
 								end;
 							case 'digital',
 								% do prep
@@ -368,20 +390,23 @@ classdef mfdaq < ndi.daq.reader
 								end;
 
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
-								t0t1 = ndi_daqreader_mfdaq_obj.t0t1(epochfiles);
+								t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
 								S0 = 1;
 								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 								s_starts = [S0:sample_digital_segment:S1];
 								for s=1:numel(s_starts),
+									disp(['Working on digital ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
-									s1 + min(s0+sample_segment-1,S1);
-									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
+									s1 = min(s0+sample_digital_segment-1,S1);
+									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
+										channels_here, epochfiles, s0, s1);
 									data = data/mypoly(2) + mypoly(1);
 									output_bit_size = datasize;
 									filename_here = ndi.file.temp_name();
 									[ratio] = ndi.compress.compress_digital(data,filename_here);
-									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
-									filenames_we_made{end+1} = filename_here;
+									d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
+										[filename_here '.nbf.tgz']);
+									filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
 								end;
 							case 'eventmarktext',
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
@@ -391,20 +416,21 @@ classdef mfdaq < ndi.daq.reader
 								end;
 								[T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf); 
 								filename_here = ndi.file.temp_name();
-								filenames_we_made{end+1} = filename_here;
 								ratio = ndi.compress.compress_eventmarktext(channeltype,channels_here,T,D,filename_here);
-								d = d.add_file(['evmktx_group' int2str(groups(g)) '_seg.nbf_1'],filename_here);
-
+								d = d.add_file(['evmktx_group' int2str(groups(g)) '_seg.nbf_1'],[filename_here '.nbf.tgz']);
+								filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
 							case 'time',
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
+									disp(['Working on time ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
-									s1 + min(s0+sample_segment-1,S1);
+									s1 = min(s0+sample_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);
 									filename_here = ndi.file.temp_name();
 									[ratio] = ndi.compress.compress_time(data,filename_here);
-									d = d.add_file([types{i} '_group' int2str(groups(g)) '_seg' int2str(s) '.nbf'],filename_here);
-									filenames_we_made{end+1} = filename_here;
+									d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
+										[filename_here '.nbf.tgz']);
+									filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
 								end;
 
 							otherwise,

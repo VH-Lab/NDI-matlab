@@ -155,6 +155,19 @@ classdef intan < ndi.daq.reader.mfdaq
 			if strcmp(intanchanneltype,'time'),
 				channel = 1; % time only has 1 channel in Intan RHD
 			end;
+
+			is_digital = 0;
+			if strcmp(intanchanneltype,'din'),
+				is_digital = 1;
+				alt_channel = channel;
+				channel = 1;
+			end;
+
+			if strcmp(intanchanneltype,'dout'),
+				is_digital = 1;
+				alt_channel = channel;
+				channel = 1;
+			end;
             
 			if ~isdirectory,
 				data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
@@ -162,7 +175,60 @@ classdef intan < ndi.daq.reader.mfdaq
 				data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
 			end;
 
+			if is_digital,
+				digital_data = int2bit(data', 8, 0)';
+				if size(digital_data,2)<16, % make sure our output is 16 bits wide
+					digital_data = [digital_data zeros(size(digital_data,1),8) ];
+				end;
+				data = digital_data(:,alt_channel);
+			end;
+
 		end % readchannels_epochsamples
+
+                function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
+                        % UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
+                        %
+                        % [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
+                        %
+                        % Return the underlying datatype for the requested channel.
+                        %
+                        % DATATYPE is a type that is suitable for passing to FREAD or FWRITE
+                        %  (e.g., 'float64', 'uint16', etc. See help fread.)
+                        %
+                        % P is a polynomial that converts between the double data that is returned by
+                        % READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
+                        %
+                        % DATASIZE is the sample size in bits.
+                        %                                       
+                        % CHANNELTYPE must be a string. It is assumed that
+                        % that CHANNELTYPE applies to every entry of CHANNEL.
+                        %                                       
+
+				switch(channeltype),            
+					case {'analog_in','analog_out','auxiliary_in'},
+						% For the abstract class, keep the data in doubles. This will always work but may not
+						% allow for optimal compression if not overridden
+						datatype = 'uint16';
+						datasize = 16;
+						p = [32768 0.195];
+					case {'time'},
+						datatype = 'float64';
+						datasize = 64;
+						p = [0 1];
+                                        case {'digital_in','digital_out'},
+						datatype = 'char';
+						datasize = 8;
+						p = [0 1];
+					case {'eventmarktext','event','marker','text'}, 
+						datatype = 'float64';
+						datasize = 64;
+						p = [0 1];
+					otherwise,
+						error(['Unknown channel type ' channeltype '.']);
+				end; %
+		end;
+
+
 
 		function sr = samplerate(ndi_daqreader_mfdaq_intan_obj, epochfiles, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
@@ -177,6 +243,10 @@ classdef intan < ndi.daq.reader.mfdaq
 			%
 				sr = [];
 				filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+
+				if iscell(channeltype) & numel(channeltype)==1 & numel(channel) ~=1,
+					channeltype = repmat(channeltype,1,numel(channel));
+				end;
 
 				head = read_Intan_RHD2000_header(filename);
 				for i=1:numel(channel),
@@ -337,7 +407,7 @@ classdef intan < ndi.daq.reader.mfdaq
 					headername = 'board_dig_out_sample_rate';
 				case {'time','timestamp'},
 					headername = 'amplifier_sample_rate';
-				case {'auxiliary','aux'},
+				case {'auxiliary','aux','auxiliary_in'},
 					headername = 'aux_input_sample_rate';
 				otherwise,
 					error(['Do not know frequency header name for channel type ' channeltype '.']);

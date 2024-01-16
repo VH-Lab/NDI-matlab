@@ -627,6 +627,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 						epochfiles_ingested_struct.files = files;
 						epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
 						docs_out{end+1} = ndi.document('epochfiles_ingested','epochfiles_ingested',epochfiles_ingested_struct);
+						docs_out{end} = docs_out{end}.set_dependency_value('filenavigator_id',ndi_filenavigator_obj.id());
 					end;
 				end;
 		end;

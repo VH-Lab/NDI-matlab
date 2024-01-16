@@ -398,6 +398,15 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
 				metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
 		end; % getmetadata()
+
+		function b = ingest(ndi_daqsystem_obj)
+
+
+		end; % ingest()
+
+		function d = ingest_epoch(ndi_daqsystem_obj, epoch)
+
+		end; % ingest_epoch
 		
 		%% functions that override ndi.documentservice
 

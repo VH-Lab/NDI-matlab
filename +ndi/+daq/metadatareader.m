@@ -101,6 +101,28 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 		end;  % readmetadata
 
+		function d = ingest_epochfiles(ndi_daqmetadatareader_obj, epochfiles)
+			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.metadatareader
+			%
+			% D = INGEST_EPOCHFILES(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES)
+			%
+			% Creates an ndi.document of type 'daqmetadatareader_epochdata_ingested' that contains the data
+			% for an ndi.daq.metadatareaderobject. The document D is not added to any database.
+			%
+
+				d = ndi.document('daqmetadatareader_epochdata_ingested');
+				d = d.set_dependency_value('daqmetadatareader_id',ndi_daqmetadatareader_obj.id());
+				
+				filenames_we_made = {};
+
+				parameters = ndi_daqmetadatareader_obj.readmetadata(epochfiles);
+				metadatafile = ndi.file.temp_name();
+				[ratio] = ndi.compress.compress_metadata(parameters,metadatafile);
+				d = d.add_file('data.bin',[metadatafile '.nbf.tgz']);
+				filenames_we_made = {metadatafile};
+
+		end;
+
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
 			% EQ - are 2 ndi.daq.metadatareader objects equal?
 			%
