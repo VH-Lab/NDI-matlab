@@ -1,4 +1,4 @@
-function [b,msg] = download_dataset(email, password, dataset_id, output_path)
+function [b,msg] = download_dataset_without_doc_prop(email, password, dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
 % [B, MSG] = ndi.cloud.download_dataset(EMAIL, PASSWORD, DATASET_ID, OUTPUT_PATH)
@@ -38,7 +38,7 @@ end
 d = dataset.documents;
 
 [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
-session_id = document.document_properties.base.id;  
+session_id = document.base.id;  
 
 %%Construct a new ndi.session
 if ~isfolder(output_path)
@@ -85,7 +85,8 @@ for i = 1:numel(files)
         continue;
     end
     file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
-    if isfile(file_path)
+    
+    if isfile(fullfile(file_path))
         if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
         continue;
     end
@@ -107,25 +108,25 @@ for i = 1:numel(d)
     json_file_path = [output_path filesep '.ndi' filesep 'json' filesep document_id '.json'];
     if isfile(json_file_path)
         if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
-        continue;
+        jsonString = fileread(json_file_path);
+        document = jsondecode(jsonString);
+        document_obj = ndi.document(document.document_properties);
+    else
+        [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+        if status 
+            b = 0;
+            msg = response;
+            error(msg);
+        end
+        if verbose, disp(['Saving document ' int2str(i) '...']); end
+        document = rmfield(document, 'id');
+        document_obj = ndi.document(document);
+        %save the document in .json file
+        fid = fopen(json_file_path, 'w');
+        fprintf(fid, '%s', did.datastructures.jsonencodenan(document_obj));
+        fclose(fid);
     end
-
-    [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
-    if status 
-        b = 0;
-        msg = response;
-        error(msg);
-    end
-    if verbose, disp(['Saving document ' int2str(i) '...']); end
-
-    document = rmfield(document, 'id');
-
-    document_obj = ndi.document(document.document_properties);
-    %save the document in .json file
-    fid = fopen(json_file_path, 'w');
-    fprintf(fid, '%s', did.datastructures.jsonencodenan(document_obj));
-    fclose(fid);
-
+    
     if isfield(document, 'files')
         for j = 1:numel(document.files)
             file_uid = document.files.file_info(j).locations(1).uid;
@@ -135,21 +136,21 @@ for i = 1:numel(d)
             end
             file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
             file_name = document.files.file_list(j);
-            document = document.add_file(file_name, file_path);
+            document_obj = document_obj.add_file(file_name, file_path);
         end
     end
-    all_documents{i} = document_obj;
-    
+    all_documents{i} = document_obj;    
 end
 for i = 1:numel(all_documents)
-    exist = S.database_search( ndi.query('base.id', 'exact_string', document_obj.document_properties.base.id) );
+    exist = S.database_search( ndi.query('base.id', 'exact_string', all_documents{i}.document_properties.base.id) );
+
     if numel(exist) == 0
-        S = S.database_add(document_obj);
+        disp(['Adding document ' all_documents{i}.document_properties.base.id ' to the database...'])
+        S = S.database_add(all_documents{i});
     else
-        disp(['Document ' document_obj.document_properties.base.id ' already exists in the database. Skipping...'])
+        disp(['Document ' all_documents{i}.document_properties.base.id ' already exists in the database. Skipping...'])
     end
 end
-
 
 
 end

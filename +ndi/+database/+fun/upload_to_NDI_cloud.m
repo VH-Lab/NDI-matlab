@@ -1,4 +1,4 @@
-function [b, msg] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin)
+function [b, msg, document_id_with_files] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin)
 % UPLOAD_TO_NDI_CLOUD - upload an NDI database to NDI Cloud
 %
 % [B,MSG] = ndi.database.fun.upload_to_NDI_cloud(S, EMAIL, PASSWORD)
@@ -14,7 +14,8 @@ function [b, msg] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin
 
 % Step 1: find all the documents
 
-
+document_id_with_files = {};
+doc_i = 1;
 verbose = 1;
 
 did.datastructures.assign(varargin{:});
@@ -64,16 +65,18 @@ for i=1:numel(document_indexes_to_upload),
     if verbose,
        disp(['Uploading ' int2str(i+numel(already_uploaded_docs)) ' of ' int2str(numel(d)) ' (' num2str(100*(i+numel(already_uploaded_docs))/numel(d))  '%)' ])
     end;
-    [status, response] = ndi.cloud.documents.post_documents(path, dataset_id, document, auth_token);
+    [status, response_doc] = ndi.cloud.documents.post_documents(path, dataset_id, document, auth_token);
     if status ~= 0
         b = 0;
-        msg = response;
+        msg = response_doc;
         error(msg);
     end
 
     ndi_doc_id = d{index}.document_properties.base.id;
 
     if isfield(d{index}.document_properties, 'files'),
+        document_id_with_files{doc_i} = response_doc;
+        doc_i = doc_i + 1;
         for f = 1:numel(d{index}.document_properties.files.file_list)
             file_name = d{index}.document_properties.files.file_list{f};
             if verbose, 
@@ -95,7 +98,13 @@ for i=1:numel(document_indexes_to_upload),
             end
             S.database_closebinarydoc(file_obj);
         end
+
+        if (numel(d{index}.document_properties.files.file_list) > 1)
+            break;
+        end
     end
+
+    
 
    
         % use whatever upload command is necessary

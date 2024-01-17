@@ -15,7 +15,7 @@ function [status, response] = post_bulk_delete(dataset_id,document_ids, auth_tok
 % document_ids_str = jsonencode(document_ids);
 % document_ids_str = strrep(document_ids_str, '"', '''');
 
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/64daf42ed94eb638d9d311d7/documents/bulk-delete', dataset_id);
+url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/documents/bulk-delete', dataset_id);
 s = struct();
 s.documentIds = document_ids;
 json_obj = jsonencode(s);
