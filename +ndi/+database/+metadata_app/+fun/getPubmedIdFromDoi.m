@@ -19,8 +19,18 @@ function [pmId, pmcId] = getPubmedIdFromDoi(doi)
     requestURI = matlab.net.URI(BASE_URL, queryParam);
 
     jsonResponse = webread( requestURI );
-    pmId = jsonResponse.records.pmid;
-    pmcId = jsonResponse.records.pmcid;
+    if isfield(jsonResponse.records, 'status')
+        if strcmp(jsonResponse.records.status, 'error')
+            error(jsonResponse.records.errmsg)
+        else
+            error('Something unexpected happened')
+        end
+    elseif isfield(jsonResponse.records, 'pmid')
+        pmId = jsonResponse.records.pmid;
+        pmcId = jsonResponse.records.pmcid;
+    else
+        error('Something unexpected happened')
+    end
 end
 
 function mustBeValidDoi(doi)
