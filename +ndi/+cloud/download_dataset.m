@@ -20,7 +20,7 @@ verbose = 1;
 [status, auth_token, organization_id] = ndi.cloud.auth.login(email, password);
 if status 
     b = 0;
-    msg = response;
+    msg = auth_token;
     error(msg);
 end
 
@@ -105,7 +105,12 @@ for i = 1:numel(d)
         if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
         continue;
     end
-    [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+    if (i == 20)
+        [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+        disp(i = 20);
+    else
+        [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+    end
     if status 
         b = 0;
         msg = response;
@@ -134,7 +139,7 @@ for i = 1:numel(d)
     end
     
     exist = S.database_search( ndi.query('base.id', 'exact_string', document_obj.document_properties.base.id) );
-    if numel(exist) > 0
+    if numel(exist) == 0
         S = S.database_add(document_obj);
     else
         disp(['Document ' document_obj.document_properties.base.id ' already exists in the database. Skipping...'])

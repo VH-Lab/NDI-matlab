@@ -12,7 +12,7 @@ function [size, session_id] =  delete_cloud_openminds_doc(auth_token,dataset_id)
 
 size = 0;
 [status, response, documents_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
-disp(['There are ' numel(documents_summary.documents) ' documents in the dataset' ])
+disp(['There are ' num2str(numel(documents_summary.documents)) ' documents in the dataset' ])
 openminds_documents_id = {};
 for i=1:numel(documents_summary.documents)
     document_id = documents_summary.documents(i).id;
@@ -28,12 +28,12 @@ for i=1:numel(documents_summary.documents)
         openminds_documents_id{end+1}= document_id;
     end
 end
-disp(['There are ' numel(openminds_documents_id) ' openminds documents in the dataset' ])
+disp(['There are ' num2str(numel(openminds_documents_id)) ' openminds documents in the dataset' ])
 disp(['Deleting ' num2str(size/1024) ' kilobytes of documents' ])
-[statu, response, dataset] = ndi.cloud.datasets.post_bulk_delete(dataset_id, openminds_documents_id, auth_token);
+[statu, dataset] = ndi.cloud.datasets.post_bulk_delete(dataset_id, openminds_documents_id, auth_token);
 
 size = size/1024;
 [status, response, documents_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
-disp(['There are ' numel(documents_summary.documents) ' documents left in the dataset' ])
+disp(['There are ' num2str(numel(documents_summary.documents)) ' documents left in the dataset' ])
 end
 
