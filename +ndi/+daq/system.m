@@ -399,15 +399,52 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
 		end; % getmetadata()
 
-		function b = ingest(ndi_daqsystem_obj)
+		function [b,d] = ingest(ndi_daqsystem_obj)
+			% INGEST - ingest the data from an ndi.daq.system into the database
+			%
+			% [B,D] = INGEST(NDI_DAQSYSTEM_OBJ)
+			%
+			% Ingest any uningested epochs from an ndi.daq.system object into the database.
+			% B is 1 if the operation is successful. D is a cell array of new ndi.document objects
+			% that were created and added to the database.
+			%
+				b = 0;
+				et = ndi_daqsystem_obj.epochtable();
+				filenavigator_ingest_called = 0;
+				d = {}; % our array of many documents to be added to database
 
+				for i=1:numel(et),
+					ef = et(i).underlying_epochs.underlying; % epochfiles
+					if ndi_daqsystem_obj.filenavigator.isingested(ef), % already ingested, skip it
+						disp(['Skipping previously ingested epoch'])
+					else, % not ingested, we need to ingest it
+							% future note: down the road we might want to add one epoch at a time
+						if ~filenavigator_ingest_called,
+							new_d = ndi_daqsystem_obj.filenavigator.ingest();
+							d = cat(1,d,new_d(:));
+							filenavigator_ingest_called = 1;
+						end;
+						new_d = ndi_daqsystem_obj.daqreader.ingest_epochfiles(ef);
+						if ~iscell(new_d),
+							new_d = {new_d};
+						end;
+						d = cat(1,d,new_d(:));
+						for j=1:numel(ndi_daqsystem_obj.daqmetadatareader),
+							new_d = ndi_daqsystem_obj.daqmetadatareader{j}.ingest_epochfiles(ef);
+							if ~iscell(new_d),
+								new_d = {new_d};
+							end;
+							d = cat(1,d,new_d(:));
+						end;
+					end;
+				end;
+				
+				ndi_daqsystem_obj.filenavigator.session.database_add(d);
+
+				b = 1;
 
 		end; % ingest()
 
-		function d = ingest_epoch(ndi_daqsystem_obj, epoch)
-
-		end; % ingest_epoch
-		
 		%% functions that override ndi.documentservice
 
 		function ndi_document_obj_set = newdocument(ndi_daqsystem_obj)

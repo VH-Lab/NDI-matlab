@@ -431,18 +431,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				epoch_id_disk = {};
 				for i=1:numel(epochfiles_disk),
-					epoch_id_disk{i} = ndi_filenavigator_obj.epoch_id(i,epochfiles_disk);
+					epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk{i});
 				end;
 				epoch_id_ingested = {};
-				for i=1:numel(d),
-					epoch_id_ingested{i} = d{i}.document_properties.epochfiles_ingested.epoch_id;
+				for i=1:numel(d_ingested),
+					epoch_id_ingested{i} = d_ingested{i}.document_properties.epochfiles_ingested.epoch_id;
 				end;
 
-				[c,ia] = unique(epoch_id_ingested,epoch_id_disk);
+				[c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
 				epochfiles = {};
 				for i=1:numel(c),
 					if ia(i)<=numel(epoch_id_ingested),
-						epochfiles{i} = d{ia(i)}.document_properties.epochfiles_ingested.files;
+						epochfiles{i} = d_ingested{ia(i)}.document_properties.epochfiles_ingested.files;
 					else,
 						epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
 					end;
@@ -626,7 +626,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 						files = cat(1,{['epochid://' et(i).epoch_id]},files);
 						epochfiles_ingested_struct.files = files;
 						epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
-						docs_out{end+1} = ndi.document('epochfiles_ingested','epochfiles_ingested',epochfiles_ingested_struct);
+						docs_out{end+1} = ndi.document('epochfiles_ingested','epochfiles_ingested',epochfiles_ingested_struct) + ndi_filenavigator_obj.session.newdocument();
 						docs_out{end} = docs_out{end}.set_dependency_value('filenavigator_id',ndi_filenavigator_obj.id());
 					end;
 				end;

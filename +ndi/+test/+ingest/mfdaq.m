@@ -22,4 +22,6 @@ efi = eti(1).underlying_epochs.underlying;
 
 di_ingest = dri.ingest_epochfiles(efi);
 
+d_fingest = fnv.ingest();
+
 
