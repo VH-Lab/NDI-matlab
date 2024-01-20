@@ -53,7 +53,13 @@ mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
 
 S.database_add(stim_pres_doc);
 
-end_time = stim_pres_doc.document_properties.stimulus_presentation.presentation_time(end).stimclose + 5;
+keyboard
+
+decoder = ndi.app.stimulus.decoder(S);
+
+presentation_time = decoder.load_presentation_time(stim_pres_doc);
+
+end_time = presentation_time(end).stimclose + 5;
 
 mock_output.mock_spikes.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 end_time], ...
 	spiketimes, ones(size(spiketimes)) );
