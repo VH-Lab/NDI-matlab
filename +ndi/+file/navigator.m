@@ -431,7 +431,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				epoch_id_disk = {};
 				for i=1:numel(epochfiles_disk),
-					epoch_id_disk{i} = ndi_filenavigator_obj.epoch_id(i,epochfiles_disk);
+					epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk);
 				end;
 				epoch_id_ingested = {};
 				for i=1:numel(d),
