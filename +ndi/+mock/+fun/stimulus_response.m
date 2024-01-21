@@ -53,8 +53,6 @@ mock_output = ndi.mock.fun.subject_stimulator_neuron(S);
 
 S.database_add(stim_pres_doc);
 
-keyboard
-
 decoder = ndi.app.stimulus.decoder(S);
 
 presentation_time = decoder.load_presentation_time(stim_pres_doc);
@@ -84,10 +82,12 @@ parameters.input_parameters.independent_parameter = independent_variables;
 parameters.input_parameters.best_algorithm = 'empirical_maximum';
 parameters.input_parameters.selection = struct('property','angle','operation','hasfield','value','varies');
 
+I = tc.search_for_input_parameters(parameters);
+
 for i=1:numel(stim_response_doc),
 	for j=1:numel(stim_response_doc{i}),
 		parameters.input_parameters.depends_on = struct('name','stimulus_response_scalar_id','value',stim_response_doc{i}{j}.id());
-		tc_docs{end+1} = tc.run('NoAction',parameters);
+		tc_docs{end+1} = tc.run('Replace',parameters);
 	end;
 end;
 
