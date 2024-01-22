@@ -1,4 +1,4 @@
-function centerFigure(figureHandle, referencePosition)
+function centerFigure(figureHandle, referencePosition, offset)
 % centerFigure - Center figure window on a reference position
 %
 %   Syntax:
@@ -18,13 +18,14 @@ function centerFigure(figureHandle, referencePosition)
             referencePosition = getpixelposition(referencePosition);
         end
     end
+    if nargin < 3; offset = [0,0]; end
     
     figurePosition = getpixelposition(figureHandle);
     figureSize = figurePosition(3:4);
     
     % Update figure position
     margins = (referencePosition(3:4) - figureSize) ./ 2;
-    figurePosition(1:2) = margins + referencePosition(1:2);
+    figurePosition(1:2) = margins + referencePosition(1:2) + offset;
             
     % Update the figure window position
     setpixelposition(figureHandle, figurePosition)
