@@ -55,6 +55,14 @@ for i = 1:numel(S.Author)
 end
 
 dataset_update.correspondingAuthors = dataset_update.contributors(indices);
+associate_publications_struct = struct();
+for i = 1:numel(S.RelatedPublication)
+    associate_publications_struct(i).DOI = S.RelatedPublication(i).DOI;
+    associate_publications_struct(i).title = S.RelatedPublication(i).Publication;
+    associate_publications_struct(i).PMID = S.RelatedPublication(i).PMID;
+    associate_publications_struct(i).PMCID = S.RelatedPublication(i).PMCID;
+end
+dataset_update.associatedPublications = associate_publications_struct;
 % dataset_update.brainRegions = brainRegions;
 dataset_update.totalSize = round(size);
 [status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, dataset_update, auth_token);
