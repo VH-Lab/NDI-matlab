@@ -6,7 +6,8 @@
 		"property_list_name":					"daqmetadatareader_epochdata_ingested",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json"}
 		]
 	},
 	"depends_on": [

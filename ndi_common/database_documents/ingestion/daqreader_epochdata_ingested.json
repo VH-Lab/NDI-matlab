@@ -6,7 +6,8 @@
 		"property_list_name":					"daqreader_epochdata_ingested",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json" }
 		]
 	},
 	"depends_on": [
@@ -18,6 +19,10 @@
 		"file_list": [ ]
 	},    
 	"daqreader_epochdata_ingested": {
+		"epochtable":	{
+			"epochclock":		"",
+			"t0_t1":                ""
+		}
 	}
 }
 

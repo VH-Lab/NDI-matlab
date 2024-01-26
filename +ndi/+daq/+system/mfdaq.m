@@ -64,7 +64,8 @@ classdef mfdaq < ndi.daq.system
 				if ~ndi.file.navigator.isingested(epochfiles),
                                 	ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
 				else,
-                                	ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock_ingested(epochfiles);
+                                	ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock_ingested(epochfiles ,...
+						ndi_daqsystem_mfdaq_obj.session());
 				end;
                 end % epochclock()
 
@@ -80,7 +81,8 @@ classdef mfdaq < ndi.daq.system
 				if ~ndi.file.navigator.isingested(epochfiles),
 					t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1(epochfiles);
 				else,
-					t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1_ingested(epochfiles);
+					t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1_ingested(epochfiles,...
+						ndi_daqsystem_mfdaq_obj.session());
 				end;
 		end % t0_t1()
 
@@ -116,7 +118,8 @@ classdef mfdaq < ndi.daq.system
 					if ~ndi.file.navigator.isingested(epochfiles),
 						channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
 					else,
-						channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+						channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, ...
+							epochfiles, ndi_daqsystem_mfdaq_obj.session());
 					end;
 					channels = vlt.data.equnique( [channels(:); channels_here(:)] );
 				end
@@ -139,7 +142,8 @@ classdef mfdaq < ndi.daq.system
 				if ~ndi.file.navigator.isingested(epochfiles),
 					data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples(channeltype, channel, epochfiles, s0, s1);
 				else,
-					data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples_ingested(channeltype,channel,epochfiles,s0,s1);
+					data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples_ingested(channeltype,...
+						channel,epochfiles,s0,s1,ndi_daqsystem_mfdaq_obj.session());
 				end;
 		end % readchannels_epochsamples()
 
@@ -242,7 +246,8 @@ classdef mfdaq < ndi.daq.system
 				if ~ndi.file.navigator.isingested(epochfiles),
 					[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype,channel,epochfiles,t0,t1);
 				else,
-					[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples_ingested(channeltype,channel,epochfiles,t0,t1);
+					[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples_ingested(...
+						channeltype,channel,epochfiles,t0,t1,ndi_daqsystem_mfdaq_obj.session());
 				end;
 		end; % readevents_epochsamples
 
@@ -262,7 +267,8 @@ classdef mfdaq < ndi.daq.system
 				if ~ndi.file.navigator.isingested(epochfiles),
 					sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel); 
 				else,
-					sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate_ingested(epochfiles, channeltype, channel); 
+					sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate_ingested(epochfiles, ...
+						channeltype, channel, ndi_daqsystem_mfdaq_obj.session()); 
 				end;
 		end;
 

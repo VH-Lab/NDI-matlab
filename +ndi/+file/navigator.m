@@ -680,13 +680,25 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			% Returns 1 if the cell array of filenames reflects ingested filenames.
 			% Returns 0 otherwise.
 			%
-			% Checks to see if the first file begins with 'epoch://'.
+			% Checks to see if the first file begins with 'epochid://'.
 			%
 				b = 0;
 				if numel(epochfiles)>=1,
-					b = startsWith(epochfiles{1},'epoch://');
+					b = startsWith(epochfiles{1},'epochid://');
 				end;
 		end; % isingested()
+
+		function epoch_id = ingestedfiles_epochid(epochfiles)
+			% INGESTEDFILES_EPOCHID - what is the epoch id for ingested epochfiles?
+			%
+			% EPOCHID = INGESTEDFILES_EPOCHID(EPOCHFILES)
+			%
+			% Returns the EPOCHID for the ingested EPOCHFILES
+			%
+				assert(ndi.file.navigator.isingested(epochfiles),...
+					'This function is only applicable to ingested EPOCHFILES.');
+				epoch_id = epochfiles{1}( (1+numel('epochid://')):end);
+		end; % ingestedfiles_epochid
 	end; % methods (Static)
 
 end % classdef

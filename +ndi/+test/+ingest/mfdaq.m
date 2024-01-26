@@ -24,4 +24,8 @@ di_ingest = dri.ingest_epochfiles(efi);
 
 d_fingest = fnv.ingest();
 
+[b,d_intan_ingested] = ds_i.ingest(); % takes a little while
+
+[b,d_vhvis_ingested] = ds_v.ingest(); % takes a little while
+
 

@@ -1,6 +1,6 @@
 {
 	"classname": "daqmetadatareader_epochdata_ingested",
-	"superclasses":  [ "base" ],
+	"superclasses":  [ "base", "epochid"],
 	"depends_on": [
 		{ "name": "daqmetadatareader_id", "mustbenotempty": 1}
 	],

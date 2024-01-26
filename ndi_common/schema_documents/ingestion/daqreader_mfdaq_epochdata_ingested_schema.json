@@ -1,6 +1,6 @@
 {
 	"classname": "daqreader_mfdaq_epochdata_ingested",
-	"superclasses":  [ "base", "daqreader_epochdata_ingested"],
+	"superclasses":  [ "base", "daqreader_epochdata_ingested", "epochid"],
 	"depends_on": [
 		{ "name": "daqreader_id", "mustbenotempty": 1}
 	],
@@ -69,5 +69,13 @@
 		{ "name": "ti_group10_seg.nbf_#", "mustbenotempty": 0}
 	],
 	"daqreader_mfdaq_epochdata_ingested": [
+                {
+                        "name": "parameters",
+                        "type": "structure",
+                        "default_value": "",
+                        "parameters": "",
+                        "queryable": 1,
+                        "documentation": "Parameters such as the samples in analog and digital segments"
+                }
 	]
 }

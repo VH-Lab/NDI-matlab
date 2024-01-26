@@ -399,7 +399,8 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				if ~ndi.file.navigator.isingested(epochfiles),
 					metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
 				else,
-					metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata_ingested(epochfiles);
+					metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata_ingested(epochfiles,...
+						ndi_daqsystem_obj.session());
 				end;
 		end; % getmetadata()
 
@@ -419,7 +420,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 
 				for i=1:numel(et),
 					ef = et(i).underlying_epochs.underlying; % epochfiles
-					if ndi_daqsystem_obj.filenavigator.isingested(ef), % already ingested, skip it
+					if ndi.file.navigator.isingested(ef), % already ingested, skip it
 						disp(['Skipping previously ingested epoch'])
 					else, % not ingested, we need to ingest it
 							% future note: down the road we might want to add one epoch at a time
@@ -428,13 +429,13 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 							d = cat(1,d,new_d(:));
 							filenavigator_ingest_called = 1;
 						end;
-						new_d = ndi_daqsystem_obj.daqreader.ingest_epochfiles(ef);
+						new_d = ndi_daqsystem_obj.daqreader.ingest_epochfiles(ef,et(i).epoch_id);
 						if ~iscell(new_d),
 							new_d = {new_d};
 						end;
 						d = cat(1,d,new_d(:));
 						for j=1:numel(ndi_daqsystem_obj.daqmetadatareader),
-							new_d = ndi_daqsystem_obj.daqmetadatareader{j}.ingest_epochfiles(ef);
+							new_d = ndi_daqsystem_obj.daqmetadatareader{j}.ingest_epochfiles(ef,et(i).epoch_id);
 							if ~iscell(new_d),
 								new_d = {new_d};
 							end;
@@ -442,7 +443,6 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 						end;
 					end;
 				end;
-				
 				ndi_daqsystem_obj.filenavigator.session.database_add(d);
 
 				b = 1;

@@ -87,11 +87,12 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 		end; % readmetadata()
 
-		function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles)
-			% PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
+		function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles, S)
+			% PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES, S)
 			%
 			% Returns the parameters (cell array of structures) associated with the
 			% stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
+			% S is the ndi.session object associated with the data.
 			%
 				parameters = {};
 				error('needs development');
@@ -111,7 +112,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 		end;  % readmetadata
 
-		function d = ingest_epochfiles(ndi_daqmetadatareader_obj, epochfiles)
+		function d = ingest_epochfiles(ndi_daqmetadatareader_obj, epochfiles, epoch_id)
 			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.metadatareader
 			%
 			% D = INGEST_EPOCHFILES(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES)
@@ -120,7 +121,9 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			% for an ndi.daq.metadatareaderobject. The document D is not added to any database.
 			%
 
-				d = ndi.document('daqmetadatareader_epochdata_ingested');
+				epochid_struct.epochid = epoch_id;
+
+				d = ndi.document('daqmetadatareader_epochdata_ingested','epochid',epochid_struct);
 				d = d.set_dependency_value('daqmetadatareader_id',ndi_daqmetadatareader_obj.id());
 				
 				filenames_we_made = {};

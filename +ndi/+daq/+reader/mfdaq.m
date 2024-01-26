@@ -42,10 +42,10 @@ classdef mfdaq < ndi.daq.reader
 
 		% functions that override ndi.epoch.epochset
 
-                function ec = epochclock(ndi_daqreader_mfdaq_obj, epoch_number)
+                function ec = epochclock(ndi_daqreader_mfdaq_obj, epochfiles)
                         % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
                         %
-                        % EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCH_NUMBER)
+                        % EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
                         %
                         % Return the clock types available for this epoch as a cell array
                         % of ndi.time.clocktype objects (or sub-class members).
@@ -102,10 +102,10 @@ classdef mfdaq < ndi.daq.reader
 
 			%012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
-		function channels = getchannelsepoch_ingested(ndi_daqreader_mdaq_obj, epochfiles)
+		function channels = getchannelsepoch_ingested(ndi_daqreader_mdaq_obj, epochfiles, S)
 			% GETCHANNELSEPOCH_INGESTED - List the channels that were sampled for this epoch
 			%
-			%  CHANNELS = GETCHANNELSEPOCH_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
+			%  CHANNELS = GETCHANNELSEPOCH_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, S)
 			%
 			%  Returns the channel list of acquired channels in these EPOCHFILES
 			%
@@ -149,11 +149,11 @@ classdef mfdaq < ndi.daq.reader
 				data = []; % abstract class 
 		end % readchannels_epochsamples()
 
-		function data = readchannels_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
+		function data = readchannels_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1, S)
 			%  READ_CHANNELS_EPOCHSAMPLES_INGESTED - read the data based on specified channels
 			%
 			%  DATA = READ_CHANNELS_EPOCHSAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, ...
-			%    CHANNEL, EPOCHFILES, S0, S1)
+			%    CHANNEL, EPOCHFILES, S0, S1, S)
 			%
 			%  CHANNELTYPE is the type of channel to read
 			%
@@ -250,7 +250,7 @@ classdef mfdaq < ndi.daq.reader
 
 		end; % readevents_epochsamples
 
-		function [timestamps, data] = readevents_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
+		function [timestamps, data] = readevents_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1, S)
                         %  READEVENTS_EPOCHSAMPLES_INGESTED - read events, markers, and digital events of specified channels for a specified epoch
                         %
                         %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_INGESTED(NDR_READER_OBJ, CHANNELTYPE, ...
@@ -291,11 +291,11 @@ classdef mfdaq < ndi.daq.reader
 					data = {};
 					for i=1:numel(channel),
 						% optimization speed opportunity
-						srd = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles,{'di'}, channel(i));
+						srd = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles,{'di'}, channel(i),S);
 						s0d = 1+round(srd*t0);
 						s1d = 1+round(srd*t1);
-						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
-						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d);
+						data_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'di'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
+						time_here = ndi_daqreader_mfdaq_obj.readchannels_epochsamples_ingested(repmat({'time'},1,numel(channel(i))),channel(i),epochfiles,s0d,s1d,S);
 						if any(strcmp(channeltype{i},{'dep','dimp'})), % look for 0 to 1 transitions
 							transitions_on_samples = find( (data_here(1:end-1)==0) & (data_here(2:end) == 1));
 							if strcmp(channeltype{i},'dimp'),
@@ -328,7 +328,7 @@ classdef mfdaq < ndi.daq.reader
 					% if the user doesn't want a derived channel, we need to read it from the file from ingested epochfiles
 					error('needs development.');
 					[timestamps, data] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_ingested(channeltype, ...
-						channel, epochfiles, t0, t1); % abstract class
+						channel, epochfiles, t0, t1, S); % abstract class
 				end;
 
 		end; % readevents_epochsamples_ingested
@@ -374,10 +374,10 @@ classdef mfdaq < ndi.daq.reader
 		end; % samplerate()
 
 			%012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
-                function sr = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
+                function sr = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel, S)
 			% SAMPLERATE_INGESTED - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
-			% SR = SAMPLERATE_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, CHANNELTYPE, CHANNEL)
+			% SR = SAMPLERATE_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, CHANNELTYPE, CHANNEL, S)
 			%
 			% SR is an array of sample rates from the specified channels
 			%
@@ -406,7 +406,6 @@ classdef mfdaq < ndi.daq.reader
 			% CHANNELTYPE must be a string. It is assumed that
 			% that CHANNELTYPE applies to every entry of CHANNEL.
 			%
-
 				switch(channeltype),
 					case {'analog_in','analog_out','auxiliary_in','time'},
 						% For the abstract class, keep the data in doubles. This will always work but may not
@@ -429,18 +428,37 @@ classdef mfdaq < ndi.daq.reader
 
 			%012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
-		function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles)
+		function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles, epoch_id)
 			% INGEST_EPOCHFILES - create an document that describes the data read by an ndi.daq.reader
 			%
-			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES)
+			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES, EPOCH_ID)
 			%
 			% Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
 			% for an ndi.daq.reader object. The document D is not added to any database.
 			%
 			% Example:
-			%    D = mydaqreader.ingest_epochfiles(epochfiles);
+			%    D = mydaqreader.ingest_epochfiles(epochfiles,epoch_id);
 
-				d = ndi.document('daqreader_mfdaq_epochdata_ingested');
+				sample_analog_segment = 1e6; %(1M)  
+				sample_digital_segment = 1e7; % 10M
+
+				daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment = sample_analog_segment; 
+				daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = sample_digital_segment; 
+
+				ec = ndi_daqreader_mfdaq_obj.epochclock(epochfiles);
+				ec_ = {};
+				for i=1:numel(ec),
+					ec_{i} = ec{i}.ndi_clocktype2char();
+				end;
+				daqreader_epochdata_ingested.epochtable.epochclock = ec_;
+				daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+
+				epochid_struct.epochid = epoch_id;
+
+				d = ndi.document('daqreader_mfdaq_epochdata_ingested', ...
+					'daqreader_mfdaq_epochdata_ingested', daqreader_mfdaq_epochdata_ingested,...
+					'daqreader_epochdata_ingested',daqreader_epochdata_ingested,...
+					'epochid',epochid_struct);
 				d = d.set_dependency_value('daqreader_id',ndi_daqreader_mfdaq_obj.id());
 
 				filenames_we_made = {};
@@ -456,6 +474,8 @@ classdef mfdaq < ndi.daq.reader
 				filenames_we_made{end+1} = channel_file_name;
 				d = d.add_file('channel_list.bin',channel_file_name);
 
+				% DEBUG: also need to store 
+
 				ci = mfdaq_epoch_channel_obj.channel_information;  %% need to update to combine eventmarktext
 				% Step 2: loop over channels with rigid samples
 				types = ndi.daq.reader.mfdaq.channel_types();
@@ -464,8 +484,6 @@ classdef mfdaq < ndi.daq.reader
 				types(index_emt) = [];
 				types{end+1} = 'eventmarktext';
 				 
-				sample_analog_segment = 1e6; %(1M)  % this is a dumb place to have this constant
-				sample_digital_segment = 1e7; % 10M
 
 				for i = 1:numel(types),
 					if strcmp(types{i},'eventmarktext'),
