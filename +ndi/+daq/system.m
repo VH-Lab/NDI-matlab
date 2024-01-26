@@ -396,7 +396,11 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 					error(['Metadata channel out of range of ' int2str(min(N,1)) '..' int2str(N) '.']);
 				end;
 				epochfiles = ndi_daqsystem_obj.filenavigator.getepochfiles(epoch);
-				metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
+				if ~ndi.file.navigator.isingested(epochfiles),
+					metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata(epochfiles);
+				else,
+					metadata = ndi_daqsystem_obj.daqmetadatareader{channel}.readmetadata_ingested(epochfiles);
+				end;
 		end; % getmetadata()
 
 		function [b,d] = ingest(ndi_daqsystem_obj)

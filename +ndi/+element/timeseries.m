@@ -58,9 +58,9 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 						ndi.query('','isa','element_epoch','') & ...
 						ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_element_timeseries_obj.session;
+
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)==0,
-                        keyboard
 						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
 					end;
 					if numel(epochdoc)>1,

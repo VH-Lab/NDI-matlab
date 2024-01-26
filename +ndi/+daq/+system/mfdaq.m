@@ -61,7 +61,11 @@ classdef mfdaq < ndi.daq.system
 			% See also: ndi.time.clocktype
                         %
 				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
-                                ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
+				if ~ndi.file.navigator.isingested(epochfiles),
+                                	ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock(epochfiles);
+				else,
+                                	ec = ndi_daqsystem_mfdaq_obj.daqreader.epochclock_ingested(epochfiles);
+				end;
                 end % epochclock()
 
 		function t0t1 = t0_t1(ndi_daqsystem_mfdaq_obj, epoch)
@@ -73,7 +77,11 @@ classdef mfdaq < ndi.daq.system
 			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
 			%
 				epochfiles = ndi_daqsystem_mfdaq_obj.filenavigator.getepochfiles(epoch);
-				t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1(epochfiles);
+				if ~ndi.file.navigator.isingested(epochfiles),
+					t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1(epochfiles);
+				else,
+					t0t1 = ndi_daqsystem_mfdaq_obj.daqreader.t0_t1_ingested(epochfiles);
+				end;
 		end % t0_t1()
 
 		function channels = getchannels(ndi_daqsystem_mfdaq_obj)
@@ -105,7 +113,11 @@ classdef mfdaq < ndi.daq.system
 
 				for n=1:N,
 					epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, n);
-					channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+					if ~ndi.file.navigator.isingested(epochfiles),
+						channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+					else,
+						channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+					end;
 					channels = vlt.data.equnique( [channels(:); channels_here(:)] );
 				end
 		end; % getchannels
@@ -124,7 +136,11 @@ classdef mfdaq < ndi.daq.system
 			%  DATA will have one column per channel.
 			%
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-				data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples(channeltype, channel, epochfiles, s0, s1);
+				if ~ndi.file.navigator.isingested(epochfiles),
+					data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples(channeltype, channel, epochfiles, s0, s1);
+				else,
+					data = ndi_daqsystem_mfdaq_obj.daqreader.readchannels_epochsamples_ingested(channeltype,channel,epochfiles,s0,s1);
+				end;
 		end % readchannels_epochsamples()
 
 		function data = readchannels(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
@@ -144,31 +160,31 @@ classdef mfdaq < ndi.daq.system
 			%
 			%  DATA is the data collection for specific channels
 
-			error('this function presently does not work, needs to know how to get to session');
+				error('this function presently does not work, needs to know how to get to session');
 
-			if isa(timeref_or_epoch,'ndi.time.timereference'),
-				exp = ndi_daqsystem_mfdaq_obj.session;
-				[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
-					ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('devlocal'));
-				[t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...
-					ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('dev_local_time'));
-				if epoch0_timeref.epoch~=epoch1_timeref.epoch,
-					error(['Do not know how to read across epochs yet; request spanned ' ...
-						 ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch0_timeref.epoch) ...
-						' and ' ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
+				if isa(timeref_or_epoch,'ndi.time.timereference'),
+					exp = ndi_daqsystem_mfdaq_obj.session;
+					[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...
+						ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('devlocal'));
+					[t1,epoch1_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t1,...
+						ndi_daqsystem_mfdaq_obj,ndi.time.clocktype('dev_local_time'));
+					if epoch0_timeref.epoch~=epoch1_timeref.epoch,
+						error(['Do not know how to read across epochs yet; request spanned ' ...
+							 ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch0_timeref.epoch) ...
+							' and ' ndi_daqsystem_mfdaq_obj.filenavigator.epoch2str(epoch1_timeref.epoch) '.']);
+					end
+					epoch = epoch0;
+				else,
+					epoch = timeref_or_epoch;
 				end
-				epoch = epoch0;
-			else,
-				epoch = timeref_or_epoch;
-			end
-			sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel);
-			if numel(unique(sr))~=1,
-				error(['Do not know how to handle multiple sampling rates across channels.']);
-			end;
-			sr = unique(sr);
-			s0 = 1+round(sr*t0);
-			s1 = 1+round(sr*t1);
-			[data] = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel, s0, s1);
+				sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel);
+				if numel(unique(sr))~=1,
+					error(['Do not know how to handle multiple sampling rates across channels.']);
+				end;
+				sr = unique(sr);
+				s0 = 1+round(sr*t0);
+				s1 = 1+round(sr*t1);
+				[data] = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel, s0, s1);
 		end %readchannels()
 
 		function [timestamps,data] = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
@@ -190,15 +206,14 @@ classdef mfdaq < ndi.daq.system
 			%  DATA is an array of the event data. If more than one channel is requested, then DATA will be a cell array of
 			%  data arrays, one per channel.
 			%
-
-			if isa(timeref_or_epoch,'ndi.time.timereference'),
-				tref = timeref_or_epoch;
-				error(['this function does not handle working with clocks yet.']);
-			else,
-				epoch = timeref_or_epoch;
-				%disp('here, about to call readchannels_epochsamples')
-				[timestamps,data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
-			end
+				if isa(timeref_or_epoch,'ndi.time.timereference'),
+					tref = timeref_or_epoch;
+					error(['this function does not handle working with clocks yet.']);
+				else,
+					epoch = timeref_or_epoch;
+					%disp('here, about to call readchannels_epochsamples')
+					[timestamps,data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
+				end
 		end % readevents
 
 		function [timestamps,data,timeref] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, t0, t1)
@@ -215,16 +230,20 @@ classdef mfdaq < ndi.daq.system
 			%
 			%  TIMESTAMPS is an array of the timestamps read. If more than one channel is requested, then TIMESTAMPS
 			%  will be a cell array of timestamp arrays, one per channel.
-            %
+			%
 			%  DATA is an is an array of the event data. For events, values are always 1. If more than one channel
-            %  is requested, then DATA will be a cell array of data arrays, one per channel.
+			%  is requested, then DATA will be a cell array of data arrays, one per channel.
 			%
 			%  TIMEREF is an ndi.time.timereference with the NDI_CLOCK of the device, referring to epoch N at time 0 as the reference.
 			%  
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
 				epochclocks  = ndi_daqsystem_mfdaq_obj.epochclock(epoch);
 				timeref = ndi.time.timereference(ndi_daqsystem_mfdaq_obj, epochclocks{1}, epoch, 0);
-				[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype,channel,epochfiles,t0,t1);
+				if ~ndi.file.navigator.isingested(epochfiles),
+					[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples(channeltype,channel,epochfiles,t0,t1);
+				else,
+					[timestamps,data]=ndi_daqsystem_mfdaq_obj.daqreader.readevents_epochsamples_ingested(channeltype,channel,epochfiles,t0,t1);
+				end;
 		end; % readevents_epochsamples
 
                 function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
@@ -240,7 +259,11 @@ classdef mfdaq < ndi.daq.system
 			% that CHANNELTYPE applies to every entry of CHANNEL.
 
 				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
-				sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel); 
+				if ~ndi.file.navigator.isingested(epochfiles),
+					sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate(epochfiles, channeltype, channel); 
+				else,
+					sr = ndi_daqsystem_mfdaq_obj.daqreader.samplerate_ingested(epochfiles, channeltype, channel); 
+				end;
 		end;
 
 	end; % methods

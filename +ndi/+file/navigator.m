@@ -234,7 +234,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				if isempty(epochfiles),
 					error(['No files in epoch number ' ndi_filenavigator_obj.epoch2str(number) '.']);
 				else,
-					if ndi_filenavigator_obj.isingested(epochfiles),
+					if ndi.file.navigator.isingested(epochfiles),
 						eidfname = '';
 					else,
 						[parentdir,filename]=fileparts(epochfiles{1});
@@ -264,7 +264,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
 					epochfiles = ndi_filenavigator_obj.getepochfiles_number(number);
-					if ndi_filenavigator_obj.isingested(epochfiles),
+					if ndi.file.navigator.isingested(epochfiles),
 						ecfname = '';
 						return;
 					end;
@@ -304,7 +304,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				epochfiles = ndi_filenavigator_obj.getepochfiles_number(number);
 				if isempty(epochfiles),
 					error(['No files in epoch number ' ndi_filenavigator_obj.epoch2str(number) '.']);
-				elseif ndi_filenavigator_obj.isingested(epochfiles),
+				elseif ndi.file.navigator.isingested(epochfiles),
 					ecfname = '';
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
@@ -549,22 +549,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				end
 		end % getepochfiles_number()
 
-		function b = isingested(ndi_filenavigator_obj, epochfiles)
-			% ISINGESTED - is a set of epochfiles ingested?
-			%
-			% B = ISINGESTED(EPOCHFILES)
-			%
-			% Returns 1 if the cell array of filenames reflects ingested filenames.
-			% Returns 0 otherwise.
-			%
-			% Checks to see if the first file begins with 'epoch://'.
-			%
-				b = 0;
-				if numel(epochfiles)>=1,
-					b = startsWith(epochfiles{1},'epoch://');
-				end;
-		end;
-
 		function fmstr = filematch_hashstring(ndi_filenavigator_obj)
 			% FILEMATCH_HASHSTRING - a computation to produce a (likely to be) unique string based on filematch
 			%
@@ -620,7 +604,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				et = ndi_filenavigator_obj.epochtable();
 				for i=1:numel(et),
 					files = et(i).underlying_epochs.underlying;
-					if ~ndi_filenavigator_obj.isingested(files),
+					if ~ndi.file.navigator.isingested(files),
 						epochfiles_ingested_struct = struct;
 						epochfiles_ingested_struct.epoch_id = et(i).epoch_id;
 						files = cat(1,{['epochid://' et(i).epoch_id]},files);
@@ -686,5 +670,23 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 					ndi.query('base.session_id', 'exact_string', ndi_filenavigator_obj.session.id(), '');
 		end; % 
 	end % methods
+
+	methods (Static) % static methods
+		function b = isingested(epochfiles)
+			% ISINGESTED - is a set of epochfiles ingested?
+			%
+			% B = ISINGESTED(EPOCHFILES)
+			%
+			% Returns 1 if the cell array of filenames reflects ingested filenames.
+			% Returns 0 otherwise.
+			%
+			% Checks to see if the first file begins with 'epoch://'.
+			%
+				b = 0;
+				if numel(epochfiles)>=1,
+					b = startsWith(epochfiles{1},'epoch://');
+				end;
+		end; % isingested()
+	end; % methods (Static)
 
 end % classdef

@@ -8,18 +8,18 @@ classdef reader < ndi.ido & ndi.documentservice
 	methods
 
 		function obj = reader(varargin)
-		% ndi.daq.reader - create a new ndi.daq.reader object
-		%
-		%  OBJ = ndi.daq.reader()
-		%  
-		%  Creates an ndi.daq.reader. 
-		%
-		%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
-		%    
-		%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
-		%
-		%  ndi.daq.reader is essentially an abstract class, and a specific implementation must be used.
-		%
+			% ndi.daq.reader - create a new ndi.daq.reader object
+			%
+			%  OBJ = ndi.daq.reader()
+			%  
+			%  Creates an ndi.daq.reader. 
+			%
+			%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+			%    
+			%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
+			%
+			%  ndi.daq.reader has mostly abstract methods, it is made to be overriden.
+			%
 			obj = obj@ndi.ido();
 
 			loadfromfile = 0;
@@ -41,6 +41,22 @@ classdef reader < ndi.ido & ndi.documentservice
 			end
 		end % ndi.daq.reader
 
+		function d = getingesteddocument(ndi_daqreader_mfdaq_obj, epochfiles)
+			% GETINGESTEDDOCUMENT - return the ndi.document with the data for an ingested epoch
+			%
+			% D = GETINGESTEDDOCUMENT(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
+			%
+			% Returns the document D that contains the ingested ndi.daq.reader.mfdaq data for
+			% the epoch described by EPOCHFILES. EPOCHFILES should be an ingested epoch.
+			%
+				assert(ndi.file.navigator.isingested(epochfiles),...
+					'This function is only applicable to ingested EPOCHFILES.');
+
+				error('needs development');			
+
+		end % getingesteddocument();
+
+
 		% EPOCHSET functions, although this object is NOT an EPOCHSET object
 
 		function ec = epochclock(ndi_daqreader_obj, epochfiles)
@@ -59,8 +75,21 @@ classdef reader < ndi.ido & ndi.documentservice
 				ec = {ndi.time.clocktype('no_time')};
 		end % epochclock
 
+		function ec = epochclock_ingested(ndi_daqreader_obj, epochfiles)
+			% EPOCHCLOCK_INGESTED - return the ndi.time.clocktype objects for an ingested epoch
+			%
+			% EC = EPOCHCLOCK_INGESTED(NDI_DAQREADER_OBJ, EPOCHFILES)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of ndi.time.clocktype objects (or sub-class members).
+			%
+			% See also: ndi.time.clocktype
+			%
+				error('needs development.');
+		end % epochclock_ingested
+
 		function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
-			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+			% T0T1 - return the t0_t1 (beginning and end) epoch times for an epoch
 			%
 			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
 			%
@@ -74,13 +103,28 @@ classdef reader < ndi.ido & ndi.documentservice
 				t0t1 = {[NaN NaN]};
 		end % t0t1
 
+		function t0t1 = t0_t1_ingested(ndi_epochset_obj, epochfiles)
+			% T0T1_INGESTED - return the t0_t1 (beginning and end) epoch times for an ingested epoch
+			%
+			% T0T1 = T0_T1_INGESTED(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: ndi.time.clocktype, EPOCHCLOCK
+			%
+				error('needs development.');
+		end % t0t1
+
 		function [b,msg] = verifyepochprobemap(ndi_daqreader_obj, epochprobemap, epochfiles)
-			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
+			% VERIFYEPOCHPROBEMAP - Verifies EPOCHPROBEMAP is compatible with device and data on disk
 			%
-			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
+			% B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
-			% epoch NUMBER.
+			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is
+			% valid for the given device epoch NUMBER.
 			%
 			% For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
 			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
@@ -104,7 +148,7 @@ classdef reader < ndi.ido & ndi.documentservice
 		end % verifyepochprobemap
 
 		function d = ingest_epochfiles(ndi_daqreader_obj, epochfiles)
-			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.reader
+			% INGEST_EPOCHFILES - create a document that describes data read by an ndi.daq.reader
 			%
 			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES)
 			%

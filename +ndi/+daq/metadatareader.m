@@ -87,6 +87,16 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 		end; % readmetadata()
 
+		function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles)
+			% PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
+			%
+			% Returns the parameters (cell array of structures) associated with the
+			% stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
+			%
+				parameters = {};
+				error('needs development');
+		end; % readmetadata_ingested()
+
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
 			% PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
 			%
