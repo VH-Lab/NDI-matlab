@@ -1,13 +1,12 @@
-function [status, response,dataset_id] = create_cloud_metadata_struct(auth_token, organization_id, S, size)
+function [status, response,dataset_id] = create_cloud_metadata_struct(auth_token, organization_id, S)
 % CREATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.CREATE_CLOUD_METADATA_STRUCT(AUTH_TOKEN, ORGANIZATION_ID, S, SIZE)
+% [STATUS, DATASET] = ndi.cloud.CREATE_CLOUD_METADATA_STRUCT(AUTH_TOKEN, ORGANIZATION_ID, S)
 %
 % Inputs:
 %   ORGANIZATION_ID - the organization ID for NDI Cloud
 %   AUTH_TOKEN - an upload token for NDI Cloud
 %   S - a struct with the metadata to create
-%   SIZE - the size of the dataset in kilobytes
 %
 % Outputs:
 %   STATUS - did the upload work? 0 for no, 1 for yes
@@ -25,7 +24,8 @@ if ~is_valid
     error('NDI:CLOUD:CREATE_CLOUD_METADATA_STRUCT', 'S is missing required fields');
 end
 
-dataset_update.name = S.DatasetFullName;
+% dataset_update.name = S.DatasetFullName;
+dataset_update.name = "test. NM43 with placeholder relatedPublication data.";
 dataset_update.branchName = S.DatasetShortName;
 author_struct = struct();
 for i = 1:numel(S.Author)
@@ -64,7 +64,7 @@ for i = 1:numel(S.RelatedPublication)
 end
 dataset_update.associatedPublications = associate_publications_struct;
 % dataset_update.brainRegions = brainRegions;
-dataset_update.totalSize = round(size);
+% dataset_update.totalSize = round(size);
 [status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, dataset_update, auth_token);
 end
 

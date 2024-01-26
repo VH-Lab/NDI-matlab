@@ -120,6 +120,9 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.versionInnovation = appUserData.VersionInnovation;
 
     % TODO: Related publication
+    datasetVersion.relatedPublication = cellfun(@(value) ...
+        openminds.core.DOI('identifier', addDoiPrefix(value)), ...
+        {appUserData.RelatedPublication.DOI} );
 
     datasetVersion.dataType = cellfun(@(value) ...
         openminds.controlledterms.SemanticDataType(value), ...
@@ -295,4 +298,12 @@ function instance = convertTechnique(value)
     instance = feval(fcn, instanceName);
 
 
+end
+
+function modifiedValue = addDoiPrefix(value)
+    if ~startsWith(value, 'https://doi.org/')
+        modifiedValue = ['https://doi.org/' value];
+    else
+        modifiedValue = value;
+    end
 end

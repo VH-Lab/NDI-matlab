@@ -38,7 +38,7 @@ end
 d = dataset.documents;
 
 [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
-session_id = document.document_properties.base.id;  
+session_id = document.base.id;  
 
 %%Construct a new ndi.session
 if ~isfolder(output_path)
