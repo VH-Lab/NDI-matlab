@@ -444,7 +444,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 					end;
 				end;
 				ndi_daqsystem_obj.filenavigator.session.database_add(d);
-
+				ndi_daqsystem_obj.session.cache.clear();
 				b = 1;
 
 		end; % ingest()

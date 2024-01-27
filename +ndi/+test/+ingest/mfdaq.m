@@ -28,4 +28,9 @@ d_fingest = fnv.ingest();
 
 [b,d_vhvis_ingested] = ds_v.ingest(); % takes a little while
 
+ % removal
 
+
+% d_ing = S.database_search(ndi.query('','isa','daqreader_mfdaq_epochdata_ingested'))
+% d_ing = fnv.find_ingested_documents()
+% d_ing = S.database_search(ndi.query('','isa','daqmetadatareader_epochdata_ingested'))
