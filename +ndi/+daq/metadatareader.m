@@ -95,7 +95,18 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			% S is the ndi.session object associated with the data.
 			%
 				parameters = {};
-				error('needs development');
+				d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
+				if ~isempty(d),
+					f = S.database_openbinarydoc(d,'data.bin');
+					data = f.fread(Inf);
+					S.database_closebinarydoc(f);
+					tname = [ndi.file.temp_name()];
+					fid = fopen([tname '.nbf.tgz'],'wb','ieee-le');
+					fwrite(fid,data,'uint8');
+					fclose(fid);
+					parameters = ndi.compress.expand_metadata(tname);
+					delete([tname '.nbf.tgz']);
+				end;
 		end; % readmetadata_ingested()
 
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
@@ -120,7 +131,6 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			% Creates an ndi.document of type 'daqmetadatareader_epochdata_ingested' that contains the data
 			% for an ndi.daq.metadatareaderobject. The document D is not added to any database.
 			%
-
 				epochid_struct.epochid = epoch_id;
 
 				d = ndi.document('daqmetadatareader_epochdata_ingested','epochid',epochid_struct);
@@ -135,6 +145,28 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				filenames_we_made = {metadatafile};
 
 		end;
+
+		function d = get_ingested_document(ndi_daqmetadatareader_obj, epochfiles, S)
+			% GET_INGESTED_DOCUMENT - get an ingested document for a set of epochfiles
+			%
+			% D = GET_INGESTED_DOCUMENT(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES, S)
+			%
+			% Returns empty if there is no such document or the single docment if
+			% there is such a document.
+			%
+				d = [];
+				epochid = [];
+
+				try,
+					epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+				end;
+				q = ndi.query('','depends_on','daqmetadatareader_id',ndi_daqmetadatareader_obj.id()) & ...
+					ndi.query('epochid.epochid','exact_string',epochid);
+				d = S.database_search(q);
+				if numel(d)==1,
+					d = d{1};
+				end;
+		end; % get_ingested_document()
 
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
 			% EQ - are 2 ndi.daq.metadatareader objects equal?

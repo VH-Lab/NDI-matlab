@@ -241,15 +241,17 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			% If it doesn't exist, it is created.
 			%
 			% 
+				id = '';
 				if nargin<3,
 					epochfiles = getepochfiles(ndi_filenavigator_obj,epoch_number);
 				end
 
-				if numel(epochfiles)>=2, % if ingested
-					if startsWith(epochfiles{2},'epochid:'),
-						id = epochfiles{2}(9:end);
-						return;
-					end;
+				try,
+					id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+				end;
+				id,
+				if ~isempty(id), 
+					return;
 				end;
 
 				eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);

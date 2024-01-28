@@ -62,9 +62,8 @@ classdef epochdir < ndi.file.navigator
 			if nargin < 3,
 				epochfiles = getepochfiles(ndi_filenavigator_epochdir_obj, epoch_number);
 			end
-			if ndi_filenavigator_epochdir_obj.isingested(epochfiles),
-				search_place = numel('epoch://');
-				id = epochfiles{1}(search_place+1:end);
+			if ndi.file.navigator.isingested(epochfiles),
+				id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
 			else,
 				[pathdir,filename] = fileparts(epochfiles{1});
 				[abovepath, id] = fileparts(pathdir);
