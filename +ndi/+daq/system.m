@@ -421,7 +421,6 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				for i=1:numel(et),
 					ef = et(i).underlying_epochs.underlying; % epochfiles
 					if ndi.file.navigator.isingested(ef), % already ingested, skip it
-						disp(['Skipping previously ingested epoch'])
 					else, % not ingested, we need to ingest it
 							% future note: down the road we might want to add one epoch at a time
 						if ~filenavigator_ingest_called,
@@ -446,7 +445,6 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 				ndi_daqsystem_obj.filenavigator.session.database_add(d);
 				ndi_daqsystem_obj.session.cache.clear();
 				b = 1;
-
 		end; % ingest()
 
 		%% functions that override ndi.documentservice
