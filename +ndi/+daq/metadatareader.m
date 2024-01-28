@@ -97,15 +97,9 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				parameters = {};
 				d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
 				if ~isempty(d),
-					f = S.database_openbinarydoc(d,'data.bin');
-					data = f.fread(Inf);
-					S.database_closebinarydoc(f);
-					tname = [ndi.file.temp_name()];
-					fid = fopen([tname '.nbf.tgz'],'wb','ieee-le');
-					fwrite(fid,data,'uint8');
-					fclose(fid);
-					parameters = ndi.compress.expand_metadata(tname);
-					delete([tname '.nbf.tgz']);
+					[tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,'data.bin','.nbf.tgz');
+					parameters = ndi.compress.expand_metadata(tname_without_ext);
+					delete(tname);
 				end;
 		end; % readmetadata_ingested()
 
