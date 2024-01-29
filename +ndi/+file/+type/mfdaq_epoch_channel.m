@@ -168,7 +168,47 @@ classdef mfdaq_epoch_channel
 
 		end; % writeToFile()
 
+	end; % methods
 
-    end; % methods()
+	methods(Static),
+
+		function [groups,channel_indexes_in_groups,channel_indexes_in_output] = channelgroupdecoding(channel_info, channel_type, channels)
+			% CHANNELGROUPDECODING - decode channel list into the groups where the channels are stored
+			%
+			% [GROUPS, CHANNEL_INDEXES_IN_GROUPS, CHANNEL_INDEXES_IN_OUTPUT]=...
+			%   CHANNELGROUPDECODING(CHANNEL_INFO, CHANNEL_TYPE, CHANNELS)
+			%
+			%
+				channel_num = [];
+				groups = [];
+				channel_indexes_in_groups = {};
+				channel_indexes_in_output = {};
+
+				indexes_type = find(strcmp(channel_type,{channel_info.type}));
+
+				ci = channel_info(indexes_type); % look only at channels with the right type
+				for c=1:numel(channels),
+					index = find([ci.number]==channels(c));
+					if isempty(index),
+						error(['Channel number ' int2str(channels(c)) ' not found in record.']);
+					end;
+					if numel(index)>1,
+						error(['Channel number ' int2str(channels(c)) ' found multiple times in record.']);
+					end;
+					group_loc = ismember(groups,ci(index).group);
+					if isempty(group_loc),
+						groups(end+1) = ci(index).group;
+						group_loc = numel(groups);
+						channel_indexes_in_groups{group_loc} = [];
+						channel_indexes_in_output{group_loc} = [];
+					end;
+					subset_group = find([ci.group]==groups(group_loc)); % subset of group and channel type
+					chan_index_in_group = find([ci(subset_group).number]==channels(c));
+					channel_indexes_in_groups{group_loc}(end+1) = chan_index_in_group;
+					channel_indexes_in_output{group_loc}(end+1) = c;
+				end;
+		end; % channelgroupdecoding()
+
+	end; % methods(static)
 
 end 

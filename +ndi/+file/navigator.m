@@ -249,7 +249,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				try,
 					id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
 				end;
-				id,
 				if ~isempty(id), 
 					return;
 				end;

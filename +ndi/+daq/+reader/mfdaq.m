@@ -102,7 +102,7 @@ classdef mfdaq < ndi.daq.reader
 
 			%012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
-		function channels = getchannelsepoch_ingested(ndi_daqreader_mdaq_obj, epochfiles, S)
+		function [channels,fullchannelinfo] = getchannelsepoch_ingested(ndi_daqreader_mfdaq_obj, epochfiles, S)
 			% GETCHANNELSEPOCH_INGESTED - List the channels that were sampled for this epoch
 			%
 			%  CHANNELS = GETCHANNELSEPOCH_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, S)
@@ -124,10 +124,13 @@ classdef mfdaq < ndi.daq.reader
 			% 'type'             | The type of data stored in the channel
 			%                    |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')
 			%
-				error('needs development');	
-				channels = struct('name',[],'type',[]);  
-				channels = channels([]);
-
+				d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
+				tname = ndi.database.fun.copydocfile2temp(d,S,'channel_list.bin','');
+				mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(tname);
+				delete(tname);
+				fullchannelinfo = mfdaq_epoch_channel_obj.channel_information;
+				to_remove = setdiff(fieldnames(fullchannelinfo),{'name','type'});
+				channels = rmfield(fullchannelinfo,to_remove);
 		end; % getchannelsepoch_ingested
 
 		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
@@ -165,7 +168,81 @@ classdef mfdaq < ndi.daq.reader
 			%
 			%  DATA will have one column per channel.
 			%
+
+				d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
+
+				ch_unique = unique(channeltype);
+
+				if numel(ch_unique)~=1,
+					error(['Only one type of channel may be read per function call at present.']);
+				end;
+
+				sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+
+				sr_unique = unique(sr);
+				if numel(sr_unique)~=1,
+					error(['Do not know how to handle different sampling rates across channels in one function call.']);
+				end;
+
+				sr = sr_unique;
+
+				if isinf(s0) | isinf(s1), % need to figure out actual values if user gave -inf/inf for either value
+					t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
+					if isinf(s0),
+						s0 = ndi.time.fun.times2samples(s0,t0_t1{1},sr);
+					end;
+					if isinf(s1),
+						s1 = ndi.time.fun.times2samples(s1,t0_t1{1},sr);
+					end;
+				end;
+
+				if s0>s1,
+					error(['sample number s0 must be less than or equal to s1.']);
+				end;
+
+				% we have two issues here:
+				%   1) identify the groups to which the requested channels belong
+				[dummy,fullchannelinfo] = ndi_daqreader_mfdaq_obj.getchannelsepoch_ingested(epochfiles,S);
+
+
+
 				error('needs development');
+
+				%   2) identify the segments in which the requested samples belong
+
+				switch(ch_unique{1}),
+					case {'analog_in','analog_out','auxiliary'},
+						samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment;
+					case {'digital_in','digital_out'},
+						samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment;
+					otherwise,
+						error(['Unknown channel type ' ch_unique{1} '. Use readevents for events, markers, text markers, etc.']);
+				end;
+
+				SEG_start = ceil(s0/samples_segment);
+				SEG_stop = ceil(s1/samples_segment);
+
+				data = [];
+
+				for seg = SEG_start : SEG_stop,
+					s0_ = 1;
+					if seg==SEG_start,
+						s0_ = mod(s0,samples_segment);
+						if s0_ == 0 % it's the last sample),
+							s0_ = samples_segment;
+						end;
+					end;
+					s1_ = samples_segment;
+					if seg==SEG_stop,
+						s1_ = mod(s1,samples_segment);
+						if s0_ == 0 % it's the last sample),
+							s0_ = samples_segment;
+						end;
+					end;
+
+					data = cat(1,data,data_here);
+				end;
+
 		end % readchannels_epochsamples_ingested()
 
 		function [timestamps, data] = readevents_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
