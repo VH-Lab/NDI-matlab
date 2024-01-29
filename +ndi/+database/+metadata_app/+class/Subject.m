@@ -24,11 +24,14 @@ classdef Subject < handle
         end
 
         function addStrain(obj, strainName)
-            if ~isKey(obj.StrainMap, strainName)
-                obj.StrainMap(strainName) = true;
-                strain = ndi.database.metadata_app.class.Strain(strainName);
-                obj.addItem("StrainList",strain);
-            end
+            strain = ndi.database.metadata_app.class.Strain(strainName);
+            obj.StrainList = strain;
+
+            % % if ~isKey(obj.StrainMap, strainName)
+            % %     obj.StrainMap(strainName) = true;
+            % %     strain = ndi.database.metadata_app.class.Strain(strainName);
+            % %     obj.addItem("StrainList",strain);
+            % % end
         end
 
         function speciesList = getSpeciesList(obj)

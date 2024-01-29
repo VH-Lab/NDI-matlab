@@ -1,13 +1,17 @@
 function [names, labels] = getOpenMindsInstances(schemaName, addOptions)
-% getCCByLicences - Get names and short names for controlled term instances from openMINDS
+% getOpenMindsInstances - Get names and short names for controlled term instances from openMINDS
 %   
 %   Syntax
 %       [names, labels] = ndi.database.metadata_app.fun.getOpenMindsInstances(schemaName)
-
+%
 %   Output arguments
-%       names - String array of openMINDS names 
-%       labels - String array of corresponding labels
+%       names  : String array of openMINDS names. Names correspond with
+%                instance names of openMINDS instances (not the name property)
+%       labels : String array of corresponding labels. Labels correspond 
+%                with the name property of the instances.
 
+    % Todo: Reconsider, maybe names should refer the the semantic name / type...
+    
     if nargin < 2; addOptions = false; end
     
     instanceTable = openminds.internal.listControlledInstances(schemaName);
