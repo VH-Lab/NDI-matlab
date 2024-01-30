@@ -13,11 +13,17 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     end
 
     import ndi.database.metadata_app.fun.loadUserInstances
+    import ndi.database.metadata_app.fun.loadUserInstanceCatalog
 
     % Organizations ("references") which are added in the app is saved to 
     % MATLAB's userpath. Load them here.
     organizations = loadUserInstances('affiliation_organization');
     fundingOrganizations = loadUserInstances('funder_organization');
+
+    strainCatalog = loadUserInstanceCatalog('Strain');
+
+    % Todo: Adapt conversion to also convert custom species.
+    strainInstanceMap = convertStrains(strainCatalog.getAll() );
 
     organizations = [organizations, fundingOrganizations];
 
@@ -155,17 +161,8 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         if isempty( subjectItem.StrainList )
             subjects{i}.species = speciesInstance;
         else
-            strainInstance = openminds.core.Strain();
-            strainInstance.species = speciesInstance;
-            
-            % Todo: handle arrays????
-            geneticStrainTypeName = subjectItem.StrainList(1).Name;
-            geneticStrainTypeInstance = openminds.controlledterms.GeneticStrainType(geneticStrainTypeName);
-            strainInstance.geneticStrainType = geneticStrainTypeInstance;
-            % Todo: add backgroundStrain, digitalIdentifier, stockNumber??
-
-            % Todo: Create name? Combine species and backgrund strain?
-            strainInstance.name = strainInstance.species.name;
+            strainName = subjectItem.StrainList.Name;
+            strainInstance = strainInstanceMap(strainName);
             subjects{i}.species = strainInstance;
         end
 
@@ -298,6 +295,33 @@ function instance = convertTechnique(value)
     instance = feval(fcn, instanceName);
 
 
+end
+
+
+function [strainInstanceMap] = convertStrains(items)
+    
+    strainInstanceMap = containers.Map;
+
+    % Convert items without background strains
+    for i = 1:numel(items)
+        thisItem = items(i);
+        thisItem = rmfield(thisItem, 'backgroundStrain');
+        thisInstance = openminds.core.Strain().fromStruct(thisItem);
+        strainInstanceMap(thisItem.name) = thisInstance;
+    end
+
+    % "Recursively" link together background strains
+    for i = 1:numel(items)
+        thisItem = items(i);
+        thisInstance = strainInstanceMap(thisItem.name);
+        addBackgroundStrain(thisInstance, thisItem, strainInstanceMap);
+        
+        for j = 1:numel(thisItem.backgroundStrain)
+            bgStrainName = thisItem.backgroundStrain(j);
+            bgInstance = strainInstanceMap(bgStrainName);
+            thisInstance.backgroundStrain(j) = bgInstance;
+        end
+    end
 end
 
 function modifiedValue = addDoiPrefix(value)
