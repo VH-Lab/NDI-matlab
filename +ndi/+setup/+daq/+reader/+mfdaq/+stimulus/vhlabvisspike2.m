@@ -178,7 +178,13 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 						otherwise,
 							error(['Unknown channel.']);
 					end
-				end
+                end
+
+                for i=1:numel(timestamps),
+                    inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
+                    timestamps{i} = timestamps{i}(inds_here);
+                    data{i} = data{i}(inds_here);
+                end;
 
 				if numel(data)==1,% if only 1 channel entry to return, make it non-cell
 					timestamps = timestamps{1};

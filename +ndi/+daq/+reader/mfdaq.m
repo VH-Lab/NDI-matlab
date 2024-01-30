@@ -437,6 +437,10 @@ classdef mfdaq < ndi.daq.reader
 					%[groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
 					%	ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
 
+					if ~iscell(channeltype),
+						channeltype = repmat({channeltype},numel(channel),1);
+					end;
+
 					groups = 1; g = 1;
 					prefix = 'evmktx';
 					fname = [prefix '_group' int2str(groups(g)) '_seg.nbf_1'];
@@ -461,7 +465,7 @@ classdef mfdaq < ndi.daq.reader
 					data = D(order);
 
 					for i=1:numel(timestamps),
-						included = find(timestamps>=t0 & timestamps <= t1);
+						included = find(timestamps{i} >=t0 & timestamps{i} <= t1);
 						timestamps{i} = timestamps{i}(included,:);
 						data{i} = data{i}(included,:);
 					end;
