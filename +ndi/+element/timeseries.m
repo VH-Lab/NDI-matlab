@@ -6,8 +6,8 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 	end % properties
 
 	methods
-		function ndi_element_timeseries_obj = timeseries(varargin)
-			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element(varargin{:});
+        function [ndi_element_timeseries_obj] = timeseries(varargin)
+			[ndi_element_timeseries_obj] = ndi_element_timeseries_obj@ndi.element(varargin{:});
 		end; % ndi.element.timeseries()
 
 		%%%%% ndi.time.timeseries methods
