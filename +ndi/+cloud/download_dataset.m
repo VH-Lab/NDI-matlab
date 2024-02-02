@@ -1,11 +1,9 @@
-function [b,msg, S] = download_dataset(email, password, dataset_id, output_path)
+function [b,msg, S] = download_dataset(dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
-% [B, MSG] = ndi.cloud.download_dataset(EMAIL, PASSWORD, DATASET_ID, OUTPUT_PATH)
+% [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, OUTPUT_PATH)
 %
 % Inputs:
-%   EMAIL - The email address of the user
-%   PASSWORD - The password of the user
 %   DATASET_ID - The dataset ID to download
 %   OUTPUT_PATH - The path to download the dataset to
 %
@@ -19,12 +17,7 @@ b = 1;
 output_path = char(output_path);
 
 verbose = 1;
-[status, auth_token, organization_id] = ndi.cloud.auth.login(email, password);
-if status 
-    b = 0;
-    msg = auth_token;
-    error(msg);
-end
+[auth_token, organization_id] = ndi.cloud.uilogin();
 
 if verbose, disp(['Retrieving dataset...']); end
 
@@ -129,43 +122,8 @@ if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
     fclose(fid);
 end
 
-S = ndi.session.dir(output_path);
-if verbose, disp(['Created new session ' S.identifier ' in ' output_path]); end
-
-all_documents = {};
-%open all the json files and add them to the session
-json_files = dir([output_path filesep 'download' filesep 'json' filesep '*.json']);
-
-
-d_ids = containers.Map;
-
-for i = 1:numel(json_files)
-    json_file_path = [output_path filesep 'download' filesep 'json' filesep json_files(i).name];
-    jsonString = fileread(json_file_path);
-    document = jsondecode(jsonString);
-    document_obj = ndi.document(document.document_properties);
-
-    id = document_obj.document_properties.base.id;
-    if isKey(d_ids, id)
-        disp('Element is already in the set.');
-    end
-
-    if isfield(document, 'files')
-        for j = 1:numel(document.files)
-            file_uid = document.files.file_info(j).locations(1).uid;
-            uploaded = files_map(file_uid);
-            if ~uploaded
-                continue;
-            end
-            file_path = [output_path filesep 'download' filesep 'files' filesep file_uid];
-            file_name = document.files.file_list(j);
-            document_obj = document_obj.add_file(file_name, file_path);
-        end
-    end    
-    all_documents{end+1} = document_obj;
-end
-if verbose, disp(['Add documents and files to session: ' S.identifier]); end
-S = S.database_add(all_documents);
+S = ndi.cloud.fun.make_session_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
+[output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'file'] );
 
 end
 

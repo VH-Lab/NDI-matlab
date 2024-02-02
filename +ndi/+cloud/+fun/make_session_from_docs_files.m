@@ -48,9 +48,6 @@ for i=1:numel(d),
 	doc_list{i} = doc_obj;
 end;
 
-keyboard
-
-
 S = ndi.session.dir(session_reference,session_path);
 S.database_add(doc_list);
 

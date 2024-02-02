@@ -1,11 +1,12 @@
-function [b, msg] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin)
+function [b, msg] = upload_to_NDI_cloud(S, auth_token, dataset_id, varargin)
 % UPLOAD_TO_NDI_CLOUD - upload an NDI database to NDI Cloud
 %
-% [B,MSG] = ndi.database.fun.upload_to_NDI_cloud(S, EMAIL, PASSWORD)
+% [B,MSG] = ndi.database.fun.upload_to_NDI_cloud(S, AUTH_TOKEN, DATASET_ID, VARARGIN)
 %
 % Inputs:
 %   S - an ndi.session object
-%   TOKEN - an upload token for NDI Cloud
+%   AUTH_TOKEN - an upload token for NDI Cloud
+%   DATASET_ID - the dataset id for the NDI Cloud
 %
 % Outputs:
 %   B - did the upload work? 0 for no, 1 for yes
@@ -22,9 +23,6 @@ did.datastructures.assign(varargin{:});
 
 if verbose, disp(['Loading documents...']); end;
 d = S.database_search(ndi.query('','isa','base'));
-
-if verbose, disp(['Logging in...']); end;
-[status, auth_token, organization_id] = ndi.cloud.auth.login(email, password);
 
 if verbose, disp(['Working on documents...']); end;
 
@@ -104,7 +102,6 @@ for i=1:numel(document_indexes_to_upload),
 
     
 
-   
         % use whatever upload command is necessary
         % or, check to see if the file is already there?
 end
