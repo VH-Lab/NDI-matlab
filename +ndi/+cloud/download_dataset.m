@@ -1,4 +1,4 @@
-function [b,msg] = download_dataset(email, password, dataset_id, output_path)
+function [b,msg, S] = download_dataset(email, password, dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
 % [B, MSG] = ndi.cloud.download_dataset(EMAIL, PASSWORD, DATASET_ID, OUTPUT_PATH)
@@ -35,38 +35,18 @@ if status
     error(msg);
 end
 
-d = dataset.documents;
-
-[status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
-session_id = document.base.id;  
-
 %%Construct a new ndi.session
 if ~isfolder(output_path)
     mkdir(output_path);
 end
 
-%Check if folder already exists
-if ~isfolder([output_path filesep '.ndi'])
-    mkdir([output_path filesep '.ndi']);
-end
-%%create a txt file with the session id
-%check if file exist
-if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
-    fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
-    fprintf(fid, '%s', session_id);
-    fclose(fid);
+if ~isfolder([output_path filesep 'download' filesep 'files'])
+    mkdir([output_path filesep 'download' filesep 'files']);
 end
 
-if ~isfolder([output_path filesep '.ndi' filesep 'json'])
-    mkdir([output_path filesep '.ndi' filesep 'json']);
+if ~isfolder([output_path filesep 'download' filesep 'json'])
+    mkdir([output_path filesep 'download' filesep 'json']);
 end
-
-if ~isfolder([output_path filesep '.ndi' filesep 'files'])
-    mkdir([output_path filesep '.ndi' filesep 'files']);
-end
-
-S = ndi.session.dir(output_path);
-if verbose, disp(['Created new session ' S.identifier ' in ' output_path]); end
 
 %%download the files
 files = dataset.files;
@@ -84,7 +64,7 @@ for i = 1:numel(files)
         disp('not uploaded to the cloud. Skipping...')
         continue;
     end
-    file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
+    file_path = [output_path filesep 'download' filesep 'files' filesep file_uid];
     if isfile(file_path)
         if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
         continue;
@@ -98,13 +78,12 @@ end
 if verbose, disp(['File Downloading complete.']); end
 
 if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
-
-all_documents = {};
+d = dataset.documents;
 
 for i = 1:numel(d)
     if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
     document_id = d{i};
-    json_file_path = [output_path filesep '.ndi' filesep 'json' filesep document_id '.json'];
+    json_file_path = [output_path filesep 'download' filesep 'json' filesep document_id '.json'];
     if isfile(json_file_path)
         if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
         continue;
@@ -120,11 +99,56 @@ for i = 1:numel(d)
 
     document = rmfield(document, 'id');
 
-    document_obj = ndi.document(document.document_properties);
+    document_obj = ndi.document(document);
     %save the document in .json file
     fid = fopen(json_file_path, 'w');
     fprintf(fid, '%s', did.datastructures.jsonencodenan(document_obj));
     fclose(fid);
+end
+
+%Check if folder already exists
+if ~isfolder([output_path filesep '.ndi'])
+    mkdir([output_path filesep '.ndi']);
+end
+
+if ~isfolder([output_path filesep '.ndi' filesep 'json'])
+    mkdir([output_path filesep '.ndi' filesep 'json']);
+end
+
+if ~isfolder([output_path filesep '.ndi' filesep 'files'])
+    mkdir([output_path filesep '.ndi' filesep 'files']);
+end
+
+[status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
+session_id = document.base.id;
+%%create a txt file with the session id
+%check if file exist
+if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
+    fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
+    fprintf(fid, '%s', session_id);
+    fclose(fid);
+end
+
+S = ndi.session.dir(output_path);
+if verbose, disp(['Created new session ' S.identifier ' in ' output_path]); end
+
+all_documents = {};
+%open all the json files and add them to the session
+json_files = dir([output_path filesep 'download' filesep 'json' filesep '*.json']);
+
+
+d_ids = containers.Map;
+
+for i = 1:numel(json_files)
+    json_file_path = [output_path filesep 'download' filesep 'json' filesep json_files(i).name];
+    jsonString = fileread(json_file_path);
+    document = jsondecode(jsonString);
+    document_obj = ndi.document(document.document_properties);
+
+    id = document_obj.document_properties.base.id;
+    if isKey(d_ids, id)
+        disp('Element is already in the set.');
+    end
 
     if isfield(document, 'files')
         for j = 1:numel(document.files)
@@ -133,24 +157,15 @@ for i = 1:numel(d)
             if ~uploaded
                 continue;
             end
-            file_path = [output_path filesep '.ndi' filesep 'files' filesep file_uid];
+            file_path = [output_path filesep 'download' filesep 'files' filesep file_uid];
             file_name = document.files.file_list(j);
-            document = document.add_file(file_name, file_path);
+            document_obj = document_obj.add_file(file_name, file_path);
         end
-    end
-    all_documents{i} = document_obj;
-    
+    end    
+    all_documents{end+1} = document_obj;
 end
-for i = 1:numel(all_documents)
-    exist = S.database_search( ndi.query('base.id', 'exact_string', document_obj.document_properties.base.id) );
-    if numel(exist) == 0
-        S = S.database_add(document_obj);
-    else
-        disp(['Document ' document_obj.document_properties.base.id ' already exists in the database. Skipping...'])
-    end
-end
-
-
+if verbose, disp(['Add documents and files to session: ' S.identifier]); end
+S = S.database_add(all_documents);
 
 end
 

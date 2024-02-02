@@ -1,4 +1,4 @@
-function [b, msg, document_id_with_files] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin)
+function [b, msg] = upload_to_NDI_cloud(S, email, password, dataset_id, varargin)
 % UPLOAD_TO_NDI_CLOUD - upload an NDI database to NDI Cloud
 %
 % [B,MSG] = ndi.database.fun.upload_to_NDI_cloud(S, EMAIL, PASSWORD)
@@ -14,7 +14,6 @@ function [b, msg, document_id_with_files] = upload_to_NDI_cloud(S, email, passwo
 
 % Step 1: find all the documents
 
-document_id_with_files = {};
 doc_i = 1;
 verbose = 1;
 
@@ -75,7 +74,6 @@ for i=1:numel(document_indexes_to_upload),
     ndi_doc_id = d{index}.document_properties.base.id;
 
     if isfield(d{index}.document_properties, 'files'),
-        document_id_with_files{doc_i} = response_doc;
         doc_i = doc_i + 1;
         for f = 1:numel(d{index}.document_properties.files.file_list)
             file_name = d{index}.document_properties.files.file_list{f};
