@@ -80,7 +80,8 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
 			%  CHANNELTYPE is a cell array of strings describing the the type(s) of channel(s) to read
-			%  ('event','marker', etc)
+			%  ('event','marker', etc). If CHANNELTYPE is a string, it is
+            %  assumed to apply to all channels.
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
@@ -92,6 +93,10 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			%  
 				timestamps = {};
 				data = {};
+
+                if ~iscell(channeltype),
+                    channeltype = repmat({channeltype},numel(channel),1);
+                end;
 
 				pathname = {};
 				fname = {};

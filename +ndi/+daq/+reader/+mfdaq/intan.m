@@ -37,7 +37,6 @@ classdef intan < ndi.daq.reader.mfdaq
 		% 'type'             | The type of data stored in the channel
 		%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
 		%
-
 			channels = vlt.data.emptystruct('name','type');
 
 			intan_channel_types = {
@@ -120,97 +119,105 @@ classdef intan < ndi.daq.reader.mfdaq
 			end
 		end % filenamefromepoch
 
+			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
 		function data = readchannels_epochsamples(ndi_daqreader_mfdaq_intan_obj, channeltype, channel, epochfiles, s0, s1)
-		%  FUNCTION READ_CHANNELS - read the data based on specified channels
-		%
-		%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
-		%
-		%  CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
-		%
-		%  CHANNEL is a vector of the channel numbers to read, beginning from 1
-		%
-		%  EPOCH is set of epoch files
-		%
-		%  DATA is the channel data (each column contains data from an indvidual channel) 
-		%
-			[filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+			%  FUNCTION READ_CHANNELS - read the data based on specified channels
+			%
+			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
+			%
+			%  CHANNELTYPE is the type of channel to read (cell array of strings, one per
+			%     channel, or single string for all channels)
+			%
+			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
+			%
+			%  EPOCH is set of epoch files
+			%
+			%  DATA is the channel data (each column contains data from an indvidual channel) 
+			%
+				[filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
 
-			uniquechannel = unique(channeltype);
-			if numel(uniquechannel)~=1,
-				error(['Only one type of channel may be read per function call at present.']);
-			end
-			intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
-
-			sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epochfiles, channeltype, channel);
-			sr_unique = unique(sr); % get all sample rates
-			if numel(sr_unique)~=1,
-				error(['Do not know how to handle different sampling rates across channels.']);
-			end;
-
-			sr = sr_unique;
-
-			t0 = (s0-1)/sr;
-			t1 = (s1-1)/sr;
-            
-			if strcmp(intanchanneltype,'time'),
-				channel = 1; % time only has 1 channel in Intan RHD
-			end;
-
-			is_digital = 0;
-			if strcmp(intanchanneltype,'din'),
-				is_digital = 1;
-				alt_channel = channel;
-				channel = 1;
-			end;
-
-			if strcmp(intanchanneltype,'dout'),
-				is_digital = 1;
-				alt_channel = channel;
-				channel = 1;
-			end;
-            
-			if ~isdirectory,
-				data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
-			else,
-				data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
-			end;
-
-			if is_digital,
-				digital_data = int2bit(data', 8, 0)';
-				if size(digital_data,2)<16, % make sure our output is 16 bits wide
-					digital_data = [digital_data zeros(size(digital_data,1),8) ];
+				if ~iscell(channeltype),
+					channeltype = repmat({channeltype},numel(channel),1);
 				end;
-				data = digital_data(:,alt_channel);
-			end;
+				uniquechannel = unique(channeltype);
+				if numel(uniquechannel)~=1,
+					error(['Only one type of channel may be read per function call at present.']);
+				end
+				intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
+
+				sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epochfiles, channeltype, channel);
+				sr_unique = unique(sr); % get all sample rates
+				if numel(sr_unique)~=1,
+					error(['Do not know how to handle different sampling rates across channels.']);
+				end;
+
+				sr = sr_unique;
+
+				t0 = (s0-1)/sr;
+				t1 = (s1-1)/sr;
+		    
+				if strcmp(intanchanneltype,'time'),
+					channel = 1; % time only has 1 channel in Intan RHD
+				end;
+
+				is_digital = 0;
+				if strcmp(intanchanneltype,'din'),
+					is_digital = 1;
+					alt_channel = channel;
+					channel = 1;
+				end;
+
+				if strcmp(intanchanneltype,'dout'),
+					is_digital = 1;
+					alt_channel = channel;
+					channel = 1;
+				end;
+		    
+				if ~isdirectory,
+					data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
+				else,
+					data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
+				end;
+
+				if is_digital,
+					digital_data = int2bit(data', 8, 0)';
+					if size(digital_data,2)<16, % make sure our output is 16 bits wide
+						digital_data = [digital_data zeros(size(digital_data,1),8) ];
+					end;
+					data = digital_data(:,alt_channel);
+				end;
 
 		end % readchannels_epochsamples
 
                 function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
-                        % UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
-                        %
-                        % [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
-                        %
-                        % Return the underlying datatype for the requested channel.
-                        %
-                        % DATATYPE is a type that is suitable for passing to FREAD or FWRITE
-                        %  (e.g., 'float64', 'uint16', etc. See help fread.)
-                        %
-                        % P is a polynomial that converts between the double data that is returned by
-                        % READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
-                        %
-                        % DATASIZE is the sample size in bits.
-                        %                                       
-                        % CHANNELTYPE must be a string. It is assumed that
-                        % that CHANNELTYPE applies to every entry of CHANNEL.
-                        %                                       
-
+			% UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
+			%
+			% [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
+			%
+			% Return the underlying datatype for the requested channel.
+			%
+			% DATATYPE is a type that is suitable for passing to FREAD or FWRITE
+			%  (e.g., 'float64', 'uint16', etc. See help fread.)
+			%
+			% P is a polynomial that converts between the double data that is returned by
+			% READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
+			%
+			% DATASIZE is the sample size in bits.
+			%                                       
+			% CHANNELTYPE must be a string. It is assumed that
+			% that CHANNELTYPE applies to every entry of CHANNEL.
+			%                                       
 				switch(channeltype),            
-					case {'analog_in','analog_out','auxiliary_in'},
+					case {'analog_in','analog_out'},
 						% For the abstract class, keep the data in doubles. This will always work but may not
 						% allow for optimal compression if not overridden
 						datatype = 'uint16';
 						datasize = 16;
 						p = [32768 0.195];
+					case {'auxiliary_in'}
+						datatype = 'uint16';
+						datasize = 16;
+						p = [0 3.7400e-05];
 					case {'time'},
 						datatype = 'float64';
 						datasize = 64;

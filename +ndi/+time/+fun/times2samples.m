@@ -11,8 +11,8 @@ function s = times2samples(t,t0_t1,sr)
 
 s = 1 + round( (t-t0_t1(1))*sr);
 
-g = (isinf(times) & t<0);
+g = (isinf(t) & t<0);
 s(g) = 1;
-g = (isinf(times) & t>0);
+g = (isinf(t) & t>0);
 s(g) = 1+sr*diff(t0_t1);
 

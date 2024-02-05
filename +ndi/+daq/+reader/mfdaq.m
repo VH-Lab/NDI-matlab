@@ -139,7 +139,8 @@ classdef mfdaq < ndi.daq.reader
 			%  DATA = READ_CHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, ...
 			%    EPOCHFILES, S0, S1)
 			%
-			%  CHANNELTYPE is the type of channel to read
+			%  CHANNELTYPE is the type of channel to read. It can either be a single string or a cell
+			%    array with one entry per channel.
 			%
 			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 			%
@@ -190,15 +191,23 @@ classdef mfdaq < ndi.daq.reader
 
 				sr = sr_unique;
 
+				t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
+                absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);
+                absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);
+
 				if isinf(s0) | isinf(s1), % need to figure out actual values if user gave -inf/inf for either value
-					t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
 					if isinf(s0),
-						s0 = ndi.time.fun.times2samples(s0,t0_t1{1},sr);
+						s0 = absolute_beginning;
 					end;
 					if isinf(s1),
-						s1 = ndi.time.fun.times2samples(s1,t0_t1{1},sr);
+						s1 = absolute_end;
 					end;
 				end;
+
+                using_absolute_end = 0;
+                if s1==absolute_end,
+                    using_absolute_end = 1;
+                end;                    
 
 				if s0>s1,
 					error(['sample number s0 must be less than or equal to s1.']);
@@ -217,7 +226,7 @@ classdef mfdaq < ndi.daq.reader
 				data = NaN(s1-s0+1,numel(channel));
 
 				switch(ch_unique{1}),
-					case {'analog_in','analog_out','auxiliary'},
+					case {'analog_in','analog_out','auxiliary_in','auxiliary_out'},
 						samples_segment = d.document_properties.daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment;
 						use_ephys = 1;
 					case {'digital_in','digital_out'},
@@ -264,6 +273,13 @@ classdef mfdaq < ndi.daq.reader
 							data_here = ndi.compress.expand_digital(tname_without_extension);
 						end;
 						delete(tname);
+
+                        if using_absolute_end,
+                            if size(data_here,1)==s1_-s0_+1-1, % if we are short 1 sample at the bitter end, it's okay
+                                s1_ = s1_ - 1; 
+                                disp(['I''ll allow it.'])
+                            end;
+                        end;
 						data((1+count):(count+numel(samples_here)),channel_indexes_in_output{g}) = ...
 							data_here(s0_:s1_,channel_indexes_in_groups{g});
 					end;
@@ -731,7 +747,7 @@ classdef mfdaq < ndi.daq.reader
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
 								t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
 								S0 = 1;
-								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+								S1 = 1+ (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
@@ -757,7 +773,7 @@ classdef mfdaq < ndi.daq.reader
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
 								t0t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
 								S0 = 1;
-								S1 = (t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
+								S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 								s_starts = [S0:sample_digital_segment:S1];
 								for s=1:numel(s_starts),
 									disp(['Working on digital ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);

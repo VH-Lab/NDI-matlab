@@ -210,6 +210,7 @@ classdef syncgraph < ndi.ido
 			%
 			% Note: this does not update the cache
 			% 
+
 				% Step 1: make sure we have the right kind of input object
 				if ~isa(ndi_daqsystem_obj, 'ndi.daq.system'),
 					error(['The input NDI_DAQSYSTEM_OBJ must be of class ndi.daq.system or a subclass.']);
@@ -264,6 +265,11 @@ classdef syncgraph < ndi.ido
 
 					% Step 3.3: now add any connections based on applying rules
 
+					% first load any saved rules
+					% q_savedRules = ndi.query('','isa','saved_syncrule_map') & ...
+					%   ndi.query('base.sessionid','exact_string',ndi_syncgraph_obj.session.id());
+					% savedRules = ndi_syncgraph_obj.session.database_search(q_SavedRules);
+
 				for i=1:oldn,
 					for j=oldn+1:oldn+newn,
 						if i~=j,
@@ -278,15 +284,18 @@ classdef syncgraph < ndi.ido
 								lowcost = Inf;
 								mappinghere = [];
 								for K=1:numel(ndi_syncgraph_obj.rules),
-									[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+									% check here to see if we have a match already saved
+									% [c,m] = ndi.syncgraph.checkingestedrules(savedRules,ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+									% if isempty(c),
+										[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+									%end
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
 									end;
 								end
 								if isempty(mappinghere) & ~isinf(lowcost),
-									disp('this is an error. notify developers. we did not think we could get here.');
-									keyboard;
+									error('this is an error. notify developers. we did not think we could get here.');
 								end;
 								ginfo.G(i_,j_) = lowcost;
 								ginfo.mapping{i_,j_} = mappinghere;
@@ -621,6 +630,22 @@ classdef syncgraph < ndi.ido
 					syncrule_docs{i} = rules_doc{1};
 				end
 		end; % load_all_syncgraph_docs()
+
+		function [c,m] = checkingestedrules(ingested_syncrule_docs, ndi_syncrule_obj, gnode_i, gnode_j);
+			% CHECKINGESTEDRULES - check for a mapping between two nodes in the ingested syncrules
+			%
+			% [C,M] = CHECKINGESTEDRULES(INGESTED_SYNCRULE_DOCS, NDI_SYNCRULE_OBJ, GNODE_I, GNODE_J)
+			%
+			% Check a set of ingested syncrule documents to see if there is any information about
+			% a mapping between graphnodes GNODE_I and GNODE_J.
+			%
+			% If there is, the mapping M with the lowest cost C is returned. Otherwise, C is Inf and
+			% M is empty.
+			%
+				c = Inf;
+				m = [];
+		end;
+
 	end % static methods
 
 end % classdef ndi.time.syncgraph
