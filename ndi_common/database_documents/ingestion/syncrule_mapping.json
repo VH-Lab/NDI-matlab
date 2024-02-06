@@ -1,0 +1,44 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/syncrule_mapping.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/syncrule_mapping_schema.json",
+		"class_name":						"syncrule_mapping",
+		"property_list_name":					"syncrule_mapping",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "syncgraph_id",
+			"value": "" 
+		}
+	],
+	"files": {
+		"file_list": [ ]
+	},    
+	"syncrule_mapping": {
+		"cost":  						0,
+		"mapping":						[1,0],
+		"epochnode_a":	{
+			"epoch_id":					"",
+			"epoch_session_id":				"",
+			"epochprobemap":				"",
+			"epoch_clock":					"",
+			"t0_t1":			                [0,0],
+			"objectname":					"",
+			"objectclass":					""
+		},
+		"epochnode_b":	{
+			"epoch_id":					"",
+			"epoch_session_id":				"",
+			"epochprobemap":				"",
+			"epoch_clock":					"",
+			"t0_t1":			                [0,0],
+			"objectname":					"",
+			"objectclass":					""
+		}
+
+	}
+}
+

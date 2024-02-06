@@ -80,6 +80,7 @@ classdef syncgraph < ndi.ido
 					ndi_syncrule_obj = {ndi_syncrule_obj};
 				end
 
+				did_add = 0;
 				for i=1:numel(ndi_syncrule_obj),
 					if isa(ndi_syncrule_obj{i},'ndi.time.syncrule'),
 						% check for duplication
@@ -91,12 +92,16 @@ classdef syncgraph < ndi.ido
 							end
 						end
 						if match<0,
+							did_add = 1;
 							ndi_syncgraph_obj.rules{end+1} = ndi_syncrule_obj{i};
 						end
 					else,
 						error('Input not of type ndi.time.syncrule.');
 					end
 				end
+				if did_add,
+					ndi_syncgraph_obj.remove_cached_graphinfo();
+				end;
 		end % addrule()
 
 		function ndi_syncgraph_obj = removerule(ndi_syncgraph_obj, index)
@@ -108,6 +113,7 @@ classdef syncgraph < ndi.ido
 			%
 				n = numel(ndi_syncgraph_obj.rules);
 				ndi_syncgraph_obj.rules = ndi_syncgraph_obj.rules(setdiff(1:n),index);
+				ndi_syncgraph_obj.remove_cached_graphinfo();
 
 		end % removerule()
 
@@ -148,12 +154,23 @@ classdef syncgraph < ndi.ido
 			% mapping                | A cell matrix with ndi.time.timemapping objects that describes the
 			%                        |   time mapping among nodes. mapping{i,j} is the mapping between node i and j.
 			% diG                    | The graph data structure in Matlab for G (a 'digraph')
+			% syncRule_IDs           | The document IDs of the syncrules
+			% syncRule_G             | The syncRule graph matrix; if syncRule_G(i,j)==k, then syncRule_IDs{k}
+			%                        |   was used to determine G(i,j) and mapping{i,j}
 			%
 				ginfo.nodes = vlt.data.emptystruct('epoch_id','epoch_session_id','epochprobemap',...
 					'epoch_clock','t0_t1','underlying_epochs','objectname','objectclass');
 				ginfo.G = [];
 				ginfo.mapping = {};
 				ginfo.diG = [];
+				ginfo.syncRuleIDs = {};
+				ginfo.syncRuleG = [];
+
+				% update syncRuleIDs 
+
+				for i=1:numel(ndi_syncgraph_obj.rules),
+					ginfo.syncRuleIDs{i} = ndi_syncgraph_obj.rules{i}.id();
+				end;
 
 				d = ndi_syncgraph_obj.session.daqsystem_load('name','(.*)');
 				if ~iscell(d) & ~isempty(d), d = {d}; end; % make sure we are a cell
@@ -184,6 +201,20 @@ classdef syncgraph < ndi.ido
 				end
 		end % cached_epochtable
 
+		function remove_cached_graphinfo(ndi_syncgraph_obj)
+			% REMOVE_CACHED_GRAPHINFO
+			%
+			% REMOVE_CACHED_GRAPHINFO(NDI_SYNCGRAPH_OBJ)
+			%
+			% Remove the cached graph info. 
+			% 
+			% See also: CACHE_GRAPHINFO, SET_CACHE_GRAPHINFO
+				[cache,key] = getcache(ndi_syncgraph_obj);
+				if ~isempty(cache),
+					cache.remove(key,'syncgraph-hash');
+				end
+		end % remove_cached_graphinfo
+
 		function set_cached_graphinfo(ndi_syncgraph_obj, ginfo)
 			% SET_CACHED_GRAPHINFO
 			%
@@ -200,6 +231,41 @@ classdef syncgraph < ndi.ido
 					cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
 				end
 		end % set_cached_graphinfo
+
+		function d = ingest(ndi_syncgraph_obj)
+			% INGEST - create objects to be ingested to store the latest syncgraph
+			% 
+			% D = INGEST(NDI_SYNCGRAPH_OBJ)
+			%
+			% Create ingestion documents from the current syncrules, devices, and epochs.
+			%
+			% First, this function removes the existing syncgraph and rebuilds it,
+			% in case any epochs have been added since the last run.
+			%
+			% Existing sync mappings will not be overwritten.
+			%
+				mylog = ndi_globals.log;
+                                mylog.msg('system',5,['Recalculating syncgraph...']);
+
+				remove_cached_graphinfo(ndi_syncgraph_obj);
+
+				ginfo = graphinfo(ndi_syncgraph_obj); % this will rebuild the syncgraph
+
+		end; % ingest
+
+		function d = get_ingested(ndi_syncgraph_obj)
+			% GET_INGESTED - get ingested docments for an ndi.syncgraph object
+			%
+			% D = GET_INGESTED(NDI_SYNCGRAPH_OBJ)
+			%
+			% Get current ingested sync mappings.
+			%
+				 q_savedRules = ndi.query('','isa','syncrule_mapping') & ...
+					ndi.query('','depends_on','syncgraph_id',ndi_syncgraph_obj.id());
+				 %  ( ndi.query('syncrule_mapping.epochnode_a.objectname','exact_string',ndi_daqsystem_obj.name) | ...
+				 %    ndi.query('syncrule_mapping.epochnode_b.objectname','exact_string',ndi_daqsystem_obj.name)); 
+				d = ndi_syncgraph_obj.session.database_search(q_savedRules);
+		end; % get_ingested()
 
 		function ginfo = addepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
 			% ADDEPOCH - add an ndi.epoch.epochset to the graph
@@ -246,6 +312,7 @@ classdef syncgraph < ndi.ido
 
 				ginfo.G = [ ginfo.G inf(oldn,newn); inf(newn,oldn) newcost ] ;
 				ginfo.mapping = [ ginfo.mapping cell(oldn,newn) ; cell(newn,oldn) newmapping];
+				ginfo.syncRuleG = [ ginfo.syncRuleG  zeros(oldn,newn); zeros(newn,oldn) zeros(size(newcost)) ];
 				
 					% Step 3.2: add any 'duh' connections ('utc' -> 'utc', etc) based purely on ndi.time.clocktype
 
@@ -266,7 +333,9 @@ classdef syncgraph < ndi.ido
 					% Step 3.3: now add any connections based on applying rules
 
 				% first load any saved rules
+
 				 q_savedRules = ndi.query('','isa','syncrule_mapping') & ...
+					ndi.query('','depends_on','syncgraph_id',ndi_syncgraph_obj.id()) & ...
 				   ( ndi.query('syncrule_mapping.epochnode_a.objectname','exact_string',ndi_daqsystem_obj.name) | ...
 				     ndi.query('syncrule_mapping.epochnode_b.objectname','exact_string',ndi_daqsystem_obj.name)); 
 				savedRules = ndi_syncgraph_obj.session.database_search(q_savedRules);
@@ -284,15 +353,17 @@ classdef syncgraph < ndi.ido
 								end;
 								lowcost = Inf;
 								mappinghere = [];
+								match = 0;
 								for K=1:numel(ndi_syncgraph_obj.rules),
 									% check here to see if we have a match already saved
-									[c,m] = ndi.syncgraph.checkingestedrules(savedRules,ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+									[c,m] = ndi.time.syncgraph.checkingestedrules(savedRules, ginfo.syncRuleIDs{K}, ginfo.nodes(i_), ginfo.nodes(j_));
 									if isempty(c),
 										[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
 									end
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
+										match = K;
 									end;
 								end
 								if isempty(mappinghere) & ~isinf(lowcost),
@@ -300,6 +371,7 @@ classdef syncgraph < ndi.ido
 								end;
 								ginfo.G(i_,j_) = lowcost;
 								ginfo.mapping{i_,j_} = mappinghere;
+								ginfo.syncRuleG(i_,j_) = K;
 							end
 						end
 					end
@@ -591,8 +663,6 @@ classdef syncgraph < ndi.ido
 				sq = ndi.query({'base.id', ndi_syncgraph_obj.id() , ...
 					'base.session_id', ndi_syncgraph_obj.session.id() });
 		end; % searchquery()
-
-
 	end % methods
 
 	methods (Static)
@@ -632,7 +702,7 @@ classdef syncgraph < ndi.ido
 				end
 		end; % load_all_syncgraph_docs()
 
-		function [c,m] = checkingestedrules(ingested_syncrule_docs, ndi_syncrule_obj, gnode_i, gnode_j);
+		function [c,m] = checkingestedrules(ingested_syncrule_docs, ndi_syncrule_obj_id, gnode_i, gnode_j);
 			% CHECKINGESTEDRULES - check for a mapping between two nodes in the ingested syncrules
 			%
 			% [C,M] = CHECKINGESTEDRULES(INGESTED_SYNCRULE_DOCS, NDI_SYNCRULE_OBJ, GNODE_I, GNODE_J)
@@ -649,6 +719,8 @@ classdef syncgraph < ndi.ido
 				m = {};
 
 				for i=1:numel(ingested_syncrule_docs),
+					test = strcmp(ingested_syncrule_docs.dependency_value('syncrule_id'), ndi_syncrule_obj_id);
+					if ~test, continue; end;
 					test = strcmp(gnode_i.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_id);
 					if ~test, continue; end;
 					test = strcmp(gnode_i.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id);

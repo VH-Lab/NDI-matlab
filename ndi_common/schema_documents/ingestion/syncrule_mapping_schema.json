@@ -1,0 +1,43 @@
+{
+	"classname": "daqreader_epochdata_ingested",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "syncgraph_id", "mustbenotempty": 1},
+		{ "name": "syncrule_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"syncrule_mapping": [
+		{
+			"name": "cost",
+			"type": "double",
+			"default_value": 0,
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The cost of making the mapping from epochnode a to b"
+		},
+		{
+			"name": "mapping",
+			"type": "array",
+			"default_value": [1,0],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The mapping (coefficients of a polynomial, high exponents first)"
+		},
+		{
+			"name": "epochnode_a",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure describing the epochnode a"
+		},
+		{
+			"name": "epochnode_b",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure describing the epochnode b"
+		}
+	]
+}
