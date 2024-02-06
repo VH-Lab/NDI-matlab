@@ -22,30 +22,30 @@ classdef syncgraph < ndi.ido
 			% where NDI_DOCUMENT_OBJ is an ndi.document of class syncgraph.
 			%
 			
-			%need to be tested after ndi.time.syncrule creator is done
-			if nargin == 2 && isa(varargin{1},'ndi.session') && isa(varargin{2}, 'ndi.document')
-				ndi_syncgraph_obj.session = varargin{1};
-				[syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
-				ndi_syncgraph_obj.identifier = varargin{2}.id();
-				for i=1:numel(syncrule_doc),
-					ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
-				end;
-            		else,
-				session = [];
+				%need to be tested after ndi.time.syncrule creator is done
+				if nargin == 2 && isa(varargin{1},'ndi.session') && isa(varargin{2}, 'ndi.document')
+					ndi_syncgraph_obj.session = varargin{1};
+					[syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
+					ndi_syncgraph_obj.identifier = varargin{2}.id();
+					for i=1:numel(syncrule_doc),
+						ndi_syncgraph_obj = ndi_syncgraph_obj.addrule(ndi.database.fun.ndi_document2ndi_object(syncrule_doc{i},varargin{1}));
+					end;
+				else,
+					session = [];
 
-				if nargin>0,
-					session = varargin{1};
-				end;
-	
-				ndi_syncgraph_obj.session = session;
+					if nargin>0,
+						session = varargin{1};
+					end;
+		
+					ndi_syncgraph_obj.session = session;
 
-				if nargin>=2,
-					if strcmp(lower(varargin{2}),lower('OpenFile')),
-						error(['Load from file no longer supported.']);
-						ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
+					if nargin>=2,
+						if strcmp(lower(varargin{2}),lower('OpenFile')),
+							error(['Load from file no longer supported.']);
+							ndi_syncgraph_obj = ndi_syncgraph_obj.readobjectfile(varargin{1});
+						end;
 					end;
 				end;
-			end;
 		end % ndi.time.syncgraph
 
 		function b = eq(ndi_syncgraph_obj1, ndi_syncgraph_obj2)
@@ -265,10 +265,11 @@ classdef syncgraph < ndi.ido
 
 					% Step 3.3: now add any connections based on applying rules
 
-					% first load any saved rules
-					% q_savedRules = ndi.query('','isa','saved_syncrule_map') & ...
-					%   ndi.query('base.sessionid','exact_string',ndi_syncgraph_obj.session.id());
-					% savedRules = ndi_syncgraph_obj.session.database_search(q_SavedRules);
+				% first load any saved rules
+				 q_savedRules = ndi.query('','isa','syncrule_mapping') & ...
+				   ( ndi.query('syncrule_mapping.epochnode_a.objectname','exact_string',ndi_daqsystem_obj.name) | ...
+				     ndi.query('syncrule_mapping.epochnode_b.objectname','exact_string',ndi_daqsystem_obj.name)); 
+				savedRules = ndi_syncgraph_obj.session.database_search(q_savedRules);
 
 				for i=1:oldn,
 					for j=oldn+1:oldn+newn,
@@ -285,10 +286,10 @@ classdef syncgraph < ndi.ido
 								mappinghere = [];
 								for K=1:numel(ndi_syncgraph_obj.rules),
 									% check here to see if we have a match already saved
-									% [c,m] = ndi.syncgraph.checkingestedrules(savedRules,ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
-									% if isempty(c),
+									[c,m] = ndi.syncgraph.checkingestedrules(savedRules,ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
+									if isempty(c),
 										[c,m] = apply(ndi_syncgraph_obj.rules{K}, ginfo.nodes(i_), ginfo.nodes(j_));
-									%end
+									end
 									if c<lowcost,
 										lowcost = c;
 										mappinghere = m;
@@ -642,8 +643,37 @@ classdef syncgraph < ndi.ido
 			% If there is, the mapping M with the lowest cost C is returned. Otherwise, C is Inf and
 			% M is empty.
 			%
-				c = Inf;
-				m = [];
+
+				matches = [];
+				c = [];
+				m = {};
+
+				for i=1:numel(ingested_syncrule_docs),
+					test = strcmp(gnode_i.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_id);
+					if ~test, continue; end;
+					test = strcmp(gnode_i.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id);
+					if ~test, continue; end;
+					test = strcmp(gnode_i.epochclock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_clock);
+					if ~test, continue; end;
+					test = strcmp(gnode_j.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_id);
+					if ~test, continue; end;
+					test = strcmp(gnode_j.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_session_id);
+					if ~test, continue; end;
+					test = strcmp(gnode_j.epochclock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_clock);
+					if ~test, continue; end;
+
+					matches(end+1) = i;
+					c(i) = ingested_syncrule_docs{i}.document_properties.synrule_mapping.cost;
+					m{i} = ingested_syncrule_docs{i}.document_properties.synrule_mapping.mapping;
+
+				end;
+				if isempty(c),
+					m = [];
+				else,
+					[min_c,min_c_loc] = min(c);
+					c = min_c;
+					m = ndi.time.timemapping(m{min_c_loc});
+				end;
 		end;
 
 	end % static methods
