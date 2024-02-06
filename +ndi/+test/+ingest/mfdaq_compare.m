@@ -60,7 +60,6 @@ for i=1:numel(et1),
 			D2 = daq2.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
 			if ~isequal(D1,D2),
 				errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
-				keyboard
 			end;
 		end;
 	end;
@@ -68,6 +67,7 @@ for i=1:numel(et1),
 	% non-continuous
 
 	for j=1:numel(event_types),
+		disp(['Examining ' event_types{j} '.']);
 		channels_entries = find(strcmp(event_types{j},{c1.type}));
 		if ~isempty(channels_entries),
 			channels_here = [];
@@ -80,7 +80,6 @@ for i=1:numel(et1),
 			[T2,D2] = daq2.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
 			if ~isequal(T1,T2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in time.'];
-				return;
 			end;
 			if ~isequal(D1,D2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in codes/text.'];

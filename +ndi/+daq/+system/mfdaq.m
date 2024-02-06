@@ -166,6 +166,10 @@ classdef mfdaq < ndi.daq.system
 
 				%error('this function presently does not work, needs to know how to get to session');
 
+				if t1<t0,
+					error(['t0 must be <= t1']);
+				end;
+
 				if isa(timeref_or_epoch,'ndi.time.timereference'),
 					exp = ndi_daqsystem_mfdaq_obj.session;
 					[t0,epoch0_timeref] = exp.syncgraph.timeconvert(timeref_or_epoch,t0,...

@@ -170,6 +170,8 @@ classdef mfdaq < ndi.daq.reader
 			%  DATA will have one column per channel.
 			%
 
+				ndi.globals;
+				mylog = ndi_globals.log;
 				d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
 
 				if ~iscell(channeltype),
@@ -192,8 +194,8 @@ classdef mfdaq < ndi.daq.reader
 				sr = sr_unique;
 
 				t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1_ingested(epochfiles,S);
-                absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);
-                absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);
+				absolute_beginning = ndi.time.fun.times2samples(t0_t1{1}(1),t0_t1{1},sr);
+				absolute_end = ndi.time.fun.times2samples(t0_t1{1}(2),t0_t1{1},sr);
 
 				if isinf(s0) | isinf(s1), % need to figure out actual values if user gave -inf/inf for either value
 					if isinf(s0),
@@ -204,10 +206,10 @@ classdef mfdaq < ndi.daq.reader
 					end;
 				end;
 
-                using_absolute_end = 0;
-                if s1==absolute_end,
-                    using_absolute_end = 1;
-                end;                    
+				using_absolute_end = 0;
+				if s1==absolute_end,
+					using_absolute_end = 1;
+				end;                    
 
 				if s0>s1,
 					error(['sample number s0 must be less than or equal to s1.']);
@@ -274,16 +276,21 @@ classdef mfdaq < ndi.daq.reader
 						end;
 						delete(tname);
 
-                        if using_absolute_end,
-                            if size(data_here,1)==s1_-s0_+1-1, % if we are short 1 sample at the bitter end, it's okay
-                                s1_ = s1_ - 1; 
-                                disp(['I''ll allow it.'])
-                            end;
-                        end;
+						if using_absolute_end&seg==SEG_stop,
+							% we should read from 1 ... s1_ and get at least s1_ samples.
+							if size(data_here,1)==s1_-1, % if we are short 1 sample at the bitter end, it's okay
+								s1_ = s1_ - 1; % drop the last sample
+								samples_here(end) = []; % drop the last sample
+								data(end,:) = []; % drop the last sample
+								mylog.msg('debug',5,['ndi.daq.reader.mfdaq.readchannels_epochsamples_ingested dropping a sample; can happen if reading from a channel that is sampled at a different rate than the rate that determines the time...']);
+							elseif size(data_here,1)<s1_-1, % if we are more than 1 sample short, complain
+								error(['I''m confused; data does not have the size I expect']);
+							end;
+						end;
 						data((1+count):(count+numel(samples_here)),channel_indexes_in_output{g}) = ...
 							data_here(s0_:s1_,channel_indexes_in_groups{g});
 					end;
-					count = count + numel(samples_here)
+					count = count + numel(samples_here);
 				end;
 				data = (data - mypoly(1))*mypoly(2);
 

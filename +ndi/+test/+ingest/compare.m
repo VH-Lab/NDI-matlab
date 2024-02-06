@@ -34,6 +34,13 @@ end;
 
  % assume same daq systems
 
-num_tests = 5;
-
+for i=1:numel(ts(1).ds_list),
+	daq1 = ts(1).ds_list{i};
+	daq2 = ts(2).ds_list{i};
+	[b,errmsg] = ndi.test.ingest.mfdaq_compare(daq1,daq2);
+	if any(~b),
+		errmsg(:),
+		error(['Daqs ' daq1.name ' and ' daq2.name ' do not match.']);
+	end;
+end;
 
