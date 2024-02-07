@@ -244,12 +244,80 @@ classdef syncgraph < ndi.ido
 			%
 			% Existing sync mappings will not be overwritten.
 			%
+				d = {};
+				ndi.globals();
 				mylog = ndi_globals.log;
                                 mylog.msg('system',5,['Recalculating syncgraph...']);
 
+				epoch_node_fields = {'epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','objectname','objectclass'};
+
 				remove_cached_graphinfo(ndi_syncgraph_obj);
 
+				syncgraph_id = ndi_syncgraph_obj.id();
+
 				ginfo = graphinfo(ndi_syncgraph_obj); % this will rebuild the syncgraph
+
+				d_i = ndi_syncgraph_obj.get_ingested();
+
+				[I,J] = find(ginfo.syncRuleG);
+				for i=1:numel(I),
+					% check for match in saved list
+					match = 0;
+					for k=1:numel(d_i),
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_id,...
+							ginfo.nodes(I(i)).epoch_id);
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_id,...
+							ginfo.nodes(J(i)).epoch_id);
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_clock,...
+							ginfo.nodes(I(i)).epoch_clock.ndi_clocktype2char());
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_clock,...
+							ginfo.nodes(J(i)).epoch_clock.ndi_clocktype2char());
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.objectname,...
+							ginfo.nodes(I(i)).objectname);
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.objectname,...
+							ginfo.nodes(J(i)).objectname);
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id,...
+							ginfo.nodes(I(i)).epoch_session_id);
+						if ~test, continue; end;
+						test = strcmp(d_i{k}.document_properties.syncrule_mapping.epochnode_b.epoch_session_id,...
+							ginfo.nodes(J(i)).epoch_session_id);
+						if ~test, continue; end;
+						% if we are still here, we match
+						match = k;
+						disp(['We matched!']);
+					end;
+
+					if match==0, % we don't have it already saved
+						sync_mapping_struct = [];
+						sync_mapping_struct.cost = ginfo.G(I(i),J(i));
+						sync_mapping_struct.mapping = ginfo.mapping{I(i),J(i)}.mapping;
+						sync_mapping_struct.epochnode_a = [];
+						sync_mapping_struct.epochnode_b = [];
+						for f=1:numel(epoch_node_fields),
+							sync_mapping_struct.epochnode_a = ...
+								setfield(sync_mapping_struct.epochnode_a,...
+								epoch_node_fields{f},...
+								getfield(ginfo.nodes(I(i)),epoch_node_fields{f}));
+							sync_mapping_struct.epochnode_b = ...
+								setfield(sync_mapping_struct.epochnode_b,...
+								epoch_node_fields{f},...
+								getfield(ginfo.nodes(J(i)),epoch_node_fields{f}));
+						end;
+						sync_mapping_struct.epochnode_a.epochprobemap = sync_mapping_struct.epochnode_a.epochprobemap.serialize();
+						sync_mapping_struct.epochnode_b.epochprobemap = sync_mapping_struct.epochnode_b.epochprobemap.serialize();
+						sync_mapping_struct.epochnode_a.epoch_clock = sync_mapping_struct.epochnode_a.epoch_clock.ndi_clocktype2char();
+						sync_mapping_struct.epochnode_b.epoch_clock = sync_mapping_struct.epochnode_b.epoch_clock.ndi_clocktype2char();
+						d{end+1} = ndi.document('syncrule_mapping','syncrule_mapping',sync_mapping_struct);
+						d{end} = d{end}.set_dependency_value('syncgraph_id',syncgraph_id);
+						d{end} = d{end}.set_dependency_value('syncrule_id',ginfo.syncRuleIDs{ginfo.syncRuleG(I(i),J(i))});
+					end;
+				end;
 
 		end; % ingest
 
@@ -371,7 +439,9 @@ classdef syncgraph < ndi.ido
 								end;
 								ginfo.G(i_,j_) = lowcost;
 								ginfo.mapping{i_,j_} = mappinghere;
-								ginfo.syncRuleG(i_,j_) = K;
+								if match,
+									ginfo.syncRuleG(i_,j_) = K;
+								end;
 							end
 						end
 					end
@@ -478,6 +548,7 @@ classdef syncgraph < ndi.ido
 				ginfo.G = ginfo.G(keep,keep);
 				ginfo.mapping = ginfo.mapping(keep,keep);
 				ginfo.nodes = ginfo.nodes(keep);
+				ginfo.syncRuleG = ginfo.syncRuleG(keep,keep);
 				
 				Gtable = ginfo.G;
 				Gtable(find(isinf(Gtable))) = 0;

@@ -1,5 +1,5 @@
 {
-	"classname": "daqreader_epochdata_ingested",
+	"classname": "syncrule_mapping",
 	"superclasses":  [ "base"],
 	"depends_on": [
 		{ "name": "syncgraph_id", "mustbenotempty": 1},
@@ -11,17 +11,17 @@
 			"name": "cost",
 			"type": "double",
 			"default_value": 0,
-			"parameters": "",
+			"parameters": [0,300000,0,0],
 			"queryable": 1,
 			"documentation": "The cost of making the mapping from epochnode a to b"
 		},
 		{
 			"name": "mapping",
-			"type": "array",
+			"type": "matrix",
 			"default_value": [1,0],
-			"parameters": "",
+			"parameters": [1,NaN],
 			"queryable": 1,
-			"documentation": "The mapping (coefficients of a polynomial, high exponents first)"
+			"documentation": "The mapping ([1xN] coefficients of a polynomial, high exponents first)"
 		},
 		{
 			"name": "epochnode_a",

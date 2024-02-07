@@ -631,6 +631,9 @@ classdef mfdaq < ndi.daq.reader
 				sample_analog_segment = 1e6; %(1M)  
 				sample_digital_segment = 1e7; % 10M
 
+				ndi.globals();
+				mylog = ndi_globals.log;
+
 				daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment = sample_analog_segment; 
 				daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = sample_digital_segment; 
 
@@ -758,7 +761,7 @@ classdef mfdaq < ndi.daq.reader
 
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
-									disp(['Working on ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                					mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_analog_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
@@ -783,7 +786,7 @@ classdef mfdaq < ndi.daq.reader
 								S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 								s_starts = [S0:sample_digital_segment:S1];
 								for s=1:numel(s_starts),
-									disp(['Working on digital ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                					mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_digital_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
@@ -810,7 +813,7 @@ classdef mfdaq < ndi.daq.reader
 							case 'time',
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
-									disp(['Working on time ingestion ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+                                					mylog.msg('system',1,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);

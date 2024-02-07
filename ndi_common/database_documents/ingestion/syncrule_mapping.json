@@ -12,6 +12,10 @@
 	"depends_on": [
 		{	"name": "syncgraph_id",
 			"value": "" 
+		},
+		{
+			"name": "syncrule_id",
+			"value": ""
 		}
 	],
 	"files": {
