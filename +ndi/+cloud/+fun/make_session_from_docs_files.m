@@ -33,15 +33,20 @@ for i=1:numel(d),
 
 	if isfield(d_struct,'files'),
 		for j=1:numel(d_struct.files),
-			% Katherine edit: make sure file is local and not web based; if web-based, add the file with a URL
-			%  see `help ndi.document.add_file` for the different possibilities
+			
 			file_uid = d_struct.files.file_info(j).locations(1).uid;
-			file_path = [files_path filesep file_uid]
-			file_name = d_struct.files.file_list(j);
-			if verbose,
+            file_name = d_struct.files.file_list(j);
+            if verbose,
 				disp(['Adding file ' file_name '.']);
 			end;
-			doc_obj = doc_obj.add_file(file_name,file_path);
+            if strcmp(d_struct.files.file_info.locations.location_type,'url') 
+                file_location = d_struct.files.file_list(j);
+                doc_obj = doc_obj.add_file(file_name,file_location, 'location_type', 'url');
+            else 
+                file_location = [files_path filesep file_uid];
+                doc_obj = doc_obj.add_file(file_name,file_location);
+            end
+			
 		end;
 	end;
 
