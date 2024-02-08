@@ -25,7 +25,7 @@ et2 = daq2.epochtable();
 dr2 = daq2.daqreader();
 
 continuous_types = {'analog_in','analog_out','auxiliary_in',...
-	'digital_in','digital_out'};
+	'digital_in','digital_out','time'};
 event_types = {'event','marker','text'};
 
 
@@ -39,7 +39,7 @@ for i=1:numel(et1),
 	[dummy,sortorder2] = sort({c2.name});
 	c1 = c1(sortorder1);
 	c2 = c2(sortorder2);
-	if ~isequal(c1,c2),
+	if ~isequaln(c1,c2),
 		errmsg{end+1} = ['Channel list in ' et1(i).epoch_id ' do not match.'];
 		return;
 	end;
@@ -58,8 +58,25 @@ for i=1:numel(et1),
 			t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
 			D1 = daq1.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
 			D2 = daq2.readchannels(continuous_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
-			if ~isequal(D1,D2),
-				errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
+			if ~strcmp(continuous_types{j},'time'),
+				if ~isequaln(D1,D2),
+					errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
+				end;
+			else,
+				disp('checking time values')
+				passing = 1;
+				if ~isequal(size(D1),size(D2)),
+					passing = 0;
+				else,
+					mx = max(abs(D1(:)-D2(:)));
+					if mx>1e-6,
+						passing = 0;
+					else, disp(['Time matches close enough.']);
+					end;
+				end;
+				if ~passing,
+					errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
+				end;
 			end;
 		end;
 	end;
@@ -78,10 +95,10 @@ for i=1:numel(et1),
 			t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
 			[T1,D1] = daq1.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
 			[T2,D2] = daq2.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
-			if ~isequal(T1,T2),
+			if ~isequaln(T1,T2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in time.'];
 			end;
-			if ~isequal(D1,D2),
+			if ~isequaln(D1,D2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in codes/text.'];
 			end;
 		end;

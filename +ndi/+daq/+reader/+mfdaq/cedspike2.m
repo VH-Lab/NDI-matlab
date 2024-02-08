@@ -37,6 +37,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			% 'name'             | The name of the channel (e.g., 'ai1')
 			% 'type'             | The type of data stored in the channel
 			%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+			% 'time_channel'     | The channel number that has the time information for that channel
 			%
 
 				channels = vlt.data.emptystruct('name','type');
@@ -51,12 +52,13 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				header = read_CED_SOMSMR_header(filename);
 
 				if isempty(header.channelinfo),
-					channels = struct('name','t1','type','time');
+					channels = struct('name','t1','type','time','time_channel',1);
 				end;
 
 				for k=1:length(header.channelinfo),
 					newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
 					newchannel.name = [ ndi.daq.system.mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.time_channel = 1;
 					channels(end+1) = newchannel;
 				end
 		end % getchannels()

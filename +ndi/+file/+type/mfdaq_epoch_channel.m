@@ -78,6 +78,7 @@ classdef mfdaq_epoch_channel
 				digital_in_channels_per_group = 512;
 				digital_out_channels_per_group = 512;
 				eventmarktext_channels_per_group = 100000;
+				time_channels_per_group = 100000;
 
 				analog_in_dataclass = 'ephys';
 				analog_out_dataclass = 'ephys';
@@ -86,13 +87,15 @@ classdef mfdaq_epoch_channel
 				digital_in_dataclass = 'digital';
 				digital_in_dataclass = 'digital';
 				eventmarktext_dataclass = 'eventmarktext';
+				time_dataclass = 'time';
+                
 				
 				did.datastructures.assign(varargin{:});
 
 				[dummy,indexes_sorted] = sort({channel_structure.type});
 				channel_structure = channel_structure(indexes_sorted);
 
-				channel_information = vlt.data.emptystruct('name','type','sample_rate','number','group','dataclass');
+				channel_information = vlt.data.emptystruct('name','type','time_channel','sample_rate','number','group','dataclass');
 
 				types_available = unique({channel_structure.type});
 				index_emt = find( strcmp('event',types_available) | strcmp('marker',types_available) | strcmp('text',types_available) );
@@ -119,6 +122,7 @@ classdef mfdaq_epoch_channel
 						channel_info_here = [];
 						channel_info_here.name = channels_here(j).name;
 						channel_info_here.type = channels_here(j).type;
+						channel_info_here.time_channel = channels_here(j).time_channel;
 						channel_info_here.sample_rate = channels_here(j).sample_rate;
 						[dummy,channel_info_here.number] = ndi.fun.channelname2prefixnumber(channels_here(j).name);
 						channel_info_here.group = 1+floor( channel_info_here.number / channels_per_group);

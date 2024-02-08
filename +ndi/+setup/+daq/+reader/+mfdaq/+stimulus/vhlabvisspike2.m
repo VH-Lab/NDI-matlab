@@ -64,12 +64,12 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			% e2              | vertical refresh trigger
 			% e3              | pretime trigger
 			%
-				channels        = struct('name','mk1','type','marker');  
-				channels(end+1) = struct('name','mk2','type','marker');  
-				channels(end+1) = struct('name','mk3','type','marker');  
-				channels(end+1) = struct('name','e1','type','event');  
-				channels(end+1) = struct('name','e2','type','event');  
-				channels(end+1) = struct('name','e3','type','event');  
+				channels        = struct('name','mk1','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','mk2','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','mk3','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','e1','type','event','time_channel',NaN);  
+				channels(end+1) = struct('name','e2','type','event','time_channel',NaN);  
+				channels(end+1) = struct('name','e3','type','event','time_channel',NaN);  
 		end; % getchannelsepoch()
 
 		function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)

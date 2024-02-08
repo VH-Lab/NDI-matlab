@@ -36,8 +36,12 @@ classdef intan < ndi.daq.reader.mfdaq
 		% 'name'             | The name of the channel (e.g., 'ai1')
 		% 'type'             | The type of data stored in the channel
 		%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+		% 'time_channel'     | The channel number that contains the time information for
+		%                    |    each channel.
 		%
-			channels = vlt.data.emptystruct('name','type');
+			channels.name = 't1';
+			channels.type = 'time';
+			channels.time_channel = 1;
 
 			intan_channel_types = {
 				'amplifier_channels'
@@ -66,6 +70,10 @@ classdef intan < ndi.daq.reader.mfdaq
 							ndi_daqreader_mfdaq_intan_obj,...
 							channel_type_entry,...
 							channel(p).native_channel_name); 
+						newchannel.time_channel = 1;
+						if strcmp(newchannel.type,'auxiliary_in'),
+							newchannel.time_channel = 2;
+						end;
 						channels(end+1) = newchannel;
 					end
 				end

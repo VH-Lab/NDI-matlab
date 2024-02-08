@@ -494,7 +494,8 @@ classdef syncgraph < ndi.ido
 						nodenumbers2_1(nanshere) = numel(ginfo.nodes)+(1:numel(nanshere));
 
 						[newG, G_indexes, numnewnodes] = vlt.graph.mergegraph(ginfo.G, u_cost, nodenumbers2_1);
-							% update mapping cell matrix, too
+						[newSyncRuleG, newSyncRuleG_indexes, numnewnodes] = vlt.graph.mergegraph(ginfo.syncRuleG, 0*u_cost, nodenumbers2_1);
+						newSyncRuleG(isinf(newSyncRuleG)) = 0;
 						mapping_upperright = cell(size(ginfo.G,1), numnewnodes);
 						mapping_upperright(G_indexes.upper_right.merged) = u_mapping(G_indexes.upper_right.G2);
 						mapping_lowerleft = cell(numnewnodes,size(ginfo.G,1));
@@ -504,6 +505,7 @@ classdef syncgraph < ndi.ido
 						ginfo.nodes = cat(2,ginfo.nodes,u_nodes(nanshere));
 						ginfo.G = newG;
 						ginfo.mapping = [ginfo.mapping mapping_upperright ; mapping_lowerleft mapping_lowerright ];
+						ginfo.syncRuleG = newSyncRuleG;
 
 						% developer question: should we bother to check for links that matter?
 						%                     right now, let's check that the first epochnode is connected at all
@@ -786,34 +788,38 @@ classdef syncgraph < ndi.ido
 			%
 
 				matches = [];
-				c = [];
-				m = {};
+				c = Inf*ones(numel(ingested_syncrule_docs),1);
+				m = cell(numel(ingested_syncrule_docs),1);
 
 				for i=1:numel(ingested_syncrule_docs),
-					test = strcmp(ingested_syncrule_docs.dependency_value('syncrule_id'), ndi_syncrule_obj_id);
+					test = strcmp(ingested_syncrule_docs{i}.dependency_value('syncrule_id'), ndi_syncrule_obj_id);
 					if ~test, continue; end;
 					test = strcmp(gnode_i.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_id);
 					if ~test, continue; end;
 					test = strcmp(gnode_i.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_session_id);
 					if ~test, continue; end;
-					test = strcmp(gnode_i.epochclock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_clock);
+					test = strcmp(gnode_i.epoch_clock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.epoch_clock);
 					if ~test, continue; end;
 					test = strcmp(gnode_j.epoch_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_id);
 					if ~test, continue; end;
 					test = strcmp(gnode_j.epoch_session_id,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_session_id);
 					if ~test, continue; end;
-					test = strcmp(gnode_j.epochclock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_clock);
+					test = strcmp(gnode_j.epoch_clock.ndi_clocktype2char(),ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.epoch_clock);
+					if ~test, continue; end;
+					test = strcmp(gnode_i.objectname,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_a.objectname);
+					if ~test, continue; end;
+					test = strcmp(gnode_j.objectname,ingested_syncrule_docs{i}.document_properties.syncrule_mapping.epochnode_b.objectname);
 					if ~test, continue; end;
 
-					matches(end+1) = i;
-					c(i) = ingested_syncrule_docs{i}.document_properties.synrule_mapping.cost;
-					m{i} = ingested_syncrule_docs{i}.document_properties.synrule_mapping.mapping;
+					c(i) = ingested_syncrule_docs{i}.document_properties.syncrule_mapping.cost;
+					m{i} = ingested_syncrule_docs{i}.document_properties.syncrule_mapping.mapping;
 
 				end;
-				if isempty(c),
+
+				[min_c,min_c_loc] = min(c);
+				if isinf(c),
 					m = [];
 				else,
-					[min_c,min_c_loc] = min(c);
 					c = min_c;
 					m = ndi.time.timemapping(m{min_c_loc});
 				end;

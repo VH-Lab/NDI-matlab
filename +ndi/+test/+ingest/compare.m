@@ -20,7 +20,6 @@ if nargin<2,
 	dirname2 = '/Users/vanhoosr/test/2019-11-19';
 end;
 
-
 dirname = {dirname1 dirname2};
 
 ts = vlt.data.emptystruct('S','ds_list');

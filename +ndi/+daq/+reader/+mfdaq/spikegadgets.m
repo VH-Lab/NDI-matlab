@@ -47,12 +47,14 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 							number = sscanf(channels(k).name, 'Ain%d'); 
 							name = strcat('axn',num2str(number));
 							channels(k).number = number;
+							channels(k).time_channel = 1;
 								%Output
 						else
 							channels(k).type = 'auxiliary';
 							number = sscanf(channels(k).name, 'Aout%d'); 
 							name = strcat('axo',num2str(number));
 							channels(k).number = number;
+							channels(k).time_channel = 1;
 						end
 
 					%Digital
@@ -62,11 +64,13 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 							number = sscanf(channels(k).name, 'Din%d'); 
 							name = strcat('di',num2str(number));
 							channels(k).number = number;
+							channels(k).time_channel = 1;
 						else %Output
 							channels(k).type = 'digital_out';
 							number = sscanf(channels(k).name, 'Dout%d');
 							name = strcat('do',num2str(number));
 							channels(k).number = number;
+							channels(k).time_channel = 1;
 						end
 					else	%MCU (digital inputs)
 						channels(k).type = 'digital_in';
@@ -74,6 +78,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 						number = number + 32; % +32 from previous non MCU inputs
 						name = strcat('di',num2str(number));
 						channels(k).number = number;
+						channels(k).time_channel = 1;
 					end
 					channels(k).name = name;
 				end
@@ -85,6 +90,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 						channels(end+1).name = strcat('ai',num2str(channelNumber+1));
 						channels(end).type = 'analog_in';
 						channels(end).number = channelNumber+1;
+						channels(end).time_channel = 1;
 					end
 				end
 

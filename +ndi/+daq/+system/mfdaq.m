@@ -107,8 +107,8 @@ classdef mfdaq < ndi.daq.system
 			% 'name'             | The name of the channel (e.g., 'ai1')
 			% 'type'             | The type of data stored in the channel
 			%                    |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')
-			%
-				channels = struct('name',[],'type',[]);  
+			% 'time_channel'     | The time channel that has timing information for that channel
+				channels = struct('name',[],'type',[],'time_channel',[]);  
 				channels = channels([]);
 
 				N = numepochs(ndi_daqsystem_mfdaq_obj);
@@ -123,6 +123,43 @@ classdef mfdaq < ndi.daq.system
 					end;
 					channels = vlt.data.equnique( [channels(:); channels_here(:)] );
 				end
+		end; % getchannels
+
+		function channels = getchannelsepoch(ndi_daqsystem_mfdaq_obj, epoch)
+			% FUNCTION GETCHANNELSEPOCH - List the channels that are available on this device for an epoch
+			%
+			%  CHANNELS = GETCHANNELSEPOCH(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH)
+			%
+			%  Returns the channel list of acquired channels in this session
+			%  for a given EPOCH (can be epochid or number)
+			%
+			%  The channels are of different types. In the below, 
+			%  'n' is replaced with the channel number.
+			%  Type       | Description
+			%  ------------------------------------------------------
+			%  ain        | Analog input (e.g., ai1 is the first input channel)
+			%  din        | Digital input (e.g., di1 is the first input channel)
+			%  t          | Time - a time channel
+			%  axn        | Auxillary inputs
+			%
+			% CHANNELS is a structure list of all channels with fields:
+			% -------------------------------------------------------
+			% 'name'             | The name of the channel (e.g., 'ai1')
+			% 'type'             | The type of data stored in the channel
+			%                    |    (e.g., 'analog_input', 'digital_input', 'image', 'timestamp')
+			% 'time_channel'     | The time channel that has timing information for that channel
+			%
+				channels = struct('name',[],'type',[],'time_channel',[]);  
+				channels = channels([]);
+
+				epochfiles = getepochfiles(ndi_daqsystem_mfdaq_obj.filenavigator, epoch);
+				if ~ndi.file.navigator.isingested(epochfiles),
+					channels_here = getchannelsepoch(ndi_daqsystem_mfdaq_obj.daqreader, epochfiles);
+				else,
+					channels_here = getchannelsepoch_ingested(ndi_daqsystem_mfdaq_obj.daqreader, ...
+						epochfiles, ndi_daqsystem_mfdaq_obj.session());
+				end;
+				channels = vlt.data.equnique( [channels(:); channels_here(:)] );
 		end; % getchannels
 
 		function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s0, s1)
