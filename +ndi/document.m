@@ -639,7 +639,7 @@ classdef document
 		end; % remove_file
 
 
-		function ndi_document_obj = reset_file_info(did_document_obj)
+        function ndi_document_obj = reset_file_info(ndi_document_obj)
 			% RESET_FILE_INFO - reset the file information parameters for a new did.document
 			%
 			% NDI_DOCUMENT_OBJ = RESET_FILE_INFO(NDI_DOCUMENT_OBJ)
@@ -650,12 +650,12 @@ classdef document
 			%
 				
 				% First, check if we even have file info
-				if ~isfield(did_document_obj.document_properties,'files'), 
+				if ~isfield(ndi_document_obj.document_properties,'files'), 
 					return;
 				end;
 
 				% Now, clear it out:
-				did_document_obj.document_properties.files.file_info = ...
+				ndi_document_obj.document_properties.files.file_info = ...
 					did.datastructures.emptystruct('name','locations');
 
 		end; % reset_file_info()

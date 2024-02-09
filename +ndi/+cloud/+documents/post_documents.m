@@ -45,9 +45,6 @@ cmd = sprintf("curl -X 'POST' '%s' " + ...
 %     "-H 'Content-Type: application/json' " +...
 %     " --data-urlencode %s ", url, auth_token, simple_doc);
 
-
-disp(cmd);
-
 % Run the curl command and capture the output
 [status, output] = system(cmd);
 if exist(file_path, 'file')==2,
