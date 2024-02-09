@@ -13,7 +13,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 	end; % properties
 
 	methods
-		function ndi_element_obj = element(varargin)
+		function [ndi_element_obj,element_doc] = element(varargin)
 			% NDI_ELEMENT_OBJ = ndi.element - creator for ndi.element
 			%
 			% NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
@@ -125,7 +125,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				ndi_element_obj.direct = direct;
 				ndi_element_obj.subject_id = subject_id;
 				ndi_element_obj.dependencies = dependencies;
-				ndi_element_obj.newdocument();
+				element_doc = ndi_element_obj.newdocument();
 		end; % ndi.element()
 
 	% ndi.epoch.epochset-based methods

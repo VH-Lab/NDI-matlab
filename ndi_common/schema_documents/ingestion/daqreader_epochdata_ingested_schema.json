@@ -1,0 +1,18 @@
+{
+	"classname": "daqreader_epochdata_ingested",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "daqreader_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"daqreader_epochdata_ingested": [
+		{
+			"name": "epochtable",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure with properties of the epoch (epochclock, t0_t1)"
+		}
+	]
+}

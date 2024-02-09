@@ -1,7 +1,7 @@
-function response_type = tuning_curve_to_response_type(S, doc)
+function [response_type,stim_response_scalar_doc] = tuning_curve_to_response_type(S, doc)
 % TUNING_CURVE_TO_RESPONSE_TYPE - get the response type ('mean', 'F1', etc) of a tuning curve document
 %
-% RESPONSE_TYPE = ndi.fun.stimulus.tuning_curve_to_response_type(S, DOC)
+% [RESPONSE_TYPE,STIM_RESPONSE_SCALAR_DOC] = ndi.fun.stimulus.tuning_curve_to_response_type(S, DOC)
 %
 % Given an ndi.document object DOC that is either a stimulus_tuningcurve or a 
 % document that has a dependency, 'stimulus_tuningcurve_id', this function
@@ -10,6 +10,7 @@ function response_type = tuning_curve_to_response_type(S, doc)
 %
 
 response_type = '';
+stim_response_scalar_doc = {};
 
 dependency_list_to_check = {'stimulus_response_scalar_id',...
 	'stimulus_tuningcurve_id'};
@@ -26,11 +27,12 @@ for i=1:numel(dependency_list_to_check),
 		end;
 		switch(dependency_action{i}),
 			case 'recursive',
-				response_type = ndi.fun.stimulus.tuning_curve_to_response_type(S,newdoc{1});
+				[response_type,stim_response_scalar_doc] = ndi.fun.stimulus.tuning_curve_to_response_type(S,newdoc{1});
 				return;
 			case 'finish',
 				try,
 					response_type = newdoc{1}.document_properties.stimulus_response_scalar.response_type;
+                    stim_response_scalar_doc = newdoc{1};
 				catch,
 					error(['Could not find field ''response_type'' in document.']);
 				end;

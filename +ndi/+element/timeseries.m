@@ -6,8 +6,8 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 	end % properties
 
 	methods
-		function ndi_element_timeseries_obj = timeseries(varargin)
-			ndi_element_timeseries_obj = ndi_element_timeseries_obj@ndi.element(varargin{:});
+        function [ndi_element_timeseries_obj] = timeseries(varargin)
+			[ndi_element_timeseries_obj] = ndi_element_timeseries_obj@ndi.element(varargin{:});
 		end; % ndi.element.timeseries()
 
 		%%%%% ndi.time.timeseries methods
@@ -58,9 +58,9 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 						ndi.query('','isa','element_epoch','') & ...
 						ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
 					E = ndi_element_timeseries_obj.session;
+
 					epochdoc = E.database_search(sq);
 					if numel(epochdoc)==0,
-                        keyboard
 						error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
 					end;
 					if numel(epochdoc)>1,

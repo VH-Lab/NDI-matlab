@@ -8,18 +8,18 @@ classdef reader < ndi.ido & ndi.documentservice
 	methods
 
 		function obj = reader(varargin)
-		% ndi.daq.reader - create a new ndi.daq.reader object
-		%
-		%  OBJ = ndi.daq.reader()
-		%  
-		%  Creates an ndi.daq.reader. 
-		%
-		%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
-		%    
-		%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
-		%
-		%  ndi.daq.reader is essentially an abstract class, and a specific implementation must be used.
-		%
+			% ndi.daq.reader - create a new ndi.daq.reader object
+			%
+			%  OBJ = ndi.daq.reader()
+			%  
+			%  Creates an ndi.daq.reader. 
+			%
+			%  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
+			%    
+			%  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
+			%
+			%  ndi.daq.reader has mostly abstract methods, it is made to be overriden.
+			%
 			obj = obj@ndi.ido();
 
 			loadfromfile = 0;
@@ -41,6 +41,25 @@ classdef reader < ndi.ido & ndi.documentservice
 			end
 		end % ndi.daq.reader
 
+		function d = getingesteddocument(ndi_daqreader_mfdaq_obj, epochfiles, S)
+			% GETINGESTEDDOCUMENT - return the ndi.document with the data for an ingested epoch
+			%
+			% D = GETINGESTEDDOCUMENT(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, S)
+			%
+			% Returns the document D that contains the ingested ndi.daq.reader.mfdaq data for
+			% the epoch described by EPOCHFILES. EPOCHFILES should be an ingested epoch.
+			% S is the ndi.session for the dataset.
+			%
+				epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+				q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+					ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id()) & ...
+					ndi.query('epochid.epochid','exact_string',epochid);
+				d = S.database_search(q);
+				assert(numel(d)==1,['Found ' int2str(numel(d)) ' documents for ' epochid ', needed exactly 1.']);
+				d = d{1};
+
+		end % getingesteddocument();
+
 		% EPOCHSET functions, although this object is NOT an EPOCHSET object
 
 		function ec = epochclock(ndi_daqreader_obj, epochfiles)
@@ -59,10 +78,28 @@ classdef reader < ndi.ido & ndi.documentservice
 				ec = {ndi.time.clocktype('no_time')};
 		end % epochclock
 
-		function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
-			% EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+		function ec = epochclock_ingested(ndi_daqreader_obj, epochfiles, S)
+			% EPOCHCLOCK_INGESTED - return the ndi.time.clocktype objects for an ingested epoch
 			%
-			% T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
+			% EC = EPOCHCLOCK_INGESTED(NDI_DAQREADER_OBJ, EPOCHFILES, S)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of ndi.time.clocktype objects (or sub-class members).
+			%
+			% See also: ndi.time.clocktype
+			%
+				ec = {};
+				d = ndi_daqreader_obj.getingesteddocument(epochfiles,S);
+				et = d.document_properties.daqreader_epochdata_ingested.epochtable;
+				for i=1:numel(et.epochclock),
+					ec{i} = ndi.time.clocktype(et.epochclock{i});
+				end;
+		end % epochclock_ingested
+
+		function t0t1 = t0_t1(ndi_daqreader_obj, epochfiles)
+			% T0T1 - return the t0_t1 (beginning and end) epoch times for an epoch
+			%
+			% T0T1 = T0_T1(NDI_DAQREADER_OBJ, EPOCH_NUMBER)
 			%
 			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
 			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
@@ -74,13 +111,37 @@ classdef reader < ndi.ido & ndi.documentservice
 				t0t1 = {[NaN NaN]};
 		end % t0t1
 
+		function t0t1 = t0_t1_ingested(ndi_daqreader_obj, epochfiles, S)
+			% T0T1_INGESTED - return the t0_t1 (beginning and end) epoch times for an ingested epoch
+			%
+			% T0T1 = T0_T1_INGESTED(NDI_DAQREADER_OBJ, EPOCH_NUMBER, S)
+			%
+			% Return the beginning (t0) and end (t1) times of the epoch EPOCH_NUMBER
+			% in the same units as the ndi.time.clocktype objects returned by EPOCHCLOCK.
+			%
+			% The abstract class always returns {[NaN NaN]}.
+			%
+			% See also: ndi.time.clocktype, EPOCHCLOCK
+			%
+				d = ndi_daqreader_obj.getingesteddocument(epochfiles, S);
+				et = d.document_properties.daqreader_epochdata_ingested.epochtable;
+				t0t1 = et.t0_t1;
+				if ~iscell(t0t1),
+					t = {};
+					for i=1:size(et.t0_t1),
+						t{i} = t0t1(i,:);
+					end;
+					t0t1 = t;
+				end;
+		end % t0t1
+
 		function [b,msg] = verifyepochprobemap(ndi_daqreader_obj, epochprobemap, epochfiles)
-			% VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
+			% VERIFYEPOCHPROBEMAP - Verifies EPOCHPROBEMAP is compatible with device and data on disk
 			%
-			%   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
+			% B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_OBJ, EPOCHPROBEMAP, NUMBER)
 			%
-			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is valid for the given device
-			% epoch NUMBER.
+			% Examines the ndi.epoch.epochprobemap_daqsystem EPOCHPROBEMAP and determines if it is
+			% valid for the given device epoch NUMBER.
 			%
 			% For the abstract class ndi.daq.reader, EPOCHPROBEMAP is always valid as long as
 			% EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
@@ -102,6 +163,26 @@ classdef reader < ndi.ido & ndi.documentservice
                                         end
                                 end
 		end % verifyepochprobemap
+
+		function d = ingest_epochfiles(ndi_daqreader_obj, epochfiles)
+			% INGEST_EPOCHFILES - create a document that describes data read by an ndi.daq.reader
+			%
+			% D = INGEST_EPOCHFILES(NDI_DAQREADER_OBJ, EPOCHFILES)
+			%
+			% Creates an ndi.document of type 'daqreader_epochdata_ingested' that contains the data
+			% for an ndi.daq.reader object. The document D is not added to any database.
+			%
+			% Example:
+			%    D = mydaqreader.ingest_epochfiles(epochfiles);
+			
+                                daqreader_epochdata_ingested.epochtable.epochclock = ndi_daqreader_mfdaq_obj.epockclock(epochfiles);
+                                daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+
+				d = ndi.document('daqreader_epochdata_ingested',...
+					'daqreader_epochdata_ingested', daqreader_epochdata_ingested);
+				d = d.set_dependency_value('daqreader_id',ndi_daqreader_obj.id());
+
+		end; % ingest_epochfiles()
 
 		function b = eq(ndi_daqreader_obj1, ndi_daqreader_obj2)
 			% EQ - tests whether 2 ndi.daq.reader objects are equal

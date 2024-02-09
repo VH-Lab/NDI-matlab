@@ -1,0 +1,12 @@
+{
+	"classname": "daqmetadatareader_epochdata_ingested",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+		{ "name": "daqmetadatareader_id", "mustbenotempty": 1}
+	],
+	"file": [
+		{ "name": "data.bin", "mustbenotempty": 1}
+	],
+	"daqmetadatareader_epochdata_ingested": [
+	]
+}
