@@ -25,7 +25,7 @@ S = ndi_session_obj; % shorten the name so it's easier to work with
 
  % Step 0:
 
-refNum = ndi.fun.pseudorandomint();
+refNum = 20000+randi(1000); % ndi.fun.pseudorandomint(); -- this produces too large of numbers
 
  % Step 1: set up mock subject
 

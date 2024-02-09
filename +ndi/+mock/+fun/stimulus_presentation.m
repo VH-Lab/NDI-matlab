@@ -117,10 +117,14 @@ for i=1:numel(stim_pres_struct.presentation_order),
 	presentation_time(i,1) = pt_here;
 end;
 
-stim_pres_doc = ndi.document('stimulus_presentation','stimulus_presentation',stim_pres_struct,'epochid',epochid) + S.newdocument();
+epochid_struct.epochid = epochid;
+
+stim_pres_doc = ndi.document('stimulus_presentation','stimulus_presentation',stim_pres_struct,'epochid',epochid_struct) + S.newdocument();
 stim_pres_doc = stim_pres_doc.set_dependency_value('stimulus_element_id',stimulus_element_id);
 
 presentation_time_filename = ndi.file.temp_name();
 ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
 	presentation_time);
+
+stim_pres_doc = stim_pres_doc.add_file('presentation_time.bin',presentation_time_filename);
 
