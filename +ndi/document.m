@@ -764,6 +764,27 @@ classdef document
 					else,
 						% regular vlt.data.structmerge is fine, will use 'depends_on' field of whichever structure has it, or none
 					end;
+
+					% part 3: merge file_list
+					if isfield(s,'files') & isfield(s_super{i},'files') % if only s or super_s has it, merge handles it fine
+						s_has = isfield(s.files,'file_list');
+						ssuper_has = isfield(s_super{i}.files,'file_list');
+						if ~ssuper_has, % just merge whatever s has
+							% use s's version in the merge
+							s_super{i} = rmfield(s_super{i},'files');
+						elseif ~s_has & ssuper_has,
+							s = rmfield(s,'files');
+						else, % they both have it
+							s.files.file_list = cat(1,s.files.file_list(:),s_super{i}.files.file_list(:));
+							s_super{i} = rmfield(s_super{i},'files');
+							[dummy,unique_indexes] = unique(s.files.file_list);
+							s.files.file_list = s.files.file_list(unique_indexes);
+						end;
+					else,
+						% nothing to do, only one has it and merge will do it
+					end;
+
+					% now do the merge
 					s = vlt.data.structmerge(s,s_super{i});
 				end;
 		end % readblankdefinition() 

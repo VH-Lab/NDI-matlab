@@ -64,15 +64,15 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			% e2              | vertical refresh trigger
 			% e3              | pretime trigger
 			%
-				channels        = struct('name','mk1','type','marker');  
-				channels(end+1) = struct('name','mk2','type','marker');  
-				channels(end+1) = struct('name','mk3','type','marker');  
-				channels(end+1) = struct('name','e1','type','event');  
-				channels(end+1) = struct('name','e2','type','event');  
-				channels(end+1) = struct('name','e3','type','event');  
+				channels        = struct('name','mk1','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','mk2','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','mk3','type','marker','time_channel',NaN);  
+				channels(end+1) = struct('name','e1','type','event','time_channel',NaN);  
+				channels(end+1) = struct('name','e2','type','event','time_channel',NaN);  
+				channels(end+1) = struct('name','e3','type','event','time_channel',NaN);  
 		end; % getchannelsepoch()
 
-		function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
+		function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
 			%  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
 			%
 			%  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
@@ -80,7 +80,8 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			%  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
 			%
 			%  CHANNELTYPE is a cell array of strings describing the the type(s) of channel(s) to read
-			%  ('event','marker', etc)
+			%  ('event','marker', etc). If CHANNELTYPE is a string, it is
+            %  assumed to apply to all channels.
 			%  
 			%  CHANNEL is a vector with the identity of the channel(s) to be read.
 			%  
@@ -92,6 +93,10 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 			%  
 				timestamps = {};
 				data = {};
+
+                if ~iscell(channeltype),
+                    channeltype = repmat({channeltype},numel(channel),1);
+                end;
 
 				pathname = {};
 				fname = {};
@@ -178,7 +183,13 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 						otherwise,
 							error(['Unknown channel.']);
 					end
-				end
+                end
+
+                for i=1:numel(timestamps),
+                    inds_here = find(timestamps{i}>=t0 & timestamps{i}<=t1);
+                    timestamps{i} = timestamps{i}(inds_here);
+                    data{i} = data{i}(inds_here);
+                end;
 
 				if numel(data)==1,% if only 1 channel entry to return, make it non-cell
 					timestamps = timestamps{1};

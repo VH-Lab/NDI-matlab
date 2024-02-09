@@ -64,6 +64,15 @@ classdef stimulator < ndi.probe.timeseries
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
 					% developer note: it would be pretty easy to extend this, just loop over the devices
+
+                md_index = find(strcmp('md',channeltype));
+                hasmetadata = ~isempty(md_index);
+                non_md = setdiff(1:numel(channel),md_index);
+                channeltype_metadata = channeltype(md_index);
+                channel_metadata = channel(md_index);
+                channeltype = channeltype(non_md);
+                channel=channel(non_md);
+
 				[timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
 				if ~iscell(edata),
 					timestamps = {timestamps};
@@ -77,6 +86,9 @@ classdef stimulator < ndi.probe.timeseries
 				e_ = 0;
 				md_ = 0;
 				event_data = {};
+
+                channeltype = cat(1,channeltype(:),channeltype_metadata(:));
+                channel = cat(1,channel(:),channel_metadata(:));
 				
 				if markermode,
 					for i=1:numel(channeltype),
@@ -95,7 +107,7 @@ classdef stimulator < ndi.probe.timeseries
 												data.stimid(dd,:) = edata{i}(dd,:);
 											end;
 										end;
-									case 3, % stimopenclose
+                                    case 3, % stimopenclose
 										t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1); 
 										t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1); 
 									otherwise,

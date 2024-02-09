@@ -385,6 +385,52 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
 		end; % syncgraph_rmrule
 
+		function [b,errmsg] = ingest(ndi_session_obj)
+			% INGEST - ingest the raw data and synchronization information into the database
+			%
+			% [B,ERRMSG] = INGEST(NDI_SESSION_OBJ)
+			%
+			% Ingest all raw data and synchronization information into the database.
+			%
+				d_syncgraph = ndi_session_obj.syncgraph.ingest();
+				errmsg = '';
+
+				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+				daq_d = {};
+				b = 1;
+				for i=1:numel(daqs),
+					[b_here,daq_d{i}] = daqs{i}.ingest();
+					b = b & b_here;
+					if ~b,
+						errmsg = ['Error in daq ' daqs{i}.name];
+					end;
+				end;
+				if b==0, % things didn't go well, bail
+					for i=1:numel(daqs),
+						ndi_session_obj.database_rm(daq_d{i});
+					end;
+				else, % add the syncgraph documents and we are done
+					ndi_session_obj.database_add(d_syncgraph);
+				end;
+		end; % ingest()
+
+		function d = get_ingested_docs(ndi_session_obj)
+			% GET_INGESTED_DOCS - get all ndi.documents related to ingested data
+			%
+			% D = GET_INGESTED_DOCS(NDI_SESSION_OBJ)
+			%
+			% Return all documents related to ingested data. Be careful; if the raw data
+			% is not available on the path, then the ingested data is the only record of it.
+			%
+				q_i1 = ndi.query('','isa','daqreader_mfdaq_epochdata_ingested');
+				q_i2 = ndi.query('','isa','daqmetadatareader_epochdata_ingested');
+				q_i3 = ndi.query('','isa','epochfiles_ingested');
+				q_i4 = ndi.query('','isa','syncrule_mapping');
+
+				d = ndi_session_obj.database_search(q_i1 | q_i2 | q_i3 | q_i4);
+
+		end; % get_ingested_docs
+
 		%%%%%% PATH methods
 
 		function p = getpath(ndi_session_obj)

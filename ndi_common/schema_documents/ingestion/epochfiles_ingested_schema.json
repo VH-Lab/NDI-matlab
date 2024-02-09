@@ -16,7 +16,7 @@
 		},
 		{
 			"name": "files",
-			"type": "structure",
+			"type": "cell",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
@@ -24,7 +24,7 @@
 		},
 		{
 			"name": "epochprobemap",
-			"type": "structure",
+			"type": "char",
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,

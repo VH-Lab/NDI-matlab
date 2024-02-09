@@ -1,5 +1,5 @@
 classdef cedspike2 < ndi.daq.reader.mfdaq
-% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for Intan Technologies RHD file format
+% NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for CED Spike2
 %
 % This class reads data from CED Spike2 .SMR or .SON file formats.
 %
@@ -37,6 +37,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			% 'name'             | The name of the channel (e.g., 'ai1')
 			% 'type'             | The type of data stored in the channel
 			%                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+			% 'time_channel'     | The channel number that has the time information for that channel
 			%
 
 				channels = vlt.data.emptystruct('name','type');
@@ -51,12 +52,13 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				header = read_CED_SOMSMR_header(filename);
 
 				if isempty(header.channelinfo),
-					channels = struct('name','t1','type','time');
+					channels = struct('name','t1','type','time','time_channel',1);
 				end;
 
 				for k=1:length(header.channelinfo),
 					newchannel.type = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2headertype2mfdaqchanneltype(header.channelinfo(k).kind);
 					newchannel.name = [ ndi.daq.system.mfdaq.mfdaq_prefix(newchannel.type) int2str(header.channelinfo(k).number) ];
+					newchannel.time_channel = 1;
 					channels(end+1) = newchannel;
 				end
 		end % getchannels()
@@ -83,7 +85,8 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			%
 			%  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
 			%
-			%  CHANNELTYPE is the type of channel to read
+                        %  CHANNELTYPE is the type of channel to read (cell array of strings, one per
+                        %     channel, or single string for all channels)
 			%
 			%  CHANNEL is a vector of the channel numbers to read, beginning from 1
 			%
@@ -91,12 +94,22 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			%
 			%  DATA is the channel data (each column contains data from an indvidual channel) 
 			%
+
+				if ~iscell(channeltype),
+					channeltype = repmat({channeltype},numel(channel),1);
+				end;
+				uniquechannel = unique(channeltype);
+				if numel(uniquechannel)~=1,
+					error(['Only one type of channel may be read per function call at present.']);
+				end
+
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 				sr = ndi_daqreader_mfdaq_cedspike2_obj.samplerate(epochfiles, channeltype, channel);
 				sr_unique = unique(sr); % get all sample rates
 				if numel(sr_unique)~=1,
 					error(['Do not know how to handle different sampling rates across channels.']);
 				end;
+
 
 				sr = sr_unique;
 
@@ -152,8 +165,8 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 				t0t1 = {[t0 t1]};
 		end % t0t1
 
-		function [timestamps,data] = readevents_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
-			%  FUNCTION READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+		function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
+			%  FUNCTION READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
 			%
 			%  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
 			%
@@ -168,18 +181,19 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
-                                timestamps = {};
-                                data = {};
+				disp('reading here')
+				timestamps = {};
+				data = {};
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
-                                for i=1:numel(channel),
-                                        [data{i},dummy,dummy,dummy,timestamps{i}]= ndr.format.ced.read_SOMSMR_datafile(filename, ...
-                                                '',channel(i),t0,t1);
-                                end
-                                if numel(channel)==1,
-                                        timestamps = timestamps{1};
-                                        data = data{1};
-                                end;
-		end % readevents_epoch()
+				for i=1:numel(channel),
+					[data{i},dummy,dummy,dummy,timestamps{i}]= ndr.format.ced.read_SOMSMR_datafile(filename, ...
+						'',channel(i),t0,t1);
+				end
+				if numel(channel)==1,
+					timestamps = timestamps{1};
+					data = data{1};
+				end;
+		end % readevents_epochsamples_native()
 
 		function sr = samplerate(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL

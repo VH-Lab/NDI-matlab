@@ -175,7 +175,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 					et_here(1).underlying_epochs(1).epoch_clock = {ndi.time.clocktype('no_time')}; % filenavigator does not keep time
 					et_here(1).underlying_epochs(1).t0_t1 = {[NaN NaN]}; % filenavigator does not keep time
 					et_here(1).epoch_number = i;
-					et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i);
+					et_here(1).epochprobemap = getepochprobemap(ndi_filenavigator_obj,i, all_epochs{i});
 					et_here(1).epoch_clock = epochclock(ndi_filenavigator_obj,i);
 					et_here(1).t0_t1 = t0_t1(ndi_filenavigator_obj,i);
 					et_here(1).epoch_id = epochid(ndi_filenavigator_obj, i, all_epochs{i});
@@ -183,6 +183,54 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 					et(end+1) = et_here;
 				end;
 		end; % epochtable()
+
+		function epochprobemap = getepochprobemap(ndi_file_navigator_obj, N, epochfiles)
+			% GETEPOCHPROBEMAP - Return the epoch record for a given ndi.file.navigator epoch number
+			%
+			%  EPOCHPROBEMAP = GETEPOCHPROBEMAP(NDI_EPOCHSET_PARAM_OBJ, N, EPOCHFILES)
+			%
+			% Inputs:
+			%     NDI_EPOCHSET_PARAM_OBJ - the ndi.epoch.epochset.param object
+			%     N - the epoch number or identifier
+			%     EPOCHFILES - the files for this epoch
+			%
+			% Output:
+			%     EPOCHPROBEMAP - The epoch record information associated with epoch N for device with name DEVICENAME
+			%
+				if nargin<3,
+					epochfiles = ndi_file_navigator_obj.getepochfiles(N);
+				end;
+
+				if ndi.file.navigator.isingested(epochfiles),
+					d = ndi_file_navigator_obj.getepochingesteddoc(epochfiles);
+					eval(['epochprobemap = ' ndi_file_navigator_obj.epochprobemap_class '(d.document_properties.epochfiles_ingested.epochprobemap);']);
+				else,
+					epochprobemap = getepochprobemap@ndi.epoch.epochset.param(ndi_file_navigator_obj, N);
+				end;
+		end; % getepochprobemap
+
+		function d = getepochingesteddoc(ndi_filenavigator_obj, epochfiles)
+			% GETEPOCHINGESTEDDOC - get an ingested epoch document if it exists
+			%
+			% D = GETEPOCHINGESTEDDOC(NDI_FILENAVIGATOR_OBJ, EPOCHFILES)
+			%
+			% Returns the document if it exists, empty if it doesn't.
+			%
+				d = [];
+				if ndi.file.navigator.isingested(epochfiles),
+					epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+	                                epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
+						ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
+						ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id()) & ...
+						ndi.query('epochfiles_ingested.epoch_id','exact_string',epochid);
+					d = ndi_filenavigator_obj.session.database_search(epoch_query);
+					if numel(d)==1,
+						d = d{1};
+					else,
+						error(['Expected 1 file navigator ingested document, but found ' int2str(numel(d)) '.']);
+					end;
+				end;
+		end;
 
 		function id = epochid(ndi_filenavigator_obj, epoch_number, epochfiles)
 			% EPOCHID - Get the epoch identifier for a particular epoch
@@ -193,15 +241,16 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			% If it doesn't exist, it is created.
 			%
 			% 
+				id = '';
 				if nargin<3,
 					epochfiles = getepochfiles(ndi_filenavigator_obj,epoch_number);
 				end
 
-				if numel(epochfiles)>=2, % if ingested
-					if startsWith(epochfiles{2},'epochid:'),
-						id = epochfiles{2}(9:end);
-						return;
-					end;
+				try,
+					id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+				end;
+				if ~isempty(id), 
+					return;
 				end;
 
 				eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
@@ -234,7 +283,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				if isempty(epochfiles),
 					error(['No files in epoch number ' ndi_filenavigator_obj.epoch2str(number) '.']);
 				else,
-					if ndi_filenavigator_obj.isingested(epochfiles),
+					if ndi.file.navigator.isingested(epochfiles),
 						eidfname = '';
 					else,
 						[parentdir,filename]=fileparts(epochfiles{1});
@@ -264,7 +313,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
 					epochfiles = ndi_filenavigator_obj.getepochfiles_number(number);
-					if ndi_filenavigator_obj.isingested(epochfiles),
+					if ndi.file.navigator.isingested(epochfiles),
 						ecfname = '';
 						return;
 					end;
@@ -304,7 +353,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				epochfiles = ndi_filenavigator_obj.getepochfiles_number(number);
 				if isempty(epochfiles),
 					error(['No files in epoch number ' ndi_filenavigator_obj.epoch2str(number) '.']);
-				elseif ndi_filenavigator_obj.isingested(epochfiles),
+				elseif ndi.file.navigator.isingested(epochfiles),
 					ecfname = '';
 				else,
 					[parentdir,filename]=fileparts(epochfiles{1});
@@ -431,18 +480,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				epoch_id_disk = {};
 				for i=1:numel(epochfiles_disk),
-					epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk);
+					epoch_id_disk{i} = ndi_filenavigator_obj.epochid(i,epochfiles_disk{i});
 				end;
 				epoch_id_ingested = {};
-				for i=1:numel(d),
-					epoch_id_ingested{i} = d{i}.document_properties.epochfiles_ingested.epoch_id;
+				for i=1:numel(d_ingested),
+					epoch_id_ingested{i} = d_ingested{i}.document_properties.epochfiles_ingested.epoch_id;
 				end;
 
-				[c,ia] = unique(epoch_id_ingested,epoch_id_disk);
+				[c,ia] = unique(cat(1,epoch_id_ingested(:),epoch_id_disk(:)));
 				epochfiles = {};
 				for i=1:numel(c),
 					if ia(i)<=numel(epoch_id_ingested),
-						epochfiles{i} = d{ia(i)}.document_properties.epochfiles_ingested.files;
+						epochfiles{i} = d_ingested{ia(i)}.document_properties.epochfiles_ingested.files;
 					else,
 						epochfiles{i} = epochfiles_disk{ia(i)-numel(epoch_id_ingested)};
 					end;
@@ -549,22 +598,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				end
 		end % getepochfiles_number()
 
-		function b = isingested(ndi_filenavigator_obj, epochfiles)
-			% ISINGESTED - is a set of epochfiles ingested?
-			%
-			% B = ISINGESTED(EPOCHFILES)
-			%
-			% Returns 1 if the cell array of filenames reflects ingested filenames.
-			% Returns 0 otherwise.
-			%
-			% Checks to see if the first file begins with 'epoch://'.
-			%
-				b = 0;
-				if numel(epochfiles)>=1,
-					b = startsWith(epochfiles{1},'epoch://');
-				end;
-		end;
-
 		function fmstr = filematch_hashstring(ndi_filenavigator_obj)
 			% FILEMATCH_HASHSTRING - a computation to produce a (likely to be) unique string based on filematch
 			%
@@ -620,13 +653,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 				et = ndi_filenavigator_obj.epochtable();
 				for i=1:numel(et),
 					files = et(i).underlying_epochs.underlying;
-					if ~ndi_filenavigator_obj.isingested(files),
-						epochfiles_ingested_struct = struct;
-						epochfiles_ingested_struct.epoch_id = et(i).epoch_id;
-						files = cat(1,{['epochid://' et(i).epoch_id]},files);
-						epochfiles_ingested_struct.files = files;
-						epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
-						docs_out{end+1} = ndi.document('epochfiles_ingested','epochfiles_ingested',epochfiles_ingested_struct);
+					if ~ndi.file.navigator.isingested(files),
+						if isempty(ndi_filenavigator_obj.getepochingesteddoc(files)), % make sure we don't have one already
+							epochfiles_ingested_struct = struct;
+							epochfiles_ingested_struct.epoch_id = et(i).epoch_id;
+							files = cat(1,{['epochid://' et(i).epoch_id]},files);
+							epochfiles_ingested_struct.files = files;
+							epochfiles_ingested_struct.epochprobemap = et(i).epochprobemap.serialize();
+							docs_out{end+1} = ndi.document('epochfiles_ingested',...
+								'epochfiles_ingested',epochfiles_ingested_struct) + ...
+								ndi_filenavigator_obj.session.newdocument();
+							docs_out{end} = docs_out{end}.set_dependency_value('filenavigator_id',ndi_filenavigator_obj.id());
+						end;
 					end;
 				end;
 		end;
@@ -685,5 +723,35 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 					ndi.query('base.session_id', 'exact_string', ndi_filenavigator_obj.session.id(), '');
 		end; % 
 	end % methods
+
+	methods (Static) % static methods
+		function b = isingested(epochfiles)
+			% ISINGESTED - is a set of epochfiles ingested?
+			%
+			% B = ISINGESTED(EPOCHFILES)
+			%
+			% Returns 1 if the cell array of filenames reflects ingested filenames.
+			% Returns 0 otherwise.
+			%
+			% Checks to see if the first file begins with 'epochid://'.
+			%
+				b = 0;
+				if numel(epochfiles)>=1,
+					b = startsWith(epochfiles{1},'epochid://');
+				end;
+		end; % isingested()
+
+		function epoch_id = ingestedfiles_epochid(epochfiles)
+			% INGESTEDFILES_EPOCHID - what is the epoch id for ingested epochfiles?
+			%
+			% EPOCHID = INGESTEDFILES_EPOCHID(EPOCHFILES)
+			%
+			% Returns the EPOCHID for the ingested EPOCHFILES
+			%
+				assert(ndi.file.navigator.isingested(epochfiles),...
+					'This function is only applicable to ingested EPOCHFILES.');
+				epoch_id = epochfiles{1}( (1+numel('epochid://')):end);
+		end; % ingestedfiles_epochid
+	end; % methods (Static)
 
 end % classdef

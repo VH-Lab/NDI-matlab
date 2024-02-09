@@ -41,7 +41,14 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
 				subjectstring_ = 'nothing@nosuchlab.org';
 			end
 
-			if nargin==1,
+			is_struct = 0;
+			if nargin>0,
+				if numel(find(name_==sprintf('\n')))>0,
+					is_struct = 1;
+				end;
+			end;
+
+			if nargin==1 | is_struct,
 				% name_ should be a filename or serialization string
 				ndi_struct = [];
 				if numel(find(name_==sprintf('\n')))>0,

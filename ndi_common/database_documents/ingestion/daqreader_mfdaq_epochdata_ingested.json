@@ -1,0 +1,43 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/daqreader_mfdaq_epochdata_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/daqreader_mfdaq_epochdata_ingested_schema.json",
+		"class_name":						"daqreader_mfdaq_epochdata_ingested",
+		"property_list_name":					"daqreader_mfdaq_epochdata_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/ingestion\/daqreader_epochdata_ingested.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "daqreader_id",
+			"value": "" 
+		}
+	],
+	"files": {
+		"file_list": [
+			"channel_list.bin", 
+			"ai_group1_seg.nbf_#", "ai_group2_seg.nbf_#", "ai_group3_seg.nbf_#", "ai_group4_seg.nbf_#", "ai_group5_seg.nbf_#", 
+			"ai_group6_seg.nbf_#", "ai_group7_seg.nbf_#", "ai_group8_seg.nbf_#", "ai_group9_seg.nbf_#", "ai_group10_seg.nbf_#", 
+			"ao_group1_seg.nbf_#", "ao_group2_seg.nbf_#", "ao_group3_seg.nbf_#", "ao_group4_seg.nbf_#", "ao_group5_seg.nbf_#", 
+			"ao_group6_seg.nbf_#", "ao_group7_seg.nbf_#", "ao_group8_seg.nbf_#", "ao_group9_seg.nbf_#", "ao_group10_seg.nbf_#", 
+			"ax_group1_seg.nbf_#", "ax_group2_seg.nbf_#", "ax_group3_seg.nbf_#", "ax_group4_seg.nbf_#", "ax_group5_seg.nbf_#", 
+			"ax_group6_seg.nbf_#", "ax_group7_seg.nbf_#", "ax_group8_seg.nbf_#", "ax_group9_seg.nbf_#", "ax_group10_seg.nbf_#", 
+			"di_group1_seg.nbf_#", "di_group2_seg.nbf_#", "di_group3_seg.nbf_#", "di_group4_seg.nbf_#", "di_group5_seg.nbf_#", 
+			"di_group6_seg.nbf_#", "di_group7_seg.nbf_#", "di_group8_seg.nbf_#", "di_group9_seg.nbf_#", "di_group10_seg.nbf_#", 
+			"do_group1_seg.nbf_#", "do_group2_seg.nbf_#", "do_group3_seg.nbf_#", "do_group4_seg.nbf_#", "do_group5_seg.nbf_#", 
+			"do_group6_seg.nbf_#", "do_group7_seg.nbf_#", "do_group8_seg.nbf_#", "do_group9_seg.nbf_#", "do_group10_seg.nbf_#", 
+			"ti_group1_seg.nbf_#", "ti_group2_seg.nbf_#", "ti_group3_seg.nbf_#", "ti_group4_seg.nbf_#", "ti_group5_seg.nbf_#", 
+			"ti_group6_seg.nbf_#", "ti_group7_seg.nbf_#", "ti_group8_seg.nbf_#", "ti_group9_seg.nbf_#", "ti_group10_seg.nbf_#", 
+			"evmktx_group1_seg.nbf_#"
+                ]
+	},    
+	"daqreader_mfdaq_epochdata_ingested": {
+		"parameters": {
+			"sample_analog_segment": 1000000,
+			"sample_digital_segment": 1000000
+		}
+	}
+}
+
