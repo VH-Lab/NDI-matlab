@@ -63,11 +63,10 @@ for i=1:numel(d),
 
     if isfield(d{index}.document_properties, 'files'),
         doc_i = doc_i + 1;
-        if numel(d{index}.document_properties.files.file_list)>50, keyboard; end;
         for f = 1:numel(d{index}.document_properties.files.file_list)
             file_name = d{index}.document_properties.files.file_list{f};
             if verbose, 
-               disp(['Uploading ' int2str(f) ' of ' int2str(numel(d{index}.document_properties.files.file_list)) ' binary files (' file_name ')']);
+               disp(['Preparing to upload ' int2str(f) ' of ' int2str(numel(d{index}.document_properties.files.file_list)) ' binary files/sets (' file_name ')']);
             end;
             j = 1;
             while j<10000, % we could potentially read a series of files
@@ -83,10 +82,11 @@ for i=1:numel(d),
                     j = 1000000;
                     file_obj = [];
                 end;
+                j = j + 1;
                 if ~isempty(file_obj),
-                if verbose, 
-                   disp(['Uploading ' int2str(f) ' of ' int2str(numel(d{index}.document_properties.files.file_list)) ' binary files (' filename_here ')']);
-                 end;
+                    if verbose, 
+                       disp(['...Uploading ' int2str(f) ' of ' int2str(numel(d{index}.document_properties.files.file_list)) ' binary files/sets (' filename_here ')']);
+                    end;
                     [~,uid,~] = fileparts(file_obj.fullpathfilename);
                     [status, response, upload_url] = ndi.cloud.files.get_files(dataset_id, uid, auth_token);
                     if status ~= 0
@@ -105,46 +105,13 @@ for i=1:numel(d),
             end;            
         end
 
-        if (numel(d{index}.document_properties.files.file_list) > 1)
-            break;
-        end
-        doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
-        cur_doc_idx = cur_doc_idx + 1;
-    end
-    
-    if isfield(d{i}.document_properties, 'files'),
-        for f = 1:numel(d{i}.document_properties.files.file_list)
-            file_name = d{i}.document_properties.files.file_list{f};
-            if (~doc_file_struct(file_id_to_idx(file_name)).is_uploaded)
-                if verbose, 
-                    disp(['Uploading ' int2str(cur_file_idx) ' of ' int2str(files_left) ' binary files (' file_name ')']);
-                end;
-                
-                waitbar(cur_file_idx/files_left, h_file, sprintf('Uploading file %d of %d, %.2f KB out of %.2f KB...', cur_file_idx, files_left, cur_size,total_size));
-                
-                file_obj = S.database_openbinarydoc(doc_id, file_name);
-                [~,uid,~] = fileparts(file_obj.fullpathfilename);
-                [status, response, upload_url] = ndi.cloud.files.get_files(dataset_id, uid, auth_token);
-                if status ~= 0
-                    b = 0;
-                    msg = response;
-                    error(msg);
-                end
-                [status, response] = ndi.cloud.files.put_files(upload_url, file_obj.fullpathfilename, auth_token);
-                if status ~= 0
-                    b = 0;
-                    msg = response;
-                    error(msg);
-                end
-                S.database_closebinarydoc(file_obj);
-                doc_json_struct(i).is_uploaded = 1;
-                cur_size = cur_size + doc_file_struct(file_id_to_idx(file_name)).bytes;
-                waitbar(cur_file_idx/files_left, h_file, sprintf('Uploading file %d of %d, %.2f KB out of %.2f KB...', cur_file_idx, files_left, cur_size,total_size));
-                cur_file_idx = cur_file_idx + 1;
-            end
-        end
+        %if (numel(d{index}.document_properties.files.file_list) > 1)  % I don't understand this..I may have moved it  
+        %    break;                                                     %  I think it breaks the document loop where I have it now 
+        %end
     end
 
+        % use whatever upload command is necessary
+        % or, check to see if the file is already there?
 end
 delete(h_document);
 delete(h_file);

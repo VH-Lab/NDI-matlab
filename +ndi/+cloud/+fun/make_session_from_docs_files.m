@@ -24,29 +24,24 @@ for i=1:numel(d),
 		disp(['Working on document ' int2str(i) ' of ' int2str(numel(d)) '.']);
 	end;
 	d_json = vlt.file.textfile2char([doc_path filesep d(i).name]);
-	d_struct = jsondecode(d_json)
+	d_struct = jsondecode(d_json);
 	if isfield(d_struct,'id'), 
 		d_struct = rmfield(d_struct,'id'); % remove API field
 	end;
-	doc_obj = ndi.document(d_struct);
+	doc_obj = ndi.document(d_struct.document_properties);
 	doc_obj = doc_obj.reset_file_info();
 
-	if isfield(d_struct,'files'),
-		for j=1:numel(d_struct.files),
-			
-			file_uid = d_struct.files.file_info(j).locations(1).uid;
-            file_name = d_struct.files.file_list(j);
-            if verbose,
-				disp(['Adding file ' file_name '.']);
-			end;
-            if strcmp(d_struct.files.file_info.locations.location_type,'url') 
-                file_location = d_struct.files.file_list(j);
-                doc_obj = doc_obj.add_file(file_name,file_location, 'location_type', 'url');
-            else 
-                file_location = [files_path filesep file_uid];
-                doc_obj = doc_obj.add_file(file_name,file_location);
-            end
-			
+	if isfield(d_struct.document_properties,'files'),
+		if isfield(d_struct.document_properties.files,'file_info'),
+		    for j=1:numel(d_struct.document_properties.files.file_info),			    
+			    file_uid = d_struct.document_properties.files.file_info(j).locations(1).uid;
+			    file_name = d_struct.document_properties.files.file_info(j).name;
+			    if verbose,
+				    disp(['Adding file ' file_name '.']);
+			    end;
+			    file_location = [files_path filesep file_uid];
+			    doc_obj = doc_obj.add_file(file_name,file_location);
+		    end;
 		end;
 	end;
 
