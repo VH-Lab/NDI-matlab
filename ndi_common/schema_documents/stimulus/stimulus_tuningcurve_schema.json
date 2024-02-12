@@ -26,7 +26,7 @@
 			"name": "stimid",
 			"type": "matrix",
 			"default_value": [],
-			"parameters": [1,NaN],
+			"parameters": [NaN,1],
 			"queryable": 1,
 			"documentation": "The stimulus id numbers"
 		},
@@ -56,7 +56,7 @@
 		},
 		{
 			"name": "individual_responses_real",
-			"type": "cell",
+			"type": "matrix",
 			"default_value": [],
 			"parameters": [NaN,NaN],
 			"queryable": 1,
@@ -64,7 +64,7 @@
 		},
 		{
 			"name": "individual_responses_imaginary",
-			"type": "cell",
+			"type": "matrix",
 			"default_value": [],
 			"parameters": [NaN,NaN],
 			"queryable": 1,
@@ -72,7 +72,7 @@
 		},
 		{
 			"name": "stimulus_presentation_number",
-			"type": "cell",
+			"type": "matrix",
 			"default_value": [],
 			"parameters": [NaN,NaN],
 			"queryable": 1,
@@ -120,7 +120,7 @@
 		},
 		{
 			"name": "control_individual_responses_real",
-			"type": "cell",
+			"type": "matrix",
 			"default_value": [],
 			"parameters": [NaN,NaN],
 			"queryable": 1,
@@ -128,7 +128,7 @@
 		},
 		{
 			"name": "control_individual_responses_imaginary",
-			"type": "cell",
+			"type": "matrix",
 			"default_value": [],
 			"parameters": [NaN,NaN],
 			"queryable": 1,
