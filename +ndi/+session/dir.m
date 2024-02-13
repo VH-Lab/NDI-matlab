@@ -33,22 +33,56 @@ classdef dir < ndi.session
 
 				ndi_session_dir_obj = ndi_session_dir_obj@ndi.session(reference);
 				ndi_session_dir_obj.path = path;
-				d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
-				if ~isempty(d),
-					ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(...
-						[ndi_session_dir_obj.ndipathname() filesep 'reference.txt']));
-				elseif nargin==1,
-					error(['Could not load the REFERENCE field from the path ' ndi_session_dir_obj.ndipathname() '.']);
-				end
+
+				% next, figure out the ID; we won't use the one on disk unless we don't have a database entry
+
 				d = dir([ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']);
 				if ~isempty(d),
 					ndi_session_dir_obj.identifier = strtrim(vlt.file.textfile2char(...
 						[ndi_session_dir_obj.ndipathname() filesep 'unique_reference.txt']));
 				else,
+					% make a provisional new one
 					ndi_session_dir_obj.identifier = ndi.ido.unique_id();
 				end
 
-				ndi_session_dir_obj.database = ndi.database.fun.opendatabase(ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
+				ndi_session_dir_obj.database = ndi.database.fun.opendatabase(...
+					ndi_session_dir_obj.ndipathname(), ndi_session_dir_obj.id());
+
+				read_from_database = 0;
+				session_doc = ndi_session_dir_obj.database_search(ndi.query('','isa','session'));
+				if ~isempty(session_doc),
+					% use the oldest
+					time_diff_max = 0;
+					time_loc = 0;
+					now_time = datetime('now','TimeZone','UTCLeapSeconds');
+					for i=1:numel(session_doc),
+						time_here = datetime(session_doc{i}.document_properties.base.datestamp,'TimeZone','UTCLeapSeconds');
+						time_diff_here = seconds(now_time-time_here);
+						if time_diff_here>time_diff_max,
+							time_diff_max = time_diff_here;
+							time_loc = i;
+						end;
+					end;
+					session_doc = session_doc{time_loc};
+
+					ndi_session_dir_obj.identifier = session_doc.document_properties.base.session_id;
+					ndi_session_dir_obj.reference = session_doc.document_properties.session.reference;
+					read_from_database = 1;
+				end;
+
+				if ~read_from_database,
+					d = dir([ndi_session_dir_obj.ndipathname() filesep 'reference.txt']);
+					if ~isempty(d),
+						ndi_session_dir_obj.reference = strtrim(vlt.file.textfile2char(...
+							[ndi_session_dir_obj.ndipathname() filesep 'reference.txt']));
+					elseif nargin==1,
+						error(['Could not load the REFERENCE field from the database or path ' ndi_session_dir_obj.ndipathname() '.']);
+					end
+					% now we have both reference and id from either the files or the database, add it to db
+					g = ndi.document('session','session.reference',ndi_session_dir_obj.reference) + ...
+						ndi_session_dir_obj.newdocument();
+					ndi_session_dir_obj.database_add(g);
+				end;
 
 				syncgraph_doc = ndi_session_dir_obj.database_search( ndi.query('','isa','syncgraph','') & ...
 					ndi.query('base.session_id', 'exact_string', ndi_session_dir_obj.id(), ''));

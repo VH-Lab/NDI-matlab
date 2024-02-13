@@ -128,8 +128,12 @@ classdef reader < ndi.ido & ndi.documentservice
 				t0t1 = et.t0_t1;
 				if ~iscell(t0t1),
 					t = {};
-					for i=1:size(et.t0_t1),
-						t{i} = t0t1(i,:);
+					if isvector(t0t1), % this fixes a to-json, from-json, to-json conversion problem
+						t{1} = t0t1(:)';
+					else,
+						for i=1:size(et.t0_t1,2),
+							t{i} = t0t1(i,:);
+						end;
 					end;
 					t0t1 = t;
 				end;

@@ -477,7 +477,7 @@ classdef mfdaq < ndi.daq.reader
 					if ~iscell(channeltype),
 						channeltype = repmat({channeltype},numel(channel),1);
 					end;
-                    channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
+					channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
 
 					groups = 1; g = 1;
 					prefix = 'evmktx';
@@ -704,7 +704,7 @@ classdef mfdaq < ndi.daq.reader
 				% Step 2: loop over channels with rigid samples
 				types = ndi.daq.reader.mfdaq.channel_types();
 				% we will treat event,mark,text with the same file
-				index_emt = find( strcmp('event',types) | strcmp('mark',types) | strcmp('text',types) );
+				index_emt = find( strcmp('event',types) | strcmp('marker',types) | strcmp('text',types) );
 				types(index_emt) = [];
 				types{end+1} = 'eventmarktext';
 				 
@@ -777,7 +777,7 @@ classdef mfdaq < ndi.daq.reader
 
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
-                                					mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+									mylog.msg('system',1,['Working on ephys/analog ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_analog_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
@@ -802,7 +802,7 @@ classdef mfdaq < ndi.daq.reader
 								S1 = 1+(t0t1{1}(end) - t0t1{1}(1)) * unique(sample_rates_here_unique);
 								s_starts = [S0:sample_digital_segment:S1];
 								for s=1:numel(s_starts),
-                                					mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+									mylog.msg('system',1,['Working on digital ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_digital_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
@@ -818,8 +818,8 @@ classdef mfdaq < ndi.daq.reader
 							case 'eventmarktext',
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
 								channeltype = {};
-								for i=1:numel(channels_here),
-									channeltype{end+1} = ci(chan_entries_indexes(group_indexes(i))).type;
+								for ii=1:numel(channels_here),
+									channeltype{end+1} = ci(chan_entries_indexes(group_indexes(ii))).type;
 								end;
 								[T,D] = ndi_daqreader_mfdaq_obj.readevents_epochsamples_native(channeltype,channels_here,epochfiles,-Inf,Inf); 
 								filename_here = ndi.file.temp_name();
@@ -829,7 +829,7 @@ classdef mfdaq < ndi.daq.reader
 							case 'time',
 								s_starts = [S0:sample_analog_segment:S1];
 								for s=1:numel(s_starts),
-                                					mylog.msg('system',1,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
+									mylog.msg('system',1,['Working on time ingestion segment ' int2str(s) ' of ' int2str(numel(s_starts)) '.']);
 									s0 = s_starts(s);
 									s1 = min(s0+sample_analog_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(types{i}, channels_here, epochfiles, s0, s1);

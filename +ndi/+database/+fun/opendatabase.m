@@ -15,6 +15,10 @@ function db = ndi_opendatabase(database_path, session_unique_reference)
 
 ndi.globals;
 
+if nargin<2,
+	session_unique_reference = '12345'; % this is not required for most database types
+end;
+
 db = [];
 
 for i=1:numel(ndi_globals.databasehierarchy),

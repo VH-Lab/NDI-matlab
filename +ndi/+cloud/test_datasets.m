@@ -12,7 +12,7 @@ fileName = 'exampledataset.json';
 str = fileread(fileName); 
 example_dataset = jsondecode(str); 
 
-[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organizationId, example_dataset, auth_token);
+[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, example_dataset, auth_token);
 
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
@@ -23,6 +23,7 @@ update_dataset.name = "updated example dataset";
 [status, response] = ndi.cloud.datasets.delete_datasetId(dataset_id, auth_token);
 
 [status, response, datasets] = ndi.cloud.datasets.get_organizations(organization_id, auth_token);
+id = "64d4c79bbafd38dfb30b1824";
 [status,dataset] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
 [status, response, dataset_id] = ndi.cloud.datasets.post_organization(organizationId, example_dataset, auth_token);
 [status,dataset] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
@@ -47,3 +48,6 @@ docName = 'exampledocument.json';
 str_doc = fileread(docName); 
 example_document = jsondecode(str_doc); 
 [status, response] = ndi.cloud.documents.post_documents(dataset_id, example_document, auth_token);
+
+[status, response] = ndi.cloud.datasets.post_unpublish(dataset_id, auth_token);
+[status, response] = ndi.cloud.datasets.post_publish(dataset_id, auth_token);

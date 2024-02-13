@@ -13,5 +13,5 @@ example_document = jsondecode(str_doc);
 [status, response] = ndi.cloud.documents.post_documents(dataset_id, example_document, auth_token);
 uid = response.files.file_info.locations.uid;
 
-
+document_id = '64e7d4694724787310421737';
 [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
