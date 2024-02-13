@@ -1,0 +1,15 @@
+{
+	"classname": "session",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"session": [
+		{
+			"name": "reference",
+			"type": "string",
+			"default_value": "12345",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The reference of an ndi.session (can be any string)"
+		}
+	]
+}
