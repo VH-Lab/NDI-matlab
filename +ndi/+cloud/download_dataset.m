@@ -123,7 +123,7 @@ if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
 end
 
 S = ndi.cloud.fun.make_session_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
-[output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'file'] );
+[output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'files'] );
 
 end
 
