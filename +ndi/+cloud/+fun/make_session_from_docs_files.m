@@ -16,7 +16,6 @@ function S = make_session_from_docs_files(session_path, session_reference, doc_p
 verbose = 1;
 
 d = dir([doc_path filesep '*.json']);
-
 doc_list = {};
 
 for i=1:numel(d),
@@ -40,6 +39,7 @@ for i=1:numel(d),
 				    disp(['Adding file ' file_name '.']);
 			    end;
 			    file_location = [files_path filesep file_uid];
+                disp(['file_name: ' file_name ': ' file_location]);
 			    doc_obj = doc_obj.add_file(file_name,file_location);
 		    end;
 		end;
@@ -50,5 +50,6 @@ end;
 
 S = ndi.session.dir(session_reference,session_path);
 S.database_add(doc_list);
+S = ndi.session.dir(session_path); % to refresh the ID
 
 
