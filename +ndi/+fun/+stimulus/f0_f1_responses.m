@@ -78,6 +78,9 @@ for i=1:numel(candidate_stim_resp_scalars),
 		q_tc_r = q_tc_r | q_here;
 	end;
 end;
+if isempty(q_tc_r), % we don't have any
+    return;
+end;
 
 tc_candidates = S.database_search(q_tc_r&ndi.query('','isa','stimulus_tuningcurve'));
 matches = [];
