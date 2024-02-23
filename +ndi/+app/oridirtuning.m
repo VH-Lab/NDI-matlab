@@ -136,7 +136,7 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
 				end;
 
 				% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
-				tuning_doc = tapp.tuningdoc_fixcellarrays(tuning_doc);
+				tuning_doc = ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static(tuning_doc);
 
 				for i=1:numel(tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_real),
 					ind{i} = tuning_doc.document_properties.stimulus_tuningcurve.individual_responses_real{i} + ...

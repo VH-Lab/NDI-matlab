@@ -679,7 +679,7 @@ classdef tuning_response < ndi.app
 
 				if ~isempty(match_indexes),
 					for i=1:size(match_indexes),
-						tc_doc{i} = ndi_app_tuning_response_obj.tuningdoc_fixcellarrays(tc_doc_matches{match_indexes(i,1)});
+						tc_doc{i} = ndi_app_tuning_response_obj.tuningdoc_fixcellarrays_static(tc_doc_matches{match_indexes(i,1)});
 						srs_doc{i} = srs{match_indexes(i,1)}{match_indexes(i,2)};
 					end;
 				end;
@@ -689,6 +689,9 @@ classdef tuning_response < ndi.app
 		function tc_doc = tuningdoc_fixcellarrays(ndi_app_tuning_response_obj, tc_doc)
 			% TUNINGDOC_FIXCELLARRAYS - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
 			%
+			% DEPRICATED - will cause an error
+			%
+				error(['This version is depricated. Use ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static() ']);
 				document_properties = tc_doc.document_properties;
 
 				for i=1:numel(document_properties.stimulus_tuningcurve.individual_responses_real),
@@ -839,31 +842,31 @@ classdef tuning_response < ndi.app
 			%
 				document_properties = tc_doc.document_properties;
 
-                if datetime(document_properties.base.datestamp(1:end-1)) > datetime('2024-02-11T0:0:01.0'),
-                    document_properties.stimulus_tuningcurve.individual_responses_real = ...
-                        document_properties.stimulus_tuningcurve.individual_responses_real';
-                    document_properties.stimulus_tuningcurve.individual_responses_imaginary = ...
-                        document_properties.stimulus_tuningcurve.individual_responses_imaginary';
-                    document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
-                        document_properties.stimulus_tuningcurve.control_individual_responses_real';
-                    document_properties.stimulus_tuningcurve.control_individual_responses_imaginary = ...
-                        document_properties.stimulus_tuningcurve.control_individual_responses_imaginary';
-                    document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
-                        document_properties.stimulus_tuningcurve.stimulus_presentation_number';
-                end;
+				if datetime(document_properties.base.datestamp(1:end-1)) > datetime('2024-02-11T0:0:01.0'),
+					document_properties.stimulus_tuningcurve.individual_responses_real = ...
+					document_properties.stimulus_tuningcurve.individual_responses_real';
+					document_properties.stimulus_tuningcurve.individual_responses_imaginary = ...
+					document_properties.stimulus_tuningcurve.individual_responses_imaginary';
+					document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
+					document_properties.stimulus_tuningcurve.control_individual_responses_real';
+					document_properties.stimulus_tuningcurve.control_individual_responses_imaginary = ...
+					document_properties.stimulus_tuningcurve.control_individual_responses_imaginary';
+					document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
+					document_properties.stimulus_tuningcurve.stimulus_presentation_number';
+				end;
 
-			    for i=1:numel(document_properties.stimulus_tuningcurve.individual_responses_real),
-				    % grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
-				    document_properties.stimulus_tuningcurve.individual_responses_real = ...
-						    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_real);
-                                        document_properties.stimulus_tuningcurve.individual_responses_imaginary= ...
-                                                        vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_imaginary);
-				    document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
-						    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_real);
-				    document_properties.stimulus_tuningcurve.control_individual_responses_imaginary= ...
-						    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_imaginary);
-				    document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
-						    vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.stimulus_presentation_number);
+				for i=1:numel(document_properties.stimulus_tuningcurve.individual_responses_real),
+					% grr..if the elements are all the same size, Matlab will make individual_response_real, etc, a matrix instead of cell
+						document_properties.stimulus_tuningcurve.individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_real);
+						document_properties.stimulus_tuningcurve.individual_responses_imaginary= ...
+							vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.individual_responses_imaginary);
+						document_properties.stimulus_tuningcurve.control_individual_responses_real = ...
+							vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_real);
+						document_properties.stimulus_tuningcurve.control_individual_responses_imaginary= ...
+							vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.control_individual_responses_imaginary);
+						document_properties.stimulus_tuningcurve.stimulus_presentation_number = ...
+							vlt.data.matrow2cell(document_properties.stimulus_tuningcurve.stimulus_presentation_number);
                                 end;
 
 				tc_doc = setproperties(tc_doc, 'stimulus_tuningcurve',document_properties.stimulus_tuningcurve);
