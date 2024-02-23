@@ -275,6 +275,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					return;
 				end; % nothing to do
 
+				doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_unique_id);
+
 				if ~iscell(doc_unique_id),
 					if ischar(doc_unique_id), % it is a single doc id
 						mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',doc_unique_id,''));
@@ -292,6 +294,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 						error(['Unknown input to DATABASE_RM of class ' class(doc_unique_id) '.']);
 					end;
 				end;
+
+				
 
 				if iscell(doc_unique_id),
 					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_unique_id{:});
@@ -334,7 +338,33 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 				ndi_session_obj.database.clear(areyousure);
 		end; % database_clear()
-        
+
+       		function [b,errmsg] = validate_documents(ndi_session_obj, document)
+			% VALIDATE_DOCUMENTS - validate whether documents belong to a session
+			%   
+			% [B, ERRMSG] = VALIDATE_DOCUMENTS(NDI_SESSION_OBJ, DOCUMENT)
+			%
+			% Given an ndi.document DOCUMENT or a cell array of ndi.documents DOCUMENT,
+			% determines whether all document session_ids match the sessions's id. 
+				b = 1;
+				errmsg = '';
+				if ~iscell(document),
+					document = {document};
+				end;
+				for i=1:numel(document),
+					b = b & isa(document{i},'ndi.document');
+					if ~b,
+						errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
+						break;
+                                        end;
+					b = b & strcmp(document{i}.document_properties.base.session_id,ndi_session_obj.id());
+					if ~b,
+						errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match).'];
+						break;
+					end;
+				end;
+		end; % validate_documents()
+
 		function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
 			% DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
 			%
@@ -656,7 +686,73 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
 				end;
 		end; % update_syncgraph_in_db()
+
 	end; % methods (Protected)
+
+	methods Static % regular static methods
+
+			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
+		function doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_input)
+			% DOCINPUT2DOCS - convert an array of ndi.documents or doc_ids to documents
+			%
+			% [DOC_LIST,B,ERRMSG] = DOCINPUT2DOCS(NDI_SESSION_OBJ, DOC_INPUT)
+			%
+			% Given an input DOC_INPUT that specifies ndi.document objects,
+			% return the list of ndi.document objects.
+			%
+			% DOC_INPUT can be a single document id (character array), or a single
+			% ndi.document, or a cell array of document ids or a cell array of ndi.documents,
+			% or a mixed cell array of ndi.document objects and ids.
+			%
+			% If all documents are found, then B is 1 and ERRMSG is ''. If a document ID
+			% does not exist in the database, then one occurence is noted in ERRMSG and B is 0.
+			% 
+
+				doc_list = {};
+				b = 1;
+
+				if ~iscell(doc_input),
+					doc_input = {doc_input};
+				end;
+				q = [];
+				for i=1:numel(doc_input),
+					if ~isa(doc_input{i},'ndi.document'),
+						if isempty(q),
+							q = ndi.query('base.id','exact_string',doc_input{i});
+						else,
+							q = q | ndi.query('base.id','exact_string',doc_input{i});
+						end;
+					end;
+				end;
+				docs_to_fetch = {};
+				if ~isempty(q),
+					docs_to_fetch = ndi_session_obj.database_search(q);
+				end;
+				include = [];
+				for i=1:numel(doc_input),
+					if isa(doc_input{i},'ndi.document'),
+						doc_list{i} = doc_input{i};
+					else,
+						for k=1:numel(docs_to_fetch),
+							if strcmp(docs_to_fetch{k}.document_properties.base.id,...
+								doc_input{i}),
+								doc_list{i} = docs_to_fetch{k};
+								break;
+							end;
+						end;
+					end;
+					if ~isa(doc_list{i},'ndi.document'),
+						b = 1;
+						errmsg = ['Unable to locate document ' doc_unique_id{i} '.'];
+					else,
+						include(end+1) = i;
+					end;
+				end;
+				doc_list = doc_list(include);
+		
+		end; %docinput2docs()
+
+	end; % methods Static
 	
 end % classdef
 
