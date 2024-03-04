@@ -238,6 +238,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%  
 			% See also: DATABASE_RM, ndi.session, ndi.database, ndi.session/SEARCH
 
+					% dev note: we should make this so it calls the database with a list of docs to
+					% add instead of one at a time
+
 				if iscell(document),
 					for i=1:numel(document),
 						ndi_session_obj.database_add(document{i});
@@ -246,6 +249,17 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end;
 				if ~isa(document,'ndi.document'),
 					error(['document is not an ndi.document']);
+				end;
+
+				session_id_here = document.document_properties.base.session_id;
+				if ~strcmp(session_id_here,ndi_session_obj.id()),
+					if strcmp(session_id_here,ndi.session.empty_id), % ok, set it to our id
+						document = document.set_session_id(ndi_session_obj.id());
+					else, 
+						error(['ndi.document with id ' document.document_properties.base.id ...
+							' has session_id ' session_id_here ' that does not match session''s id ' ...
+							ndi_session_obj.id()]);
+					end;
 				end;
 				ndi_session_obj.database.add(document);
 		end; % database_add()
@@ -276,37 +290,21 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end; % nothing to do
 
 				doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_unique_id);
-
-				if ~iscell(doc_unique_id),
-					if ischar(doc_unique_id), % it is a single doc id
-						mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',doc_unique_id,''));
-						if isempty(mydoc), % 
-							if ErrIfNotFound,
-								error(['Looked for an base document matching ID ' doc_unique_id ' but found none.']);
-							else,
-								return; % nothing to do
-							end;
-						end;
-						doc_unique_id = mydoc; % now a cell list
-					elseif isa(doc_unique_id,'ndi.document'),
-						doc_unique_id = {doc_unique_id};
-					else,
-						error(['Unknown input to DATABASE_RM of class ' class(doc_unique_id) '.']);
-					end;
+				[b,errmsg] = ndi_session_obj.validate_documents(doc_list);
+				if ~b,
+					error(errmsg);
 				end;
 
-				
-
-				if iscell(doc_unique_id),
-					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_unique_id{:});
+				if iscell(doc_list),
+					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_list{:});
 					if numel(dependent_docs)>1,
 						warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
 					end;
 					for i=1:numel(dependent_docs),
 						ndi_session_obj.database.remove(dependent_docs{i});
 					end;
-					for i=1:numel(doc_unique_id), 
-						ndi_session_obj.database.remove(doc_unique_id{i});
+					for i=1:numel(doc_list), 
+						ndi_session_obj.database.remove(doc_list);
 					end;
 				else,
 					error(['Did not think we could get here..notify steve.']);
@@ -346,6 +344,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% Given an ndi.document DOCUMENT or a cell array of ndi.documents DOCUMENT,
 			% determines whether all document session_ids match the sessions's id. 
+		
 				b = 1;
 				errmsg = '';
 				if ~iscell(document),
@@ -356,10 +355,17 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					if ~b,
 						errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
 						break;
-                                        end;
-					b = b & strcmp(document{i}.document_properties.base.session_id,ndi_session_obj.id());
+					end;
+					session_id_here = document{i}.document_properties.base.session_id;
+					b_ = strcmp(session_id_here,ndi_session_obj.id());
+					if ~b_,
+						b_=0; % strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
+					end;
+					b = b & b_;
 					if ~b,
-						errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match).'];
+						errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match and has session_id '  ').'];
+						ndi_session_obj.id(),
+						document{i}.document_properties.base.session_id,
 						break;
 					end;
 				end;
@@ -691,7 +697,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
 	methods Static % regular static methods
 
-			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
 		function doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_input)
 			% DOCINPUT2DOCS - convert an array of ndi.documents or doc_ids to documents
 			%
@@ -707,7 +712,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% If all documents are found, then B is 1 and ERRMSG is ''. If a document ID
 			% does not exist in the database, then one occurence is noted in ERRMSG and B is 0.
 			% 
-
 				doc_list = {};
 				b = 1;
 
@@ -733,6 +737,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					if isa(doc_input{i},'ndi.document'),
 						doc_list{i} = doc_input{i};
 					else,
+						doc_list{i} = [];
 						for k=1:numel(docs_to_fetch),
 							if strcmp(docs_to_fetch{k}.document_properties.base.id,...
 								doc_input{i}),
@@ -742,15 +747,43 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 						end;
 					end;
 					if ~isa(doc_list{i},'ndi.document'),
-						b = 1;
-						errmsg = ['Unable to locate document ' doc_unique_id{i} '.'];
+						b = 0;
+						errmsg = ['Unable to locate document ' doc_input{i} '.'];
 					else,
 						include(end+1) = i;
 					end;
 				end;
 				doc_list = doc_list(include);
-		
 		end; %docinput2docs()
+
+			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
+		function [b,errmsg] = all_docs_in_session(docs, session_id)
+			% ALL_DOCS_IN_SESSION - determines if a set of ndi documents are in a session
+			%
+			% [B,ERRMSG] = ALL_DOCS_IN_SESSION(DOCS, SESSION_ID)
+			%
+			% B is 1 if the base.session_id field of all ndi.document objects in the cell
+			% array DOCS match session_id. If so, ERRMSG is empty. Otherwise, ERRMSG lists
+			% the documents that are not in the session.
+			%
+				b = zeros(numel(docs),1);
+				errmsg = ['The following documents are not in session_id ' session_id ': '];
+				for i=1:numel(docs),
+					session_id_here = docs{i}.document_properties.base.session_id;
+					b(i) = strcmp(session_id,session_id_here);
+					if ~b(i),
+						errmsg = cat(2,errmsg,[session_id_here ', ']);
+					end;
+				end;
+				if any(b),
+					errmsg = errmsg(1:end-2); % trim last ', '
+					errmsg(end+1) = '.';
+					b = 1; % make it a scalar
+				else,
+					b = 0; % make it a scalar
+				end;
+
+		end; % all_docs_in_session
 
 	end; % methods Static
 	

@@ -52,6 +52,16 @@ classdef document
 
 		end % ndi.document() creator
 
+		function ndi_document_obj = set_session_id(ndi_document_obj, session_id)
+			% SET_SESSION_ID - set the session id for an ndi.document object
+			%
+			% NDI_DOCUMENT_OBJ = SET_SESSION_ID(NDI_DOCUMENT_OBJ, SESSION_ID)
+			%
+			% Sets the document_properties.base.session_id field to the value indicated.
+			%
+				ndi_document_obj.document_properties.base.session_id = session_id;
+		end; % set_session_id
+
 		function ndi_document_obj = add_dependency_value_n(ndi_document_obj, dependency_name, value, varargin)
 			% ADD_DEPENDENCY_VALUE_N - add a dependency to a named list
 			%
