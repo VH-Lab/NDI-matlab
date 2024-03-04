@@ -117,7 +117,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			% See also: ndi.dataset/database_search(), ndi.dataset/database_rm()
 				ndi_dataset_obj.session.database_add(document);
-
 		end; % database_add
 
 		function ndi_dataset_obj = database_rm(ndi_dataset_obj, doc_unique_id, varargin)
@@ -141,58 +140,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
                                 ErrIfNotFound = 0;
                                 did.datastrucrures.assign(varargin{:});
-				if isempty(doc_unique_id),
-					% nothing to do
-					return;
-				end;
-				if ~iscell(doc_unique_id),
-					doc_unique_id = {doc_unique_id};
-				end;
-				q = [];
-				for i=1:numel(doc_unique_id),
-					if ~isa(doc_unique_id{i},'ndi.document'),
-						if isempty(q),
-							q = ndi.query('base.id','exact_string',doc_unique_id{i});
-						else,
-							q = q | ndi.query('base.id','exact_string',doc_unique_id{i});
-						end;
-					end;
-				end;
-				docs_to_fetch = {};
-				if ~isempty(q),
-					docs_to_fetch = ndi_dataset_obj.database_search(q);
-				end;
-				include = [];
-				for i=1:numel(doc_unique_id),
-					if ~isa(doc_unique_id{i},'ndi.document'),
-						for k=1:numel(docs_to_fetch),
-							if strcmp(docs_to_fetch{k}.document_properties.base.id,...
-								doc_unique_id{i}),
-								doc_unique_id{i} = docs_to_fetch{k};
-								break;
-							end;
-						end;
-					end;
-					is ~isa(doc_unique_id{i},'ndi.document'),
-						if ErrIfNotFound,
-							error(['Unable to locate document ' doc_unique_id{i} '.']);
-						else,
-							doc_unique_id{i} = [];
-						end;
-					else,
-						include(end+1) = i;
-					end;
-				end;
-				doc_unique_id = doc_unique_id(include);
-				
-				[b,errmsg] = ndi_dataset_obj.validate_documents(doc_unique_id);
-
-				if ~b,
-					error(errmsg);
-				else,
-					ndi_dataset_obj.session.database_rm(doc_unique_id);
-				end;
-
+				ndi_dataset_obj.session.database_add(document,'ErrIfNotFound',ErrIfNotFound);
 		end; % database_rm
 
 		function ndi_document_obj = database_search(ndi_dataset_obj, searchparameters)
@@ -208,32 +156,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_rm()
 				ndi_document_obj = ndi_dataset_obj.session.database.search(searchparameters);
 		end % database_search();
-
-		function [b,errmsg] = validate_documents(ndi_dataset_obj, document)
-			% VALIDATE_DOCUMENTS - validate whether documents belong to a dataset
-			%
-			% [B, ERRMSG] = VALIDATE_DOCUMENTS(NDI_DATASET_OBJ, DOCUMENT)
-			%
-			% Given an ndi.document DOCUMENT or a cell array of ndi.documents DOCUMENT,
-			% determines whether all document session_ids match the dataset's id.
-				b = 1;
-				errmsg = '';
-				if ~iscell(document),
-					document = {document};
-				end;
-				for i=1:numel(document),
-					b = b & isa(document{i},'ndi.document');
-					if ~b,
-						errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
-						break;
-					end;
-					b = b & strcmp(document{i}.document_properties.base.session_id,ndi_dataset_obj.id());
-					if ~b,
-						errmsg = ['All documents associated with the dataset (and not a session in the dataset) must have a session_id equal to the dataset id (document ' int2str(i) ' does not match).'];
-						break;
-					end;
-				end;
-		end; % validate_documents()
 
 	end; % methods
 
