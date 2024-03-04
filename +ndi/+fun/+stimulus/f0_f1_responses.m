@@ -111,9 +111,12 @@ end;
 
  % now we have f1_tuning_curve and f0_tuning_curve
 
+resp_f0 = ndi.app.stimulus.tuning_response.tuningcurvedoc2vhlabrespstruct(f0_tuning_curve);
+resp_f1 = ndi.app.stimulus.tuning_response.tuningcurvedoc2vhlabrespstruct(f1_tuning_curve);
+
 if isempty(response_index), % have to figure it out
-	[mx_f0,mx_local_f0] = max(f0_tuning_curve.document_properties.stimulus_tuningcurve.response_mean);
-	[mx_f1,mx_local_f1] = max(f1_tuning_curve.document_properties.stimulus_tuningcurve.response_mean);
+	[mx_f0,mx_local_f0] = max(resp_f0.curve(2,:));
+	[mx_f1,mx_local_f1] = max(resp_f1.curve(2,:));
 	if mx_f0 > mx_f1,
 		response_index = mx_local_f0;
 	else,
@@ -121,5 +124,5 @@ if isempty(response_index), % have to figure it out
 	end;
 end;
 
-f0 = f0_tuning_curve.document_properties.stimulus_tuningcurve.response_mean(response_index);
-f1 = f1_tuning_curve.document_properties.stimulus_tuningcurve.response_mean(response_index);
+f0 = resp_f0.curve(2,response_index);
+f1 = resp_f1.curve(2,response_index);
