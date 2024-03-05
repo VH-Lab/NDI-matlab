@@ -112,6 +112,7 @@ for i=1:numel(d),
 
         % use whatever upload command is necessary
         % or, check to see if the file is already there?
+
 end
 delete(h_document);
 delete(h_file);
