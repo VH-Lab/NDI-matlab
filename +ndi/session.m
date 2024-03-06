@@ -54,6 +54,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% Returns the unique reference string for the ndi.session.
 			% REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
 			% and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
+			%
+			% If you just want the reference (not unique) just access the reference
+			% property (NDI_SESSION_OBJ.reference).
+			%
 				warning('unique_reference_string depricated, use id() instead.');
 				dbstack
 				refstr = [ndi_session_obj.reference '_' ndi_session_obj.identifier];
@@ -344,6 +348,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 			% Given an ndi.document DOCUMENT or a cell array of ndi.documents DOCUMENT,
 			% determines whether all document session_ids match the sessions's id. 
+			% An 'empty' session_id (all 0s, ndi.session.empty_id() ) also matches.
+			%
 		
 				b = 1;
 				errmsg = '';
@@ -359,7 +365,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					session_id_here = document{i}.document_properties.base.session_id;
 					b_ = strcmp(session_id_here,ndi_session_obj.id());
 					if ~b_,
-						b_=0; % strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
+						b_= strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
 					end;
 					b = b & b_;
 					if ~b,
@@ -466,6 +472,31 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				d = ndi_session_obj.database_search(q_i1 | q_i2 | q_i3 | q_i4);
 
 		end; % get_ingested_docs
+
+		function b = is_fully_ingested(ndi_session_obj)
+			% IS_FULLY_INGESTED - is an ndi.session object fully ingested?
+			%
+			% B = IS_FULLY_INGESTED(NDI_SESSION_OBJ)
+			%
+			% Returns 1 if the ndi.session object NDI_SESSION_OBJ is fully
+			% ingested and 0 if there are still elements on disk that would
+			% need to be ingested by NDI_SESSION_OBJ.ingest() in order to 
+			% be fully ingested.
+
+					% as a proxy, we will see if there any file navigators that remain to be ingested
+					% this performs no ingestion on its own
+
+				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+				daq_d = {};
+				b = 1;
+				for i=1:numel(daqs),
+					[docs_out] = daqs{i}.filenavigator.ingest();
+					if ~isempty(docs_out),
+						b = 0; 
+						return;
+					end;
+				end;
+		end; % is_fully_ingested
 
 		%%%%%% PATH methods
 
@@ -647,6 +678,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end;
 		end; % eq()
 
+		function inputs = creator_args(ndi_session_obj)
+			% CREATOR_ARGS - return the arguments needed to build an ndi.session object
+			%
+			% INPUTS = CREATOR_ARGS(NDI_SESSION_OBJ)
+			%
+			% Return the inputs necessary to create an ndi.session object. Each input
+			% argument is returned as an entry in the cell array INPUTS.
+			% 
+			% Example:
+			% INPUTS = ndi_session_obj.creator_args();
+			% ndi_session_copy = ndi.session(INPUTS{:});
+			%
+			
+				inputs{1} = ndi_session_obj.reference();
+		end; % creator_args()
+
 	end; % methods
 
 	methods (Access=protected)
@@ -756,7 +803,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				doc_list = doc_list(include);
 		end; %docinput2docs()
 
-			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
 		function [b,errmsg] = all_docs_in_session(docs, session_id)
 			% ALL_DOCS_IN_SESSION - determines if a set of ndi documents are in a session
 			%

@@ -313,7 +313,7 @@ classdef syncgraph < ndi.ido
 						sync_mapping_struct.epochnode_b.epochprobemap = sync_mapping_struct.epochnode_b.epochprobemap.serialize();
 						sync_mapping_struct.epochnode_a.epoch_clock = sync_mapping_struct.epochnode_a.epoch_clock.ndi_clocktype2char();
 						sync_mapping_struct.epochnode_b.epoch_clock = sync_mapping_struct.epochnode_b.epoch_clock.ndi_clocktype2char();
-						d{end+1} = ndi.document('syncrule_mapping','syncrule_mapping',sync_mapping_struct);
+						d{end+1} = ndi.document('syncrule_mapping','syncrule_mapping',sync_mapping_struct) + ndi_syncgraph_obj.session.newdocument();
 						d{end} = d{end}.set_dependency_value('syncgraph_id',syncgraph_id);
 						d{end} = d{end}.set_dependency_value('syncrule_id',ginfo.syncRuleIDs{ginfo.syncRuleG(I(i),J(i))});
 					end;
