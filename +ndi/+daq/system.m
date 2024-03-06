@@ -442,6 +442,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 						end;
 					end;
 				end;
+                for i=1:numel(d),
+                    d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
+                end;
 				ndi_daqsystem_obj.filenavigator.session.database_add(d);
 				ndi_daqsystem_obj.session.cache.clear();
 				b = 1;

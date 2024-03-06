@@ -1,11 +1,11 @@
 classdef dataset < handle % & ndi.ido but this cannot be a superclass because it is not a handle; we do it by construction
 
 	properties (GetAccess=public, SetAccess = protected)
-		reference		% A string reference for the dataset
-		identifier		% A unique identifier
 		session			% A session to hold documents for this dataset
 	end
 	properties (GetAccess=protected, SetAccess = protected)
+		session_info            % A structure with the sessions here
+		session_array           % An array with session objects contained in the dataset
 	end
 
 	methods
@@ -21,10 +21,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			%   ndi.dataset/GETPATH, ndi.dataset/GETREFERENCE
 
-				ndi_dataset_obj.reference = reference;
-				ndi_dataset_obj.database = [];
-				ndiido = ndi.ido();
-				ndi_dataset_obj.identifier = ndiido.id();
                 end
 
 		function identifier = id(ndi_dataset_obj)
@@ -34,21 +30,129 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			% Returns the unique identifier of an ndi.dataset object.
 			%
-				identifier = ndi_dataset_obj.identifier;
+				identifier = ndi_dataset_obj.session.id();
 		end; % id()
 
-		function ref = unique_reference_string(ndi_dataset_obj)
-			% UNIQUE_REFERENCE_STRING - return the reference string for an ndi.dataset object
+		function ref = reference(ndi_dataset_obj)
+			% reference - return the reference string for an ndi.dataset object
 			%
-			% REF_STRING = UNIQUE_REFERENCE_STRING(NDI_DATASET_OBJ)
+			% REF_STRING = REFERENCE(NDI_DATASET_OBJ)
 			%
 			% Returns the reference string for an ndi.dataset object. This can be any
 			% string, it is not necessarily unique among datasets. The dataset identifier
 			% returned by ID is unique.
 			%
 			% See also: ndi.dataset/ID
-
+				ref = ndi_dataset_obj.session.reference;
 		end; % unique_reference_string()
+
+		function ndi_dataset_obj = add_linked_session(ndi_dataset_obj, ndi_session_obj)
+			% ADD_LINKED_SESSION - link an ndi.session to an ndi.dataset
+			%
+			% NDI_DATASET_OBJ = ADD_LINKED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ)
+			%
+			% Add an ndi.session object to an ndi.dataset, without ingesting the session
+			% into the dataset. Instead, the ndi.session is linked to the dataset, but
+			% the session remains where it is.
+			% 
+				if isempty(ndi_dataset_obj.session_array),
+					ndi_dataset_obj.build_session_info;
+				end;
+
+				% first, make sure it is not already there
+
+				match = any(strcmp(ndi_session_obj.id(),{ndi_dataset_obj.session_info.session_id}));
+				if match,
+					error(['ndi.session object with id ' ndi_session_obj.id() ' is already part of dataset ' ndi_dataset_obj.id() '.']);
+				end;
+
+				% okay, it is new, let's add it
+
+				session_info_here.session_id = ndi_session_obj.id();
+				session_info_here.session_reference = ndi_session_obj.reference();
+				session_info_here.is_linked = 1;
+				session_info_here.session_creator = class(ndi_session_obj);
+				session_creator_args = ndi_session_obj.creator_args();
+				for i=1:6, %numel(session_creator_args),
+					field_here = ['session_creator_input' int2str(i)];
+					session_info_here = setfield(session_info_here,field_here,'');
+					if numel(session_creator_args)>=i,
+						session_info_here = setfield(session_info_here,field_here,session_creator_args{i});
+					end;
+				end;
+
+				ndi_dataset_obj.session_info(end+1) = session_info_here;
+				ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
+
+				d = ndi.document('dataset_session_info','dataset_session_info.dataset_session_info',ndi_dataset_obj.session_info);
+				d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
+					% delete the previous
+				ndi_dataset_obj.session.database_rm(d_);
+				d = d.set_session_id(ndi_dataset_obj.id());
+				ndi_dataset_obj.session.database_add(d);
+
+		end; % add_linked_session()
+
+			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
+		function ndi_dataset_obj = add_ingested_session(ndi_dataset_obj, ndi_session_obj)
+			% ADD_INGESTED_SESSION - ingets an ndi.session into an ndi.dataset
+			%
+			% NDI_DATASET_OBJ = ADD_INGESTED_SESSION(NDI_DATASET_OBJ, NDI_SESSION_OBJ)
+			%
+			% Add an ndi.session object to an ndi.dataset, by copying the session
+			% documents into the dataset. 
+			% 
+				if isempty(ndi_dataset_obj.session_array),
+					ndi_dataset_obj.build_session_info;
+				end;
+
+				% first, make sure it is not already there
+
+				match = any(strcmp(ndi_session_obj.id(),{ndi_dataset_obj.session_info.session_id}));
+				if match,
+					error(['ndi.session object with id ' ndi_session_obj.id() ' is already part of dataset ' ndi_dataset_obj.id() '.']);
+				end;
+
+				% second, make sure it is fully ingested
+				is_fully_ingested = ndi_session_obj.is_fully_ingested();
+				if ~is_fully_ingested,
+					error(['ndi.session object with id ' ndi_session_obj.id() ' and reference ' ndi_session_obj.reference ' is not yet fully ingested. It must be fully ingested before it can be added in ingested form to an ndi.dataset object.']);
+				end;
+
+				% okay, let's add it
+				session_info_here.session_id = ndi_session_obj.id();
+				session_info_here.session_reference = ndi_session_obj.unique_reference_string();
+				session_info_here.session_creator = class(ndi_session_obj);
+				session_info_here.is_linked = 0;
+				session_creator_args = ndi_session_obj.creator_args();
+				for i=1:6, %numel(session_creator_args),
+					field_here = ['session_creator_input' int2str(i)];
+					session_info_here = setfield(session_info_here,field_here,'');
+					if numel(session_creator_args)>=i,
+						session_info_here = setfield(session_info_here,field_here,session_creator_args{i});
+					end;
+				end;
+
+				% terrible kludge
+				if isa(ndi_session_obj,'ndi.session.dir'),
+					session_info_here = setfield(session_info_here,'session_creator_input2',ndi_dataset_obj.path());
+				else,
+					error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
+				end;
+
+				ndi.database.fun.copy_session_to_dataset(ndi_session_obj, ndi_dataset);
+
+				ndi_dataset_obj.session_info(end+1) = session_info_here;
+				ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',[]); % make it open it again
+
+				d = ndi.document('dataset_session_info','dataset_session_info',ndi_dataset_obj.session_info);
+				d_ = ndi_dataset_obj.session.database_search(ndi.query('','isa','dataset_session_info'));
+					% delete the previous
+				ndi_dataset_obj.session.database_rm(d_);
+				d = d.set_session_id(ndi_dataset_obj.id());
+				ndi_dataset_obj.session.database_add(d);
+
+		end; % add_ingested_session()
 
 		function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
 			% SESSION - open an ndi.session object from an ndi.dataset
@@ -60,7 +164,30 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			% See also: ndi.session, ndi.dataset/session_list()
 			%
-
+				if isempty(ndi_dataset_obj.session_array),
+					ndi_dataset_obj.build_session_info();
+				end;
+				
+				match = find(strcmp(session_id,{ndi_dataset_obj.session_array.session_id}));
+				match_ = find(strcmp(session_id,{ndi_dataset_obj.session_info.session_id}));
+				if isempty(match),
+					error(['session_id ' session_id ' not found in dataset ' ...
+						ndi_dataset_obj.id() ]);
+				else,
+					if ~isempty(ndi_dataset_obj.session_array(match).session),
+						ndi_session_obj = ndi_dataset_obj.session_array(match).session;
+					else,
+						ndi_dataset_obj.session_array(match).session = ...
+							feval(ndi_dataset_obj.session_info(match_).session_creator,...
+								ndi_dataset_obj.session_info(match_).session_creator_input1, ...
+								ndi_dataset_obj.session_info(match_).session_creator_input2, ...
+								ndi_dataset_obj.session_info(match_).session_creator_input3, ...
+								ndi_dataset_obj.session_info(match_).session_creator_input4, ...
+								ndi_dataset_obj.session_info(match_).session_creator_input5, ...
+								ndi_dataset_obj.session_info(match_).session_creator_input6);
+						ndi_session_obj = ndi_dataset_obj.session_array(match).session;
+					end;
+				end;
 		end; % open_session()
 
 		function [ref_list,id_list] = session_list(ndi_dataset_obj)
@@ -74,14 +201,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% REF_LIST corresponds to the Nth entry of ID_LIST (that is, REF_LIST{n} is the
 			% reference that corresponds to the ndi.session with unique identifier ID_LIST{n}.
 			% 
-				ref_list = {};
-				id_list = {};
-				q_session = ndi.query('','isa','session');
-				d = ndi_dataset_obj.database_search(q_session);
-				for i=1:numel(d),
-					ref_list{i} = d{i}.document_properties.session.reference;
-					id_list{i} = d{i}.document_properties.base.session_id;
+				if isempty(ndi_dataset_obj.session_info),
+					ndi_dataset_obj.build_session_info();
 				end;
+
+				ref_list = {ndi_dataset_obj.session_info.session_reference};
+				id_list = {ndi_dataset_obj.session_info.session_id};
 		end; % session_list()
 
 		function p = getpath(ndi_dataset_obj)
@@ -98,12 +223,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% In the ndi.dataset class, this returns empty.
 			% 
 			% See also: ndidataset.
-				p = [];
+				p = ndi_dataset_obj.session.getpath();
                 end;
 
 		% database methods
 
-			%01234567890123456789012345678901234567890123456789012345678901234567890123456789
 		function ndi_dataset_obj = database_add(ndi_dataset_obj, document)
 			%DATABASE_ADD - Add an ndi.document to an ndi.dataset object
 			%               
@@ -116,7 +240,31 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% The database can be queried by calling NDI_DATASET_OBJ/SEARCH
 			%
 			% See also: ndi.dataset/database_search(), ndi.dataset/database_rm()
-				ndi_dataset_obj.session.database_add(document);
+				if ~iscell(document),
+					document = {document};
+				end;
+
+				ndi_session_ids_here = {};
+				for i=1:numel(document),
+					ndi_session_ids_here{end+1} = document{i}.document_properties.base.session_id;
+				end;
+
+				usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
+				s = {};
+				% make sure all documents have a home before doing anything else
+				for i=1:numel(usession_ids),
+					if ~strcmp(usession_ids{i},ndi_dataset_obj.id()),
+						s{i} = ndi_dataset_obj.open_session(usession_ids{i});
+					else,
+						s{i} = ndi_dataset_obj.session;
+					end;
+				end;
+
+				% now add them in turn
+				for i=1:numel(usession_ids), 
+					indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
+					s{i}.database_add_document(strcmp(usession_ids{i},ndi_session_ids_here));
+				end;
 		end; % database_add
 
 		function ndi_dataset_obj = database_rm(ndi_dataset_obj, doc_unique_id, varargin)
@@ -139,8 +287,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
                                 ErrIfNotFound = 0;
-                                did.datastrucrures.assign(varargin{:});
+                                did.datastructures.assign(varargin{:});
 				ndi_dataset_obj.session.database_add(document,'ErrIfNotFound',ErrIfNotFound);
+				open_linked_sessions(ndi_dataset_obj);
+				match = [ndi_dataset_obj.session_info.is_linked];
+				for i=1:numel(match),
+					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id);
+				end;
 		end; % database_rm
 
 		function ndi_document_obj = database_search(ndi_dataset_obj, searchparameters)
@@ -154,9 +307,69 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% Matches are returned in a cell list NDI_DOCUMENT_OBJ.
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_rm()
-				ndi_document_obj = ndi_dataset_obj.session.database.search(searchparameters);
+				ndi_document_obj = ndi_dataset_obj.session.database_search(searchparameters);
+				open_linked_sessions(ndi_dataset_obj);
+				match = [ndi_dataset_obj.session_info.is_linked];
+				for i=1:numel(match),
+					ndi_document_obj = cat(1,ndi_dataset_obj.session_array(match(i)).session.database_search(searchparameters));
+				end;
 		end % database_search();
 
 	end; % methods
 
+	methods (Access=protected)
+
+		function build_session_info(ndi_dataset_obj)
+			% BUILD_SESSION_INFO - build the session info data structure for an ndi.dataset
+			%
+			% BUILD_SESSION_INFO(NDI_DATASET_OBJ)
+			%
+			% Builds the internal variables 'session_array' and 'session_info' for 
+			% an ndi.dataset object.
+
+				q = ndi.query('','isa','dataset_session_info') & ...
+					ndi.query('base.session_id','exact_string',ndi_dataset_obj.id());
+				session_info_doc = ndi_dataset_obj.session.database_search(q); % we know we are searching the dataset session
+				if isempty(session_info_doc),
+					% we don't have any
+					ndi_dataset_obj.session_info = did.datastructures.emptystruct('session_id','session_reference','is_linked','session_creator',...
+								'session_creator_input1','session_creator_input2','session_creator_input3',...
+								'session_creator_input4','session_creator_input5','session_creator_input6');
+				else,
+					if numel(session_info_doc)>1,
+						error(['Found too many dataset session info documents (' int2str(numel(session_info_doc)) ') for dataset ' ndi_dataset_obj.id() '.']);
+					end;
+					ndi_dataset_obj.session_info = session_info_doc.document_properties.dataset_session_info.dataset_session_info;
+				end;
+
+				% now we have session_info structure, build the initial session_array
+
+				ndi_dataset_obj.session_array = did.datastructures.emptystruct('session_id','session');
+				for i=1:numel(ndi_dataset_obj.session_info),
+					session_array_here.session_id = ndi_dataset_obj.session_info(i).session_id;
+					session_array_here.session = []; % initially don't open it
+					ndi_dataset_obj.session_array(i) = session_array_here; % entries will match
+				end;
+		end; % build_session_info()
+
+		function open_linked_sessions(ndi_dataset_obj)
+			% OPEN_LINKED_SESSIONS - ensure that all linked sessions are open
+			%
+			% OPEN_LINKED_SESSIONS(NDI_DATASET_OBJ)
+			% 
+			% Open all linked dataset sessions, if they are not already open.
+			% 
+				if isempty(ndi_dataset_obj.session_info),
+					ndi_dataset_obj.build_session_info();
+				end;
+
+				for i=1:numel(ndi_dataset_obj.session_info),
+					if isempty(ndi_dataset_obj.session_array.session),
+						ndi_dataset_obj.open_session(ndi_dataset_obj.session_info.session_id(i));
+					end;
+				end;
+		end; % open_linked_sessions
+
+	end; % methods protected
 end % class
+
