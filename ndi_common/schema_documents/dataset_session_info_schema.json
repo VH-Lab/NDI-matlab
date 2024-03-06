@@ -1,0 +1,15 @@
+{
+	"classname": "dataset_session_info",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"dataset_session_info": [
+		{
+			"name": "dataset_session_info",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Session information about for an ndi.dataset object"
+		}
+	]
+}

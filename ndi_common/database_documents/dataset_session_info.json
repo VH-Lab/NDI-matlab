@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/dataset_session_info.json",
+		"validation":						"$NDISCHEMAPATH\/dataset_session_info.json",
+		"class_name":						"dataset_session_info",
+		"property_list_name":					"dataset_session_info",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [ ],
+	"dataset_session_info": {
+		"dataset_session_info":						""
+	}
+}
+
