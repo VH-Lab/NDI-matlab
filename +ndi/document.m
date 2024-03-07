@@ -441,6 +441,24 @@ classdef document
 				end;
 		end; % is_in_file_list() 
 
+		function fl = current_file_list(ndi_document_obj)
+			% CURRENT_FILE_LIST - return the list of files that have been associated with an ndi.document
+			%
+			% FL = CURRENT_FILE_LIST(NDI_DOCUMENT_OBJ)
+			%
+			% Return a cell array of file names that are associated with an ndi.document object.
+			% 
+			% This list will be a subset of all files possible to add to the document in
+			% ndi_document_obj.document_properties.file.file_list, and only includes files that have actually
+			% been added in {ndi_document_obj.document_properties.file.file_info.name}.
+				fl = {};
+				if isfield(ndi_document_obj.document_properties,'files'),
+					if isfield(ndi_document_obj.document_properties.files,'file_info'),
+						fl = {ndi_document_obj.document_properties.files.file_info.name};
+					end;
+				end;
+		end; %  current_file_list()
+
 		function ndi_document_obj_out = plus(ndi_document_obj_a, ndi_document_obj_b)
 			% PLUS - merge two ndi.document objects
 			%
@@ -664,7 +682,6 @@ classdef document
 					return;
 				end;
 
-				% Now, clear it out:
 				ndi_document_obj.document_properties.files.file_info = ...
 					did.datastructures.emptystruct('name','locations');
 

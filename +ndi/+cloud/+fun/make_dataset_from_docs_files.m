@@ -1,11 +1,13 @@
-function S = make_session_from_docs_files(session_path, session_reference, doc_path, files_path)
+function D = make_dataset_from_docs_files(dataset_path, dataset_reference, doc_path, files_path)
 %
-% [S] = make_session_from_docs_files(SESSION_PATH, SESSION_REFERENCE, ...
+% [D] = make_dataset_from_docs_files(DATASET_PATH, DATASET_REFERENCE, ...
 %   DOC_PATH, FILES_PATH)
 %
-% Build an ndi.session from a set of downloaded documents and files.
+% Build an ndi.dataset.dir from a set of downloaded documents and files.
 %
-% SESSION_PATH is the full path of the session to be made.
+% DATASET_PATH is the full path of the dataset to be made.
+%
+% DATASET_REFERENCE is the full path of the dataset.
 %
 % DOC_PATH is the full path of a directory with .json files of ndi.documents.
 %
@@ -17,6 +19,8 @@ verbose = 1;
 
 d = dir([doc_path filesep '*.json']);
 doc_list = {};
+
+session_id = '';
 
 for i=1:numel(d),
 	if verbose,
@@ -46,10 +50,16 @@ for i=1:numel(d),
 	end;
 
 	doc_list{i} = doc_obj;
+
+	if strcmp(doc_list{i}.doc_class,'dataset_session_info'),
+		session_id = doc_list{i}.document_properties.base.session_id;
+	end;
 end;
 
-S = ndi.session.dir(session_reference,session_path);
-S.database_add(doc_list);
-S = ndi.session.dir(session_path); % to refresh the ID
+if isempty(session_id),
+	error(['Could not find session_id among documents specified. (You should not see this error.)']);
+end;
+
+D = ndi.dataset.dir(dataset_reference,dataset_path,doc_list);
 
 

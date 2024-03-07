@@ -393,11 +393,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % database_openbinarydoc
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
-			% DATABASE_CLOSEBINARYDOC - close and unlock an ndi.database.binarydoc 
+			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc 
 			%
-			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
+			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_SESSION_OBJ, NDI_BINARYDOC_OBJ)
 			%
-			% Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
+			% Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
 			% database, which is why it is necessary to call this function through the session object.
 			%
 				ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);

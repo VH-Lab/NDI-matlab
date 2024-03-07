@@ -31,17 +31,26 @@ end;
 
  % Step 2, make a copy of all the documents
 
-q_all = ndi.query('base.id','regexp','(.*)'); % take any id
-
-d = ndi_session_obj.database_search(q_all);
-
- % how to add?
-
+[docs,target_path] = ndi.database.fun.extract_docs_files(ndi_session_obj);
 
  % what we want is to make a surrogate ndi.session.dir with path matching the dataset path
-
  % for this, we need to make sure the ndi.session.dir creator doesn't read its session_id or reference from the database
  % this needs to be true at ANY time, when it is opened again later
- % 
 
+are_empty_session_id_docs = 0;
+
+for i=1:numel(docs),
+	if isempty(docs{i}.document_properties.base.session_id),
+		are_empty_session_id_docs = are_empty_session_id_docs + 1;
+		docs{i} = docs{i}.set_session_id(ndi_session_obj.id());
+	end;
+end;
+
+if are_empty_session_id_docs>0,
+	warning(['Found ' int2str(are_empty_session_id_docs) ' documents with empty session_id. Setting them to match the current session.']);
+end;
+
+ndi_session_surrogate = ndi.session.dir(ndi_session_obj.reference, ndi_dataset_obj.getpath(), ndi_session_obj.id());
+
+ndi_session_surrogate.database_add(docs);
 
