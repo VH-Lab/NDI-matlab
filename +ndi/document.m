@@ -52,6 +52,16 @@ classdef document
 
 		end % ndi.document() creator
 
+		function ndi_document_obj = set_session_id(ndi_document_obj, session_id)
+			% SET_SESSION_ID - set the session id for an ndi.document object
+			%
+			% NDI_DOCUMENT_OBJ = SET_SESSION_ID(NDI_DOCUMENT_OBJ, SESSION_ID)
+			%
+			% Sets the document_properties.base.session_id field to the value indicated.
+			%
+				ndi_document_obj.document_properties.base.session_id = session_id;
+		end; % set_session_id
+
 		function ndi_document_obj = add_dependency_value_n(ndi_document_obj, dependency_name, value, varargin)
 			% ADD_DEPENDENCY_VALUE_N - add a dependency to a named list
 			%
@@ -431,6 +441,24 @@ classdef document
 				end;
 		end; % is_in_file_list() 
 
+		function fl = current_file_list(ndi_document_obj)
+			% CURRENT_FILE_LIST - return the list of files that have been associated with an ndi.document
+			%
+			% FL = CURRENT_FILE_LIST(NDI_DOCUMENT_OBJ)
+			%
+			% Return a cell array of file names that are associated with an ndi.document object.
+			% 
+			% This list will be a subset of all files possible to add to the document in
+			% ndi_document_obj.document_properties.file.file_list, and only includes files that have actually
+			% been added in {ndi_document_obj.document_properties.file.file_info.name}.
+				fl = {};
+				if isfield(ndi_document_obj.document_properties,'files'),
+					if isfield(ndi_document_obj.document_properties.files,'file_info'),
+						fl = {ndi_document_obj.document_properties.files.file_info.name};
+					end;
+				end;
+		end; %  current_file_list()
+
 		function ndi_document_obj_out = plus(ndi_document_obj_a, ndi_document_obj_b)
 			% PLUS - merge two ndi.document objects
 			%
@@ -654,7 +682,6 @@ classdef document
 					return;
 				end;
 
-				% Now, clear it out:
 				ndi_document_obj.document_properties.files.file_info = ...
 					did.datastructures.emptystruct('name','locations');
 

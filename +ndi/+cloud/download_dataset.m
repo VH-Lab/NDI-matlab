@@ -1,4 +1,4 @@
-function [b,msg, S] = download_dataset(dataset_id, output_path)
+function [b,msg, D] = download_dataset(dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
 % [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, OUTPUT_PATH)
@@ -122,7 +122,7 @@ if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
     fclose(fid);
 end
 
-S = ndi.cloud.fun.make_session_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
+D = ndi.cloud.fun.make_dataset_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
 [output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'files'] );
 
 end
