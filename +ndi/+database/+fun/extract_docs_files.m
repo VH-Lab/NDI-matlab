@@ -29,10 +29,11 @@ docs = d;
 for i = 1:numel(d),
 	if isfield(d{i}.document_properties,'files'),
 		file_info = did.datastructures.emptystruct('file_name','fullpathfilename');
+		fl = docs{i}.current_file_list();
 		docs{i} = docs{i}.reset_file_info;
-		for f = 1:numel(d{i}.document_properties.files.file_list),
+		for f = 1:numel(fl),
 			file_info_here = [];
-			file_info_here.file_name = d{i}.document_properties.files.file_list{f};
+			file_info_here.file_name = fl{f};
 			doc_id = d{i}.document_properties.base.id;
 			file_obj = ndi_session_obj.database_openbinarydoc(doc_id,file_info_here.file_name);
 			[~,uid,~] = fileparts(file_obj.fullpathfilename);
