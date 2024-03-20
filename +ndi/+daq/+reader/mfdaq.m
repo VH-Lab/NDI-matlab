@@ -189,7 +189,7 @@ classdef mfdaq < ndi.daq.reader
 					error(['Only one type of channel may be read per function call at present.']);
 				end;
 
-				sr = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
+				[sr,offset,scale] = ndi_daqreader_mfdaq_obj.samplerate_ingested(epochfiles, channeltype, channel, S);
 
 				sr_unique = unique(sr);
 				if numel(sr_unique)~=1,
@@ -247,8 +247,6 @@ classdef mfdaq < ndi.daq.reader
 					otherwise,
 						error(['Unknown channel type ' ch_unique{1} '. Use readevents for events, markers, text markers, etc.']);
 				end;
-				[underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
-					ch_unique{1},channel(1));
 				[mytypes,myabbrev] = ndi.daq.reader.mfdaq.channel_types();
 				ind = find(strcmp(ch_unique{1},mytypes));
 				prefix = myabbrev{ind};
@@ -306,7 +304,7 @@ classdef mfdaq < ndi.daq.reader
 					end;
 					count = count + numel(samples_here);
 				end;
-				data = (data - mypoly(1))*mypoly(2);
+				data = ndi.compress.underlying2scaled(data,[offset scale]);
 
 		end % readchannels_epochsamples_ingested()
 
@@ -505,6 +503,7 @@ classdef mfdaq < ndi.daq.reader
 					for i=1:numel(timestamps),
 						included = find(timestamps{i} >=t0 & timestamps{i} <= t1);
 						timestamps{i} = timestamps{i}(included,:);
+                        data{i} = data{i}(:); % make sure we are column
 						data{i} = data{i}(included,:);
 					end;
 
@@ -530,7 +529,7 @@ classdef mfdaq < ndi.daq.reader
 			%  
 			%  EPOCH is the epoch number or epochID
 			%
-			%  DATA is a two-column vector; the first column has the time of the event. The second
+			%  T is a two-column vector; the first column has the time of the event. The second
 			%  column indicates the marker code. In the case of 'events', this is just 1. If more
 			%  than one channel is requested, DATA is returned as a cell array, one entry per channel.
 			%
@@ -557,7 +556,7 @@ classdef mfdaq < ndi.daq.reader
 		end; % samplerate()
 
 			%012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
-                function sr = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel, S)
+                function [sr,offset,scale] = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel, S)
 			% SAMPLERATE_INGESTED - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
 			% SR = SAMPLERATE_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES, CHANNELTYPE, CHANNEL, S)
@@ -581,6 +580,8 @@ classdef mfdaq < ndi.daq.reader
 				channeltype = ndi.daq.reader.mfdaq.standardize_channel_types(channeltype);
 
 				sr = [];
+                offset = [];
+                scale = [];
 				for i=1:numel(channel),
 					index_here = find( strcmp(channeltype{i},{fullchannelinfo.type}) & ...
 						([fullchannelinfo.number]==channel(i)) );
@@ -588,8 +589,12 @@ classdef mfdaq < ndi.daq.reader
 						error(['No such channel: ' channeltype{i} ' : ' int2str(channel(i)) '.']);
 					end;
 					sr(i) = fullchannelinfo(index_here).sample_rate;
+                    offset(i) = fullchannelinfo(index_here).offset;
+                    scale(i) = fullchannelinfo(index_here).scale;
 				end;
 				sr = sr(:);
+                offset = offset(:);
+                scale = scale(:);
 
 		end; % samplerate_ingested
 
@@ -603,8 +608,9 @@ classdef mfdaq < ndi.daq.reader
 			% DATATYPE is a type that is suitable for passing to FREAD or FWRITE
 			%  (e.g., 'float64', 'uint16', etc. See help fread.)
 			%
-			% P is a polynomial that converts between the double data that is returned by
-			% READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
+			% P is a ,atrix of polynomials that converts between the double data that is returned by
+			% READCHANNEL. RETURNED_DATA = (RAW_DATA+P(i,1))*P(i,2)+(RAW_DATA+P(i,1))*P(i,3) ...
+            % There is one row of P for each entry of CHANNEL.
 			%
 			% DATASIZE is the sample size in bits.
 			%
@@ -617,15 +623,15 @@ classdef mfdaq < ndi.daq.reader
 						% allow for optimal compression if not overridden
 						datatype = 'float64';
 						datasize = 64;
-						p = [0 1];
+						p = repmat([0 1],numel(channel),1);
 					case {'digital_in','digital_out'},
 						datatype = 'char';
 						datasize = 8;
-						p = [0 1];
+						p = repmat([0 1],numel(channel),1);
 					case {'eventmarktext','event','marker','text'},
 						datatype = 'float64';
 						datasize = 64;
-						p = [0 1];
+						p = repmat([0 1],numel(channel),1);
 					otherwise,
 						error(['Unknown channel type ' channeltype '.']);
 				end; % 
@@ -690,6 +696,15 @@ classdef mfdaq < ndi.daq.reader
 					end;
 				end;
 				[ch.sample_rate] = sample_rates{:};
+                thepoly1 = {}; thepoly2 = {};
+                for i=1:numel(ch),
+                    [dummy,chan_number] = ndi.fun.channelname2prefixnumber(ch(i).name);
+                    [ut,thepoly,~]=ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,ch(i).type,chan_number);
+                    thepoly1{i} = thepoly(1);
+                    thepoly2{i} = thepoly(2);
+                end;
+                [ch.offset] = thepoly1{:};
+                [ch.scale] = thepoly2{:};
 
 				mfdaq_epoch_channel_obj = ndi.file.type.mfdaq_epoch_channel(ch);
 				channel_file_name = ndi.file.temp_name();
@@ -738,7 +753,6 @@ classdef mfdaq < ndi.daq.reader
 					groups = unique([ci(chan_entries_indexes).group]); 
 					for g = 1:numel(groups),
 						group_indexes = find([ci(chan_entries_indexes).group]==groups(g));
-
 						% Step 2b: check to make sure all channels have the same sampling rate
 							% will this work for all channel types? Probably not
 						[underlying_format,mypoly,datasize] = ndi_daqreader_mfdaq_obj.underlying_datatype(epochfiles,...
@@ -782,10 +796,10 @@ classdef mfdaq < ndi.daq.reader
 									s1 = min(s0+sample_analog_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
 										channels_here, epochfiles, s0, s1);
-									data = data/mypoly(2) + mypoly(1);
+									data = ndi.compress.scaled2underlying(data, mypoly);
 									output_bit_size = datasize;
 									filename_here = ndi.file.temp_name();
-									[ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here);
+									[ratio] = ndi.compress.compress_ephys(data,output_bit_size,filename_here,'data_is_unsigned','u'==lower(underlying_format(1)));
 									d = d.add_file([fileprefix '_group' int2str(groups(g)) '_seg.nbf_' int2str(s) ],...
 										[filename_here '.nbf.tgz']);
 									filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
@@ -807,7 +821,7 @@ classdef mfdaq < ndi.daq.reader
 									s1 = min(s0+sample_digital_segment-1,S1);
 									data = ndi_daqreader_mfdaq_obj.readchannels_epochsamples(repmat({types{i}},1,numel(channels_here)), ...
 										channels_here, epochfiles, s0, s1);
-									data = data/mypoly(2) + mypoly(1);
+									data = ndi.compress.scaled2underlying(data, mypoly);
 									output_bit_size = datasize;
 									filename_here = ndi.file.temp_name();
 									[ratio] = ndi.compress.compress_digital(data,filename_here);
@@ -816,6 +830,7 @@ classdef mfdaq < ndi.daq.reader
 									filenames_we_made{end+1} = [filename_here '.nbf.tgz'];
 								end;
 							case 'eventmarktext',
+								mylog.msg('system',1,['Working on event/marker/text ingestion segment 1 of 1.']);
 								channels_here = [ci(chan_entries_indexes(group_indexes)).number];
 								channeltype = {};
 								for ii=1:numel(channels_here),
