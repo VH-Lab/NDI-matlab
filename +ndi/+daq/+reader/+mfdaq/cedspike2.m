@@ -202,7 +202,11 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
                         data{i} = ones(size(data{i}));
                     end;
                     if strcmp(channeltype{i},'marker'),
+                        if ~isempty(data{i}),
+                        try,
                         data{i} = sum( double(data{i}) .* repmat([2^0 2^8 2^16 2^24],size(data{i},1),1),2);
+                        catch, keyboard; end
+                        end
                     end;
                     if strcmp(channeltype{i},'text'),
                         data{i} = vlt.data.matrow2cell(data{i})';

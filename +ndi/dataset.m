@@ -81,6 +81,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 					end;
 				end;
 
+				% maybe later
+				% assume that the second creator argument is a file path that needs to be made relative
+				% session_info.session_creator_input2 = vlt.file.relativeFilename(ndi_dataset_obj.getpath(),ndi_session_obj.getpath)
+
 				ndi_dataset_obj.session_info(end+1) = session_info_here;
 				ndi_dataset_obj.session_array(end+1) = struct('session_id',ndi_session_obj.id(),'session',ndi_session_obj);
 
@@ -135,7 +139,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
 				% terrible kludge
 				if isa(ndi_session_obj,'ndi.session.dir'),
-					session_info_here = setfield(session_info_here,'session_creator_input2',ndi_dataset_obj.getpath());
+					session_info_here = setfield(session_info_here,'session_creator_input2',''); % same relative path % ndi_dataset_obj.getpath());
 				else,
 					error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
 				end;
@@ -177,10 +181,15 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 					if ~isempty(ndi_dataset_obj.session_array(match).session),
 						ndi_session_obj = ndi_dataset_obj.session_array(match).session;
 					else,
+						patharg = ndi_dataset_obj.session_info(match_).session_creator_input2;
+						if ndi_dataset_obj.session_info(match_).is_linked==0,
+							patharg = ndi_dataset_obj.getpath();
+						end;
 						ndi_dataset_obj.session_array(match).session = ...
 							feval(ndi_dataset_obj.session_info(match_).session_creator,...
 								ndi_dataset_obj.session_info(match_).session_creator_input1, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input2);, ...
+								patharg,...
+								session_id);
 								%ndi_dataset_obj.session_info(match_).session_creator_input3, ...
 								%ndi_dataset_obj.session_info(match_).session_creator_input4, ...
 								%ndi_dataset_obj.session_info(match_).session_creator_input5, ...
