@@ -362,6 +362,7 @@ classdef mfdaq < ndi.daq.system
 			% 'digital_in_mark','dimp',   | 'dimp'
 			% 'digital_in_mark_pos','dim' |
 			% 'digital_in_mark_neg','dimn'| 'dimn'
+            % 'text'                      | 'tx'
 			%
 			% See also: ndi.daq.system.mfdaq/MFDAQ_TYPE
 			%
@@ -392,6 +393,8 @@ classdef mfdaq < ndi.daq.system
 						prefix = 'e';
 					case {'metadata','md'},
 						prefix = 'md';
+                    case {'text'},
+                        prefix = 'tx';
 				end;
 		end % mfdaq_prefix()
 

@@ -46,7 +46,8 @@ classdef mfdaq_epoch_channel
 			% 
 			% OBJ = CREATE_PROPERTIES(OBJ, CHANNEL_STRUCTURE, ...)
 			%
-			% CHANNEL_STRUCTURE has fields 'name','type', and 'sample_rate'
+			% CHANNEL_STRUCTURE has fields 'name','type', 'sample_rate', 
+            %   'offset', and 'scale'
 			%
 			% This function also takes name/value pairs that modify the
 			% default behavior.
@@ -95,7 +96,7 @@ classdef mfdaq_epoch_channel
 				[dummy,indexes_sorted] = sort({channel_structure.type});
 				channel_structure = channel_structure(indexes_sorted);
 
-				channel_information = vlt.data.emptystruct('name','type','time_channel','sample_rate','number','group','dataclass');
+				channel_information = vlt.data.emptystruct('name','type','time_channel','sample_rate','offset','scale','number','group','dataclass');
 
 				types_available = unique({channel_structure.type});
 				index_emt = find( strcmp('event',types_available) | strcmp('marker',types_available) | strcmp('text',types_available) );
@@ -124,6 +125,8 @@ classdef mfdaq_epoch_channel
 						channel_info_here.type = channels_here(j).type;
 						channel_info_here.time_channel = channels_here(j).time_channel;
 						channel_info_here.sample_rate = channels_here(j).sample_rate;
+                        channel_info_here.offset = channels_here(j).offset;
+                        channel_info_here.scale = channels_here(j).scale;
 						[dummy,channel_info_here.number] = ndi.fun.channelname2prefixnumber(channels_here(j).name);
 						channel_info_here.group = 1+floor( channel_info_here.number / channels_per_group);
 						channel_info_here.dataclass = eval([types_available{i} '_dataclass;']);

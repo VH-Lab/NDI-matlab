@@ -4,7 +4,7 @@ function b = compare(dirname1, dirname2)
 % B = COMPARE(DIRNAME1, DIRNAME2)
 %  
 % Compare data from ndi sessions (from VH Lab) where one dataset
-%  (DIRNAME1) is ingested and the other (DIRNAME2) is not.
+%  (DIRNAME1) is not ingested and the other (DIRNAME2) is.
 %
 % If DIRNAME1 and DIRNAME2 are not provided, then
 %   DIRNAME1 = '/Users/vanhoosr/test/2019-11-19' and
