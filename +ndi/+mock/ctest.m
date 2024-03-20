@@ -22,7 +22,7 @@ classdef ctest
  
                         % 80 character reference; documentation should be within 80 character limit
 			% 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-		function [b,errormsg,b_expected] = test(ctest_obj, scope, number_of_tests, plot_it)
+		function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it)
 			% test - perform a test of an ndi.calculator object
 			%
 			% [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT)
@@ -83,7 +83,7 @@ classdef ctest
 						ctest_obj.plot(doc_output{i});
 					end;
 				end;
-		end;
+			end; % test()
 
                         % 80 character reference; documentation should be within 80 character limit
 			% 01234567890123456789012345678901234567890123456789012345678901234567890123456789

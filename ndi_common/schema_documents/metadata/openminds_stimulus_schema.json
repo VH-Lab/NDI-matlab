@@ -1,0 +1,11 @@
+{
+	"classname": "openminds_stimulus",
+	"superclasses":  [ "base", "epochid", "openminds" ],
+	"depends_on": [
+		{ "name": "stimulus_element_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"openminds_stimulus": [
+	]
+}
+
