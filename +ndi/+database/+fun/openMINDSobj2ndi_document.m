@@ -1,4 +1,4 @@
-function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type, dependency_value)
+function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type, dependency_value, varargin)
 % OPENMINDSOBJ2NDI_DOCUMENT - openMinds objects to set of ndi.document objects
 %
 % D = ndi.database.fun.openMINDSobj2ndi_document(OPENMINDS_OBJ, SESSION_ID, [DEPENDENCY_TYPE], [DEPENDENCY_VALUE])
@@ -55,6 +55,9 @@ switch lower(dependency_type),
 	case 'element',
 		dependency_name = 'element_id';
 		docName = ['openminds_element'];
+    case 'stimulus',
+        dependency_name = 'stimulus_element_id';
+        docName = ['openminds_stimulus'];
 	otherwise,
 		error(['Unknown DEPENDENCY_TYPE ' dependency_type '.']);
 end;
@@ -67,7 +70,7 @@ for i=1:numel(s),
     openminds_struct = rmfield(openminds_struct,'ndi_id');
 	d{i} = ndi.document(docName,'base.id',ndi_id_here,...
 		'base.session_id',session_id,...
-		'openminds',openminds_struct);
+		'openminds',openminds_struct,varargin{:});
 	fn = fieldnames(openminds_struct.fields);
     added_dependency = 0;
 	for j=1:numel(fn),

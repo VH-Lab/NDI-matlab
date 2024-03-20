@@ -180,11 +180,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 						ndi_dataset_obj.session_array(match).session = ...
 							feval(ndi_dataset_obj.session_info(match_).session_creator,...
 								ndi_dataset_obj.session_info(match_).session_creator_input1, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input2, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input3, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input4, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input5, ...
-								ndi_dataset_obj.session_info(match_).session_creator_input6);
+								ndi_dataset_obj.session_info(match_).session_creator_input2);, ...
+								%ndi_dataset_obj.session_info(match_).session_creator_input3, ...
+								%ndi_dataset_obj.session_info(match_).session_creator_input4, ...
+								%ndi_dataset_obj.session_info(match_).session_creator_input5, ...
+								%ndi_dataset_obj.session_info(match_).session_creator_input6);
 						ndi_session_obj = ndi_dataset_obj.session_array(match).session;
 					end;
 				end;
@@ -341,6 +341,18 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_closebinarydoc(ndi_binarydoc_obj);
 		end; % database_closebinarydoc
 
+		function ndi_session_obj = document_session(ndi_dataset_obj, ndi_document_obj)
+			% DOCUMENT_SESSION return the ndi.session of an ndi.document object in an ndi.dataset
+			%
+			% NDI_SESSION_OBJ = DOCUMENT_SESSION(NDI_DATASET_OBJ, NDI_DOCUMENT_OBJ)
+			%
+			% Given an ndi.document, return an open ndi.session object that contains the
+			% the document.
+			%
+				session_id = ndi_document_obj.document_properties.base.session_id;
+				ndi_session_obj = ndi_dataset_obj.open_session(session_id)
+		end; % document_session()
+
 	end; % methods
 
 	methods (Access=protected)
@@ -391,8 +403,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
 				for i=1:numel(ndi_dataset_obj.session_info),
 					if ndi_dataset_obj.session_info(i).is_linked,
-						if isempty(ndi_dataset_obj.session_array.session),
-							ndi_dataset_obj.open_session(ndi_dataset_obj.session_info.session_id(i));
+						if isempty(ndi_dataset_obj.session_array(i).session),
+							ndi_dataset_obj.open_session(ndi_dataset_obj.session_info(i).session_id);
 						end;
 					end;
 				end;
