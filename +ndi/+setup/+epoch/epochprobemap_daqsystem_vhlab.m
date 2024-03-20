@@ -110,6 +110,7 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 			    ndi_struct = vlt.file.loadStructArray(filename);
 			    fn = fieldnames(ndi_struct);
 			    if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}'),
+                    fn,
 				    error(['fields must be (case-sensitive match): name, ref, channel_list. See HELP VHINTAN_CHANNELGROUPING.']);
 			    end;
 

@@ -61,6 +61,7 @@ for i=1:numel(et1),
 			if ~strcmp(continuous_types{j},'time'),
 				if ~isequaln(D1,D2),
 					errmsg{end+1} = ['Reading ' continuous_types{j} ' produced unequal results.'];
+                    keyboard
 				end;
 			else,
 				disp('checking time values')
@@ -95,11 +96,31 @@ for i=1:numel(et1),
 			t_stop = min(t_start + 300,et1(i).t0_t1{1}(2));
 			[T1,D1] = daq1.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
 			[T2,D2] = daq2.readevents(event_types{j},channels_here,et1(i).epoch_id,t_start,t_stop);
+            if iscell(T1)
+                for TT=1:numel(T1),
+                    if isempty(T1{TT}), 
+                        T1{TT} = zeros(0,1);
+                    end;
+                end;
+            end;
 			if ~isequaln(T1,T2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in time.'];
+                                    keyboard
+
 			end;
-			if ~isequaln(D1,D2),
+            if iscell(D1),
+                for TT=1:numel(D1),
+                    if isempty(D1{TT}), 
+                        D1{TT} = zeros(0,1);
+                    end;
+                end;
+            else,
+                if isempty(D1),D1=zeros(0,1);end;
+            end;
+            if ~isequaln(D1,D2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in codes/text.'];
+                                    keyboard
+
 			end;
 		end;
 	end;
