@@ -1,7 +1,7 @@
-function add_stimulus_approach(S, filename)
+function dnew = add_stimulus_approach(S, filename)
 % ADD_STIMULUS_APPROACH add stimulus approaches to an ndi.session from a text file
 %
-% ADD_STIMULUS_APPROACH(S, [FILENAME])
+% DNEW = ADD_STIMULUS_APPROACH(S, [FILENAME])
 %
 % Examines a text file, either named 'stimulus_approaches.txt' in the root
 % directory of the ndi.session object S or FILENAME if provided.
@@ -28,10 +28,12 @@ if isempty(daqsys),
 	error(['Could not find daq system vhvis_spike2.']);
 end;
 
-daq_id = daqsys{1}.id();
+daq_id = daqsys.id();
 session_id = S.id();
 
-probe_id = ;
+probe = S.getprobes('type','stimulator');
+probe = probe{1};
+probe_id = probe.id();
 et = probe.epochtable();
 
 for i=1:numel(tab),
@@ -44,17 +46,17 @@ for i=1:numel(tab),
 		error(['Could not find epoch ' tab(i).Epoch '.']);
 	end;
 
-	ont_id = ['NDIC:' sprintf('%0.8d',item.Identifier];
+	ont_id = ['NDIC:' sprintf('%0.8d',item.Identifier)]
 
 	% do we already have the item as a document?
 	q_e = ndi.query('epochid.epochid','exact_string',tab(i).Epoch);
 	q_s = ndi.query('openminds.fields.name','exact_string',tab(i).Approach) & ...
-		ndi.query('openminds.fields.preferredOntologyIdentifier',ont_id);
-	d_test = S.database_search(q_e&q&s);
+		ndi.query('openminds.fields.preferredOntologyIdentifier','exact_string',ont_id);
+	d_test = S.database_search(q_e&q_s);
 	if isempty(d_test),
-		new_approach = openminds.controlledterms.StimulusApproach(...
+		new_approach = openminds.controlledterms.StimulationApproach(...
 			'name',item.Name,...
-			'preferredOntologyIdentifier',ont_id',...
+			'preferredOntologyIdentifier',ont_id,...
 			'description',item.Description);
 		d_new = ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
 			session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch);
