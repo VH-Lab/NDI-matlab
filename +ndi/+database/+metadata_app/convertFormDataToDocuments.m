@@ -314,7 +314,6 @@ function [strainInstanceMap] = convertStrains(items)
     for i = 1:numel(items)
         thisItem = items(i);
         thisInstance = strainInstanceMap(thisItem.name);
-        addBackgroundStrain(thisInstance, thisItem, strainInstanceMap);
         
         for j = 1:numel(thisItem.backgroundStrain)
             bgStrainName = thisItem.backgroundStrain(j);
