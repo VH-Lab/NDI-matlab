@@ -8,6 +8,7 @@ classdef Subject < handle
         SpeciesList (1,:) ndi.database.metadata_app.class.Species
         StrainList (1,:) ndi.database.metadata_app.class.Strain
         StrainMap
+        sessionIdentifier (1,1) string
     end
     
     methods

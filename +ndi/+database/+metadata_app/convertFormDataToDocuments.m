@@ -23,7 +23,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     strainCatalog = loadUserInstanceCatalog('Strain');
 
     % Todo: Adapt conversion to also convert custom species.
-    strainInstanceMap = convertStrains(strainCatalog.getAll() );
+    % strainInstanceMap = convertStrains(strainCatalog.getAll() );
 
     organizations = [organizations, fundingOrganizations];
 
@@ -116,7 +116,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     try 
         doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = doi;
-    catch
+        catchloadl
         webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = webResource;
     end
@@ -141,6 +141,8 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.technique = cellfun(@(value) convertTechnique(value), ...
         appUserData.TechniquesEmployed, 'UniformOutput', false );
 
+    subjectMap = containers.Map;
+
     % Create subjects
     subjects = cell(1, numel(appUserData.Subjects));
     for i = 1:numel(subjects)
@@ -157,20 +159,21 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         else
             speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
         end
-
-        if isempty( subjectItem.StrainList )
-            subjects{i}.species = speciesInstance;
-        else
-            strainName = subjectItem.StrainList.Name;
-            strainInstance = strainInstanceMap(strainName);
-            subjects{i}.species = strainInstance;
-        end
+        subjects{i}.species = speciesInstance;
+        % if isempty( subjectItem.StrainList )
+        %     subjects{i}.species = speciesInstance;
+        % else
+        %     strainName = subjectItem.StrainList.Name;
+        %     strainInstance = strainInstanceMap(strainName);
+        %     subjects{i}.species = strainInstance;
+        % end
 
         % Add internal identifier and lookup label
         subjectName = subjectItem.SubjectName;
         subjectNameSplit = strsplit(subjectName, '@');
         subjects{i}.internalIdentifier = subjectNameSplit{1};
         subjects{i}.lookupLabel = subjectName;
+        subjectMap(subjects{i}.lookupLabel) = subjectItem.sessionIdentifier;
     end
     datasetVersion.studiedSpecimen = [subjects{:}];
 
@@ -178,6 +181,33 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     % Generate the ndi documents.
     documentList = ndi.database.fun.openMINDSobj2ndi_document(dataset, sessionId);
+    documentList = checkSessionIds(subjectMap, documentList);
+end
+
+function documentList = checkSessionIds(subjectMap, documentList)
+    dv_f = {};
+    studiedSpecimen_id_map = containers.Map;
+    studiedSpecimen_id = '';
+    for i = 1:numel(documentList)
+        if strcmp(documentList{i}.document_properties.openminds.matlab_type, 'openminds.core.products.DatasetVersion')
+            dataset_version_doc{1} = documentList{i};
+            dv_f = dataset_version_doc{1, 1}.document_properties.openminds.fields;
+            break
+        end
+    end
+    if numel(dataset_version_doc) > 0 
+        % for each dv_f.studiedSpecimen, remove its prefix ndi:// and make it the key of the map
+        studiedSpecimen_id = dv_f.studiedSpecimen;
+        % for i = 1:numel(dv_f.studiedSpecimen)
+        %     studiedSpecimen_id_map(dv_f.studiedSpecimen{i}(7:end)) = dv_f.studiedSpecimen{i}(7:end);
+        % end
+    end
+    
+    for i = 1:numel(studiedSpecimen_id)
+        [studiedSpecimen_doc, idx] = ndi.cloud.fun.search_id(studiedSpecimen_id{i},documentList);
+        session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
+        documentList{idx} = studiedSpecimen_doc.set_session_id(session_id);
+    end
 end
 
 
