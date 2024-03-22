@@ -36,6 +36,8 @@ probe = probe{1};
 probe_id = probe.id();
 et = probe.epochtable();
 
+dnew = {};
+
 for i=1:numel(tab),
 	item = ndi.database.fun.ndicloud_ontology_lookup('Name',tab(i).Approach);
 	if isempty(item),
@@ -58,8 +60,8 @@ for i=1:numel(tab),
 			'name',item.Name,...
 			'preferredOntologyIdentifier',ont_id,...
 			'description',item.Description);
-		d_new = ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
-			session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch);
+		dnew = cat(1,dnew,ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
+			session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
 	end;
 
 end;
