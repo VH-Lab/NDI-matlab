@@ -87,6 +87,22 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 				end;
 		end; % readmetadata()
 
+		function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles, S)
+			% PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES, S)
+			%
+			% Returns the parameters (cell array of structures) associated with the
+			% stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
+			% S is the ndi.session object associated with the data.
+			%
+				parameters = {};
+				d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
+				if ~isempty(d),
+					[tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,'data.bin','.nbf.tgz');
+					parameters = ndi.compress.expand_metadata(tname_without_ext);
+					delete(tname);
+				end;
+		end; % readmetadata_ingested()
+
 		function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
 			% PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
 			%
@@ -100,6 +116,51 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 					parameters{i} = stimparameters(i);
 				end;
 		end;  % readmetadata
+
+		function d = ingest_epochfiles(ndi_daqmetadatareader_obj, epochfiles, epoch_id)
+			% INGEST_EPOCHFILES - create an ndi.document that describes the data that is read by an ndi.daq.metadatareader
+			%
+			% D = INGEST_EPOCHFILES(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES)
+			%
+			% Creates an ndi.document of type 'daqmetadatareader_epochdata_ingested' that contains the data
+			% for an ndi.daq.metadatareaderobject. The document D is not added to any database.
+			%
+				epochid_struct.epochid = epoch_id;
+
+				d = ndi.document('daqmetadatareader_epochdata_ingested','epochid',epochid_struct);
+				d = d.set_dependency_value('daqmetadatareader_id',ndi_daqmetadatareader_obj.id());
+				
+				filenames_we_made = {};
+
+				parameters = ndi_daqmetadatareader_obj.readmetadata(epochfiles);
+				metadatafile = ndi.file.temp_name();
+				[ratio] = ndi.compress.compress_metadata(parameters,metadatafile);
+				d = d.add_file('data.bin',[metadatafile '.nbf.tgz']);
+				filenames_we_made = {metadatafile};
+
+		end;
+
+		function d = get_ingested_document(ndi_daqmetadatareader_obj, epochfiles, S)
+			% GET_INGESTED_DOCUMENT - get an ingested document for a set of epochfiles
+			%
+			% D = GET_INGESTED_DOCUMENT(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES, S)
+			%
+			% Returns empty if there is no such document or the single docment if
+			% there is such a document.
+			%
+				d = [];
+				epochid = [];
+
+				try,
+					epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+				end;
+				q = ndi.query('','depends_on','daqmetadatareader_id',ndi_daqmetadatareader_obj.id()) & ...
+					ndi.query('epochid.epochid','exact_string',epochid);
+				d = S.database_search(q);
+				if numel(d)==1,
+					d = d{1};
+				end;
+		end; % get_ingested_document()
 
 		function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
 			% EQ - are 2 ndi.daq.metadatareader objects equal?

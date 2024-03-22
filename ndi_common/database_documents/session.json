@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/session.json",
+		"validation":						"$NDISCHEMAPATH\/session.json",
+		"class_name":						"session",
+		"property_list_name":					"session",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [ ],
+	"session": {
+		"reference":						""
+	}
+}
+

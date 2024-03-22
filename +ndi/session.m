@@ -54,6 +54,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% Returns the unique reference string for the ndi.session.
 			% REFSTR is a combination of the REFERENCE property of NDI_SESSION_OBJ
 			% and the UNIQUE_REFERENCE property of NDI_SESSION_OBJ, joined with a '_'.
+			%
+			% If you just want the reference (not unique) just access the reference
+			% property (NDI_SESSION_OBJ.reference).
+			%
 				warning('unique_reference_string depricated, use id() instead.');
 				dbstack
 				refstr = [ndi_session_obj.reference '_' ndi_session_obj.identifier];
@@ -238,6 +242,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%  
 			% See also: DATABASE_RM, ndi.session, ndi.database, ndi.session/SEARCH
 
+					% dev note: we should make this so it calls the database with a list of docs to
+					% add instead of one at a time
+
 				if iscell(document),
 					for i=1:numel(document),
 						ndi_session_obj.database_add(document{i});
@@ -246,6 +253,17 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end;
 				if ~isa(document,'ndi.document'),
 					error(['document is not an ndi.document']);
+				end;
+
+				session_id_here = document.document_properties.base.session_id;
+				if ~strcmp(session_id_here,ndi_session_obj.id()),
+					if strcmp(session_id_here,ndi.session.empty_id), % ok, set it to our id
+						document = document.set_session_id(ndi_session_obj.id());
+					else, 
+						error(['ndi.document with id ' document.document_properties.base.id ...
+							' has session_id ' session_id_here ' that does not match session''s id ' ...
+							ndi_session_obj.id()]);
+					end;
 				end;
 				ndi_session_obj.database.add(document);
 		end; % database_add()
@@ -275,34 +293,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					return;
 				end; % nothing to do
 
-				if ~iscell(doc_unique_id),
-					if ischar(doc_unique_id), % it is a single doc id
-						mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',doc_unique_id,''));
-						if isempty(mydoc), % 
-							if ErrIfNotFound,
-								error(['Looked for an base document matching ID ' doc_unique_id ' but found none.']);
-							else,
-								return; % nothing to do
-							end;
-						end;
-						doc_unique_id = mydoc; % now a cell list
-					elseif isa(doc_unique_id,'ndi.document'),
-						doc_unique_id = {doc_unique_id};
-					else,
-						error(['Unknown input to DATABASE_RM of class ' class(doc_unique_id) '.']);
-					end;
+				doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_unique_id);
+				[b,errmsg] = ndi_session_obj.validate_documents(doc_list);
+				if ~b,
+					error(errmsg);
 				end;
 
-				if iscell(doc_unique_id),
-					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_unique_id{:});
+				if iscell(doc_list),
+					dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_list{:});
 					if numel(dependent_docs)>1,
 						warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
 					end;
 					for i=1:numel(dependent_docs),
 						ndi_session_obj.database.remove(dependent_docs{i});
 					end;
-					for i=1:numel(doc_unique_id), 
-						ndi_session_obj.database.remove(doc_unique_id{i});
+					for i=1:numel(doc_list), 
+						ndi_session_obj.database.remove(doc_list);
 					end;
 				else,
 					error(['Did not think we could get here..notify steve.']);
@@ -334,7 +340,43 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			%
 				ndi_session_obj.database.clear(areyousure);
 		end; % database_clear()
-        
+
+       		function [b,errmsg] = validate_documents(ndi_session_obj, document)
+			% VALIDATE_DOCUMENTS - validate whether documents belong to a session
+			%   
+			% [B, ERRMSG] = VALIDATE_DOCUMENTS(NDI_SESSION_OBJ, DOCUMENT)
+			%
+			% Given an ndi.document DOCUMENT or a cell array of ndi.documents DOCUMENT,
+			% determines whether all document session_ids match the sessions's id. 
+			% An 'empty' session_id (all 0s, ndi.session.empty_id() ) also matches.
+			%
+		
+				b = 1;
+				errmsg = '';
+				if ~iscell(document),
+					document = {document};
+				end;
+				for i=1:numel(document),
+					b = b & isa(document{i},'ndi.document');
+					if ~b,
+						errmsg = ['All entries of DOCUMENT must be ndi.document objects.'];
+						break;
+					end;
+					session_id_here = document{i}.document_properties.base.session_id;
+					b_ = strcmp(session_id_here,ndi_session_obj.id());
+					if ~b_,
+						b_= strcmp(document{i}.document_properties.base.session_id,ndi.session.empty_id());
+					end;
+					b = b & b_;
+					if ~b,
+						errmsg = ['All documents associated with the session) must have a session_id equal to the session id (document ' int2str(i) ' does not match and has session_id '  ').'];
+						ndi_session_obj.id(),
+						document{i}.document_properties.base.session_id,
+						break;
+					end;
+				end;
+		end; % validate_documents()
+
 		function ndi_binarydoc_obj = database_openbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
 			% DATABASE_OPENBINARYDOC - open the ndi.database.binarydoc channel of an ndi.document
 			%
@@ -351,11 +393,11 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % database_openbinarydoc
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
-			% DATABASE_CLOSEBINARYDOC - close and unlock an ndi.database.binarydoc 
+			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc 
 			%
-			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_DATABASE_OBJ, NDI_BINARYDOC_OBJ)
+			% [NDI_BINARYDOC_OBJ] = DATABASE_CLOSEBINARYDOC(NDI_SESSION_OBJ, NDI_BINARYDOC_OBJ)
 			%
-			% Close and lock an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be unlocked in the
+			% Close an NDI_BINARYDOC_OBJ. The NDI_BINARYDOC_OBJ must be closed in the
 			% database, which is why it is necessary to call this function through the session object.
 			%
 				ndi_binarydoc_obj = ndi_session_obj.database.closebinarydoc(ndi_binarydoc_obj);
@@ -384,6 +426,77 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				ndi_session_obj.syncgraph = ndi_session_obj.syncgraph.removerule(index);
 				ndi_session_obj.syncgraph = update_syncgraph_in_db(ndi_session_obj);
 		end; % syncgraph_rmrule
+
+		function [b,errmsg] = ingest(ndi_session_obj)
+			% INGEST - ingest the raw data and synchronization information into the database
+			%
+			% [B,ERRMSG] = INGEST(NDI_SESSION_OBJ)
+			%
+			% Ingest all raw data and synchronization information into the database.
+			%
+				d_syncgraph = ndi_session_obj.syncgraph.ingest();
+				errmsg = '';
+
+				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+				daq_d = {};
+				b = 1;
+				for i=1:numel(daqs),
+					[b_here,daq_d{i}] = daqs{i}.ingest();
+					b = b & b_here;
+					if ~b,
+						errmsg = ['Error in daq ' daqs{i}.name];
+					end;
+				end;
+				if b==0, % things didn't go well, bail
+					for i=1:numel(daqs),
+						ndi_session_obj.database_rm(daq_d{i});
+					end;
+				else, % add the syncgraph documents and we are done
+					ndi_session_obj.database_add(d_syncgraph);
+				end;
+		end; % ingest()
+
+		function d = get_ingested_docs(ndi_session_obj)
+			% GET_INGESTED_DOCS - get all ndi.documents related to ingested data
+			%
+			% D = GET_INGESTED_DOCS(NDI_SESSION_OBJ)
+			%
+			% Return all documents related to ingested data. Be careful; if the raw data
+			% is not available on the path, then the ingested data is the only record of it.
+			%
+				q_i1 = ndi.query('','isa','daqreader_mfdaq_epochdata_ingested');
+				q_i2 = ndi.query('','isa','daqmetadatareader_epochdata_ingested');
+				q_i3 = ndi.query('','isa','epochfiles_ingested');
+				q_i4 = ndi.query('','isa','syncrule_mapping');
+
+				d = ndi_session_obj.database_search(q_i1 | q_i2 | q_i3 | q_i4);
+
+		end; % get_ingested_docs
+
+		function b = is_fully_ingested(ndi_session_obj)
+			% IS_FULLY_INGESTED - is an ndi.session object fully ingested?
+			%
+			% B = IS_FULLY_INGESTED(NDI_SESSION_OBJ)
+			%
+			% Returns 1 if the ndi.session object NDI_SESSION_OBJ is fully
+			% ingested and 0 if there are still elements on disk that would
+			% need to be ingested by NDI_SESSION_OBJ.ingest() in order to 
+			% be fully ingested.
+
+					% as a proxy, we will see if there any file navigators that remain to be ingested
+					% this performs no ingestion on its own
+
+				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+				daq_d = {};
+				b = 1;
+				for i=1:numel(daqs),
+					[docs_out] = daqs{i}.filenavigator.ingest();
+					if ~isempty(docs_out),
+						b = 0; 
+						return;
+					end;
+				end;
+		end; % is_fully_ingested
 
 		%%%%%% PATH methods
 
@@ -565,6 +678,22 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				end;
 		end; % eq()
 
+		function inputs = creator_args(ndi_session_obj)
+			% CREATOR_ARGS - return the arguments needed to build an ndi.session object
+			%
+			% INPUTS = CREATOR_ARGS(NDI_SESSION_OBJ)
+			%
+			% Return the inputs necessary to create an ndi.session object. Each input
+			% argument is returned as an entry in the cell array INPUTS.
+			% 
+			% Example:
+			% INPUTS = ndi_session_obj.creator_args();
+			% ndi_session_copy = ndi.session(INPUTS{:});
+			%
+			
+				inputs{1} = ndi_session_obj.reference();
+		end; % creator_args()
+
 	end; % methods
 
 	methods (Access=protected)
@@ -610,7 +739,99 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					error(['Could not delete old syncgraph; new syncgraph has been added to the database.']);
 				end;
 		end; % update_syncgraph_in_db()
+
 	end; % methods (Protected)
+
+	methods Static % regular static methods
+
+		function doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_input)
+			% DOCINPUT2DOCS - convert an array of ndi.documents or doc_ids to documents
+			%
+			% [DOC_LIST,B,ERRMSG] = DOCINPUT2DOCS(NDI_SESSION_OBJ, DOC_INPUT)
+			%
+			% Given an input DOC_INPUT that specifies ndi.document objects,
+			% return the list of ndi.document objects.
+			%
+			% DOC_INPUT can be a single document id (character array), or a single
+			% ndi.document, or a cell array of document ids or a cell array of ndi.documents,
+			% or a mixed cell array of ndi.document objects and ids.
+			%
+			% If all documents are found, then B is 1 and ERRMSG is ''. If a document ID
+			% does not exist in the database, then one occurence is noted in ERRMSG and B is 0.
+			% 
+				doc_list = {};
+				b = 1;
+
+				if ~iscell(doc_input),
+					doc_input = {doc_input};
+				end;
+				q = [];
+				for i=1:numel(doc_input),
+					if ~isa(doc_input{i},'ndi.document'),
+						if isempty(q),
+							q = ndi.query('base.id','exact_string',doc_input{i});
+						else,
+							q = q | ndi.query('base.id','exact_string',doc_input{i});
+						end;
+					end;
+				end;
+				docs_to_fetch = {};
+				if ~isempty(q),
+					docs_to_fetch = ndi_session_obj.database_search(q);
+				end;
+				include = [];
+				for i=1:numel(doc_input),
+					if isa(doc_input{i},'ndi.document'),
+						doc_list{i} = doc_input{i};
+					else,
+						doc_list{i} = [];
+						for k=1:numel(docs_to_fetch),
+							if strcmp(docs_to_fetch{k}.document_properties.base.id,...
+								doc_input{i}),
+								doc_list{i} = docs_to_fetch{k};
+								break;
+							end;
+						end;
+					end;
+					if ~isa(doc_list{i},'ndi.document'),
+						b = 0;
+						errmsg = ['Unable to locate document ' doc_input{i} '.'];
+					else,
+						include(end+1) = i;
+					end;
+				end;
+				doc_list = doc_list(include);
+		end; %docinput2docs()
+
+		function [b,errmsg] = all_docs_in_session(docs, session_id)
+			% ALL_DOCS_IN_SESSION - determines if a set of ndi documents are in a session
+			%
+			% [B,ERRMSG] = ALL_DOCS_IN_SESSION(DOCS, SESSION_ID)
+			%
+			% B is 1 if the base.session_id field of all ndi.document objects in the cell
+			% array DOCS match session_id. If so, ERRMSG is empty. Otherwise, ERRMSG lists
+			% the documents that are not in the session.
+			%
+				b = zeros(numel(docs),1);
+				errmsg = ['The following documents are not in session_id ' session_id ': '];
+				for i=1:numel(docs),
+					session_id_here = docs{i}.document_properties.base.session_id;
+					b(i) = strcmp(session_id,session_id_here);
+					if ~b(i),
+						errmsg = cat(2,errmsg,[session_id_here ', ']);
+					end;
+				end;
+				if any(b),
+					errmsg = errmsg(1:end-2); % trim last ', '
+					errmsg(end+1) = '.';
+					b = 1; % make it a scalar
+				else,
+					b = 0; % make it a scalar
+				end;
+
+		end; % all_docs_in_session
+
+	end; % methods Static
 	
 end % classdef
 

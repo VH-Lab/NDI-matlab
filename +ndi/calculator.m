@@ -157,7 +157,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 				end;
 				% validate fixed depends_on values
 				for i=1:numel(fixed_depends_on),
-					q = ndi.query('ndi_document.id','exact_string',fixed_depends_on(i).value,'');
+					q = ndi.query('base.id','exact_string',fixed_depends_on(i).value,'');
 					l = ndi_calculator_obj.session.database_search(q);
 					if numel(l)~=1,
 						error(['Could not locate ndi document with id ' fixed_depends_on(i).value ' that corresponded to name ' fixed_depends_on(i).name '.']);
@@ -234,7 +234,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 						    ~isempty(parameters_specification.input_parameters.depends_on(i).name),
 						    query_here = struct('name',parameters_specification.input_parameters.depends_on(i).name,...
 							    'query',...
-							    ndi.query('ndi_document.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
+							    ndi.query('base.id','exact_string',parameters_specification.input_parameters.depends_on(i).value,''));
 						    query(end+1) = query_here;
 					    end;
 				    end;
@@ -323,7 +323,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 			% B = IS_VALID_DEPENDENCY_INPUT(NDI_CALCULATOR_OBJ, NAME, VALUE)
 			%
 			% Tests whether a potential input to a calculator is valid.
-			% The potential dependency name is provided in NAME and its ndi_document id is
+			% The potential dependency name is provided in NAME and its ndi.document id is
 			% provided in VALUE.
 			%
 			% The base class behavior of this function is simply to return true, but it
