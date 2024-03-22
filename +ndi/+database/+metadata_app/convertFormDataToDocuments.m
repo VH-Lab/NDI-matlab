@@ -116,7 +116,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     try 
         doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = doi;
-        catchloadl
+        catch
         webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = webResource;
     end
@@ -159,14 +159,14 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         else
             speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
         end
-        subjects{i}.species = speciesInstance;
-        % if isempty( subjectItem.StrainList )
-        %     subjects{i}.species = speciesInstance;
-        % else
-        %     strainName = subjectItem.StrainList.Name;
-        %     strainInstance = strainInstanceMap(strainName);
-        %     subjects{i}.species = strainInstance;
-        % end
+
+        if isempty( subjectItem.StrainList )
+            subjects{i}.species = speciesInstance;
+        else
+            strainName = subjectItem.StrainList.Name;
+            strainInstance = strainInstanceMap(strainName);
+            subjects{i}.species = strainInstance;
+        end
 
         % Add internal identifier and lookup label
         subjectName = subjectItem.SubjectName;
