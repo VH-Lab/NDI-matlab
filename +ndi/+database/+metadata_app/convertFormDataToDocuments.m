@@ -23,7 +23,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     strainCatalog = loadUserInstanceCatalog('Strain');
 
     % Todo: Adapt conversion to also convert custom species.
-    % strainInstanceMap = convertStrains(strainCatalog.getAll() );
+    strainInstanceMap = convertStrains(strainCatalog.getAll() );
 
     organizations = [organizations, fundingOrganizations];
 
@@ -196,11 +196,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
         end
     end
     if numel(dataset_version_doc) > 0 
-        % for each dv_f.studiedSpecimen, remove its prefix ndi:// and make it the key of the map
         studiedSpecimen_id = dv_f.studiedSpecimen;
-        % for i = 1:numel(dv_f.studiedSpecimen)
-        %     studiedSpecimen_id_map(dv_f.studiedSpecimen{i}(7:end)) = dv_f.studiedSpecimen{i}(7:end);
-        % end
     end
     
     for i = 1:numel(studiedSpecimen_id)
