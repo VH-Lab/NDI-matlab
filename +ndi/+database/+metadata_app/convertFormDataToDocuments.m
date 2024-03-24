@@ -116,7 +116,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     try 
         doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = doi;
-    catch
+        catch
         webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
         datasetVersion.fullDocumentation = webResource;
     end
@@ -140,6 +140,8 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     datasetVersion.technique = cellfun(@(value) convertTechnique(value), ...
         appUserData.TechniquesEmployed, 'UniformOutput', false );
+
+    subjectMap = containers.Map;
 
     % Create subjects
     subjects = cell(1, numel(appUserData.Subjects));
@@ -171,6 +173,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         subjectNameSplit = strsplit(subjectName, '@');
         subjects{i}.internalIdentifier = subjectNameSplit{1};
         subjects{i}.lookupLabel = subjectName;
+        subjectMap(subjects{i}.lookupLabel) = subjectItem.sessionIdentifier;
     end
     datasetVersion.studiedSpecimen = [subjects{:}];
 
@@ -178,6 +181,47 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     % Generate the ndi documents.
     documentList = ndi.database.fun.openMINDSobj2ndi_document(dataset, sessionId);
+    documentList = checkSessionIds(subjectMap, documentList);
+end
+
+function documentList = checkSessionIds(subjectMap, documentList)
+    dv_f = {};
+    studiedSpecimen_id_map = containers.Map;
+    studiedSpecimen_id = '';
+    for i = 1:numel(documentList)
+        if strcmp(documentList{i}.document_properties.openminds.matlab_type, 'openminds.core.products.DatasetVersion')
+            dataset_version_doc{1} = documentList{i};
+            dv_f = dataset_version_doc{1, 1}.document_properties.openminds.fields;
+            break
+        end
+    end
+    if numel(dataset_version_doc) > 0 
+        studiedSpecimen_id = dv_f.studiedSpecimen;
+    end
+    
+    for i = 1:numel(studiedSpecimen_id)
+        [studiedSpecimen_doc, idx] = ndi.cloud.fun.search_id(studiedSpecimen_id{i},documentList);
+        session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
+        documentList{idx} = studiedSpecimen_doc.set_session_id(session_id);
+        doc = studiedSpecimen_doc;
+        for j = 1:numel(doc.document_properties.depends_on) 
+            if (~isempty(doc.document_properties.depends_on(j).value))
+                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+            end
+        end
+    end
+end
+
+function changeDependenciesDoc(documentList, session_id, doc_id)
+    [doc, idx] = ndi.cloud.fun.search_id(doc_id,documentList);
+    documentList{idx} = doc.set_session_id(session_id);
+    if numel(doc.document_properties.depends_on) > 0 
+        for i = 1: numel(doc.document_properties.depends_on)
+            if (~isempty(doc.document_properties.depends_on(i).value))
+                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+            end
+        end
+    end
 end
 
 
@@ -314,7 +358,6 @@ function [strainInstanceMap] = convertStrains(items)
     for i = 1:numel(items)
         thisItem = items(i);
         thisInstance = strainInstanceMap(thisItem.name);
-        addBackgroundStrain(thisInstance, thisItem, strainInstanceMap);
         
         for j = 1:numel(thisItem.backgroundStrain)
             bgStrainName = thisItem.backgroundStrain(j);

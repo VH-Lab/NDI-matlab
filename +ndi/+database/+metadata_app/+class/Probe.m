@@ -8,6 +8,7 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         DigitalIdentifier
         Manufacturer
         Complete
+        sessionIdentifier
     end
     
     methods

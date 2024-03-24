@@ -28,6 +28,7 @@ if isempty(daqsys),
 	error(['Could not find daq system vhvis_spike2.']);
 end;
 
+
 daq_id = daqsys.id();
 session_id = S.id();
 
