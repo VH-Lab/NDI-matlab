@@ -1,11 +1,16 @@
 classdef dataset < handle % & ndi.ido but this cannot be a superclass because it is not a handle; we do it by construction
 
-	properties (GetAccess=public, SetAccess = protected)
-		session			% A session to hold documents for this dataset
-	end
+
 	properties (GetAccess=protected, SetAccess = protected)
 		session_info            % A structure with the sessions here
 		session_array           % An array with session objects contained in the dataset
+    end
+	
+    properties (Access = protected)
+		session			% A session to hold documents for this dataset.
+        % Note: This is not a session in the context of representing an
+        % experimental session, but insted an entrypoint to a session-like
+        % database.
 	end
 
 	methods
@@ -21,7 +26,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			%   ndi.dataset/GETPATH, ndi.dataset/GETREFERENCE
 
-                end
+        end
 
 		function identifier = id(ndi_dataset_obj)
 			% ID - return the identifier of an ndi.dataset object
