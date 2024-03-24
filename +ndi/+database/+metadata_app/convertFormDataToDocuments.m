@@ -60,16 +60,20 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     end
 
     % Create funding instances
-    fundingStructArray = appUserData.Funding;
-    createFunding = getFactoryFunction('openminds.core.Funding');
-    fundingInstances = arrayfun( @(s) createFunding(s), fundingStructArray);
-    
-    % Update funder based on the reference funder organizations.
-    for i = 1:numel(fundingInstances)
-        thisFunding = fundingInstances(i);
-        funderName = thisFunding.funder.fullName;
-        isMatch = strcmp(funderName, organizationNames);
-        thisFunding.funder = organizationInstances(isMatch);
+    if isfield( appUserData, 'Funding' )
+        fundingStructArray = appUserData.Funding;
+        createFunding = getFactoryFunction('openminds.core.Funding');
+        fundingInstances = arrayfun( @(s) createFunding(s), fundingStructArray);
+        
+        % Update funder based on the reference funder organizations.
+        for i = 1:numel(fundingInstances)
+            thisFunding = fundingInstances(i);
+            funderName = thisFunding.funder.fullName;
+            isMatch = strcmp(funderName, organizationNames);
+            thisFunding.funder = organizationInstances(isMatch);
+        end
+    else
+        fundingInstances = openminds.core.Funding.empty;
     end
 
     % Create a dataset version instance:
@@ -113,12 +117,14 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     % Try to create a DOI from the given value. If that fails, the value
     % should be a URL and we create a WebResource instead.
-    try 
-        doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
-        datasetVersion.fullDocumentation = doi;
-        catch
-        webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
-        datasetVersion.fullDocumentation = webResource;
+    if isfield( appUserData, 'FullDocumentation')
+        try 
+            doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
+            datasetVersion.fullDocumentation = doi;
+            catch
+            webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
+            datasetVersion.fullDocumentation = webResource;
+        end
     end
 
     datasetVersion.releaseDate = appUserData.ReleaseDate;
@@ -126,10 +132,12 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.versionInnovation = appUserData.VersionInnovation;
 
     % TODO: Related publication
-    datasetVersion.relatedPublication = cellfun(@(value) ...
-        openminds.core.DOI('identifier', addDoiPrefix(value)), ...
-        {appUserData.RelatedPublication.DOI} );
-
+    if isfield(appUserData, 'RelatedPublication')
+        datasetVersion.relatedPublication = cellfun(@(value) ...
+            openminds.core.DOI('identifier', addDoiPrefix(value)), ...
+            {appUserData.RelatedPublication.DOI} );
+    end
+    
     datasetVersion.dataType = cellfun(@(value) ...
         openminds.controlledterms.SemanticDataType(value), ...
         appUserData.DataType );
