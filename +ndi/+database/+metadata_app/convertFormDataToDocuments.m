@@ -299,7 +299,7 @@ function conversionMap = createConversionMap()
         struct(...
         'contactInformation', getFactoryFunction('openminds.core.ContactInformation'), ...
                'affiliation', getFactoryFunction('openminds.core.Affiliation'), ...
-         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', sprintf('https://orcid.org/%s', value.identifier)) ...
+         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', addOrcidUriPrefix(value.identifier)) ...
         );
         %'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
         % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
@@ -378,6 +378,15 @@ end
 function modifiedValue = addDoiPrefix(value)
     if ~startsWith(value, 'https://doi.org/')
         modifiedValue = ['https://doi.org/' value];
+    else
+        modifiedValue = value;
+    end
+end
+
+
+function modifiedValue = addOrcidUriPrefix(value)
+    if ~startsWith(value, 'https://orcid.org/') && value ~= ""
+        modifiedValue = ['https://orcid.org/' value];
     else
         modifiedValue = value;
     end
