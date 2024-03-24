@@ -6,8 +6,8 @@
 		"property_list_name":					"openminds_element",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json",
-			  "definition":					"$NDIDOCUMENTPATH\/metadata\/openminds.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{  "definition":					"$NDIDOCUMENTPATH\/metadata\/openminds.json" }
 		]
 	},
 	"depends_on": [

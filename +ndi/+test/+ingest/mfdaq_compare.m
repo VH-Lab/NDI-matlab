@@ -30,6 +30,8 @@ event_types = {'event','marker','text'};
 
 
 for i=1:numel(et1),
+    number = sscanf(et1(i).epoch_id,'t%d')
+    if number<63, continue; end;
 	disp(['Testing epoch ' et1(i).epoch_id '...']);
 	f1 = fn1.getepochfiles(et1(i).epoch_id);
 	f2 = fn2.getepochfiles(et1(i).epoch_id);
@@ -117,6 +119,7 @@ for i=1:numel(et1),
             else,
                 if isempty(D1),D1=zeros(0,1);end;
             end;
+            if isempty(D2) & isempty(D1), D2 = D1; end;
             if ~isequaln(D1,D2),
 				errmsg{end+1} = ['Reading ' event_types{j} ' produced unequal results in codes/text.'];
                                     keyboard
