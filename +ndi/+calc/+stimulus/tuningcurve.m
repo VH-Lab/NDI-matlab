@@ -105,6 +105,44 @@ classdef tuningcurve < ndi.calculator
 							'operation','exact_number','param1',stim_property_value,'param2','');
 						constraint(end+1) = constraint_here;
 						log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' best value is ' num2str(stim_property_value) ',']);
+					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'greatest'),
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						match = 0;
+						greatest = -Inf;
+						for j=1:numel(pva),
+							if pva{j}>greatest,
+								match = 1;
+								greatest = pva{j};
+							end;
+						end;
+						if match==0, %if it doesn't have it, then quit
+							doc = {};
+							return;
+						end;
+						stim_property_value = greatest;
+						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
+							'operation','exact_number','param1',stim_property_value,'param2','');
+						constraint(end+1) = constraint_here;
+						log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' greatest value is ' num2str(stim_property_value) ',']);
+					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'least'),
+						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+						match = 0;
+						least = Inf;
+						for j=1:numel(pva),
+							if pva{j}<least,
+								match = 1;
+								least= pva{j};
+							end;
+						end;
+						if match==0, %if it doesn't have it, then quit
+							doc = {};
+							return;
+						end;
+						stim_property_value = least;
+						constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
+							'operation','exact_number','param1',stim_property_value,'param2','');
+						constraint(end+1) = constraint_here;
+						log_str = cat(2,log_str,[char(parameters.input_parameters.selection(i).property) ' least value is ' num2str(stim_property_value) ',']);
 					elseif strcmpi(char(parameters.input_parameters.selection(i).value),'deal'),
 						stim_property_list{end+1} = parameters.input_parameters.selection(i).property;
 						pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
