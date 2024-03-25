@@ -302,7 +302,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
                                 ErrIfNotFound = 0;
                                 did.datastructures.assign(varargin{:});
-				ndi_dataset_obj.session.database_add(document,'ErrIfNotFound',ErrIfNotFound);
+				ndi_dataset_obj.session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
 				open_linked_sessions(ndi_dataset_obj);
 				match = [ndi_dataset_obj.session_info.is_linked];
 				for i=1:numel(match),

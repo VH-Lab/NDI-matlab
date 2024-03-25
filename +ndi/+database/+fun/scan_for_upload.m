@@ -34,30 +34,48 @@ doc_file_struct = struct('name',{},'docid',{},'bytes',{},'is_uploaded', {});
 total_size = 0;
 
 for i=1:numel(d)
-	all_docs{i} = d{i}.document_properties.base.id;
+disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
+    all_docs{i} = d{i}.document_properties.base.id;
     doc_json_struct(i).docid = d{i}.document_properties.base.id;
     doc_json_struct(i).is_uploaded = false;
     if isfield(d{i}.document_properties, 'files')
         for f = 1:numel(d{i}.document_properties.files.file_list)
-            curr_idx = numel(doc_file_struct)+1;
             file_name = d{i}.document_properties.files.file_list{f};
-            file_obj = S.database_openbinarydoc(d{i}.document_properties.base.id, file_name);
-            [~,uid,~] = fileparts(file_obj.fullpathfilename);
-            doc_file_struct(curr_idx).uid = uid;
-            doc_file_struct(curr_idx).name = file_name;
-            doc_file_struct(curr_idx).docid = d{i}.document_properties.base.id;
-            file_obj = S.database_openbinarydoc(d{i}.document_properties.base.id, file_name);
-            file_info = dir(file_obj.fullpathfilename);
-            file_size= file_info.bytes / 1024;
-            doc_file_struct(curr_idx).bytes = file_size;
-            total_size = file_size + total_size;
-            doc_file_struct(curr_idx).is_uploaded = false;
+            j = 1;
+            while j<10000, % we could potentially read a series of files
+                if file_name(end)=='#', % this file is a series of files
+                    filename_here = [file_name(1:end-1) int2str(j)];
+                else,
+                    filename_here = file_name;
+                    j = 1000000; % only 1 file
+                end;
+                try,
+                    file_obj = S.database_openbinarydoc(ndi_doc_id,filename_here);
+                catch,
+                    j = 1000000;
+                    file_obj = [];
+                end;
+                j = j + 1;
+                if ~isempty(file_obj),
+                    curr_idx = numel(doc_file_struct)+1;
+                    [~,uid,~] = fileparts(file_obj.fullpathfilename);
+                    doc_file_struct(curr_idx).uid = uid;
+                    doc_file_struct(curr_idx).name = file_name;
+                    doc_file_struct(curr_idx).docid = d{i}.document_properties.base.id;
+                    file_info = dir(file_obj.fullpathfilename);
+                    file_size= file_info.bytes / 1024;
+                    doc_file_struct(curr_idx).bytes = file_size;
+                    total_size = file_size + total_size;
+                    doc_file_struct(curr_idx).is_uploaded = false;
+                end;
+            end;
         end
     end
 end
 
 
 if (~new)
+    keyboard
     [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id,auth_token);
     [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
     already_uploaded_docs = {};
