@@ -216,7 +216,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
     for i = 1:numel(studiedSpecimen_id)
         [studiedSpecimen_doc, idx] = ndi.cloud.fun.search_id(studiedSpecimen_id{i},documentList);
         session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
-        documentList{idx} = studiedSpecimen_doc.set_session_id(session_id);
+        documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
         for j = 1:numel(doc.document_properties.depends_on) 
             if (~isempty(doc.document_properties.depends_on(j).value))
@@ -228,7 +228,7 @@ end
 
 function changeDependenciesDoc(documentList, session_id, doc_id)
     [doc, idx] = ndi.cloud.fun.search_id(doc_id,documentList);
-    documentList{idx} = doc.set_session_id(session_id);
+    documentList{idx} = doc.set_session_id(char(session_id));
     if numel(doc.document_properties.depends_on) > 0 
         for i = 1: numel(doc.document_properties.depends_on)
             if (~isempty(doc.document_properties.depends_on(i).value))
