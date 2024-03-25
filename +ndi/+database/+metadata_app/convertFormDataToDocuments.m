@@ -112,8 +112,12 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.funding = fundingInstances;
     datasetVersion.otherContribution = [firstAuthorDoc, corresondingAuthorDoc];
 
-    S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
-    datasetVersion.license = openminds.core.License().fromStruct(S);
+    if isfield( appUserData, 'License')
+        if appUserData.License ~= ""
+            S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
+            datasetVersion.license = openminds.core.License().fromStruct(S);
+        end
+    end
 
     % Try to create a DOI from the given value. If that fails, the value
     % should be a URL and we create a WebResource instead.
@@ -157,8 +161,10 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         subjectItem = appUserData.Subjects(i);
         
         subjects{i} = openminds.core.Subject();
-        subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
-        
+        if ~isempty(subjectItem.BiologicalSexList)
+            subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
+        end
+
         speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
         isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
         if any( isMatchedInstance )
@@ -214,7 +220,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
         doc = studiedSpecimen_doc;
         for j = 1:numel(doc.document_properties.depends_on) 
             if (~isempty(doc.document_properties.depends_on(j).value))
-                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(j).value);
             end
         end
     end
