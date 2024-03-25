@@ -14,7 +14,7 @@ function [b, msg, dataset, dataset_id] = submit_dataset(S, session_id, datasetIn
 %   DATASET_ID - the dataset id of the uploaded dataset
 
 documentList = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
-% S.database_add(documentList);
+S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
 [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
 [b, msg] = ndi.database.fun.upload_to_NDI_cloud(S, dataset_id);
 [auth_token, organization_id] = ndi.cloud.uilogin();
