@@ -80,7 +80,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     dataset = openminds.core.Dataset();
     dataset.fullName = appUserData.DatasetFullName;
     dataset.shortName = appUserData.DatasetShortName;
-    dataset.description = appUserData.Description;
+    dataset.description = strjoin(appUserData.Description, newline);
     dataset.author = authorInstances;
 
     % Resolve custodians:
@@ -106,7 +106,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion = openminds.core.DatasetVersion();
     datasetVersion.fullName = appUserData.DatasetFullName;
     datasetVersion.shortName = appUserData.DatasetShortName;
-    datasetVersion.description = appUserData.Description;
+    datasetVersion.description = strjoin(appUserData.Description, newline);
     datasetVersion.author = authorInstances;
     datasetVersion.custodian = authorInstances(isCustodian);
     datasetVersion.funding = fundingInstances;
@@ -376,7 +376,7 @@ function [strainInstanceMap] = convertStrains(items)
 end
 
 function modifiedValue = addDoiPrefix(value)
-    if ~startsWith(value, 'https://doi.org/')
+    if ~startsWith(value, 'https://doi.org/') && value ~= ""
         modifiedValue = ['https://doi.org/' value];
     else
         modifiedValue = value;
