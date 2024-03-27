@@ -1,10 +1,11 @@
-function [doc_json_struct,doc_file_struct, total_size] = scan_for_upload(S, new, dataset_id)
+function [doc_json_struct,doc_file_struct, total_size] = scan_for_upload(S, d, new, dataset_id)
 %SCAN_FOR_UPLOAD - Scans the session for documents and files to upload. Calculate the size of the files.
 %   
-% [DOC_JSON_STRUCT,DOC_FILE_STRUCT] = ndi.database.fun.scan_for_upload(S, DATASET_ID)
+% [DOC_JSON_STRUCT,DOC_FILE_STRUCT] = ndi.database.fun.scan_for_upload(S, d, new, DATASET_ID)
 %  
 % Inputs:
 %  S - an ndi.session object
+%  d - documents returned by searching the session using database_search
 %  NEW - 1 if this is a new dataset with empty documents and files, 0 otherwise
 %  DATASET_ID - The dataset id. dataset_id = '' if it is a new dataset
 %
@@ -25,7 +26,6 @@ verbose = 1;
 
 if verbose, disp(['Loading documents...']); end;
     
-d = S.database_search(ndi.query('','isa','base'));
 all_docs = {};
 clear doc_json_struct;
 clear doc_file_struct;
