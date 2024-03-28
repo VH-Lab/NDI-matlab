@@ -87,13 +87,13 @@ classdef  didsqlite < ndi.database
 		end; % do_search()
 
 		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-			ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename,'a');
+			ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename);
 			ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
-		end; % do_binarydoc()
+		end; % do_openbinarydoc()
 
         function [tf, file_path] = check_exist_binarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-			[tf, file_path] = ndi_didsqlite_obj.db.exist_doc(ndi_document_id,filename,'a');
-        end
+			[tf, file_path] = ndi_didsqlite_obj.db.exist_doc(ndi_document_id, filename);
+        end % check_exist_binarydoc()
 
 		function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_didsqlite_obj, ndi_binarydoc_matfid_obj)
 			% DO_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC_MATFID_OBJ
