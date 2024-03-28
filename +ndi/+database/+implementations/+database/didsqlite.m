@@ -21,7 +21,7 @@ classdef  didsqlite < ndi.database
 		%
 		% See also: did.database, did.implementations.sqlitedb
 			ndi_didsqlite_obj = ndi_didsqlite_obj@ndi.database(varargin{:});
-			database_filename = [ndi_didsqlite_obj.path filesep 'did-sqlite.sqlite'];
+			database_filename = fullfile(ndi_didsqlite_obj.path, 'did-sqlite.sqlite');
 			ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename); 
 			if ~isfolder(ndi_didsqlite_obj.file_directory),
 				mkdir(ndi_didsqlite_obj.file_directory);
