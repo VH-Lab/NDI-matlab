@@ -383,7 +383,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
 			%
 			%  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
-			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
 			%  The document is opened for reading only. Document binary streams may not be edited once the
 			%  document is added to the database.
 			% 
@@ -391,6 +391,10 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% 
 				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
+
+        function tf = database_existbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
+		    tf = ndi_session_obj.database.existbinarydoc(ndi_document_or_id, filename);
+        end
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc 

@@ -26,7 +26,7 @@ verbose = 1;
 
 if verbose, disp(['Loading documents...']); end;
     
-all_docs = {};
+all_doc_ids = cell(1, numel(d));
 clear doc_json_struct;
 clear doc_file_struct;
 doc_json_struct = struct('docid',{},'is_uploaded', {});
@@ -34,27 +34,34 @@ doc_file_struct = struct('name',{},'docid',{},'bytes',{},'is_uploaded', {});
 total_size = 0;
 
 for i=1:numel(d)
-disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
-    all_docs{i} = d{i}.document_properties.base.id;
+    if mod(i, 10)==0 || i == numel(d)
+        disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
+    end
+
+    all_doc_ids{i} = d{i}.document_properties.base.id;
     doc_json_struct(i).docid = d{i}.document_properties.base.id;
     doc_json_struct(i).is_uploaded = false;
+    ndi_doc_id = doc_json_struct(i).docid;
     if isfield(d{i}.document_properties, 'files')
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
-            j = 1;
-            while j<10000, % we could potentially read a series of files
+            
+            j = 1; is_finished = false;
+            while ~is_finished % we could potentially read a series of files
                 if file_name(end)=='#', % this file is a series of files
                     filename_here = [file_name(1:end-1) int2str(j)];
                 else,
                     filename_here = file_name;
-                    j = 1000000; % only 1 file
+                    is_finished = true; % only 1 file
                 end;
-                try,
+
+                if S.database_existbinarydoc(ndi_doc_id, filename_here)
                     file_obj = S.database_openbinarydoc(ndi_doc_id,filename_here);
-                catch,
-                    j = 1000000;
+                else
+                    is_finished = true;
                     file_obj = [];
-                end;
+                end
+
                 j = j + 1;
                 if ~isempty(file_obj),
                     curr_idx = numel(doc_file_struct)+1;
@@ -73,15 +80,13 @@ disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
     end
 end
 
-
 if (~new)
-    keyboard
     [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id,auth_token);
     [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
     already_uploaded_docs = {};
     if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
-    [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs);
-    docid_upload = containers.Map(all_docs(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
+    [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
+    docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
     for i = 1:numel(doc_json_struct)
         if (~isKey(docid_upload, doc_json_struct(i).docid))
             doc_json_struct(i).is_uploaded = true;

@@ -344,6 +344,10 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
+        function tf = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+		    tf = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
+        end
+
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_dataset_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc
 			%

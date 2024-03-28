@@ -87,6 +87,10 @@ classdef  didsqlite < ndi.database
 			ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
 		end; % do_binarydoc()
 
+        function tf = check_exist_binarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
+			tf = ndi_didsqlite_obj.db.exist_doc(ndi_document_id,filename,'a');
+        end
+
 		function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_didsqlite_obj, ndi_binarydoc_matfid_obj)
 			% DO_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC_MATFID_OBJ
 			%
