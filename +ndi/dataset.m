@@ -344,6 +344,18 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
+        function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+			% DATABASE_EXISTBINARYDOC - checks if an ndi.database.binarydoc exists for an ndi.document
+			%
+			% [TF, FILE_PATH] = DATABASE_EXISTBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+			%
+			%  Return a boolean flag (TF) indicating if a binary document 
+            %  exists for an ndi.document and, if it exists, the full file 
+            %  path (FILE_PATH) to the file where the binary data is stored.
+            
+            [tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
+        end
+
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_dataset_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc
 			%
@@ -368,6 +380,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 		end; % document_session()
 
 	end; % methods
+
+    methods (Hidden)
+        function [hCleanup, filename] = open_database(ndi_dataset_obj)
+	        [hCleanup, filename] = ndi_dataset_obj.session.open_database();
+        end
+    end
 
 	methods (Access=protected)
 

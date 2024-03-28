@@ -1,4 +1,4 @@
-function [doc_json_struct,doc_file_struct, total_size] = scan_for_upload(S, d, new, dataset_id)
+function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, new, dataset_id)
 %SCAN_FOR_UPLOAD - Scans the session for documents and files to upload. Calculate the size of the files.
 %   
 % [DOC_JSON_STRUCT,DOC_FILE_STRUCT] = ndi.database.fun.scan_for_upload(S, d, new, DATASET_ID)
@@ -26,45 +26,57 @@ verbose = 1;
 
 if verbose, disp(['Loading documents...']); end;
     
-all_docs = {};
+all_doc_ids = cell(1, numel(d));
 clear doc_json_struct;
 clear doc_file_struct;
 doc_json_struct = struct('docid',{},'is_uploaded', {});
 doc_file_struct = struct('name',{},'docid',{},'bytes',{},'is_uploaded', {});
 total_size = 0;
 
+% Explicitly open the database before scanning all the files to upload.
+% This process will run a large number of queries to the database, so keep
+% it open till finished.
+[db_cleanup_obj, ~] = S.open_database(); %#ok<ASGLU>
+
 for i=1:numel(d)
-disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
-    all_docs{i} = d{i}.document_properties.base.id;
+    if mod(i, 10)==0 || i == numel(d)
+        fprintf('Working on document %d of %d\n', i, numel(d))
+    end
+
+    all_doc_ids{i} = d{i}.document_properties.base.id;
     doc_json_struct(i).docid = d{i}.document_properties.base.id;
     doc_json_struct(i).is_uploaded = false;
+    ndi_doc_id = doc_json_struct(i).docid;
     if isfield(d{i}.document_properties, 'files')
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
-            j = 1;
-            while j<10000, % we could potentially read a series of files
+            
+            j = 1; is_finished = false;
+            while ~is_finished % we could potentially read a series of files
                 if file_name(end)=='#', % this file is a series of files
-                    filename_here = [file_name(1:end-1) int2str(j)];
+                    filename_here = sprintf('%s%d', file_name(1:end-1), j);
                 else,
                     filename_here = file_name;
-                    j = 1000000; % only 1 file
+                    is_finished = true; % only 1 file
                 end;
-                try,
-                    file_obj = S.database_openbinarydoc(ndi_doc_id,filename_here);
-                catch,
-                    j = 1000000;
-                    file_obj = [];
-                end;
+
+                [file_exists, full_file_path] = S.database_existbinarydoc(ndi_doc_id, filename_here);
+                    
+                if ~file_exists
+                    is_finished = true;
+                    full_file_path = '';
+                end
+
                 j = j + 1;
-                if ~isempty(file_obj),
+                if ~isempty(full_file_path),
                     curr_idx = numel(doc_file_struct)+1;
-                    [~,uid,~] = fileparts(file_obj.fullpathfilename);
+                    [~,uid,~] = fileparts(full_file_path);
                     doc_file_struct(curr_idx).uid = uid;
                     doc_file_struct(curr_idx).name = file_name;
                     doc_file_struct(curr_idx).docid = d{i}.document_properties.base.id;
-                    file_info = dir(file_obj.fullpathfilename);
-                    file_size= file_info.bytes / 1024;
-                    doc_file_struct(curr_idx).bytes = file_size;
+                    file_info = dir(full_file_path);
+                    doc_file_struct(curr_idx).bytes = file_info.bytes;
+                    file_size = file_info.bytes / 1024;
                     total_size = file_size + total_size;
                     doc_file_struct(curr_idx).is_uploaded = false;
                 end;
@@ -72,16 +84,15 @@ disp(['Working on document ' int2str(i) ' of ' int2str(numel(d))])
         end
     end
 end
-
+clear db_cleanup_obj
 
 if (~new)
-    keyboard
-    [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id,auth_token);
+    [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
     [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
     already_uploaded_docs = {};
     if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
-    [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs);
-    docid_upload = containers.Map(all_docs(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
+    [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
+    docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
     for i = 1:numel(doc_json_struct)
         if (~isKey(docid_upload, doc_json_struct(i).docid))
             doc_json_struct(i).is_uploaded = true;

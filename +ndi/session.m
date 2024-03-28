@@ -341,7 +341,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				ndi_session_obj.database.clear(areyousure);
 		end; % database_clear()
 
-       		function [b,errmsg] = validate_documents(ndi_session_obj, document)
+       	function [b,errmsg] = validate_documents(ndi_session_obj, document)
 			% VALIDATE_DOCUMENTS - validate whether documents belong to a session
 			%   
 			% [B, ERRMSG] = VALIDATE_DOCUMENTS(NDI_SESSION_OBJ, DOCUMENT)
@@ -383,7 +383,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
 			%
 			%  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
-			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+			%  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
 			%  The document is opened for reading only. Document binary streams may not be edited once the
 			%  document is added to the database.
 			% 
@@ -391,6 +391,18 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% 
 				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
+
+        function [tf, file_path] = database_existbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
+			% DATABASE_EXISTBINARYDOC - checks if an ndi.database.binarydoc exists for an ndi.document
+			%
+			% [TF, FILE_PATH] = DATABASE_EXISTBINARYDOC(NDI_SESSION_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+			%
+			%  Return a boolean flag (TF) indicating if a binary document 
+            %  exists for an ndi.document and, if it exists, the full file 
+            %  path (FILE_PATH) to the file where the binary data is stored.
+
+		    [tf, file_path] = ndi_session_obj.database.existbinarydoc(ndi_document_or_id, filename);
+        end % database_existbinarydoc
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc 
@@ -695,6 +707,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % creator_args()
 
 	end; % methods
+
+    methods (Hidden)
+        function [hCleanup, filename] = open_database(ndi_session_obj)
+	        [hCleanup, filename] = ndi_session_obj.database.open();
+        end
+    end
 
 	methods (Access=protected)
 		function syncgraph = update_syncgraph_in_db(ndi_session_obj)
