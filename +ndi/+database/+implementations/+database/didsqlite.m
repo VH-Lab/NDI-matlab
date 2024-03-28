@@ -49,6 +49,10 @@ classdef  didsqlite < ndi.database
 
 	methods (Access=protected),
 
+        function [hCleanup, filename] = do_open_database(ndi_didsqlite_obj)
+			[hCleanup, filename] = ndi_didsqlite_obj.db.open();
+        end
+
 		function ndi_didsqlite_obj = do_add(ndi_didsqlite_obj, ndi_document_obj, add_parameters)
 			ndi_didsqlite_obj.db.add_docs(ndi_document_obj,'a');
 		end; % do_add
@@ -87,8 +91,8 @@ classdef  didsqlite < ndi.database
 			ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
 		end; % do_binarydoc()
 
-        function tf = check_exist_binarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-			tf = ndi_didsqlite_obj.db.exist_doc(ndi_document_id,filename,'a');
+        function [tf, file_path] = check_exist_binarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
+			[tf, file_path] = ndi_didsqlite_obj.db.exist_doc(ndi_document_id,filename,'a');
         end
 
 		function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_didsqlite_obj, ndi_binarydoc_matfid_obj)

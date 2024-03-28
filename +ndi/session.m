@@ -392,8 +392,8 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				ndi_binarydoc_obj = ndi_session_obj.database.openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
-        function tf = database_existbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
-		    tf = ndi_session_obj.database.existbinarydoc(ndi_document_or_id, filename);
+        function [tf, file_path] = database_existbinarydoc(ndi_session_obj, ndi_document_or_id, filename)
+		    [tf, file_path] = ndi_session_obj.database.existbinarydoc(ndi_document_or_id, filename);
         end
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_session_obj, ndi_binarydoc_obj)
@@ -699,6 +699,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		end; % creator_args()
 
 	end; % methods
+
+    methods (Hidden)
+        function [hCleanup, filename] = open_database(ndi_session_obj)
+	        [hCleanup, filename] = ndi_session_obj.database.open();
+        end
+    end
 
 	methods (Access=protected)
 		function syncgraph = update_syncgraph_in_db(ndi_session_obj)

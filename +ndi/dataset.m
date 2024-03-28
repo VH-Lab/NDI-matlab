@@ -344,8 +344,8 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
-        function tf = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
-		    tf = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
+        function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+		    [tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
         end
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_dataset_obj, ndi_binarydoc_obj)
@@ -372,6 +372,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 		end; % document_session()
 
 	end; % methods
+
+    methods (Hidden)
+        function [hCleanup, filename] = open_database(ndi_dataset_obj)
+	        [hCleanup, filename] = ndi_dataset_obj.session.open_database();
+        end
+    end
 
 	methods (Access=protected)
 

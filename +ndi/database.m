@@ -10,6 +10,12 @@ classdef database
 		session_unique_reference % The reference string for the database
 	end % properties
 
+    methods (Access = ?ndi.session)
+        function [hCleanup, filename] = open(ndi_database_obj)
+            [hCleanup, filename] = ndi_database_obj.do_open_database(); % Calls protected method
+        end
+    end
+
 	methods
 		function ndi_database_obj = database(varargin)
 			% ndi.database - create a new ndi.database
@@ -105,7 +111,7 @@ classdef database
 				ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, filename);
 		end; % openbinarydoc
 
-		function [ndi_binarydoc_obj] = existbinarydoc(ndi_database_obj, ndi_document_or_id, filename)
+		function [tf, file_path] = existbinarydoc(ndi_database_obj, ndi_document_or_id, filename)
             if isa(ndi_document_or_id,'ndi.document'),
 	            ndi_document_id = ndi_document_or_id.id();
             else
@@ -113,7 +119,7 @@ classdef database
             end
 
             %[ndi_document_obj] = ndi_database_obj.read(ndi_document_id);
-            ndi_binarydoc_obj = check_exist_binarydoc(ndi_database_obj, ndi_document_id, filename);
+            [tf, file_path] = check_exist_binarydoc(ndi_database_obj, ndi_document_id, filename);
         end % existbinarydoc
 
 		function [ndi_binarydoc_obj] = closebinarydoc(ndi_database_obj, ndi_binarydoc_obj)
@@ -230,11 +236,12 @@ classdef database
 		end % do_search()
 		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_database_obj, ndi_document_id) 
 		end % do_openbinarydoc()
-        function [tf] = check_exist_binarydoc(ndi_database_obj, ndi_document_id) 
+        function [tf, file_path] = check_exist_binarydoc(ndi_database_obj, ndi_document_id) 
 		end % do_openbinarydoc()
 		function [ndi_binarydoc_obj] = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj) 
 		end % do_closebinarydoc()
-
+        function do_open_database(ndi_database_obj)
+        end
 	end % Methods (Access=Protected) protected methods
 end % classdef
 
