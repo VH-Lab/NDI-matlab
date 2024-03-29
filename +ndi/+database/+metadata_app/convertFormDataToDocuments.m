@@ -28,8 +28,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     organizations = [organizations, fundingOrganizations];
 
     % Make sure we dont have any duplicates
-    organizationIds = unique({organizations.digitalIdentifier});
-    [~, keep] = unique(organizationIds);
+    [~, keep] = unique({organizations.digitalIdentifier});
     organizations = organizations(keep);
 
     % Create organization instances:
