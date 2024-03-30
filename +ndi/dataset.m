@@ -264,6 +264,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				end;
 
 				usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
+
 				s = {};
 				% make sure all documents have a home before doing anything else
 				for i=1:numel(usession_ids),
@@ -277,7 +278,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				% now add them in turn
 				for i=1:numel(usession_ids), 
 					indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
-					s{i}.database_add_document(strcmp(usession_ids{i},ndi_session_ids_here));
+					s{i}.database_add(document(indexes));
 				end;
 		end; % database_add
 
@@ -300,13 +301,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
-                                ErrIfNotFound = 0;
-                                did.datastructures.assign(varargin{:});
+                ErrIfNotFound = 0;
+                did.datastructures.assign(varargin{:});
 				ndi_dataset_obj.session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
 				open_linked_sessions(ndi_dataset_obj);
-				match = [ndi_dataset_obj.session_info.is_linked];
+				match = find([ndi_dataset_obj.session_info.is_linked]);
 				for i=1:numel(match),
-					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id);
+					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
 				end;
 		end; % database_rm
 

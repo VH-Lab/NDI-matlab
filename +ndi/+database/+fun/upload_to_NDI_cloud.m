@@ -26,7 +26,7 @@ if verbose, disp(['Getting list of previously uploaded documents...']); end;
 [doc_json_struct,doc_file_struct, total_size] = ndi.database.fun.scan_for_upload(S, d, 0, dataset_id);
 %count the number of documents to be upload by checking the is_upload flag in doc_json_struct
 docs_left = sum(~[doc_json_struct.is_uploaded]);
-%files_left = sum(~[doc_file_struct.is_uploaded]);
+files_left = sum(~[doc_file_struct.is_uploaded]);
 cur_size = 0;
 doc_id_to_idx = containers.Map({doc_json_struct.docid}, 1:numel(doc_json_struct));
 file_id_to_idx = containers.Map({doc_file_struct.name}, 1:numel(doc_file_struct));
@@ -67,7 +67,7 @@ for i=1:numel(d),
     % ndi_doc_id = d{index}.document_properties.base.id;
 
     if isfield(d{i}.document_properties, 'files'),
-        doc_i = doc_i + 1;
+        cur_file_idx = cur_file_idx + 1;
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
             waitbar(cur_file_idx/files_left, h_file, sprintf('Uploading file %d of %d, %.2f KB out of %.2f KB...', cur_file_idx, files_left, cur_size,total_size));
