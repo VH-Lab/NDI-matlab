@@ -20,9 +20,13 @@ function [token, organization_id] = uilogin()
     end
     
     if isempty(token) || isempty(organization_id)
-        hApp = ndi.database.app.uilogin.Login();
+        hApp = ndi.cloud.ui.dialog.LoginDialog();
         hApp.waitfor()
         token = getenv('NDI_CLOUD_TOKEN');
         organization_id = getenv('NDI_CLOUD_ORGANIZATION_ID');
+    end
+
+    if nargout == 1
+        clear organization_id
     end
 end
