@@ -12,8 +12,7 @@ function [status, response] = post_unpublish(dataset_id, auth_token)
 %   RESPONSE - the dataset was unpublished
 %
     
-% Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/unpublish', dataset_id);
+url = ndi.cloud.api.url('post_unpublish', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'POST' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' " +...

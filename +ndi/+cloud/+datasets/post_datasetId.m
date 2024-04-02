@@ -16,8 +16,7 @@ function [status, response] = post_datasetId(dataset_id, dataset, auth_token)
 % Prepare the JSON data to be sent in the POST request
 dataset_str = jsonencode(dataset);
     
-% Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s', dataset_id);
+url = ndi.cloud.api.url('post_datasetId', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'POST' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' " +...

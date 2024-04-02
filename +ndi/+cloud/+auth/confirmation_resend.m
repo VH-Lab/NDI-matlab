@@ -1,7 +1,7 @@
 function [status,response] = confirmation_resend(email)
 % CONFIRMATION_RESEND - Resends the verification code via email
 %
-% [STATUS,RESPONSE] = ndi.cloud.auth.confirmation_resend(EMAIL)
+% [STATUS,RESPONSE] = ndi.cloud.api.auth.confirmation_resend(EMAIL)
 %
 % Inputs:
 %   EMAIL - a string representing the email address used to send the
@@ -17,13 +17,12 @@ json = struct('email', email);
 json_str = jsonencode(json);
 
 % Construct the curl command
-url = 'https://dev-api.ndi-cloud.com/v1/auth/confirmation/resend';
+url = ndi.cloud.api.url('confirmation_resend');
 cmd = sprintf("curl -X 'POST' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Content-Type: application/json' " + ...
     "-d '%s'", url, json_str);
-
-
+    
 % Run the curl command and capture the output
 [status, output] = system(cmd);
 

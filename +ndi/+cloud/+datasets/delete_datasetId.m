@@ -14,7 +14,7 @@ function [status, response] = delete_datasetId(dataset_id, auth_token)
 %
     
 % Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s', dataset_id);
+url = ndi.cloud.api.url('delete_datasetId', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'DELETE' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

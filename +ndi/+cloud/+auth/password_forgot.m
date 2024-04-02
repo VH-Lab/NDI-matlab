@@ -14,7 +14,7 @@ function [status,response] = password_forgot(email)
  % Prepare the JSON data to be sent in the POST request
 json = struct('email', email);
 jsonStr = jsonencode(json);
-url = 'https://dev-api.ndi-cloud.com/v1/auth/password/forgot';
+url = ndi.cloud.api.url('password_forgot');
 
 % Construct the curl command
 cmd = sprintf("curl -X 'POST' '%s' " + ...

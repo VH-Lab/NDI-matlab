@@ -18,7 +18,7 @@ json = struct('branchName', branch_name);
 json_str = jsonencode(json);
 
 % Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/branches', dataset_id);
+url = ndi.cloud.api.url('get_branches', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

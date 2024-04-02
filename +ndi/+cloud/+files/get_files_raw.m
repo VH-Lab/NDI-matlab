@@ -16,9 +16,7 @@ function [status, response, upload_url] = get_files_raw(dataset_id, uid, auth_to
 %   UPLOAD_URL - the upload URL to put the file to
 %
 
-% Construct the curl command with the organization ID and authentication token
-
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/files/raw/%s', dataset_id, uid);
+url = ndi.cloud.api.url('get_files_raw', 'dataset_id', dataset_id , 'uid', uid);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

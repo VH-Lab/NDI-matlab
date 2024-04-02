@@ -13,7 +13,7 @@ function [status,dataset, response] = get_datasetId(dataset_id, auth_token)
 %   RESPONSE - the response from the server
     
 % Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s', dataset_id);
+url = ndi.cloud.api.url('get_datasetId', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

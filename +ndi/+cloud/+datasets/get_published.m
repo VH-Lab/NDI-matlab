@@ -17,7 +17,7 @@ function [status, response, datasets] = get_published(page, page_size, auth_toke
 % Construct the curl command with the organization ID and authentication token
 page = int2str(page);
 page_size = int2str(page_size);
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/published?page=%s&pageSize=%s', page, page_size);
+url = ndi.cloud.api.url('get_published', 'page', page, 'page_size', page_size);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

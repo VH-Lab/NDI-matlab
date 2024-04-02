@@ -13,8 +13,7 @@ function [status, response] = delete_documents(dataset_id, document_id, auth_tok
 %   RESPONSE - a message saying if the document was deleted or not 
 %
 
-% Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/documents/%s', dataset_id, document_id);
+url = ndi.cloud.api.url('delete_documents', 'dataset_id', dataset_id, 'document_id', document_id);
 cmd = sprintf("curl -X 'DELETE' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

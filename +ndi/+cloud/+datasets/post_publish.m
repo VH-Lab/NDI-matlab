@@ -12,8 +12,8 @@ function [status, response] = post_publish(dataset_id, auth_token)
 %   RESPONSE - the dataset was published
 %
     
-% Construct the curl command with the organization ID and authentication token
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/publish', dataset_id);
+url = ndi.cloud.api.url('post_publish', 'dataset_id', dataset_id);
+
 cmd = sprintf("curl -X 'POST' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' " +...

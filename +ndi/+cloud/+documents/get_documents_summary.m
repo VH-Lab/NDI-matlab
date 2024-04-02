@@ -13,9 +13,7 @@ function [status, response, summary] = get_documents_summary(dataset_id, auth_to
 %   SUMMARY - The list of documents in the dataset
 %
 
-% Construct the curl command with the organization ID and authentication token
-
-url = sprintf('https://dev-api.ndi-cloud.com/v1/datasets/%s/documents', dataset_id);
+url = ndi.cloud.api.url('get_documents_summary', 'dataset_id', dataset_id);
 cmd = sprintf("curl -X 'GET' '%s' " + ...
     "-H 'accept: application/json' " + ...
     "-H 'Authorization: Bearer %s' ", url, auth_token);

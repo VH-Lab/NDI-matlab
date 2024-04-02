@@ -13,7 +13,7 @@ function [status,response] = verify(email, confirmation_code)
  % Prepare the JSON data to be sent in the POST request
 json = struct('email', email, 'confirmationCode', confirmation_code);
 jsonStr = jsonencode(json);
-url = 'https://dev-api.ndi-cloud.com/v1/auth/verify';
+url = ndi.cloud.api.url('verify');
 
 % Construct the curl command
 cmd = sprintf("curl -X 'POST' '%s' " + ...
