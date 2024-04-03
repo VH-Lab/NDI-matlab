@@ -9,21 +9,21 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
 %
 % Outputs:
 %   FILE_MANIFEST - A structure with the following fields:
-%       'uid'   - The uid of the file
-%       'name'  - The name of the file
+%       'name' - The name of the file
+%       'file_path' - The full (absolute) pathname of the file
 %       'docid' - The document id that the file is associated with
 %       'bytes' - The size of the file in bytes
 
     arguments
         ndi_dataset (1,1) ndi.dataset
         database_documents (1,:) cell
-        verbose = true
+        verbose = false
     end
 
     num_documents = numel(database_documents);
 
     % Pre-allocate output struct arrays
-    file_manifest = struct('name', {}, 'docid', {}, 'bytes', {});
+    file_manifest = struct('name', {}, 'docid', {}, 'bytes', {}, 'file_path', {});
     
     % Explicitly open the database before scanning all the files to upload.
     % This process will run a large number of queries to the database, so 
@@ -45,14 +45,14 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                 j = 1; is_finished = false;
                 while ~is_finished % we could potentially read a series of files
                     if file_name(end)=='#' % this file is a series of files
-                        filename_here = sprintf('%s%d', file_name(1:end-1), j);
+                        this_filename = sprintf('%s%d', file_name(1:end-1), j);
                     else
-                        filename_here = file_name;
+                        this_filename = file_name;
                         is_finished = true; % only 1 file
                     end
     
                     [file_exists, full_file_path] = ...
-                        ndi_dataset.database_existbinarydoc(ndi_document_id, filename_here);
+                        ndi_dataset.database_existbinarydoc(ndi_document_id, this_filename);
                         
                     if ~file_exists
                         is_finished = true;
@@ -62,10 +62,11 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                     j = j + 1;
                     if ~isempty(full_file_path)
                         curr_idx = numel(file_manifest) + 1;
-                        [~, uid, ~] = fileparts(full_file_path);
-                        file_manifest(curr_idx).uid = uid;
-                        file_manifest(curr_idx).name = file_name;
+                        %[~, uid, ~] = fileparts(full_file_path);
                         file_manifest(curr_idx).docid = ndi_document_id;
+                        %file_manifest(curr_idx).uid = uid;
+                        file_manifest(curr_idx).name = this_filename;
+                        file_manifest(curr_idx).file_path = full_file_path;
                         file_info = dir(full_file_path);
                         file_manifest(curr_idx).bytes = file_info.bytes;
                     end

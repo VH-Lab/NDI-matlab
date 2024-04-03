@@ -1,6 +1,7 @@
 function decodedPayload = decode_jwt(jwtToken)
-    
-    % Split the JWT token into its components
+% decode_jwt - Decode a JSON Web token
+
+    % Split the token into its components
     tokenParts = strsplit(jwtToken, '.');
 
     % Extract and decode the payload
