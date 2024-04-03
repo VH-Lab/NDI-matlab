@@ -87,17 +87,17 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     end
     
     num_documents = numel(documents_for_upload);
-    % for i = 1:num_documents
-    %     if ~ismissing( progress_trackers(2) )
-    %         progress_trackers(2).updateProgress(i)
-    %     end
-    %     json_document = did.datastructures.jsonencodenan(documents_for_upload{i}.document_properties);
-    %     try
-    %         [result] = ndi.cloud.api.documents.add_document(cloud_dataset_id, json_document);
-    %     catch ME
-    %         warning(ME.identifier, '%s', ME.message)
-    %     end
-    % end
+    for i = 1:num_documents
+        if ~ismissing( progress_trackers(2) )
+            progress_trackers(2).updateProgress(i)
+        end
+        json_document = did.datastructures.jsonencodenan(documents_for_upload{i}.document_properties);
+        try
+            [result] = ndi.cloud.api.documents.add_document(cloud_dataset_id, json_document);
+        catch ME
+            warning(ME.identifier, '%s', ME.message)
+        end
+    end
 
     if ~ismissing( progress_trackers(2) )
         progress_trackers(2).setCompleted("Uploaded all documents.")
