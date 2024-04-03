@@ -61,6 +61,6 @@ end
 dataset_update.associatedPublications = associate_publications_struct;
 % dataset_update.brainRegions = brainRegions;
 % dataset_update.totalSize = round(size);
-[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, dataset_update, auth_token);
+[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organization_id, dataset_update, auth_token);
 end
 

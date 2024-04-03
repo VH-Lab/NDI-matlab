@@ -37,6 +37,6 @@ end
 dataset_update.contributors = author_struct;
 
  
-[status,dataset] = ndi.cloud.datasets.post_datasetId(datasetid,dataset_update,auth_token);
+[status,dataset] = ndi.cloud.api.datasets.post_datasetId(datasetid,dataset_update,auth_token);
 end
 

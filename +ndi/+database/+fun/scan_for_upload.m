@@ -58,8 +58,8 @@ end
 
 
 if (~new)
-    [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id,auth_token);
-    [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+    [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id,auth_token);
+    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id, auth_token);
     already_uploaded_docs = {};
     if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
     [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs);

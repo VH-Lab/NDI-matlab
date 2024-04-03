@@ -18,6 +18,6 @@ S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
 [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
 [b, msg] = ndi.database.fun.upload_to_NDI_cloud(S, dataset_id);
 [auth_token, organization_id] = ndi.cloud.uilogin();
-[status,dataset] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id, auth_token);
 end
 

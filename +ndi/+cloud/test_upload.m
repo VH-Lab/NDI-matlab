@@ -13,7 +13,7 @@ function [b, msg, dataset_id] = test_upload(S,test_name)
 
 [auth_token, organization_id] = ndi.cloud.uilogin();
 d = struct('name',test_name);
-[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, d, auth_token);
+[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organization_id, d, auth_token);
 [b, msg] = ndi.database.fun.upload_to_NDI_cloud(S, auth_token, dataset_id);
 end
 

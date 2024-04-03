@@ -68,6 +68,6 @@ dataset_update.associatedPublications = associate_publications_struct;
 % round up the bytes to the nearest kilobyte
 dataset_update.totalSize = round(size);
 % dataset_update.brainRegions = brainRegions;
-[status,dataset] = ndi.cloud.datasets.post_datasetId(dataset_id,dataset_update,auth_token);
+[status,dataset] = ndi.cloud.api.datasets.post_datasetId(dataset_id,dataset_update,auth_token);
 end
 
