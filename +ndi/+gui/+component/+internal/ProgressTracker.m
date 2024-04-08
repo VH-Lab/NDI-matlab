@@ -153,7 +153,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
             end
 
             if obj.CurrentStep >= obj.TotalSteps
-                eventData = task.event.ProgressUpdatedEventData(...
+                eventData = ndi.gui.component.internal.event.ProgressUpdatedEventData(...
                     obj.PercentageComplete, obj.CurrentStep, obj.TotalSteps);
                 obj.notify('TaskCompleted', eventData);
                 obj.IsFinished = true;
@@ -162,7 +162,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
 
             if seconds(toc(obj.LastUpdate)) > obj.UpdateInterval
                 % Trigger event
-                eventData = task.event.ProgressUpdatedEventData(...
+                eventData = ndi.gui.component.internal.event.ProgressUpdatedEventData(...
                     obj.PercentageComplete, obj.CurrentStep, obj.TotalSteps);
 
                 obj.notify('ProgressUpdated', eventData);
@@ -171,7 +171,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         end
         
         function updateMessage(obj, newMessage)
-            eventData = task.event.MessageUpdatedEventData(newMessage);
+            eventData = ndi.gui.component.internal.event.MessageUpdatedEventData(newMessage);
             obj.notify('MessageUpdated', eventData);
         end
 
