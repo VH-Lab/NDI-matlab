@@ -14,7 +14,7 @@ function [token, organization_id] = uilogin()
     
     if ~isempty(token)
         expiration_time = ndi.cloud.internal.get_token_expiration(token);
-        if datetime("now") > expiration_time
+        if datetime("now", "TimeZone", "local") > expiration_time
             token = '';
         end
     end
