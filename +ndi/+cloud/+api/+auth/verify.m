@@ -10,35 +10,28 @@ function [status,response] = verify(email, confirmation_code)
 %   STATUS - is the confirmation code correct? 1 for no, 0 for yes
 %   RESPONSE - the response summary
 %
- % Prepare the JSON data to be sent in the POST request
+
+[auth_token, ~] = ndi.cloud.uilogin();
 json = struct('email', email, 'confirmationCode', confirmation_code);
-jsonStr = jsonencode(json);
-url = ndi.cloud.api.url('verify');
 
-% Construct the curl command
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Content-Type: application/json' " + ...
-    "-d '%s'", url, jsonStr);
+method = matlab.net.http.RequestMethod.POST;
 
+body = matlab.net.http.MessageBody(json);
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('verify'));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200 || response.StatusCode == 201)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
-
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
-
-if isfield(response, 'error')
-    error(response.error);
-end
-
 end

@@ -22,7 +22,6 @@ function [doc_json_struct,doc_file_struct, total_size] = scan_for_upload(S, d, n
 %  TOTAL_SIZE - The total size of the files to upload in KB
 
 verbose = 1;
-[auth_token, organization_id] = ndi.cloud.uilogin();
 
 if verbose, disp(['Loading documents...']); end;
     
@@ -58,8 +57,8 @@ end
 
 
 if (~new)
-    [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id,auth_token);
-    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id, auth_token);
+    [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
     already_uploaded_docs = {};
     if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
     [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs);

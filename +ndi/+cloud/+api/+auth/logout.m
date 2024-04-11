@@ -1,37 +1,35 @@
-function [status, response] = logout(auth_token)
+function [status, response] = logout()
 % LOGOUT - logs a user out and invalidates their token
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.auth.LOGOUT(AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.auth.LOGOUT()
 %
 % Inputs:
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did user log out? 1 for no, 0 for yes
 %   RESPONSE - the response summary
 %
 
-% Construct the curl command
-url = ndi.cloud.api.url('logout');
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " +...
-    "-d ''", url, auth_token);
+[auth_token, ~] = ndi.cloud.uilogin();
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+method = matlab.net.http.RequestMethod.POST;
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
+json = '';
+body = matlab.net.http.MessageBody(json);
+
+h1 = matlab.net.http.HeaderField('accept','application/json');
+h2 = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [h1 h2];
+
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('logout'));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
-
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
-
-disp('Logout successful!');
 end

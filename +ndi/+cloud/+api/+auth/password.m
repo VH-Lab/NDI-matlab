@@ -1,49 +1,40 @@
-function [status,response] = password(oldPassword, newPassword, auth_token)
+function [status,response] = password(oldPassword, newPassword)
 % PASSWORD - update a users password
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.auth.PASSWORD(OLDPASSWORD, NEWPASSWORD, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.auth.PASSWORD(OLDPASSWORD, NEWPASSWORD)
 %
 % Inputs:
 %   OLDPASSWORD - a string representing the old password
 %   NEWPASSWORD - a string representing the new password
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did the new password correctly set? 1 for no, 0 for yes
 %   RESPONSE - the response summary
 %
- % Prepare the JSON data to be sent in the POST request
+
+[auth_token, ~] = ndi.cloud.uilogin();
 json = struct('oldPassword', oldPassword, 'newPassword', newPassword);
-json_str = jsonencode(json);
 
-% Construct the curl command
-url = ndi.cloud.api.url('password');
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " + ...
-    "-H 'Content-Type: application/json' " + ...
-    "-d '%s'", url, auth_token, json_str);
+method = matlab.net.http.RequestMethod.POST;
 
+body = matlab.net.http.MessageBody(json);
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('password'));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200 || response.StatusCode == 201)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
-
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
-
-if isfield(response, 'error')
-    error(response.error);
-end
-
 end
 
 

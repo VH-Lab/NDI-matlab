@@ -8,46 +8,47 @@
 % 
 % type (fullfile(filename,'t00001','stims.tsv'))
 
-fileName = 'exampledataset.json'; 
+fileName = '/Users/cxy/Documents/MATLAB/tools/NDI-matlab/+ndi/+cloud/+api/exampledataset.json'; 
 str = fileread(fileName); 
 example_dataset = jsondecode(str); 
 
-[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organization_id, example_dataset, auth_token);
+[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(example_dataset);
 
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
-[status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset, auth_token);
+[status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset);
 %example organization id: '645163735ea2a39cb644cc6c'
-[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id, auth_token);
+[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
 
-[status, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id, auth_token);
+[status, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id);
 
-[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id, auth_token);
+[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
 id = "64d4c79bbafd38dfb30b1824";
-[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id, auth_token);
-[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organizationId, example_dataset, auth_token);
-[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id, auth_token);
+[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organizationId, example_dataset);
+[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 page = 1;
 page_size = 1;
-[status, response, datasets] = ndi.cloud.api.datasets.get_published(page, page_size, auth_token);
+[status, response, datasets] = ndi.cloud.api.datasets.get_published(page, page_size);
 %% not successful
-[status, response, datasets] = ndi.cloud.api.datasets.get_unpublished(page, page_size, auth_token);
+[status, response, datasets] = ndi.cloud.api.datasets.get_unpublished(page, page_size);
 curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://presigned-url"
 
-[status, response, url] = ndi.cloud.api.datasets.get_files_raw(dataset_id, uid, auth_token);
-[status, output] = ndi.cloud.put_files(presigned_url, file_path, auth_token);
+[status, response, url] = ndi.cloud.api.datasets.get_files_raw(dataset_id, uid);
+[status, output] = ndi.cloud.put_files(presigned_url, file_path);
 %example dataset id: '6466c110390dd305045ee10e'
 %example document id: ''6466f7e9cd19dffd5f63022c'
-[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id, auth_token);
+[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
 all_docs = summary.documents;
 all_docs_ids = all_docs.id;
-[status, response, document] = ndi.cloud.api.documents.get_documents('6466c110390dd305045ee10e', all_docs(3).id, auth_token);
-[status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id, auth_token);
+[status, response, document] = ndi.cloud.api.documents.get_documents('6466c110390dd305045ee10e', all_docs(3).id);
+[status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
 
 docName = 'exampledocument.json'; 
 str_doc = fileread(docName); 
-example_document = jsondecode(str_doc); 
-[status, response] = ndi.cloud.api.documents.post_documents(dataset_id, example_document, auth_token);
+example_document = struct("name", "example document");
+example_document = jsonencode(example_document);
+[status, response] = ndi.cloud.api.documents.post_documents(docName, dataset_id, example_document);
 
-[status, response] = ndi.cloud.api.datasets.post_unpublish(dataset_id, auth_token);
-[status, response] = ndi.cloud.api.datasets.post_publish(dataset_id, auth_token);
+[status, response] = ndi.cloud.api.datasets.post_unpublish(dataset_id);
+[status, response] = ndi.cloud.api.datasets.post_publish(dataset_id);

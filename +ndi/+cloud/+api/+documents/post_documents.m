@@ -1,49 +1,40 @@
-function [status, response] = post_documents(file_path, dataset_id, document, auth_token)
+function [status, response] = post_documents(file_path, dataset_id, document)
 % POST_DOCUMENTS - add a document to the dataset
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS(DATASET_ID, DOCUMENT, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS(DATASET_ID, DOCUMENT)
 %
 % Inputs:
 %   DATASET_ID - a string representing the dataset id
 %   DOCUMENT - a string of JSON object representing the new document
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did post request work? 1 for no, 0 for yes
 %   RESPONSE - the new document summary
 %
 
-url = ndi.cloud.api.url('post_documents', 'dataset_id', dataset_id);
 fid = fopen(file_path,'w');
 fprintf(fid,'%s',document);
 fclose(fid);
 
-% directly from files
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " +...
-    "-H 'Content-Type: application/json' " +...
-    " -d @%s ", url, auth_token, file_path);
+[auth_token, ~] = ndi.cloud.uilogin();
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
-if exist(file_path, 'file')==2,
-  delete(file_path);
-end
+method = matlab.net.http.RequestMethod.POST;
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
-end
+provider = matlab.net.http.io.FileProvider(file_path);
 
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
 
-if isfield(response, 'error')
-    error(response.error);
-end
+req = matlab.net.http.RequestMessage(method, headers, provider);
+
+url = matlab.net.URI(ndi.cloud.api.url('post_documents', 'dataset_id', dataset_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end

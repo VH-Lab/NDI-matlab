@@ -1,45 +1,37 @@
-function [status, response, dataset_id] = post_organization(organization_id, dataset, auth_token)
+function [status, response, dataset_id] = post_organization(dataset)
 % POST_ORGANIZATION - Create a new dataset
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_ORGANIZATION(ORGANIZATION_ID, DATASET, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_ORGANIZATION(DATASET)
 %
 % Inputs:
-%   ORGANIZATION_ID - a string representing the id of the organization
 %   DATASET - a JSON object representing the dataset
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did post request work? 1 for no, 0 for yes
 %   RESPONSE - the new dataset summary
 %   DATASET_ID - the id of the newly created dataset
 
-% Prepare the JSON data to be sent in the POST request
-dataset_str = jsonencode(dataset);
+[auth_token, organization_id] = ndi.cloud.uilogin();
 
-url = ndi.cloud.api.url('post_organization', 'organization_id', organization_id);
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " + ...
-    "-H 'Content-Type: application/json' " + ...
-    "-d '%s'", url, auth_token, dataset_str);
+method = matlab.net.http.RequestMethod.POST;
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+body = matlab.net.http.MessageBody(dataset);
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
+
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('post_organization', 'organization_id', organization_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 201)
+    status = 0;
+    dataset_id = response.Body.Data.id;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
-
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
-
-if isfield(response, 'error')
-    error(response.error);
-end
-dataset_id = response.id;
 end

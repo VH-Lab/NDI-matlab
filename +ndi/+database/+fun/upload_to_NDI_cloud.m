@@ -15,7 +15,6 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
 verbose = 1;
 
 did.datastructures.assign(varargin{:});
-[auth_token, ~] = ndi.cloud.uilogin();
 
 if verbose, disp(['Loading documents...']); end;
 d = S.database_search(ndi.query('','isa','base'));
@@ -55,7 +54,7 @@ for i=1:numel(d),
         if verbose,
         disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
         end;
-        [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document, auth_token);
+        [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document);
         if status ~= 0
             b = 0;
             msg = response_doc;
@@ -96,13 +95,13 @@ for i=1:numel(d),
                        disp(['...Uploading ' int2str(f) ' of ' int2str(numel(d{i}.document_properties.files.file_list)) ' binary files/sets (' filename_here ')']);
                     end;
                     [~,uid,~] = fileparts(file_obj.fullpathfilename);
-                    [status, response, upload_url] = ndi.cloud.api.files.get_files(dataset_id, uid, auth_token);
+                    [status, response, upload_url] = ndi.cloud.api.files.get_files(dataset_id, uid);
                     if status ~= 0
                         b = 0;
                         msg = response;
                         error(msg);
                     end
-                    [status, response] = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename, auth_token);
+                    [status, response] = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename);
                     if status ~= 0
                         b = 0;
                         msg = response;

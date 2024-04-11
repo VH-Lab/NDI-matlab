@@ -4,10 +4,10 @@ confirmation_code = "176741";
 %% auth
 %tested successfully 
 [status, auth_token, organization_id] = ndi.cloud.api.auth.login(email, password);
-[status, output] = ndi.cloud.api.auth.logout(auth_token);
+[status, output] = ndi.cloud.api.auth.logout();
 [status,response] = ndi.cloud.auth.confirmation_resend(email);
 [status,response] = ndi.cloud.auth.password_forgot(email);
-[status,response] = ndi.cloud.auth.password(oldPassword, newPassword, auth_token);
+[status,response] = ndi.cloud.auth.password(oldPassword, newPassword);
 
 % unsucessful
 [status,response] = ndi.cloud.auth.verify(email, confirmation_code);

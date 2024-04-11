@@ -1,46 +1,39 @@
-function [status, response] = post_documents_update(dataset_id, document_id, document, auth_token)
+function [status, response] = post_documents_update(dataset_id, document_id, document)
 % POST_DOCUMENTS_UPDATE - update a document
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS_UPDATE(DATASET_ID, DOCUMENT_ID, DOCUMENT, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS_UPDATE(DATASET_ID, DOCUMENT_ID, DOCUMENT)
 %
 % Inputs:
 %   DATASET_ID - a string representing the dataset id
 %   DOCUMENT_ID -  a string representing the document id
 %   DOCUMENT - a JSON object representing the updated version of the
 %   document
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did post request work? 1 for no, 0 for yes
 %   RESPONSE - the updated document summary
 %
 
-% Prepare the JSON data to be sent in the POST request
-document_str = jsonencode(document);
+[auth_token, ~] = ndi.cloud.uilogin();
 
-url = ndi.cloud.api.url('post_documents_update', 'dataset_id', dataset_id, 'document_id', document_id);
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " +...
-    "-H 'Content-Type: application/json' " +...
-    " -d '%s' ", url, auth_token, document_str);
+method = matlab.net.http.RequestMethod.POST;
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+body = matlab.net.http.MessageBody(document);
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
-end
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
 
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
+req = matlab.net.http.RequestMessage(method, headers, body);
 
-if isfield(response, 'error')
-    error(response.error);
+url = matlab.net.URI(ndi.cloud.api.url('post_documents_update', 'dataset_id', dataset_id, 'document_id', document_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
 end

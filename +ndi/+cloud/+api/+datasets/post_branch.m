@@ -1,43 +1,39 @@
-function [status, response] = post_branch(dataset_id, branch_name, auth_token)
+function [status, response] = post_branch(dataset_id, branch_name)
 % POST_BRANCH - branch a given dataset
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_BRANCH(DATASET_ID, BRANCH_NAME, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_BRANCH(DATASET_ID, BRANCH_NAME)
 %
 % Inputs:
 %   DATASET_ID - a string representing the id of the dataset
 %   BRANCH_NAME - a string representing the branch name
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did get request work? 1 for no, 0 for yes
 %   RESPONSE - the updated dataset summary
 %
 
-% Prepare the JSON data to be sent in the POST request
+[auth_token, ~] = ndi.cloud.uilogin();
+
 json = struct('branchName', branch_name);
-json_str = jsonencode(json);
 
-url = ndi.cloud.api.url('post_branch', 'dataset_id', dataset_id);
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " +...
-    "-H 'Content-Type: application/json' " +...
-    " -d '%s' ", url, auth_token, json_str);
+method = matlab.net.http.RequestMethod.POST;
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+body = matlab.net.http.MessageBody(json);
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
-end
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
-if isfield(response, 'error')
-    error(response.error);
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+acceptField = matlab.net.http.field.AcceptField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
+
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('post_branch', 'dataset_id', dataset_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
 end

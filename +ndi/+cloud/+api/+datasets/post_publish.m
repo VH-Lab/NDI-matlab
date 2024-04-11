@@ -1,40 +1,36 @@
-function [status, response] = post_publish(dataset_id, auth_token)
+function [status, response] = post_publish(dataset_id)
 % POST_PUBLISH - publish a dataset
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_PUBLISH(DATASET_ID, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_PUBLISH(DATASET_ID)
 %
 % Inputs:
 %   DATASET_ID - an id of the dataset
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did the post request work? 1 for no, 0 for yes
 %   RESPONSE - the dataset was published
 %
-    
-url = ndi.cloud.api.url('post_publish', 'dataset_id', dataset_id);
 
-cmd = sprintf("curl -X 'POST' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' " +...
-    "-d ' '", url, auth_token);
+[auth_token, ~] = ndi.cloud.uilogin();
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+method = matlab.net.http.RequestMethod.POST;
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
-end
+body = matlab.net.http.MessageBody('');
 
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+contentTypeField = matlab.net.http.field.ContentTypeField(matlab.net.http.MediaType('application/json'));
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField contentTypeField authorizationField];
 
-if isfield(response, 'error')
-    error(response.error);
+req = matlab.net.http.RequestMessage(method, headers, body);
+
+url = matlab.net.URI(ndi.cloud.api.url('post_publish', 'dataset_id', dataset_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
 end

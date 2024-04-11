@@ -1,40 +1,34 @@
-function [status, response] = delete_datasetId(dataset_id, auth_token)
+function [status, response] = delete_datasetId(dataset_id)
 % DELETE_DATASETID - Delete a dataset. Datasets cannot be deleted if they
 % have been branched off of
 %
-% [STATUS,RESPONSE] = ndi.cloud.api.datasets.DELETE_DATASETID(DATASET_ID, AUTH_TOKEN)
+% [STATUS,RESPONSE] = ndi.cloud.api.datasets.DELETE_DATASETID(DATASET_ID)
 %
 % Inputs:
 %   DATASET_ID - a string representing the dataset id
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did delete request work? 1 for no, 0 for yes
 %   RESPONSE - the delete confirmation
 %
-    
-% Construct the curl command with the organization ID and authentication token
-url = ndi.cloud.api.url('delete_datasetId', 'dataset_id', dataset_id);
-cmd = sprintf("curl -X 'DELETE' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' ", url, auth_token);
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
+[auth_token, ~] = ndi.cloud.uilogin();
 
-% Check the status code and handle any errors
-if status ~= 0
-    error('Failed to run curl command: %s', output);
-end
+method = matlab.net.http.RequestMethod.DELETE;
 
-% Process the JSON response; if the command failed, it might be a plain text error message
-try,
-	response = jsondecode(output);
-catch,
-	error(['Command failed with message: ' output ]);
-end;
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField authorizationField];
 
-if isfield(response, 'error')
-    error(response.error);
+req = matlab.net.http.RequestMessage(method, headers);
+
+url = matlab.net.URI(ndi.cloud.api.url('delete_datasetId', 'dataset_id', dataset_id));
+
+response = req.send(url);
+status = 1;
+if (response.StatusCode == 204)
+    status = 0;
+else
+    error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
 end

@@ -1,39 +1,33 @@
-function [status,dataset, response] = get_datasetId(dataset_id, auth_token)
+function [status,dataset, response] = get_datasetId(dataset_id)
 % GET_DATASETID - get a dataset
 %
-% [STATUS,DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASETID(DATASET_ID, AUTH_TOKEN)
+% [STATUS,DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASETID(DATASET_ID)
 %
 % Inputs:
 %   DATASET_ID - a string representing the dataset id
-%   AUTH_TOKEN - a string representing the authentification token
 %
 % Outputs:
 %   STATUS - did get request work? 1 for no, 0 for yes
 %   DATASET - the dataset required by the user
 %   RESPONSE - the response from the server
-    
-% Construct the curl command with the organization ID and authentication token
-url = ndi.cloud.api.url('get_datasetId', 'dataset_id', dataset_id);
-cmd = sprintf("curl -X 'GET' '%s' " + ...
-    "-H 'accept: application/json' " + ...
-    "-H 'Authorization: Bearer %s' ", url, auth_token);
 
-% Run the curl command and capture the output
-[status, output] = system(cmd);
-response = jsondecode(output);
-dataset = '';
-% Check the status code and handle any errors
-if status
-    error('Failed to run curl command: %s', output);
+[auth_token, ~] = ndi.cloud.uilogin();
+
+url = matlab.net.URI(ndi.cloud.api.url('get_datasetId', 'dataset_id', dataset_id));
+
+method = matlab.net.http.RequestMethod.GET;
+
+acceptField = matlab.net.http.HeaderField('accept','application/json');
+authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);
+headers = [acceptField authorizationField];
+
+request = matlab.net.http.RequestMessage(method, headers);
+response = send(request, url);
+status = 1;
+if (response.StatusCode == 200)
+    status = 0;
+    dataset = response.Body.Data;
 else
-        % Process the JSON response; if the command failed, it might be a plain text error message
-    try,
-	    dataset = jsondecode(output);
-    catch,
-	    error(['Command failed with message: ' output ]);
-    end;
-    if isfield(dataset, 'error')
-        error(dataset.error);
-    end
+    error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
 end
 end
