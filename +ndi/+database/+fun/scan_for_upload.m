@@ -60,7 +60,7 @@ if (~new)
     [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
     [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
     already_uploaded_docs = {};
-    if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
+    if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end;
     [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs);
     docid_upload = containers.Map(all_docs(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
     for i = 1:numel(doc_json_struct)

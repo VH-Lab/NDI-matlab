@@ -1,6 +1,6 @@
-function [size, session_id, openminds_doc] =  delete_cloud_openminds_doc(dataset_id)
+function [size, session_id, openminds_doc] = delete_cloud_openminds_doc(dataset_id)
 %DELETE_CLOUD_OPENMINDS_DOC - delete all the openminds documents in the dataset
-%   ndi.cloud.delete_cloud_openminds_doc(DATASET_ID)
+%   [SIZE,SESSION_ID, OPENMINDS_DOC] = ndi.cloud.delete_cloud_openminds_doc(DATASET_ID)
 %
 %   input:
 %   DATASET_ID - the dataset id where the documents will be deleted
@@ -8,6 +8,7 @@ function [size, session_id, openminds_doc] =  delete_cloud_openminds_doc(dataset
 %   output:
 %   SIZE - the size (in kilobytes) of the deleted documents
 %   SESSION_ID - the session id of the deleted documents
+%   OPENMINDS_DOC - the openminds docs that have been deleted
 
 size = 0;
 [status, response, documents_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);

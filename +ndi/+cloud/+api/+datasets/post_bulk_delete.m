@@ -12,8 +12,8 @@ function [status, response] = post_bulk_delete(dataset_id,document_ids)
 %   response - the post request response
 
 [auth_token, ~] = ndi.cloud.uilogin();
-
-json = struct('documentIds', document_ids);
+json = struct();
+json.documentIds = document_ids;
 
 method = matlab.net.http.RequestMethod.POST;
 
@@ -26,7 +26,7 @@ headers = [acceptField contentTypeField authorizationField];
 
 req = matlab.net.http.RequestMessage(method, headers, body);
 
-url = matlab.net.URI(ndi.cloud.api.url(url = ndi.cloud.api.url('post_bulk_delete', 'dataset_id', dataset_id)));
+url = matlab.net.URI(ndi.cloud.api.url('post_bulk_delete', 'dataset_id', dataset_id));
 
 response = req.send(url);
 status = 1;
@@ -35,4 +35,32 @@ if (response.StatusCode == 200)
 else
     error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end
+
+% url = ndi.cloud.api.url('post_bulk_delete', 'dataset_id', dataset_id);
+% s = struct();
+% s.documentIds = document_ids;
+% json_obj = jsonencode(s);
+% cmd = sprintf("curl -X 'POST' '%s' " + ...
+%     "-H 'accept: application/json' " + ...
+%     "-H 'Authorization: Bearer %s' " +...
+%     "-H 'Content-Type: application/json' " + ...
+%     "-d '%s'", url, auth_token, json_obj);
+% 
+% % Run the curl command and capture the output
+% [status, output] = system(cmd);
+% response = output;
+% % Check the status code and handle any errors
+% if status
+%     error('Failed to run curl command: %s', output);
+% else
+%     % Process the JSON response; if the command failed, it might be a plain text error message
+%     try,
+% 	    response = jsondecode(output);
+%     catch,
+% 	    error(['Command failed with message: ' output ]);
+%     end;
+%     if isfield(response, 'error')
+%         error(response.error);
+%     end
+% end
 end
