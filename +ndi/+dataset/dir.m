@@ -41,7 +41,7 @@ classdef dir < ndi.dataset
 					d2 = ndi_dataset_dir_obj.database_search(q2);
 					if ~isempty(d2),
 						ref = d2{1}.document_properties.session.reference;
-						ndi_dataset_dir_obj.session = ndi.session.dir(ref,path,session_id);
+						ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
 					end;
 				end;
 		end; % dir(), creator
