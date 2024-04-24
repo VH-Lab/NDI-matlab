@@ -17,8 +17,7 @@ function [b, msg, dataset_id] = create_new_dataset(S, struct, email, password)
 %   MSG - An error message if the upload failed; otherwise ''
 %   DATASET_ID - the dataset id of the newly created dataset
 
-[status, auth_token, organization_id] = ndi.cloud.auth.login(email, password);
-[status, response, dataset_id] = ndi.cloud.create_cloud_metadata_struct(auth_token, organization_id, struct);
+[status, response, dataset_id] = ndi.cloud.create_cloud_metadata_struct(struct);
 % dataset_id = '65b2e807f75422c1b570d1b4';
 d_openminds = S.database_search( ndi.query('openMinds.fields','hasfield'));
 %remove all the old openminds docs

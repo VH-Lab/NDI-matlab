@@ -1,11 +1,10 @@
-function [status, dataset] = update_cloud_metadata_struct(dataset_id, auth_token, S, size)
+function [status, dataset] = update_cloud_metadata_struct(dataset_id, S, size)
 % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA_STRUCT(DATASETID, AUTH_TOKEN, S, SIZE)
+% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA_STRUCT(DATASETID, S, SIZE)
 %
 % Inputs:
 %   DATASETID - the dataset ID to update
-%   AUTH_TOKEN - an upload token for NDI Cloud
 %   S - a struct with the metadata to upload
 %   SIZE - a float representing the size of this dataset in kilobytes
 %
@@ -68,6 +67,6 @@ dataset_update.associatedPublications = associate_publications_struct;
 % round up the bytes to the nearest kilobyte
 dataset_update.totalSize = round(size);
 % dataset_update.brainRegions = brainRegions;
-[status,dataset] = ndi.cloud.datasets.post_datasetId(dataset_id,dataset_update,auth_token);
+[status,dataset] = ndi.cloud.api.datasets.post_datasetId(dataset_id,dataset_update);
 end
 
