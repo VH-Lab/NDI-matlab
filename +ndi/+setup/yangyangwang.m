@@ -20,10 +20,12 @@ end;
 S = ndi.session.dir(ref, dirname);
 devnames = ndi.setup.daq.system.yangyangwang(); % returns list of daq system names
 
-for i=1:numel(vhlabdevnames),
+for i=1:numel(devnames),
 	dev = S.daqsystem_load('name',devnames{i});
 	if force,
-		S.daqsystem_rm(dev);
+        if ~isempty(dev),
+    		S.daqsystem_rm(dev);
+        end;
 		dev = [];
 	end;
 	if isempty(dev),
