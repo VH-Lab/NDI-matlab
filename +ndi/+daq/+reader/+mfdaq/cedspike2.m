@@ -189,28 +189,28 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 			%  is requested, DATA is returned as a cell array, one entry per channel.
 			%
 				%disp('reading here')
-                if ~iscell(channeltype),
-                    channeltype = repmat({channeltype},numel(channel),1);
-                end;
+				if ~iscell(channeltype),
+					channeltype = repmat({channeltype},numel(channel),1);
+				end;
 				timestamps = {};
 				data = {};
 				filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
 				for i=1:numel(channel),
 					[data{i},dummy,dummy,dummy,timestamps{i}]= ndr.format.ced.read_SOMSMR_datafile(filename, ...
 						'',channel(i),t0,t1);
-                    if strcmp(channeltype{i},'event'),
-                        data{i} = ones(size(data{i}));
-                    end;
-                    if strcmp(channeltype{i},'marker'),
-                        if ~isempty(data{i}),
-                        try,
-                        data{i} = sum( double(data{i}) .* repmat([2^0 2^8 2^16 2^24],size(data{i},1),1),2);
-                        catch, keyboard; end
-                        end
-                    end;
-                    if strcmp(channeltype{i},'text'),
-                        data{i} = vlt.data.matrow2cell(data{i})';
-                    end;
+					if strcmp(channeltype{i},'event'),
+						data{i} = ones(size(data{i}));
+					end;
+					if strcmp(channeltype{i},'marker'),
+						if ~isempty(data{i}),
+							try,
+								data{i} = sum( double(data{i}) .* repmat([2^0 2^8 2^16 2^24],size(data{i},1),1),2);
+							catch, keyboard; end
+						end
+					end;
+					if strcmp(channeltype{i},'text'),
+						data{i} = vlt.data.matrow2cell(data{i})';
+					end;
 				end
 				if numel(channel)==1,
 					timestamps = timestamps{1};
