@@ -69,7 +69,7 @@ classdef ndr < ndi.daq.reader.mfdaq
 			% 'time_channel'     | The channel number that has the time information for that channel
 			%
 				ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
-				channels = nd_reader.getchannelsepoch(epochfiles,1);
+				channels = ndr_reader.getchannelsepoch(epochfiles,1);
 		end; % getchannelsepoch
 
 		function data = readchannels_epochsamples(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s0, s1)
