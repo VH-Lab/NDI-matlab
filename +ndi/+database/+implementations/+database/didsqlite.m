@@ -83,7 +83,7 @@ classdef  didsqlite < ndi.database
 		end; % do_search()
 
 		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_didsqlite_obj, ndi_document_id, filename)
-			ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename,'a');
+			ndi_binarydoc_obj = ndi_didsqlite_obj.db.open_doc(ndi_document_id,filename);
 			ndi_binarydoc_obj.fopen(); % should be open but didsqlite does not open it
 		end; % do_binarydoc()
 

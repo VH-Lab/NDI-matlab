@@ -1,0 +1,24 @@
+{
+	"classname": "daqreader_ndr",
+	"superclasses":  [ "base", "daqreader"],
+	"depends_on": [ ],
+	"file": [ ],
+	"daqreader_ndr": [
+		{
+			"name": "ndr_reader_string",
+			"type": "string",
+			"default_value": "RHD",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The NDR reader type is stored here."
+		},
+		{
+			"name": "ndi_daqreader_ndr_class",
+			"type": "string",
+			"default_value": "ndi.daq.reader.mfdaq.ndr",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The class type is stored here."
+		}
+	]
+}

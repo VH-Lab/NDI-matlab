@@ -11,7 +11,7 @@ classdef ndr < ndi.daq.reader.mfdaq
 	end 
 
 	methods
-		function obj = ndr(reader_string)
+		function obj = ndr(varargin)
 			% NDR - create a new ndi.daq.reader.mfdaq.ndr object
 			%
 			% OBJ = NDR(READER_STRING)
@@ -25,18 +25,33 @@ classdef ndr < ndi.daq.reader.mfdaq
 			% A list of valid strings may be obtained from
 			%   reader_string = ndr.known_readers()
 			%
-				arguments
-					reader_string (1,:) char {mustBeNonempty} = 'RHD';
-				end % arguments
 
-				kr = ndr.known_readers();
-				index = find(strcmpi(reader_string,kr));
-				if isempty(index),
-					error(['READER_STRING must be a member of the known readers of NDR, as listed in ndr.known_readers()']);
+				finished = 0;
+
+				if nargin==0,
+					reader_string = 'RHD';
+				elseif nargin==1,
+					% should be a reader_string
+					reader_string = char(varargin{1});
+					if isempty(reader_string),
+						error(['READER_STRING must be not empty.']);
+					end;
+				elseif nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+					obj.identifier = varargin{2}.document_properties.base.id;
+					obj.ndr_reader_string = varargin{2}.document_properties.daqreader_ndr.ndr_reader_string;
+					finished = 1;
+				else,
+					error(['Unknown arguments.']);
 				end;
-				obj.ndr_reader_string = kr{index};
-				% test this
-				ndr_reader = ndr.reader(obj.ndr_reader_string);
+
+				if ~finished,
+					kr = ndr.known_readers();
+					index = find(strcmpi(reader_string,kr));
+					if isempty(index),
+						error(['READER_STRING must be a member of the known readers of NDR, as listed in ndr.known_readers()']);
+					end;
+					obj.ndr_reader_string = kr{index};
+				end;
 		end;
 
 		function channels = getchannelsepoch(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
@@ -120,5 +135,21 @@ classdef ndr < ndi.daq.reader.mfdaq
 				ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
 				sr = ndr_reader.samplerate(channeltype,channel,epochfiles,1);
 		end; % samplerate
+
+		function ndi_document_obj = newdocument(ndi_daqreader_obj)
+			% NEWDOCUMENT - create a new ndi.document for an ndi.daq.reader object
+			%
+			% DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
+			%
+			% Creates an ndi.document object DOC that represents the
+			%    ndi.daq.reader object. 
+				ndi_document_obj = ndi.document('daq/daqreader_ndr.json',...
+					'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
+					'daqreader_ndr.ndr_reader_string', ndi_daqreader_obj.ndr_reader_string,...
+					'daqreader_ndr.ndi_daqreader_ndr_class',class(ndi_daqreader_obj),...
+					'base.id', ndi_daqreader_obj.id(),...
+					'base.session_id',ndi.session.empty_id());
+                end; % newdocument()
+
 	end; % methods
 end % class
