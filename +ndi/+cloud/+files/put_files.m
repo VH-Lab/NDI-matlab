@@ -1,5 +1,5 @@
 function [status, output] = put_files(presigned_url, file_path, auth_token)
-% GET_DOCUMENTS - get a document
+% PUT_FILES - upload a file
 %
 % [STATUS,RESPONSE,DOCUMENT] = ndi.cloud.files.put_files(DATASET_ID, DOCUMENT_ID, AUTH_TOKEN)
 %

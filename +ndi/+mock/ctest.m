@@ -65,7 +65,7 @@ classdef ctest
 				b_expected = [];
 				for i=1:numel(doc_output),
 					for j=1:numel(doc_output),
-						[doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{i}, ...
+						[doesitmatch,theerrormsg] = ctest_obj.compare_mock_docs(doc_expected_output{j}, ...
 							doc_output{i}, scope); 
 						b(i,j) = doesitmatch;
 						b(j,i) = doesitmatch;

@@ -10,6 +10,13 @@ classdef database
 		session_unique_reference % The reference string for the database
 	end % properties
 
+    methods (Access = ?ndi.session)
+        function [hCleanup, filename] = open(ndi_database_obj)
+            % OPEN - Open a database connection
+            [hCleanup, filename] = ndi_database_obj.do_open_database(); % Calls protected method
+        end
+    end
+
 	methods
 		function ndi_database_obj = database(varargin)
 			% ndi.database - create a new ndi.database
@@ -104,6 +111,23 @@ classdef database
 				[ndi_document_obj] = ndi_database_obj.read(ndi_document_id);
 				ndi_binarydoc_obj = do_openbinarydoc(ndi_database_obj, ndi_document_id, filename);
 		end; % openbinarydoc
+
+		function [tf, file_path] = existbinarydoc(ndi_database_obj, ndi_document_or_id, filename)
+            % EXISTBINARYDOC - check if a binary doc exists for a given document id
+			%
+            % [TF, FILE_PATH] = EXISTBINARYDOC(NDI_DATABASE_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+			%
+			%  Return a boolean flag (TF) indicating if a binary document 
+            %  exists for an ndi.document and, if it exists, the full file 
+            %  path (FILE_PATH) to the file where the binary data is stored.
+            
+            if isa(ndi_document_or_id,'ndi.document'),
+	            ndi_document_id = ndi_document_or_id.id();
+            else
+	            ndi_document_id = ndi_document_or_id;
+            end
+            [tf, file_path] = check_exist_binarydoc(ndi_database_obj, ndi_document_id, filename);
+        end % existbinarydoc
 
 		function [ndi_binarydoc_obj] = closebinarydoc(ndi_database_obj, ndi_binarydoc_obj)
 			% CLOSEBINARYDOC - close and unlock an ndi.database.binarydoc 
@@ -219,9 +243,12 @@ classdef database
 		end % do_search()
 		function [ndi_binarydoc_obj] = do_openbinarydoc(ndi_database_obj, ndi_document_id) 
 		end % do_openbinarydoc()
+        function [tf, file_path] = check_exist_binarydoc(ndi_database_obj, ndi_document_id) 
+		end % do_openbinarydoc()
 		function [ndi_binarydoc_obj] = do_closebinarydoc(ndi_database_obj, ndi_binarydoc_obj) 
 		end % do_closebinarydoc()
-
+        function do_open_database(ndi_database_obj)
+        end
 	end % Methods (Access=Protected) protected methods
 end % classdef
 

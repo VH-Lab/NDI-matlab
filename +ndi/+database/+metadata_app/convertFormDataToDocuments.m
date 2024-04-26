@@ -28,8 +28,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     organizations = [organizations, fundingOrganizations];
 
     % Make sure we dont have any duplicates
-    organizationIds = unique({organizations.digitalIdentifier});
-    [~, keep] = unique(organizationIds);
+    [~, keep] = unique({organizations.digitalIdentifier});
     organizations = organizations(keep);
 
     % Create organization instances:
@@ -60,23 +59,27 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     end
 
     % Create funding instances
-    fundingStructArray = appUserData.Funding;
-    createFunding = getFactoryFunction('openminds.core.Funding');
-    fundingInstances = arrayfun( @(s) createFunding(s), fundingStructArray);
-    
-    % Update funder based on the reference funder organizations.
-    for i = 1:numel(fundingInstances)
-        thisFunding = fundingInstances(i);
-        funderName = thisFunding.funder.fullName;
-        isMatch = strcmp(funderName, organizationNames);
-        thisFunding.funder = organizationInstances(isMatch);
+    if isfield( appUserData, 'Funding' )
+        fundingStructArray = appUserData.Funding;
+        createFunding = getFactoryFunction('openminds.core.Funding');
+        fundingInstances = arrayfun( @(s) createFunding(s), fundingStructArray);
+        
+        % Update funder based on the reference funder organizations.
+        for i = 1:numel(fundingInstances)
+            thisFunding = fundingInstances(i);
+            funderName = thisFunding.funder.fullName;
+            isMatch = strcmp(funderName, organizationNames);
+            thisFunding.funder = organizationInstances(isMatch);
+        end
+    else
+        fundingInstances = openminds.core.Funding.empty;
     end
 
     % Create a dataset version instance:
     dataset = openminds.core.Dataset();
     dataset.fullName = appUserData.DatasetFullName;
     dataset.shortName = appUserData.DatasetShortName;
-    dataset.description = appUserData.Description;
+    dataset.description = strjoin(appUserData.Description, newline);
     dataset.author = authorInstances;
 
     % Resolve custodians:
@@ -102,23 +105,29 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion = openminds.core.DatasetVersion();
     datasetVersion.fullName = appUserData.DatasetFullName;
     datasetVersion.shortName = appUserData.DatasetShortName;
-    datasetVersion.description = appUserData.Description;
+    datasetVersion.description = strjoin(appUserData.Description, newline);
     datasetVersion.author = authorInstances;
     datasetVersion.custodian = authorInstances(isCustodian);
     datasetVersion.funding = fundingInstances;
     datasetVersion.otherContribution = [firstAuthorDoc, corresondingAuthorDoc];
 
-    S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
-    datasetVersion.license = openminds.core.License().fromStruct(S);
+    if isfield( appUserData, 'License')
+        if appUserData.License ~= ""
+            S = openminds.internal.getControlledInstance( appUserData.License, 'License', 'core');
+            datasetVersion.license = openminds.core.License().fromStruct(S);
+        end
+    end
 
     % Try to create a DOI from the given value. If that fails, the value
     % should be a URL and we create a WebResource instead.
-    try 
-        doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
-        datasetVersion.fullDocumentation = doi;
-        catch
-        webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
-        datasetVersion.fullDocumentation = webResource;
+    if isfield( appUserData, 'FullDocumentation')
+        try 
+            doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
+            datasetVersion.fullDocumentation = doi;
+            catch
+            webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
+            datasetVersion.fullDocumentation = webResource;
+        end
     end
 
     datasetVersion.releaseDate = appUserData.ReleaseDate;
@@ -126,10 +135,12 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.versionInnovation = appUserData.VersionInnovation;
 
     % TODO: Related publication
-    datasetVersion.relatedPublication = cellfun(@(value) ...
-        openminds.core.DOI('identifier', addDoiPrefix(value)), ...
-        {appUserData.RelatedPublication.DOI} );
-
+    if isfield(appUserData, 'RelatedPublication')
+        datasetVersion.relatedPublication = cellfun(@(value) ...
+            openminds.core.DOI('identifier', addDoiPrefix(value)), ...
+            {appUserData.RelatedPublication.DOI} );
+    end
+    
     datasetVersion.dataType = cellfun(@(value) ...
         openminds.controlledterms.SemanticDataType(value), ...
         appUserData.DataType );
@@ -149,8 +160,10 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         subjectItem = appUserData.Subjects(i);
         
         subjects{i} = openminds.core.Subject();
-        subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
-        
+        if ~isempty(subjectItem.BiologicalSexList)
+            subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
+        end
+
         speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
         isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
         if any( isMatchedInstance )
@@ -202,23 +215,23 @@ function documentList = checkSessionIds(subjectMap, documentList)
     for i = 1:numel(studiedSpecimen_id)
         [studiedSpecimen_doc, idx] = ndi.cloud.fun.search_id(studiedSpecimen_id{i},documentList);
         session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
-        documentList{idx} = studiedSpecimen_doc.set_session_id(session_id);
+        documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
         for j = 1:numel(doc.document_properties.depends_on) 
             if (~isempty(doc.document_properties.depends_on(j).value))
-                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+                documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(j).value);
             end
         end
     end
 end
 
-function changeDependenciesDoc(documentList, session_id, doc_id)
+function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
     [doc, idx] = ndi.cloud.fun.search_id(doc_id,documentList);
-    documentList{idx} = doc.set_session_id(session_id);
+    documentList{idx} = doc.set_session_id(char(session_id));
     if numel(doc.document_properties.depends_on) > 0 
         for i = 1: numel(doc.document_properties.depends_on)
             if (~isempty(doc.document_properties.depends_on(i).value))
-                changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
+                documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
             end
         end
     end
@@ -291,7 +304,7 @@ function conversionMap = createConversionMap()
         struct(...
         'contactInformation', getFactoryFunction('openminds.core.ContactInformation'), ...
                'affiliation', getFactoryFunction('openminds.core.Affiliation'), ...
-         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', sprintf('https://orcid.org/%s', value.identifier)) ...
+         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', addOrcidUriPrefix(value.identifier)) ...
         );
         %'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
         % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
@@ -368,8 +381,17 @@ function [strainInstanceMap] = convertStrains(items)
 end
 
 function modifiedValue = addDoiPrefix(value)
-    if ~startsWith(value, 'https://doi.org/')
+    if ~startsWith(value, 'https://doi.org/') && value ~= ""
         modifiedValue = ['https://doi.org/' value];
+    else
+        modifiedValue = value;
+    end
+end
+
+
+function modifiedValue = addOrcidUriPrefix(value)
+    if ~startsWith(value, 'https://orcid.org/') && value ~= ""
+        modifiedValue = ['https://orcid.org/' value];
     else
         modifiedValue = value;
     end

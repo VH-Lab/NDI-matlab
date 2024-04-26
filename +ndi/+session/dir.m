@@ -32,7 +32,8 @@ classdef dir < ndi.session
 				end;
 
 				ndi_session_dir_obj = ndi_session_dir_obj@ndi.session(reference);
-				ndi_session_dir_obj.path = path;
+                
+				ndi_session_dir_obj.path = char(path); % Ensure type is character vector
 
 				should_we_try_to_read_from_database = 1;
 
