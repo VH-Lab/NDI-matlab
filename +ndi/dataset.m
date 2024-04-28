@@ -1,11 +1,16 @@
 classdef dataset < handle % & ndi.ido but this cannot be a superclass because it is not a handle; we do it by construction
 
-	properties (GetAccess=public, SetAccess = protected)
-		session			% A session to hold documents for this dataset
-	end
+
 	properties (GetAccess=protected, SetAccess = protected)
 		session_info            % A structure with the sessions here
 		session_array           % An array with session objects contained in the dataset
+    end
+	
+    properties (Access = protected)
+		session			% A session to hold documents for this dataset.
+        % Note: This is not a session in the context of representing an
+        % experimental session, but insted an entrypoint to a session-like
+        % database.
 	end
 
 	methods
@@ -21,7 +26,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			%   ndi.dataset/GETPATH, ndi.dataset/GETREFERENCE
 
-                end
+        end
 
 		function identifier = id(ndi_dataset_obj)
 			% ID - return the identifier of an ndi.dataset object
@@ -259,6 +264,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				end;
 
 				usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
+
 				s = {};
 				% make sure all documents have a home before doing anything else
 				for i=1:numel(usession_ids),
@@ -272,7 +278,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				% now add them in turn
 				for i=1:numel(usession_ids), 
 					indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
-					s{i}.database_add_document(strcmp(usession_ids{i},ndi_session_ids_here));
+					s{i}.database_add(document(indexes));
 				end;
 		end; % database_add
 
@@ -295,13 +301,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
-                                ErrIfNotFound = 0;
-                                did.datastructures.assign(varargin{:});
-				ndi_dataset_obj.session.database_add(document,'ErrIfNotFound',ErrIfNotFound);
+                ErrIfNotFound = 0;
+                did.datastructures.assign(varargin{:});
+				ndi_dataset_obj.session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
 				open_linked_sessions(ndi_dataset_obj);
-				match = [ndi_dataset_obj.session_info.is_linked];
+				match = find([ndi_dataset_obj.session_info.is_linked]);
 				for i=1:numel(match),
-					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id);
+					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
 				end;
 		end; % database_rm
 
@@ -339,6 +345,18 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
+        function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+			% DATABASE_EXISTBINARYDOC - checks if an ndi.database.binarydoc exists for an ndi.document
+			%
+			% [TF, FILE_PATH] = DATABASE_EXISTBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
+			%
+			%  Return a boolean flag (TF) indicating if a binary document 
+            %  exists for an ndi.document and, if it exists, the full file 
+            %  path (FILE_PATH) to the file where the binary data is stored.
+            
+            [tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
+        end
+
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_dataset_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc
 			%
@@ -363,6 +381,12 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 		end; % document_session()
 
 	end; % methods
+
+    methods (Hidden)
+        function [hCleanup, filename] = open_database(ndi_dataset_obj)
+	        [hCleanup, filename] = ndi_dataset_obj.session.open_database();
+        end
+    end
 
 	methods (Access=protected)
 

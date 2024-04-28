@@ -60,8 +60,12 @@ classdef Species < handle
                 instance = openminds.controlledterms.Species();
                 instance.name = obj.Name;
                 instance.synonym = obj.Synonym;
-                instance.definition = obj.Definition;
-                instance.description = obj.Description;
+                if ~isempty(obj.Definition)
+                    instance.definition = obj.Definition;
+                end
+                if ~isempty(obj.Description)
+                    instance.description = obj.Description;
+                end
                 instance.preferredOntologyIdentifier = obj.OntologyIdentifier;
                 instances = [instances, instance]; %#ok<AGROW>
             end
