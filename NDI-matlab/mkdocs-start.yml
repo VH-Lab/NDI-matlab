@@ -25,6 +25,7 @@ theme:
   features:
     - navigation
 nav:
+  - Home: index.md
   - NDI-matlab:
     - Home: 'NDI-matlab/index.md'
     - Installation: 'NDI-matlab/installation.md'
