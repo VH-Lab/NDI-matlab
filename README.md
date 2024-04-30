@@ -1,6 +1,8 @@
 # NDI
 
-Neuroscience Data Interface - A means of specifying and accessing neuroscience data
+Neuroscience Data Interface - A means of specifying and accessing neuroscience data and analyses
+
+2024-04-29: The main branch now holds the code for NDI 2 beta. You can get NDI 1.0.1 on the `ndi1_legacy` branch. Bear with us a couple of days as we roll this out. If you install today, use DID-matlab branch `ndi2beta`. Exciting changes coming!
 
 - Available at https://github.com/VH-Lab/NDI-matlab
 - Documentation is at https://vh-lab.github.io/NDI-matlab/

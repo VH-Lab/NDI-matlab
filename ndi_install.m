@@ -67,9 +67,9 @@ dependency_input = dependencies;
 if isnumeric(dependencies),
 	switch (dependencies),
 		case 1,
-			dependencies = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/master/ndi-matlab-dependencies.json';
+			dependencies = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
 		case 2,
-			dependencies = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/master/vhtools_standard_distribution.json';
+			dependencies = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
 	end;
 end;
 

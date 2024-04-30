@@ -7,6 +7,9 @@ function build()
 % **Example**:
 %   ndi.docs.build();
 %
+% Need to move mkdocs.yml to the root directory of the repo before running `mkdocs gh-deploy`
+% on regular command line (not Matlab command line).
+%
 
 ndi.globals
 
@@ -51,7 +54,7 @@ vlt.file.str2text(ymlfile.references,T);
 
 T0 = vlt.file.text2cellstr(ymlfile.start);
 T1 = vlt.file.text2cellstr(ymlfile.documents);
-T1_1 = {'  - Code reference:'};
+T1_1 = {'    - Code reference:'};
 T2 = vlt.file.text2cellstr(ymlfile.references);
 T3 = vlt.file.text2cellstr(ymlfile.end);
 
