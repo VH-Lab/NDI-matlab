@@ -80,8 +80,7 @@ tc_docs = {};
 parameters.input_parameters.independent_label = independent_variables;
 parameters.input_parameters.independent_parameter = independent_variables;
 parameters.input_parameters.best_algorithm = 'empirical_maximum';
-parameters.input_parameters.selection = struct('property','angle','operation','hasfield','value','varies');
-
+parameters.input_parameters.selection = struct('property',independent_variables{1},'operation','hasfield','value','varies'); %what to do if multiple independent variables?
 I = tc.search_for_input_parameters(parameters);
 
 for i=1:numel(stim_response_doc),
