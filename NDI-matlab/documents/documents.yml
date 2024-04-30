@@ -1,0 +1,70 @@
+      - animalsubject : 'NDI-matlab/documents/animalsubject.md'
+      - app : 'NDI-matlab/documents/app.md'
+      - base : 'NDI-matlab/documents/base.md'
+      - dataset_session_info : 'NDI-matlab/documents/dataset_session_info.md'
+      - demoNDI : 'NDI-matlab/documents/demoNDI.md'
+      - element : 'NDI-matlab/documents/element.md'
+      - element_epoch : 'NDI-matlab/documents/element_epoch.md'
+      - epochid : 'NDI-matlab/documents/epochid.md'
+      - mock : 'NDI-matlab/documents/mock.md'
+      - projectvar : 'NDI-matlab/documents/projectvar.md'
+      - session : 'NDI-matlab/documents/session.md'
+      - subject : 'NDI-matlab/documents/subject.md'
+      - subjectmeasurement : 'NDI-matlab/documents/subjectmeasurement.md'
+      - apps:
+        - calculators:
+          - simple_calc : 'NDI-matlab/documents/apps/calculators/simple_calc.md'
+          - tuningcurve_calc : 'NDI-matlab/documents/apps/calculators/tuningcurve_calc.md'
+        - jrclust:
+          - jrclust_clusters : 'NDI-matlab/documents/apps/jrclust/jrclust_clusters.md'
+        - markgarbage:
+          - valid_interval : 'NDI-matlab/documents/apps/markgarbage/valid_interval.md'
+        - spikeextractor:
+          - spike_extraction_parameters : 'NDI-matlab/documents/apps/spikeextractor/spike_extraction_parameters.md'
+          - spike_extraction_parameters_modification : 'NDI-matlab/documents/apps/spikeextractor/spike_extraction_parameters_modification.md'
+          - spikewaves : 'NDI-matlab/documents/apps/spikeextractor/spikewaves.md'
+        - spikesorter:
+          - sorting_parameters : 'NDI-matlab/documents/apps/spikesorter/sorting_parameters.md'
+          - spike_clusters : 'NDI-matlab/documents/apps/spikesorter/spike_clusters.md'
+        - vhlab_voltage2firingrate:
+          - binnedspikeratevm : 'NDI-matlab/documents/apps/vhlab_voltage2firingrate/binnedspikeratevm.md'
+          - vmneuralresponseresiduals : 'NDI-matlab/documents/apps/vhlab_voltage2firingrate/vmneuralresponseresiduals.md'
+          - vmspikefilteringparameters : 'NDI-matlab/documents/apps/vhlab_voltage2firingrate/vmspikefilteringparameters.md'
+          - vmspikefit : 'NDI-matlab/documents/apps/vhlab_voltage2firingrate/vmspikefit.md'
+          - vmspikesummary : 'NDI-matlab/documents/apps/vhlab_voltage2firingrate/vmspikesummary.md'
+      - daq:
+        - daqmetadatareader : 'NDI-matlab/documents/daq/daqmetadatareader.md'
+        - daqreader : 'NDI-matlab/documents/daq/daqreader.md'
+        - daqreader_ndr : 'NDI-matlab/documents/daq/daqreader_ndr.md'
+        - daqsystem : 'NDI-matlab/documents/daq/daqsystem.md'
+        - filenavigator : 'NDI-matlab/documents/daq/filenavigator.md'
+        - syncgraph : 'NDI-matlab/documents/daq/syncgraph.md'
+        - syncrule : 'NDI-matlab/documents/daq/syncrule.md'
+      - data:
+        - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
+        - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
+        - ngrid : 'NDI-matlab/documents/data/ngrid.md'
+      - ingestion:
+        - daqmetadatareader_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqmetadatareader_epochdata_ingested.md'
+        - daqreader_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqreader_epochdata_ingested.md'
+        - daqreader_mfdaq_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqreader_mfdaq_epochdata_ingested.md'
+        - epochfiles_ingested : 'NDI-matlab/documents/ingestion/epochfiles_ingested.md'
+        - syncrule_mapping : 'NDI-matlab/documents/ingestion/syncrule_mapping.md'
+      - metadata:
+        - openminds : 'NDI-matlab/documents/metadata/openminds.md'
+        - openminds_element : 'NDI-matlab/documents/metadata/openminds_element.md'
+        - openminds_stimulus : 'NDI-matlab/documents/metadata/openminds_stimulus.md'
+        - openminds_subject : 'NDI-matlab/documents/metadata/openminds_subject.md'
+      - neuron:
+        - neuron_extracellular : 'NDI-matlab/documents/neuron/neuron_extracellular.md'
+      - stimulus:
+        - control_stimulus_ids : 'NDI-matlab/documents/stimulus/control_stimulus_ids.md'
+        - stimulus_presentation : 'NDI-matlab/documents/stimulus/stimulus_presentation.md'
+        - stimulus_response : 'NDI-matlab/documents/stimulus/stimulus_response.md'
+        - stimulus_response_scalar : 'NDI-matlab/documents/stimulus/stimulus_response_scalar.md'
+        - stimulus_response_scalar_parameters : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters.md'
+        - stimulus_response_scalar_parameters_basic : 'NDI-matlab/documents/stimulus/stimulus_response_scalar_parameters_basic.md'
+        - stimulus_tuningcurve : 'NDI-matlab/documents/stimulus/stimulus_tuningcurve.md'
+        - vision:
+          - oridir:
+            - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
