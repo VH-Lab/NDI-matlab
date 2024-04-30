@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikesummary_schema.json",
-		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikesummary",
+		"class_name":						"vmspikesummary",
 		"property_list_name":					"vmspikesummary",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-            { "definition":                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+            { "definition":                 "$NDIDOCUMENTPATH\/epochid.json" }
 		]
 	},
 	"depends_on": [

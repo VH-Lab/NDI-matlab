@@ -2,13 +2,13 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/vhlab_voltage2firingrate\/vmspikefit_schema.json",
-		"class_name":						"ndi_document_apps_vhlab_voltage2firingrate_vmspikefit",
+		"class_name":						"vmspikefit",
 		"property_list_name":					"vmspikefit",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
-			{ "definition":					"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on":[

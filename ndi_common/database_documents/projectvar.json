@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/projectvar.json",
+		"validation":						"$NDISCHEMAPATH\/projectvar_schema.json",
+		"class_name":						"projectvar",
+		"property_list_name":					"projectvar",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+    },
+	"depends_on": [
+		{	"name": "element_id",
+			"value": "" 
+		}
+	],
+	"projectvar": {
+		"project":						"",
+		"type":							"",
+		"user":							"",
+		"lab":							"",
+		"description":						"",
+		"data":							""
+	}
+}
+

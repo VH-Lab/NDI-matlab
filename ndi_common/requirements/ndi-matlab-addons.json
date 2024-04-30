@@ -1,0 +1,9 @@
+{
+	"addons": {
+		"required": [
+			"openMINDS Metadata Models"
+		],
+		"recommended": [
+		]
+	}
+}

@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/app.json",
+		"validation":						"$NDISCHEMAPATH\/app_schema.json",
+		"class_name":						"app",
+		"property_list_name":					"app",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"app": {
+		"name":							"",
+		"version":						"",
+		"url":							"",
+		"os":							"",
+		"os_version":						"",
+		"interpreter":						"",
+		"interpreter_version":					""
+	}
+}
+

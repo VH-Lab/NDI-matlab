@@ -47,7 +47,7 @@ function ndi_gui_v2(ndi_session_obj)
     
     %Import ndi_session_obj
     e = ndi_session_obj.getelements();
-    docs = ndi_session_obj.database_search({'ndi_document.id','(.*)'});
+    docs = ndi_session_obj.database_search({'base.id','(.*)'});
     d = ndi_session_obj.daqsystem_load('name','(.*)');
     p = ndi_session_obj.getprobes();
     s_id = {};
@@ -60,7 +60,7 @@ function ndi_gui_v2(ndi_session_obj)
     s_id = unique(s_id);
     s = {};
     for i = 1:numel(s_id)
-        s{i} = ndi_session_obj.database_search(ndi.query('ndi_document.id','exact_string',s_id{i},''));
+        s{i} = ndi_session_obj.database_search(ndi.query('base.id','exact_string',s_id{i},''));
     end
     
     %Add elements
@@ -76,7 +76,7 @@ function ndi_gui_v2(ndi_session_obj)
     %Connect elements
     for i = 1:numel(p)
         ps_id = p{i}.subject_id;
-        ps = p{i}.session.database_search(ndi.query('ndi_document.id','exact_string',ps_id,''));
+        ps = p{i}.session.database_search(ndi.query('base.id','exact_string',ps_id,''));
         lab.connect(findobj(lab.subjects, 'elem', ps));
         lab.connect(findobj(lab.probes, 'elem', p{i}));       
         et = p{i}.epochtable();

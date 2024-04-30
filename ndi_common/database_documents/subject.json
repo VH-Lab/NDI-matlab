@@ -1,0 +1,17 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/subject.json",
+		"validation":						"$NDISCHEMAPATH\/subject_schema.json",
+		"class_name":						"subject",
+		"property_list_name":					"subject",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"subject": {
+		"local_identifier":					"",
+		"description":						""
+	}
+}
+

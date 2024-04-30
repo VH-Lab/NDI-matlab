@@ -1,0 +1,25 @@
+{
+	"classname": "syncrule",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"syncrule": [
+		{
+			"name": "ndi_syncrule_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ndi.syncrule object class name that is being stored."
+		},
+		{
+			"name": "parameters",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The parameters that define the syncrule."
+		}
+	]
+}
+

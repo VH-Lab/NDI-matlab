@@ -42,7 +42,13 @@ classdef mfdaq < ndi.probe.timeseries
 					[data] = readchannels_epochsamples(dev{1}, channeltype, channel, devepoch{1}, s0, s1);
 				end
 				if nargout>=2,
-					[t] = readchannels_epochsamples(dev{1}, {'time'}, channel(1), devepoch{1}, s0, s1);
+                    ch = dev{1}.getchannelsepoch(devepoch{1});
+                    timechannel = ndi.daq.reader.mfdaq.channelsepoch2timechannelinfo(ch,channeltype,channel);
+                    if isnan(timechannel(1)),
+                        t = NaN;
+                    else,
+    					[t] = readchannels_epochsamples(dev{1}, {'time'}, timechannel(1), devepoch{1}, s0, s1);
+                    end;
 				end
 				if nargout>=3,
 					timeref_out = ndi.time.timereference(ndi_probe_timeseries_mfdaq_obj, ndi.time.clocktype('dev_local_time'), eid, 0);

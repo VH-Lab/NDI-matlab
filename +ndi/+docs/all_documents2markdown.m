@@ -6,13 +6,13 @@ function t = all_documents2markdown(varargin)
 
 ndi.globals;
 
-spaces = 4;
+spaces = 6; % used to be 4 when there was only one tool in the suite
 input_path = ndi_globals.path.documentpath;
 if input_path(end)~=filesep,
 	input_path(end+1) = filesep;
 end;
-output_path=[ndi_globals.path.path filesep 'docs' filesep 'documents' filesep];
-doc_output_path = ['documents' filesep];
+output_path=[ndi_globals.path.path filesep 'docs' filesep 'NDI-matlab' filesep 'documents' filesep];
+doc_output_path = ['NDI-matlab/documents' filesep];
 doc_path = [''];
 write_yml = 1;
 
@@ -51,5 +51,5 @@ for i=1:numel(folders),
 end;
 
 if write_yml,
-	vlt.file.str2text([ndi_globals.path.path filesep 'docs' filesep 'documents' filesep 'documents.yml'],t);
+	vlt.file.str2text([ndi_globals.path.path filesep 'docs' filesep 'NDI-matlab' filesep 'documents' filesep 'documents.yml'],t);
 end;

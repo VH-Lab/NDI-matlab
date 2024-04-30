@@ -1,0 +1,18 @@
+{
+	"classname": "syncgraph",
+	"superclasses":  [ "base" ],
+	"depends_on": [ { "name": "syncrule_id", "mustbenotempty": 0}],
+	"file": [ ],
+	"syncgraph": [
+		{
+			"name": "ndi_syncgraph_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ndi.syncgraph class name of the syncgraph that is being stored."
+		}
+	]
+}
+
+

@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/filenavigator.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/filenavigator_schema.json",
+		"class_name":						"filenavigator",
+		"property_list_name":					"filenavigator",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"filenavigator": {
+		"ndi_filenavigator_class":				"ndi_filenavigator",
+		"fileparameters":					"",
+		"epochprobemap_class":					"",
+		"epochprobemap_fileparameters":				""
+	}
+}
+

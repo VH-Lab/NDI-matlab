@@ -1,12 +1,12 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_response_scalar_parameters_basic.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_scalar_schema_parameters_basic.json",
-		"class_name":						"ndi_document_stimulus_stimulus_response_scalar_parameters",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_response_scalar_parameters_basic_schema.json",
+		"class_name":						"stimulus_response_scalar_parameters_basic",
                 "property_list_name":                                   "stimulus_response_scalar_parameters_basic",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"},
 			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/stimulus_response_scalar_parameters.json"}
 		]
 	},

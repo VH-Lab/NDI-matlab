@@ -25,7 +25,7 @@ E = ndi.session.dir('exp1',dirname);
 
  % if we ran the demo before, delete the entry
 
-doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
+doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());
@@ -49,11 +49,11 @@ myelement1 = ndi.element.timeseries(E,'mydirectelement',p{1}.reference,'field', 
 et = p{1}.epochtable;
  % FIX here
 myelement2 = ndi.element.timeseries(E,'myindirectelement',p{1}.reference,'lfp', p{1}, 0, 'anteater27@nosuchlab.org');
-[myelement2,mydoc]=myelement2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
+[myelement2]=myelement2.addepoch(et(1).epoch_id,et(1).epoch_clock{1},et(1).t0_t1{1},t,d_filter); 
 
  % demo adding a element that does not depend on an antecedent element at all
 myelement3 = ndi.element.timeseries(E,'mymadeupelement',1,'madeup', [], 0,'anteater27@nosuchlab.org');
-[myelement3,mydoc3] = myelement3.addepoch('epoch1',ndi.time.clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
+[myelement3] = myelement3.addepoch('epoch1',ndi.time.clocktype('dev_local_time'),[0 10],[0:10]',[0:10]');
 
 et_t1 = myelement1.epochtable();
 et_t2 = myelement2.epochtable();
@@ -79,7 +79,7 @@ box off;
 
 % remove the element documents
 
-doc = E.database_search({'ndi_document.type','ndi_element(.*)'});
+doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
 	for i=1:numel(doc),
 		E.database_rm(doc{i}.id());

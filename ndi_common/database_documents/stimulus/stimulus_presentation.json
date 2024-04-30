@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_presentation.json",
 		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_presentation_schema.json",
-		"class_name":						"ndi_document_stimulus_stimulus_presentation",
+		"class_name":						"stimulus_presentation",
                 "property_list_name":                                   "stimulus_presentation",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document.json"} ,
-			{ "definition":                                 "$NDIDOCUMENTPATH\/ndi_document_epochid.json"} 
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"} 
 		]
 	},
 	"depends_on": [
@@ -15,6 +15,11 @@
 			"value": "" 
 		}
 	],
+        "files": {
+                "file_list": [
+                        "presentation_time.bin"
+                ]
+        },
 	"stimulus_presentation": {
 		"presentation_order":							[],
 		"presentation_time": {
@@ -22,7 +27,8 @@
 				"stimopen":						0,
 				"onset":						0,
 				"offset":						1,
-				"stimclose":						1
+				"stimclose":						1,
+				"stimevents":						[]
 		},
 		"stimuli": {
 			"parameters": {

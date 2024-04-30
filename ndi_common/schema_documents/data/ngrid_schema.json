@@ -1,0 +1,42 @@
+{
+	"classname": "ngrid",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"ngrid": [
+		{
+			"name": "data_size",
+			"type": "integer",
+			"default_value": "1",
+			"parameters": [1,2000000,0,0],
+			"queryable": 1,
+			"documentation": "The size of each sample in bytes"
+		},
+		{
+			"name": "data_type",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The data type (float32, uint16, etc)"
+		},
+		{
+			"name": "data_dim",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "Vector with the dimensions of the data"
+		},
+		{
+			"name": "coordinates",
+			"type": "matrix",
+			"default_value": "",
+			"parameters": [NaN,NaN,NaN,NaN,NaN,NaN],
+			"queryable": 1,
+			"documentation": "Not sure"
+		}
+
+	]
+}
+

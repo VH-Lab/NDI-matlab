@@ -1,0 +1,16 @@
+{
+	"classname":	"animalsubject",
+	"superclasses": [ "base" ],
+	"depends_on": [ ],
+	"animalsubject": [
+		{
+			"name": "node_at_ontology",
+			"type": "string",
+			"default_value": "",
+			"parameters": 10000,
+			"queryable": 1,
+			"documentation": "A node@ontology label for the species."
+		}
+	]
+}
+

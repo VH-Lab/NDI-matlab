@@ -1,0 +1,8 @@
+{
+	"classname": "stimulus_response_scalar_parameters",
+	"superclasses":  [ "base"],
+	"depends_on": [
+	],
+	"stimulus_response_scalar_parameters": [
+	]
+}

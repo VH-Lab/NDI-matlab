@@ -15,7 +15,7 @@ function [G,nodes,mdigraph] = ndi_docs2graph(ndi_document_obj)
 nodes = {};
 
 for i=1:numel(ndi_document_obj),
-	nodes{i} = ndi_document_obj{i}.document_properties.ndi_document.id;
+	nodes{i} = ndi_document_obj{i}.document_properties.base.id;
 end;
 
  % now we have all the nodes, build adjacency matrix

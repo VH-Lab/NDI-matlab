@@ -58,11 +58,13 @@ redo = 1;
  % Code block 2.4.2.2
 disp(['Code block 2.4.2.2:']);
 
+
 stim_pres_docs{1}.document_properties.stimulus_presentation
 % these are the fields that were decoded by ndi.app.stimulus.decoder
 % let's take a look
  % here is information about the presentation time of the first stimulus
-stim_pres_docs{1}.document_properties.stimulus_presentation.presentation_time(1)
+presentation_time = sapp.load_presentation_time(stim_pres_docs{1});
+presentation_time(1)
  % here is information about the presentation order of the first 10 stimuli shown:
 stim_pres_docs{1}.document_properties.stimulus_presentation.presentation_order(1:10)
  % We see that the first stimulus that was presented was stimulus number 4. Let's take a look at its properties:

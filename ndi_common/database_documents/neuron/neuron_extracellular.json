@@ -1,20 +1,18 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/neuron\/neuron_extracellular.json",
-		"validation":						"$NDISCHEMAPATH\/neuron\/neuron_extracellular.json",
-		"class_name":						"ndi_document_neuron_extracellular",
+		"validation":						"$NDISCHEMAPATH\/neuron\/neuron_extracellular_schema.json",
+		"class_name":						"neuron_extracellular",
 		"property_list_name":					"neuron_extracellular",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [
-		{	
-			"name": "element_id",
-			"value": "doc_id_of_underlying_element" 
-		}
+		{  "name": "element_id", "value": "" },
+		{  "name": "spike_clusters_id", "value": "" }
 	],
 	"neuron_extracellular": {
 		"number_of_samples_per_channel": [],

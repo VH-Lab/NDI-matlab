@@ -1,0 +1,12 @@
+Identifier	Name	Description
+1	Purpose: Assessing spatial frequency tuning	States that the purpose of the stimulus is to assess spatial frequency tuning
+2	Purpose: Assessing temporal frequency tuning	States that the purpose of the stimulus is to assess temporal frequency tuning
+3	Purpose: Assessing direction of motion tuning	States that the purpose of the stimulus is to assess direction of motion tuning
+4	Purpose: Assessing contrast tuning	States that the purpose of the stimulus is to assess contrast tuning
+5	Left eye view blocked	Indicates that the view through the left eye was blocked during presentation of this stimulus
+6	Right eye view blocked	Indicates that the view through the right eye was blocked during presentation of this stimulus
+7	Purpose: Assessing ocular dominance or binocular matching	States that the purpose of the stimulus is to assess ocular dominance or binocular matching
+8	Experienced cricket hunting	Indicates that the animal has had experience with hunting for crickets in some capacity
+9	Has not experienced cricket hunting	Indicates that the animal has not had experience with hunting for crickets
+10	Session Timeline	"A relative experimental session timeline; major stimulation events are, by default, considered numerically from 1 to N"
+11	Postnatal day	"Postnatal day' is a specific unit to measure the age of an organism that is born live (viviparous animals), starting with the day of birth (postnatal day 0). Often abbreviated in written documents with a capital P (as in P0, P10, etc)."""

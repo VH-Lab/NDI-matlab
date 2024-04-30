@@ -1,0 +1,82 @@
+{
+	"classname": "fitcurve",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "fit_example_data_id", "mustbenotempty": 1}
+	],
+	"file": [ ],
+	"fitcurve": [
+		{
+			"name": "fit_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A name of the fit (user selectable)."
+		},
+		{
+			"name": "fit_equation",
+			"type": "string",
+			"default_value": "y=a+b*x.^c",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A string equation of the fit in the form y=f(x)."
+		},
+		{
+			"name": "fit_parameters",
+			"type": "matrix",
+			"default_value": [0,1,2],
+			"parameters": [NaN,1],
+			"queryable": 1,
+			"documentation": "The values of the fit parameters."
+		},
+		{
+			"name": "fit_parameter_names",
+			"type": "string",
+			"default_value": "a b c",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The names of the fit variables (should correspond to variables in the fit_equation)"
+		},
+		{
+			"name": "fit_independent_variable_names",
+			"type": "string",
+			"default_value": "x",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name(s) of the independent variable(s)"
+		},
+		{
+			"name": "fit_dependent_variable_names",
+			"type": "string",
+			"default_value": "y",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name(s) of the dependent variable(s)"
+		},
+		{
+			"name": "fit_sse",
+			"type": "string",
+			"default_value": "y",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name(s) of the dependent variable(s)"
+		},
+		{
+			"name": "fit_constraints",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure with fields fit_constraint_name and fit_constraint_value"
+		},
+		{
+			"name": "fit_data",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure with fields input_data_field, output_data_field, output_number_examples"
+		}
+	]
+}

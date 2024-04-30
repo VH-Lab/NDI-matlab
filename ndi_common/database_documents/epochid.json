@@ -1,0 +1,16 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/epochid.json",
+		"validation":						"$NDISCHEMAPATH\/epochid_schema.json",
+		"class_name":						"epochid",
+		"property_list_name":					"epochid",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"epochid": {
+		"epochid":						""
+	}
+}
+

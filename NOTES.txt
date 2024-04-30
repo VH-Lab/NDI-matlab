@@ -1,0 +1,47 @@
+
+Where we are:
+
+a) modify schema so they conform to DID-database and use base instead of ndi_document
+b) modify ndi.document so it operates with base instead of ndi_document
+c) test the code to make sure all test cases pass
+
+
+What is next:
+
+a) make a new version of the dumbjsondb implementation that
+  1) stores the binary files somewhere else and handles the file copying on loading
+  2) allows the name of the binary file to be specified
+b) modify use of writing to binary files so the binary files are made before
+   the documents are added to the database
+c) test the code to make sure all test cases pass
+
+Then, finally:
+
+a) modify ndi.database implementations so it uses did did sql
+b) test the code to make sure all test cases pass
+
+Some notes:
+
+a)
+
+ndi.app.spikeextractor: 
+	line 186 *
+	line 188 *
+	check lines 437, 458  * (reading)
+
+ndi.app.spikesorter: 
+	line 231 *
+
+c) update ndi.document so merges file names
+
+
+
+To update other stuff:
+
+
+
+grep "ndi_document\." */*/*.m
+
+also grep "\'ndi_document_"
+
+

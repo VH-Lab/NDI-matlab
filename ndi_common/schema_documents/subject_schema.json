@@ -1,0 +1,25 @@
+{
+	"classname": "subject",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"file": [ ],
+	"subject": [
+		{
+			"name": "local_identifier",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The identifier is usually constructed by concatenating a local identifier with the name of the group, such as `mouse123@vhlab.org`"
+		},
+		{
+			"name": "description",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A character string that is free for the user to choose"
+		}
+	]
+}
+

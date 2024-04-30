@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/daqmetadatareader.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/daqmetadatareader_schema.json",
+		"class_name":						"daqmetadatareader",
+		"property_list_name":					"daqmetadatareader",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"daqmetadatareader": {
+		"ndi_daqmetadatareader_class":				"ndi.daq.metadatareader",
+		"tab_separated_file_parameter":				""
+	}
+}
+
+

@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/daqmetadatareader_epochdata_ingested.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/daqmetadatareader_epochdata_ingested_schema.json",
+		"class_name":						"daqmetadatareader_epochdata_ingested",
+		"property_list_name":					"daqmetadatareader_epochdata_ingested",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json"}
+		]
+	},
+	"depends_on": [
+		{	"name": "daqmetadatareader_id",
+			"value": "" 
+		}
+	],
+	"files": {
+		"file_list": [
+			"data.bin"
+                ]
+	},    
+	"daqmetadatareader_epochdata_ingested": {
+	}
+}
+

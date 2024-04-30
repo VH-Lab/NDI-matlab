@@ -1,0 +1,18 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/daqreader_ndr.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/daqreader_ndr_schema.json",
+		"class_name":						"daqreader_ndr",
+		"property_list_name":					"daqreader_ndr",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":					"$NDIDOCUMENTPATH\/daq\/daqreader.json" }
+		]
+        },
+	"daqreader_ndr": {
+		"ndr_reader_string":					"RHD",
+		"ndi_daqreader_ndr_class":					"ndi.daq.reader.mfdaq.ndr"
+	}
+}
+

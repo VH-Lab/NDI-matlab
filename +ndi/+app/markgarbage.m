@@ -129,7 +129,7 @@ classdef markgarbage < ndi.app
 			%
 				vi = vlt.data.emptystruct('timeref_structt0','t0','timeref_structt1','t1');
 
-				searchq = ndi.query(ndi_app_markgarbage_obj.searchquery()) & ndi.query('','isa','valid_interval.json','');
+				searchq = ndi.query(ndi_app_markgarbage_obj.searchquery()) & ndi.query('','isa','valid_interval','');
 
 				if isa(ndi_epochset_obj,'ndi.element'),
 					searchq2 = ndi.query('','depends_on','element_id',ndi_epochset_obj.id());

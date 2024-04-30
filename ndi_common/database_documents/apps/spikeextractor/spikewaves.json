@@ -2,13 +2,13 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/spikeextractor\/spikewaves.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/spikeextractor\/spikewaves_schema.json",
-		"class_name":						"ndi_document_apps_spikeextractor_spikeextractor_spikewaves",
+		"class_name":						"spikewaves",
 		"property_list_name":					"spikewaves",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_epochid.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/epochid.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [
@@ -19,6 +19,12 @@
 			"value": "" 
 		}
 	],
+        "files": {
+                "file_list": [
+                        "spikewaves.vsw", 
+			"spiketimes.bin"
+                ]
+        },
 	"spikewaves": {
 		"extraction_name": ""
 	}

@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/animalsubject.json",
+		"validation":						"$NDISCHEMAPATH\/animalsubject_schema.json",
+		"class_name":						"animalsubject",
+		"property_list_name":					"animalsubject",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"animalsubject": {
+		"node_at_ontology":					"node@ontology"
+	}
+}

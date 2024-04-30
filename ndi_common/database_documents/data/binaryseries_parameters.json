@@ -1,0 +1,21 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/binaryseries_parameters.json",
+		"validation":						"$NDISCHEMAPATH\/data\/binaryseries_parameters_schema.json",
+		"class_name":						"binaryseries_parameters",
+		"property_list_name":					"binaryseries_parameters",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"binaryseries_parameters" : {
+			"time_size":					"",
+			"time_type":					"",
+			"data_size":					"",
+			"data_type":					"",
+			"data_dim":					"",
+			"samples_regular_intervals":			0
+	}
+}
+

@@ -15,7 +15,7 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
 
 if ~isa(ndi_document_obj, 'ndi.document'),
 	% try to look it up
-	mydoc = ndi_session_obj.database_search(ndi.query('ndi_document.id','exact_string',ndi_document_obj,''));
+	mydoc = ndi_session_obj.database_search(ndi.query('base.id','exact_string',ndi_document_obj,''));
 	if numel(mydoc)==1,
 		ndi_document_obj = mydoc{1};
 	else,
@@ -30,6 +30,8 @@ index = findstr(classname,doc_string);
 
 if ~isempty(index),
 	obj_parent_string = classname(index+numel(doc_string):end);
+else,
+    obj_parent_string = classname;
 end;
 
 if ~isfield(ndi_document_obj.document_properties, obj_parent_string),

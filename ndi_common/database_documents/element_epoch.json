@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/element_epoch.json",
+		"validation":						"$NDISCHEMAPATH\/element_epoch_schema.json",
+		"class_name":						"element_epoch",
+		"property_list_name":					"element_epoch",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{  "definition":				"$NDIDOCUMENTPATH\/epochid.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "element_id",
+			"value": "" 
+		}
+	],
+        "files": {
+                "file_list": [
+                        "epoch_binary_data.vhsb"        
+                ]
+        },
+	"element_epoch": {
+		"epoch_clock":						"",
+		"t0_t1":						""
+	}
+}
+

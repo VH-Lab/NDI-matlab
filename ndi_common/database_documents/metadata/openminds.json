@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/metadata\/openminds.json",
+		"validation":						"$NDISCHEMAPATH\/metadata\/openminds.json",
+		"class_name":						"openminds",
+		"property_list_name":					"openminds",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"openminds": {
+		"openminds_type": "",
+		"matlab_type": "",
+		"openminds_id": "",
+		"fields": {
+
+		}
+	}
+}
+
+

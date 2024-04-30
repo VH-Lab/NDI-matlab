@@ -1,0 +1,40 @@
+{
+	"classname": "filenavigator",
+	"superclasses":  [ "base"],
+	"depends_on": [ ],
+	"file": [ ],
+	"filenavigator": [
+		{
+			"name": "ndi_filenavigator_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.file.navigator class type that is being stored."
+		},
+		{
+			"name": "fileparameters",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The file parameters for finding epochs."
+		},
+		{
+			"name": "epochprobemap_class",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.epoch.probemap class type that is being stored."
+		},
+		{
+			"name": "epochprobemap_fileparameters",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The file parameters for finding epochprobemaps."
+		}
+	]
+}

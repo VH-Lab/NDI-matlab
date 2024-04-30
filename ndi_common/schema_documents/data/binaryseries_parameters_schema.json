@@ -1,0 +1,56 @@
+{
+	"classname": "binaryseries_parameters",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"binaryseries_parameters": [
+		{
+			"name": "time_size",
+			"type": "integer",
+			"default_value": 32,
+			"parameters": [1,256,0],
+			"queryable": 1,
+			"documentation": "The size of each time sample in bytes."
+		},
+		{
+			"name": "time_type",
+			"type": "string",
+			"default_value": "float32",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The data type of the time sample (uint32, float32, etc)."
+		},
+		{
+			"name": "data_size",
+			"type": "integer",
+			"default_value": 32,
+			"parameters": [1,256,0],
+			"queryable": 1,
+			"documentation": "The size of each data sample in bytes."
+		},
+		{
+			"name": "data_type",
+			"type": "string",
+			"default_value": "float32",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The data type of the time sample in bytes."
+		},
+		{
+			"name": "data_dim",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [1,100000,0],
+			"queryable": 1,
+			"documentation": "The dimension of each data sample (integer)."
+		},
+		{
+			"name": "samples_regular_intervals",
+			"type": "integer",
+			"default_value": 0,
+			"parameters": [0,1,0],
+			"queryable": 1,
+			"documentation": "0/1 Are the samples taken at regular intervals? (0=no, 1=yes)."
+		}
+	]
+}

@@ -45,10 +45,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				end;
 		end; % check_sorting_parameters
 		
-		function [waveforms, waveformparams, epochinfo, extraction_params_doc, waveform_docs] = loadwaveforms(ndi_app_spikesorter_obj, ndi_timeseries_obj, extraction_name)
+		function [waveforms, waveformparams, spiketimes, epochinfo, extraction_params_doc, waveform_docs] = loadwaveforms(ndi_app_spikesorter_obj, ndi_timeseries_obj, extraction_name)
 			% LOADWAVEFORMS - load extracted spike waveforms for an ndi_timeseries_obj
 			%
-			% [WAVEFORMS, WAVEFORMPARAMS, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
+			% [WAVEFORMS, WAVEFORMPARAMS, SPIKETIMES, EPOCHINFO, EXTRACTION_PARAMS_DOC, WAVEFORM_DOCS] = LOADWAVEFORMS(...
 			%         NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
 			%
 			% Loads extracted spike WAVEFORMS from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.
@@ -57,12 +57,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 			% WAVEFORMPARAMS is the set of waveform parameters from ndi.app.spikeextractor that includes information
 			%    such as the sample dimensions and the sampling rate of the underlying data.
 			%    See help ndi.app.spikeextractor.appdoc_description.
+			% SPIKTIMES is time of each spike waveform.
 			% EPOCHINFO - a structure with fields EpochStartSamples that indicates the waveform sample that begins each new
 			%    epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
 			% EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
 			% WAVEFORM_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
 
 				waveforms = []; 
+                spiketimes = [];
 				waveformparams = [];
 				epochinfo.EpochStartSamples = [];
 				epochinfo.EpochNames = {};
@@ -83,61 +85,21 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				for i=1:numel(et),
 					epochinfo.EpochStartSamples(end+1) = sample_counter + 1;
 					epochinfo.EpochNames{end+1} = et(i).epoch_id;
-					[waveshere, waveformparams, waveform_docs{end+1}]=e.loaddata_appdoc('spikewaves',...
+					[waveshere, waveformparams, spiketimes_here, waveform_docs{end+1}]=e.loaddata_appdoc('spikewaves',...
 						ndi_timeseries_obj, et(i).epoch_id, extraction_name);
 					if isempty(waveforms),
 						waveforms = waveshere;
 					else,
 						waveforms = cat(3,waveforms,waveshere);
 					end;
+                    if isempty(spiketimes),
+                        spiketimes = spiketimes_here(:);
+                    else,
+                        spiketimes = cat(1,spiketimes,spiketimes_here(:));
+                    end;
 					sample_counter = sample_counter + size(waveshere,3);
 				end;
 		end; % loadwaveforms
-
-		function [spiketimes, epochinfo, extraction_params_doc, spiketimes_docs] = loadspiketimes(ndi_app_spikesorter_obj, ndi_timeseries_obj, extraction_name)
-			% LOADSPIKETIMES - load extracted spike times for an ndi_timeseries_obj
-			%
-			% [SPIKETIMES, EPOCHINFO, EXTRACTION_PARAMS_DOC, SPIKETIMES_DOCS] = LOADSPIKETIMES(...
-			%         NDI_APP_SPIKESORTER_OBJ, NDI_TIMESERIES_OBJ,EXTRACTION_NAME)
-			%
-			% Loads extracted SPIKETIMES from an NDI_TIMESERIERS_OBJ with extraction name EXTRACTION_NAME.
-			%
-			% SPIKTIMES is a vector description of each spike waveform.
-			% EPOCHINFO - a structure with fields EpochStartSamples that indicates the spiketime number that begins each new
-			%    epoch from the NDI_TIMESERIES_OBJ and EpochNames that is a cell array of the epoch ID of each epoch.
-			% EXTRACTION_PARAMS_DOC is the ndi.document for the extraction parameters.
-			% SPIKETIMES_DOCS is a cell array of ndi.documents for each extracted spike waveform document.
-
-				spiketimes = []; 
-				epochinfo.EpochStartSamples = [];
-				epochinfo.EpochNames = {};
-				spiketimes_docs = {};
-
-				e = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session); % new spikeextractor app
-
-				extraction_params_doc = e.loaddata_appdoc('extraction_parameters', extraction_name);
-
-				if isempty(extraction_params_doc),
-					error(['Could not load extraction parameters document with name ' extraction_name '.']);
-				end;
-				
-				et = ndi_timeseries_obj.epochtable();
-
-				sample_counter = 0;
-
-				for i=1:numel(et),
-					epochinfo.EpochStartSamples(end+1) = sample_counter + 1;
-					epochinfo.EpochNames{end+1} = et(i).epoch_id;
-					[spiketimeshere, spiketimes_docs{end+1}]=e.loaddata_appdoc('spiketimes',...
-						ndi_timeseries_obj, et(i).epoch_id, extraction_name);
-					if isempty(spiketimes),
-						spiketimes = spiketimeshere;
-					else,
-						spiketimes= cat(1,spiketimes,spiketimeshere(:));
-					end;
-					sample_counter = sample_counter + numel(spiketimeshere);
-				end;
-		end; % loadspiketimes
 
 		function spike_cluster_doc = spike_sort(ndi_app_spikesorter_obj, ndi_timeseries_obj, extraction_name, sorting_parameters_name, redo)
 			% SPIKE_SORT - method that sorts spikes from specific probes in session to ndi_doc
@@ -181,7 +143,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 
 				% Step 1c: Now that we know we are continuing, we need to gather our waveforms. 
 
-				[waveforms, waveformparameters, epochinfo, extract_doc, waveform_docs] = ...
+				[waveforms, waveformparameters, spiketimes, epochinfo, extract_doc, waveform_docs] = ...
 					ndi_app_spikesorter_obj.loadwaveforms(ndi_timeseries_obj, extraction_name);
 				extract_doc = extract_doc{1};
 				
@@ -216,7 +178,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 
 				spike_clusters.epoch_info = epochinfo;
 				spike_clusters.clusterinfo = clusterinfo;
-				spike_clusters.waveform_sample_times = wavesamples;
+				spike_clusters.waveform_sample_times = vlt.data.colvec(wavesamples);
 				spike_cluster_doc = ndi_app_spikesorter_obj.session.newdocument('apps/spikesorter/spike_clusters', ...
 					'spike_clusters', spike_clusters) ...
 					+ ndi_app_spikesorter_obj.newdocument();
@@ -226,11 +188,14 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				for i=1:numel(waveform_docs),
 					spike_cluster_doc = spike_cluster_doc.add_dependency_value_n('spikewaves_doc_id',waveform_docs{i}.id()); 
 				end;
+				[spike_cluster_binarydoc,spike_cluster_binarydoc_filename] = ndi.file.temp_fid();
+				fwrite(spike_cluster_binarydoc,uint16(clusterids),'uint16');
+				fclose(spike_cluster_binarydoc);
+				spike_cluster_doc = spike_cluster_doc.add_file('spike_cluster.bin',spike_cluster_binarydoc_filename);
+
 				% Add doc to database
+
 				ndi_app_spikesorter_obj.session.database_add(spike_cluster_doc);
-				spike_cluster_binarydoc = ndi_app_spikesorter_obj.session.database_openbinarydoc(spike_cluster_doc);
-				spike_cluster_binarydoc.fwrite(uint16(clusterids),'uint16');
-				ndi_app_spikesorter_obj.session.database_closebinarydoc(spike_cluster_binarydoc);
 
 		end % spike_sort()
 
@@ -249,18 +214,26 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					extraction_parameters_name, sorting_parameters_name);
 
 				q_E = ndi.query(ndi_app_spikesorter_obj.session.searchquery());
-				q_t = q_E & ndi.query('ndi_document.type','exact_string','ndi_element','') & ...
-					ndi.query('element.type','exact_string','spikes','') & ...
-					ndi.query('','depends_on','spike_clusters_id',spike_clusters_doc.id());
-				anyneurons = ndi_app_spikesorter_obj.session.database_search(q_t);
+				q_n = ndi.query('','isa','neuron_extracellular','') & ndi.query('','depends_on','spike_clusters_id',spike_clusters_doc.id());
+				anyneurons = ndi_app_spikesorter_obj.session.database_search(q_n);
 				if ~redo & ~isempty(anyneurons),
 					return; % we are done
 				elseif redo & ~isempty(anyneurons),
-					ndi_app_spikesorter_obj.session.database_rm(anyneurons);
+					for n=1:numel(anyneurons),
+						e_here = anyneurons{n}.dependency_value('element_id');
+						q_here = ndi.query('base.id','exact_string',e_here,'');
+						if n==1,
+							q_ne = q_here;
+						else,
+							q_ne = q_ne | q_here;
+						end;
+					end;
+					anyneuronelements = ndi_app_spikesorter_obj.session.database_search(q_ne);
+					ndi_app_spikesorter_obj.session.database_rm(anyneuronelements);
 				end;
 
-				[spiketimes,epochinfo,extraction_params_doc,spiketimes_doc] = ndi_app_spikesorter_obj.loadspiketimes(ndi_timeseries_obj,...
-					extraction_parameters_name);
+				[waveforms, waveformparams, spiketimes, epochinfo, extraction_params_doc, waveform_docs] = ...
+					ndi_app_spikesorter_obj.loadwaveforms(ndi_timeseries_obj, extraction_parameters_name);
 				et = ndi_timeseries_obj.epochtable();
 
 				include = [];
@@ -274,7 +247,6 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 				appstruct = ndidocapp.document_properties.app;
 				EpochStartStopSamples = [ epochinfo.EpochStartSamples numel(spiketimes)-1 ];
 
-				dependency = struct('name','spike_clusters_id', 'value', spike_clusters_doc.id());
 				for n=1:numel(include),
 					clusternum = include(n);
 					neuron_extracellular.number_of_samples_per_channel = size(clusterinfo(clusternum).meanshape,1);
@@ -301,9 +273,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					if value >0 & value <=4, % only add reasonable neurons
 						element_neuron = ndi.neuron(ndi_app_spikesorter_obj.session, ...
 							[ndi_timeseries_obj.name '_' num2str(clusternum)], ndi_timeseries_obj.reference, 'spikes', ...
-							ndi_timeseries_obj, 0, [], dependency);
-						neuron_doc = ndi.document('neuron/neuron_extracellular.json','neuron_extracellular',neuron_extracellular,'app',appstruct);
+							ndi_timeseries_obj, 0, []);
+						neuron_doc = ndi.document('neuron/neuron_extracellular.json','neuron_extracellular',neuron_extracellular,'app',appstruct,'base.session_id',ndi_app_spikesorter_obj.session.id());
 						neuron_doc = neuron_doc.set_dependency_value('element_id',element_neuron.id());
+						neuron_doc = neuron_doc.set_dependency_value('spike_clusters_id',spike_clusters_doc.id())
 						ndi_app_spikesorter_obj.session.database_add(neuron_doc);
 						epoch_start_index = find(strcmp(clusterinfo(clusternum).EpochStart, {et.epoch_id}));
 						epoch_stop_index = find(strcmp(clusterinfo(clusternum).EpochStop, {et.epoch_id}));
@@ -346,7 +319,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					doc = ndi.document('apps/spikesorter/sorting_parameters',...
 						'sorting_parameters',appdoc_struct) + ...
 						ndi_app_spikesorter_obj.newdocument() + ...
-						ndi.document('ndi_document','ndi_document.name',sorting_name);
+						ndi.document('base','base.name',sorting_name);
 				elseif strcmpi(appdoc_type,'spike_clusters'),
 					error(['spike_clusters documents are created internally.']);
 				else
@@ -397,7 +370,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 					case 'sorting_parameters'
 						sorting_parameters_name = varargin{1};
                     
-						sorting_search = ndi.query('ndi_document.name','exact_string',sorting_parameters_name,'') & ...
+						sorting_search = ndi.query('base.name','exact_string',sorting_parameters_name,'') & ...
 						ndi.query('','isa','sorting_parameters', '');
 						doc = ndi_app_spikesorter_obj.session.database_search(sorting_search);
                 
@@ -461,10 +434,10 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
 						else, 
 							spike_clusters_doc = spike_clusters_doc{1};
 						end;
-						spike_clusters_binarydoc = ndi_app_spikesorter_obj.session.database_openbinarydoc(spike_clusters_doc);
+						spike_clusters_binarydoc = ndi_app_spikesorter_obj.session.database_openbinarydoc(spike_clusters_doc,'spike_cluster.bin');
 						varargout{1} = spike_clusters_binarydoc.fread(inf,'uint16');
 						varargout{2} = spike_clusters_doc;
-		                                ndi_app_spikesorter_obj.session.database_closebinarydoc(spike_clusters_binarydoc);
+		                ndi_app_spikesorter_obj.session.database_closebinarydoc(spike_clusters_binarydoc);
 					otherwise
 						error(['Unknown APPDOC_TYPE ' appdoc_type '.']);
 				end %switch

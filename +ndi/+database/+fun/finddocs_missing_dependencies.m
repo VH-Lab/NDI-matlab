@@ -40,7 +40,7 @@ for i=1:numel(d),
 				if any(strcmpi(d{i}.document_properties.depends_on(j).value,documents_observed)),
 					% we've got it already
 				else,   % we need to look more
-					dhere = E.database_search(ndi.query('ndi_document.id','exact_string',id_here,''));
+					dhere = E.database_search(ndi.query('base.id','exact_string',id_here,''));
 					if ~isempty(dhere),
 						if ~iscell(dhere), dhere = {dhere}; end;
 						documents_observed{end+1} = dhere{1}.id();

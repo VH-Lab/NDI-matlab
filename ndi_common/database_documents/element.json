@@ -1,0 +1,28 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/element.json",
+		"validation":						"$NDISCHEMAPATH\/element_schema.json",
+		"class_name":						"element",
+		"property_list_name":					"element",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "underlying_element_id",
+			"value": ""
+		},
+		{	"name": "subject_id",
+			"value": ""
+		}
+	],
+	"element": {
+		"ndi_element_class":					"ndi_element",
+		"name":							"",
+		"reference":						"",
+		"type":							"",
+		"direct":						0
+	}
+}
+

@@ -48,7 +48,12 @@ classdef stimulator < ndi.probe.timeseries
 			%    be encoded here. If there is no information about stimulus setup or shutdown, then 
 			%    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF]. If there is a third marker channel present, then STIMOPENCLOSE
 			%    will be defined by +1 and -1 marks on the third marker channel.
-			%
+			% T.STIMEVENTS is a cell array of stimulus event triggers that occur while the stimuli are running.
+			%    These channels are optional and may not be present. If the NDI_PROBE_TIMESERIES_STIMULATOR_OBJ has
+			%    no events, this will be an empty cell array.
+			%    There will be one entry per event channel. In a visual stimulus system, the first event channel
+			%    should be data frame events (when the video monitor updates). The second event channel can be the
+			%    monitor's refresh rate, if it has one.
 			% 
 			% TIMEREF is an ndi.time.timereference object that refers to this EPOCH.
 			%
@@ -59,6 +64,15 @@ classdef stimulator < ndi.probe.timeseries
 
 				if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
 					% developer note: it would be pretty easy to extend this, just loop over the devices
+
+                md_index = find(strcmp('md',channeltype));
+                hasmetadata = ~isempty(md_index);
+                non_md = setdiff(1:numel(channel),md_index);
+                channeltype_metadata = channeltype(md_index);
+                channel_metadata = channel(md_index);
+                channeltype = channeltype(non_md);
+                channel=channel(non_md);
+
 				[timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
 				if ~iscell(edata),
 					timestamps = {timestamps};
@@ -71,6 +85,10 @@ classdef stimulator < ndi.probe.timeseries
 				mk_ = 0;
 				e_ = 0;
 				md_ = 0;
+				event_data = {};
+
+                channeltype = cat(1,channeltype(:),channeltype_metadata(:));
+                channel = cat(1,channel(:),channel_metadata(:));
 				
 				if markermode,
 					for i=1:numel(channeltype),
@@ -89,7 +107,7 @@ classdef stimulator < ndi.probe.timeseries
 												data.stimid(dd,:) = edata{i}(dd,:);
 											end;
 										end;
-									case 3, % stimopenclose
+                                    case 3, % stimopenclose
 										t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1); 
 										t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1); 
 									otherwise,
@@ -97,13 +115,14 @@ classdef stimulator < ndi.probe.timeseries
 								end;
 							case 'e',
 								e_ = e_ + 1;
-								% do nothing
+								event_data{e_} = timestamps{i};
 							case {'md'},
 								data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
 							otherwise,
 								error(['Unknown channel.']);
 						end
 					end
+					t.stimevents = event_data;
 				elseif dimmode,
 					t.stimon = [];
 					t.stimoff = [];
@@ -118,6 +137,9 @@ classdef stimulator < ndi.probe.timeseries
 						end;
 						if strcmp(channeltype(i),'md'),
 							data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
+						end;
+						if strcmp(channeltype(i),'e'),
+							event_data{end+1} = timestamps{i};
 						end;
 					end;
 					[dummy,order] = sort(t.stimon);

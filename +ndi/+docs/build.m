@@ -25,8 +25,8 @@ vlt.file.touch([ndi_path filesep 'site' filesep '.matlab2markdown-ignore']);
 
 disp(['Now writing function reference...']);
 
-ndi_docs = [ndi_path filesep 'docs' filesep 'reference']; % code reference path
-ymlpath = 'reference';
+ndi_docs = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'reference']; % code reference path
+ymlpath = 'NDI-matlab/reference';
 
 disp(['Writing documents pass 1']);
 
@@ -38,13 +38,14 @@ save([ndi_path filesep 'docs' filesep 'documentation_structure.mat'],'os','-mat'
 disp(['Writing documents pass 2, with all links']);
 out2 = vlt.docs.matlab2markdown(ndi_path,ndi_docs,ymlpath, os,'','https://vh-lab.github.io/NDI-matlab/');
 
-T = vlt.docs.mkdocsnavtext(out2,4);
+spaces = 6; % used to be 4 when only 1 set of tools
+T = vlt.docs.mkdocsnavtext(out2,spaces);
 
-ymlfile.references = [ndi_path filesep 'docs' filesep 'mkdocs-references.yml'];
-ymlfile.start = [ndi_path filesep 'docs' filesep 'mkdocs-start.yml'];
-ymlfile.end = [ndi_path filesep 'docs' filesep 'mkdocs-end.yml'];
-ymlfile.documents = [ndi_path filesep 'docs' filesep 'documents' filesep 'documents.yml'];
-ymlfile.main = [ndi_path filesep 'mkdocs.yml'];
+ymlfile.references = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'mkdocs-references.yml'];
+ymlfile.start = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'mkdocs-start.yml'];
+ymlfile.end = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'mkdocs-end.yml'];
+ymlfile.documents = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'documents' filesep 'documents.yml'];
+ymlfile.main = [ndi_path filesep 'docs' filesep 'NDI-matlab' filesep 'mkdocs.yml'];
 
 vlt.file.str2text(ymlfile.references,T);
 

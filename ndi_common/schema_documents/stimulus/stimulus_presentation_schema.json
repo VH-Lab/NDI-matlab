@@ -1,65 +1,28 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/stimulus\/stimulus_presentation_schema.json",
-	"title": "ndi_document_stimulus_stimulus_presentation",
-	"type": "object",
-	"properties": {
-		"presentation_order": {
-			"type": "array",
-			"items" : {
-				"type" : "string"
-			},
-			"doc_default_value": "-",
-			"doc_data_type": "Integer array",
-			"doc_description": "An array of the order of stimulus presentation (each stimulus has an integer ID)"
+	"classname": "stimulus_presentation",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+		{ "name": "stimulus_element_id", "mustbenotempty": 1}
+	],
+        "file": [
+                {"name": "presentation_time.bin", "mustbenotempty": 1}
+	],
+	"stimulus_presentation": [
+		{
+			"name": "presentation_order",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,1],
+			"queryable": 1,
+			"documentation": "An array of the order of stimulus presentation (each stimulus has an integer ID)"
 		},
-		"presentation_time" : {
-			"type" : "object",
-			"properties" : {
-				"clocktype" : {
-					"type": "string",
-					"doc_default_value": "dev_local_clock",
-					"doc_data_type": "character string (ASCII) matching types in ndi.time.clocktime",
-					"doc_description": "The type of clock that is used to specify the time of the stimuli."
-				}, 
-				"stimopen" : "number",
-				"onset" : "number",
-				"offset" : "number",
-				"stimclose" : "number"
-			},
-			"doc_default_value": "",
-			"doc_data_type": "Structure with fields clocktype, stimopen, onset, offset, stimclose",
-			"doc_description": "clocktype is the string describing the type of clock (from ndi.time.clocktime)"
-		},
-		"stimuli": {
-			"type": "object",
-			"properties" : {
-				"parameters" : {
-					"type" : "object"
-				}
-			}
-		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulus_element_id"
-						},
-						"value" : {
-							"type" : "string"
-						},
-						"doc_default_value": "",
-						"doc_data_type": "NDI document ID",
-						"doc_description": "The ID of the element of the stimulator (usually the probe that provided the stimulation)"
-					}
-				}				
-			],
-			"doc_default_value": "",
-			"doc_data_type": "structures with fields ''name'' and ''value''",
-			"doc_description": "Each document that this document depends on is listed; its document ID is given by the value, and the name indicates the type of dependency that exists. Note that the index for each dependency in the list below is arbitrary and can change. Use `ndi.document` methods `dependency`, `dependency_value`,`add_dependency_value_n`,`dependency_value_n`,`remove_dependency_value_n`, and `set_dependency_value` to read and edit `depends_on` fields of an `ndi.document`."
-		}		
-	}
+		{
+			"name": "stimuli",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "UPDATE THIS TO STRUCTURE"
+		}
+	]
 }

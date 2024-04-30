@@ -1,0 +1,19 @@
+{
+	"classname":	"demoNDI",
+	"superclasses": [ "base" ],
+	"depends_on": [ ],
+	"file": [ 
+		{"name": "filename1.ext", "mustbenotempty": 1}
+	],
+	"demoNDI": [
+		{
+			"name": "value",
+			"type": "integer",
+			"default_value": 1,
+			"parameters": [-100000,100000,0],
+			"queryable": 1,
+			"documentation": "A value field for the demoNDI class."
+		}
+	]
+}
+

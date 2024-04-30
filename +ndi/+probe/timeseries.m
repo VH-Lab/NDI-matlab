@@ -62,8 +62,17 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
 					elseif isstruct(t),
 						fn = fieldnames(t);
 						for i=1:numel(fn),
-							t = setfield(t, fn{i}, ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
-								getfield(t,fn{i}), timeref.referent, timeref.clocktype));
+							t_data_here = getfield(t,fn{i});
+							if ~iscell(t_data_here),
+								t = setfield(t, fn{i}, ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
+									t_data_here, timeref.referent, timeref.clocktype));
+							else,
+								for jj=1:numel(t_data_here),
+									t_data_here{jj} = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
+									t_data_here{jj}, timeref.referent, timeref.clocktype);
+								end;
+								t = setfield(t, fn{i}, t_data_here);
+							end;
 						end
 					end;
 				end;

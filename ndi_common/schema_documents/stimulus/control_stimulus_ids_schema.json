@@ -1,0 +1,26 @@
+{
+	"classname": "control_stimulus_ids",
+	"superclasses":  [ "base"],
+	"depends_on": [
+                { "name": "stimulus_presentation_id", "mustbenotempty": 1}
+	],
+	"control_stimulus_ids": [
+		{
+			"name": "control_stimulus_ids",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,1],
+			"queryable": 1,
+			"documentation": "An array of the control stimulus identifier for each stimulus. For example, if a stimulus set has IDs [1;2;3], and 3 is a control (or 'blank') stimulus, then this is indicated by control_stimulus_ids = [3;3;3]"
+		},
+		{
+			"name": "control_stimulus_id_method",
+			"type": "structure",
+			"default_value": [],
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The method for finding the control stimulus for each stimulus. The method field indicates the method used (such as 'pseudorandom'), the controlid is a stimulus parameter that the control stimulus will have (such as 'isblank'), and the controlis_value is the vaue of that parameter (such as 1)."
+		}
+	]
+}
+

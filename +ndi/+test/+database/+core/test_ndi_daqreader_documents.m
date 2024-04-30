@@ -24,7 +24,7 @@ function test_ndi_daqreader_documents
 
 	E = ndi.session.dir('exp1',dirname);
 	 % remove any existing daqreaders
-	doc = E.database_search(ndi.query('','isa','ndi_document_daqreader.json',''));
+	doc = E.database_search(ndi.query('','isa','daqreader',''));
 	E.database_rm(doc);
 
 	object_list = { ...

@@ -1,0 +1,24 @@
+  - NDI-matlab:
+    - Home: 'NDI-matlab/index.md'
+    - Installation: 'NDI-matlab/installation.md'
+    - Tutorials:
+      - 1 The NDI model:
+        - 1.1 Introduction: 'NDI-matlab/tutorials/ndimodel/1_intro.md'
+        - 1.2 Real world vocabulary: 'NDI-matlab/tutorials/ndimodel/2_ndimodel_vocabulary.md'
+      - 2 Analzying your first electrophysiology experiment with NDI:
+        - 2.1 Reading an example dataset: 'NDI-matlabtutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
+        - 2.2 Automating data reading with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
+        - 2.3 Using apps to analyze data (example - spike sorting): 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting.md'
+        - 2.4 Analyzing spiking responses and tuning curve properties: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/4_analyzing_tuning_curves.md'
+        - 2.5 Searching NDI databases: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases.md'
+      - 3 Tutorials for new coders or new Matlab users:
+        - 3.1 Newbie version of your first electrophysiology experiment with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset.md'
+      - 7 Writing your own apps and calculators:
+        - 7.2 Writing short calculations: 'NDI-matlab/tutorials/writing_own_app/2_ndi_calculators.md'
+      - Planned:
+        - 4. Case studies in reading data in NDI: 'NDI-matlab/tutorials/case_studies_reading_data.md'
+        - 5. Making your own data pipeline in NDI: 'NDI-matlab/tutorials/data_pipeline.md'
+        - 6. Making your own analysis app that uses NDI: 'NDI-matlab/tutorials/analysis_app.md'
+        - 7. Submitting your data to an archive: 'NDI-matlab/tutorials/archive.md'
+        - 8. Search and analyze NDI databases on the web: 'NDI-matlab/tutorials/search_ndi_databases.md'
+    - Document reference:

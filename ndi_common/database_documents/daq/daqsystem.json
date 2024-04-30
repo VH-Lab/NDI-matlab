@@ -1,0 +1,27 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/daq\/daqsystem.json",
+		"validation":						"$NDISCHEMAPATH\/daq\/daqsystem_schema.json",
+		"class_name":						"daqsystem",
+		"property_list_name":					"daqsystem",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"depends_on": [
+		{	"name": "filenavigator_id",
+			"value": "" 
+		},
+		{	"name": "daqreader_id",
+			"value": "" 
+		},
+		{	"name": "daqmetadatareader_id",
+			"value": ""
+		}
+	],
+	"daqsystem": {
+		"ndi_daqsystem_class":					""
+	}
+}
+

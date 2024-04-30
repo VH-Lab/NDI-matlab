@@ -40,6 +40,18 @@ ndi_globals.path.filecachepath = [userpath filesep 'Documents' filesep 'NDI' fil
 ndi_globals.path.logpath = [userpath filesep 'Documents' filesep 'NDI' filesep 'Logs'];
 ndi_globals.path.preferences = [userpath filesep 'Preferences' filesep' 'NDI'];
 
+ % initialize any NDIcalc-x-matlab directories
+ndi_globals.path.calcdoc = {};
+ndi_globals.path.calcdocschema = {};
+
+d = ndi.fun.find_calc_directories();
+
+for i=1:numel(d),
+	ndi_globals.path.calcdoc{end+1} = [d{i} filesep 'ndi_common' filesep 'database_documents'];
+	ndi_globals.path.calcdocschema{end+1} = [d{i} filesep 'ndi_common' filesep 'schema_documents'];
+	addpath(d{i});
+end;
+
 if ~exist(ndi_globals.path.temppath,'dir'),
 	mkdir(ndi_globals.path.temppath);
 end;
@@ -68,7 +80,8 @@ paths = {ndi_globals.path.testpath, ndi_globals.path.temppath, ndi_globals.path.
 pathnames = {'NDI test path', 'NDI temporary path', 'NDI filecache path', 'NDI preferences path'};
 
 for i=1:numel(paths),
-	fname = [paths{i} filesep 'testfile_' ndi.ido.ndi_unique_id() '.txt'];
+	ndiido = ndi.ido();
+	fname = [paths{i} filesep 'testfile_' ndiido.id() '.txt'];
 	fid = fopen(fname,'wt');
 	if fid<0,
 		error(['We do not have write access to the ' pathnames{i} ' at '  paths{i} '.']);
@@ -92,3 +105,25 @@ ndi.fun.check_Matlab_toolboxes
 
  % run any warnings on various architectures
 ndi.fun.run_Linux_checks
+
+did.globals;
+if isempty(find(strcmp('$NDIDOCUMENTPATH',did_globals.path.definition_names))),
+    did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDIDOCUMENTPATH','$NDISCHEMAPATH'});
+    did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.documentpath ndi_globals.path.documentschemapath});
+end;
+if isempty(find(strcmp('$NDICALCDOCUMENTPATH',did_globals.path.definition_names))),
+    for i=1:numel(ndi_globals.path.calcdoc)
+        did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDICALCDOCUMENTPATH'});
+        did_globals.path.definition_names = cat(2,did_globals.path.definition_names,{'$NDICALCSCHEMAPATH'});
+        did_globals.path.definition_locations = cat(2,did_globals.path.definition_locations,{ndi_globals.path.calcdoc{i} ndi_globals.path.calcdocschema{i}});
+    end;
+end;
+
+
+%ndi_globals.path.documentpath = [ndi_globals.path.commonpath filesep 'database_documents'];
+%ndi_globals.path.documentschemapath = [ndi_globals.path.commonpath filesep 'schema_documents'];
+
+if ~isfield(ndi_globals,'cache'),
+	ndi_globals.cache = ndi.cache();
+end;
+

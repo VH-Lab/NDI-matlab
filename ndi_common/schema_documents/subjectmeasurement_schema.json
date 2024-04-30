@@ -1,0 +1,34 @@
+{
+	"classname": "subjectmeasurement",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "subject_id", "mustbenotempty": 1}
+	],
+	"subjectmeasurement": [
+		{
+			"name": "measurement",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of a measurement that was taken."
+		},
+		{
+			"name": "value",
+			"type": "matrix",
+			"default_value": [0],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The value of the measurement."
+		},
+		{
+			"name": "datestamp",
+			"type": "timestamp",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The timestamp of the measurement."
+		}
+	]
+}
+

@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/ngrid.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ngrid_schema.json",
+		"class_name":						"ngrid",
+		"property_list_name":					"ngrid",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"ngrid" : {
+			"data_size":					"",
+			"data_type":					"",
+			"data_dim":					"",
+			"coordinates":					""
+	}
+}
+

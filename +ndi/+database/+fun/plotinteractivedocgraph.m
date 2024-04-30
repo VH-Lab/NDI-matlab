@@ -85,7 +85,7 @@ doc_properties_ndi_doc = {};
 for i=1:numel(docs),
 	doc_properties{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties);'])];
 	doc_properties_doc_class{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.document_class);'])];
-	doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.ndi_document);'])];
+	doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.base);'])];
 end;
 
 h=plot(mdigraph,'layout',layout);
@@ -94,7 +94,7 @@ DTT = get(h,'DataTipTemplate');
 try, % requires Matlab > 2019a
 	DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
 	DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
-	DTT.DataTipRows(end+1) = dataTipTextRow('ndi_document:', doc_properties_ndi_doc);
+	DTT.DataTipRows(end+1) = dataTipTextRow('base:', doc_properties_ndi_doc);
 set(DTT,'interpreter','none');
 end;
 box off;

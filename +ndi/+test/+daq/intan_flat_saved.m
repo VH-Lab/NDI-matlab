@@ -19,9 +19,9 @@ end;
 disp(['reading a new session object from directory ' dirname ' ... ' ]);
 E = ndi.session.dir(dirname);
 
-disp(['Now looking for daqsystem Intan1']);
+disp(['Now looking for daqsystem intan1']);
 
-dev1 = E.daqsystem_load('name','Intan1'),
+dev1 = E.daqsystem_load('name','intan1'),
 
   % Now let's print some statistics
 

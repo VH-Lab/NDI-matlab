@@ -1,151 +1,138 @@
 {
-	"$schema": "http://json-schema.org/draft/2019-09/schema#",
-	"id": "$NDISCHEMAPATH\/stimulus\/stimulus_tuningcurve_schema.json",
-	"title": "ndi_document_stimulus_stimulus_tuningcurve",
-	"type": "object",
-	"properties": {
-		"tuning_curve": {
-			"type": "object",
-			"properties": {
-				"independent_variable_label": {
-					"type": "array",
-					"items" : {
-						"type" : "array"
-					}
-				},
-				"independent_variable_value": {
-					"type": "array",
-					"items" : {
-						"type" : "string"
-					}
-				},
-				"stimid": {
-					"type": "array",
-					"items" : {
-						"type" : "string"
-					}
-				},	
-				"response_mean": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"response_stddev": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"response_mean": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"response_stderr": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"individual_responses_real": {
-					"type": "array",
-					"items" : {
-						"type" : "array", 
-						"item" : {
-							"type" : "number"
-						}
-					}
-				},
-				"individual_responses_imaginary": {
-					"type": "array",
-					"items" : {
-						"type" : "array", 
-						"item" : {
-							"type" : "number"
-						}
-					}
-				},
-				"stimulus_presentation_number": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"stimulus_presentation_number": {
-					"type": "array",
-					"items" : {
-						"type" : "string"
-					}
-				},
-				"control_response_mean": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},		
-				"control_response_stddev": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},	
-				"control_response_stderr": {
-					"type": "array",
-					"items" : {
-						"type" : "number"
-					}
-				},
-				"control_individual_responses_real": {
-					"type": "array",
-					"items" : {
-						"type" : "array", 
-						"item" : {
-							"type" : "number"
-						}
-					}
-				},
-				"control_individual_responses_imaginary": {
-					"type": "array",
-					"items" : {
-						"type" : "array", 
-						"item" : {
-							"type" : "number"
-						}
-					}
-				},		
-				"response_units" : {
-					"type" : "string"
-				}
-			}
+	"classname": "stimulus_tuningcurve",
+	"superclasses":  [ "base"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1},
+		{ "name": "stimulus_response_scalar_id", "mustbenotempty": 1}
+	],
+	"stimulus_tuningcurve": [
+		{
+			"name": "independent_variable_label",
+			"type": "cell",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The label of the independent variable(s) (comma separated if more than one) UPDATE THIS"
 		},
-		"depends_on" : {
-			"type" : "array",
-			"items" : [
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "element_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				},	
-				{
-					"type": "object", 
-					"properties" : {
-						"name" : {
-							"const" : "stimulus_response_scalar_id"
-						},
-						"value" : {
-							"type" : "string"
-						}
-					}
-				}							
-			]
-		}																				
-	}
+		{
+			"name": "independent_variable_value",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN,NaN,NaN,NaN],
+			"queryable": 1,
+			"documentation": "The values of the independent variable(s), one row per value"
+		},
+		{
+			"name": "stimid",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,1],
+			"queryable": 1,
+			"documentation": "The stimulus id numbers"
+		},
+		{
+			"name": "response_mean",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The mean response to each stimulus"
+		},
+		{
+			"name": "response_stddev",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The standard deviation of the response to each stimulus"
+		},
+		{
+			"name": "response_stderr",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The standard error of the mean of the response to each stimulus"
+		},
+		{
+			"name": "individual_responses_real",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "Real part of the response to each stimulus"
+		},
+		{
+			"name": "individual_responses_imaginary",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "Imaginary part of the response to each stimulus"
+		},
+		{
+			"name": "stimulus_presentation_number",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The stimulus IDs whose responses were averaged together to get the mean value (cell array)"
+		},
+		{
+			"name": "response_units",
+			"type": "string",
+			"default_value": "Spikes/s",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The units of the response (example: Spikes/s)."
+		},
+		{
+			"name": "control_stimid",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The control stimulus id numbers"
+		},
+		{
+			"name": "control_response_mean",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The mean response to the control stimulus associated with each stimulus"
+		},
+		{
+			"name": "control_response_stddev",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "The standard deviation of the control response for each stimulus"
+		},
+		{
+			"name": "control_response_stderr",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "The standard error of the mean of the control response for each stimulus"
+		},
+		{
+			"name": "control_individual_responses_real",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "Real part of the control response for each stimulus"
+		},
+		{
+			"name": "control_individual_responses_imaginary",
+			"type": "matrix",
+			"default_value": [],
+			"parameters": [NaN,NaN],
+			"queryable": 1,
+			"documentation": "Imaginary part of the control response for each stimulus"
+		}
+	]
 }

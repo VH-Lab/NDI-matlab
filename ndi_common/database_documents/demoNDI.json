@@ -1,0 +1,21 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/demoNDI.json",
+		"validation":						"$NDISCHEMAPATH\/demoNDI_schema.json",
+		"class_name":						"demoNDI",
+		"property_list_name":					"demoNDI",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+        },
+	"files": {
+		"file_list": [
+			"filename1.ext"
+		]
+	},
+	"demoNDI": {
+		"value":						""
+	}
+}
+

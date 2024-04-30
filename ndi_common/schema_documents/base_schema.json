@@ -1,0 +1,41 @@
+{
+	"classname":	"base",
+	"superclasses": [ ],
+	"depends_on": [ ],
+	"file": [ ],
+	"base": [
+		{
+			"name": "session_id",
+			"type": "did_uid",
+			"default_value": "",
+			"parameters": 33, 
+			"queryable": 1,
+			"documentation": "Session ID for base document class."
+		},
+		{
+			"name": "id",
+			"type": "did_uid",
+			"default_value": "",
+			"parameters": 33, 
+			"queryable": 1,
+			"documentation": "Unique ID for base document class."
+		},
+		{
+			"name": "name",
+			"type": "char",
+			"default_value": "",
+			"parameters": "", 
+			"queryable": 1,
+			"documentation": "Name of document for base document class."
+		},
+		{
+			"name": "datestamp",
+			"type": "timestamp",
+			"default_value": "2018-12-05T18:36:47.241Z",
+			"parameters": "", 
+			"queryable": 1,
+			"documentation": "Datestamp of document creation in UTC."
+		}
+	]
+}
+

@@ -2,12 +2,12 @@
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/apps\/jrclust\/jrclust_clusters.json",
 		"validation":						"$NDISCHEMAPATH\/apps\/jrclust\/jrclust_clusters_schema.json",
-		"class_name":						"ndi_document_apps_jrclust_jrclust_clusters",
+		"class_name":						"jrclust_clusters",
 		"property_list_name":					"jrclust_clusters",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document.json" },
-			{ "definition":				"$NDIDOCUMENTPATH\/ndi_document_app.json" }
+			{ "definition":				"$NDIDOCUMENTPATH\/base.json" },
+			{ "definition":				"$NDIDOCUMENTPATH\/app.json" }
 		]
 	},
 	"depends_on": [

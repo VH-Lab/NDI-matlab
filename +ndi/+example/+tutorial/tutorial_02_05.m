@@ -68,6 +68,8 @@ stim_pres_doc{1}.document_properties
   %                epochid_fix: [1x1 struct]
   %               ndi_document: [1x1 struct]
   %      stimulus_presentation: [1x1 struct]
+  %                      files: [1x1 struct]
+
   
  % Code block 2.5.2.1
 disp(['Code block 2.5.2.1:']);
@@ -78,7 +80,7 @@ stim_pres_doc{1}.document_properties.document_class
 %  struct with fields:
 %            definition: '$NDIDOCUMENTPATH/stimulus/stimulus_presentation.json'
 %            validation: '$NDISCHEMAPATH/stimulus/stimulus_presentation_schema.json'
-%            class_name: 'ndi_document_stimulus_stimulus_presentation'
+%            class_name: 'stimulus_presentation'
 %    property_list_name: 'stimulus_presentation'
 %         class_version: 1
 %          superclasses: [3x1 struct]
@@ -86,7 +88,7 @@ stim_pres_doc{1}.document_properties.document_class
 stim_pres_doc{1}.document_properties.document_class.superclasses(1)
 % ans = 
 %   struct with fields:
-%    definition: '$NDIDOCUMENTPATH/ndi_document.json'
+%    definition: '$NDIDOCUMENTPATH/base.json'
 
 stim_pres_doc{1}.document_properties.document_class.superclasses(2)
 % ans = 
@@ -96,16 +98,16 @@ stim_pres_doc{1}.document_properties.document_class.superclasses(2)
 stim_pres_doc{1}.document_properties.document_class.superclasses(3)
 %ans = 
 %  struct with fields:
-%    definition: '$NDIDOCUMENTPATH/ndi_document.json'
+%    definition: '$NDIDOCUMENTPATH/base.json'
 
   
  % Code block 2.5.3.1
 disp(['Code block 2.5.3.1:']);
 
 % search for document classes that contain the string 'stim'
-q_stim = ndi.query('document_class.class_name','contains_string','stim',''); 
+q_stim = ndi.query('base.id','hasfield','',''); 
 stim_docs = S.database_search(q_stim)
-  % returns 35 matches for me
+  % returns 113 matches for me
 
 % now suppose we also want to search for documents that were made by 
 % our app ndi_app_stimulus_decoder:
@@ -155,7 +157,6 @@ q_stim_and_stim_decoder_docs{1}.document_properties.stimulus_presentation
  % ans = 
  %   struct with fields:
  %     presentation_order: [85x1 double]
- %      presentation_time: [85x1 struct]
  %                stimuli: [17x1 struct]
  
  
@@ -171,7 +172,7 @@ stim_pres_doc{1}.document_properties.depends_on
 
  % what is this node at 412687d3ae63489a_40d1d65fa08bb81a ?
 
-mydoc = S.database_search(ndi.query('ndi_document.id','exact_string', ...
+mydoc = S.database_search(ndi.query('base.id','exact_string', ...
     stim_pres_doc{1}.document_properties.depends_on(1).value,''));
 
 mydoc{1}.document_properties
@@ -198,7 +199,7 @@ disp('Clode block 2.5.4.2:')
   
 e = S.getelements('element.type','spikes');
 
-spikes_doc = S.database_search(ndi.query('ndi_document.id','exact_string',e{1}.id(),''))
+spikes_doc = S.database_search(ndi.query('base.id','exact_string',e{1}.id(),''))
 spikes_doc = spikes_doc{1}
 
 for i=1:numel(spikes_doc.document_properties.depends_on),
@@ -214,7 +215,7 @@ end;
 disp(['Code block 2.5.5.1:']);
 
 interactive = 1; % set it to zero if you have Matlab 2020a or later for DataTip navigation! Try it!
-docs=S.database_search(ndi.query('ndi_document.id','regexp','(.*)','')); % this finds ALL documents
+docs=S.database_search(ndi.query('base.id','regexp','(.*)','')); % this finds ALL documents
 [g,nodes,mdigraph] = ndi.database.fun.docs2graph(docs);
 ndi.database.fun.plotinteractivedocgraph(docs,g,mdigraph,nodes,'layered',interactive);
 

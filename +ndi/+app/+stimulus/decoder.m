@@ -50,7 +50,7 @@ classdef decoder < ndi.app
 
 				sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
 				sq_e = ndi.query(E.searchquery());
-				sq_stim = ndi.query('','isa','stimulus_presentation.json',''); % presentation
+				sq_stim = ndi.query('','isa','stimulus_presentation',''); % presentation
 
 				existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
 
@@ -81,25 +81,60 @@ classdef decoder < ndi.app
 					for k=1:numel(data.parameters),
 						mystim(k) = struct('parameters',data.parameters{k});
 					end;
-					presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose');
+					presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose','stimevents');
 					for z=1:numel(t.stimon),
 						timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
 							'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
 							'stimclose', t.stimopenclose(z,2) );
+						stimevents = [];
+						if isfield(t,'stimevents'),
+							for kk=1:numel(t.stimevents),
+								stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
+								stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
+								stimevents_indexes = find(t.stimevents{kk}>=stim_onset & t.stimevents{kk}<=stim_offset);
+								stimevents = cat(1,stimevents,[ vlt.data.colvec(t.stimevents{kk}(stimevents_indexes)) kk*ones(numel(stimevents_indexes),1)]);
+							end;
+							[dummy,sortorder] = sort(stimevents(:,1));
+							stimevents = stimevents(sortorder,:);
+						end;
+						timestruct.stimevents = stimevents;
 						presentation_time(end+1) = timestruct;
 					end;
 
-					stimulus_presentation = struct('presentation_order', data.stimid,...
-						'presentation_time', presentation_time, ...
+					%  make a file and write the presentation_time structure
+					presentation_time_filename = ndi.file.temp_name();
+					ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
+						presentation_time);
+
+					stimulus_presentation = struct('presentation_order', data.stimid(:),...
+						... % 'presentation_time', presentation_time, ... % we now put this in a file
 						'stimuli', mystim);
-					nd = E.newdocument('stimulus/stimulus_presentation.json',...
+					nd = E.newdocument('stimulus/stimulus_presentation',...
 						'stimulus_presentation', stimulus_presentation, ...
-						'epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+						'epochid.epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
 					nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
+					nd = nd.add_file('presentation_time.bin',presentation_time_filename);
 					newdocs{end+1} = nd;
 				end;
 				E.database_add(newdocs);
 		end % 
+
+		function presentation_time = load_presentation_time(ndi_app_stimulus_decoder_obj, stimulus_presentation_doc)
+			% LOAD_PRESENTATION_TIME - read the presentation_time structure from binary portion	
+			%
+			% PRESENTATION_TIME = LOAD_PRESENTATION_TIME(NDI_APP_STIMULUS_DECODER_OBJ, ...
+			%      STIMULUS_PRESENTATION_DOC)
+			%
+			% Given a 'stimulus_presentation' type ndi.document, loads the presentation_time data from
+			% the binary portion.
+			%
+	
+				fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
+				[header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
+				fobj.fclose();
+
+		end; % load_presentation_time
 	end; % methods
+
 end % ndi.app.stimulus.decoder
 
