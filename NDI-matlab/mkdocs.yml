@@ -25,6 +25,7 @@ theme:
   features:
     - navigation
 nav:
+  - Home: index.md
   - NDI-matlab:
     - Home: 'NDI-matlab/index.md'
     - Installation: 'NDI-matlab/installation.md'
@@ -119,7 +120,7 @@ nav:
         - vision:
           - oridir:
             - orientation_direction_tuning : 'NDI-matlab/documents/stimulus/vision/oridir/orientation_direction_tuning.md'
-  - Code reference:
+    - Code reference:
       - ndi_Init: 'NDI-matlab/reference/ndi_Init.m.md'
       - ndi_install: 'NDI-matlab/reference/ndi_install.m.md'
       - ndi PACKAGE:
