@@ -61,7 +61,7 @@ for i = 1:numel(files)
         if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
         continue;
     end
-    downloadURL = dataset.files(i).downloadUrl;
+    [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_files_detail(dataset_id, file_uid);
     if verbose, disp(['Saving file ' int2str(i) '...']); end
 
     %save the file

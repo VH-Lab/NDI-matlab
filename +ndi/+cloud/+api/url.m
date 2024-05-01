@@ -21,6 +21,8 @@ elseif (strcmp(type,'delete_datasetId'))
     url = strcat(site, 'datasets/', dataset_id);
 elseif (strcmp(type,'get_branches'))
     url = strcat(site, 'datasets/', dataset_id, '/branches');
+elseif (strcmp(type,'get_files_detail'))
+    url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
 elseif (strcmp(type,'get_datasetId'))
     url = strcat(site, 'datasets/', dataset_id);
 elseif (strcmp(type,'get_files'))
