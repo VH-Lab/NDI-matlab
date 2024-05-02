@@ -34,7 +34,8 @@ if isfield(S, 'Author')
     for i = 1:numel(S.Author)
         author_struct(i).firstName = S.Author(i).givenName;
         author_struct(i).lastName = S.Author(i).familyName;
-        author_struct(i).orchid = S.Author(i).digitalIdentifier.identifier;
+        author_struct(i).orcid = S.Author(i).digitalIdentifier.identifier;
+        author_struct(i).contact = S.Author(i).contactInformation.email;
     end
     dataset_update.contributors = author_struct;
     indices = [];
