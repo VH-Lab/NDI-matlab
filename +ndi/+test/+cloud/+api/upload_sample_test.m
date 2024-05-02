@@ -15,7 +15,8 @@ dirname = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datas
 
 D = ndi.dataset.dir(dirname);
 
-metadatafile = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'dataset.mat'];
+metadatafile = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'NDIDatasetUpload' filesep 'metadata.mat'];
+
 
 
 
