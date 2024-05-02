@@ -24,7 +24,7 @@ A version of NDI is available in [Matlab](https://github.com/VH-Lab/NDI-matlab) 
 
 ## Installation
 
-Check out the [Installation Guide](https://vh-lab.github.io/NDI-matlab/installation/).
+Check out the [Installation Guide](https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/).
 
 ## Publication
 
