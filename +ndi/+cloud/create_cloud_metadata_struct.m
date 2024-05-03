@@ -60,8 +60,13 @@ if isfield(S, 'License')
 end
 if isfield(S, 'Subjects')
     species_str = '';
+    all_species = {};
     for i = 1:numel(S.Subjects)
-        species_str = [species_str, S.Subjects(i).SpeciesList.Name, ', '];
+        all_species = [all_species, S.Subjects(i).SpeciesList.Name];
+    end
+    all_species = unique(all_species);
+    for i = 1:numel(all_species)
+        species_str = [species_str, all_species{i}, ', '];
     end
     species_str = species_str(1:end-2);
     dataset_update.species = species_str;
