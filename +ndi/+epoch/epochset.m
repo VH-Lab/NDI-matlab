@@ -84,7 +84,7 @@ classdef epochset
 			% 'epoch_number'            | The number of the epoch. The number may change as epochs are added and subtracted.
 			% 'epoch_id'                | The epoch ID code (will never change once established, though it may be deleted.)
 			%                           |   This epoch ID uniquely specifies the epoch.
-			% 'epoch_session_id'           | The session ID that contains this epoch
+			% 'epoch_session_id'        | The session ID that contains this epoch
 			% 'epochprobemap'           | Any contents information for each epoch, usually of type ndi.epoch.epochprobemap or empty.
 			% 'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
 			% 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
