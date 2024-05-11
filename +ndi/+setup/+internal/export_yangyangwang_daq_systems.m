@@ -1,0 +1,16 @@
+ndi.globals; 
+exportDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', 'yangyangwang');
+if ~isfolder(exportDir); mkdir(exportDir); end
+
+
+% Export "yangyang_tdt_sev" DAQ System
+% - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+daqSystemName = 'yangyang_tdt_sev';
+daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
+                 'DaqReaderClass', 'ndi.daq.reader.mfdaq.ndr', ...
+                 'FileParameters', {'.*_Ch1\.sev\>', 'Notes.txt', 'StoresListing.txt', 'probemap.txt'}, ...
+        'DaqReaderFileParameters', "SEV", ...
+    'EpochProbeMapFileParameters', 'probemap.txt', ...
+            'HasEpochDirectories', true);
+
+daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))

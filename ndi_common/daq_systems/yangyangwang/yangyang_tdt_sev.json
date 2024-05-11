@@ -1,0 +1,17 @@
+{
+  "Name": "yangyang_tdt_sev",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    ".*_Ch1\\.sev\\>",
+    "Notes.txt",
+    "StoresListing.txt",
+    "probemap.txt"
+  ],
+  "DaqReaderFileParameters": "SEV",
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "probemap.txt",
+  "HasEpochDirectories": true
+}

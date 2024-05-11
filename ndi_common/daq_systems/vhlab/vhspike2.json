@@ -1,0 +1,16 @@
+{
+  "Name": "vhspike2",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.cedspike2",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileParameters": [
+    "reference.txt",
+    ".*\\.smr\\>",
+    "vhspike2_channelgrouping.txt"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "vhspike2_channelgrouping.txt",
+  "HasEpochDirectories": true
+}

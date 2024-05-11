@@ -1,0 +1,17 @@
+{
+  "Name": "angelucci_blackrock5",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.blackrock",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#.nev",
+    "^stimData.mat$",
+    "^epochprobemap.txt$",
+    "#.ns5"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "^epochprobemap.txt$",
+  "HasEpochDirectories": false
+}
