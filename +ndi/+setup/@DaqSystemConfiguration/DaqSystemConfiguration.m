@@ -2,15 +2,43 @@ classdef DaqSystemConfiguration
 %DaqSystemConfiguration Parameters for configuring a DAQ System.
 
     properties
+        % Name - A name for the DAQ system device
         Name (1,1) string = missing
+
+        % DaqSystemClass - Full class name for the class to use for 
+        % creating an NDI DAQ system object
         DaqSystemClass (1,1) string = "ndi.daq.system.mfdaq"
+
+        % DaqReaderClass - Full class name for the class to use for 
+        % creating an NDI DAQ reader object
         DaqReaderClass (1,1) string = "ndi.daq.reader.mfdaq"
+        
+        % MetadataReaderClass - Full class name for the class to use for 
+        % creating an NDI metadata reader object
         MetadataReaderClass (1,:) string = string.empty
+        
+        % EpochProbeMapClass - Full name of class that specifies the epoch
+        % probe map.
         EpochProbeMapClass (1,1) string = "ndi.epoch.epochprobemap_daqsystem"
+
+        % FileParameters - A list of file patterns of files that are
+        % recorded / stored for each epoch of this DAQ System device.
         FileParameters (1,:) string = string.empty
+
+        % DaqReaderFileParameters - A list of file parameters that are
+        % specific to the DAQ Reader (subset of FileParameters).
         DaqReaderFileParameters (1,:) string = string.empty
+
+        % MetadataReaderFileParameters - A list of file parameters that are
+        % specific to the Metadata Reader (subset of FileParameters).
         MetadataReaderFileParameters (1,:) string = string.empty
+        
+        % EpochProbeMapFileParameters - A list of file parameters that are
+        % specific to Epoch Probe Map (subset of FileParameters).
         EpochProbeMapFileParameters (1,:) string = string.empty
+        
+        % HasEpochDirectories - Whether epochs are organized in
+        % subdirectories.
         HasEpochDirectories (1,1) logical = false
     end
 
@@ -30,7 +58,7 @@ classdef DaqSystemConfiguration
     end
 
     methods
-        function ndiSession = create(obj, ndiSession)
+        function ndiSession = addToSession(obj, ndiSession)
         % create - Create and add DAQ System to session
 
             fileNavigator = obj.createFileNavigator(ndiSession);
@@ -38,7 +66,7 @@ classdef DaqSystemConfiguration
             metadataReader = obj.createMetadataReader();
 
             daqSystem = feval(obj.DaqSystemClass, ...
-                obj.Name, ...
+                char(obj.Name), ...
                 fileNavigator, ...
                 daqReader, ...
                 metadataReader );
@@ -74,16 +102,16 @@ classdef DaqSystemConfiguration
 
             fileNavigator = navigatorClass(...
                 ndiSession, ...
-                obj.FileParameters, ...
-                obj.EpochProbeMapClass, ...
-                obj.EpochProbeMapFileParameters );
+                cellstr(obj.FileParameters), ...
+                char(obj.EpochProbeMapClass), ...
+                cellstr(obj.EpochProbeMapFileParameters) );
         end
 
         function daqReader = createDaqReader(obj)
             if isempty(obj.DaqReaderFileParameters)
                 daqReader = feval(obj.DaqReaderClass);
             else
-                daqReader = feval(obj.DaqReaderClass, obj.DaqReaderFileParameters);
+                daqReader = feval(obj.DaqReaderClass, char(obj.DaqReaderFileParameters));
             end
         end
 
@@ -93,19 +121,19 @@ classdef DaqSystemConfiguration
             else
                 if numel(obj.MetadataReaderFileParameters) > 1
                     if numel(obj.MetadataReaderClass) == 1
-                        metadataReader = arrayfun(@(fp) feval(obj.MetadataReaderClass, fp), ...
+                        metadataReader = arrayfun(@(fp) feval(obj.MetadataReaderClass, char(fp)), ...
                             obj.MetadataReaderFileParameters, ...
                             'UniformOutput', false);
                     else
                         assert( numel(obj.MetadataReaderFileParameters) == numel(obj.MetadataReaderClass), ...
                            'Expected one metadata reader per metadata file parameter')
-                        metadataReader = arrayfun(@(i) feval(obj.MetadataReaderClass(i), obj.MetadataReaderFileParameters(i)), ...
+                        metadataReader = arrayfun(@(i) feval(obj.MetadataReaderClass(i), char(obj.MetadataReaderFileParameters(i))), ...
                             1:numel(obj.MetadataReaderFileParameters), ...
                             'UniformOutput', false);
                     end
                 else
                     metadataReader = { feval(obj.MetadataReaderClass, ...
-                        obj.MetadataReaderFileParameters) };
+                        char(obj.MetadataReaderFileParameters) ) };
                 end
             end
         end
