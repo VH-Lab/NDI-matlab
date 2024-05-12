@@ -5,19 +5,10 @@ function S = marderlab(ref, dirname)
 %
 %  Initializes an ndi.session.dir object for the directory
 %  DIRNAME with the standard compliment of MARDERLAB devices, as
-%  found in ndi.setup.daq.system.marderlab.
+%  found in "ndi_common/daq_systems/marderlab".
 %
 %  If the devices are already added, they are not re-created.
-%
 
-S = ndi.session.dir(ref, dirname);
-
-marderlabdevnames = ndi.setup.daq.system.marderlab();
-
-for i=1:numel(marderlabdevnames),
-	dev = S.daqsystem_load('name',marderlabdevnames{i});
-	if isempty(dev),
-		S = ndi.setup.daq.system.marderlab(S, marderlabdevnames{i});
-	end
+    S = ndi.session.dir(ref, dirname);
+    S = ndi.setup.daq.addDaqSystems(S, 'marderlab');
 end
-
