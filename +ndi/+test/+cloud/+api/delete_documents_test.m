@@ -58,10 +58,7 @@ end
 if (number_of_documents ~= numel(dataset.documents))
     error('ndi.cloud.api.datasets.get_datasetId returns the same number of documents after deleting a document');
 end
-% [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
-% if (number_of_documents ~= numel(summary.documents))
-%     error('ndi.cloud.api.documents.get_documents_summary returns the same number of documents after deleting a document');
-% end
+
 %try getting the document that was deleted. If no error is thrown, then the document was not deleted
 %try delete_document to delete a document that does not exist
 for i = 1:numel(document_ids)

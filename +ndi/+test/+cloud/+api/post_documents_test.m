@@ -29,9 +29,6 @@ test_post_documents(d, dataset_id);
 %% test scan_for_upload function again
 test_scan_for_upload(D, d, dataset_id, 1);
 
-% %% test post_files function
-% test_post_files(D, d, dataset_id);
-
 %% test upload_to_NDI_cloud
 [b, msg] = ndi.database.fun.upload_to_NDI_cloud(D, dataset_id);
 if ~b
@@ -39,13 +36,6 @@ if ~b
 end
 
 [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
-% [doc_json_struct,doc_file_struct, total_size] = ndi.database.fun.scan_for_upload(D, d, 0, dataset_id);
-% if numel(dataset.documents) ~= numel(doc_json_struct)
-%     error('Number of documents does not match the number of documents uploaded');
-% end
-% if numel(dataset.files) ~= numel(doc_file_struct)
-%     error('Number of files does not match the number of files uploaded');
-% end
 
 %% test post_document_update
 test_document_update(dataset_id)

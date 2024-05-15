@@ -100,10 +100,6 @@ if ~match
     error('Dataset id not found in the list of datasets');
 end
 
-% if check_dataset_metadata(datasetInformation, dataset)
-%     error('Dataset metadata does not match the input metadata');
-% end
-
 %% test invalid inputs
 try
     [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(1);
