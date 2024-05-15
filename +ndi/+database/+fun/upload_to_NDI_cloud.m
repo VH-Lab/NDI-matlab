@@ -67,7 +67,6 @@ for i=1:numel(d),
     % ndi_doc_id = d{index}.document_properties.base.id;
 
     if isfield(d{i}.document_properties, 'files'),
-        doc_i = doc_i + 1;
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
             waitbar(cur_file_idx/files_left, h_file, sprintf('Uploading file %d of %d, %.2f KB out of %.2f KB...', cur_file_idx, files_left, cur_size,total_size));

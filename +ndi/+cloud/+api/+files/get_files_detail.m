@@ -28,7 +28,7 @@ function [status,file_detail,downloadUrl, response] = get_files_detail(dataset_i
     if (response.StatusCode == 200)
         status = 0;
         file_detail = response.Body.Data;
-        downloadUrl = file_detail.download_url;
+        downloadUrl = response.Body.Data.downloadUrl;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end

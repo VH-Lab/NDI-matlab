@@ -24,7 +24,7 @@ function [dataset, dataset_id] = NDICloud_essential_metadata_submit(email, passw
             disp(['Error uploading to NDI cloud: ' msg]);
         end
     elseif strcmp(location, 'cloud')
-        [status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataIdentifier);
+        [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataIdentifier);
         [deleted_size, session_id] = ndi.cloud.delete_cloud_openminds_doc(dataIdentifier);
         convertedDocs = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
         added_size = ndi.cloud.calculate_document_size(convertedDocs);

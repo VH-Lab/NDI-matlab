@@ -31,7 +31,7 @@ response = send(request, url);
 status = 1;
 if (response.StatusCode == 200)
     status = 0;
-    url = response.Body.Data;
+    url = response.Body.Data.url;
 else
     error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
 end

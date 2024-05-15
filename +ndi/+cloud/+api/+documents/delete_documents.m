@@ -26,7 +26,7 @@ url = matlab.net.URI(ndi.cloud.api.url('delete_documents', 'dataset_id', dataset
 
 response = req.send(url);
 status = 1;
-if (response.StatusCode == 204)
+if (response.StatusCode == 200)
     status = 0;
 else
     error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);

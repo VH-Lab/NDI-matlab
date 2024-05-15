@@ -1,4 +1,4 @@
-function [status, response] = post_documents(file_path, dataset_id, document)
+function [status, response, document_id] = post_documents(file_path, dataset_id, document)
 % POST_DOCUMENTS - add a document to the dataset
 %
 % [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS(DATASET_ID, DOCUMENT)
@@ -32,9 +32,13 @@ req = matlab.net.http.RequestMessage(method, headers, provider);
 url = matlab.net.URI(ndi.cloud.api.url('post_documents', 'dataset_id', dataset_id));
 
 response = req.send(url);
+if exist(file_path, 'file')==2,
+    delete(file_path);
+end
 status = 1;
 if (response.StatusCode == 200)
     status = 0;
+    document_id = response.Body.Data.id;
 else
     error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
 end

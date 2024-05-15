@@ -24,9 +24,9 @@ update_dataset.name = "updated example dataset";
 
 [status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
 id = "64d4c79bbafd38dfb30b1824";
-[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+[status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organizationId, example_dataset);
-[status,dataset] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+[status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 page = 1;
 page_size = 1;
 [status, response, datasets] = ndi.cloud.api.datasets.get_published(page, page_size);
@@ -48,7 +48,7 @@ docName = 'exampledocument.json';
 str_doc = fileread(docName); 
 example_document = struct("name", "example document");
 example_document = jsonencode(example_document);
-[status, response] = ndi.cloud.api.documents.post_documents(docName, dataset_id, example_document);
+[status, response, document_id] = ndi.cloud.api.documents.post_documents(docName, dataset_id, example_document);
 
 [status, response] = ndi.cloud.api.datasets.post_unpublish(dataset_id);
 [status, response] = ndi.cloud.api.datasets.post_publish(dataset_id);
