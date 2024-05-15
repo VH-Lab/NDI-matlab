@@ -20,7 +20,11 @@ cmd = sprintf("curl -X 'GET' '%s' " + ...
 
 % Run the curl command and capture the output
 [status, output] = system(cmd);
-response = jsondecode(output);
+try,
+    response = jsondecode(output);
+catch,
+    status,output,error();
+end;
 dataset = '';
 % Check the status code and handle any errors
 if status
@@ -28,7 +32,7 @@ if status
 else
         % Process the JSON response; if the command failed, it might be a plain text error message
     try,
-	    dataset = jsondecode(output);
+	    dataset = jsondecode(output)
     catch,
 	    error(['Command failed with message: ' output ]);
     end;
