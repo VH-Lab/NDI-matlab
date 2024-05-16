@@ -85,11 +85,11 @@ end
 clear db_cleanup_obj
 
 if (~new)
-    [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
-    [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+    [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
     already_uploaded_docs = {};
-    %if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end; % prior version
-    if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
+    if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end; % prior version
+    %if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
     %[ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior verson
     [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
     docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
@@ -100,7 +100,6 @@ if (~new)
     end
     %create a map contains dataset.files.uid as key and uploaded as value
     file_map = containers.Map;
-    keyboard;
     for i = 1:numel(dataset.files)
         file_map(dataset.files(i).uid) = dataset.files(i).uploaded;
     end
