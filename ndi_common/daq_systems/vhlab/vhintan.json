@@ -1,0 +1,17 @@
+{
+  "Name": "vhintan",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.intan",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileParameters": [
+    "reference.txt",
+    ".*\\.rhd\\>",
+    "vhintan_channelgrouping.txt",
+    "vhintan_intan2spike2time.txt"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "vhintan_channelgrouping.txt",
+  "HasEpochDirectories": true
+}

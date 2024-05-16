@@ -1,0 +1,23 @@
+{
+  "Name": "narendra_intan",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.intan",
+  "MetadataReaderClass": "ndi.daq.metadatareader",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "time.dat",
+    "info.rhd",
+    "epochprobemap.txt",
+    "intraoral_canulae.tsv",
+    "optical_fiber1.tsv",
+    "optical_fiber2.tsv"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [
+    "stimulus_metadata_intraoral_canulae.tsv",
+    "stimulus_metadata_optical_fiber1.tsv",
+    "stimulus_metadata_optical_fiber2.tsv"
+  ],
+  "EpochProbeMapFileParameters": "epochprobemap.txt",
+  "HasEpochDirectories": false
+}

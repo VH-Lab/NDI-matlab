@@ -1,0 +1,17 @@
+{
+  "Name": "angelucci_visstim",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim",
+  "MetadataReaderClass": "ndi.setup.daq.metadatareader.AngelucciStims",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#.nev",
+    "^stimData.mat$",
+    "^epochprobemap.txt$",
+    "#.ns4"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": "stimData.mat",
+  "EpochProbeMapFileParameters": "^epochprobemap.txt$",
+  "HasEpochDirectories": false
+}

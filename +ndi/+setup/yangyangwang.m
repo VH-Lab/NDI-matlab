@@ -1,34 +1,17 @@
-function S = vhlab(ref, dirname, force)
-% ndi.setup.vhlab - initialize an ndi.session.dir with VHLAB devices
+function S = yangyangwang(ref, dirname, force)
+% ndi.setup.yangyangwang - initialize an ndi.session.dir with YANGYANGWANG devices
 %
-%  S = ndi.setup.vhlab(REF, DIRNAME, [FORCE])
+%  S = ndi.setup.yangyangwang(REF, DIRNAME, [FORCE])
 %
 %  Initializes an ndi.session.dir object for the directory
-%  DIRNAME with the standard compliment of VHLAB devices, as
-%  found in ndi.setup.daq.system.vhlab.
-%
-%  If the devices are already added, they are not re-created.
+%  DIRNAME with the standard compliment of YANGYANGWANG devices, as
+%  found in "ndi_common/daq_systems/yangyangwang"
 %
 %  If the devices are already added, they are not re-created unless
 %  FORCE is provided and is 1.
-%
 
-if nargin<3,
-	force = 0;
-end;
+    if nargin < 3; force = 0; end
 
-S = ndi.session.dir(ref, dirname);
-devnames = ndi.setup.daq.system.yangyangwang(); % returns list of daq system names
-
-for i=1:numel(devnames),
-	dev = S.daqsystem_load('name',devnames{i});
-	if force,
-        if ~isempty(dev),
-    		S.daqsystem_rm(dev);
-        end;
-		dev = [];
-	end;
-	if isempty(dev),
-		S = ndi.setup.daq.system.yangyangwang(S, devnames{i});
-	end
+    S = ndi.session.dir(ref, dirname);
+    S = ndi.setup.daq.addDaqSystems(S, 'yangyangwang', force);
 end

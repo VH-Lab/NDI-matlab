@@ -277,7 +277,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 			error(['Not implemented yet.']);
 		end % deleteepoch()
 
-                function [cache,key] = getcache(ndi_daqsystem_obj)
+        function [cache,key] = getcache(ndi_daqsystem_obj)
 			% GETCACHE - return the NDI_CACHE and key for ndi.daq.system
 			%
 			% [CACHE,KEY] = GETCACHE(NDI_DAQSYSTEM_OBJ)

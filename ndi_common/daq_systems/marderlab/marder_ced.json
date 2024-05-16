@@ -1,0 +1,15 @@
+{
+  "Name": "marder_ced",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.cedspike2",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#\\.smr\\>",
+    "#\\.epochprobemap.txt\\>"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
+  "HasEpochDirectories": false
+}

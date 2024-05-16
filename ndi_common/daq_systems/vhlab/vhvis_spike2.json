@@ -1,0 +1,18 @@
+{
+  "Name": "vhvis_spike2",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2",
+  "MetadataReaderClass": "ndi.daq.metadatareader.NewStimStims",
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem_vhlab",
+  "FileParameters": [
+    "reference.txt",
+    "stimtimes.txt",
+    "verticalblanking.txt",
+    "stims.mat",
+    "spike2data.smr"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": "stims.mat",
+  "EpochProbeMapFileParameters": "stimtimes.txt",
+  "HasEpochDirectories": true
+}
