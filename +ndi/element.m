@@ -28,6 +28,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 			% element.
 			%
 				set_identifier = 0;
+
+				needs_newdocument_call = 1;
 				
 				if numel(varargin)>=6,
 					% first type
@@ -65,6 +67,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 					if ~isa(element_session,'ndi.session'),
 						error(['When 2 input arguments are given, 1st input must be an ndi.session.']);
 					end;
+					needs_newdocument_call = 0;
 					element_doc = [];
 					if ~isa(varargin{2},'ndi.document'),
 						% might be id
@@ -125,7 +128,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 				ndi_element_obj.direct = direct;
 				ndi_element_obj.subject_id = subject_id;
 				ndi_element_obj.dependencies = dependencies;
-				element_doc = ndi_element_obj.newdocument();
+				if needs_newdocument_call, % do we need to create the document and add it to the database?
+							   % or, do we already have it?
+					element_doc = ndi_element_obj.newdocument();
+				end;
 		end; % ndi.element()
 
 	% ndi.epoch.epochset-based methods

@@ -7,6 +7,9 @@
 		"https://github.com/VH-Lab/vhlab-NewStim-matlab",
 		"https://github.com/VH-lab/NDI-matlab",
 		"https://github.com/VH-lab/DID-matlab",
-		"https://github.com/VH-lab/NDR-matlab"
+		"https://github.com/VH-lab/NDR-matlab",
+		"https://github.com/ehennestad/Catalog",
+		"https://github.com/a-ma72/mksqlite",
+		"https://github.com/Waltham-Data-Science/NDI-compress-matlabp"
 	]
 }

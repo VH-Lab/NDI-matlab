@@ -1,3 +1,31 @@
+site_name: NDI-matlab
+repo_url: https://github.com/VH-Lab/NDI-matlab
+site_author: Steve Van Hooser
+docs_dir: 'docs'
+google_analytics:
+  - UA-91714905-5
+  - auto
+extra:
+  analytics:
+    provider: google
+    property: G-9SPRKF3BW3  
+theme:
+  name: 'material'
+  palette:
+    - scheme: default
+      primary: 'indigo'
+      secondary: 'indigo'
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation
+nav:
+  - Home: index.md
   - NDI-matlab:
     - Home: 'NDI-matlab/index.md'
     - Installation: 'NDI-matlab/installation.md'

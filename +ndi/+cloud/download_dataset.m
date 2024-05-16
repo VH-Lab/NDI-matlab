@@ -1,11 +1,12 @@
 function [b,msg, D] = download_dataset(dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
-% [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, OUTPUT_PATH)
+% [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, [OUTPUT_PATH])
 %
 % Inputs:
-%   DATASET_ID - The dataset ID to download
-%   OUTPUT_PATH - The path to download the dataset to
+%   DATASET_ID  - The dataset ID to download
+%   OUTPUT_PATH - The path to download the dataset to. If not
+%                 provided, the user will be prompted. 
 %
 % Outputs:
 %   B - did the download work? 0 for no, 1 for yes
@@ -13,6 +14,16 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
 
 msg = '';
 b = 1;
+
+if nargin<2,
+	output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
+
+	if ~ischar(output_path),
+		b = 0;
+		msg = 'Cancelling per user request.';
+		D = [];
+	end;
+end;
 
 output_path = char(output_path);
 

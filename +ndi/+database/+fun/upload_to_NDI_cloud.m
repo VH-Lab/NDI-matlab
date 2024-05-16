@@ -67,12 +67,13 @@ for i=1:numel(d),
     % ndi_doc_id = d{index}.document_properties.base.id;
 
     if isfield(d{i}.document_properties, 'files'),
+        cur_file_idx = cur_file_idx + 1;
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
             waitbar(cur_file_idx/files_left, h_file, sprintf('Uploading file %d of %d, %.2f KB out of %.2f KB...', cur_file_idx, files_left, cur_size,total_size));
 
             if verbose, 
-               disp(['Preparing to upload ' int2str(f) ' of ' int2str(numel(d{i}.document_properties.files.file_list)) ' binary files/sets (' file_name ')']);
+                disp(['Preparing to upload ' int2str(f) ' of ' int2str(numel(d{i}.document_properties.files.file_list)) ' binary files/sets (' file_name ')']);
             end;
             j = 1;
             while j<10000, % we could potentially read a series of files
@@ -91,7 +92,7 @@ for i=1:numel(d),
                 j = j + 1;
                 if ~isempty(file_obj),
                     if verbose, 
-                       disp(['...Uploading ' int2str(f) ' of ' int2str(numel(d{i}.document_properties.files.file_list)) ' binary files/sets (' filename_here ')']);
+                        disp(['...Uploading ' int2str(f) ' of ' int2str(numel(d{i}.document_properties.files.file_list)) ' binary files/sets (' filename_here ')']);                    
                     end;
                     [~,uid,~] = fileparts(file_obj.fullpathfilename);
                     [status, response, upload_url] = ndi.cloud.api.files.get_files(dataset_id, uid);
@@ -111,9 +112,6 @@ for i=1:numel(d),
             end;            
         end
 
-        %if (numel(d{index}.document_properties.files.file_list) > 1)  % I don't understand this..I may have moved it  
-        %    break;                                                     %  I think it breaks the document loop where I have it now 
-        %end
     end
 
         % use whatever upload command is necessary
