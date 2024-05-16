@@ -59,5 +59,7 @@ elseif (strcmp(type,'post_documents'))
     url = strcat(site, 'datasets/', dataset_id, '/documents');
 elseif (strcmp(type,'post_documents_update'))
     url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
+elseif (strcmp(type, 'get_dataset_details'))
+    url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
 end
 

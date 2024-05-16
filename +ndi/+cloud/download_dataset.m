@@ -28,11 +28,10 @@ end;
 output_path = char(output_path);
 
 verbose = 1;
-[auth_token, organization_id] = ndi.cloud.uilogin();
 
 if verbose, disp(['Retrieving dataset...']); end
 
-[status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+[status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 if status 
     b = 0;
     msg = response;
@@ -93,7 +92,7 @@ for i = 1:numel(d)
         continue;
     end
 
-    [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+    [status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
     if status 
         b = 0;
         msg = response;
@@ -123,7 +122,7 @@ if ~isfolder([output_path filesep '.ndi' filesep 'files'])
     mkdir([output_path filesep '.ndi' filesep 'files']);
 end
 
-[status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
+[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, d{1});
 session_id = document.base.id;
 %%create a txt file with the session id
 %check if file exist

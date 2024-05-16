@@ -450,6 +450,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				errmsg = '';
 
 				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+                if ~iscell(daqs), 
+                    daqs = {daqs};
+                end;
 				daq_d = {};
 				b = 1;
 				for i=1:numel(daqs),
@@ -499,6 +502,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					% this performs no ingestion on its own
 
 				daqs = ndi_session_obj.daqsystem_load('name','(.*)');
+                if ~iscell(daqs),
+                    daqs = {daqs};
+                end;
 				daq_d = {};
 				b = 1;
 				for i=1:numel(daqs),

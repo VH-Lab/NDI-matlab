@@ -22,13 +22,10 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
 %  TOTAL_SIZE - The total size of the files to upload in KB
 
 verbose = 1;
-[auth_token, organization_id] = ndi.cloud.uilogin();
 
 if verbose, disp(['Loading documents...']); end;
     
 all_doc_ids = cell(1, numel(d));
-clear doc_json_struct;
-clear doc_file_struct;
 doc_json_struct = struct('docid',{},'is_uploaded', {});
 doc_file_struct = struct('name',{},'docid',{},'bytes',{},'is_uploaded', {});
 total_size = 0;
@@ -50,8 +47,9 @@ for i=1:numel(d)
     if isfield(d{i}.document_properties, 'files')
         for f = 1:numel(d{i}.document_properties.files.file_list)
             file_name = d{i}.document_properties.files.file_list{f};
-            
-            j = 1; is_finished = false;
+           
+            j = 1;
+            is_finished = false;
             while ~is_finished % we could potentially read a series of files
                 if file_name(end)=='#', % this file is a series of files
                     filename_here = sprintf('%s%d', file_name(1:end-1), j);
@@ -90,7 +88,9 @@ if (~new)
     [doc_status,doc_resp,doc_summary] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
     [status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
     already_uploaded_docs = {};
+    %if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end; % prior version
     if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
+    %[ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior verson
     [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
     docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
     for i = 1:numel(doc_json_struct)
