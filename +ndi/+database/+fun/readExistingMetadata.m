@@ -81,4 +81,43 @@ for i = 1:numel(dv_f.experimentalApproach)
 end
 datasetInformation.ExperimentalApproach = ndi.cloud.fun.find_instance_name(experimentalApproach_name, 'ExperimentalApproach');
 
+techniquesEmployed_name = {};
+for i = 1:numel(dv_f.technique)
+    techniquesEmployed_id = dv_f.technique{i}(7:end);
+    techniquesEmployed_doc = D.database_search(ndi.query('base.id', 'exact_string',techniquesEmployed_id));
+    techniquesEmployed_name{i} = techniquesEmployed_doc{1}.document_properties.openminds.fields.name;
+end
+datasetInformation.TechniquesEmployed = ndi.cloud.fun.find_instance_name(TechniquesEmployed_name, 'TechniquesEmployed');
+
+funding = struct();
+for i = 1:numel(dv_f.funding)
+    funding_id = dv_f.funding{i}(7:end);
+    funding_doc = D.database_search(ndi.query('base.id', 'exact_string',funding_id));
+    funding.awardTitle = funding_doc{1}.openminds.fields.awardTitle;
+    funding.awardNumber = funding_doc{1}.openminds.fields.awardNumber;
+    funder_id =funding_doc{1}.document_properties.openminds.fields.funder{1}(7:end);
+    funder_doc = D.database_search(ndi.query('base.id', 'exact_string',funder_id));
+    funding.funder = funder_doc{1, 1}.document_properties.openminds.fields.fullName;
+end
+datasetInformation.Funding = funding;
+
+Subjects = {};
+for i = 1:numel(dv_f.studiedSpecimen)
+    Subjects{i} = struct();
+    studiedSpecimen_id = dv_f.studiedSpecimen{i}(7:end);
+    studiedSpecimen_doc = D.database_search(ndi.query('base.id', 'exact_string',studiedSpecimen_id));
+    Subjects{i}.SubjectNameList = studiedSpecimen_doc{1}.document_properties.openminds.fields.lookupLabel;
+    species_id = studiedSpecimen_doc{1}.document_properties.openminds.fields.species{1}(7:end);
+    species_doc = D.database_search(ndi.query('base.id', 'exact_string',species_id));
+    openminds_species_id = species_doc{1}.document_properties.openminds.fields.species{1}(7:end);
+    openminds_species_doc = D.database_search(ndi.query('base.id', 'exact_string',openminds_species_id));
+    %create species object using Species(name, ontologyIdentifier, synonym)
+    Subjects{i}.SpeciesList = ndi.database.metadata_app.class.Species(...
+    openminds_species_doc{1}.document_properties.openminds.fields.name, ...
+    openminds_species_doc{1}.document_properties.openminds.fields.preferredOntologyIdentifier, ...
+    openminds_species_doc{1}.document_properties.openminds.fields.synonym);
+    studiedSpecimen_doc{1}.document_properties.openminds.fields.species;
+end
+end
+
 
