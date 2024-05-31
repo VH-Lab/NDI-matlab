@@ -41,7 +41,7 @@ for i = 1:numel(doc_file_struct)
     if exist(file_path, 'file') == 2
         if cur_size + doc_file_struct(i).bytes > size_limit
             files_to_zip{end+1} = file_path;
-            zip_file = [ndi_globals.path.temppath 'files.zip'];
+            zip_file = [ndi.file.temp_name() '.zip'];
             zip(zip_file, files_to_zip);
             cur_size = cur_size + doc_file_struct(i).bytes;
             size_gb = cur_size/1e9;
@@ -54,9 +54,7 @@ for i = 1:numel(doc_file_struct)
             catch
             end
             [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
-            status,response,response.Body.Data
             [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
-            status,response,response.Body.Data
 
             if exist(zip_file, 'file')
                 delete(zip_file);
@@ -64,8 +62,6 @@ for i = 1:numel(doc_file_struct)
             % reset the size
             cur_size = 0;
             files_to_zip = {};
-            disp(['pausing 5 seconds']);
-            pause(5);
         else
             files_to_zip{end+1} = file_path;
             cur_size = cur_size + doc_file_struct(i).bytes;
