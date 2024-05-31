@@ -24,7 +24,7 @@ h = waitbar(0, 'Uploading Files...');
 files_left = sum(~[doc_file_struct.is_uploaded]);
 global ndi_globals;
 % set the maximum size of the zip file to be 5GB
-size_limit = 5; % 5e9;
+size_limit = 5e9;
 cur_size = 0;
 files_to_zip = {};
 dir = [D.path filesep '.ndi' filesep 'files' filesep];
