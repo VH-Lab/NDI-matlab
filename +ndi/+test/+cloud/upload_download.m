@@ -47,9 +47,9 @@ newdir = ndi.file.temp_name;
 
 mkdir(newdir);
 
-disp(['Pausing 5 seconds to let the remote catch up...']);
+disp(['Pausing 10 seconds to let the remote catch up...']);
 
-pause(5);
+pause(10);
 
 tic;
 

@@ -24,7 +24,7 @@ h = waitbar(0, 'Uploading Files...');
 files_left = sum(~[doc_file_struct.is_uploaded]);
 global ndi_globals;
 % set the maximum size of the zip file to be 5GB
-size_limit = 5e9;
+size_limit = 5; % 5e9;
 cur_size = 0;
 files_to_zip = {};
 dir = [D.path filesep '.ndi' filesep 'files' filesep];
@@ -54,13 +54,18 @@ for i = 1:numel(doc_file_struct)
             catch
             end
             [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
+            status,response,response.Body.Data
             [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
+            status,response,response.Body.Data
+
             if exist(zip_file, 'file')
                 delete(zip_file);
             end
             % reset the size
             cur_size = 0;
             files_to_zip = {};
+            disp(['pausing 5 seconds']);
+            pause(5);
         else
             files_to_zip{end+1} = file_path;
             cur_size = cur_size + doc_file_struct(i).bytes;
