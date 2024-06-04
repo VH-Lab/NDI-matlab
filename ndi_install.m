@@ -77,7 +77,7 @@ t = urlread(dependencies);
 j = jsondecode(t);
 dependencies = j.dependency;
 
- % are we updating at least NDI?
+% are we updating at least NDI?
 
 w = which('ndi_Init');
 if isempty(w),
@@ -116,7 +116,12 @@ end;
 for i=1:numel(dependencies),
 	libparts = split(dependencies{i},'/');
 	disp(['Installing/updating ' dependencies{i} '...']);
-	git_embedded_install([directory filesep libparts{end}],dependencies{i});
+    if startsWith(dependencies{i}, 'fex')
+        addonUUID = extractAfter(dependencies{i}, 'fex://');
+        installFexPackage(addonUUID, directory)
+    else
+        git_embedded_install([directory filesep libparts{end}],dependencies{i});
+    end
 end;
 
 disp(['Examining startup.m file to add startup line.']);
@@ -398,3 +403,40 @@ else,
 	error(['Could not open ' filename ' for writing.']);
 end;
 
+function installFexPackage(toolboxIdentifier, installLocation)
+
+    fexClient = matlab.addons.repositories.FileExchangeRepository();
+    addonUrl = fexClient.getAddonURL(toolboxIdentifier);
+    
+    if endsWith(addonUrl, '.xml')
+        [filepath, C] = tempsave(addonUrl);
+        S = readstruct(filepath); delete(C)
+        addonUrl = S.downloadUrl;
+        addonUrl = extractBefore(addonUrl, '?');
+    end
+
+    if endsWith(addonUrl, '/zip')
+        [tempFilepath, C] = tempsave(addonUrl, [char(toolboxIdentifier), '_temp.zip']);
+        unzip(tempFilepath, fullfile(installLocation, S.name)); delete(C)
+
+    elseif endsWith(addonUrl, '/mltbx')
+        tempFile = websave(fullfile(tempdir,'temp.zip'), addonUrl );
+        matlab.addons.install(tempFile);
+        delete(tempFile)
+    end
+
+function [filePath, cleanupObj] = tempsave(fileUrl, fileName)
+    if nargin < 2
+        [~, fileName, fileExtension] = fileparts( char(fileUrl) );
+    else
+        [~, fileName, fileExtension] = fileparts( char(fileName) );
+    end
+
+    filePath = websave(fullfile(tempdir, [fileName, fileExtension] ), fileUrl );
+    cleanupObj = onCleanup(@(filename) deleteTempFile(filePath));
+
+function deleteTempFile(filePath)
+    if isfile(filePath)
+        delete(filePath)
+    end
+    
