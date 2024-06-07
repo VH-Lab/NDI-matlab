@@ -23,7 +23,7 @@
 
 classdef mfdaq < ndi.daq.system
 
-	properties (GetAcces=public,SetAccess=protected)
+	properties (GetAccess=public,SetAccess=protected)
 	end
 	properties (Access=private) % potential private variables
 	end
@@ -47,13 +47,13 @@ classdef mfdaq < ndi.daq.system
 
 		% functions that override ndi.epoch.epochset
 
-                function ec = epochclock(ndi_daqsystem_mfdaq_obj, epoch)
-                        % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
-                        %
-                        % EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH)
-                        %
-                        % Return the clock types available for this epoch as a cell array
-                        % of ndi.time.clocktype objects (or sub-class members).
+		function ec = epochclock(ndi_daqsystem_mfdaq_obj, epoch)
+			% EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
+			%
+			% EC = EPOCHCLOCK(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH)
+			%
+			% Return the clock types available for this epoch as a cell array
+			% of ndi.time.clocktype objects (or sub-class members).
 			% 
 			% For the generic ndi.daq.system.mfdaq, this returns a single clock
 			% type 'dev_local'time';
@@ -292,7 +292,7 @@ classdef mfdaq < ndi.daq.system
 				end;
 		end; % readevents_epochsamples
 
-                function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
+		function sr = samplerate(ndi_daqsystem_mfdaq_obj, epoch, channeltype, channel)
 			% SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
 			%
 			% SR = SAMPLERATE(DEV, EPOCH, CHANNELTYPE, CHANNEL)
