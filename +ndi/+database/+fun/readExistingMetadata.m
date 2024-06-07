@@ -9,23 +9,7 @@ function datasetInformation = readExistingMetadata(D, entries)
 % Outputs:
 %   DATASETINFORMATION - the metadata structure
 datasetInformation = struct();
-dataset_doc = {};
-d_f = '';
-dataset_version_doc = {};
-dv_f= '';
-author_doc_id = {};
 author_doc = {};
-dataType_id = {};
-studiedSpecimen_id = {};
-experimentalApproach_id = {};
-license_id = {};
-otherContribution_id = {};
-otherContribution_doc = {};
-funding_id = {};
-relatedPublication_id = {};
-relatedPublication = {};
-
-% d_openminds_docs = D.database_search(ndi.query('','isa','openminds'));
 dataset_version_doc = D.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.DatasetVersion'));
 dv_f = {};
 if numel(dataset_version_doc) > 0
@@ -36,16 +20,6 @@ if numel(dataset_version_doc) > 0
     datasetInformation.ReleaseDate = datetime(dv_f.releaseDate);
     datasetInformation.VersionIdentifier = dv_f.versionIdentifier;
     datasetInformation.VersionInnovation = dv_f.versionInnovation;
-    author_doc_id = dv_f.author;
-    dataType_id = dv_f.dataType;
-    experimentalApproach_id = dv_f.experimentalApproach;
-    TechniquesEmployed_id = dv_f.technique;
-    funding_id = dv_f.funding;
-    studiedSpecimen_id = dv_f.studiedSpecimen;
-    license_id = dv_f.license;
-    otherContribution_id = dv_f.otherContribution;
-    otherContribution_id = dv_f.custodian;
-    relatedPublication_id = dv_f.relatedPublication;
 end
 
 for i = 1:numel(dv_f.author)
@@ -81,7 +55,7 @@ for i = 1:numel(dv_f.experimentalApproach)
 end
 datasetInformation.ExperimentalApproach = ndi.cloud.fun.find_instance_name(experimentalApproach_name, 'ExperimentalApproach');
 
-techniquesEmployed_name = {};
+TechniquesEmployed = {};
 for i = 1:numel(dv_f.technique)
     techniquesEmployed_id = dv_f.technique{i}(7:end);
     techniquesEmployed_doc = D.database_search(ndi.query('base.id', 'exact_string',techniquesEmployed_id));
@@ -91,21 +65,21 @@ for i = 1:numel(dv_f.technique)
     name = techniquesEmployed_doc{1}.document_properties.openminds.openminds_id;
     name = split(name, '/');
     name = name{end};
-    techniquesEmployed_name{i} = strcat(type, ' (', name, ')');
+    TechniquesEmployed{i} = strcat(name, ' (', type, ')');
 end
-datasetInformation.TechniquesEmployed = techniquesEmployed_name;
+datasetInformation.TechniquesEmployed = TechniquesEmployed;
 
-funding = struct();
+Funding = struct();
 for i = 1:numel(dv_f.funding)
     funding_id = dv_f.funding{i}(7:end);
     funding_doc = D.database_search(ndi.query('base.id', 'exact_string',funding_id));
-    funding.awardTitle = funding_doc{1}.document_properties.openminds.fields.awardTitle;
-    funding.awardNumber = funding_doc{1}.document_properties.openminds.fields.awardNumber;
+    Funding.awardTitle = funding_doc{1}.document_properties.openminds.fields.awardTitle;
+    Funding.awardNumber = funding_doc{1}.document_properties.openminds.fields.awardNumber;
     funder_id =funding_doc{1}.document_properties.openminds.fields.funder{1}(7:end);
     funder_doc = D.database_search(ndi.query('base.id', 'exact_string',funder_id));
-    funding.funder = funder_doc{1, 1}.document_properties.openminds.fields.fullName;
+    Funding.funder = funder_doc{1, 1}.document_properties.openminds.fields.fullName;
 end
-datasetInformation.Funding = funding;
+datasetInformation.Funding = Funding;
 
 Subjects = ndi.database.metadata_app.class.Subject.empty();
 for i = 1:numel(dv_f.studiedSpecimen)
@@ -134,6 +108,28 @@ for i = 1:numel(dv_f.studiedSpecimen)
 end
 datasetInformation.Subjects = Subjects;
 strainInstances = loadStrain(D, entries);
+
+License = '';
+if ~isempty(dv_f.license)
+    license_id = dv_f.license{1}(7:end);
+    license_doc = D.database_search(ndi.query('base.id', 'exact_string',license_id));
+    License = license_doc{1}.document_properties.openminds.fields.shortName;
+end
+datasetInformation.License = License;
+
+RelatedPublication = struct();
+for i = 1:numel(dv_f.relatedPublication)
+    relatedPublication_id = dv_f.relatedPublication{i}(7:end);
+    relatedPublication_doc = D.database_search(ndi.query('base.id', 'exact_string',relatedPublication_id));
+    doi = relatedPublication_doc{1, 1}.document_properties.openminds.fields.identifier;
+    publicationInfo = ndi.database.metadata_app.fun.resolveRelatedPublication(doi);
+    RelatedPublication.Publication = publicationInfo.title;
+    RelatedPublication.DOI = publicationInfo.doi;
+    RelatedPublication.PMID = publicationInfo.pmid;
+    RelatedPublication.PMCID = publicationInfo.pmcid;
+end
+datasetInformation.RelatedPublication = RelatedPublication;
+
 end
 
 function strainInstances = loadStrain(D,entries)
@@ -164,20 +160,20 @@ function strainInstances = loadStrain(D,entries)
             strainInstances.save()
         catch ME
             if ME.identifier == "Catalog:NamedItemExists"
-                disp("Strain already exists in the catalog. Do you want to update it?");
-                prompt = 'Y/N [Y]: ';
-                str = input(prompt,'s');
-                if isempty(str)
-                    str = 'Y';
-                end
-                if str == 'Y'
-                    strainInstances.update(strain)
-                    strainInstances.save()
-                else
-                    disp("Aborted");
-                end
-            else
-                disp("Aborted");
+                disp("Strain already exists in the catalog.");
+            %     prompt = 'Y/N [Y]: ';
+            %     str = input(prompt,'s');
+            %     if isempty(str)
+            %         str = 'Y';
+            %     end
+            %     if str == 'Y'
+            %         strainInstances.update(strain)
+            %         strainInstances.save()
+            %     else
+            %         disp("Aborted");
+            %     end
+            % else
+            %     disp("Aborted");
             end
         end
         
@@ -196,7 +192,7 @@ end
 function property = readName(D, doc, name)
     if ~isempty(doc.document_properties.openminds.fields.(name))
         property_doc = D.database_search(ndi.query('base.id', 'exact_string', doc.document_properties.openminds.fields.(name){1}(7:end)));
-        property = property_doc{1}.document_properties.openminds.fields.name;
+        property = property_doc{1}.document_properties.openminds.fields.(name);
     else
         property = [];
     end
