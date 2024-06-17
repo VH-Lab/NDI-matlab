@@ -3,7 +3,7 @@ classdef DaqSystemConfiguration
 
     properties
         % Name - A name for the DAQ system device
-        Name (1,1) string = missing
+        Name (1,1) string = ""
 
         % DaqSystemClass - Full class name for the class to use for 
         % creating an NDI DAQ system object
@@ -45,7 +45,7 @@ classdef DaqSystemConfiguration
     methods
         function obj = DaqSystemConfiguration(name, propertyValues)
             arguments
-                name
+                name (1,1) string = ""
                 propertyValues.?ndi.setup.DaqSystemConfiguration
             end
 
@@ -160,6 +160,14 @@ classdef DaqSystemConfiguration
             importDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', labName);
             configFilePath = fullfile(importDir, [deviceName, '.json']);
             daqSystemConfiguration = ndi.setup.DaqSystemConfiguration.fromConfigFile(configFilePath);
+        end
+
+        function daqSystemConfiguration = fromDeviceName(deviceName)
+            ndi.globals; 
+            importDir = fullfile(ndi_globals.path.commonpath, 'daq_systems');
+            configFilePath = recursiveDir(importDir, 'FileType', '.json', 'Expression', deviceName, 'OutputType', 'FilePath');
+            assert(iscell(configFilePath) && numel(configFilePath)==1)
+            daqSystemConfiguration = ndi.setup.DaqSystemConfiguration.fromConfigFile(configFilePath{1});
         end
     end
 end
