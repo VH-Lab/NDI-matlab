@@ -6,7 +6,7 @@ function [names, absPaths] = listDaqSystemClasses()
     fileExtension = '.m';
     fileList = recursiveDir(rootPath, 'Type', 'file', 'FileType', fileExtension);
     
-    absPaths = abspath(fileList);
+    absPaths = ndi.util.dir2abspath(fileList);
     names = {fileList.name};
     names = strrep(names, fileExtension, '');
     

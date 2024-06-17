@@ -17,6 +17,6 @@ function [names, absPaths] = listDaqMetadataReaders()
     names = strrep(names, fileExtension, '');
     
     if nargout >= 2
-        absPaths = abspath(fileList); % Todo: Add dependency
+        absPaths = ndi.util.dir2abspath(fileList);
     end
 end

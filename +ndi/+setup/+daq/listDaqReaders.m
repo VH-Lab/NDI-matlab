@@ -9,7 +9,7 @@ function [names, absPaths, functionNames] = listDaqReaders()
     fileExtension = '.m';
     fileList = recursiveDir(rootPath, 'Type', 'file', 'FileType', fileExtension);
     
-    absPaths = abspath(fileList);
+    absPaths = ndi.util.dir2abspath(fileList);
     names = {fileList.name};
     names = strrep(names, fileExtension, '');
 
@@ -18,7 +18,7 @@ function [names, absPaths, functionNames] = listDaqReaders()
     end
 
     if nargout == 3
-        functionNames = utility.path.abspath2funcname(absPaths);
+        functionNames = ndi.util.abspath2funcname(absPaths);
     end
 
     % Todo: Return a struct, with following fields:
