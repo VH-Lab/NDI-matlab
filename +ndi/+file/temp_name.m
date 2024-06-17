@@ -1,7 +1,7 @@
-function fname = tempname()
+function fname = temp_name()
 % TEMPNAME - return a unique temporary file name
 %
-% FNAME = ndi.file.tempname()
+% FNAME = ndi.file.temp_name()
 %
 % Return the full path of a unique temporary file name that
 % can be used by NDI programs.
