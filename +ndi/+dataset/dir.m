@@ -28,15 +28,13 @@ classdef dir < ndi.dataset
 					warning('off');
 					ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
 					mystruct = struct(ndi_dataset_dir_obj.session); % don't do this but we need to here
-					for i=1:numel(docs),
-						mystruct.database.add(docs{i});
-					end;
+					mystruct.database.add(docs);
 					warning(S);
 					ndi_dataset_dir_obj.session = ndi.session.dir(reference, path_name);
 				end;
 
-                % Use the session.dir's path as the path for this object
-                ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
+				% Use the session.dir's path as the path for this object
+				ndi_dataset_dir_obj.path = ndi_dataset_dir_obj.session.path;
 
 				q = ndi.query('','isa','dataset_session_info');
 				d = ndi_dataset_dir_obj.database_search(q);
@@ -49,12 +47,9 @@ classdef dir < ndi.dataset
 					d2 = ndi_dataset_dir_obj.database_search(q2);
 					if ~isempty(d2),
 						ref = d2{1}.document_properties.session.reference;
-						ndi_dataset_dir_obj.session = ndi.session.dir(ref,path_name,session_id);
+						ndi_dataset_dir_obj.session = ndi.session.dir(ref,ndi_dataset_dir_obj.session.path,session_id);
 					end;
 				end;
 		end; % dir(), creator
-
 	end; % methods
-
-
 end

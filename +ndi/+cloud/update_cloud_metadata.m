@@ -1,11 +1,10 @@
-function [status, dataset] = update_cloud_metadata(datasetid, auth_token, S)
+function [status, dataset] = update_cloud_metadata(datasetid, S)
 % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA(DATASETID, AUTH_TOKEN, S)
+% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA(DATASETID, S)
 %
 % Inputs:
 %   DATASETID - the dataset ID to update
-%   AUTH_TOKEN - an upload token for NDI Cloud
 %   S - an ndi.session object with the metadata to upload
 %
 % Outputs:
@@ -37,6 +36,6 @@ end
 dataset_update.contributors = author_struct;
 
  
-[status,dataset] = ndi.cloud.datasets.post_datasetId(datasetid,dataset_update,auth_token);
+[status,dataset] = ndi.cloud.api.datasets.post_datasetId(datasetid,dataset_update);
 end
 

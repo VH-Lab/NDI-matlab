@@ -12,8 +12,6 @@ function [status, response,dataset_id] = create_cloud_metadata_struct(S)
 %   DATASET_ID - The created dataset id
 %
 
-[auth_token, organization_id] = ndi.cloud.uilogin();
-
 clear dataset_update;
 
 % is_valid = ndi.cloud.fun.check_metadata_cloud_inputs(S);
@@ -23,8 +21,14 @@ clear dataset_update;
 if isfield(S, 'DatasetFullName')
     dataset_update.name = S.DatasetFullName;
 end
-if isfield(S, 'DatasetShortName')
-    dataset_update.branchName = S.DatasetShortName;
+
+dataset_update.name = S.DatasetFullName;
+dataset_update.branchName = S.DatasetShortName;
+author_struct = struct();
+for i = 1:numel(S.Author)
+    author_struct(i).firstName = S.Author(i).givenName;
+    author_struct(i).lastName = S.Author(i).familyName;
+    author_struct(i).orchid = S.Author(i).digitalIdentifier.identifier;
 end
 if isfield(S, 'Description')
     dataset_update.abstract = S.Description{1};
@@ -85,6 +89,6 @@ if isfield(S, 'RelatedPublication')
 end
 % dataset_update.brainRegions = brainRegions;
 % dataset_update.totalSize = round(size);
-[status, response, dataset_id] = ndi.cloud.datasets.post_organization(organization_id, dataset_update, auth_token);
+[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(dataset_update);
 end
 

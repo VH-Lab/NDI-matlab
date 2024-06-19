@@ -1,0 +1,15 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/ingestion\/metadata_editor.json",
+		"validation":						"$NDISCHEMAPATH\/ingestion\/metadata_editor_schema.json",
+		"class_name":						"metadata_editor",
+		"property_list_name":					"metadata_editor",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"metadata_editor": {
+		"metadata_structure":	[]
+	}
+}

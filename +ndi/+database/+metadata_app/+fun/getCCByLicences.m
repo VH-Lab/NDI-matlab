@@ -9,7 +9,7 @@ function [names, shortNames] = getCCByLicences()
 %       shortNames - String array of corresponding short names
 
     instanceTable = openminds.internal.listControlledInstances('License');
-    isCcBy = contains(instanceTable.InstanceName, 'ccBy');
+    isCcBy = contains(instanceTable.InstanceName, 'CC-BY');
 
     names = instanceTable.InstanceName(isCcBy);
     shortNames = repmat("", size(names));

@@ -196,7 +196,7 @@ q_stim_and_stim_decoder_docs = S.database_search(q_stim_decoder & q_stim);
 filename = 'special_char.json';
 str_doc = fileread(filename); 
 bug_document = jsondecode(str_doc); 
-[status, response] = ndi.cloud.documents.post_documents(dataset_id, bug_document, auth_token);
+[status, response] = ndi.cloud.api.documents.post_documents(dataset_id, bug_document);
 
 %%
 

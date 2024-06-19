@@ -9,7 +9,7 @@ function subjectData = loadSubjects(S)
         
         if (~isa(S,'ndi.session.dir') && ~isa(S, 'ndi.dataset.dir'))
            error('METADATA_APP:loadSubjects:InvalidSession',...
-              'Input must be an ndi.session object.'); 
+              'Input must be an ndi.session object or ndi.dataset.dir.'); 
         end
 
         subjects = S.database_search(ndi.query('','isa','subject'));

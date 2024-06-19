@@ -1,11 +1,12 @@
 function [b,msg, D] = download_dataset(dataset_id, output_path)
 %DOWNLOAD_DATASET download the dataset from the server
 %   
-% [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, OUTPUT_PATH)
+% [B, MSG] = ndi.cloud.download_dataset(DATASET_ID, [OUTPUT_PATH])
 %
 % Inputs:
-%   DATASET_ID - The dataset ID to download
-%   OUTPUT_PATH - The path to download the dataset to
+%   DATASET_ID  - The dataset ID to download
+%   OUTPUT_PATH - The path to download the dataset to. If not
+%                 provided, the user will be prompted. 
 %
 % Outputs:
 %   B - did the download work? 0 for no, 1 for yes
@@ -14,14 +15,23 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
 msg = '';
 b = 1;
 
+if nargin<2,
+	output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
+
+	if ~ischar(output_path),
+		b = 0;
+		msg = 'Cancelling per user request.';
+		D = [];
+	end;
+end;
+
 output_path = char(output_path);
 
 verbose = 1;
-[auth_token, organization_id] = ndi.cloud.uilogin();
 
 if verbose, disp(['Retrieving dataset...']); end
 
-[status,dataset, response] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+[status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 if status 
     b = 0;
     msg = response;
@@ -82,7 +92,7 @@ for i = 1:numel(d)
         continue;
     end
 
-    [status, response, document] = ndi.cloud.documents.get_documents(dataset_id, document_id, auth_token);
+    [status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
     if status 
         b = 0;
         msg = response;
@@ -112,7 +122,7 @@ if ~isfolder([output_path filesep '.ndi' filesep 'files'])
     mkdir([output_path filesep '.ndi' filesep 'files']);
 end
 
-[status, response, document] = ndi.cloud.documents.get_documents(dataset_id, d{1}, auth_token);
+[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, d{1});
 session_id = document.base.id;
 %%create a txt file with the session id
 %check if file exist

@@ -1,7 +1,6 @@
 function documentList = convertFormDataToDocuments(appUserData, sessionId)
 
     % Todo:
-    %  [ ] RelatedPublications
     %  [ ] Probes
     %  [ ] Link subjects to ndi subjects using dependency_type?
     %  [ ] Any other dependency_type?
@@ -134,7 +133,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.versionIdentifier = appUserData.VersionIdentifier;
     datasetVersion.versionInnovation = appUserData.VersionInnovation;
 
-    % TODO: Related publication
+    % Related publication
     if isfield(appUserData, 'RelatedPublication')
         datasetVersion.relatedPublication = cellfun(@(value) ...
             openminds.core.DOI('identifier', addDoiPrefix(value)), ...
@@ -310,6 +309,12 @@ function conversionMap = createConversionMap()
         % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
         %'digitalIdentifier', getFactoryFunction('openminds.core.ORCID') ...
 
+    conversionMap("openminds.core.Strain") = ...
+        struct( ...
+         'digitalIdentifier', @(value) openminds.core.RRID('identifier', value), ...
+               'stockNumber', @(value) openminds.core.StockNumber('identifier', value) ...
+        );
+ 
     conversionMap("openminds.core.Funding") = ...
         struct(...
             'funder', @(value) openminds.core.Organization('fullName', value) ...
@@ -363,7 +368,10 @@ function [strainInstanceMap] = convertStrains(items)
     for i = 1:numel(items)
         thisItem = items(i);
         thisItem = rmfield(thisItem, 'backgroundStrain');
-        thisInstance = openminds.core.Strain().fromStruct(thisItem);
+        
+        createStrain = getFactoryFunction('openminds.core.Strain');
+        thisInstance = createStrain(thisItem);
+
         strainInstanceMap(thisItem.name) = thisInstance;
     end
 
