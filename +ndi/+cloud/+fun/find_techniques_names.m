@@ -9,11 +9,15 @@ name_to_technique = containers.Map();
 for i = 1:numel(allowedTypes)
     type = allowedTypes{i};
     [names, ~] = ndi.database.metadata_app.fun.getOpenMindsInstances(type);
-    for j = 1:numel(names)
-        technique = sprintf('%s (%s)', names{i}, allowedTypes{i});
-        command = sprintf('openminds.controlledterms.%s(names{j})',type);
-        obj = eval(command);
-        name_to_technique(obj.name) = technique;
+    try
+        for j = 1:numel(names)
+            technique = sprintf('%s (%s)', names{i}, allowedTypes{i});
+            command = sprintf('openminds.controlledterms.%s(names{j})',type);
+            obj = eval(command);
+            name_to_technique(obj.name) = technique;
+        end
+    catch
+        disp(names{j});
     end
 end
 
