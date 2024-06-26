@@ -242,7 +242,7 @@ classdef ctest
 			% It must be deleted manually to ensure programmer really wants to overwrite it.
 			%
 				fname = ctest_obj.mock_expected_filename(number);
-				json_output = char(vlt.data.prettyjson(vlt.data.jsonencodenan(doc.document_properties)));
+				json_output = char(did.datastructures.jsonencodenan(doc.document_properties));
 				if isfile(fname),
 					error(['File ' fname ' already exists. Delete to overwrite.']);
 				end;
