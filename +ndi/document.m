@@ -93,6 +93,50 @@ classdef document
 				end;
 		end; % 
 
+		function t = to_table(ndi_document_obj)
+			% TO_TABLE - convert an ndi.document to a table
+			%
+			% T = TO_TABLE(NDI_DOCUMENT_OBJ)
+			%
+			% Convert an ndi.document to a Matlab table.
+			%
+			% Field names are converted to table variable names. If
+			% there are substructures, then the variable names
+			% have a 'dot' indicating the substructure.
+			% 
+			% 'depends_on' elements are given their own names.
+			% Each dependency has a 'depends_on_NAME' variable name
+			% and the value is the dependency value.
+			%
+
+				s = ndi_document_obj.document_properties;
+				if isfield(s,'depends_on'),
+					s = rmfield(s,'depends_on');
+				end;
+				if isfield(s,'files'),
+					s = rmfield(s,'files');
+				end;
+
+				t = table();
+				[names,depend] = ndi_document_obj.dependency();
+				for i=1:numel(names),
+					t_new = cell2table({depend(i).value},'variableNames',{['depends_on_' depend(i).name]});
+					t = cat(2,t,t_new);
+				end;
+
+				abbrev = {};
+				ndi.globals;
+				abbrevName = fullfile(ndi_globals.path.commonpath,'config','ndi_document2table_abbreviations.json');
+				if isfile(abbrevName),
+					j = vlt.file.textfile2char(abbrevName);
+					abbrev = jsondecode(j);
+				end;
+
+				ts = vlt.data.flattenstruct2table(s,abbrev);
+
+				t = cat(2,t,ts);
+		end; 
+
 		function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
 			% ADD_FILE - add a file to a ndi.document
 			%
