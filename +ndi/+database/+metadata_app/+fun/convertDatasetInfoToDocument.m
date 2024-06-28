@@ -22,37 +22,46 @@ fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'Technique
     
 for i = 1:numel(fieldsToConvert)
     fieldName = fieldsToConvert{i};
-    if isfield(document, fieldName)
+    v = getfield(datasetInfo, fieldName);
+    for j = 1:numel(v)
+        if isfield(document, fieldName)
         % Check for nested fields and convert if they exist
-        if strcmp(fieldName, 'Author') && isfield(document.Author, 'authorRole')
-            if iscell(document.Author.authorRole) || isstring(document.Author.authorRole)
-                document.Author.authorRole = strjoin(document.Author.authorRole, ', ');
-            end
-        elseif strcmp(fieldName, 'Subjects') && isfield(document.Subjects, 'BiologicalSexList')
-            if iscell(document.Subjects.BiologicalSexList) || isstring(document.Subjects.BiologicalSexList)
-                document.Subjects.BiologicalSexList = strjoin(document.Subjects.BiologicalSexList, ', ');
-            end
-        else
-            % Convert top-level fields
-            if iscell(document.(fieldName)) || isstring(document.(fieldName))
-                document.(fieldName) = strjoin(document.(fieldName), ', ');
-            end
-        end
-    end
-end
-fields = fieldnames(document);
-for i = 1:numel(fields)
-    if ischar(document.(fields{i})) || isstring(document.(fields{i}))
-        document.(fields{i}) = char(document.(fields{i}));
-    elseif isstruct(document.(fields{i}))
-        subfields = fieldnames(document.(fields{i}));
-        for j = 1:numel(subfields)
-            if ischar(document.(fields{i}).(subfields{j})) || isstring(document.(fields{i}).(subfields{j}))
-                document.(fields{i}).(subfields{j}) = char(document.(fields{i}).(subfields{j}));
+            if strcmp(fieldName, 'Author') && isfield(document.Author(j), 'authorRole')
+                if iscell(document.Author(j).authorRole) || isstring(document.Author(j).authorRole)
+                    document.Author(j).authorRole = strjoin(document.Author(j).authorRole, ', ');
+                end
+            elseif strcmp(fieldName, 'Subjects') && isfield(document.Subjects(j), 'BiologicalSexList')
+                if iscell(document.Subjects(j).BiologicalSexList) || isstring(document.Subjects(j).BiologicalSexList)
+                    document.Subjects(j).BiologicalSexList = strjoin(document.Subjects(j).BiologicalSexList, ', ');
+                end
+            else
+                % Convert top-level fields
+                if iscell(document.(fieldName)) || isstring(document.(fieldName))
+                    document.(fieldName) = strjoin(document.(fieldName), ', ');
+                end
             end
         end
     end
 end
 
+fields = fieldnames(document);
+for i = 1:numel(fields)
+    fieldName = fields{i};
+    v = getfield(document, fieldName);
+    if ischar(v) || isstring(v)
+        document.(fields{i}) = char(v);
+    elseif isstruct(v)
+        for j = 1:numel(v)
+            data = v(j);
+            subfields = fieldnames(data);
+            for k = 1:numel(subfields)
+                subfieldName = subfields{k};
+                if ischar(data.(subfieldName)) || isstring(data.(subfieldName))
+                    document.(fields{i})(j).(subfields{k}) = char(data.(subfieldName));
+                end
+            end
+        end
+    end
+end
 end
 

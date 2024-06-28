@@ -15,20 +15,23 @@ fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'Technique
     
     for i = 1:numel(fieldsToConvert)
         fieldName = fieldsToConvert{i};
-        if isfield(datasetInformation, fieldName)
-            % Check for nested fields and convert if they exist
-            if strcmp(fieldName, 'Author') && isfield(datasetInformation.Author, 'authorRole')
-                if ischar(datasetInformation.Author.authorRole)
-                    datasetInformation.Author.authorRole = strsplit(datasetInformation.Author.authorRole, ', ');
-                end
-            elseif strcmp(fieldName, 'Subjects') && isfield(datasetInformation.Subjects, 'BiologicalSexList')
-                if ischar(datasetInformation.Subjects.BiologicalSexList)
-                    datasetInformation.Subjects.BiologicalSexList = strsplit(datasetInformation.Subjects.BiologicalSexList, ', ');
-                end
-            else
-                % Convert top-level fields
-                if ischar(datasetInformation.(fieldName))
-                    datasetInformation.(fieldName) = strsplit(datasetInformation.(fieldName), ', ');
+        v = getfield(datasetInformation, fieldName);
+        for j = 1:numel(v)
+            if isfield(datasetInformation, fieldName)
+                % Check for nested fields and convert if they exist
+                if strcmp(fieldName, 'Author') && isfield(datasetInformation.Author(j), 'authorRole')
+                    if ischar(datasetInformation.Author(j).authorRole)
+                        datasetInformation.Author(j).authorRole = strsplit(datasetInformation.Author(j).authorRole, ', ');
+                    end
+                elseif strcmp(fieldName, 'Subjects') && isfield(datasetInformation.Subjects(j), 'BiologicalSexList')
+                    if ischar(datasetInformation.Subjects(j).BiologicalSexList)
+                        datasetInformation.Subjects(j).BiologicalSexList = strsplit(datasetInformation.Subjects(j).BiologicalSexList, ', ');
+                    end
+                else
+                    % Convert top-level fields
+                    if ischar(datasetInformation.(fieldName))
+                        datasetInformation.(fieldName) = strsplit(datasetInformation.(fieldName), ', ');
+                    end
                 end
             end
         end
