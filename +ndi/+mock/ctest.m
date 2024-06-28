@@ -22,10 +22,10 @@ classdef ctest
  
                         % 80 character reference; documentation should be within 80 character limit
 			% 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-		function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it)
+            function [b,errormsg,b_expected,doc_output,doc_expected_output] = test(ctest_obj, scope, number_of_tests, plot_it, varargin)
 			% test - perform a test of an ndi.calculator object
 			%
-			% [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT)
+			% [B, ERRORMSG] = test(CTEST_OBJ, SCOPE, NUMBER_OF_TESTS, PLOT_IT, VARARGIN)
 			%
 			% Perform tests of the calculator for a certain SCOPE.
 			%
@@ -33,7 +33,9 @@ classdef ctest
 			%   of the expected output of test i and actual output of test j are equal.
 			%   Generally, b(i,i) should be 1 for all tests, and b(i,j) for i~=j should
 			%   be 0, although results might be close enough for some comparisons to be
-			%   equal even if there are no errors.
+			%   equal even if there are no errors. If test indices are
+            %   specified, B becomes a numel(specific_test_inds) x
+            %   numel(specific_test_inds) array.
 			%
 			% ERRORMSG{i,j} is any error message given if the comparison between the
 			%   expected outcome of test i and the actual outcome of test j.
@@ -53,10 +55,20 @@ classdef ctest
 			% NUMBER_OF_TESTS indicates the number of tests to perform.
 			% PLOT_IT indicates (0/1) whether or not the results should be plotted.
 			%
-			% 
+			% This function's behavior can be modified by name/value pairs.
+			% --------------------------------------------------------------------------------
+			% | Parameter (default):     | Description:                                      |
+			% |--------------------------|---------------------------------------------------|   
+            % | specific_test_inds([])   | Should we specify which tests to run?             |
+			% |--------------------------|---------------------------------------------------|
+			%
 				% Step 1: generate_mock_docs
-				[docs,doc_output,doc_expected_output] = ...
-					ctest_obj.generate_mock_docs(scope, number_of_tests);
+                specific_test_inds = [];
+				did.datastructures.assign(varargin{:});
+                %override number_of_tests
+                [docs,doc_output,doc_expected_output] = ...
+				    ctest_obj.generate_mock_docs(scope,number_of_tests,'specific_test_inds',specific_test_inds);
+                
 
 				% Step 2:
 
@@ -160,7 +172,7 @@ classdef ctest
 
                         % 80 character reference; documentation should be within 80 character limit
 			% 01234567890123456789012345678901234567890123456789012345678901234567890123456789
-		function clean_mock_docs(cstest_obj)
+		function clean_mock_docs(ctest_obj)
 			% CLEAN_MOCK_DOCS - remove mock/test documents
 
 
