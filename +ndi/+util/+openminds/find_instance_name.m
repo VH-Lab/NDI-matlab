@@ -3,7 +3,7 @@ function format_names = find_instance_name(unformat_names,value)
 %   Detailed explanation goes here
 
 if (strcmp(value,'TechniquesEmployed'))
-    format_names = ndi.cloud.fun.find_techniques_names(unformat_names);
+    format_names = ndi.util.openminds.find_techniques_names(unformat_names);
     return;
 else
     [names, ~] = ndi.database.metadata_app.fun.getOpenMindsInstances(value);

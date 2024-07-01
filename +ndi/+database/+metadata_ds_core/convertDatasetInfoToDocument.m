@@ -28,10 +28,12 @@ for i = 1:numel(fieldsToConvert)
         % Check for nested fields and convert if they exist
             if strcmp(fieldName, 'Author') && isfield(document.Author(j), 'authorRole')
                 if iscell(document.Author(j).authorRole) || isstring(document.Author(j).authorRole)
+                    document.Author(j).authorRole=cellfun(@char, document.Author(j).authorRole, 'UniformOutput', false);
                     document.Author(j).authorRole = strjoin(document.Author(j).authorRole, ', ');
                 end
             elseif strcmp(fieldName, 'Subjects') && isfield(document.Subjects(j), 'BiologicalSexList')
                 if iscell(document.Subjects(j).BiologicalSexList) || isstring(document.Subjects(j).BiologicalSexList)
+                    document.Subjects(j).BiologicalSexList=cellfun(@char, Subjects(j).BiologicalSexList, 'UniformOutput', false);
                     document.Subjects(j).BiologicalSexList = strjoin(document.Subjects(j).BiologicalSexList, ', ');
                 end
             else

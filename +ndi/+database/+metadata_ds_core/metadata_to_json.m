@@ -1,6 +1,7 @@
 function dataset_update = metadata_to_json(S)
-%METADATA_TO_JSON - Convert metadata structure to json
-% DATASET_UPDATE = ndi.cloud.fun.METADATA_TO_JSON(S)
+%METADATA_TO_JSON - Convert NDIMetadataEditorApp metadata structure to json
+% 
+% DATASET_UPDATE = METADATA_TO_JSON(S)
 %
 % Inputs:
 %   S - the metadata structure to convert

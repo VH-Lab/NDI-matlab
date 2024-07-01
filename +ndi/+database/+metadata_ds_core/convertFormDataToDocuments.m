@@ -90,14 +90,14 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     is1stAuthor = cellfun(@(c) any(strcmp(c, '1st Author')), authorRoles);
     firstAuthor = authorInstances(is1stAuthor);
     if ~iscell(firstAuthor)
-        firstAuthor = {firstAuthor};
+        firstAuthor = mat2cell(firstAuthor,repmat(1,size(firstAuthor,1),1));
     end
     firstAuthorDoc = cellfun(@(p) openminds.core.Contribution('contributor', p, 'type', openminds.controlledterms.ContributionType('name', '1st Author')), firstAuthor);
 
     isCorresponding = cellfun(@(c) any(strcmp(c, 'Corresponding')), authorRoles);
     correspondingAuthor = authorInstances(isCorresponding);
     if ~iscell(correspondingAuthor)
-        correspondingAuthor = {correspondingAuthor};
+        correspondingAuthor = mat2cell(correspondingAuthor,repmat(1,size(correspondingAuthor,1),1));
     end
     corresondingAuthorDoc = cellfun(@(p) openminds.core.Contribution('contributor', p, 'type', openminds.controlledterms.ContributionType('name', 'point of contact')), correspondingAuthor);
 
@@ -108,7 +108,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     datasetVersion.author = authorInstances;
     datasetVersion.custodian = authorInstances(isCustodian);
     datasetVersion.funding = fundingInstances;
-    datasetVersion.otherContribution = [firstAuthorDoc, corresondingAuthorDoc];
+    datasetVersion.otherContribution = [firstAuthorDoc(:); corresondingAuthorDoc(:)];
 
     if isfield( appUserData, 'License')
         if appUserData.License ~= ""
@@ -160,6 +160,9 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         
         subjects{i} = openminds.core.Subject();
         if ~isempty(subjectItem.BiologicalSexList)
+            if ~iscell(subjectItem.BiologicalSexList),
+                subjectItem.BiologicalSexList = {subjectItem.BiologicalSexList};
+            end;
             subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
         end
 
@@ -212,7 +215,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
     end
     
     for i = 1:numel(studiedSpecimen_id)
-        [studiedSpecimen_doc, idx] = ndi.cloud.fun.search_id(studiedSpecimen_id{i},documentList);
+        [studiedSpecimen_doc, idx] = ndi.document.find_doc_by_id(studiedSpecimen_id{i},documentList);
         session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
         documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
@@ -225,7 +228,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
 end
 
 function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
-    [doc, idx] = ndi.cloud.fun.search_id(doc_id,documentList);
+    [doc, idx] = ndi.document.find_doc_by_id(doc_id,documentList);
     documentList{idx} = doc.set_session_id(char(session_id));
     if numel(doc.document_properties.depends_on) > 0 
         for i = 1: numel(doc.document_properties.depends_on)

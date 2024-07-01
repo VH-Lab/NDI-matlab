@@ -24,7 +24,7 @@ if ~is_valid
     error('NDI:CLOUD:UPDATE_CLOUD_METADATA_STRUCT', ...
           'Metadata struct is missing required fields');
 end
-dataset_update = ndi.cloud.fun.metadata_to_json(S);
+dataset_update = ndi.database.metadata_app.fun.metadata_to_json(S);
 dataset_update.doi = "https://doi.org://10.1000/123456789";
 % round up the bytes to the nearest kilobyte
 dataset_update.totalSize = round(size);

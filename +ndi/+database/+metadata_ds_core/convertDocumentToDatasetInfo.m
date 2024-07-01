@@ -2,7 +2,9 @@ function datasetInformation = convertDocumentToDatasetInfo(document)
 %CONVERTDOCUMENTTODATASETINFO function to convert NDI document to datasetInfo
 %   DATASETINFO = ndi.database.metadata_app.fun.CONVERTDOCUMENTTODATASETINFO(DOCUMENT)
 %   Inputs:
-%       DOCUMENT - struct containing the dataset information
+%       DOCUMENT - struct containing the saved dataset information for our app
+%                  Note that this is not a set of saved metadata objects in the dataset,
+%                  but just the saved structure data from the MetaDataEditorApp
 %
 %   Outputs:
 %       DATASETINFO - struct containing the dataset information

@@ -25,6 +25,6 @@ S = S.database_rm(d_openminds);
 %add the new openminds doc
 convertedDocs = ndi.database.metadata_app.convertFormDataToDocuments(struct);
 S = S.database_add(convertedDocs);
-[b, msg] = ndi.database.fun.upload_to_NDI_cloud(S, email, password, dataset_id);
+[b, msg] = ndi.cloud.up.upload_to_NDI_cloud(S, email, password, dataset_id);
 end
 

@@ -1,7 +1,7 @@
 function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, new, dataset_id)
 %SCAN_FOR_UPLOAD - Scans the session for documents and files to upload. Calculate the size of the files.
 %   
-% [DOC_JSON_STRUCT,DOC_FILE_STRUCT] = ndi.database.fun.scan_for_upload(S, d, new, DATASET_ID)
+% [DOC_JSON_STRUCT,DOC_FILE_STRUCT] = ndi.cloud.up.scan_for_upload(S, d, new, DATASET_ID)
 %  
 % Inputs:
 %  S - an ndi.session object

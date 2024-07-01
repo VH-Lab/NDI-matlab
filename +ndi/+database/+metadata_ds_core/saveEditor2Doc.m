@@ -10,12 +10,15 @@ function d = saveEditor2Doc(D, datasetInfo)
 ndi.globals();
 newid = ndi.ido;
 docName = ['metadata_editor'];
-session_id = D.id;
+session_id = D.id();
+
 metadata_editor_docs = D.database_search(ndi.query('','isa','metadata_editor'));
 if numel(metadata_editor_docs) ~= 0
     D.database_rm(metadata_editor_docs);
+
 end
-document = ndi.database.metadata_app.fun.convertDatasetInfoToDocument(datasetInfo);
+
+document = ndi.database.metadata_ds_core.convertDatasetInfoToDocument(datasetInfo);
 
 d = ndi.document(docName,'base.id',newid.identifier,...
     'base.session_id',session_id,...

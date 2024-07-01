@@ -1,6 +1,6 @@
-function author = load_author_from_cloud(author_doc, otherContribution_docs, custodian_docs, D)
+function author = load_author_from_ndidocument(author_doc, otherContribution_docs, custodian_docs, D)
 %UNTITLED Summary of this function goes here
-%   AUTHOR = ndi.cloud.fun.LOAD_AUTHOR_FROM_CLOUD(AUTHOR_DOCS, OTHERCONTRIBUTION_DOCS, CUSTODIAN_DOCS, D)
+%   AUTHOR = ndi.database.metadata_ds_core.LOAD_AUTHOR_FROM_NDIDOCUMENT(AUTHOR_DOCS, OTHERCONTRIBUTION_DOCS, CUSTODIAN_DOCS, D)
 
 author = struct();
 

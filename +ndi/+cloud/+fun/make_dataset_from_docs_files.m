@@ -7,7 +7,7 @@ function D = make_dataset_from_docs_files(dataset_path, dataset_reference, doc_p
 %
 % DATASET_PATH is the full path of the dataset to be made.
 %
-% DATASET_REFERENCE is the full path of the dataset.
+% DATASET_REFERENCE is the dataset's reference.
 %
 % DOC_PATH is the full path of a directory with .json files of ndi.documents.
 %

@@ -13,10 +13,11 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
 %   DATASET - the newly created dataset
 %   DATASET_ID - the dataset id of the uploaded dataset
 
+keyboard
 documentList = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
 S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
 [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
-[b, ~] = ndi.database.fun.upload_to_NDI_cloud(S, dataset_id);
+[b, ~] = ndi.cloud.up.upload_to_NDI_cloud(S, dataset_id);
 [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
 
 end

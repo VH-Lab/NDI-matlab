@@ -3,6 +3,13 @@ function [status, response,dataset_id] = create_cloud_metadata_struct(S)
 %
 % [STATUS, DATASET] = ndi.cloud.CREATE_CLOUD_METADATA_STRUCT(S)
 %
+% Applies the MetaDataEditorApp data structure to 
+%   a) create a new dataset
+%   b) add metadata for the dataset to the cloud API
+%
+% Note: This function does not create any ndi.document representations
+% of the metadata, but only edits the metadata in the cloud API.   
+%
 % Inputs:
 %   S - a struct with the metadata to create
 %
