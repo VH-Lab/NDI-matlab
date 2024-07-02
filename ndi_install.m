@@ -27,53 +27,52 @@ function b = ndi_install(directory, dependencies)
 b = git_embedded_assert;
 
 if ~b,
-	error(['The program git was not detected on the system. Please install git and restart Matlab.']);
+    error(['The program git was not detected on the system. Please install git and restart Matlab.']);
 end;
-
 
 need_to_set_directory = 0;
 
 if nargin<1,
-	need_to_set_directory = 1;
-	directory = ' '; % not empty
+    need_to_set_directory = 1;
+    directory = ' '; % not empty
 end;
 
 if isempty(directory),
-	need_to_set_directory = 1;
+    need_to_set_directory = 1;
 end;
 
 if need_to_set_directory,
-	if isempty(userpath),
-		disp(['Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.']);
-		reply = input('Can we reset your USERPATH to the default? Y/N [Y]:','s');
-		if isempty(reply)
-			reply = 'Y';
-		end
-		if strcmpi(strtrim(reply),'Y'),
-			userpath('reset');
-		else,
-			error(['User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath']);
-		end;
-	end;
-	directory = [userpath filesep 'tools'];
+    if isempty(userpath),
+        disp(['Your Matlab USERPATH is empty. This is your ''home'' directory for your Matlab use.']);
+        reply = input('Can we reset your USERPATH to the default? Y/N [Y]:','s');
+        if isempty(reply)
+            reply = 'Y';
+        end
+        if strcmpi(strtrim(reply),'Y'),
+            userpath('reset');
+        else,
+            error(['User elected NOT to reset USERPATH. USERPATH is blank, so we cannot install. See help userpath']);
+        end;
+    end;
+    directory = [userpath filesep 'tools'];
 end;
 
 disp(['About to install at directory ' directory '...']);
 
 if nargin<2,
-	dependencies = 1;
+    dependencies = 1;
 end;
 
 % If a numeric 
 if isnumeric(dependencies),
-	switch (dependencies),
-		case 1,
-			dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
-		case 2,
-			dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
+    switch (dependencies),
+        case 1,
+            dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
+        case 2,
+            dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
         case 3,
             dependencies_filepath = fullfile(ndi.util.toolboxdir, 'ndi-matlab-dependencies.json');
-	end;
+    end;
 
     if dependencies == 1 || dependencies == 2
         t = webread(dependencies_filepath);
@@ -91,43 +90,43 @@ end;
 
 w = which('ndi_Init');
 if isempty(w),
-	updating = 0;
+    updating = 0;
 else,
-	updating = 1;
+    updating = 1;
 end;
 
 if updating,
-	disp(['We are updating an existing installation on the path...']);
-	disp(['  We must temporarily reset the Matlab path.']);
-	disp(['  startup.m will be called during the installation, which should restore your path to your desired path.']);
-	currentpath = path(); % for now, don't do anything with this
-	currpwd = pwd();
+    disp(['We are updating an existing installation on the path...']);
+    disp(['  We must temporarily reset the Matlab path.']);
+    disp(['  startup.m will be called during the installation, which should restore your path to your desired path.']);
+    currentpath = path(); % for now, don't do anything with this
+    currpwd = pwd();
 
-	% copy 'ndi_install.m' file to userpath directory
-	thisfile = which('ndi_Init'); % ndi.globals is in same directory as ndi_install; ndi_install can have multiple copies
-	[thisparent,thisfilename,thisextension] = fileparts(thisfile);
-	copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
+    % copy 'ndi_install.m' file to userpath directory
+    thisfile = which('ndi_Init'); % ndi.globals is in same directory as ndi_install; ndi_install can have multiple copies
+    [thisparent,thisfilename,thisextension] = fileparts(thisfile);
+    copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
 
-	cd(userpath);
-	restoredefaultpath();
-	ndi_install(directory, dependencies);
+    cd(userpath);
+    restoredefaultpath();
+    ndi_install(directory, dependencies);
 
-	% now clean up
-	try,
-		delete([userpath filesep 'ndi_install.m']);
-	end;
-	try,
-		cd(currpwd);
-	end;
+    % now clean up
+    try,
+        delete([userpath filesep 'ndi_install.m']);
+    end;
+    try,
+        cd(currpwd);
+    end;
 
     addpath(currentpath) % Restore the user's path
-	
-	return;
+    
+    return;
 end;
 
 for i=1:numel(dependencies),
-	libparts = split(dependencies{i},'/');
-	disp(['Installing/updating ' dependencies{i} '...']);
+    libparts = split(dependencies{i},'/');
+    disp(['Installing/updating ' dependencies{i} '...']);
     if startsWith(dependencies{i}, 'fex')
         addonUUID = extractAfter(dependencies{i}, 'fex://');
         installFexPackage(addonUUID, directory)
@@ -141,21 +140,21 @@ disp(['Examining startup.m file to add startup line.']);
 s = which('startup.m');
 
 if ~isempty(s),
-	t = text2cellstr_embedded(s);
+    t = text2cellstr_embedded(s);
 else,
-	s = [userpath filesep 'startup.m'];
-	t = {};
+    s = [userpath filesep 'startup.m'];
+    t = {};
 end;
 
 z = regexp(t,'vhtools_startup','forceCellOutput');
 
 if all(cellfun('isempty',z)),
-	text_to_add = ['run([''' directory filesep 'vhlab_vhtools' filesep 'vhtools_startup.m'']);'];
-	disp(['Adding ' text_to_add ' to startup.m']);
-	t{end+1} = text_to_add;
-	cellstr2text_embedded(s,t);
+    text_to_add = ['run([''' directory filesep 'vhlab_vhtools' filesep 'vhtools_startup.m'']);'];
+    disp(['Adding ' text_to_add ' to startup.m']);
+    t{end+1} = text_to_add;
+    cellstr2text_embedded(s,t);
 else,
-	disp(['startup.m seems to already have needed line. No action taken.']);
+    disp(['startup.m seems to already have needed line. No action taken.']);
 end;
 
 startup
@@ -205,28 +204,28 @@ localparentdir = fileparts(dirname);
 must_clone = 0;
 
 if ~exist(dirname,'dir'),
-	must_clone = 1;
+    must_clone = 1;
 end;
 
 status_good = 0;
 if ~must_clone,
         try,
-		[uptodate,changes,untrackedfiles] = git_embedded_status(dirname);
-		status_good = ~changes; %  & ~untrackedfiles;  % untracked files okay
+        [uptodate,changes,untrackedfiles] = git_embedded_status(dirname);
+        status_good = ~changes; %  & ~untrackedfiles;  % untracked files okay
         end;
 
         if status_good, % we can pull without difficulty
-		b=git_embedded_pull(dirname);
+        b=git_embedded_pull(dirname);
         else, % stash first, then pull
-		warning(['STASHING changes in ' dirname '...']);
-		git_embedded_stash(dirname);
-		b=git_embedded_pull(dirname);
+        warning(['STASHING changes in ' dirname '...']);
+        git_embedded_stash(dirname);
+        b=git_embedded_pull(dirname);
         end;
 else,
-	if exist(dirname,'dir'),
-		rmdir(dirname,'s');
-	end;
-	b=git_embedded_clone(repository,localparentdir);
+    if exist(dirname,'dir'),
+        rmdir(dirname,'s');
+    end;
+    b=git_embedded_clone(repository,localparentdir);
 end;
 
 
@@ -249,13 +248,13 @@ localparentdir = fileparts(dirname);
 pull_success = 1; % assume success, and update to failure if need be
 
 if ~exist(dirname,'dir'),
-	pull_success = 0;
+    pull_success = 0;
 end;
 
 if pull_success, % if we are still going, try to pull
-	[status,results]=system(['git -C "' dirname '" pull']);
+    [status,results]=system(['git -C "' dirname '" pull']);
 
-	pull_success=(status==0);
+    pull_success=(status==0);
 end;
 
 b = pull_success;
@@ -270,10 +269,10 @@ function b = git_embedded_isgitdirectory(dirname)
 %
 
 if git_embedded_assert,
-	[status,results] = system(['git -C "' dirname '" status']);
-	b = ((status==0) | (status==1)) & ~isempty(results);
+    [status,results] = system(['git -C "' dirname '" status']);
+    b = ((status==0) | (status==1)) & ~isempty(results);
 else,
-	error(['GIT not available on system.']);
+    error(['GIT not available on system.']);
 end;
 
 
@@ -295,7 +294,7 @@ function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
 b = git_embedded_isgitdirectory(dirname);
 
 if ~b,
-	error(['Not a GIT directory: ' dirname '.']);
+    error(['Not a GIT directory: ' dirname '.']);
 end;
 
 [status,results] = system(['git -C "' dirname '" status ']); 
@@ -304,11 +303,11 @@ uptodate = 0;
 untracked_present = 0;
 
 if status==0,
-	uptodate = ~isempty(strfind(results,'Your branch is up to date with'));
-	changes = ~isempty(strfind(results,'Changes'));
-	untracked_present = ~isempty(strfind(results,'untracked files present'));
+    uptodate = ~isempty(strfind(results,'Your branch is up to date with'));
+    changes = ~isempty(strfind(results,'Changes'));
+    untracked_present = ~isempty(strfind(results,'untracked files present'));
 else,
-	error(['Error running git status: ' results]);
+    error(['Error running git status: ' results]);
 end;
 
 function b = git_embedded_stash(dirname)
@@ -326,13 +325,13 @@ localparentdir = fileparts(dirname);
 stash_success = 1; % assume success, and update to failure if need be
 
 if ~exist(dirname,'dir'),
-	stash_success = 0;
+    stash_success = 0;
 end;
 
 if stash_success, % if we are still going, try to
-	[status,results]=system(['git -C "' dirname '" stash']);
+    [status,results]=system(['git -C "' dirname '" stash']);
 
-	stash_success=(status==0);
+    stash_success=(status==0);
 end;
 
 b = stash_success;
@@ -353,7 +352,7 @@ function b = git_embedded_clone(repository, localparentdir)
 %
 
 if ~exist(localparentdir,'dir'),
-	mkdir(localparentdir);
+    mkdir(localparentdir);
 end;
 
 reponames = split(repository,'/');
@@ -361,7 +360,7 @@ reponames = split(repository,'/');
 localreponame = [localparentdir filesep reponames{end}];
 
 if exist([localreponame],'dir'),
-	error([localreponame ' already exists.']);
+    error([localreponame ' already exists.']);
 end;
 
 [status,results]=system(['git -C "' localparentdir '" clone ' repository]);
@@ -384,11 +383,11 @@ c = {};
 fid = fopen(filename,'rt');
 
 if fid<0,
-	error(['Could not open file ' filename ' for reading.']);
+    error(['Could not open file ' filename ' for reading.']);
 end;
 
 while ~feof(fid),
-	c{end+1} = fgetl(fid);
+    c{end+1} = fgetl(fid);
 end;
 fclose(fid);
 
@@ -407,12 +406,12 @@ fid = fopen(filename,'wt');
 newline = sprintf('\n');
 
 if fid>=0,
-	for i=1:numel(cs),
-		fwrite(fid,[cs{i} newline],'char');
-	end;
-	fclose(fid);
+    for i=1:numel(cs),
+        fwrite(fid,[cs{i} newline],'char');
+    end;
+    fclose(fid);
 else,
-	error(['Could not open ' filename ' for writing.']);
+    error(['Could not open ' filename ' for writing.']);
 end;
 
 function installFexPackage(toolboxIdentifier, installLocation)
