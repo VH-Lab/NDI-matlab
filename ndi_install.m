@@ -15,8 +15,10 @@ function b = ndi_install(directory, dependencies)
 %
 % PATHNAME should not include any shell script shortcuts (like '~').
 %
-% Finally, one can also install either the minimal set of tools needed for NDI (DEPENDENCIES=1),
-% or one can install the standard VHTOOLS suite (DEPENDENCIES=2):
+% Finally, one can also install either the minimal set of tools needed for NDI 
+% (DEPENDENCIES=1), or one can install the standard VHTOOLS suite (DEPENDENCIES=2).
+% For developers, the option DEPENDENCIES=3 will install dependencies based
+% on the locally checked out branch of NDI-matlab.
 %
 % B = NDI_INSTALL(PATHNAME, DEPENDENCIES)
 %
@@ -62,20 +64,28 @@ if nargin<2,
 	dependencies = 1;
 end;
 
-dependency_input = dependencies;
-
+% If a numeric 
 if isnumeric(dependencies),
 	switch (dependencies),
 		case 1,
-			dependencies = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
+			dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
 		case 2,
-			dependencies = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
+			dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
+        case 3,
+            dependencies_filepath = fullfile(ndi.util.toolboxdir, 'ndi-matlab-dependencies.json');
 	end;
-end;
 
-t = urlread(dependencies);
-j = jsondecode(t);
-dependencies = j.dependency;
+    if dependencies == 1 || dependencies == 2
+        t = webread(dependencies_filepath);
+    elseif dependencies == 3
+        t = fileread(dependencies_filepath);
+    else
+        error('Dependencies must be 1, 2 or 3')
+    end
+
+    j = jsondecode(t);
+    dependencies = j.dependency;
+end;
 
 % are we updating at least NDI?
 
@@ -100,7 +110,7 @@ if updating,
 
 	cd(userpath);
 	restoredefaultpath();
-	eval(['ndi_install(directory,dependency_input);']);
+	ndi_install(directory, dependencies);
 
 	% now clean up
 	try,
@@ -109,6 +119,8 @@ if updating,
 	try,
 		cd(currpwd);
 	end;
+
+    addpath(currentpath) % Restore the user's path
 	
 	return;
 end;
