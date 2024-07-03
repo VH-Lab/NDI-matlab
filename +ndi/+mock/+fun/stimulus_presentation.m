@@ -52,10 +52,11 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
 %
 % 
 
-stim_duration = 2;
-interstimulus_interval = 3;
+stim_duration = 10;
+interstimulus_interval = 5;
 stim_duration_min = 0.2;
 epochid = 'mockepoch';
+t_eps = 1e-4; % time epsilon, make sure we stay within the edges of the stimulus
 
 vlt.data.assign(varargin{:});
 
@@ -107,7 +108,7 @@ for i=1:numel(stim_pres_struct.presentation_order),
 			stim_duration_here = stim_duration_here_ceil;
 		end;
 		spiketimes=cat(1,spiketimes,...
-			vlt.data.colvec(linspace(pt_here(1).onset+eps,pt_here(1).onset+stim_duration_here-eps,n_spikes)));
+			vlt.data.colvec(linspace(pt_here(1).onset+t_eps,pt_here(1).onset+stim_duration_here-t_eps,n_spikes)));
 	else,
 		stim_duration_here = stim_duration;
 	end;

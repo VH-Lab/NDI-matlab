@@ -1,0 +1,26 @@
+[
+  [
+    "orientation_direction_tuning",
+    "oridir"
+  ],
+  [
+    "significance",
+    "sig"
+  ],
+  [
+    "spatial_frequency",
+    "SF"
+  ],
+  [
+    "temporal_frequency",
+    "TF"
+  ],
+  [ 
+    "tuning_curve",
+    "TC"
+  ],
+  [
+    "stimulus_response_scalar",
+    "SRC"
+  ]
+]
