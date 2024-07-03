@@ -144,6 +144,27 @@ classdef FolderOrganizationModel < ndi.internal.mixin.JsonSerializable & matlab.
                 obj.addSubFolderLevel(nvPairs{:})
             end
         end
+    
+        function folderPath = listAllFolders(obj)
+        % listAllFolders - List all folders in a root directory based on model
+            folderPath = string.empty;
+            
+            S = obj.getFolderLevelStruct();
+            if isempty(S); return; end
+            
+            folderPath = cellstr(obj.RootDirectory);
+
+            for i = 1:numel(S)
+
+                % Look for subfolders in the folderpath
+                folderPath = recursiveDir(folderPath, ...
+                    'Expression', S(i).Expression, ...
+                    'Ignore', S(i).IgnoreList, ...
+                    'Type', 'folder', ...
+                    'RecursionDepth', 1, ...
+                    'OutputType', 'FilePath');
+            end
+        end
     end
     
 

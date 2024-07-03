@@ -83,6 +83,9 @@ classdef FolderOrganizationTableView < handle
                     S(i).Name = subFolderOptions{1};
                 end
                 S(i).Name = categorical({char(S(i).Name)}, subFolderOptions);
+
+                % Update ignorelist to comma separated char
+                S(i).IgnoreList = strjoin( S(i).IgnoreList, ', ');
             end
 
             if ~obj.ShowAdvancedOptions

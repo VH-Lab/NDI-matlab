@@ -118,7 +118,7 @@ classdef NDIDatasetConfiguration < handle
             filePath = obj.getDaqSystemConfigurationFile();
             obj.DaqSystemsCollection.toJson(filePath)
 
-            % Load dataset information
+            % Save dataset information
             filePath = obj.getDatasetMetadataFile();
             S = struct('DatasetInformation', obj.DatasetInformation);
             save(filePath, "-struct", "S")

@@ -85,33 +85,17 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
         end
 
         function onPageEntered(obj)
-            % Subclasses may override
+            % No action needed
         end
 
         function onPageExited(obj)
-            % Update model data based on UITable data.
-            if obj.IsInitialized
-                % Todo: get data...
-                S = obj.UITable.getSubfolderStructure();
-                if ~isempty(obj.DataModel)
-                    obj.DataModel.updateFolderLevelFromStruct(S)
-                end
-            end
+            % Todo: Close folder viewer if it is open.
         end
 
         function createComponents(obj)
         % createComponents - Create components for page.   
 
-            args = { 'Parent', obj.UIPanel };
-            
-            % % obj.UITable = ndi.dataset.gui.pages.component.FolderOrganizationTable(obj.DataModel, args{:});
-            % % obj.UITable.hideAdvancedOptions()
-            % % if ~isempty(obj.RootDirectory)
-            % %     obj.UITable.RootDirectory = obj.RootDirectory;
-            % % end
-
             defaultTableData = obj.DataModel.getDefaultFolderLevelTable();
-
 
             obj.TableGridLayout = uigridlayout(obj.UIPanel);
             obj.TableGridLayout.ColumnWidth={'1x'};
@@ -135,11 +119,9 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
             
             obj.UITable.setDefaultRowData(defaultTableData)
             
-
             obj.View = ndi.dataset.gui.folderorganization.FolderOrganizationTableView(obj.DataModel, obj.UITable);
             obj.Controller = ndi.dataset.gui.folderorganization.FolderOrganizationTableController(obj.DataModel, obj.UITable);
             obj.View.update()
-
 
             obj.UIToolbar = ndi.dataset.gui.pages.component.FolderOrganizationToolbar(obj.ParentApp.BodyGridLayout);
             obj.UIToolbar.Layout.Row = 2;
@@ -152,15 +134,15 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
             obj.UIToolbar.PreviewButtonPushedFcn = @obj.onFolderPreviewButtonClicked;
             obj.UIToolbar.SelectTemplateDropDownValueChangedFcn = @obj.onPresetTemplateSelected;
 
-            % Todo:
+            % Todo: (allow saving a model as a template?)
+            % Note: This could be a menu on a button next to the template
+            % dropdown
             obj.ContextMenu = uicontextmenu(obj.ParentApp.UIFigure);
 
             obj.SaveMenu = uimenu(obj.ContextMenu);
-            %obj.SaveMenu.MenuSelectedFcn = createCallbackFcn(obj, @DiseaseMenuSelected, true);
             obj.SaveMenu.Text = 'Save to template file';
 
             obj.LoadMenu = uimenu(obj.ContextMenu);
-            %obj.LoadMenu.MenuSelectedFcn = createCallbackFcn(obj, @DiseaseMenuSelected, true);
             obj.LoadMenu.Text = 'Load from template file';
 
             % Do this last.
@@ -223,8 +205,8 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
             addlistener(obj.FolderListViewer, 'ObjectBeingDestroyed', ...
                 @(s, e) obj.onFolderListViewerDeleted);
             
-            obj.FolderOrganizationFilterListener = listener(obj.UITable, ...
-                'FilterChanged', @(s,e) obj.updateFolderList);
+            obj.FolderOrganizationFilterListener = listener(obj.DataModel, ...
+                'FolderModelChanged', @(s,e) obj.updateFolderList);
             
             % Give focus to the app figure
             figure(obj.ParentApp.UIFigure)
@@ -274,15 +256,8 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
             if isempty(obj.FolderListViewer) || ~isvalid(obj.FolderListViewer)
                 return
             end
-            
-            % Make sure data location model is updated with current values
-            S = obj.UITable.getSubfolderStructure();
-            folderPath = cellstr(obj.RootDirectory);
 
-            for i = 1:numel(S)
-                [folderPath, ~] = utility.path.listSubDir(...
-                    folderPath, S(i).Expression, S(i).IgnoreList);
-            end
+            folderPath = obj.DataModel.listAllFolders();
 
             if isempty(folderPath); folderPath = {''}; end
             

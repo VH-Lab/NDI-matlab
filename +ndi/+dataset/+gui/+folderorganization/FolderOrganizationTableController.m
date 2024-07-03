@@ -45,6 +45,11 @@ classdef FolderOrganizationTableController < handle
             switch varName
                 case 'Expression'
                     newValue = numbersign2expression(evt.NewData);
+
+                case 'IgnoreList'
+                    newValue = strtrim( strsplit(newValue, ',') );
+                    newValue = newValue(~cellfun('isempty', newValue));
+                    newValue = string(newValue);
                 
                 case 'Name' % Make sure "placeholder" value does not end up in model
                     if strcmp(newValue, '<Select a Folder>')
