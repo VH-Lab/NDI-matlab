@@ -1012,9 +1012,6 @@ classdef document
 								break;
 							end;
 						end;
-						if isempty(filename),
-							break;
-						end;
 					end;
 				end;
 
