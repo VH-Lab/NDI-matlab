@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Pulse Animation</title>
+    <style>
+        @keyframes pulse {
+            to {
+                transform: scale(0.6);
+                opacity: 0.5;
+            }
+        }
+        #path1, #path2 {
+            transform-origin: center;
+        }
+
+
+        #path1 {
+            animation: pulse 0.5s alternate infinite ease-in-out;
+        }
+
+        #path2 {
+            animation: pulse 0.5s 0.5s alternate infinite ease-in-out;
+        }
+
+        .cls-1 {
+            fill: #002054;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        svg {
+            overflow: visible;
+            width: 50px;
+            height: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 432.55 447.84" width="200" height="200">
+            <g id="Layer_1-2" data-name="Layer 1">
+                <g>
+                    <path id="path1" class="cls-1" d="m72,180.25l42.9,29.24,84.13-56.63V0L35.16,110.2C13.16,125.03,0,149.75,0,176.32c0,17.38,5.67,34.05,15.79,47.61-10.12,13.55-15.79,30.21-15.79,47.61,0,26.55,13.16,51.27,35.16,66.1l163.87,110.2v-152.87l-58.93-39.7-46.56-31.34-17.86-12.05-7.17-4.79-6.94-4.71c-3.51-2.38-6.46-5.42-8.7-8.85-3.26-5.02-5.02-10.92-5.02-17.22,0-10.77,5.1-20.42,14.04-26.4l47.38-31.82,41.94-28.24v37.49l-79.2,52.9Zm79.2,177.72l-89.32-60.06c-8.93-5.98-14.04-15.63-14.04-26.38,0-6.32,1.76-12.22,5.02-17.24l98.34,66.18v37.49Z"/>
+                    <path id="path2" class="cls-1" d="m360.55,267.59l-42.9-29.24-84.13,56.63v152.87l163.87-110.2c22.01-14.83,35.16-39.56,35.16-66.12,0-17.38-5.67-34.05-15.79-47.61,10.12-13.55,15.79-30.21,15.79-47.61,0-26.55-13.16-51.27-35.16-66.1L233.52,0v152.87l58.93,39.7,46.56,31.34,17.86,12.05,7.17,4.79,6.94,4.71c3.51,2.38,6.46,5.42,8.68,8.85,3.28,5.02,5.04,10.92,5.04,17.22,0,10.77-5.1,20.42-14.04,26.4l-47.38,31.82-41.94,28.24v-37.49l79.2-52.9Zm-79.2-177.72l89.32,60.06c8.93,5.98,14.04,15.63,14.04,26.38,0,6.32-1.76,12.22-5.04,17.24l-98.32-66.18v-37.49Z"/>
+                </g>
+            </g>
+        </svg>
+    </div>
+</body>
+</html>

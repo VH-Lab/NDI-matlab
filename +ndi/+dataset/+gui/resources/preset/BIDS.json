@@ -1,0 +1,26 @@
+{
+  "ClassName": "ndi.dataset.gui.models.FolderOrganizationModel",
+  "Description": "NDI Folder Organization Model",
+  "Version": "1.0.0",
+  "DateCreated": "16-May-2024",
+  "DateModified": "16-May-2024",
+  "Properties": {
+    "FolderLevels": [
+      {
+        "Name": "",
+        "Type": "Subject",
+        "Expression": "sub*",
+        "IgnoreList": [],
+        "FolderNamePrefix": ""
+      },
+      {
+        "Name": "",
+        "Type": "Session",
+        "Expression": "ses*",
+        "IgnoreList": [],
+        "FolderNamePrefix": ""
+      }
+    ],
+    "SubFolders": []
+  }
+}
