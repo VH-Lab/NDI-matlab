@@ -727,6 +727,53 @@ classdef document
 
 
 	methods (Static)
+
+		function [d,i] = find_doc_by_id(docArray, id)
+			% FIND_DOC_BY_ID - find a doc in an array by ID
+			%
+			% [D,I] = FIND_DOC_BY_ID(DOCARRAY, ID)
+			%
+			% Given a cell array of ndi.document objects and an
+			% ID, return the document D that matches and its
+			% index I in DOCARRAY. 
+			%
+			% If no document matches, empty is returned for D, I.
+				d = {};
+				foundIt = 0;
+
+				for i=1:numel(docArray),
+					if strcmp(id,docArray{i}.document_properties.base.id),
+						d = docArray{i};
+						foundIt = 1;
+						break;
+					end;
+				end;
+
+				if ~foundIt,
+					i = [];
+				end;
+
+		end % find_doc_by_id
+
+		function [d,i,t] = find_newest(docArray)
+			% FIND_NEWEST - find the newest document out an array
+			%
+			% [D,I,T] = FIND_NEWEST(DOCARRAY)
+			%
+			% Find the newest document among an array of ndi.document objects.
+			%
+			% The newest document is returned in D, along with the index I.
+			% T is the datestamp of each document as a datetime object.
+			%
+				for i=1:numel(docArray),
+					t(i) = datetime(docArray{i}.document_properties.base.datestamp,'timezone','UTCLeapSeconds');
+				end;
+
+				[tsort,tsortindex] = sort(t);
+				i = tsortindex(end);
+				d = docArray{i};
+		end; % find_newest
+
 		function s = readblankdefinition(jsonfilelocationstring, s)
 			% READBLANKDEFINITION - read a blank JSON class definitions from a file location string
 			%

@@ -11,6 +11,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 		database          % An ndi.database associated with this session
 	end
 	methods
+
 		function ndi_session_obj = session(reference)
 			% ndi.session - Create a new ndi.session object
 			%
@@ -712,13 +713,13 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 				inputs{1} = ndi_session_obj.reference();
 		end; % creator_args()
 
-	end; % methods
+	end % methods
 
-    methods (Hidden)
-        function [hCleanup, filename] = open_database(ndi_session_obj)
-	        [hCleanup, filename] = ndi_session_obj.database.open();
-        end
-    end
+	methods (Hidden)
+		function [hCleanup, filename] = open_database(ndi_session_obj)
+			[hCleanup, filename] = ndi_session_obj.database.open();
+		end
+	end
 
 	methods (Access=protected)
 		function syncgraph = update_syncgraph_in_db(ndi_session_obj)
@@ -766,9 +767,9 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 
 	end; % methods (Protected)
 
-	methods Static % regular static methods
+	methods (Static) % regular static methods
 
-		function doc_list = ndi.session.docinput2docs(ndi_session_obj, doc_input)
+		function doc_list = docinput2docs(ndi_session_obj, doc_input)
 			% DOCINPUT2DOCS - convert an array of ndi.documents or doc_ids to documents
 			%
 			% [DOC_LIST,B,ERRMSG] = DOCINPUT2DOCS(NDI_SESSION_OBJ, DOC_INPUT)

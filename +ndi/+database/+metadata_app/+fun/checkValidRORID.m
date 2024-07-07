@@ -8,4 +8,7 @@ function [name, formattedID] = checkValidRORID(rorid)
         formattedID = response.id;
         name = response.name;
     end
+    if ~isempty(formattedID) && ~startsWith(formattedID, 'https://ror.org/')
+        formattedID = strcat('https://ror.org/', formattedID);
+    end
 end

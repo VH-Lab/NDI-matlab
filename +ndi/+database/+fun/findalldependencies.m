@@ -1,5 +1,5 @@
 function [d] = findalldependencies(E, visited, varargin)
-% NDI_FINDALLDEPENDENCIES- find documents that have dependencies on documents that do not exist
+% FINDALLDEPENDENCIES- find documents that have dependencies on provided documents
 %
 % [D] = ndi.database.fun.findalldependencies(E, VISITED, DOC1, DOC2, ...)
 %
@@ -10,6 +10,11 @@ function [d] = findalldependencies(E, visited, varargin)
 %
 % D is always a cell array of NDI_DOCUMENTS (perhaps empty, {}).
 %
+% See also: ndi.database.fun.findallantecedents()
+
+if ~isa(E,'ndi.session') & ~isa(E,'ndi.dataset'),
+    error(['Input E must be an ndi.session or ndi.dataset']);
+end;
 
 d = {};
 

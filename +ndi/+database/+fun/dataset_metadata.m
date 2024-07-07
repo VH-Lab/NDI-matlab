@@ -25,12 +25,12 @@ if nargin == 2
         rand_num = ido_.identifier;
         temp_filename = sprintf("metadata_%s.mat", rand_num);
         file_path = fullfile(metadataRootPath, temp_filename);
-        a = ndi.database.metadata_app.Apps.DatasetUploadApp(S,file_path,options.Debug);
+        a = ndi.database.metadata_app.Apps.MetadataEditorApp(S,file_path,options.Debug);
     else
         file_list = dir(fullfile(metadataRootPath, 'metadata_*.mat'));
         for i = 1:numel(file_list)
             full_file_path = fullfile(metadataRootPath, file_list(i).name);
-            a = ndi.database.metadata_app.Apps.DatasetUploadApp(S,full_file_path,options.Debug);
+            a = ndi.database.metadata_app.Apps.MetadataEditorApp(S,full_file_path,options.Debug);
         end
     end
 

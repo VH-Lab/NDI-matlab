@@ -30,9 +30,9 @@ test_post_documents(d, dataset_id);
 test_scan_for_upload(D, d, dataset_id, 1);
 
 %% test upload_to_NDI_cloud
-[b, msg] = ndi.database.fun.upload_to_NDI_cloud(D, dataset_id);
+[b, msg] = ndi.cloud.up.upload_to_NDI_cloud(D, dataset_id);
 if ~b
-    error(['ndi.database.fun.upload_to_NDI_cloud() failed to upload the dataset' msg]);
+    error(['ndi.cloud.up.upload_to_NDI_cloud() failed to upload the dataset' msg]);
 end
 
 [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
@@ -81,7 +81,7 @@ end
 function test_scan_for_upload(D, d, dataset_id, n)
 % test scan_for_upload function
 % n is the number of documents that have been uploaded
-    [doc_json_struct,doc_file_struct, total_size] = ndi.database.fun.scan_for_upload(D, d, 0, dataset_id);
+    [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.up.scan_for_upload(D, d, 0, dataset_id);
     docs_left = sum(~[doc_json_struct.is_uploaded]);
     files_left = sum(~[doc_file_struct.is_uploaded]);
     if docs_left ~= numel(doc_json_struct) - n
