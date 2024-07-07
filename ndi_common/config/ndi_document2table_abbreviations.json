@@ -22,5 +22,9 @@
   [
     "stimulus_response_scalar",
     "SRC"
+  ],
+  [
+    "orientation",
+    "ori"
   ]
 ]
