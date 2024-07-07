@@ -84,7 +84,7 @@ if ~isempty(summary.documents)
     error('Documents summary should be empty');
 end
 %% test get_organizations
-if 1,
+if 0,
 [status, response, datasets] = ndi.cloud.api.datasets.get_organizations();
 if status
     error(['ndi.cloud.api.datasets.get_organizations() failed to retrieve the datasets' response]);

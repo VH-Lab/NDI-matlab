@@ -92,12 +92,19 @@ if (~new)
     %if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
     %[ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior verson
     [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
-    docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
-    for i = 1:numel(doc_json_struct)
-        if (~isKey(docid_upload, doc_json_struct(i).docid))
+    if numel(ids_left) == 0
+        for i = 1:numel(doc_json_struct)
             doc_json_struct(i).is_uploaded = true;
         end
+    else
+        docid_upload = containers.Map(all_doc_ids(document_indexes_to_upload),  repmat({1}, 1, numel(document_indexes_to_upload)));
+        for i = 1:numel(doc_json_struct)
+            if (~isKey(docid_upload, doc_json_struct(i).docid))
+                doc_json_struct(i).is_uploaded = true;
+            end
+        end
     end
+    
     %create a map contains dataset.files.uid as key and uploaded as value
     file_map = containers.Map;
     for i = 1:numel(dataset.files)
