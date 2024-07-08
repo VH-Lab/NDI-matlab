@@ -17,6 +17,10 @@ end
 metadata_structure = ndi.database.metadata_ds_core.ndidataset2metadataeditorstruct(D);
 
  %   Step 1b: Create the dataset record on NDI cloud
-[status,response,datasetId] = ndi.cloud.up.create_cloud_metadata(metadata_structure);
+[status,response,datasetId] = ndi.cloud.up.create_cloud_metadata_struct(metadata_structure);
+
+ % Step 2: upload
+
+[b,msg] = ndi.cloud.up.upload_to_NDI_cloud(D,datasetId);
 
 

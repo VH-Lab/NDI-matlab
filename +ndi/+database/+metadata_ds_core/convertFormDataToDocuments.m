@@ -62,7 +62,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
         fundingStructArray = appUserData.Funding;
         createFunding = getFactoryFunction('openminds.core.Funding');
         fundingInstances = arrayfun( @(s) createFunding(s), fundingStructArray);
-        
+
         % Update funder based on the reference funder organizations.
         for i = 1:numel(fundingInstances)
             thisFunding = fundingInstances(i);
@@ -213,9 +213,9 @@ function documentList = checkSessionIds(subjectMap, documentList)
     if numel(dataset_version_doc) > 0 
         studiedSpecimen_id = dv_f.studiedSpecimen;
     end
-    
+
     for i = 1:numel(studiedSpecimen_id)
-        [studiedSpecimen_doc, idx] = ndi.document.find_doc_by_id(studiedSpecimen_id{i},documentList);
+        [studiedSpecimen_doc, idx] = ndi.document.find_doc_by_id(documentList,studiedSpecimen_id{i}(7:end));
         session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
         documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
@@ -228,7 +228,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
 end
 
 function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
-    [doc, idx] = ndi.document.find_doc_by_id(doc_id,documentList);
+    [doc, idx] = ndi.document.find_doc_by_id(documentList,doc_id);
     documentList{idx} = doc.set_session_id(char(session_id));
     if numel(doc.document_properties.depends_on) > 0 
         for i = 1: numel(doc.document_properties.depends_on)

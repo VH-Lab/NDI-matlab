@@ -740,6 +740,7 @@ classdef document
 			% If no document matches, empty is returned for D, I.
 				d = {};
 				foundIt = 0;
+                if ~iscell(docArray), keyboard; end
 
 				for i=1:numel(docArray),
 					if strcmp(id,docArray{i}.document_properties.base.id),

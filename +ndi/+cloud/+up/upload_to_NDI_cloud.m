@@ -51,7 +51,7 @@ for i=1:numel(d),
         path = fullfile(temp_dir,temp_filename);
         waitbar(cur_doc_idx/docs_left, h_document, sprintf('Uploading Document: %s. %d of %d...', doc_id, cur_doc_idx, docs_left));
         if verbose,
-        disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
+        disp(['Uploading ' int2str(cur_doc_idx) ' JSON portions of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
         end;
         [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document);
         if status ~= 0
@@ -118,7 +118,7 @@ for i=1:numel(d),
 end
 delete(h_document);
 
-[b, msg] = ndi.database.fun.zip_for_upload(S, doc_file_struct, total_size, dataset_id);
+[b, msg] = ndi.cloud.up.zip_for_upload(S, doc_file_struct, total_size, dataset_id);
 
 end
 

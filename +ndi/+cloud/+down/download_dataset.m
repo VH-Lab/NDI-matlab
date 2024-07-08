@@ -132,7 +132,7 @@ if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
     fclose(fid);
 end
 
-D = ndi.cloud.fun.make_dataset_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
+D = ndi.cloud.down.make_dataset_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
 [output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'files'] );
 
 end
