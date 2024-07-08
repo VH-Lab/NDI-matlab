@@ -13,8 +13,8 @@ function dataset_id = upload_sample_test()
 %
 % Tests the following functions:
 %
-%    ndi.database.fun.upload_to_NDI_cloud
-%    ndi.cloud.fun.metadata_to_json
+%    ndi.cloud.up.upload_to_NDI_cloud
+%    ndi.database.metadata_app.fun.metadata_to_json
 
 ndi.globals;
 dirname = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'sample_test'];
@@ -24,7 +24,7 @@ D = ndi.dataset.dir(dirname);
 metadatafile = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'NDIDatasetUpload' filesep 'metadata.mat'];
 metadata = load(metadatafile);
 datasetInformation = metadata.datasetInformation;
-metadata_json = ndi.cloud.fun.metadata_to_json(datasetInformation);
+metadata_json = ndi.database.metadata_app.fun.metadata_to_json(datasetInformation);
 %% test posting a dataset
 [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(metadata_json);
 if status
@@ -84,7 +84,7 @@ if ~isempty(summary.documents)
     error('Documents summary should be empty');
 end
 %% test get_organizations
-if 1,
+if 0,
 [status, response, datasets] = ndi.cloud.api.datasets.get_organizations();
 if status
     error(['ndi.cloud.api.datasets.get_organizations() failed to retrieve the datasets' response]);

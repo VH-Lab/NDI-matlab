@@ -23,10 +23,23 @@ classdef Strain < handle
             str = obj.Name;
         end
         
-        function properties = toStruct(obj)
-            properties = struct(...
-                'Name', obj.Name ...
-            );
+        function s = toStruct(obj)
+            props = properties(obj);
+            s = struct();
+            for i = 1:length(props)
+                propName = props{i};
+                propValue = obj.(propName);
+                if isempty(propValue)
+                    obj.(propName) = '';
+                else
+                    s.(propName) = propValue;
+                end
+            end
+        end        
+    end
+    methods (Static)
+        function obj = fromStruct(s)
+            obj = ndi.database.metadata_app.class.Strain(s.Name);
         end
     end
 end

@@ -251,6 +251,11 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% NDI_DOCUMENT_OBJ can also be a cell array of ndi.document objects, which will
 			% all be added in turn.
 			%
+			% If the base.session_id of each NDI_DOCUMENT_OBJ matches one of the sessions
+			% in the DATASET, the document will be added to that session. If the base.session_id of
+			% the document matches the id of the NDI_DATASET_OBJ, it will be added to the dataset
+			% instead of one of the invidiual sessions.
+			%
 			% The database can be queried by calling NDI_DATASET_OBJ/SEARCH
 			%
 			% See also: ndi.dataset/database_search(), ndi.dataset/database_rm()
@@ -295,19 +300,41 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			% and they are removed in turn.  If DOC/DOC_UNIQUE_ID is empty, no action is
 			% taken.
 			%
+			% If the base.session_id of each NDI_DOCUMENT_OBJ matches one of the linked sessions
+			% in the DATASET, the document will be removed from the linked session. If the linked
+			% session is opened individually, the document will have been removed.
+			%
 			% This function also takes parameters as name/value pairs that modify its behavior:
 			% Parameter (default)        | Description
 			% --------------------------------------------------------------------------------
 			% ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
-                ErrIfNotFound = 0;
-                did.datastructures.assign(varargin{:});
-				ndi_dataset_obj.session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
-				open_linked_sessions(ndi_dataset_obj);
-				match = find([ndi_dataset_obj.session_info.is_linked]);
-				for i=1:numel(match),
-					ndi_dataset_obj.session_array(match(i)).session.database_rm(doc_unique_id,'ErrIfNotFound',ErrIfNotFound);
+				ErrIfNotFound = 0;
+				did.datastructures.assign(varargin{:});
+
+				doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
+				ndi_session_ids_here = {};
+				for i=1:numel(doc_input),
+					ndi_session_ids_here{i} = doc_input{i}.document_properties.base.session_id;
+				end;
+
+				usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
+
+				s = {};
+				% make sure all documents have a home before doing anything else
+				for i=1:numel(usession_ids),
+					if ~strcmp(usession_ids{i},ndi_dataset_obj.id()),
+						s{i} = ndi_dataset_obj.open_session(usession_ids{i});
+					else,
+						s{i} = ndi_dataset_obj.session;
+					end;
+				end;
+
+				% now remove them in turn
+				for i=1:numel(usession_ids), 
+					indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
+					s{i}.database_rm(doc_input(indexes),'ErrIfNotFound',ErrIfNotFound);
 				end;
 		end; % database_rm
 
@@ -345,17 +372,17 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 				ndi_binarydoc_obj = ndi_dataset_obj.session.database_openbinarydoc(ndi_document_or_id, filename);
 		end; % database_openbinarydoc
 
-        function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
+		function [tf, file_path] = database_existbinarydoc(ndi_dataset_obj, ndi_document_or_id, filename)
 			% DATABASE_EXISTBINARYDOC - checks if an ndi.database.binarydoc exists for an ndi.document
 			%
 			% [TF, FILE_PATH] = DATABASE_EXISTBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
 			%
 			%  Return a boolean flag (TF) indicating if a binary document 
-            %  exists for an ndi.document and, if it exists, the full file 
-            %  path (FILE_PATH) to the file where the binary data is stored.
+			%  exists for an ndi.document and, if it exists, the full file 
+			%  path (FILE_PATH) to the file where the binary data is stored.
             
-            [tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
-        end
+				[tf, file_path] = ndi_dataset_obj.session.database_existbinarydoc(ndi_document_or_id, filename);
+		end
 
 		function [ndi_binarydoc_obj] = database_closebinarydoc(ndi_dataset_obj, ndi_binarydoc_obj)
 			% DATABASE_CLOSEBINARYDOC - close an ndi.database.binarydoc
