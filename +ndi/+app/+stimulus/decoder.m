@@ -128,11 +128,14 @@ classdef decoder < ndi.app
 			% Given a 'stimulus_presentation' type ndi.document, loads the presentation_time data from
 			% the binary portion.
 			%
-	
-				fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
-				[header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
-				fobj.fclose();
-
+				if isfield(stimulus_presentation_doc.document_properties.stimulus_presentation,'presentation_time'), % old way
+					warning('stimulus presentation document uses deprecated form of presentation_time storage.');
+					presentation_time = stimulus_presentation_doc.document_properties.stimulus_presentation.presentation_time;
+				else,
+					fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
+					[header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
+					fobj.fclose();
+				end;
 		end; % load_presentation_time
 	end; % methods
 
