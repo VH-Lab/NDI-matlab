@@ -1,7 +1,7 @@
 function [status, response,dataset_id] = create_cloud_metadata_struct(S)
 % CREATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.CREATE_CLOUD_METADATA_STRUCT(S)
+% [STATUS, DATASET] = ndi.cloud.upload.CREATE_CLOUD_METADATA_STRUCT(S)
 %
 % Applies the MetaDataEditorApp data structure to 
 %   a) create a new dataset

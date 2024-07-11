@@ -1,7 +1,7 @@
 function [status, dataset] = update_cloud_metadata(datasetid, S)
 % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA(DATASETID, S)
+% [STATUS, DATASET] = ndi.cloud.upload.UPDATE_CLOUD_METADATA(DATASETID, S)
 %
 % Inputs:
 %   DATASETID - the dataset ID to update

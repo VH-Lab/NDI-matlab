@@ -6,6 +6,9 @@ function datasetId = new_dataset(D)
 % Upload an ndi.dataset object to NDI Cloud. The DATASETID on
 % NDI Cloud is returned.
 %
+% Example:
+%   ndi.cloud.upload.new_dataset(D)
+%
 
 arguments
 	D (1,1) {mustBeA(D,'ndi.dataset')}
@@ -17,10 +20,10 @@ end
 metadata_structure = ndi.database.metadata_ds_core.ndidataset2metadataeditorstruct(D);
 
  %   Step 1b: Create the dataset record on NDI cloud
-[status,response,datasetId] = ndi.cloud.up.create_cloud_metadata_struct(metadata_structure);
+[status,response,datasetId] = ndi.cloud.upload.create_cloud_metadata_struct(metadata_structure);
 
  % Step 2: upload
 
-[b,msg] = ndi.cloud.up.upload_to_NDI_cloud(D,datasetId);
+[b,msg] = ndi.cloud.upload.upload_to_NDI_cloud(D,datasetId);
 
 

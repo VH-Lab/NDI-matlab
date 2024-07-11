@@ -1070,6 +1070,7 @@ classdef document
 				% filename could be url or filename
 
 				if vlt.file.isurl(filename),
+                    keyboard
 					t = urlread(filename);
 				else,
 					t = vlt.file.textfile2char(filename);

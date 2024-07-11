@@ -1,6 +1,6 @@
 function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
 % ZIP_FOR_UPLOAD - Create a zip file for uploading to the NDI cloud
-%   [B, MSG] = ndi.cloud.up.ZIP_FOR_UPLOAD(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID)
+%   [B, MSG] = ndi.cloud.upload.ZIP_FOR_UPLOAD(D, DOC_FILE_STRUCT, TOTAL_SIZE, DATASET_ID)
 %
 % Inputs:
 %  D - the ndi.database object
