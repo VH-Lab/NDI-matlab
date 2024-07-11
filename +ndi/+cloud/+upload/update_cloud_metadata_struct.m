@@ -1,7 +1,7 @@
 function [status, dataset] = update_cloud_metadata_struct(dataset_id, S, size)
 % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
 %
-% [STATUS, DATASET] = ndi.cloud.UPDATE_CLOUD_METADATA_STRUCT(DATASETID, S, SIZE)
+% [STATUS, DATASET] = ndi.cloud.upload.UPDATE_CLOUD_METADATA_STRUCT(DATASETID, S, SIZE)
 %
 % Inputs:
 %   DATASETID - the dataset ID to update
@@ -19,7 +19,7 @@ all_fields = {'name','branchName','contributors','doi','funding','abstract','lic
 
 clear dataset_update;
 
-is_valid = ndi.cloud.fun.check_metadata_cloud_inputs(S);
+is_valid = ndi.database.metadata_ds_core.check_metadata_cloud_inputs(S);
 if ~is_valid
     error('NDI:CLOUD:UPDATE_CLOUD_METADATA_STRUCT', ...
           'Metadata struct is missing required fields');
