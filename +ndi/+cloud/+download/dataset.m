@@ -17,14 +17,14 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
 arguments
 	dataset_id
 	mode (1,:) char {mustBeMember(mode,{'local','hybrid'})}
-	output_path
+	output_path = ''
 	options.verbose logical = true
 end
 
 msg = '';
 b = 1;
 
-if nargin<3,
+if isempty(output_path),
 	output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
 
 	if ~ischar(output_path),
