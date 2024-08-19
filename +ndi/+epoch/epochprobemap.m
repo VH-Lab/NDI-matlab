@@ -17,7 +17,7 @@ classdef epochprobemap
 			%
 			% S = SERIALIZE(NDI_EPOCHPROBEMAP_OBJ)
 			%
-			% Create a charater array representation of an ndi.epoch.epochprobemap object
+			% Create a character array representation of an ndi.epoch.epochprobemap object
 			%
 				s = ''; % abstract class returns nothing
 		end; % serialize()
