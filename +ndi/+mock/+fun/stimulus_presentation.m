@@ -2,7 +2,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
 % ndi.mock.fun.stimulus_presentation - make a mock stimulus presentation document base
 %
 % [STIM_PRES_DOC,SPIKETIMES] = ndi.mock.fun.stimulus_presentation(S, stimulus_element_id, parameter_struct_array, ...
-%    independent_variables, X, R, control, noise, reps, ...)
+%    independent_variables, X, R, noise, reps, ...)
 %
 % Create a mock stimulus presentation document and spike times that approximate the
 % responses R as closely as possible (within the stimulus duration bounds).

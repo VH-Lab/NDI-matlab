@@ -2,7 +2,7 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
 % ndi.mock.fun.stimulus_response- make a set of mock documents to simulate a stimulus and spiking response
 %
 % [DOCS] = ndi.mock.fun.stimulus_presentation(ndi_session_obj, parameter_struct, ...
-%    independent_variables, X, R, control, noise, reps, ...)
+%    independent_variables, X, R, noise, reps, ...)
 %
 % Create a mock subject, mock stimulator, mock neuron with response, and
 % mock stimulus presentation document that approximates the responses R
