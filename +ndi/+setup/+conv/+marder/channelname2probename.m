@@ -1,4 +1,4 @@
-function [probename, proberef, subjectname] = channelname2probename(chName, subjects)
+function [probename, proberef, subjectname] = channelname2probename(chName, subjects, options)
 % CHANNELNAME2PROBE - convert a Marder channel name to a probe name
 %
 % [PROBENAME, PROBEREF, SUBJECTNAME] = CHANNELNAME2PROBENAME(CHNAME, SUBJECTS)
@@ -11,6 +11,13 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
 % assumed there is only 1 subject and 1 is the end of the string.
 % If a 2 is found and there is no second subject, a warning is produced.
 %
+
+arguments
+	chName
+	subjects
+	options.forceIgnore2 = false;
+end
+
 
 probename = '';
 proberef = 1;
@@ -32,7 +39,7 @@ if hasone&hastwo,
 	error(['Do not know how to proceed with both 1 and 2 in string ' chName '.']);
 end;
 
-if ~hastwo, 
+if ~hastwo | options.forceIgnore2, 
 	channel_str = '1';
 	subjectname = subjects{1};
 elseif hastwo,
