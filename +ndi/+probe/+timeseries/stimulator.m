@@ -102,7 +102,7 @@ classdef stimulator < ndi.probe.timeseries
 									case 2, % stimid
 										for dd=1:size(edata{i},1),
 											if strcmp(channeltype{i},'text'),
-												data.stimid(dd,1) = eval([edata{i}(dd,:)]);
+												data.stimid(dd,1) = eval([edata{i}{dd}]);
 											else,
 												data.stimid(dd,:) = edata{i}(dd,:);
 											end;
