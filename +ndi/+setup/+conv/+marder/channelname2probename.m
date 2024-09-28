@@ -47,7 +47,7 @@ elseif hastwo,
 	subjectname = subjects{2};
 end;
 
-standard_strings = {'dgn','lgn','lvn','pdn','pyn','PhysiTemp'};
+standard_strings = {'dgn','lgn','lvn','pdn','pyn','mvn','PhysiTemp'};
 
 for i=1:numel(standard_strings),
 	if ~isempty(findstr(lower(chName),lower(standard_strings{i}))),

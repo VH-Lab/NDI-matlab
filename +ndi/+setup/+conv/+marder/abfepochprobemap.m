@@ -1,10 +1,25 @@
 function abfepochprobemap(S, options)
-% Create epochprobemap files for a Marder ABF directory
+% Create epochprobemap files for a Marder ndi session
 % 
-% ABFEPOCHPROBEMAP(DIRNAME)
+% ABFEPOCHPROBEMAP(S)
 %
-% Reads all ABF files in DIRNAME and creates corresponding epochprobemap files.
+% Reads all ABF files in the NDI session S and creates corresponding
+% epochprobemap files.
+%
+% To create a new Marder lab session from a directory, use
+%  S = ndi.setup.lab
 % 
+% ABFEPOCHPROBEMAP(S,'forceIgnore2',true) does not interpret a 2 in the
+% channel name as a second prep.
+%
+% It is necessary to first create a subject1.txt file with the subject
+% identifier of the first crab. If there are two crabs being recorded, then
+% it is necessary to create a subject2.txt file. And so on.
+% 
+% The usual naming convention: 745_003_01@marderlab.brandeis.edu
+%  where 745 is the lab notebook, 003 is the experiment number in the
+%  lab notebook, and 01 indicates that there is only one prep in this
+%  experiment.
 %
 
 arguments

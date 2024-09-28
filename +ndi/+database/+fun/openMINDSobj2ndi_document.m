@@ -55,9 +55,9 @@ switch lower(dependency_type),
 	case 'element',
 		dependency_name = 'element_id';
 		docName = ['openminds_element'];
-    case 'stimulus',
-        dependency_name = 'stimulus_element_id';
-        docName = ['openminds_stimulus'];
+	case 'stimulus',
+		dependency_name = 'stimulus_element_id';
+		docName = ['openminds_stimulus'];
 	otherwise,
 		error(['Unknown DEPENDENCY_TYPE ' dependency_type '.']);
 end;
@@ -66,13 +66,13 @@ d = {};
 
 for i=1:numel(s),
 	openminds_struct = rmfield(s(i),'complete');
-    ndi_id_here = openminds_struct.ndi_id;
-    openminds_struct = rmfield(openminds_struct,'ndi_id');
+	ndi_id_here = openminds_struct.ndi_id;
+	openminds_struct = rmfield(openminds_struct,'ndi_id');
 	d{i} = ndi.document(docName,'base.id',ndi_id_here,...
 		'base.session_id',session_id,...
 		'openminds',openminds_struct,varargin{:});
 	fn = fieldnames(openminds_struct.fields);
-    added_dependency = 0;
+	added_dependency = 0;
 	for j=1:numel(fn),
 		g = getfield(openminds_struct.fields,fn{j});
 		if iscell(g),
@@ -83,15 +83,15 @@ for i=1:numel(s),
 						d{i} = add_dependency_value_n(d{i},...
 							'openminds',id_here,...
 							'ErrorIfNotFound',0);
-                        added_dependency = 1;
+						added_dependency = 1;
 					end;
 				end;
 			end;
 		end;
 	end;
-    if ~added_dependency,
-        d{i} = set_dependency_value(d{i},'openminds','','ErrorIfNotFound',0);
-    end;
+	if ~added_dependency,
+		d{i} = set_dependency_value(d{i},'openminds','','ErrorIfNotFound',0);
+	end;
 	if ~isempty(dependency_name),
 		d{i} = d{i}.set_dependency_value(dependency_name,dependency_value);
 	end;

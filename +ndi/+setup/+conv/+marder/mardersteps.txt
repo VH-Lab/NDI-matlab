@@ -1,0 +1,39 @@
+
+
+
+1)  Setup ndi session 
+
+For example:
+
+S = ndi.setup.lab('marderlab','745_043',[pwd filesep '745_043']);
+
+2) Set up subject text files, need to look at the log to see how many
+motif is: 745_003_01@marderlab.brandeis.edu for first, 02 for second, etc
+
+3) Make the probe table
+
+ndi.setup.conv.marder.abf2probetable(S,'forceIgnore2',true)
+
+4) Edit the probe table
+
+(edit the file called 'probeTable.csv')
+
+(check log to see what cells were stuck)
+
+5) Generate the epochprobemaps
+
+ndi.setup.conv.marder.abfprobetable2probemap(S)
+
+6) Check that the probes are in
+
+S.cache.clear(); 
+p = S.getprobes()
+
+7) Generate the metadata
+
+ndi.setup.conv.marder.preptemptable(S)
+
+
+
+
+
