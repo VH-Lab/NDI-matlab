@@ -29,5 +29,5 @@ for P = 1:numel(p),
 	end;
 end;
 
-save([dirname filsep 'temptable.mat'],'temptable','-mat');
+save([dirname filesep 'temptable.mat'],'temptable','-mat');
 

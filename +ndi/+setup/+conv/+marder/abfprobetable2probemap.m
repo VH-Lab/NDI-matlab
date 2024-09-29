@@ -14,7 +14,7 @@ end
 
 dirname = S.getpath();
 
-probetable = readtable([dirname filesep 'probetable.csv']);
+probetable = readtable([dirname filesep 'probetable.csv'],'Delimiter',',');
 
 daqname = 'marder_abf';
 

@@ -54,7 +54,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
 				if numel(find(name_==sprintf('\n')))>0,
 					ndi_struct = ndi.epoch.epochprobemap_daqsystem.decode(name_);
 				elseif isfile(name_),
-					ndi_struct= table2struct(readtable(name_));
+					ndi_struct= table2struct(readtable(name_,'Delimiter','\t'));
 				end;
 				if isempty(ndi_struct),
 					ndi_struct = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
