@@ -33,7 +33,7 @@ function installFexPackage(toolboxIdentifier, installLocation)
             unzip(tempFilepath, installLocation); delete(C)
 
         elseif endsWith(addonUrl, '/mltbx')
-            tempFile = websave(fullfile(tempdir,'temp.zip'), addonUrl );
+            tempFile = websave(fullfile(tempdir,'temp.mltbx'), addonUrl );
             matlab.addons.install(tempFile);
             delete(tempFile)
         end
