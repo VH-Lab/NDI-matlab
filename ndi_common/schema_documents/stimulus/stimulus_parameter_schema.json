@@ -1,0 +1,34 @@
+{
+	"classname": "stimulus_parameter",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+		{ "name": "stimulus_element_id", "mustbenotempty": 1}
+	],
+	"stimulus_parameter": [
+		{
+			"name": "ontology_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the parameter in an ontology (e.g., NDIC:12)"
+		},
+		{
+			"name": "name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Name of the stimulus parameter"
+		},
+		{
+			"name": "value",
+			"type": "double",
+			"default_value": [],
+			"parameters": [-1000000,1000000,1,0],
+			"queryable": 1,
+			"documentation": "Value of the stimulus parameter"
+		}
+	]
+}
+
