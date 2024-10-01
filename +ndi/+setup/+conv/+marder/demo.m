@@ -54,7 +54,7 @@ for i=1:numel(m_doc),
          index = index(end); % find the last one
        end;
        [D,ts] = P{p}.readtimeseries(epoch_ids_sorted{index},-Inf,Inf);
-       D = 2* D./max(abs(D(:)));
+       D = 0.5 * D./prctile(abs(D(:)),95);
        plot(ts(1:size(D,1)),D+all_temps(t),'k','linewidth',1);
        hold on;
     end;
