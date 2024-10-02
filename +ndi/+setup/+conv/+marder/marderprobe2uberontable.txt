@@ -1,0 +1,8 @@
+probe	name
+dgn_1	dorsal gastric nerve
+gpn_1	gastropyloric nerve
+lgn_1	lateral gastric nerve
+lvn_1	lateral ventricular nerve
+mvn_1	median ventricular nerve
+pdn_1	pyloric dilator nerve
+pyn_1	pyloric nerve

@@ -1,0 +1,26 @@
+{
+	"classname": "probe_location",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "probe_id", "mustbenotempty": 1}
+	],
+	"probe_location": [
+		{
+			"name": "ontology_name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the parameter in an ontology (e.g., uberon:0002436)"
+		},
+		{
+			"name": "name",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "Name of the location (e.g., primary visual cortex)"
+		}
+	]
+}
+

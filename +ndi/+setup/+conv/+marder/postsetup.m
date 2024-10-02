@@ -30,4 +30,10 @@ S.database_rm(d);
 d = ndi.setup.conv.marder.temptable2stimulusparameters(S);
 S.database_add(d);
 
+disp(['Setting probe locations...']);
+d = S.database_search(ndi.query('','isa','probe_location'));
+S.database_rm(d);
+d = ndi.setup.conv.marder.marderprobe2uberon(S)
+S.database_add(d);
+
 
