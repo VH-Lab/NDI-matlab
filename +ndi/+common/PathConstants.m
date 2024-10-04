@@ -1,24 +1,18 @@
 classdef PathConstants
 % PathConstants - A set of path constants referenced by the NDI toolbox
+%
+%   RootFolder              | The path of the NDI distribution on this machine.
+%   CommonFolder            | The path to the package ndi_common
+%   DocumentFolder          | The path of the NDI document definitions
+%   DocumentSchemaFolder    | The path of the NDI document validation schema
+%   ExampleDataFolder       | The path to the NDI example sessions
+%   Preferences             | A path to a directory of preferences files
+%   FileCacheFolder         | A path where files may be cached (not deleted every time)
+%   TempFolder              | The path to a directory that may be used for temporary files
+%   TestFolder              | A path to a safe place to run test code
+%   CalcDoc                 | A cell array of paths to NDI calculator document definitions
+%   CalcDocSchema           | A cell array of paths to NDI calculator document schemas
 
-% ndi.common.PathConstants.RootFolder            | The path of the NDI distribution on this machine.
-%                                  |   (Initialized by ndi_Init.m)
-% ndi_globals.path.commonpath      | The path to the package ndi_common
-%                                  |   (Initialized by ndi_Init.m)
-% ndi.common.PathConstants.DocumentFolder    | The path of the NDI document definitions
-%                                  |   (Initialized by ndi_Init.m)
-% ndi_globals.path. ...            | The path of the NDI document validation schema
-%    documentschemapath            |   (Initialized by ndi_Init.m)
-% ndi_globals.path.exampleexperpath| The path to the NDI example sessions
-% ndi_globals.path.preferences     | A path to a directory of preferences files
-% ndi_globals.path.filecachepath   | A path where files may be cached (not deleted every time)
-% ndi_globals.path.temppath        | The path to a directory that may be used for
-%                                  |   temporary files (Initialized by ndi_Init.m)
-% ndi_globals.path.testpath        | A path to a safe place to run test code
-% ndi_globals.path.calcdoc         | A cell array of paths to NDI calculator document definitions
-% ndi_globals.path.calcdocschema   | A cell array of paths to NDI calculator document schemas
-
-    
     properties (Constant)
         % RootFolder - The path of the NDI distribution on this machine.
         RootFolder = ndi.toolboxdir()
