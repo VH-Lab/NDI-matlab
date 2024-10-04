@@ -18,7 +18,7 @@ disp(['Writing NDI document documentation...']);
 ndi.docs.all_documents2markdown();
 
  % make sure we don't traverse the the 'site' directory
-ndi_path = ndi_globals.path.path;
+ndi_path = ndi.common.PathConstants.RootFolder;
 
 if ~isfolder([ndi_path filesep 'site']),
 	mkdir([ndi_path filesep 'site']);

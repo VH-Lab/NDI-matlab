@@ -32,8 +32,8 @@ classdef validate
             
             % Initialization
             ndi.globals;
-            if ~any(strcmp(javaclasspath,[ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            if ~any(strcmp(javaclasspath,[ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
+                eval("javaaddpath([ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             end
             import com.ndi.*;
             import org.json.*;
@@ -210,8 +210,8 @@ classdef validate
             %  the JSON file ndi_validate_config.json
             %
             ndi.globals;
-            if ~any(strcmp(javaclasspath,[ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi_globals.path.path filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
+            if ~any(strcmp(javaclasspath,[ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
+                eval("javaaddpath([ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
             end
             import com.ndi.*;
             import org.json.*;

@@ -1,7 +1,7 @@
 classdef PathConstants
 % PathConstants - A set of path constants referenced by the NDI toolbox
 
-% ndi_globals.path.path            | The path of the NDI distribution on this machine.
+% ndi.common.PathConstants.RootFolder            | The path of the NDI distribution on this machine.
 %                                  |   (Initialized by ndi_Init.m)
 % ndi_globals.path.commonpath      | The path to the package ndi_common
 %                                  |   (Initialized by ndi_Init.m)

@@ -31,7 +31,7 @@ disp(['Writing documents pass 1']);
 out1 = vlt.docs.matlab2markdown(ndicalc_path,ndi_docs,ymlpath,[],'',url_prefix);
 os = vlt.docs.markdownoutput2objectstruct(out1); % get object structures
 
-ndi_os = load([ndi_globals.path.path filesep 'docs' filesep 'documentation_structure.mat']);
+ndi_os = load([ndi.common.PathConstants.RootFolder filesep 'docs' filesep 'documentation_structure.mat']);
 os = cat(2,os,ndi_os.os);
 
 disp(['Writing documents pass 2, with all links']);

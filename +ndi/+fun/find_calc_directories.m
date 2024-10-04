@@ -11,7 +11,7 @@ function d = find_calc_directories()
 
 ndi.globals();
 
-tool_path = fileparts(ndi_globals.path.path);
+tool_path = fileparts(ndi.common.PathConstants.RootFolder);
 
 d = dir([tool_path filesep 'NDIcalc*-matlab']);
 

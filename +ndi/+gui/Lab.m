@@ -25,7 +25,7 @@ classdef Lab < handle
         function obj = Lab()
             
             ndi.globals;
-            guipath = [ndi_globals.path.path filesep '+ndi' filesep '+gui'];
+            guipath = [ndi.common.PathConstants.RootFolder filesep '+ndi' filesep '+gui'];
             
             %Create lab
             obj.window = axes('position', [1/18 1/12 2/3 2/3], ...
