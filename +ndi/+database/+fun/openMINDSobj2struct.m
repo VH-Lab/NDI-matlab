@@ -13,7 +13,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 %
 %
 
-ndi.globals();
+ndi_cache = ndi.common.getCache();
 
 openminds_base_class = 'openminds.abstract.Schema';
 cachetype = 'openmindsconversionstack';
@@ -30,7 +30,7 @@ if nargin<2,
 	s = did.datastructures.emptystruct('openminds_type','matlab_type','openminds_id','ndi_id','fields','complete');
 	initial_call = 1;
 else,
-	sdata = ndi_globals.cache.lookup(cachekey, cachetype);
+	sdata = ndi_cache.lookup(cachekey, cachetype);
 	s = sdata.data;
 end;
 
@@ -71,8 +71,8 @@ for i=1:numel(openmindsObj),
 
 	s(index) = s_here;
 	% put it in the table now so the children will know it's under construction
-	ndi_globals.cache.remove(cachekey,cachetype);
-	ndi_globals.cache.add(cachekey,cachetype,s);
+	ndi_cache.remove(cachekey,cachetype);
+	ndi_cache.add(cachekey,cachetype,s);
 
 	fn = fieldnames(openmindsObj{i});
 
@@ -97,7 +97,7 @@ for i=1:numel(openmindsObj),
 				child_index = find(strcmp(f_here.id,{s.openminds_id}));
 				if isempty(child_index),
 					% stop this nonsense
-					ndi_globals.cache.remove(cachekey,cachetype);
+					ndi_cache.remove(cachekey,cachetype);
 					error(['A child was not built successfully.']);
 				end;
 				fields_here{k} = ['ndi://' s(child_index).ndi_id];
@@ -113,13 +113,13 @@ for i=1:numel(openmindsObj),
 
 	s(index) = s_here;
 	
-	ndi_globals.cache.remove(cachekey,cachetype);
-	ndi_globals.cache.add(cachekey,cachetype,s);
+	ndi_cache.remove(cachekey,cachetype);
+	ndi_cache.add(cachekey,cachetype,s);
 
 end;
 
 if initial_call, 
 	% if we were the first function, remove the cache
-	ndi_globals.cache.remove(cachekey,cachetype);
+	ndi_cache.remove(cachekey,cachetype);
 end;
 
