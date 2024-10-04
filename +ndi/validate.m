@@ -217,7 +217,7 @@ classdef validate
             import org.json.*;
             import org.everit.*;
             json_path = [ndi.common.PathConstants.DocumentFolder filesep 'ndi_validate_config.json'];
-            schema_path = [ndi_globals.path.documentschemapath filesep 'ndi_validate_config_schema.json'];
+            schema_path = [ndi.common.PathConstants.DocumentSchemaFolder filesep 'ndi_validate_config_schema.json'];
             json_object = JSONObject(fileread(json_path));
             schema_json_object = JSONObject(fileread(schema_path));
             report = Validator(json_object, schema_json_object).getReport();
@@ -261,7 +261,7 @@ classdef validate
             schema_json = "";
             if isa(ndi_document_obj, 'ndi.document')
                 schema_path = ndi_document_obj.document_properties.document_class.validation;
-                schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi_globals.path.documentschemapath);
+                schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.common.PathConstants.DocumentSchemaFolder);
                 try
                     schema_json = fileread(schema_path);
                 catch
@@ -271,7 +271,7 @@ classdef validate
             if isa(ndi_document_obj, 'char') || isa(ndi_document_obj, 'string')
                 schema_path = string(ndi_document_obj).replace('.json', '_schema.json');
                 if  numel( strfind(ndi_document_obj, '$NDIDOCUMENTPATH') ) ~= 0
-                    schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi_globals.path.documentschemapath);
+                    schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi.common.PathConstants.DocumentSchemaFolder);
                 elseif numel( strfind(ndi_document_obj, '$NDISCHEMAPATH') ) ~= 0
                     schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi_globals.path.documentsschemapath);
                 end
