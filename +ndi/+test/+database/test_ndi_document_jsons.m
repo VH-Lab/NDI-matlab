@@ -22,7 +22,7 @@ failures = {};
 ndi.globals;
 error_msg = {};
 
-json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,{'.*\.json\>'});
+json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,{'.*\.json\>'});
 
 for i=1:numel(ndi_globals.path.calcdoc),
 	more_json_docs = vlt.file.findfilegroups(ndi_globals.path.calcdoc{i},{'.*\.json\>'});

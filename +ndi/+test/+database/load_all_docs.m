@@ -9,7 +9,7 @@ function json_filenames = load_all_docs()
 
 ndi.globals;
 
-json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,...
+json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,...
 	{'.*\.json\>'});
 
 for i=1:numel(ndi_globals.path.calcdoc),

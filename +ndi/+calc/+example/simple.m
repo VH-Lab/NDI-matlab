@@ -11,7 +11,7 @@ classdef simple < ndi.calculator
 			%
 				ndi.globals;
 				simple_obj = simple_obj@ndi.calculator(session,'simple_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculators','simple_calc.json'));
+					fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','simple_calc.json'));
 		end; % simple()
 
 		function doc = calculate(ndi_calculator_obj, parameters)

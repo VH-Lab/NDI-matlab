@@ -924,11 +924,11 @@ classdef document
 				searchString = '$NDIDOCUMENTPATH';
 				s = strfind(jsonfilelocationstring, searchString);
 				if ~isempty(s), % insert the location
-					filename = [ndi_globals.path.documentpath filesep ...
+					filename = [ndi.common.PathConstants.DocumentFolder filesep ...
 						vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi.filesep, filesep)];
 				else,
 					% first, guess that it is a complete path from $NDIDOCUMENTPATH
-					filename = [ndi_globals.path.documentpath filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi.filesep,filesep)];
+					filename = [ndi.common.PathConstants.DocumentFolder filesep vlt.file.filesepconversion(jsonfilelocationstring,ndi.filesep,filesep)];
 					if ~vlt.file.isfile(filename),
 						% try adding extension
 						filename = [filename '.json'];
@@ -940,7 +940,7 @@ classdef document
 							filename = [filename '.json'];
 						end;
 						if ~vlt.file.isfile(filename),
-							filename2 = [ndi_globals.path.documentpath filesep filename];
+							filename2 = [ndi.common.PathConstants.DocumentFolder filesep filename];
 							if ~vlt.file.isfile(filename2),
 								error(['Cannot find file ' filename '.']);
 							else,
@@ -989,7 +989,7 @@ classdef document
 					searchString = '$NDIDOCUMENTPATH';
 					s = strfind(jsonfilelocationstring, searchString);
 					if ~isempty(s), % insert the location
-						filename = [ndi_globals.path.documentpath filesep ...
+						filename = [ndi.common.PathConstants.DocumentFolder filesep ...
 							vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString):end), ndi.filesep, filesep)];
 					end;
 				end;
@@ -1020,7 +1020,7 @@ classdef document
 					if ~endsWith(lower(putativefilename),'.json'),
 						putativefilename = [putativefilename '.json'];
 					end;
-					if vlt.file.isfile([ndi_globals.path.documentpath filesep putativefilename]),
+					if vlt.file.isfile([ndi.common.PathConstants.DocumentFolder filesep putativefilename]),
 						filename = putativefilename;
 					end;
 				end;
@@ -1032,7 +1032,7 @@ classdef document
 						putativefilename = [putativefilename '.json'];
 					end;
 					% first try $NDIDOCUMENTPATH
-					filelist = vlt.file.getAllFiles(ndi_globals.path.documentpath);
+					filelist = vlt.file.getAllFiles(ndi.common.PathConstants.DocumentFolder);
 					for i=1:numel(filelist),
 						[parent,name,ext] = fileparts(filelist{i});
 						if strcmpi([name ext],[putativefilename]),

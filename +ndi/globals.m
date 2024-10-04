@@ -12,7 +12,7 @@
 %                                  |   (Initialized by ndi_Init.m)
 % ndi.common.PathConstants.CommonFolder      | The path to the package ndi_common
 %                                  |   (Initialized by ndi_Init.m)
-% ndi_globals.path.documentpath    | The path of the NDI document definitions
+% ndi.common.PathConstants.DocumentFolder    | The path of the NDI document definitions
 %                                  |   (Initialized by ndi_Init.m)
 % ndi_globals.path. ...            | The path of the NDI document validation schema
 %    documentschemapath            |   (Initialized by ndi_Init.m)

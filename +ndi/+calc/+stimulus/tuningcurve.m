@@ -10,7 +10,7 @@ classdef tuningcurve < ndi.calculator
 			%
 				ndi.globals;
 				tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
-					fullfile(ndi_globals.path.documentpath,'apps','calculators','tuningcurve_calc.json'));
+					fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','tuningcurve_calc.json'));
 		end; % tuningcurve()
 
 		function doc = calculate(ndi_calculator_obj, parameters)

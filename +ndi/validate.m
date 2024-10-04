@@ -216,7 +216,7 @@ classdef validate
             import com.ndi.*;
             import org.json.*;
             import org.everit.*;
-            json_path = [ndi_globals.path.documentpath filesep 'ndi_validate_config.json'];
+            json_path = [ndi.common.PathConstants.DocumentFolder filesep 'ndi_validate_config.json'];
             schema_path = [ndi_globals.path.documentschemapath filesep 'ndi_validate_config_schema.json'];
             json_object = JSONObject(fileread(json_path));
             schema_json_object = JSONObject(fileread(schema_path));
