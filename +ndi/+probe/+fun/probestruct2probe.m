@@ -14,13 +14,9 @@ function ndi_probe_obj = probestruct2probe(probestruct, exp)
         exp % (1,1) ndi.session ?
     end
 
-    persistent probeTypeMap
-    if isempty(probeTypeMap)
-        probeTypeMap = ndi.probe.fun.initProbeTypeMap; 
-    end
+    probeTypeMap = ndi.probe.fun.getProbeTypeMap();
     
     ndi_probe_obj = cell(1, numel(probestruct));
-    
     for i = 1:numel(probestruct)
         if ~isKey(probeTypeMap, probestruct(i).type)
             throwProbeTypeNotFoundError(probestruct(i).type)
