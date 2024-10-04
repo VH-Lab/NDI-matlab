@@ -999,8 +999,8 @@ classdef document
 					s = strfind(jsonfilelocationstring, searchString2);
 					if ~isempty(s), % we need to figure out WHICH $NDICALCDOCUMENT is intended
 						match = 0;
-						for i=1:numel(ndi_globals.path.calcdoc),
-							filename = [ndi_globals.path.calcdoc{i} filesep ...
+						for i=1:numel(ndi.common.PathConstants.CalcDoc),
+							filename = [ndi.common.PathConstants.CalcDoc{i} filesep ...
 								vlt.file.filesepconversion(jsonfilelocationstring(s+numel(searchString2):end), ndi.filesep, filesep)];
 							if vlt.file.isfile(filename),
 								% we have a match
@@ -1050,8 +1050,8 @@ classdef document
 						putativefilename = [putativefilename '.json'];
 					end;
 					% next try $NDICALCDOCUMENTPATH
-					for a=1:numel(ndi_globals.path.calcdoc),
-						filelist = vlt.file.getAllFiles(ndi_globals.path.calcdoc{a});
+					for a=1:numel(ndi.common.PathConstants.CalcDoc),
+						filelist = vlt.file.getAllFiles(ndi.common.PathConstants.CalcDoc{a});
 						for i=1:numel(filelist),
 							[parent,name,ext] = fileparts(filelist{i});
 							if strcmpi([name ext],[putativefilename]),
