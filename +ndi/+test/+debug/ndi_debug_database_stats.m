@@ -1,4 +1,4 @@
-function out = ndi_globals.debug_database_stats(E)
+function out = ndi_debug_database_stats(E)
 % NDI_DEBUG_DATABASE_STATS - examine an NDI database to check for inconsistencies
 %
 % OUT = ndi.test.database.debug_stats(E)
