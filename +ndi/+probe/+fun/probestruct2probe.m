@@ -8,31 +8,35 @@ function ndi_probe_obj = probestruct2probe(probestruct, exp)
 % this function generates the appropriate subclass of ndi.probe for
 % dealing with the PROBE and returns the objects in a cell array NDI_PROBE_OBJ.
 %
-% This function uses the ndi.globals variable 'ndi.globals.probetype2object' to
-% make the conversion.
-%
-% See also: ndi.globals and NDI_PROBETYPE2OBJECT
-%
 
-ndi.globals;
+    arguments
+        probestruct (1,:) struct
+        exp % (1,1) ndi.session ?
+    end
 
-init_probetypes = 0;
-if ~isfield(ndi_globals,'probetype2object'),
-	init_probetypes = 1;
-elseif isempty(ndi_globals.probetype2object),
-	init_probetypes = 1;
+    persistent probeTypeMap
+    if isempty(probeTypeMap)
+        probeTypeMap = ndi.probe.fun.initProbeTypeMap; 
+    end
+    
+    ndi_probe_obj = cell(1, numel(probestruct));
+    
+    for i = 1:numel(probestruct)
+        if ~isKey(probeTypeMap, probestruct(i).type)
+            throwProbeTypeNotFoundError(probestruct(i).type)
+        end
+        probeClass = probeTypeMap(probestruct(i).type);
+        probeArgs = struct2cell(probestruct(i));
+        ndi_probe_obj{i} = feval(probeClass, exp, probeArgs{:});
+    end
 end
 
-if init_probetypes==1,
-	ndi.globals.probetype2objectinit;
-end
+function throwProbeTypeNotFoundError(probeType)
+    arguments
+        probeType (1,1) string % Name/type of probe
+    end
 
-ndi_probe_obj = {};
-
-for i=1:numel(probestruct),
-	ind = find(strcmpi(probestruct(i).type,{ndi_globals.probetype2object.type}));
-	if isempty(ind),
-		error(['Could not find exact match for ' probestruct(i).type ', bailing out.']);
-	end
-	eval(['ndi_probe_obj{i} = ' ndi_globals.probetype2object(ind).classname '(exp, probestruct(i).name, probestruct(i).reference, probestruct(i).type, probestruct(i).subject_id);']);
+    error('NDI:Probe:ProbeTypeNotFound', ...
+          'Could not find exact match for "%s" in probe type map.', ...
+          probeType);
 end
