@@ -6,7 +6,7 @@
 	},{
 		"type":"patch","classname":"ndi.probe.timeseries.mfdaq"
 	},{
-		"type":"patch-Vm","classname":"ndi.probe_timeseries.mfdaq"
+		"type":"patch-Vm","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"patch-I","classname":"ndi.probe.timeseries.mfdaq"
 	},{
