@@ -174,8 +174,7 @@ classdef mfdaq < ndi.daq.reader
 			%  DATA will have one column per channel.
 			%
 
-				ndi.globals;
-				mylog = ndi_globals.log;
+				mylog = ndi.common.getLogger();
 				d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
 
 				if ~iscell(channeltype),
@@ -653,8 +652,7 @@ classdef mfdaq < ndi.daq.reader
 				sample_analog_segment = 1e6; %(1M)  
 				sample_digital_segment = 1e7; % 10M
 
-				ndi.globals();
-				mylog = ndi_globals.log;
+				mylog = ndi.common.getLogger;
 
 				daqreader_mfdaq_epochdata_ingested.parameters.sample_analog_segment = sample_analog_segment; 
 				daqreader_mfdaq_epochdata_ingested.parameters.sample_digital_segment = sample_digital_segment; 

@@ -69,7 +69,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
 				ndi.globals();
 
-				mylog = ndi_globals.log;
+				mylog = ndi.common.getLogger();
 				mylog.msg('system',1,['Beginning calculator by class ' class(ndi_calculator_obj) '...']);
 
 				for i=1:numel(all_parameters),

@@ -74,10 +74,9 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 			% EXTRACTION_NAME name given to find ndi_doc in database
 			% REDO - if 1, then extraction is re-done for epochs even if it has been done before with same extraction parameters
 			% [T0 T1] - if given, then restricts the extraction to be between times t0 and t1; default is [-Inf Inf]
-
-				ndi.globals;
-
-				ndi_globals.log.msg('system',1,'Beginning of extraction.');
+                
+                logger = ndi.common.getLogger();
+				logger.msg('system',1,'Beginning of extraction.');
 
 				% process input arguments
 
@@ -110,7 +109,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 				for n=1:numel(epoch),
 					epoch_string = ndi_timeseries_obj.epoch2str(epoch{n});
 
-					ndi_globals.log.msg('system',1,['Beginning to set up for epoch ' epoch_string '.']);
+					logger.msg('system',1,['Beginning to set up for epoch ' epoch_string '.']);
 
 					% begin an epoch, get ready
 
@@ -178,7 +177,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 					vlt.file.custom_file_formats.newvhlspikewaveformfile(spikewaves_binarydoc_filename, fileparameters); 
 
 					epochtic = tic; % Timer variable to measure duration of epoch extraction
-					ndi_globals.log.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
+					logger.msg('system',1,['Epoch ' ndi_timeseries_obj.epoch2str(epoch{n}) ' spike extraction started...']);
 
 					% we have spikewaves_binarydoc and spiketimes_binarydoc open as we go into this loop
 	
@@ -268,7 +267,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
 
 					ndi_app_spikeextractor_obj.session.database_add(spikes_doc);
 
-					ndi_globals.log.msg('system',1,['Epoch ' int2str(n) ' spike extraction done.']);
+					logger.msg('system',1,['Epoch ' int2str(n) ' spike extraction done.']);
 				end % epoch n
 		end % extract
 

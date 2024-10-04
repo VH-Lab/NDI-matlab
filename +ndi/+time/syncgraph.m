@@ -245,9 +245,8 @@ classdef syncgraph < ndi.ido
 			% Existing sync mappings will not be overwritten.
 			%
 				d = {};
-				ndi.globals();
-				mylog = ndi_globals.log;
-                                mylog.msg('system',5,['Recalculating syncgraph...']);
+				mylog = ndi.common.getLogger();
+				mylog.msg('system',5,['Recalculating syncgraph...']);
 
 				epoch_node_fields = {'epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','objectname','objectclass'};
 
