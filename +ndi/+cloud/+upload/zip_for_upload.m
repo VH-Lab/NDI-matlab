@@ -71,7 +71,7 @@ for i = 1:numel(doc_file_struct)
 end
 
 if (numel(files_to_zip) > 0)
-    zip_file = [ndi_globals.path.temppath 'files.zip'];
+    zip_file = [ndi.common.PathConstants.TempFolder 'files.zip'];
     zip(zip_file, files_to_zip);
     cur_size = cur_size + doc_file_struct(i).bytes;
     size_gb = cur_size/1e9;

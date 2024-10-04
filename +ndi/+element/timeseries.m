@@ -109,7 +109,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
 				ndi.globals;
 
-				fname = [ndi_globals.path.temppath filesep epochdoc.id() '.vhsb'];
+				fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
 				vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
 				epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
 				if nargout<2,

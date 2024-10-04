@@ -18,7 +18,7 @@ classdef mock < ndi.session.dir
 			ndi.globals();
 
 			ref = 'mock_test';
-			dirname = [ndi_globals.path.temppath filesep 'mock_test'];
+			dirname = [ndi.common.PathConstants.TempFolder filesep 'mock_test'];
 
 			if vlt.file.isfolder(dirname),
 				rmdir(dirname,'s');

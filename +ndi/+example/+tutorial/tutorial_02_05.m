@@ -13,7 +13,7 @@ function tutorial_02_05(prefix, testing)
 % PREFIX should be the directory that contains the directory 'ts_exper2'. If it is not
 % provided or is empty, the default is [userpath filesep 'Documents' filesep 'NDI'].
 %
-% If TESTING is 1, then the files are examined in the temporary directory ndi_globals.path.temppath (use
+% If TESTING is 1, then the files are examined in the temporary directory ndi.common.PathConstants.TempFolder (use
 % ndi.globals() to make this variable available for inspection). It is assumed that
 % ndi.example.tutorial.tutorial_t02_04([],1) has been run (with TESTING set to 1).
 %
@@ -31,7 +31,7 @@ tutorial_dir = 'ts_exper2';
 
 if testing, % copy the files to the temp directory
 	ndi.globals() 
-	prefix = ndi_globals.path.temppath;
+	prefix = ndi.common.PathConstants.TempFolder;
 	disp(['Assuming data files ts_exper2 are in ' prefix '.']);
 end
 

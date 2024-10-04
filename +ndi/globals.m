@@ -19,7 +19,7 @@
 % ndi.common.PathConstants.ExampleDataFolder| The path to the NDI example sessions
 % ndi_globals.path.preferences     | A path to a directory of preferences files
 % ndi_globals.path.filecachepath   | A path where files may be cached (not deleted every time)
-% ndi_globals.path.temppath        | The path to a directory that may be used for
+% ndi.common.PathConstants.TempFolder        | The path to a directory that may be used for
 %                                  |   temporary files (Initialized by ndi_Init.m)
 % ndi_globals.path.testpath        | A path to a safe place to run test code
 % ndi_globals.path.calcdoc         | A cell array of paths to NDI calculator document definitions

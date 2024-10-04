@@ -12,5 +12,5 @@ ndi.globals;
 i = ndi.ido();
 uid = i.id();
 
-fname = fullfile(ndi_globals.path.temppath,uid);
+fname = fullfile(ndi.common.PathConstants.TempFolder,uid);
 

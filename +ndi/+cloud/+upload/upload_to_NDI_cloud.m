@@ -44,7 +44,7 @@ for i=1:numel(d),
     if (~doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded)
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
         global ndi_globals;
-        temp_dir = ndi_globals.path.temppath;
+        temp_dir = ndi.common.PathConstants.TempFolder;
         ido_ = ndi.ido;
         rand_num = ido_.identifier;
         temp_filename = sprintf("file_%s.json", rand_num);
