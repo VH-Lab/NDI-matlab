@@ -20,7 +20,7 @@ function test_ndi_daqreader_documents
 %
 
 	ndi.globals;
-	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 
 	E = ndi.session.dir('exp1',dirname);
 	 % remove any existing daqreaders

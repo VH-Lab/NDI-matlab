@@ -14,7 +14,7 @@ frame_number = 1;
 %default.
 if nargin < 1
     ndi.globals
-    example_directory = [ndi_globals.path.exampleexperpath];
+    example_directory = [ndi.common.PathConstants.ExampleDataFolder];
     input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
     output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];
     if exist(output_dir_name) ~=7

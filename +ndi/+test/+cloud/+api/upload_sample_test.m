@@ -17,11 +17,11 @@ function dataset_id = upload_sample_test()
 %    ndi.database.metadata_app.fun.metadata_to_json
 
 ndi.globals;
-dirname = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'sample_test'];
+dirname = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'sample_test'];
 
 D = ndi.dataset.dir(dirname);
 
-metadatafile = [ndi_globals.path.exampleexperpath filesep '..' filesep 'example_datasets' filesep 'NDIDatasetUpload' filesep 'metadata.mat'];
+metadatafile = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'NDIDatasetUpload' filesep 'metadata.mat'];
 metadata = load(metadatafile);
 datasetInformation = metadata.datasetInformation;
 metadata_json = ndi.database.metadata_app.fun.metadata_to_json(datasetInformation);

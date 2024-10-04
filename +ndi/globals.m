@@ -16,7 +16,7 @@
 %                                  |   (Initialized by ndi_Init.m)
 % ndi_globals.path. ...            | The path of the NDI document validation schema
 %    documentschemapath            |   (Initialized by ndi_Init.m)
-% ndi_globals.path.exampleexperpath| The path to the NDI example sessions
+% ndi.common.PathConstants.ExampleDataFolder| The path to the NDI example sessions
 % ndi_globals.path.preferences     | A path to a directory of preferences files
 % ndi_globals.path.filecachepath   | A path where files may be cached (not deleted every time)
 % ndi_globals.path.temppath        | The path to a directory that may be used for

@@ -14,7 +14,7 @@ function build_intan_flat_exp(dirname)
 
 if nargin<1,
 	ndi.globals;
-	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg_saved'];
+	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
 end;
 
 disp(['creating a new session object...']);

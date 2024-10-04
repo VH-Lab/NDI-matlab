@@ -16,7 +16,7 @@ error('not ready yet');
 
 if nargin<1,
 	ndi.globals;
-	dirname = [ndi_globals.path.exampleexperpath filesep 'exp_blackrock'];
+	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_blackrock'];
 end;
 
 disp(['creating a new session object...']);
