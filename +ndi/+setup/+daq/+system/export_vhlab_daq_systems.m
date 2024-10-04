@@ -1,5 +1,5 @@
 ndi.globals; 
-exportDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', 'vhlab');
+exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'vhlab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
 

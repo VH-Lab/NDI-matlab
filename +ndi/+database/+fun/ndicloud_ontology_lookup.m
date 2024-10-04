@@ -15,7 +15,7 @@ function [item] = ndicloud_ontology_lookup(field, value)
 
 ndi.globals();
 
-filename = fullfile(ndi_globals.path.commonpath,...
+filename = fullfile(ndi.common.PathConstants.CommonFolder,...
 	'controlled_vocabulary','NDIC.txt');
 
 s = loadStructArray(filename);

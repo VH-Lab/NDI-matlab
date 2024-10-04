@@ -8,7 +8,7 @@ function spikeextractor
  % find our directory
 
 ndi.globals;
-mydirectory = [ndi_globals.path.commonpath filesep 'example_app_sessions'];
+mydirectory = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions'];
 dirname = [mydirectory filesep 'exp_sg'];
 
 

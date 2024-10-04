@@ -32,7 +32,7 @@ classdef mock < ndi.session.dir
 			ndi_session_mock_obj.database_clear('yes');
 			ndi_session_mock_obj.daqsystem_clear();
 
-			fpath = [ndi_globals.path.commonpath filesep 'example_sessions' filesep 'exp1_eg_saved'];
+			fpath = [ndi.common.PathConstants.CommonFolder filesep 'example_sessions' filesep 'exp1_eg_saved'];
 
 			fnames{1} = '.Intan_160317_125049_short.48a19d04440fdc9fdfc43074e7c33a77.epochid.ndi';
 			fnames{2} = '.Intan_160317_125049_short.48a19d04440fdc9fdfc43074e7c33a77.epochprobemap.ndi';

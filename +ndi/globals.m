@@ -10,7 +10,7 @@
 % -------------------------------------------------------------------------
 % ndi.common.PathConstants.RootFolder            | The path of the NDI distribution on this machine.
 %                                  |   (Initialized by ndi_Init.m)
-% ndi_globals.path.commonpath      | The path to the package ndi_common
+% ndi.common.PathConstants.CommonFolder      | The path to the package ndi_common
 %                                  |   (Initialized by ndi_Init.m)
 % ndi_globals.path.documentpath    | The path of the NDI document definitions
 %                                  |   (Initialized by ndi_Init.m)

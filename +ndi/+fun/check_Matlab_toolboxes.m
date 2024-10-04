@@ -4,7 +4,7 @@ ndi.globals;
 
 V = ver;
 
-filename = [ndi_globals.path.commonpath filesep 'requirements' filesep ...
+filename = [ndi.common.PathConstants.CommonFolder filesep 'requirements' filesep ...
 	'ndi-matlab-toolboxes.json'];
 
 t = vlt.file.textfile2char(filename);

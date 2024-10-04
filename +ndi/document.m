@@ -126,7 +126,7 @@ classdef document
 
 				abbrev = {};
 				ndi.globals;
-				abbrevName = fullfile(ndi_globals.path.commonpath,'config','ndi_document2table_abbreviations.json');
+				abbrevName = fullfile(ndi.common.PathConstants.CommonFolder,'config','ndi_document2table_abbreviations.json');
 				if isfile(abbrevName),
 					j = vlt.file.textfile2char(abbrevName);
 					abbrev = jsondecode(j);

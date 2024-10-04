@@ -1,5 +1,5 @@
 ndi.globals; 
-exportDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', 'angeluccilab');
+exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'angeluccilab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
 commonFileParameters = {'#.nev', '^stimData.mat$', '^epochprobemap.txt$'};
