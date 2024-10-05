@@ -36,7 +36,7 @@ classdef sessiontable
 			%
 				t = vlt.data.emptystruct('session_id','path');
 				fname = ndi.session.sessiontable.localtablefilename();
-				if exist(fname,'file'),
+				if isfile(fname),
 					try,
 						t = vlt.file.loadStructArray(fname);
 						if ~isfield(t,'path'),
@@ -114,7 +114,7 @@ classdef sessiontable
 				[b,msg] = ndi_sessiontable_obj.isvalidtable(t);
 				if b,
 					for i=1:numel(t),
-						resultshere.exists = exist(t(i).path,'dir');
+						resultshere.exists = isfolder(t(i).path);
 						results(i) = resultshere;
 					end;
 				end;
@@ -172,7 +172,7 @@ classdef sessiontable
 			% and be named 'local_sessiontableNNN.txt', where NNN is a number.
 			%
 				fname = ndi.session.sessiontable.localtablefilename();
-				if exist(fname,'file'), % nothing to do if there's no file
+				if isfile(fname), % nothing to do if there's no file
 					backupname = vlt.file.filebackup(fname);
 					[success,message]=copyfile(fname,backupname);
 					if ~success,

@@ -255,7 +255,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
 				eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
 
-				if exist(eidfname,'file'),
+				if isfile(eidfname),
 					id = text2cellstr(eidfname);
 					id = id{1};
 				else,

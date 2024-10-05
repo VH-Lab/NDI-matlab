@@ -77,7 +77,7 @@ md = cat(2,md,['**Definition**: [' info.definition '](' info.definition_url ')<b
 info.validation = ndi_document_obj.document_properties.document_class.validation;
 info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi.common.PathConstants.DocumentSchemaFolder);
-if ~exist(info.validation_path,'file'),
+if ~isfile(info.validation_path),
 	info.validation_json = struct('properties',vlt.data.emptystruct());
 else,
 	info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
