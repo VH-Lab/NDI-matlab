@@ -10,7 +10,6 @@ function test_ndi_filenavigator_documents(dirname)
 %   c) Search for the database document
 %   d) Create a new object based on the database entry, and test that it matches the original
 %  
-	ndi.globals;
 
 	%No directory has passed in as a parameter
 	if nargin<1

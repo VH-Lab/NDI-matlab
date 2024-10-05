@@ -16,7 +16,6 @@ function dataset_id = upload_sample_test()
 %    ndi.cloud.up.upload_to_NDI_cloud
 %    ndi.database.metadata_app.fun.metadata_to_json
 
-ndi.globals;
 dirname = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'sample_test'];
 
 D = ndi.dataset.dir(dirname);

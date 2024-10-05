@@ -13,7 +13,6 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
 %
 
 if nargin<2,
-	ndi.globals();
 	target_path = ndi.file.temp_name();
 	mkdir(target_path);
 end;

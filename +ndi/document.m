@@ -125,7 +125,6 @@ classdef document
 				end;
 
 				abbrev = {};
-				ndi.globals;
 				abbrevName = fullfile(ndi.common.PathConstants.CommonFolder,'config','ndi_document2table_abbreviations.json');
 				if isfile(abbrevName),
 					j = vlt.file.textfile2char(abbrevName);
@@ -919,7 +918,6 @@ classdef document
 			%      c) a relative filename with respect to $NDIDOCUMENTPATH
 			%      d) a filename referenced with respect to $NDIDOCUMENTPATH
 			%
-				ndi.globals;
 
 				searchString = '$NDIDOCUMENTPATH';
 				s = strfind(jsonfilelocationstring, searchString);
@@ -971,8 +969,7 @@ classdef document
 			%      d) a filename without any path that sits beneath $NDIDOCUMENTPATH or $NDICALCDOCUMENTPATH
 			%      e) a relative path beneath $NDIDOCUMENTPATH (e.g., daq/ndi_document_filenavigator.json)
 			%
-				ndi.globals;
-
+            
 				filename = '';
 
 				if vlt.file.isurl(jsonfilelocationstring),

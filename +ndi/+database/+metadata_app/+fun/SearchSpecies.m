@@ -5,7 +5,6 @@ database = "taxonomy";
 search_url = sprintf("esearch.fcgi?db=%s&term=%s", database, term);
 search_result = webread(base_url+"/"+search_url);
 
-global ndi_globals;
 temp_dir = ndi.common.PathConstants.TempFolder;
 ido_ = ndi.ido;
 rand_num = ido_.identifier;

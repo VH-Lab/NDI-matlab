@@ -9,7 +9,6 @@ function markgarbage
 %
 
 if nargin<1,
-	ndi.globals;
 	dirname = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions' filesep 'markgarbage_ex'];
 end;
 

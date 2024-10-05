@@ -1,4 +1,3 @@
-ndi.globals; 
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'angeluccilab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 

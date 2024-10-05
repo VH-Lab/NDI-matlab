@@ -1,4 +1,3 @@
-ndi.globals; 
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'yangyangwang');
 if ~isfolder(exportDir); mkdir(exportDir); end
 

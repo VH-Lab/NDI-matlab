@@ -24,7 +24,6 @@ classdef Lab < handle
     methods
         function obj = Lab()
             
-            ndi.globals;
             guipath = [ndi.common.PathConstants.RootFolder filesep '+ndi' filesep '+gui'];
             
             %Create lab

@@ -10,8 +10,6 @@ function calcbuild(ndicalc_path)
 %   % builds documentation for NDIcalc-vis
 %
 
-ndi.globals
-
 disp(['Writing NDI calculator document documentation...']);
 
 ndi.docs.all_documents2markdown('input_path', ...

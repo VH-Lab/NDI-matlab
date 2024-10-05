@@ -11,8 +11,6 @@ function build()
 % on regular command line (not Matlab command line).
 %
 
-ndi.globals
-
 disp(['Writing NDI document documentation...']);
 
 ndi.docs.all_documents2markdown();

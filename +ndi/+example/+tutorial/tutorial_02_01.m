@@ -31,7 +31,6 @@ tutorial_dir = 'ts_exper1';
 if testing, % copy the files to the temp directory
 	prefix = [userpath filesep 'Documents' filesep 'NDI' filesep 'Test']; 
 	disp(['Assuming clean data files ts_exper1 are in ' prefix '.']);
-	ndi.globals() 
 	disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
 	try,
 		rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');

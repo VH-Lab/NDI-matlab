@@ -7,7 +7,6 @@ function [b,msg] = upload_download(D,metadatafile)
 %
 
 if nargin<1,
-	ndi.globals();
 	dirname = fullfile(ndi.common.PathConstants.ExampleDataFolder, '..' ,'example_datasets', 'sample_test');
 	D = ndi.dataset.dir(dirname);
 	metadatafile = fullfile(ndi.common.PathConstants.ExampleDataFolder,'..',...

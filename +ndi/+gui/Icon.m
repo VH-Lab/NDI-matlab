@@ -15,7 +15,6 @@ classdef Icon < handle
     end
     methods
         function obj = Icon(src, len, elem, hShift, vShift, w, h, color)
-            ndi.globals;
             guipath = [ndi.common.PathConstants.RootFolder filesep '+ndi' filesep '+gui'];
             obj.elem = elem;
             obj.src = src;

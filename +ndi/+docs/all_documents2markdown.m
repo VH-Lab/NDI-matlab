@@ -4,8 +4,6 @@ function t = all_documents2markdown(varargin)
 % 
 % 
 
-ndi.globals;
-
 spaces = 6; % used to be 4 when there was only one tool in the suite
 input_path = ndi.common.PathConstants.DocumentFolder;
 if input_path(end)~=filesep,

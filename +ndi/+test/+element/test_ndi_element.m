@@ -12,8 +12,6 @@ function test_ndi_element(dirname)
 %
 %
 
-ndi.globals;
-
 test_struct = 0;
 
 if nargin<1,

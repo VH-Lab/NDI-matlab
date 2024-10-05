@@ -19,7 +19,6 @@ b = 0;
 successes = {};
 failures = {};
 
-ndi.globals;
 error_msg = {};
 
 json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,{'.*\.json\>'});

@@ -14,7 +14,6 @@ function test_ndi_daqsystem_documents
 %   c) Search for the database document
 %   d) Create a new object based on the database entry, and test that it matches the original
 %
-	ndi.globals;
 	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 	    
 	E = ndi.session.dir('exp1',dirname);

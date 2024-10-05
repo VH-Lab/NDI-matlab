@@ -107,7 +107,6 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 					error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
 				end;
 				[ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
-				ndi.globals;
 
 				fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
 				vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);

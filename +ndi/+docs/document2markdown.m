@@ -76,7 +76,6 @@ info.definition_url = strrep(info.definition, '$NDIDOCUMENTPATH/', giturl_path);
 md = cat(2,md,['**Definition**: [' info.definition '](' info.definition_url ')<br>' newline]);
 info.validation = ndi_document_obj.document_properties.document_class.validation;
 info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
-ndi.globals;
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi.common.PathConstants.DocumentSchemaFolder);
 if ~exist(info.validation_path,'file'),
 	info.validation_json = struct('properties',vlt.data.emptystruct());

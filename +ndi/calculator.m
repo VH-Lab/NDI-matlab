@@ -66,9 +66,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
 				% Step 3: check if we've already done the calculator for these parameters; if we have,
 				% take the appropriate action. If we need to, perform the calculator.
-
-				ndi.globals();
-
+                
 				mylog = ndi.common.getLogger();
 				mylog.msg('system',1,['Beginning calculator by class ' class(ndi_calculator_obj) '...']);
 

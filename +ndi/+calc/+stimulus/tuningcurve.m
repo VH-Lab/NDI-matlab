@@ -8,7 +8,6 @@ classdef tuningcurve < ndi.calculator
 			%
 			% Creates a TUNINGCURVE ndi.calculator object
 			%
-				ndi.globals;
 				tuningcurve_obj = tuningcurve_obj@ndi.calculator(session,'tuningcurve_calc',...
 					fullfile(ndi.common.PathConstants.DocumentFolder,'apps','calculators','tuningcurve_calc.json'));
 		end; % tuningcurve()

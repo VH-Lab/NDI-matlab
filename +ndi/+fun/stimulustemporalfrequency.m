@@ -14,8 +14,6 @@ function [tf_value, tf_name] = ndi_stimulustemporalfrequency(stimulus_parameters
 tf_value = [];
 tf_name = '';
 
-ndi.globals;
-
 j = vlt.file.textfile2char([ndi.common.PathConstants.CommonFolder filesep 'stimulus' filesep 'ndi_stimulusparameters2temporalfrequency.json']);
 
 ndi_stimTFinfo = jsondecode(j);

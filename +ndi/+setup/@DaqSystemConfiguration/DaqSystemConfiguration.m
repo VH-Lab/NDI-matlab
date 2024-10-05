@@ -156,7 +156,6 @@ classdef DaqSystemConfiguration
         end
 
         function daqSystemConfiguration = fromLabDevice(labName, deviceName)
-            ndi.globals; 
             importDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', labName);
             configFilePath = fullfile(importDir, [deviceName, '.json']);
             daqSystemConfiguration = ndi.setup.DaqSystemConfiguration.fromConfigFile(configFilePath);

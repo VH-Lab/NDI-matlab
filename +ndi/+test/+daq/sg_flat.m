@@ -13,7 +13,6 @@ function sg_flat(dirname)
 % from specific epoch n, along with sample0 and sample1. 
 
 if nargin < 1,
-	ndi.globals
 	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_sg'];
 end;
 

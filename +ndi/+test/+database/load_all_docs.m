@@ -7,8 +7,6 @@ function json_filenames = load_all_docs()
 % of strings.
 %
 
-ndi.globals;
-
 json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,...
 	{'.*\.json\>'});
 

@@ -44,7 +44,6 @@ for i=1:numel(d),
     doc_id = d{i}.document_properties.base.id;
     if (~doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded)
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
-        global ndi_globals;
         temp_dir = ndi.common.PathConstants.TempFolder;
         ido_ = ndi.ido;
         rand_num = ido_.identifier;

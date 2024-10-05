@@ -254,7 +254,6 @@ classdef sessiontable
 			%
 			% F = LOCALTABLEFILENAME()
 			%
-				ndi.globals;
 				f = [ndi.common.PathConstants.Preferences filesep 'local_sessiontable.txt'];
 		end; % tablefilename()
 

@@ -13,7 +13,6 @@ frame_number = 1;
 %If no argument is passed, then set the directories to a
 %default.
 if nargin < 1
-    ndi.globals
     example_directory = [ndi.common.PathConstants.ExampleDataFolder];
     input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
     output_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'output' ];

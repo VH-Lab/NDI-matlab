@@ -118,8 +118,6 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
 			    [myfilepath,myfilename] = fileparts(filename);
 			    ref_struct = vlt.file.loadStructArray([myfilepath filesep 'reference.txt']);
 
-			    ndi.globals;
-
 			    for i=1:length(ndi_struct),
 				tf_name = strcmp(ndi_struct(i).name,{ref_struct.name});
 				tf_ref = [ndi_struct(i).ref == [ref_struct.ref]];

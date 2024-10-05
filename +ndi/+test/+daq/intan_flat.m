@@ -13,7 +13,6 @@ function intan_flat(dirname)
 %
 
 if nargin<1,
-	ndi.globals;
 	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 end;
 

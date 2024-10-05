@@ -13,7 +13,6 @@ function post_documents_test(dataset_id)
 %    files/get_files_detail
 
 % TODO: test scan_for_upload function. If correctly detects the number of files that have been uploaded
-global ndi_globals;
 dirname = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'sample_test'];
 
 D = ndi.dataset.dir(dirname);

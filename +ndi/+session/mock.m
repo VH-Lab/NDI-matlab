@@ -15,8 +15,6 @@ classdef mock < ndi.session.dir
 			% d) a single epoch.
 			%
 
-			ndi.globals();
-
 			ref = 'mock_test';
 			dirname = [ndi.common.PathConstants.TempFolder filesep 'mock_test'];
 

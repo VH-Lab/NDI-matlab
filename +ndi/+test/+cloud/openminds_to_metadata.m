@@ -2,7 +2,6 @@ function D = openminds_to_metadata()
 %OPENMINDS_TO_METADATA Summary of this function goes here
 %   Detailed explanation goes here
 
-ndi.globals;
 dirname = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'sample_test'];
 
 D = ndi.dataset.dir(dirname);

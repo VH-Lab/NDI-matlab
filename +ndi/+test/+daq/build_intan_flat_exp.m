@@ -13,7 +13,6 @@ function build_intan_flat_exp(dirname)
 %
 
 if nargin<1,
-	ndi.globals;
 	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
 end;
 
