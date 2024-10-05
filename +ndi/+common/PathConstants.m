@@ -52,15 +52,17 @@ classdef PathConstants
     end
 
     methods (Static)
-        function remappedName = remapName(name)
-            switch name
-                case "DocumentFolder"
-                    remappedName = "documentpath";
-                case "DocumentSchemaFolder"
-                    remappedName = "schemapath";
-                otherwise
-                    error('Not implemented')
+        function placeholder = getNdiPathPlaceholderName(name)
+            persistent nameMap
+            if isempty(nameMap)
+                scriptLocation = fileparts(mfilename('fullpath'));
+                nameMapFilePath = fullfile(scriptLocation, 'resources', 'pathNameMapping.json');
+                S = jsondecode( fileread(nameMapFilePath) );
+                nameMap = containers.Map(fieldnames(S), struct2cell(S));
             end
+
+            identifier = string( nameMap(name) );
+            placeholder = "$NDI" + upper(identifier);
         end
     end
 
@@ -81,10 +83,6 @@ classdef PathConstants
                 pathList{i} = fullfile(d{i}, 'ndi_common', key);
                 addpath(d{i})
             end
-        end
-
-        function folderPath = initializeFolder( folderPath )
-
         end
     end
 end
