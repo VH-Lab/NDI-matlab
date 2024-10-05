@@ -51,6 +51,19 @@ classdef PathConstants
         CalcDocSchema = ndi.common.PathConstants.findCalculatorDocumentDefinitions("schema_documents")
     end
 
+    methods (Static)
+        function remappedName = remapName(name)
+            switch name
+                case "DocumentFolder"
+                    remappedName = "documentpath";
+                case "DocumentSchemaFolder"
+                    remappedName = "schemapath";
+                otherwise
+                    error('Not implemented')
+            end
+        end
+    end
+
     methods (Static, Access = private)
         function pathList = findCalculatorDocumentDefinitions(key)
 

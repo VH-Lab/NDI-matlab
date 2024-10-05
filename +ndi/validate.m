@@ -241,10 +241,13 @@ classdef validate
         
         function new_path = replace_ndipath(path)
             ndi.globals;
-            fn = fieldnames(ndi_globals.path);
+            %fn = fieldnames(ndi_globals.path);
+            fn = properties(ndi.common.PathConstants);
+                
             for i = 1:numel(fn)
-                if numel( strfind(path, "$NDI" + (string(fn{i}).upper())) )~= 0
-                    new_path = strrep(path, "$NDI" + (string(fn{i}).upper()), ndi_globals.path.(fn{i}));
+                docPlaceHolder = ndi.common.PathConstants.remapName(fn{i});
+                if numel( strfind(path, "$NDI" + (string(docPlaceHolder).upper())) )~= 0
+                    new_path = strrep(path, "$NDI" + (string(docPlaceHolder).upper()), ndi.common.PathConstants.(fn{i}));
                     return;
                 end
             end
