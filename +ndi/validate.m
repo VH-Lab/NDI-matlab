@@ -245,10 +245,9 @@ classdef validate
             fn = properties(ndi.common.PathConstants);
                 
             for i = 1:numel(fn)
-                documentPlaceHolderName = ndi.common.PathConstants.remapName(fn{i});
-                documentPlaceHolder = "$NDI" + string(upper(documentPlaceHolderName));
-                if numel( strfind(path, documentPlaceHolder) ) ~= 0
-                    new_path = strrep(path, documentPlaceHolder, ndi.common.PathConstants.(fn{i}));
+                ndiDocPlaceholder = ndi.common.PathConstants.getNdiPathPlaceholderName(fn{i});
+                if numel( strfind(path, ndiDocPlaceholder) ) ~= 0
+                    new_path = strrep(path, ndiDocPlaceholder, ndi.common.PathConstants.(fn{i}));
                     return;
                 end
             end
