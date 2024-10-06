@@ -443,8 +443,16 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 			%
 			% Return the files on disk that comprise epochs. 
 			%
+
+                % Memoize function which is called repeatedly with same input args
+                persistent memoizedFindFileGroups
+                if isempty(memoizedFindFileGroups)
+                    memoizedFindFileGroups = memoize(@findfilegroups);
+                    memoizedFindFileGroups.CacheSize = 10;
+                end
+
 				exp_path = ndi_filenavigator_obj.path();
-				epochfiles_disk = findfilegroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
+				epochfiles_disk = memoizedFindFileGroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
 		end;
 
 		function [epochfiles] = selectfilegroups(ndi_filenavigator_obj)
