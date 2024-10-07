@@ -617,7 +617,36 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 					probestruct = cat(1,probestruct,getprobes(devs{d}));
 				end
 				probestruct = vlt.data.equnique(probestruct);
+
+				existing_probes = ndi_session_obj.database_search(ndi.query('element.ndi_element_class','contains_string','probe'));
+				existing_subjects = ndi_session_obj.database_search(ndi.query('','isa','subject'));
+				subjectlist.a = 0;
+				for i=1:numel(existing_subjects),
+					subjectlist = setfield(subjectlist,['a' existing_subjects{i}.document_properties.base.id],...
+						[existing_subjects{i}.document_properties.subject.local_identifier]);
+				end;
+				existing_probe_objects = {};
+				for i=1:numel(existing_probes),
+					existing_probe_objects{end+1} = ndi.database.fun.ndi_document2ndi_object(existing_probes{i},ndi_session_obj);
+				end;
+						
+				match_probestruct_in_existing = [];
+				for i=1:numel(probestruct),
+					for j=1:numel(existing_probes),
+						if strcmp(probestruct(i).subject_id,getfield(subjectlist,['a' existing_probes{j}.dependency_value('subject_id')])) & ...
+							strcmp(probestruct(i).name,existing_probes{j}.document_properties.element.name) & ...
+							(probestruct(i).reference==existing_probes{j}.document_properties.element.reference) & ...
+							strcmp(probestruct(i).type,existing_probes{j}.document_properties.element.type),
+							match_probestruct_in_existing(end+1,[1 2]) = [i j];
+						end;
+					end;
+				end;
+				if ~isempty(match_probestruct_in_existing),
+					probestruct = probestruct(setdiff(1:numel(probestruct),match_probestruct_in_existing(:,1)));
+				end;
+				
 				probes = ndi.probe.fun.probestruct2probe(probestruct, ndi_session_obj);
+				probes = cat(1,probes(:),existing_probe_objects(:));
 
 				if numel(varargin)==1,
 					include = [];
