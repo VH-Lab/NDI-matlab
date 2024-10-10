@@ -11,7 +11,7 @@ classdef ProbeTest <  matlab.unittest.TestCase
 
     methods (TestClassSetup)
         function setupClass(testCase) %#ok<*MANU>
-            % Pass. No class setup routines needed
+            testCase.applyFixture(matlab.unittest.fixtures.WorkingFolderFixture);
         end
     end
 
