@@ -31,10 +31,7 @@ classdef validate
             end
             
             % Initialization
-            ndi.globals;
-            if ~any(strcmp(javaclasspath,[ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
-            end
+            ndi.validate.checkJavaPath()
             import com.ndi.*;
             import org.json.*;
             import org.everit.*;
@@ -209,10 +206,7 @@ classdef validate
             %  LOAD the the list of FormatValidator configurated based on
             %  the JSON file ndi_validate_config.json
             %
-            ndi.globals;
-            if ~any(strcmp(javaclasspath,[ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar']))
-                eval("javaaddpath([ndi.common.PathConstants.RootFolder filesep 'java' filesep 'ndi-validator-java' filesep 'jar' filesep 'ndi-validator-java.jar'], 'end')");
-            end
+            ndi.validate.checkJavaPath()
             import com.ndi.*;
             import org.json.*;
             import org.everit.*;
@@ -233,15 +227,22 @@ classdef validate
             end
             json_object = json_object.put("string_format", json_array);
             format_validator_list = EnumFormatValidator.buildFromJSON(json_object);
-            ndi_globals.validators.format_validators = format_validator_list;
         end
     end
 
-    methods(Static, Access = public)
+    methods (Static, Access = public)
+
+        function checkJavaPath()
+        % checkJavaPath - Check that ndi-validator is on the java class path 
+            ndiValidatorJavaFilepath = fullfile(ndi.common.PathConstants.RootFolder, ...
+                'java', 'ndi-validator-java', 'jar', 'ndi-validator-java.jar');
+            
+            if ~any(strcmp(javaclasspath, ndiValidatorJavaFilepath))
+                javaaddpath(ndiValidatorJavaFilepath, 'end')
+            end
+        end
         
         function new_path = replace_ndipath(path)
-            ndi.globals;
-            %fn = fieldnames(ndi_globals.path);
             fn = properties(ndi.common.PathConstants);
                 
             for i = 1:numel(fn)
@@ -260,7 +261,6 @@ classdef validate
             %
             %   SCHEMA_JSON = EXTRACT_SCHEMA(NDI_DOCUMENT_OBJ)
             %
-            ndi.globals;
             schema_json = "";
             if isa(ndi_document_obj, 'ndi.document')
                 schema_path = ndi_document_obj.document_properties.document_class.validation;
@@ -276,7 +276,7 @@ classdef validate
                 if  numel( strfind(ndi_document_obj, '$NDIDOCUMENTPATH') ) ~= 0
                     schema_path = strrep(schema_path, '$NDIDOCUMENTPATH', ndi.common.PathConstants.DocumentSchemaFolder);
                 elseif numel( strfind(ndi_document_obj, '$NDISCHEMAPATH') ) ~= 0
-                    schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi_globals.path.documentsschemapath);
+                    schema_path = strrep(schema_path, '$NDISCHEMAPATH', ndi.common.PathConstants.DocumentSchemaFolder);
                 end
                 try
                     schema_json = fileread(schema_path);
@@ -320,6 +320,5 @@ classdef validate
             end
             str = strcat(extractBetween(str, 1, strlength(str)-3), ']');
         end
-        
     end
 end
