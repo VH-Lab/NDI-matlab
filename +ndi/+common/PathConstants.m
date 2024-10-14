@@ -110,6 +110,7 @@ classdef PathConstants
 end
 
 function mustUpdateDidGlobals(value, key)
+    ndi.common.assertDIDInstalled()
     definitionsMap = did.common.PathConstants.definitions;
     if ~isKey(definitionsMap, key)
         if ~isempty(value)
