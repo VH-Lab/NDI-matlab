@@ -103,7 +103,7 @@ if updating,
     currpwd = pwd();
 
     % copy 'ndi_install.m' file to userpath directory
-    thisfile = which('ndi_Init'); % ndi.globals is in same directory as ndi_install; ndi_install can have multiple copies
+    thisfile = which('ndi_Init'); % ndi_Init is in same directory as ndi_install; ndi_install can have multiple copies
     [thisparent,thisfilename,thisextension] = fileparts(thisfile);
     copyfile([thisparent filesep 'ndi_install.m'], [userpath filesep 'ndi_install.m'],'f');
 

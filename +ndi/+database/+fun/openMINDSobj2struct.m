@@ -13,7 +13,7 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
 %
 %
 
-ndi.globals();
+ndi_cache = ndi.common.getCache();
 
 openminds_base_class = 'openminds.abstract.Schema';
 cachetype = 'openmindsconversionstack';
@@ -24,21 +24,21 @@ initial_call = 0;
   % remembers if we have visited all the openMinds object
 
 if nargin<2,
-	% we are just gettin started on a new conversion
+	% we are just getting started on a new conversion
 	newid = ndi.ido;
 	cachekey = newid.id(); % build a cache stack 
 	s = did.datastructures.emptystruct('openminds_type','matlab_type','openminds_id','ndi_id','fields','complete');
 	initial_call = 1;
 else,
-	sdata = ndi_globals.cache.lookup(cachekey, cachetype);
+	sdata = ndi_cache.lookup(cachekey, cachetype);
 	s = sdata.data;
 end;
 
 if ~iscell(openmindsObj),
-    newcell = {};
-    for i=1:numel(openmindsObj),
-        newcell{i} = openmindsObj(i);
-    end;
+	newcell = {};
+	for i=1:numel(openmindsObj),
+		newcell{i} = openmindsObj(i);
+	end;
 	openmindsObj = newcell; % make it a cell no matter what
 end;
 
@@ -71,19 +71,19 @@ for i=1:numel(openmindsObj),
 
 	s(index) = s_here;
 	% put it in the table now so the children will know it's under construction
-	ndi_globals.cache.remove(cachekey,cachetype);
-	ndi_globals.cache.add(cachekey,cachetype,s);
+	ndi_cache.remove(cachekey,cachetype);
+	ndi_cache.add(cachekey,cachetype,s);
 
 	fn = fieldnames(openmindsObj{i});
 
 	for j=1:numel(fn),
 		f = getfield(openmindsObj{i},fn{j});
-        if strcmp(class(f),'string'), 
-            f = char(f); % we have to insert character arrays into the sql database
-        end;
-        if strcmp(class(f),'datetime'),
-            f = char(f);
-        end;
+	        if strcmp(class(f),'string'), 
+			f = char(f); % we have to insert character arrays into the sql database
+	        end;
+	        if strcmp(class(f),'datetime'),
+			f = char(f);
+	        end;
 		mt = startsWith(class(f),'openminds.internal.mixedtype');
 		if isa(f,'openminds.abstract.Schema') | mt,
 			fields_here = {};
@@ -97,7 +97,7 @@ for i=1:numel(openmindsObj),
 				child_index = find(strcmp(f_here.id,{s.openminds_id}));
 				if isempty(child_index),
 					% stop this nonsense
-					ndi_globals.cache.remove(cachekey,cachetype);
+					ndi_cache.remove(cachekey,cachetype);
 					error(['A child was not built successfully.']);
 				end;
 				fields_here{k} = ['ndi://' s(child_index).ndi_id];
@@ -113,13 +113,13 @@ for i=1:numel(openmindsObj),
 
 	s(index) = s_here;
 	
-	ndi_globals.cache.remove(cachekey,cachetype);
-	ndi_globals.cache.add(cachekey,cachetype,s);
+	ndi_cache.remove(cachekey,cachetype);
+	ndi_cache.add(cachekey,cachetype,s);
 
 end;
 
 if initial_call, 
 	% if we were the first function, remove the cache
-	ndi_globals.cache.remove(cachekey,cachetype);
+	ndi_cache.remove(cachekey,cachetype);
 end;
 

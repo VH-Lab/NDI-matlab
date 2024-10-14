@@ -1,0 +1,15 @@
+{
+  "Name": "gluckman_bjgbin",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#\\.bin\\>",
+    "#\\.epochprobemap.txt\\>"
+  ],
+  "DaqReaderFileParameters": "bjg",
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
+  "HasEpochDirectories": false
+}

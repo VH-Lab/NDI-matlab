@@ -79,7 +79,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 							'; epochfiles were ' epochfiles{:} '.']);
 
 					else,
-						if ~exist(epochfiles{tf},'file'),
+						if ~isfile(epochfiles{tf}),
 							error(['No such file ' file '.']);
 						end;
 						parameters = ndi_daqmetadatareader_obj.readmetadatafromfile(epochfiles{tf});

@@ -263,21 +263,21 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 		%% functions that override ndi.epoch.epochset, ndi.epoch.epochset.param
 
 		function deleteepoch(ndi_daqsystem_obj, number, removedata)
-		% DELETEEPOCH - Delete an epoch and an epoch record from a device
-		%
-		%   DELETEEPOCH(NDI_DAQSYSTEM_OBJ, NUMBER ... [REMOVEDATA])
-		%
-		% Deletes the data and ndi.epoch.epochprobemap_daqsystem and epoch data for epoch NUMBER.
-		% If REMOVEDATA is present and is 1, the data and record are physically deleted.
-		% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
-		%
-		% In the abstract class, this command takes no action.
-		%
-		% See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
-			error(['Not implemented yet.']);
+			% DELETEEPOCH - Delete an epoch and an epoch record from a device
+			%
+			%   DELETEEPOCH(NDI_DAQSYSTEM_OBJ, NUMBER ... [REMOVEDATA])
+			%
+			% Deletes the data and ndi.epoch.epochprobemap_daqsystem and epoch data for epoch NUMBER.
+			% If REMOVEDATA is present and is 1, the data and record are physically deleted.
+			% If REMOVEDATA is omitted or is 0, the data and record are renamed but not deleted from disk.
+			%
+			% In the abstract class, this command takes no action.
+			%
+			% See also: ndi.daq.system, ndi.epoch.epochprobemap_daqsystem
+				error(['Not implemented yet.']);
 		end % deleteepoch()
 
-        function [cache,key] = getcache(ndi_daqsystem_obj)
+		function [cache,key] = getcache(ndi_daqsystem_obj)
 			% GETCACHE - return the NDI_CACHE and key for ndi.daq.system
 			%
 			% [CACHE,KEY] = GETCACHE(NDI_DAQSYSTEM_OBJ)
@@ -442,9 +442,9 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 						end;
 					end;
 				end;
-                for i=1:numel(d),
-                    d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
-                end;
+				for i=1:numel(d),
+					d{i} = d{i}.set_session_id(ndi_daqsystem_obj.filenavigator.session.id());
+				end;
 				ndi_daqsystem_obj.filenavigator.session.database_add(d);
 				ndi_daqsystem_obj.session.cache.clear();
 				b = 1;

@@ -13,9 +13,7 @@ function [item] = ndicloud_ontology_lookup(field, value)
 %     'Name','Left eye view blocked');
 %
 
-ndi.globals();
-
-filename = fullfile(ndi_globals.path.commonpath,...
+filename = fullfile(ndi.common.PathConstants.CommonFolder,...
 	'controlled_vocabulary','NDIC.txt');
 
 s = loadStructArray(filename);

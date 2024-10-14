@@ -19,13 +19,12 @@ b = 0;
 successes = {};
 failures = {};
 
-ndi.globals;
 error_msg = {};
 
-json_docs = vlt.file.findfilegroups(ndi_globals.path.documentpath,{'.*\.json\>'});
+json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.DocumentFolder,{'.*\.json\>'});
 
-for i=1:numel(ndi_globals.path.calcdoc),
-	more_json_docs = vlt.file.findfilegroups(ndi_globals.path.calcdoc{i},{'.*\.json\>'});
+for i=1:numel(ndi.common.PathConstants.CalcDoc),
+	more_json_docs = vlt.file.findfilegroups(ndi.common.PathConstants.CalcDoc{i},{'.*\.json\>'});
 	json_docs = cat(1,json_docs,more_json_docs);
 end;
 

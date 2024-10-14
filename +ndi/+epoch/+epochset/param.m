@@ -102,7 +102,7 @@ classdef param < ndi.epoch.epochset
 
 				if b,
 					ecfname = ndi_epochset_param_obj.epochprobemapfilename(number);
-					if exist(ecfname,'file') & ~overwrite,
+					if isfile(ecfname) & ~overwrite,
 						error(['epochprobemap file exists and overwrite was not requested.']);
 					end
 					epochprobemap.savetofile(ecfname);
@@ -134,7 +134,7 @@ classdef param < ndi.epoch.epochset
 			% EPOCHNUMBER then an error is returned.
 			%
 				etfname = epochtagfilename(ndi_epochset_param_obj, number);
-				if exist(etfname,'file'),
+				if isfile(etfname),
 					tag = vlt.file.loadStructArray(etfname);
 				else,
 					tag = vlt.data.emptystruct('name','value');
@@ -159,7 +159,7 @@ classdef param < ndi.epoch.epochset
 				if ~isempty(tag),
 					vlt.file.saveStructArray(etfname,tag);
 				else, % delete the file so it is empty
-					if exist(etfname,'file'),
+					if isfile(etfname),
 						delete(etfname);
 					end
 				end

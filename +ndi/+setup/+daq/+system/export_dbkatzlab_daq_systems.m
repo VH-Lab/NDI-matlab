@@ -1,5 +1,4 @@
-ndi.globals; 
-exportDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', 'dbkatzlab');
+exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'dbkatzlab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
 

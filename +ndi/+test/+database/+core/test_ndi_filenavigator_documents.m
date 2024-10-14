@@ -10,11 +10,10 @@ function test_ndi_filenavigator_documents(dirname)
 %   c) Search for the database document
 %   d) Create a new object based on the database entry, and test that it matches the original
 %  
-	ndi.globals;
 
 	%No directory has passed in as a parameter
 	if nargin<1
-		dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
+		dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 	end
 
 	%Create and NDI_session object

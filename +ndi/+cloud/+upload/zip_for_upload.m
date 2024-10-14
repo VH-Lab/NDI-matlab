@@ -22,7 +22,6 @@ msg = '';
 b = 1;
 h = waitbar(0, 'Uploading Files...');
 files_left = sum(~[doc_file_struct.is_uploaded]);
-global ndi_globals;
 % set the maximum size of the zip file to be 5GB
 size_limit = 5e9;
 cur_size = 0;
@@ -71,7 +70,7 @@ for i = 1:numel(doc_file_struct)
 end
 
 if (numel(files_to_zip) > 0)
-    zip_file = [ndi_globals.path.temppath 'files.zip'];
+    zip_file = [ndi.common.PathConstants.TempFolder 'files.zip'];
     zip(zip_file, files_to_zip);
     cur_size = cur_size + doc_file_struct(i).bytes;
     size_gb = cur_size/1e9;
