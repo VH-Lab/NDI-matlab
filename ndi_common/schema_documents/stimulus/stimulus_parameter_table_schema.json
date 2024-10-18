@@ -1,0 +1,17 @@
+{
+	"classname": "stimulus_parameter_table",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+		{ "name": "stimulus_element_id", "mustbenotempty": 1}
+	],
+	"stimulus_parameter_table": [
+		{
+			"name": "string",
+			"type": "char",
+			"default_value": [],
+			"parameters": [1,NaN],
+			"queryable": 1,
+			"documentation": "An array of the order of stimulus presentation (each stimulus has an integer ID)"
+		}
+	]
+}
