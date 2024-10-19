@@ -1,5 +1,5 @@
 function assertDIDInstalled()
-    s = which('did_Init');
+    s = which('did.database');
 
     if isempty(s)
         ME = MException("NDI:DIDNotFound", ...
