@@ -93,7 +93,7 @@ classdef markgarbage < ndi.app
 
 				% save new variable, clearing old
 				ndi_app_markgarbage_obj.clearvalidinterval(ndi_epochset_obj);
-				newdoc = ndi_app_markgarbage_obj.session.newdocument('apps/markgarbage/valid_interval',...
+				newdoc = ndi_app_markgarbage_obj.session.newdocument('valid_interval',...
 						'valid_interval',vi) + ndi_app_markgarbage_obj.newdocument(); % order of operations matters! superclasses last
 				newdoc = newdoc.set_dependency_value('element_id',ndi_epochset_obj.id());
 				ndi_app_markgarbage_obj.session.database_add(newdoc);

@@ -200,14 +200,14 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
 			% an optional argument and can be any type that confirms to the .json
 			% files in $NDI_COMMON/database_documents/*, a URL to such a file, or
 			% a full path filename. If DOCUMENT_TYPE is not specified, it is taken
-			% to be 'base.json'.
+			% to be 'base'.
 			%
 			% If additional PROPERTY values are specified, they are set to the VALUES indicated.
 			%
 			% Example: mydoc = ndi_session_obj.newdocument('base','base.name','myname');
 			%
 				if nargin<2,
-					document_type = 'base.json';
+					document_type = 'base';
 				end
 				inputs = cat(2,varargin,{'base.session_id', ndi_session_obj.id()});
 				ndi_document_obj = ndi.document(document_type, inputs);
