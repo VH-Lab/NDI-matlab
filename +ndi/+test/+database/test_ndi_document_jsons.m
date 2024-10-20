@@ -30,7 +30,7 @@ end;
 
 for i=1:numel(json_docs),
 	[parentdir,filename,ext] = fileparts(json_docs{i}{1});
-	ndidoc = [filename ext];
+	ndidoc = [filename];
 
 	if filename(1)=='.',  % ignore swap files and hidden files
 		continue;

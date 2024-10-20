@@ -22,7 +22,7 @@ classdef appdoc
 			%    connected database.
 			%
 			% Example:
-			%   ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'/apps/spikeextractor/spike_extraction_parameters'});
+			%   ndi_app_appdoc_obj = ndi.app.appdoc({'extraction_doc'},{'spike_extraction_parameters'});
 			%
 					ndi_app_appdoc_obj.doc_types = doc_types;
 					ndi_app_appdoc_obj.doc_document_types = doc_document_types;
