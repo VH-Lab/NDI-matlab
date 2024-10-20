@@ -1,0 +1,55 @@
+
+
+
+1)  run presetup. 
+
+ndi.setup.conv.marder.presetup(DIRNAME, N)
+
+ where DIRNAME is the full path to your session directory and 
+ N is the number of crabs in that experiment.
+
+presetup accomplishes:
+  (You don't do these, presetup does it)
+  1.1) Setup ndi session 
+    S = ndi.setup.lab('marderlab','745_043',[pwd filesep '745_043']);
+  1.2) Set up subject text files, need to look at the log to see how many
+motif is: 745_003_01@marderlab.brandeis.edu for first, 02 for second, etc
+  1.3 Make the probe table
+     ndi.setup.conv.marder.abf2probetable(S,'forceIgnore2',true)
+  1.4 Opens the probe table for adjustment
+
+2) Edit the probe table
+
+(edit the file called 'probeTable.csv')
+
+(check log to see what cells were stuck)
+
+examples:
+
+5v1_ai0,LPv_1_1,1,sharp-Vm,745_003_01@marderlab.brandeis.edu,745_003_0007.abf
+1v2_ai1,LPv_2_1,1,sharp-Vm,745_003_01@marderlab.brandeis.edu,745_003_0007.abf
+50v3_ai2,LPv_2_1,1,sharp-Vm,745_003_01@marderlab.brandeis.edu,745_003_0012.abf
+50v1_ai0,LPv_1_1,1,sharp-Vm,745_003_01@marderlab.brandeis.edu,745_003_0014.abf
+5i2_ai9,LPi_1,1,sharp-Im,745_003_01@marderlab.brandeis.edu,745_003_0014.abf
+
+PhysiTemp_1
+
+3) Run the post-routine
+
+ndi.setup.conv.marder.postsetup(S)
+
+ This does:
+
+    3.1) Generate the epochprobemaps
+    ndi.setup.conv.marder.abfprobetable2probemap(S)
+
+    3.2) Check that the probes are in
+	S.cache.clear(); 
+	p = S.getprobes()
+    3.3) Generate the metadata
+       ndi.setup.conv.marder.preptemptable(S)
+
+
+
+
+

@@ -46,10 +46,8 @@ function assertAddonOnPath(addonName, options)
 end
 
 function requirements = getRequirements()
-    
-    ndi.globals
-    
-    filename = fullfile(ndi_globals.path.commonpath, ...
+        
+    filename = fullfile(ndi.common.PathConstants.CommonFolder, ...
         'requirements', 'ndi-matlab-addons.json');
     
     t = vlt.file.textfile2char(filename);

@@ -12,12 +12,10 @@ function test_ndi_document(dirname)
 %
 %
 
-ndi.globals;
-
 test_struct = 0;
 
 if nargin<1,
-	dirname = [ndi_globals.path.exampleexperpath filesep 'exp1_eg'];
+	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 end;
 
 disp(['Creating a new session object in directory ' dirname '.']);

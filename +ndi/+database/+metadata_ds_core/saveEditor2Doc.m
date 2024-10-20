@@ -7,7 +7,6 @@ function d = saveEditor2Doc(D, datasetInfo)
 %
 %   Outputs:
 %       D - ndi.dataset object
-ndi.globals();
 newid = ndi.ido;
 docName = ['metadata_editor'];
 session_id = D.id();

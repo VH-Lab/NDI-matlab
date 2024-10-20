@@ -108,7 +108,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 				% do the decoding
 				[stimid,stimtimes,frametimes] = read_stimtimes_txt(pathname{1});
 				mappingfile1 = [pathname{1} filesep 'stimtimes2stimtimes_mapping.txt'];
-				if exist(mappingfile1,'file'),
+				if isfile(mappingfile1),
 					mapping = load(mappingfile1,'-ascii');
 					stimid = stimid(vlt.data.dropnan(mapping));
 					stimtimes = stimtimes(vlt.data.dropnan(mapping));
@@ -116,7 +116,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
 				end
 				[ss,mti]=getstimscript(pathname{1});
 				mappingfile2 = [pathname{1} filesep 'mti2stimtimes_mapping.txt'];
-				if exist(mappingfile2,'file'),
+				if isfile(mappingfile2),
 					mapping = load(mappingfile2,'-ascii');
 					mti = mti(vlt.data.dropnan(mapping));
 				end

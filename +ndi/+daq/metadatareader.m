@@ -79,7 +79,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 							'; epochfiles were ' epochfiles{:} '.']);
 
 					else,
-						if ~exist(epochfiles{tf},'file'),
+						if ~isfile(epochfiles{tf}),
 							error(['No such file ' file '.']);
 						end;
 						parameters = ndi_daqmetadatareader_obj.readmetadatafromfile(epochfiles{tf});
@@ -184,7 +184,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.daq.reader object.
-				ndi_document_obj = ndi.document('daq/daqmetadatareader',...
+				ndi_document_obj = ndi.document('daqmetadatareader',...
 					'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
 					'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
 					'base.id', ndi_daqmetadatareader_obj.id(),...

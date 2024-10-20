@@ -29,18 +29,17 @@ end;
 tutorial_dir = 'ts_exper2';
 
 if testing, % copy the files to the temp directory
-	ndi.globals() 
         prefix = [userpath filesep 'Documents' filesep 'NDI' filesep 'Test'];
         disp(['Assuming clean data files ts_exper2 are in ' prefix '.']);
 
 	disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
 	try,
-		rmdir([ndi_globals.path.temppath filesep tutorial_dir],'s');
+		rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');
 	end;
 	disp(['Copying ''' tutorial_dir ''' to the temporary directory']);
-	copyfile([prefix filesep tutorial_dir], [ndi_globals.path.temppath filesep tutorial_dir]);
+	copyfile([prefix filesep tutorial_dir], [ndi.common.PathConstants.TempFolder filesep tutorial_dir]);
 
-	prefix = ndi_globals.path.temppath;
+	prefix = ndi.common.PathConstants.TempFolder;
 end
 
  % Code block 2.2.7.1

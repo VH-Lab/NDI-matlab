@@ -245,9 +245,8 @@ classdef syncgraph < ndi.ido
 			% Existing sync mappings will not be overwritten.
 			%
 				d = {};
-				ndi.globals();
-				mylog = ndi_globals.log;
-                                mylog.msg('system',5,['Recalculating syncgraph...']);
+				mylog = ndi.common.getLogger();
+				mylog.msg('system',5,['Recalculating syncgraph...']);
 
 				epoch_node_fields = {'epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','objectname','objectclass'};
 
@@ -716,7 +715,7 @@ classdef syncgraph < ndi.ido
 			%
 			% Creates an ndi.document object DOC that represents the
 			%    ndi.time.syncrule object.
-				ndi_document_obj_set{1} = ndi.document('daq/syncgraph',...
+				ndi_document_obj_set{1} = ndi.document('syncgraph',...
 					'syncgraph.ndi_syncgraph_class',class(ndi_syncgraph_obj),...
 					'base.id', ndi_syncgraph_obj.id(),...
 					'base.session_id', ndi_syncgraph_obj.session.id());

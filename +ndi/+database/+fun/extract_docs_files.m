@@ -8,12 +8,11 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
 % will be placed in the directory TARGET_PATH.
 % 
 % If TARGE_TPATH is not given, then a subdirectory inside
-% ndi_globals.path.temppath is used and the path is returned as
+% ndi.common.PathConstants.TempFolder is used and the path is returned as
 % an output.
 %
 
 if nargin<2,
-	ndi.globals();
 	target_path = ndi.file.temp_name();
 	mkdir(target_path);
 end;

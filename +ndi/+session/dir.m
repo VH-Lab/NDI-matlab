@@ -27,7 +27,7 @@ classdef dir < ndi.session
 					ref = 'temp';
 				end
 
-				if ~exist(path,'dir'),
+				if ~isfolder(path),
 					error(['Directory ' path ' does not exist.']);
 				end;
 
@@ -141,7 +141,7 @@ classdef dir < ndi.session
 
 				ndi_dir = '.ndi';
 				p = [ndi_session_dir_obj.path filesep ndi_dir ];
-				if ~exist(p,'dir'),
+				if ~isfolder(p),
 					mkdir(p);
 				end;
 		end; % ndipathname()

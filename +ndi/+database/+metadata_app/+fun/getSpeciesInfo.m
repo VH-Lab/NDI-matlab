@@ -5,8 +5,7 @@ function [name, ontology_identifier, synonym] = getSpeciesInfo(uuid)
     doc_url = sprintf("efetch.fcgi?db=%s&id=%d", database, uuid);
     search_result = webread(base_url+"/"+doc_url);
     
-    global ndi_globals;
-    temp_dir = ndi_globals.path.temppath;
+    temp_dir = ndi.common.PathConstants.TempFolder;
     ido_ = ndi.ido;
     rand_num = ido_.identifier;
     temp_filename = sprintf("search_result_%s.xml", rand_num);
