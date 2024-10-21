@@ -20,7 +20,8 @@ ndiDocuments = {};
 session_id = '';
 
 for i=1:numel(d),
-	d_json = did.file.textfile2char([jsonpath filesep d(i).name]);
+	json_file_path = fullfile(jsonpath, d(i).name);
+	d_json = fileread(json_file_path);
 	d_struct = jsondecode(d_json);
 	if isfield(d_struct,'id'), 
 		d_struct = rmfield(d_struct,'id'); % remove API field
