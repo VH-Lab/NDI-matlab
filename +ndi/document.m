@@ -223,7 +223,7 @@ classdef document
 				
 				parameters = '';
 
-				location_here = did.datastructures.var2struct('delete_original','uid','location',...
+				location_here = vlt.data.var2struct('delete_original','uid','location',...
 					'parameters','location_type','ingest');
 
 				% Step 3: Add the file to the list
