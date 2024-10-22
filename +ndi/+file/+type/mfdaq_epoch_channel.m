@@ -91,7 +91,7 @@ classdef mfdaq_epoch_channel
 				time_dataclass = 'time';
                 
 				
-				did.datastructures.assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				[dummy,indexes_sorted] = sort({channel_structure.type});
 				channel_structure = channel_structure(indexes_sorted);

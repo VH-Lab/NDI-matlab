@@ -14,7 +14,7 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
 
 verbose = 1;
 
-did.datastructures.assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 if verbose, disp(['Loading documents...']); end;
 d = S.database_search(ndi.query('','isa','base'));

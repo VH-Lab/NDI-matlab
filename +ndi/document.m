@@ -678,7 +678,7 @@ classdef document
 				end;
 
 				ErrorIfNoFileInfo = 0;
-				did.datastructures.assign(varargin{:});
+				vlt.data.assign(varargin{:});
 				
 				[b,msg,fI_index] = ndi_document_obj.is_in_file_list(name);
 				if ~b,
