@@ -15,7 +15,7 @@ function test_ndi_document(dirname)
 test_struct = 0;
 
 if nargin<1,
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 end;
 
 disp(['Creating a new session object in directory ' dirname '.']);
@@ -25,14 +25,14 @@ E = ndi.session.dir('exp1',dirname);
 
 doc = E.database_search(ndi.query('','isa','demoNDI',''));
 if ~isempty(doc),
-	for i=1:numel(doc),
-		E.database_rm(id(doc{i}));
-	end;
+    for i=1:numel(doc),
+        E.database_rm(id(doc{i}));
+    end;
 end;
 
 doc = E.newdocument('demoNDI',...
-	'base.name','Demo document',...
-	'demoNDI.value', 5);
+    'base.name','Demo document',...
+    'demoNDI.value', 5);
 
 %add a binary file
 
@@ -40,7 +40,7 @@ binary_filename = [dirname filesep 'myfile.bin'];
 myfid = fopen(binary_filename,'w','ieee-le');
 if myfid>0,
 else,
-	error(['unable to open file: ' binary_filename '.']);
+    error(['unable to open file: ' binary_filename '.']);
 end;
 
 disp(['Storing ' mat2str(0:9) '...'])
@@ -56,13 +56,13 @@ E.database_add(doc);
 
 doc = E.database_search(ndi.query('demoNDI.value','exact_number',5,'')); 
 if numel(doc)~=1,
-	error(['Found <1 or >1 document with demoNDI.value of 5; this means there is a database problem.']);
+    error(['Found <1 or >1 document with demoNDI.value of 5; this means there is a database problem.']);
 end;
 doc = doc{1}, % should be only one match
 
 doc = E.database_search(ndi.query('','isa','demoNDI',''));
 if numel(doc)~=1,
-	error(['Found <1 or >1 document of type demoNDI; this means there is a database problem.']);
+    error(['Found <1 or >1 document of type demoNDI; this means there is a database problem.']);
 end;
 doc = doc{1}, % should be only one match
 
@@ -80,9 +80,9 @@ end;
 
 doc = E.database_search(ndi.query('','isa','demoNDI',''));
 if ~isempty(doc),
-	for i=1:numel(doc),
-		E.database_rm(doc{i}.id());
-	end;
+    for i=1:numel(doc),
+        E.database_rm(doc{i}.id());
+    end;
 end;
 
 

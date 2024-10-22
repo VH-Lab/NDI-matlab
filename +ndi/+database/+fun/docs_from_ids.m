@@ -14,20 +14,20 @@ function docs = docs_from_ids(DorS,document_ids)
 
 
 if isempty(document_ids),
-	docs = {};
-	return;
+    docs = {};
+    return;
 end;
 
 
 q = [];
 
 for i=1:numel(document_ids),
-	q_here = ndi.query('base.id','exact_string',document_ids{i});
-	if isempty(q),
-		q = q_here;
-	else,
-		q = q | q_here;
-	end;
+    q_here = ndi.query('base.id','exact_string',document_ids{i});
+    if isempty(q),
+        q = q_here;
+    else,
+        q = q | q_here;
+    end;
 end;
 
 docs_here = DorS.database_search(q);
@@ -35,12 +35,12 @@ docs_here = DorS.database_search(q);
 docs = cell(size(document_ids));
 
 for i=1:numel(document_ids),
-	for j=1:numel(docs_here),
-		if strcmp(document_ids{i},docs_here{j}.document_properties.base.id),
-			docs{i} = docs_here{j};
-			break; % stop when we found it
-		end;
-	end;
+    for j=1:numel(docs_here),
+        if strcmp(document_ids{i},docs_here{j}.document_properties.base.id),
+            docs{i} = docs_here{j};
+            break; % stop when we found it
+        end;
+    end;
 end;
 
 

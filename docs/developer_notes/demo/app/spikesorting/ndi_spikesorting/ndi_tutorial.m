@@ -3,7 +3,7 @@
 % Remove .ndi directory if it exists to avoid errors
 dirpath = '/Users/danielgmu/Downloads/Experiments/2019-08-22'
 if exist([dirpath filesep '.ndi'], 'dir') == 7
-	rmdir([dirpath filesep '.ndi'], 's');
+    rmdir([dirpath filesep '.ndi'], 's');
 end
 
 our_exp = ndi.session.dir('ts1',dirpath);
@@ -39,7 +39,7 @@ vlt.plot.plot_multichan(d,t,10);
 
 spikeextractor = ndi.ap0.spikeextractor(our_exp); 
 spikeextractor.add_appdoc(spikeextractor.session, 'extraction_parameters', [], 'ReplaceIfDifferent', ...
-	'test_extract');
+    'test_extract');
 spikeextractor.extract(probe, e,'test_extract');
 
 w = spikeextractor.loaddata_appdoc('spikewaves', probe, 1, 'test_extract');

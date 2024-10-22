@@ -20,18 +20,18 @@ function tutorial_02_04(prefix, testing)
 %
 
 if nargin<1 | isempty(prefix),
-	prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
+    prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 end;
 
 if nargin<2,
-	testing = 0;
+    testing = 0;
 end;
 
 tutorial_dir = 'ts_exper2';
 
 if testing, % copy the files to the temp directory
-	prefix = ndi.common.PathConstants.TempFolder;
-	disp(['Assuming data files ts_exper2 are in ' prefix '.']);
+    prefix = ndi.common.PathConstants.TempFolder;
+    disp(['Assuming data files ts_exper2 are in ' prefix '.']);
 end
 
  % Code block 2.4.1.1

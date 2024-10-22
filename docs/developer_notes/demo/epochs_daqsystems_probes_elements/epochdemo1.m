@@ -26,7 +26,7 @@ disp(['Now adding our acquisition device (CED Spike2):']);
   %         epoch.
 
 fn = ndi.file.navigator(E, {'.*\.smr\>','.*\.epochmetadata\>'},...
-	'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
+    'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
 
 
   % Step 1.2: create the daqsystem object and add it to the session:

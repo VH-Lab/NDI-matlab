@@ -14,41 +14,41 @@ function test_ndi_syncgraph_documents
 %   d) Create a new object based on the database entry, and test that it matches the original
 %
 
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 
-	E = ndi.session.dir('exp1',dirname);
-	 % remove any existing syncrules
-	doc = E.database_search(ndi.query('','isa','syncgraph',''));
-	E.database_rm(doc);
+    E = ndi.session.dir('exp1',dirname);
+     % remove any existing syncrules
+    doc = E.database_search(ndi.query('','isa','syncgraph',''));
+    E.database_rm(doc);
 
-	sg = {};
-	sg_docs = {};
-	 
-	 % Steps a and b and c)
+    sg = {};
+    sg_docs = {};
+     
+     % Steps a and b and c)
 
-	syncrule_docs = {};
+    syncrule_docs = {};
 
-	disp(['Making ndi.time.syncgraph object ...']);
-	sg{1} = ndi.time.syncgraph(E);
-	sg{1} = sg{1}.addrule(ndi.time.syncrule.filematch());
+    disp(['Making ndi.time.syncgraph object ...']);
+    sg{1} = ndi.time.syncgraph(E);
+    sg{1} = sg{1}.addrule(ndi.time.syncrule.filematch());
 
 
-	disp(['Making document for ndi.time.syncgraph object.']);
-	sg_docs{1} = sg{1}.newdocument();
-	E.database_add(sg_docs{1});
-	syncgraph_docs{1} = E.database_search(sg{1}.searchquery());
-	if numel(syncgraph_docs{1})~=1,
-		error(['Did not find exactly 1 match.']);
-	end;
+    disp(['Making document for ndi.time.syncgraph object.']);
+    sg_docs{1} = sg{1}.newdocument();
+    E.database_add(sg_docs{1});
+    syncgraph_docs{1} = E.database_search(sg{1}.searchquery());
+    if numel(syncgraph_docs{1})~=1,
+        error(['Did not find exactly 1 match.']);
+    end;
 
-	sg_fromdoc = {};
+    sg_fromdoc = {};
 
-	for i=1:numel(syncgraph_docs),
-		sg_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncgraph_docs{i}{1},E);
-		if eq(sg_fromdoc{i},sg{i}),
-			disp(['Syncgraph number ' int2str(i) ' matches.']);
-		else,
-			error(['Syncgraph number ' int2str(i) ' does not match.']);
-		end;
-	end;
+    for i=1:numel(syncgraph_docs),
+        sg_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncgraph_docs{i}{1},E);
+        if eq(sg_fromdoc{i},sg{i}),
+            disp(['Syncgraph number ' int2str(i) ' matches.']);
+        else,
+            error(['Syncgraph number ' int2str(i) ' does not match.']);
+        end;
+    end;
 end

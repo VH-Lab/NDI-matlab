@@ -18,17 +18,17 @@ function convertoldnsd2ndi(pathname)
 done = 0;
 
 while ~done,
-	alldirs = split(genpath(pathname),pathsep);
-	for i=1:numel(alldirs),
-		newname = strrep(alldirs{i},'nsd','ndi');
-		if ~strcmp(newname,alldirs{i}),
-			movefile(alldirs{i},newname);
-			break;
-		end;
-	end;
-	if i==numel(alldirs), 
-		done = 1;
-	end;
+    alldirs = split(genpath(pathname),pathsep);
+    for i=1:numel(alldirs),
+        newname = strrep(alldirs{i},'nsd','ndi');
+        if ~strcmp(newname,alldirs{i}),
+            movefile(alldirs{i},newname);
+            break;
+        end;
+    end;
+    if i==numel(alldirs), 
+        done = 1;
+    end;
 end;
 
 
@@ -46,6 +46,6 @@ str{end+1} = ['find ' pathname  ' -type f -name ''*.m'' -exec sed -i '''' s/NSD/
 str{end+1} = ['find ' pathname  ' -type f -name ''*.json'' -exec sed -i '''' s/NSD/NDI/g {} +'];
 
 for i=1:numel(str),
-	system(str{i});
+    system(str{i});
 end;
 

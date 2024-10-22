@@ -29,39 +29,39 @@ function S = vhlab(S, daqsystemname)
 % See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
-	S = {'vhintan', 'vhspike2', 'vhvis_spike2'};
-	return;
+    S = {'vhintan', 'vhspike2', 'vhvis_spike2'};
+    return;
 end;
 
 if iscell(daqsystemname),
-	for i=1:length(daqsystemname),
-		S = ndi.setup.daq.system.vhlab(S, daqsystemname{i});
-	end
-	return;
+    for i=1:length(daqsystemname),
+        S = ndi.setup.daq.system.vhlab(S, daqsystemname{i});
+    end
+    return;
 end
 
   % all of our daq systems use this custom epochprobemap class
 epochprobemapclass = 'ndi.setup.epoch.epochprobemap_daqsystem_vhlab';
 
 switch daqsystemname,
-	case 'vhintan',
-		fileparameters = {'reference.txt','.*\.rhd\>','vhintan_channelgrouping.txt','vhintan_intan2spike2time.txt'};  
-		readerobjectclass = ['ndi.daq.reader.mfdaq.intan'];
-		epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
-		mdr = {};
-	case 'vhspike2',
-		fileparameters = {'reference.txt', '.*\.smr\>', 'vhspike2_channelgrouping.txt'}; 
-		readerobjectclass = ['ndi.daq.reader.mfdaq.cedspike2'];
-		epochprobemapfileparameters = {'vhspike2_channelgrouping.txt'};
-		mdr = {};
-	case 'vhvis_spike2'
-		fileparameters = {'reference.txt', 'stimtimes.txt', 'verticalblanking.txt',...
-			'stims.mat', 'spike2data.smr'}; 
-		readerobjectclass = ['ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2'];
-		epochprobemapfileparameters = {'stimtimes.txt'}; 
-		mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')};
-	otherwise,
-		error(['Unknown device requested ' daqsystemname '.']);
+    case 'vhintan',
+        fileparameters = {'reference.txt','.*\.rhd\>','vhintan_channelgrouping.txt','vhintan_intan2spike2time.txt'};  
+        readerobjectclass = ['ndi.daq.reader.mfdaq.intan'];
+        epochprobemapfileparameters = {'vhintan_channelgrouping.txt'};
+        mdr = {};
+    case 'vhspike2',
+        fileparameters = {'reference.txt', '.*\.smr\>', 'vhspike2_channelgrouping.txt'}; 
+        readerobjectclass = ['ndi.daq.reader.mfdaq.cedspike2'];
+        epochprobemapfileparameters = {'vhspike2_channelgrouping.txt'};
+        mdr = {};
+    case 'vhvis_spike2'
+        fileparameters = {'reference.txt', 'stimtimes.txt', 'verticalblanking.txt',...
+            'stims.mat', 'spike2data.smr'}; 
+        readerobjectclass = ['ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2'];
+        epochprobemapfileparameters = {'stimtimes.txt'}; 
+        mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')};
+    otherwise,
+        error(['Unknown device requested ' daqsystemname '.']);
 end
 
 ft = ndi.file.navigator.epochdir(S, fileparameters, epochprobemapclass, epochprobemapfileparameters);

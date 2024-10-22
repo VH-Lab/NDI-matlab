@@ -38,10 +38,10 @@ cd(ndi_distribution_path);
 
  % first edit text in the files
 for i=1:numel(filestoedit),
-	if ~noOp,
-		vlt.file.searchreplacefiles_shell(filestoedit{i},oldname,newname);
-		vlt.file.searchreplacefiles_shell(filestoedit{i},upper(oldname),upper(newname));
-	end;
+    if ~noOp,
+        vlt.file.searchreplacefiles_shell(filestoedit{i},oldname,newname);
+        vlt.file.searchreplacefiles_shell(filestoedit{i},upper(oldname),upper(newname));
+    end;
 end;
 
 cd(currentpath); % restore path
@@ -49,7 +49,7 @@ cd(currentpath); % restore path
  % next change file names
 
 vlt.file.filenamesearchreplace(ndi_distribution_path, {oldname}, {newname}, 'deleteOriginals',1,...
-	'noOp', noOp, 'recursive', 1);
+    'noOp', noOp, 'recursive', 1);
 
 
 

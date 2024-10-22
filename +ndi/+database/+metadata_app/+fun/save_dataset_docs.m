@@ -13,19 +13,19 @@ documentList = ndi.database.metadata_ds_core.convertFormDataToDocuments(datasetI
 oldDocs = S.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.Dataset'));
 
 if ~isempty(oldDocs),
-	answer = questdlg('This will replace any previously saved core metadata information in the dataset or session. Continue?','Continue?','Yes','No','Yes');
+    answer = questdlg('This will replace any previously saved core metadata information in the dataset or session. Continue?','Continue?','Yes','No','Yes');
 else,
-	answer = 'Yes';
+    answer = 'Yes';
 end;
 
 if ~strcmp(answer,'Yes'),
-	return; % leave if user said no
+    return; % leave if user said no
 end;
 
 if ~isempty(oldDocs),
-	antecedents = ndi.database.fun.findallantecedents(S,[],oldDocs{:});
-	S.database_rm(oldDocs);
-	S.database_rm(antecedents);
+    antecedents = ndi.database.fun.findallantecedents(S,[],oldDocs{:});
+    S.database_rm(oldDocs);
+    S.database_rm(antecedents);
 end;
 
 S.database_add(documentList); 

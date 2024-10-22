@@ -19,32 +19,32 @@ end;
 d = {};
 
 if isempty(visited),
-	visited = {};
+    visited = {};
 end;
 
 for i=1:numel(varargin),
-	visited = cat(1,visited,{varargin{i}.id()});
+    visited = cat(1,visited,{varargin{i}.id()});
 end;
 
 
 for i=1:numel(varargin),
-	q_v = ndi.query('','depends_on','*',varargin{i}.id());
-	bb = E.database_search(q_v);
+    q_v = ndi.query('','depends_on','*',varargin{i}.id());
+    bb = E.database_search(q_v);
 
-	for j=1:numel(bb),
-		id_here = bb{j}.id();
-		if ~any(strcmp(id_here,visited)), % we don't already know about it
-			visited = cat(1,visited,{id_here}); 
-			d = cat(1,d,{bb{j}});
-			newdocs = ndi.database.fun.findalldependencies(E,visited,bb{j});
-			if ~isempty(newdocs),
-				for k=1:numel(newdocs),
-					visited = cat(1,visited,newdocs{k}.id());
-				end;
-				d = cat(1,d,newdocs(:));
-			end;
-		end;
-	end;
+    for j=1:numel(bb),
+        id_here = bb{j}.id();
+        if ~any(strcmp(id_here,visited)), % we don't already know about it
+            visited = cat(1,visited,{id_here}); 
+            d = cat(1,d,{bb{j}});
+            newdocs = ndi.database.fun.findalldependencies(E,visited,bb{j});
+            if ~isempty(newdocs),
+                for k=1:numel(newdocs),
+                    visited = cat(1,visited,newdocs{k}.id());
+                end;
+                d = cat(1,d,newdocs(:));
+            end;
+        end;
+    end;
 end;
 
 if ~iscell(d),

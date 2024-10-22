@@ -20,14 +20,14 @@ gitvalurl_path = 'https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/sc
 vlt.data.assign(varargin{:});
 
 if current_depth > max_depth,
-	error(['Maximum depth of ' int2str(max_depth) ' exceeded. Check for loops in schema definitions.']);
+    error(['Maximum depth of ' int2str(max_depth) ' exceeded. Check for loops in schema definitions.']);
 end;
 
 info.class_name = ndi_document_obj.document_properties.document_class.class_name;
 info.url = strrep(ndi_document_obj.document_properties.document_class.definition,'$NDIDOCUMENTPATH/', urldocpath);
 [info.url, shortname, ext] = fileparts(info.url);
 if ~isempty(info.url),
-	info.url(end+1) = '/';
+    info.url(end+1) = '/';
 end;
 info.shortname = shortname;
 info.url = [info.url info.shortname '.md'];
@@ -45,28 +45,28 @@ md = cat(2,md,['## Class definition' newline newline]);
 md = cat(2,md,['**Class name**: [' info.class_name '](' info.localurl  ')' '<br>' newline ]);
 md = cat(2,md,['**Short name**: [' info.shortname '](' info.localurl  ')' '<br>' newline ]);
 
-	 % Superclasses
+     % Superclasses
 
 superclass_info = {};
 
 if examine_superclasses,
-	md = cat(2,md,['**Superclasses**: ']);
+    md = cat(2,md,['**Superclasses**: ']);
 
-	if numel(ndi_document_obj.document_properties.document_class.superclasses)==0,
-		md = cat(2,md,'*none*');
-	else,
-		for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses),
-			d=ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
-			[blank,info_here] = ndi.docs.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1);
-			md=cat(2,md,['[' info_here.shortname '](' [info.my_path_to_root info_here.url] ')']);
-			superclass_info{end+1} = info_here;
-			if i~=numel(ndi_document_obj.document_properties.document_class.superclasses),
-				md = cat(2,md,', ');
-			end;
-		end;
-	end;
+    if numel(ndi_document_obj.document_properties.document_class.superclasses)==0,
+        md = cat(2,md,'*none*');
+    else,
+        for i=1:numel(ndi_document_obj.document_properties.document_class.superclasses),
+            d=ndi.document(ndi_document_obj.document_properties.document_class.superclasses(i).definition);
+            [blank,info_here] = ndi.docs.document2markdown(d,'examine_superclasses',0,'current_depth',current_depth+1);
+            md=cat(2,md,['[' info_here.shortname '](' [info.my_path_to_root info_here.url] ')']);
+            superclass_info{end+1} = info_here;
+            if i~=numel(ndi_document_obj.document_properties.document_class.superclasses),
+                md = cat(2,md,', ');
+            end;
+        end;
+    end;
 
-	md = cat(2,md,[newline newline]);
+    md = cat(2,md,[newline newline]);
 end;
 info.superclass_info = superclass_info;
 
@@ -78,9 +78,9 @@ info.validation = ndi_document_obj.document_properties.document_class.validation
 info.validation_url = strrep(info.validation, '$NDISCHEMAPATH/', gitvalurl_path);
 info.validation_path = strrep(info.validation, '$NDISCHEMAPATH', ndi.common.PathConstants.DocumentSchemaFolder);
 if ~isfile(info.validation_path),
-	info.validation_json = struct('properties',vlt.data.emptystruct());
+    info.validation_json = struct('properties',vlt.data.emptystruct());
 else,
-	info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
+    info.validation_json = jsondecode(vlt.file.textfile2char(info.validation_path));
 end;
 md = cat(2,md,['**Schema for validation**: [' info.validation '](' info.validation_url ')<br>' newline]);
 info.property_list_name = ndi_document_obj.document_properties.document_class.property_list_name;
@@ -97,64 +97,64 @@ info.prop_list = vlt.data.emptystruct('field','default_value','data_type','descr
 info.prop_list = ndi.docs.schemastructure2docstructure(info.validation_json);
 
 if isempty(info.prop_list), % reading from schema did not succeed
-	prop_list = getfield(ndi_document_obj.document_properties, info.property_list_name);
+    prop_list = getfield(ndi_document_obj.document_properties, info.property_list_name);
 
-	fn = fieldnames(prop_list);
-	if numel(fn)>0, % we have field names
-		for i=1:numel(fn),
-			phere.property = fn{i};
-			phere.doc_default_value = '';
-			phere.doc_data_type = '';
-			phere.doc_description = '';
+    fn = fieldnames(prop_list);
+    if numel(fn)>0, % we have field names
+        for i=1:numel(fn),
+            phere.property = fn{i};
+            phere.doc_default_value = '';
+            phere.doc_data_type = '';
+            phere.doc_description = '';
             if isfield(info.validation_json,'properties'),
-			    if isfield(info.validation_json.properties,fn{i}),
-				    v=getfield(info.validation_json.properties,fn{i});
-				    if isfield(v,'doc_description'),
-					    phere.doc_description = getfield(v,'doc_description');
-				    end;
-				    if isfield(v,'doc_data_type'),
-					    phere.doc_data_type = getfield(v,'doc_data_type');
-				    end;
-				    if isfield(v,'doc_default_value'),
-					    phere.doc_default_value = getfield(v,'doc_default_value');
-				    end;
-			    end;
+                if isfield(info.validation_json.properties,fn{i}),
+                    v=getfield(info.validation_json.properties,fn{i});
+                    if isfield(v,'doc_description'),
+                        phere.doc_description = getfield(v,'doc_description');
+                    end;
+                    if isfield(v,'doc_data_type'),
+                        phere.doc_data_type = getfield(v,'doc_data_type');
+                    end;
+                    if isfield(v,'doc_default_value'),
+                        phere.doc_default_value = getfield(v,'doc_default_value');
+                    end;
+                end;
             end;
-			info.prop_list(end+1) = phere;
-		end;
-	end;
+            info.prop_list(end+1) = phere;
+        end;
+    end;
 end;
 
 if ~isempty(info.prop_list),
-	md = cat(2,md,['## [' info.shortname '](' info.localurl ') fields' newline newline]);
-	md = cat(2,md,['Accessed by `' info.property_list_name '.field` where *field* is one of the field names below' newline newline]);
-	md = cat(2,md,['| field | default_value | data type | description |' newline]);
-	md = cat(2,md,['| --- | --- | --- | --- |' newline]);
-	for i=1:numel(info.prop_list),
-		phere = info.prop_list(i);
-		md = cat(2,md,['| ' phere.property  ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
-	end;
+    md = cat(2,md,['## [' info.shortname '](' info.localurl ') fields' newline newline]);
+    md = cat(2,md,['Accessed by `' info.property_list_name '.field` where *field* is one of the field names below' newline newline]);
+    md = cat(2,md,['| field | default_value | data type | description |' newline]);
+    md = cat(2,md,['| --- | --- | --- | --- |' newline]);
+    for i=1:numel(info.prop_list),
+        phere = info.prop_list(i);
+        md = cat(2,md,['| ' phere.property  ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
+    end;
 
-	md = cat(2,md,[newline newline]);
+    md = cat(2,md,[newline newline]);
 end;
 
 
  % superclass fields
 
 if numel(superclass_info)>0,
-	for i=1:numel(info.superclass_info),
-		if numel(info.superclass_info{i}.prop_list)>0,
-			md = cat(2,md,['## [' info.superclass_info{i}.shortname '](' [info.my_path_to_root info.superclass_info{i}.url] ...
-				 ') fields' newline newline]);
-			md = cat(2,md,['Accessed by `' info.superclass_info{i}.property_list_name '.field` where *field* is one of the field names below' newline newline]);
-			md = cat(2,md,['| field | default_value | data type | description |' newline]);
-			md = cat(2,md,['| --- | --- | --- | --- |' newline]);
-			for j=1:numel(info.superclass_info{i}.prop_list),
-				phere = info.superclass_info{i}.prop_list(j);
-				md=cat(2,md,['| ' phere.property ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
-			end;
-			md = cat(2,md,[newline newline]);
-		end;
-	end;
+    for i=1:numel(info.superclass_info),
+        if numel(info.superclass_info{i}.prop_list)>0,
+            md = cat(2,md,['## [' info.superclass_info{i}.shortname '](' [info.my_path_to_root info.superclass_info{i}.url] ...
+                 ') fields' newline newline]);
+            md = cat(2,md,['Accessed by `' info.superclass_info{i}.property_list_name '.field` where *field* is one of the field names below' newline newline]);
+            md = cat(2,md,['| field | default_value | data type | description |' newline]);
+            md = cat(2,md,['| --- | --- | --- | --- |' newline]);
+            for j=1:numel(info.superclass_info{i}.prop_list),
+                phere = info.superclass_info{i}.prop_list(j);
+                md=cat(2,md,['| ' phere.property ' | ' phere.doc_default_value  ' | ' phere.doc_data_type  ' | ' phere.doc_description  ' |' newline]);
+            end;
+            md = cat(2,md,[newline newline]);
+        end;
+    end;
 end;
 

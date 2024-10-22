@@ -19,12 +19,12 @@ if isempty(to_delete_list),
 end;
 
 for i=1:numel(to_delete_list),
-	try,
-		delete(to_delete_list{i});
-	catch,
-		b = 0;
-		msg = ['Deleting: ' lasterr];
-	end;
+    try,
+        delete(to_delete_list{i});
+    catch,
+        b = 0;
+        msg = ['Deleting: ' lasterr];
+    end;
 end;
 
 

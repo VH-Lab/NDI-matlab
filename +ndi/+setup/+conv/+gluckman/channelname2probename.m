@@ -13,9 +13,9 @@ function [probename, proberef, subjectname, probetype] = channelname2probename(c
 %
 
 arguments
-	chName
-	subjects
-	options.nothing = 0;
+    chName
+    subjects
+    options.nothing = 0;
 end
 
 subjectname = subjects{1};
@@ -23,16 +23,16 @@ subjectname = subjects{1};
 probetype = 'eeg';
 
 if ~isempty(findstr(lower(chName),'ecg')),
-	probetype = 'ecg';
+    probetype = 'ecg';
 end;
 if ~isempty(findstr(lower(chName),'counter')),
-	probetype = '';
+    probetype = '';
 end;
 if ~isempty(findstr(lower(chName),'status')),
-	probetype = '';
+    probetype = '';
 end;
 if ~isempty(findstr(chName,'ACC')),
-	probetype = '';
+    probetype = '';
 end;
 
 probename = matlab.lang.makeValidName(chName);

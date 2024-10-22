@@ -26,24 +26,24 @@ searchspace = 1:numel(epochnodearray);
 parameters = {'objectname','objectclass','epoch_id','epoch_clock','epoch_session_id'};
 
 if numel(epochnode)>1,
-	error(['EPOCHNODE must be a single entry.']);
+    error(['EPOCHNODE must be a single entry.']);
 end;
 
 for i=1:numel(parameters),
-	value = [];
-	if isfield(epochnode,parameters{i}),
-		value = getfield(epochnode,parameters{i});
-	end;
-	if ~isempty(value)
-		switch(parameters{i}),
-			case {'objectname','objectclass','epoch_id','epoch_session_id'},
-				eval(['subspacesearch = find(strcmp(value,{epochnodearray(searchspace).' parameters{i} '}));']);
-			case 'epoch_clock',
-				idx = cellfun(@(x) eq(x,value), {epochnodearray(searchspace).epoch_clock});
-				subspacesearch = find(idx);
-		end
-		searchspace = searchspace(subspacesearch);
-	end
+    value = [];
+    if isfield(epochnode,parameters{i}),
+        value = getfield(epochnode,parameters{i});
+    end;
+    if ~isempty(value)
+        switch(parameters{i}),
+            case {'objectname','objectclass','epoch_id','epoch_session_id'},
+                eval(['subspacesearch = find(strcmp(value,{epochnodearray(searchspace).' parameters{i} '}));']);
+            case 'epoch_clock',
+                idx = cellfun(@(x) eq(x,value), {epochnodearray(searchspace).epoch_clock});
+                subspacesearch = find(idx);
+        end
+        searchspace = searchspace(subspacesearch);
+    end
 end
 
 index = searchspace;

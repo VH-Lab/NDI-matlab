@@ -55,9 +55,9 @@ end
 % else
 %     % Process the JSON response; if the command failed, it might be a plain text error message
 %     try,
-% 	    response = jsondecode(output);
+%         response = jsondecode(output);
 %     catch,
-% 	    error(['Command failed with message: ' output ]);
+%         error(['Command failed with message: ' output ]);
 %     end;
 %     if isfield(response, 'error')
 %         error(response.error);

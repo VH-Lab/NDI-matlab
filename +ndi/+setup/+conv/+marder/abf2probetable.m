@@ -20,8 +20,8 @@ function abf2probetable(S, options)
 %
 
 arguments
-	S (1,1) 
-	options.forceIgnore2 = false
+    S (1,1) 
+    options.forceIgnore2 = false
 end
 
 dirname = S.getpath();
@@ -32,7 +32,7 @@ s = dir([dirname filesep  'subje*.txt']);
 
 subject = {};
 for i=1:numel(s),
-	subject{i} = fileread([dirname filesep s(i).name]);
+    subject{i} = fileread([dirname filesep s(i).name]);
 end;
 
 cols = {'channelName','probeName','probeRef','probeType','subject','firstAppears'};
@@ -41,27 +41,27 @@ datatypes = {'string','string','double','string','string','string'};
 probetable = table('Size',[0 numel(cols)],'VariableNames',cols,'VariableTypes',datatypes);
 
 for i=1:numel(d),
-	h = ndr.format.axon.read_abf_header([dirname filesep d(i).name]);
-	[name,ref,daqsysstr,subjectlist] = ndi.setup.conv.marder.channelnames2daqsystemstrings(h.recChNames,'marder_abf',subject,...
-		'forceIgnore2',options.forceIgnore2);
-	for j=1:numel(name),
-		if isempty(find(strcmp(h.recChNames{j},probetable.("channelName")))),
-			if any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='v'),
-				probeType = 'sharp-Vm';
-				name{j} = 'XP';
-			elseif any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='i'),
-				probeType = 'sharp-Im';
-				name{j} = 'XP';
-			elseif ~isempty(findstr(lower(h.recChNames{j}),'temp')),
-				probeType = 'thermometer';
-			else,
-				probeType = 'n-trode';
-			end;
-			probetable_new = cell2table({ h.recChNames{j} name{j} ref(j) probeType subjectlist{j} d(i).name},...
-				'VariableNames',cols);
-			probetable = cat(1,probetable,probetable_new);
-		end;
-	end;
+    h = ndr.format.axon.read_abf_header([dirname filesep d(i).name]);
+    [name,ref,daqsysstr,subjectlist] = ndi.setup.conv.marder.channelnames2daqsystemstrings(h.recChNames,'marder_abf',subject,...
+        'forceIgnore2',options.forceIgnore2);
+    for j=1:numel(name),
+        if isempty(find(strcmp(h.recChNames{j},probetable.("channelName")))),
+            if any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='v'),
+                probeType = 'sharp-Vm';
+                name{j} = 'XP';
+            elseif any(lower(h.recChNames{j})=='a') & any(lower(h.recChNames{j})=='i'),
+                probeType = 'sharp-Im';
+                name{j} = 'XP';
+            elseif ~isempty(findstr(lower(h.recChNames{j}),'temp')),
+                probeType = 'thermometer';
+            else,
+                probeType = 'n-trode';
+            end;
+            probetable_new = cell2table({ h.recChNames{j} name{j} ref(j) probeType subjectlist{j} d(i).name},...
+                'VariableNames',cols);
+            probetable = cat(1,probetable,probetable_new);
+        end;
+    end;
 end;
 
 writetable(probetable,[dirname filesep 'probeTable.csv']);

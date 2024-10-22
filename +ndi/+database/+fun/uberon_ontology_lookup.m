@@ -17,7 +17,7 @@ function [item] = uberon_ontology_lookup(field, value)
 %
 
 filename = fullfile(ndi.common.PathConstants.CommonFolder,...
-	'controlled_vocabulary','uberon_temp.txt');
+    'controlled_vocabulary','uberon_temp.txt');
 
 s = loadStructArray(filename);
 

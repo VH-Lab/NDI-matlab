@@ -16,13 +16,13 @@ msg = '';
 b = 1;
 
 if nargin<2,
-	output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
+    output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
 
-	if ~ischar(output_path),
-		b = 0;
-		msg = 'Cancelling per user request.';
-		D = [];
-	end;
+    if ~ischar(output_path),
+        b = 0;
+        msg = 'Cancelling per user request.';
+        D = [];
+    end;
 end;
 
 output_path = char(output_path);

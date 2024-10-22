@@ -9,7 +9,7 @@ function markgarbage
 %
 
 if nargin<1,
-	dirname = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions' filesep 'markgarbage_ex'];
+    dirname = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions' filesep 'markgarbage_ex'];
 end;
 
 disp(['creating a new session object at path ' dirname '...']);
@@ -21,14 +21,14 @@ disp(['Now adding our acquisition device (intan):']);
   %         files in any organization within the directory
 
 fn = ndi.file.navigator(E, {'.*\.rhd\>','.*\.epochmetadata\>'},...
-		'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
+        'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .rhd files
 
   % Step 2: create the daqsystem object and add it to the session:
 
   % if it is there from before, remove it
 devs = E.daqsystem_load('name','(.*)');
 for i=1:numel(devs), 
-	E.daqsystem_rm(vlt.data.celloritem(devs,i));
+    E.daqsystem_rm(vlt.data.celloritem(devs,i));
 end;
 
 dev1 = ndi.daq.system.mfdaq('intan1',fn,ndi.daq.reader.mfdaq.intan());

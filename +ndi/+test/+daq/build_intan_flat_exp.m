@@ -13,7 +13,7 @@ function build_intan_flat_exp(dirname)
 %
 
 if nargin<1,
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
 end;
 
 disp(['creating a new session object...']);
@@ -24,10 +24,10 @@ E.database_clear('yes'); % use it only if you mean it
 
 dev = E.daqsystem_load('name','(.*)'), 
 if ~isempty(dev) & ~iscell(dev),
-	dev = {dev};
+    dev = {dev};
 end;
 for i=1:numel(dev),
-	E.daqsystem_rm(dev{i});
+    E.daqsystem_rm(dev{i});
 end;
 
 disp(['Now adding our acquisition daqsystem (intan):']);
@@ -48,11 +48,11 @@ E.database_add(subject.newdocument());
   % Step 3: let's add a document
 
 doc = E.newdocument('subjectmeasurement',...
-	'base.name','Animal statistics',...
-	'subjectmeasurement.measurement','age',...
-	'subjectmeasurement.value',30,...
-	'subjectmeasurement.datestamp','2017-03-17T19:53:57.066Z'...
-	);
+    'base.name','Animal statistics',...
+    'subjectmeasurement.measurement','age',...
+    'subjectmeasurement.value',30,...
+    'subjectmeasurement.datestamp','2017-03-17T19:53:57.066Z'...
+    );
 
 doc = doc.set_dependency_value('subject_id',subject.id());
 

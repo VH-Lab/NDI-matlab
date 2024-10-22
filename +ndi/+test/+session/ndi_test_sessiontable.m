@@ -16,7 +16,7 @@ st.addtableentry('12345','~/Desktop/myexperiment');
 t = st.getsessiontable();
 
 if numel(t)~=1,
-	error(['Session table does not have right number of entries.']);
+    error(['Session table does not have right number of entries.']);
 end;
 
 [b,results]=st.checktable(); 
@@ -26,7 +26,7 @@ st.removetableentry('12345');
 t = st.getsessiontable();
 
 if numel(t)~=0,
-	error(['Session table does not have right number of entries.']);
+    error(['Session table does not have right number of entries.']);
 end;
 
 st.clearsessiontable();
@@ -34,7 +34,7 @@ st.clearsessiontable();
 f = st.backupfilelist();
 
 if numel(f)>0,
-	% small risk, file not locked or checked out
-	movefile(f{end},ndi.session.sessiontable.localtablefilename());
+    % small risk, file not locked or checked out
+    movefile(f{end},ndi.session.sessiontable.localtablefilename());
 end;
 

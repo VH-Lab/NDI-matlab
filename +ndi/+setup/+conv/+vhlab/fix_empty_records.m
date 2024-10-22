@@ -11,6 +11,6 @@ ds = dirstruct(dirname);
 T = getalltests(ds);
 
 for t=1:numel(T),
-	
+    
 
 end;

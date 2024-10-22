@@ -17,7 +17,7 @@ function dnew = add_stimulus_approach(S, filename)
 % added, then they are not re-added.
 
 if nargin<2,
-	filename = [S.getpath filesep 'stimulus_approaches.txt'];
+    filename = [S.getpath filesep 'stimulus_approaches.txt'];
 end;
 
 tab = loadStructArray(filename);
@@ -25,7 +25,7 @@ tab = loadStructArray(filename);
 daqsys = S.daqsystem_load('name','vhvis_spike2');
 
 if isempty(daqsys),
-	error(['Could not find daq system vhvis_spike2.']);
+    error(['Could not find daq system vhvis_spike2.']);
 end;
 
 
@@ -40,30 +40,30 @@ et = probe.epochtable();
 dnew = {};
 
 for i=1:numel(tab),
-	item = ndi.database.fun.ndicloud_ontology_lookup('Name',tab(i).Approach);
-	if isempty(item),
-		error(['Could not find item that matches ' tab(i).Approach '.']);
-	end;
-	% make sure epoch is in epochtable
-	if isempty(find(strcmp(tab(i).Epoch,{et.epoch_id}))),
-		error(['Could not find epoch ' tab(i).Epoch '.']);
-	end;
+    item = ndi.database.fun.ndicloud_ontology_lookup('Name',tab(i).Approach);
+    if isempty(item),
+        error(['Could not find item that matches ' tab(i).Approach '.']);
+    end;
+    % make sure epoch is in epochtable
+    if isempty(find(strcmp(tab(i).Epoch,{et.epoch_id}))),
+        error(['Could not find epoch ' tab(i).Epoch '.']);
+    end;
 
-	ont_id = ['NDIC:' sprintf('%0.8d',item.Identifier)]
+    ont_id = ['NDIC:' sprintf('%0.8d',item.Identifier)]
 
-	% do we already have the item as a document?
-	q_e = ndi.query('epochid.epochid','exact_string',tab(i).Epoch);
-	q_s = ndi.query('openminds.fields.name','exact_string',tab(i).Approach) & ...
-		ndi.query('openminds.fields.preferredOntologyIdentifier','exact_string',ont_id);
-	d_test = S.database_search(q_e&q_s);
-	if isempty(d_test),
-		new_approach = openminds.controlledterms.StimulationApproach(...
-			'name',item.Name,...
-			'preferredOntologyIdentifier',ont_id,...
-			'description',item.Description);
-		dnew = cat(1,dnew,ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
-			session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
-	end;
+    % do we already have the item as a document?
+    q_e = ndi.query('epochid.epochid','exact_string',tab(i).Epoch);
+    q_s = ndi.query('openminds.fields.name','exact_string',tab(i).Approach) & ...
+        ndi.query('openminds.fields.preferredOntologyIdentifier','exact_string',ont_id);
+    d_test = S.database_search(q_e&q_s);
+    if isempty(d_test),
+        new_approach = openminds.controlledterms.StimulationApproach(...
+            'name',item.Name,...
+            'preferredOntologyIdentifier',ont_id,...
+            'description',item.Description);
+        dnew = cat(1,dnew,ndi.database.fun.openMINDSobj2ndi_document(new_approach,...
+            session_id, 'stimulus',probe_id,'epochid.epochid', tab(i).Epoch));
+    end;
 
 end;
 

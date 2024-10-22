@@ -11,7 +11,7 @@ function datasetId = new_dataset(D)
 %
 
 arguments
-	D (1,1) {mustBeA(D,'ndi.dataset')}
+    D (1,1) {mustBeA(D,'ndi.dataset')}
 end
 
  % Step 1: Create the dataset record on NDI Cloud and insert the metadata

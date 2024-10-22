@@ -14,52 +14,52 @@ function test_ndi_daqsystem_documents
 %   c) Search for the database document
 %   d) Create a new object based on the database entry, and test that it matches the original
 %
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
-	    
-	E = ndi.session.dir('exp1',dirname);
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
+        
+    E = ndi.session.dir('exp1',dirname);
 
-	% First, delete any daq systems that are there from the dbleaf system
-	E.daqsystem_clear();
-	% Second, delete any existing daqsystem documents
-	doc = E.database_search(ndi.query('','isa','daqsystem',''));
-	E.database_rm(doc);
+    % First, delete any daq systems that are there from the dbleaf system
+    E.daqsystem_clear();
+    % Second, delete any existing daqsystem documents
+    doc = E.database_search(ndi.query('','isa','daqsystem',''));
+    E.database_rm(doc);
 
-	% we will create one of all types returned by 
+    % we will create one of all types returned by 
     % `ndi.setup.daq.system.listDaqSystemNames('vhlab')`
 
     devlist = ndi.setup.daq.system.listDaqSystemNames('vhlab');
 
 
-	daqsys = {};
-	daqsys_docs = {};
+    daqsys = {};
+    daqsys_docs = {};
 
-	for i=1:numel(devlist),
-		disp(['Making object ' devlist{i} '.']);
+    for i=1:numel(devlist),
+        disp(['Making object ' devlist{i} '.']);
         daqSystemConfig = ndi.setup.DaqSystemConfiguration.fromLabDevice('vhlab', devlist{i});
         E = daqSystemConfig.addToSession(E);
-		daqsys{i} = E.daqsystem_load('name',devlist{i});
-		disp(['Making document for ' devlist{i} '.']);
-		daqsys_docs{i} = daqsys{i}.newdocument();
-		%we can't add it back, it's already there
-		%E.database_add(daqsys_docs{i});
-		ds_doc{i} = E.database_search(daqsys{i}.searchquery());
-		if numel(ds_doc{i})~=1,
-			error(['Did not find exactly 1 match.']);
-		end;
-	end;
+        daqsys{i} = E.daqsystem_load('name',devlist{i});
+        disp(['Making document for ' devlist{i} '.']);
+        daqsys_docs{i} = daqsys{i}.newdocument();
+        %we can't add it back, it's already there
+        %E.database_add(daqsys_docs{i});
+        ds_doc{i} = E.database_search(daqsys{i}.searchquery());
+        if numel(ds_doc{i})~=1,
+            error(['Did not find exactly 1 match.']);
+        end;
+    end;
 
-	ds_fromdoc = {};
+    ds_fromdoc = {};
 
-	for i=1:numel(ds_doc),
-		ds_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqsys_docs{i}{3},E);
-		if eq(ds_fromdoc{i},daqsys{i}),
-			disp(['Daqsystem number ' int2str(i) ' matches.']);
-		else,
-			error(['Daqsystem number ' int2str(i) ' does not match.']);
-		end;
-	end;
+    for i=1:numel(ds_doc),
+        ds_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(daqsys_docs{i}{3},E);
+        if eq(ds_fromdoc{i},daqsys{i}),
+            disp(['Daqsystem number ' int2str(i) ' matches.']);
+        else,
+            error(['Daqsystem number ' int2str(i) ' does not match.']);
+        end;
+    end;
 
-	% clean up for next time
-	E.daqsystem_clear();
+    % clean up for next time
+    E.daqsystem_clear();
 end
 

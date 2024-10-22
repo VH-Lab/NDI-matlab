@@ -7,7 +7,7 @@ dot_ndi = [dirname filesep '.ndi'];
 
 % Remove .ndi directory if it exists to avoid errors
 if exist(dot_ndi, 'dir') == 7
-	rmdir([dirname filesep '.ndi'], 's');
+    rmdir([dirname filesep '.ndi'], 's');
 end
 
 disp(['opening session object...']);
@@ -15,11 +15,11 @@ E = ndi.session.dir('exp1', dirname);
 d = E.daqsystem_load('name','SpikeGadgets');
 
 if isempty(d),
-	disp(['Now adding our acquisition device (SpikeGadgets):']);
-	filenav = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files
-	dr = ndi.daq.reader.mfdaq.spikegadgets;
-	dev1 = ndi.daq.system.mfdaq('SpikeGadgets',filenav, dr);
-	E.daqsystem_add(dev1);
+    disp(['Now adding our acquisition device (SpikeGadgets):']);
+    filenav = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files
+    dr = ndi.daq.reader.mfdaq.spikegadgets;
+    dev1 = ndi.daq.system.mfdaq('SpikeGadgets',filenav, dr);
+    E.daqsystem_add(dev1);
 end;
 
 spike_extractor = ndi.ap0.spikeextractor(E);
@@ -29,7 +29,7 @@ probe = probes{1};
 
 % d = E.database_search({'ndi.document.name','test','spike_extraction_parameters.filter_type','(.*)'});
 % if isempty(d),
-% 	spike_extractor.add_extraction_doc('test');
+%     spike_extractor.add_extraction_doc('test');
 % end;
 
 

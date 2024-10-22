@@ -132,14 +132,14 @@ function mustBeWritable(folderPath)
         mkdir(folderPath)
     end
 
-	ndiido = ndi.ido();
-	fname = fullfile( folderPath, ['testfile_' ndiido.id() '.txt'] );
-	fid = fopen(fname,'wt');
+    ndiido = ndi.ido();
+    fname = fullfile( folderPath, ['testfile_' ndiido.id() '.txt'] );
+    fid = fopen(fname,'wt');
     if fid < 0
         throwWriteAccessDeniedError(folderPath)
     end
-	fclose(fid);
-	delete(fname);
+    fclose(fid);
+    delete(fname);
 end
 
 function throwWriteAccessDeniedError(folderPath)

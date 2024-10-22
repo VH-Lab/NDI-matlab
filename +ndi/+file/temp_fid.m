@@ -18,6 +18,6 @@ fname = ndi.file.temp_name();
 fid = fopen(fname,'w','l'); % open for writing, little-endian
 
 if fid<0,
-	error(['Could not open the file ' fname ' for writing.']);
+    error(['Could not open the file ' fname ' for writing.']);
 end;
 

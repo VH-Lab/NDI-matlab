@@ -19,12 +19,12 @@ j = vlt.file.textfile2char([ndi.common.PathConstants.CommonFolder filesep 'stimu
 ndi_stimTFinfo = jsondecode(j);
 
 for i=1:numel(ndi_stimTFinfo),
-	if ~isempty(intersect(fieldnames(stimulus_parameters),ndi_stimTFinfo(i).parameter_name)),
-		% have a match
-		tf_value = getfield(stimulus_parameters,ndi_stimTFinfo(i).parameter_name);
-		tf_value = ndi_stimTFinfo(i).temporalFrequencyAdder + ndi_stimTFinfo(i).temporalFrequencyMultiplier * tf_value;
-		tf_name = ndi_stimTFinfo(i).parameter_name;
-		return;
-	end;
+    if ~isempty(intersect(fieldnames(stimulus_parameters),ndi_stimTFinfo(i).parameter_name)),
+        % have a match
+        tf_value = getfield(stimulus_parameters,ndi_stimTFinfo(i).parameter_name);
+        tf_value = ndi_stimTFinfo(i).temporalFrequencyAdder + ndi_stimTFinfo(i).temporalFrequencyMultiplier * tf_value;
+        tf_name = ndi_stimTFinfo(i).parameter_name;
+        return;
+    end;
 end;
 

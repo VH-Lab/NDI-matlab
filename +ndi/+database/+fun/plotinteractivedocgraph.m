@@ -30,31 +30,31 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
 
 if nargin==0,
 
-	global clicked_node;
+    global clicked_node;
 
-	f = gcf;
-	a = gca;
-	ud = get(f,'userdata');
-	pt = get(gca,'CurrentPoint');
+    f = gcf;
+    a = gca;
+    ud = get(f,'userdata');
+    pt = get(gca,'CurrentPoint');
 
-	pt = pt(1,1:2); % just take first row, live in 2-d only
-	ch = get(gca,'children'); % assume we got the only plot
-	X = get(ch(1),'XData');
-	Y = get(ch(1),'YData');
-	Z = get(ch(1),'ZData'); % in case we want to go to 3-d
-	ind = vlt.data.findclosest( sqrt( (X-pt(1)).^2 + (Y-pt(2)).^2), 0);
+    pt = pt(1,1:2); % just take first row, live in 2-d only
+    ch = get(gca,'children'); % assume we got the only plot
+    X = get(ch(1),'XData');
+    Y = get(ch(1),'YData');
+    Z = get(ch(1),'ZData'); % in case we want to go to 3-d
+    ind = vlt.data.findclosest( sqrt( (X-pt(1)).^2 + (Y-pt(2)).^2), 0);
 
-	id = ud.nodes(ind);
+    id = ud.nodes(ind);
 
-	disp(['Doc index ' int2str(ind) ' with id ' id ':']);
-	ud.docs{ind}.document_properties
-	ud.docs{ind}.document_properties.document_class
-	ud.docs{ind}.document_properties.ndi_document
+    disp(['Doc index ' int2str(ind) ' with id ' id ':']);
+    ud.docs{ind}.document_properties
+    ud.docs{ind}.document_properties.document_class
+    ud.docs{ind}.document_properties.ndi_document
 
-	clicked_node = ud.docs{ind};
-	disp(['Global variable ''clicked_node'' set to clicked document']);
+    clicked_node = ud.docs{ind};
+    disp(['Global variable ''clicked_node'' set to clicked document']);
 
-	return;
+    return;
 end;
 
 
@@ -83,25 +83,25 @@ doc_properties = {};
 doc_properties_doc_class = {};
 doc_properties_ndi_doc = {};
 for i=1:numel(docs),
-	doc_properties{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties);'])];
-	doc_properties_doc_class{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.document_class);'])];
-	doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.base);'])];
+    doc_properties{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties);'])];
+    doc_properties_doc_class{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.document_class);'])];
+    doc_properties_ndi_doc{i} = [sprintf('\n') evalc(['disp(docs{i}.document_properties.base);'])];
 end;
 
 h=plot(mdigraph,'layout',layout);
 set(h,'interpreter','none');
 DTT = get(h,'DataTipTemplate');
 try, % requires Matlab > 2019a
-	DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
-	DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
-	DTT.DataTipRows(end+1) = dataTipTextRow('base:', doc_properties_ndi_doc);
+    DTT.DataTipRows(end+1) = dataTipTextRow('document_properties:', doc_properties);
+    DTT.DataTipRows(end+1) = dataTipTextRow('document_class:', doc_properties_doc_class);
+    DTT.DataTipRows(end+1) = dataTipTextRow('base:', doc_properties_ndi_doc);
 set(DTT,'interpreter','none');
 end;
 box off;
 set(gca,'ydir','reverse')
 
 if interactive,
-	set(gca,'ButtonDownFcn','ndi.database.fun.plotinteractivedocgraph');
+    set(gca,'ButtonDownFcn','ndi.database.fun.plotinteractivedocgraph');
 end;
 
 

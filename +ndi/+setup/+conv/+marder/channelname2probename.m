@@ -13,9 +13,9 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
 %
 
 arguments
-	chName
-	subjects
-	options.forceIgnore2 = false;
+    chName
+    subjects
+    options.forceIgnore2 = false;
 end
 
 
@@ -29,35 +29,35 @@ theintegers = cellfun(@str2num,regexp(chName,'\d+','match'));
 hasone = ismember(theintegers,1);
 hastwo = ismember(theintegers,2);
 if isempty(hasone),
-	hasone = false;
+    hasone = false;
 end;
 if isempty(hastwo),
-	hastwo = false;
+    hastwo = false;
 end;
 
 if hasone&hastwo,
-	error(['Do not know how to proceed with both 1 and 2 in string ' chName '.']);
+    error(['Do not know how to proceed with both 1 and 2 in string ' chName '.']);
 end;
 
 if ~hastwo | options.forceIgnore2, 
-	channel_str = '1';
-	subjectname = subjects{1};
+    channel_str = '1';
+    subjectname = subjects{1};
 elseif hastwo,
-	channel_str = '2';
-	subjectname = subjects{2};
+    channel_str = '2';
+    subjectname = subjects{2};
 end;
 
 standard_strings = {'dgn','lgn','lvn','pdn','pyn','mvn','PhysiTemp'};
 
 for i=1:numel(standard_strings),
-	if ~isempty(findstr(lower(chName),lower(standard_strings{i}))),
-		probename = [standard_strings{i} '_' channel_str];
-		break; 
-	end;
+    if ~isempty(findstr(lower(chName),lower(standard_strings{i}))),
+        probename = [standard_strings{i} '_' channel_str];
+        break; 
+    end;
 end;
 
 if isempty(probename), % did not match standard_string,
-	probename = matlab.lang.makeValidName(chName);
+    probename = matlab.lang.makeValidName(chName);
 end
 
 

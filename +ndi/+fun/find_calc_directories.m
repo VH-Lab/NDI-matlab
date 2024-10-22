@@ -20,7 +20,7 @@ d = d(dirindexes);
 d = {d.name};
 
 for i=1:numel(d),
-	d{i} = [tool_path filesep d{i}];
+    d{i} = [tool_path filesep d{i}];
 end;
 
 

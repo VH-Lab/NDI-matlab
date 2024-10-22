@@ -11,7 +11,7 @@ function [prefix,number] = channelname2prefixnumber(channelname)
 %   % prefix == 'ai', number == 5
 
 if ~(isa(channelname,'char') | isa(channelname,'string')),
-	error(['channelname must be a character array or a string.']);
+    error(['channelname must be a character array or a string.']);
 end;
 
 channelname = char(channelname);
@@ -19,11 +19,11 @@ channelname = char(channelname);
 numeric_chars = find(channelname>=char('0') & channelname<=char('9'));
 
 if isempty(numeric_chars),
-	error(['No numeric characters found for string ' channelname '.']);
+    error(['No numeric characters found for string ' channelname '.']);
 end;
 
 if numeric_chars(1)==1,
-	error(['No non-numeric characters found at prefix.']);
+    error(['No non-numeric characters found at prefix.']);
 end;
 
 prefix = channelname(1:numeric_chars(1)-1);

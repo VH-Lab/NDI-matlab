@@ -9,7 +9,7 @@ function abfprobetable2epochprobemap(S)
 %
 
 arguments
-	S (1,1) 
+    S (1,1) 
 end
 
 dirname = S.getpath();
@@ -34,19 +34,19 @@ end;
 d = dir([dirname filesep '*.abf']);
 
 for i=1:numel(d),
-	h = ndr.format.axon.read_abf_header([dirname filesep d(i).name]);
-	for k=1:numel(s),
-		probemap = ndi.epoch.epochprobemap_daqsystem('stimulation',k,'stimulator',...
-			'marder_abf:ai1',subject{k});
-	end;
+    h = ndr.format.axon.read_abf_header([dirname filesep d(i).name]);
+    for k=1:numel(s),
+        probemap = ndi.epoch.epochprobemap_daqsystem('stimulation',k,'stimulator',...
+            'marder_abf:ai1',subject{k});
+    end;
 
-	for j=1:numel(h.recChNames),
-		[name,ref,probeType,subjectlist] = ndi.setup.conv.marder.channelnametable2probename(h.recChNames{j},probetable);
-		daqsysstr = ndi.daq.daqsystemstring(daqname,{'ai'},j);
-		probemap(end+1) = ndi.epoch.epochprobemap_daqsystem(name,ref,probeType,...
-			daqsysstr.devicestring(),subjectlist);
-	end;
-	[myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
-	probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
+    for j=1:numel(h.recChNames),
+        [name,ref,probeType,subjectlist] = ndi.setup.conv.marder.channelnametable2probename(h.recChNames{j},probetable);
+        daqsysstr = ndi.daq.daqsystemstring(daqname,{'ai'},j);
+        probemap(end+1) = ndi.epoch.epochprobemap_daqsystem(name,ref,probeType,...
+            daqsysstr.devicestring(),subjectlist);
+    end;
+    [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
+    probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
 end;
 

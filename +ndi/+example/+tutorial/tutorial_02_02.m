@@ -18,12 +18,12 @@ function tutorial_02_02(prefix, testing)
 %
 
 if nargin<1 | isempty(prefix),
-	prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
+    prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
 end;
 
 
 if nargin<2,
-	testing = 0;
+    testing = 0;
 end;
 
 tutorial_dir = 'ts_exper2';
@@ -32,14 +32,14 @@ if testing, % copy the files to the temp directory
         prefix = [userpath filesep 'Documents' filesep 'NDI' filesep 'Test'];
         disp(['Assuming clean data files ts_exper2 are in ' prefix '.']);
 
-	disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
-	try,
-		rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');
-	end;
-	disp(['Copying ''' tutorial_dir ''' to the temporary directory']);
-	copyfile([prefix filesep tutorial_dir], [ndi.common.PathConstants.TempFolder filesep tutorial_dir]);
+    disp(['Clearing any ''' tutorial_dir  ''' in the temporary directory']);
+    try,
+        rmdir([ndi.common.PathConstants.TempFolder filesep tutorial_dir],'s');
+    end;
+    disp(['Copying ''' tutorial_dir ''' to the temporary directory']);
+    copyfile([prefix filesep tutorial_dir], [ndi.common.PathConstants.TempFolder filesep tutorial_dir]);
 
-	prefix = ndi.common.PathConstants.TempFolder;
+    prefix = ndi.common.PathConstants.TempFolder;
 end
 
  % Code block 2.2.7.1

@@ -22,9 +22,9 @@ function [genbanknames] = ndi_readGenBankNames(filename)
 %                      |   other_commonname{i}{j} is the jth other common name for node i
 
 if ischar(filename),
-	T = vlt.file.text2cellstr(filename);
+    T = vlt.file.text2cellstr(filename);
 else,
-	T = filename; % hidden mode for debugging
+    T = filename; % hidden mode for debugging
 end;
 
 mystr = split(T{end},sprintf('\t|\t'));
@@ -39,45 +39,45 @@ progressbar('Interpreting node names...');
 
 for t=1:numel(T),
 
-	if mod(t,1000) == 0,
-		progressbar(t/numel(T));
-	end;
+    if mod(t,1000) == 0,
+        progressbar(t/numel(T));
+    end;
 
-	mystr = split(T{t},sprintf('\t|\t'));
-	% remove tab and line at end of line
-	lasttab = strfind(mystr{end},sprintf('\t|'));
-	if ~isempty(lasttab),
-		mystr{end} = mystr{end}(1:lasttab-1);
-	end;
-	node_here = eval(mystr{1});
-	name_here = mystr{2};
-	category = mystr{end};
-	
-	switch category,
-		case 'scientific name',
-			if ~isempty(scientific_name{node_here}),
-				error(['Multiply scientific names for node ' num2str(node_here) '.']);
-			end;
-			scientific_name{node_here} = name_here;
-		case 'synonym',
-			if isempty(synonym{node_here}),
-				synonym{node_here} = {};
-			end;
-			synonym{node_here}{end+1} = name_here;
-		case 'genbank common name',
-			if ~isempty(genbank_commonname{node_here}),
-				error(['Multiply genbank common names for node ' num2str(node_here) '.']);
-			end;
-			genbank_commonname{node_here} = name_here;
-		case 'common name'
-			if isempty(other_commonname{node_here}),
-				other_commonname{node_here} = {};
-			end;
-			other_commonname{node_here}{end+1} = name_here;
+    mystr = split(T{t},sprintf('\t|\t'));
+    % remove tab and line at end of line
+    lasttab = strfind(mystr{end},sprintf('\t|'));
+    if ~isempty(lasttab),
+        mystr{end} = mystr{end}(1:lasttab-1);
+    end;
+    node_here = eval(mystr{1});
+    name_here = mystr{2};
+    category = mystr{end};
+    
+    switch category,
+        case 'scientific name',
+            if ~isempty(scientific_name{node_here}),
+                error(['Multiply scientific names for node ' num2str(node_here) '.']);
+            end;
+            scientific_name{node_here} = name_here;
+        case 'synonym',
+            if isempty(synonym{node_here}),
+                synonym{node_here} = {};
+            end;
+            synonym{node_here}{end+1} = name_here;
+        case 'genbank common name',
+            if ~isempty(genbank_commonname{node_here}),
+                error(['Multiply genbank common names for node ' num2str(node_here) '.']);
+            end;
+            genbank_commonname{node_here} = name_here;
+        case 'common name'
+            if isempty(other_commonname{node_here}),
+                other_commonname{node_here} = {};
+            end;
+            other_commonname{node_here}{end+1} = name_here;
 
-		otherwise,
-			% do nothing
-	end;
+        otherwise,
+            % do nothing
+    end;
 end;
 
 

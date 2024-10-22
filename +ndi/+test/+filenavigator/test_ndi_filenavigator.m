@@ -7,7 +7,7 @@ function test_ndi_filenavigator
 %   
 
 mydirectory = [userpath filesep 'tools' filesep 'vhlab-toolbox-matlab' ...
- 		filesep 'file' filesep 'test_dirs' filesep 'findfilegroupstest3'];
+         filesep 'file' filesep 'test_dirs' filesep 'findfilegroupstest3'];
 
 disp(['Working on directory ' mydirectory '...'])
 
@@ -34,7 +34,7 @@ et = epochtable(ft);
 disp(['The epoch table entries:']);
 
 for i=1:numel(et),
-	et(i),
+    et(i),
 end
 
 disp(['File paths of epoch ' et(2).epoch_id ' are as follows: ']);

@@ -7,8 +7,8 @@ function ndiDocuments = jsons2documents(jsonpath, options)
 %
 
 arguments
-	jsonpath (1,:) char {mustBeFolder}
-	options.verbose logical = true
+    jsonpath (1,:) char {mustBeFolder}
+    options.verbose logical = true
 end;
 
 verbose = options.verbose;
@@ -20,22 +20,22 @@ ndiDocuments = {};
 session_id = '';
 
 for i=1:numel(d),
-	json_file_path = fullfile(jsonpath, d(i).name);
-	d_json = fileread(json_file_path);
-	d_struct = jsondecode(d_json);
-	if isfield(d_struct,'id'), 
-		d_struct = rmfield(d_struct,'id'); % remove API field
-	end;
+    json_file_path = fullfile(jsonpath, d(i).name);
+    d_json = fileread(json_file_path);
+    d_struct = jsondecode(d_json);
+    if isfield(d_struct,'id'), 
+        d_struct = rmfield(d_struct,'id'); % remove API field
+    end;
 
-	ndiDocuments{i} = ndi.document(d_struct.document_properties);
+    ndiDocuments{i} = ndi.document(d_struct.document_properties);
 
-	if strcmp(ndiDocuments{i}.doc_class,'dataset_session_info'),
-		session_id = ndiDocuments{i}.document_properties.base.session_id;
-	end;
+    if strcmp(ndiDocuments{i}.doc_class,'dataset_session_info'),
+        session_id = ndiDocuments{i}.document_properties.base.session_id;
+    end;
 end;
 
 if isempty(session_id),
-	error(['Could not find session_id among documents specified. (You should not see this error.)']);
+    error(['Could not find session_id among documents specified. (You should not see this error.)']);
 end;
 
 

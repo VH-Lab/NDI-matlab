@@ -10,14 +10,14 @@ classdef docViewer < handle
         panel; % right panel
         info; % data for function details
         docs; % original docs file (SDV q: file or variable?)
-	fig; % figure handle
+    fig; % figure handle
     end
     
     methods
         function obj = docViewer()
             % table2list 
 
-		obj.fig = figure('name','Document Viewer','NumberTitle','off');
+        obj.fig = figure('name','Document Viewer','NumberTitle','off');
             obj.table = uitable('units', 'normalized', 'Position', [2/36 2/24 20/36 18/24], ...
                                 'ColumnName', {'Name'; 'ID'; 'Type'; 'Date'}, ...
                                 'ColumnWidth', {100, 100, 100, 100}, ...
@@ -49,7 +49,7 @@ classdef docViewer < handle
         end
         
         function addDoc(obj,docs)
-		% SDV: needs documentation
+        % SDV: needs documentation
 
 
             for i=1:numel(docs)
@@ -63,7 +63,7 @@ classdef docViewer < handle
             obj.docs = docs;
         end
 
-	% SDV: needs clearDoc() function to clear the table
+    % SDV: needs clearDoc() function to clear the table
         
         function details(obj, ~, event)
             if ~isempty(event.Indices)
@@ -219,7 +219,7 @@ classdef docViewer < handle
         end
         
         function restore(obj, ~, ~)
-		% SDV: needs documentation; are we restoring the view or the underlying data?
+        % SDV: needs documentation; are we restoring the view or the underlying data?
             obj.table.Data = obj.fullTable;
         end
         

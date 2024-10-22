@@ -18,7 +18,7 @@ function timestamp_string = timestamp()
 timestamp_string = char(datetime('now','TimeZone','UTCLeapSeconds'));
 
 if strcmp(timestamp_string(end-6:end-1),'60.000'),
-	timestamp_string(end-6:end-1) = '59.999';
+    timestamp_string(end-6:end-1) = '59.999';
 end;
  
 

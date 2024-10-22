@@ -22,10 +22,10 @@ channel_types = {};
 channels = {};
 
 for i=1:numel(et),
-	[DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = getchanneldevinfo(ndi_probe_obj, et(i).epoch_id);
-	daqnames{i} = DEVNAME;
-	channel_types{i} = CHANNELTYPE;
-	channels{i} = CHANNELLIST;
+    [DEV, DEVNAME, DEVEPOCH, CHANNELTYPE, CHANNELLIST] = getchanneldevinfo(ndi_probe_obj, et(i).epoch_id);
+    daqnames{i} = DEVNAME;
+    channel_types{i} = CHANNELTYPE;
+    channels{i} = CHANNELLIST;
 end;
 
 

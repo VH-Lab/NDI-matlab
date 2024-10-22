@@ -9,9 +9,9 @@ function [G] = ndi_readGenBankNodes(filename)
 % 
 
 if ischar(filename),
-	T = vlt.file.text2cellstr(filename);
+    T = vlt.file.text2cellstr(filename);
 else,
-	T = filename; % hidden mode for debugging
+    T = filename; % hidden mode for debugging
 end;
 
 
@@ -25,13 +25,13 @@ progressbar('Interpreting nodes...');
 
 for t=1:numel(T),
 
-	if mod(t,1000)==0,
-		progressbar(t/numel(T));
-	end;
-	mystr = split(T{t},sprintf('\t|\t'));
+    if mod(t,1000)==0,
+        progressbar(t/numel(T));
+    end;
+    mystr = split(T{t},sprintf('\t|\t'));
 
-	parents(t) = str2num(mystr{2});
-	children(t) = str2num(mystr{1});
+    parents(t) = str2num(mystr{2});
+    children(t) = str2num(mystr{1});
 end;
 
 G = sparse(parents,children,ones(size(parents)),node_max,node_max,length(parents));

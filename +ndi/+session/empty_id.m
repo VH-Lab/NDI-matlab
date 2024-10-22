@@ -14,9 +14,9 @@ my_new_id = ndi.ido();
 id = my_new_id.unique_id();
 
 for i=1:numel(id),
-	if (id(i)~='_'),
-		id(i) = '0';
-	end;
+    if (id(i)~='_'),
+        id(i) = '0';
+    end;
 end;
 
 

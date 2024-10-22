@@ -23,15 +23,15 @@ function exp = katzlab_makedev(exp, devname)
 % See also: ndi.file.navigator.epochdir
 
 if nargin == 0,
-	exp = {'narendra_intan'};
-	return;
+    exp = {'narendra_intan'};
+    return;
 end;
 
 if iscell(devname),
-	for i=1:length(devname),
-		exp = ndi.setups.katzlab_makedev(exp, devname{i});
-	end
-	return;
+    for i=1:length(devname),
+        exp = ndi.setups.katzlab_makedev(exp, devname{i});
+    end
+    return;
 end
 
 fileparameters = {};
@@ -40,20 +40,20 @@ readerobjectclass = 'ndi.daq.reader.mfdaq';
 epochprobemapclass = 'ndi.epoch.epochprobemap_daqsystem';
 
 switch devname,
-	case 'narendra_intan',
-		fileparameters{end+1} = 'time.dat';
-		fileparameters{end+1} = 'info.rhd'; 
-		fileparameters{end+1} = 'epochprobemap.txt';
-		fileparameters{end+1} = 'intraoral_canulae.tsv'; 
-		fileparameters{end+1} = 'optical_fiber1.tsv'; 
-		fileparameters{end+1} = 'optical_fiber2.tsv'; 
-		readerobjectclass = [readerobjectclass '.intan'];
-		mdr = {ndi.daq.metadatareader('stimulus_metadata_intraoral_canulae.tsv') ...
-			ndi.daq.metadatareader('stimulus_metadata_optical_fiber1.tsv') ...
-			ndi.daq.metadatareader('stimulus_metadata_optical_fiber2.tsv')};
-		epochprobemapfileparameters = {'epochprobemap.txt'};
-	otherwise,
-		error(['Unknown device requested ' devname '.']);
+    case 'narendra_intan',
+        fileparameters{end+1} = 'time.dat';
+        fileparameters{end+1} = 'info.rhd'; 
+        fileparameters{end+1} = 'epochprobemap.txt';
+        fileparameters{end+1} = 'intraoral_canulae.tsv'; 
+        fileparameters{end+1} = 'optical_fiber1.tsv'; 
+        fileparameters{end+1} = 'optical_fiber2.tsv'; 
+        readerobjectclass = [readerobjectclass '.intan'];
+        mdr = {ndi.daq.metadatareader('stimulus_metadata_intraoral_canulae.tsv') ...
+            ndi.daq.metadatareader('stimulus_metadata_optical_fiber1.tsv') ...
+            ndi.daq.metadatareader('stimulus_metadata_optical_fiber2.tsv')};
+        epochprobemapfileparameters = {'epochprobemap.txt'};
+    otherwise,
+        error(['Unknown device requested ' devname '.']);
 
 end
 

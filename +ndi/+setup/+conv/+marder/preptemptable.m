@@ -19,14 +19,14 @@ temptable = table('size',[0 numel(cols)],'VariableNames',cols,'VariableTypes',da
 p = S.getprobes('type','thermometer');
 
 for P = 1:numel(p),
-	et = p{P}.epochtable();
-	for j=1:numel(et),
-		[D,t] = p{P}.readtimeseries(et(j).epoch_id,-Inf,Inf);
-		out = ndi.setup.conv.marder.preptemp(t,D,standard_temps);
-		newtable = cell2table({ p{P}.id() et(j).epoch_id out.type mat2cell(out.temp,1) mat2cell(out.raw,1)},...
-			'VariableNames',cols);
-		temptable = cat(1,temptable,newtable);
-	end;
+    et = p{P}.epochtable();
+    for j=1:numel(et),
+        [D,t] = p{P}.readtimeseries(et(j).epoch_id,-Inf,Inf);
+        out = ndi.setup.conv.marder.preptemp(t,D,standard_temps);
+        newtable = cell2table({ p{P}.id() et(j).epoch_id out.type mat2cell(out.temp,1) mat2cell(out.raw,1)},...
+            'VariableNames',cols);
+        temptable = cat(1,temptable,newtable);
+    end;
 end;
 
 save([dirname filesep 'temptable.mat'],'temptable','-mat');

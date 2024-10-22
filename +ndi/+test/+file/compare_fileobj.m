@@ -7,8 +7,8 @@ function [b] = compare_fileobj(f1,f2)
 %
 
 arguments
-	f1 fileobj
-	f2 fileobj
+    f1 fileobj
+    f2 fileobj
 end
 
 buffer_size = 100000;
@@ -16,10 +16,10 @@ buffer_size = 100000;
 b = 1;
 
 while ~feof(f1),
-	data1 = fread(f1,buffer_size,'char');
-	data2 = fread(f2,buffer_size,'char');
-	if ~isequal(data1,data2),
-		b = 0;
-		return;
-	end;
+    data1 = fread(f1,buffer_size,'char');
+    data2 = fread(f2,buffer_size,'char');
+    if ~isequal(data1,data2),
+        b = 0;
+        return;
+    end;
 end;

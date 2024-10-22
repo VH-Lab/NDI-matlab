@@ -20,39 +20,39 @@ end;
 d = {};
 
 if isempty(visited),
-	visited = {};
+    visited = {};
 end;
 
 for i=1:numel(varargin),
-	visited = cat(1,visited,{varargin{i}.id()});
+    visited = cat(1,visited,{varargin{i}.id()});
 end;
 
 
 for i=1:numel(varargin),
-	[depNames,depStruct] = dependency(varargin{i});
-	ids = {depStruct.value};
-	if numel(ids)>0,
-		q_v = ndi.query('base.id','exact_string',ids{1});
-		for j=2:numel(ids),
-			q_v = q_v | ndi.query('base.id','exact_string',ids{j});
-		end;
-	end;
-	bb = E.database_search(q_v);
+    [depNames,depStruct] = dependency(varargin{i});
+    ids = {depStruct.value};
+    if numel(ids)>0,
+        q_v = ndi.query('base.id','exact_string',ids{1});
+        for j=2:numel(ids),
+            q_v = q_v | ndi.query('base.id','exact_string',ids{j});
+        end;
+    end;
+    bb = E.database_search(q_v);
 
-	for j=1:numel(bb),
-		id_here = bb{j}.id();
-		if ~any(strcmp(id_here,visited)), % we don't already know about it
-			visited = cat(1,visited,{id_here}); 
-			d = cat(1,d,{bb{j}});
-			newdocs = ndi.database.fun.findallantecedents(E,visited,bb{j});
-			if ~isempty(newdocs),
-				for k=1:numel(newdocs),
-					visited = cat(1,visited,newdocs{k}.id());
-				end;
-				d = cat(1,d,newdocs(:));
-			end;
-		end;
-	end;
+    for j=1:numel(bb),
+        id_here = bb{j}.id();
+        if ~any(strcmp(id_here,visited)), % we don't already know about it
+            visited = cat(1,visited,{id_here}); 
+            d = cat(1,d,{bb{j}});
+            newdocs = ndi.database.fun.findallantecedents(E,visited,bb{j});
+            if ~isempty(newdocs),
+                for k=1:numel(newdocs),
+                    visited = cat(1,visited,newdocs{k}.id());
+                end;
+                d = cat(1,d,newdocs(:));
+            end;
+        end;
+    end;
 end;
 
 if ~iscell(d),

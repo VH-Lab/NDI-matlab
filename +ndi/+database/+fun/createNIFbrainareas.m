@@ -36,18 +36,18 @@ exclude_ontologies = {'CL'};
 vlt.data.assign(varargin{:});
 
 command = ['https://scicrunch.org/api/1/sparc-scigraph/graph/neighbors/' ...
-		root ...
-		'?relationshipType=subClassOf&relationshipType=BFO:0000050' ...
-		'&direction=INCOMING' ...
-		'&depth=' int2str(depth) ...
-		'&key=hJ11JrXAMlnBzuWzREV14ctciyPXNVBw'];
+        root ...
+        '?relationshipType=subClassOf&relationshipType=BFO:0000050' ...
+        '&direction=INCOMING' ...
+        '&depth=' int2str(depth) ...
+        '&key=hJ11JrXAMlnBzuWzREV14ctciyPXNVBw'];
 
 command_ = ['https://scicrunch.org/api/1/sparc-scigraph/graph/neighbors/' ...
-		root ...
-		'?relationshipType=subClassOf&relationshipType=BFO:0000050' ...
-		'&direction=INCOMING' ...
-		'&depth=' int2str(depth_exclude) ...
-		'&key=hJ11JrXAMlnBzuWzREV14ctciyPXNVBw'];
+        root ...
+        '?relationshipType=subClassOf&relationshipType=BFO:0000050' ...
+        '&direction=INCOMING' ...
+        '&depth=' int2str(depth_exclude) ...
+        '&key=hJ11JrXAMlnBzuWzREV14ctciyPXNVBw'];
 
 t = urlread(command);
 t_ = urlread(command_);
@@ -69,27 +69,27 @@ fprintf(fid,['ID\tLabel\tSynonyms\n']);
 included = [];
 
 for i=1:numel(ba),
-	strs = split(ba(i).id,':');
-	if any(strcmp(strs{1},exclude_ontologies)),
-		continue; % skip
-	end;
-	included(end+1) = i;
+    strs = split(ba(i).id,':');
+    if any(strcmp(strs{1},exclude_ontologies)),
+        continue; % skip
+    end;
+    included(end+1) = i;
 
         fprintf(fid,[ba(i).id '\t']);
         fprintf(fid,[ba(i).lbl '\t']);
 
-	if isfield(ba(i).meta,'synonym'),
-		for j=1:numel(ba(i).meta.synonym),
-			fprintf(fid,[ba(i).meta.synonym{j}]);
-			if j~=numel(ba(i).meta.synonym), 
-				fprintf(fid,', ');
-			end;
-		end;
+    if isfield(ba(i).meta,'synonym'),
+        for j=1:numel(ba(i).meta.synonym),
+            fprintf(fid,[ba(i).meta.synonym{j}]);
+            if j~=numel(ba(i).meta.synonym), 
+                fprintf(fid,', ');
+            end;
+        end;
 
-	end;
+    end;
 
-	% end the line
-	fprintf(fid,'\n');
+    % end the line
+    fprintf(fid,'\n');
 end;
 
 fclose(fid);

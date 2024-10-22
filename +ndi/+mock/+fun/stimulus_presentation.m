@@ -69,53 +69,53 @@ presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset'
 stim_pres_struct.stimuli = vlt.data.emptystruct('parameters');
 
 for i=1:stimulus_N,
-	stim_params_here = parameter_struct;
+    stim_params_here = parameter_struct;
 
-	for j=1:size(X,2), % go over each column
-		if isnan(X(i,j)),
-			stim_params_here = setfield(stim_params_here,'isblank',1);
-		else,
-			stim_params_here = setfield(stim_params_here,independent_variables{j},X(i,j));
-		end;
-	end;
-	stim_pres_struct.stimuli(i).parameters = stim_params_here;
+    for j=1:size(X,2), % go over each column
+        if isnan(X(i,j)),
+            stim_params_here = setfield(stim_params_here,'isblank',1);
+        else,
+            stim_params_here = setfield(stim_params_here,independent_variables{j},X(i,j));
+        end;
+    end;
+    stim_pres_struct.stimuli(i).parameters = stim_params_here;
 end;
 
 spiketimes = [];
 
 for i=1:numel(stim_pres_struct.presentation_order),
-	pt_here = vlt.data.emptystruct(fieldnames(presentation_time));
-	pt_here(1).clocktype = 'utc';
-	pt_here(1).stimopen = i * (stim_duration+interstimulus_interval);
-	pt_here(1).onset    = pt_here(1).stimopen;
+    pt_here = vlt.data.emptystruct(fieldnames(presentation_time));
+    pt_here(1).clocktype = 'utc';
+    pt_here(1).stimopen = i * (stim_duration+interstimulus_interval);
+    pt_here(1).onset    = pt_here(1).stimopen;
 
-	% now see how many spikes to fire for this stimulus
-	stimid = stim_pres_struct.presentation_order(i);
-	R_here = R(stimid) + noise * randn * R(stimid);
-	if ~isnan(R_here) & (R_here>0),
-		n_spikes_mean = R_here * stim_duration;
-		n_spikes_floor = floor( n_spikes_mean );
-		n_spikes_ceil = ceil( n_spikes_mean );
-		deltat_floor = stim_duration - (n_spikes_floor/R_here);
-		deltat_ceil = stim_duration - (n_spikes_ceil/R_here);
-		stim_duration_here_floor = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_floor));
-		stim_duration_here_ceil = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_ceil));
-		if abs(n_spikes_floor/stim_duration_here_floor - R_here) < abs(n_spikes_ceil/stim_duration_here_ceil - R_here),
-			n_spikes = n_spikes_floor;
-			stim_duration_here = stim_duration_here_floor;
-		else,
-			n_spikes = n_spikes_ceil;
-			stim_duration_here = stim_duration_here_ceil;
-		end;
-		spiketimes=cat(1,spiketimes,...
-			vlt.data.colvec(linspace(pt_here(1).onset+t_eps,pt_here(1).onset+stim_duration_here-t_eps,n_spikes)));
-	else,
-		stim_duration_here = stim_duration;
-	end;
+    % now see how many spikes to fire for this stimulus
+    stimid = stim_pres_struct.presentation_order(i);
+    R_here = R(stimid) + noise * randn * R(stimid);
+    if ~isnan(R_here) & (R_here>0),
+        n_spikes_mean = R_here * stim_duration;
+        n_spikes_floor = floor( n_spikes_mean );
+        n_spikes_ceil = ceil( n_spikes_mean );
+        deltat_floor = stim_duration - (n_spikes_floor/R_here);
+        deltat_ceil = stim_duration - (n_spikes_ceil/R_here);
+        stim_duration_here_floor = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_floor));
+        stim_duration_here_ceil = max(stim_duration_min, min(stim_duration+interstimulus_interval, stim_duration-deltat_ceil));
+        if abs(n_spikes_floor/stim_duration_here_floor - R_here) < abs(n_spikes_ceil/stim_duration_here_ceil - R_here),
+            n_spikes = n_spikes_floor;
+            stim_duration_here = stim_duration_here_floor;
+        else,
+            n_spikes = n_spikes_ceil;
+            stim_duration_here = stim_duration_here_ceil;
+        end;
+        spiketimes=cat(1,spiketimes,...
+            vlt.data.colvec(linspace(pt_here(1).onset+t_eps,pt_here(1).onset+stim_duration_here-t_eps,n_spikes)));
+    else,
+        stim_duration_here = stim_duration;
+    end;
 
-	pt_here(1).offset   = pt_here(1).onset + stim_duration_here;
-	pt_here(1).stimclose = pt_here(1).offset;
-	presentation_time(i,1) = pt_here;
+    pt_here(1).offset   = pt_here(1).onset + stim_duration_here;
+    pt_here(1).stimclose = pt_here(1).offset;
+    presentation_time(i,1) = pt_here;
 end;
 
 epochid_struct.epochid = epochid;
@@ -125,7 +125,7 @@ stim_pres_doc = stim_pres_doc.set_dependency_value('stimulus_element_id',stimulu
 
 presentation_time_filename = ndi.file.temp_name();
 ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
-	presentation_time);
+    presentation_time);
 
 stim_pres_doc = stim_pres_doc.add_file('presentation_time.bin',presentation_time_filename);
 

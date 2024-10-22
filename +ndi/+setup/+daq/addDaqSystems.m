@@ -21,12 +21,12 @@ function S = addDaqSystems(S, labName, force)
     deviceNames = ndi.setup.daq.system.listDaqSystemNames(labName);
     
     for i = 1:numel(deviceNames)
-	    device = S.daqsystem_load('name', deviceNames{i});
+        device = S.daqsystem_load('name', deviceNames{i});
 
         % Remove an existing DAQ system if "force" is true
         if force && ~isempty(device)
-		    S.daqsystem_rm(device);
-		    device = [];
+            S.daqsystem_rm(device);
+            device = [];
         end
         
         % Add DAQ system / device to session if it does not already exist.

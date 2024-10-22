@@ -19,9 +19,9 @@ q2 = ndi.query('','isa','tuningcurve_calc');
 stim_tune_doc = S.database_search(q1&q2);
 
 if ~isempty(stim_tune_doc),
-	if isfield(stim_tune_doc{1}.document_properties.tuningcurve_calc,'log'),
-		log_str = stim_tune_doc{1}.document_properties.tuningcurve_calc.log;
-	end;
+    if isfield(stim_tune_doc{1}.document_properties.tuningcurve_calc,'log'),
+        log_str = stim_tune_doc{1}.document_properties.tuningcurve_calc.log;
+    end;
 end;
 
 

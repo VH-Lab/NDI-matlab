@@ -18,11 +18,11 @@ documents = ndi_session_obj.database_search({'ndi.document.id','(.*)'});
 subjects_id = {};
 
 for i=1:numel(probes),
-	subjects_id{i} = probes{i}.subject_id;
+    subjects_id{i} = probes{i}.subject_id;
 end;
 
 for i=1:numel(elements),
-	subjects_id{end+1} = elements{i}.subject_id;
+    subjects_id{end+1} = elements{i}.subject_id;
 end;
 
 subjects_id = unique(subjects_id);
@@ -30,7 +30,7 @@ subjects_id = unique(subjects_id);
 subjects = {};
 
 for i=1:numel(subjects_id),
-	subjects{i} = ndi_session_obj.database_search(ndi.query('ndi.document.id','exact_string',subjects_id{i},''));
+    subjects{i} = ndi_session_obj.database_search(ndi.query('ndi.document.id','exact_string',subjects_id{i},''));
 end;
 
 

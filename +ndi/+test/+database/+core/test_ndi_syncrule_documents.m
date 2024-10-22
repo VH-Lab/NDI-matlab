@@ -14,44 +14,44 @@ function test_ndi_syncrule_documents
 %   d) Create a new object based on the database entry, and test that it matches the original
 %
 
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 
-	E = ndi.session.dir('exp1',dirname);
-	 % remove any existing syncrules
-	doc = E.database_search(ndi.query('','isa','syncrule',''));
-	E.database_rm(doc);
+    E = ndi.session.dir('exp1',dirname);
+     % remove any existing syncrules
+    doc = E.database_search(ndi.query('','isa','syncrule',''));
+    E.database_rm(doc);
 
-	object_list = { ...
-			'ndi.time.syncrule.filematch',...
-			};
+    object_list = { ...
+            'ndi.time.syncrule.filematch',...
+            };
 
-	sr = {};
-	sr_docs = {};
-	 
-	 % Steps a and b and c)
+    sr = {};
+    sr_docs = {};
+     
+     % Steps a and b and c)
 
-	syncrule_docs = {};
+    syncrule_docs = {};
 
-	for i=1:numel(object_list),
-		disp(['Making ' object_list{i} '...']);
-		sr{i} = eval([object_list{i} '();']);
-		disp(['Making document for ' object_list{i} '...']);
-		sr_docs{i} = sr{i}.newdocument();
-		E.database_add(sr_docs{i});
-		syncrule_docs{i} = E.database_search(sr{i}.searchquery());
-		if numel(syncrule_docs{i})~=1,
-			error(['Did not find exactly 1 match.']);
-		end;
-	end;
+    for i=1:numel(object_list),
+        disp(['Making ' object_list{i} '...']);
+        sr{i} = eval([object_list{i} '();']);
+        disp(['Making document for ' object_list{i} '...']);
+        sr_docs{i} = sr{i}.newdocument();
+        E.database_add(sr_docs{i});
+        syncrule_docs{i} = E.database_search(sr{i}.searchquery());
+        if numel(syncrule_docs{i})~=1,
+            error(['Did not find exactly 1 match.']);
+        end;
+    end;
 
-	sr_fromdoc = {};
+    sr_fromdoc = {};
 
-	for i=1:numel(syncrule_docs),
-		sr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncrule_docs{i}{1},E);
-		if eq(sr_fromdoc{i},sr{i}),
-			disp(['Syncrule number ' int2str(i) ' matches.']);
-		else,
-			error(['Syncrule number ' int2str(i) ' does not match.']);
-		end;
-	end;
+    for i=1:numel(syncrule_docs),
+        sr_fromdoc{i} = ndi.database.fun.ndi_document2ndi_object(syncrule_docs{i}{1},E);
+        if eq(sr_fromdoc{i},sr{i}),
+            disp(['Syncrule number ' int2str(i) ' matches.']);
+        else,
+            error(['Syncrule number ' int2str(i) ' does not match.']);
+        end;
+    end;
 end

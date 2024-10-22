@@ -7,10 +7,10 @@ function [b,msg] = upload_download(D,metadatafile)
 %
 
 if nargin<1,
-	dirname = fullfile(ndi.common.PathConstants.ExampleDataFolder, '..' ,'example_datasets', 'sample_test');
-	D = ndi.dataset.dir(dirname);
-	metadatafile = fullfile(ndi.common.PathConstants.ExampleDataFolder,'..',...
-		'example_datasets','NDIDatasetUpload','metadata.mat');
+    dirname = fullfile(ndi.common.PathConstants.ExampleDataFolder, '..' ,'example_datasets', 'sample_test');
+    D = ndi.dataset.dir(dirname);
+    metadatafile = fullfile(ndi.common.PathConstants.ExampleDataFolder,'..',...
+        'example_datasets','NDIDatasetUpload','metadata.mat');
 end;
 
 metadata = load(metadatafile);
@@ -25,15 +25,15 @@ tic;
 
 [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(metadata_json);
 if status,
-	msg=['ndi.cloud.api.datasets.post_organization() failed to create a new dataset' response];
-	return;
+    msg=['ndi.cloud.api.datasets.post_organization() failed to create a new dataset' response];
+    return;
 end;
 
 [b_upload, msg_upload] = ndi.database.fun.upload_to_NDI_cloud(D, dataset_id);
 
 if ~b_upload,
-	msg = msg_upload;
-	return;
+    msg = msg_upload;
+    return;
 end;
 
 time_taken = toc;
@@ -55,8 +55,8 @@ tic;
 [b_download,msg_download] = ndi.cloud.download_dataset(dataset_id,newdir);
 
 if ~b_download,
-	msg = msg_download;
-	return;
+    msg = msg_download;
+    return;
 end;
 
 time_taken = toc;

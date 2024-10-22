@@ -49,14 +49,14 @@ ndr.data.assign(varargin{:});
 r = ndr.reader('smr');
 
 if verbose,
-	disp(['Reading ePhys data...']);
+    disp(['Reading ePhys data...']);
 end;
 
 eData = r.readchannels_epochsamples('ai',electrodeChannel,{filename},1,-Inf,Inf);
 eTime = r.readchannels_epochsamples('time',electrodeChannel,{filename},1,-Inf,Inf);
 
 if verbose,
-	disp(['Reading stimulus trigger information...']);
+    disp(['Reading stimulus trigger information...']);
 end;
 
 stimTriggers = r.readevents_epochsamples('event', stimTriggerChannel, {filename}, 1, -Inf, Inf);
@@ -64,34 +64,34 @@ stimTriggers = stimTriggers(1:2:end,:); % for this data, 2 triggers per stimulus
 [stimCodes_time,stimCodes_text] = r.readevents_epochsamples('text', stimCodeMarkChannel, {filename}, 1, -Inf, Inf);
 stimCodes_value = [];
 for i=1:size(stimCodes_text,1),
-	stimCodes_value(i,1) = str2num(stimCodes_text(i,:));
+    stimCodes_value(i,1) = str2num(stimCodes_text(i,:));
 end;
 
 scData = [];
 scTime = [];
 
 if plotstimsync,
-	if verbose,
-		disp(['Reading stimulus video frame sync information...']);
-	end;
-	scData = r.readchannels_epochsamples('ai',syncChannel, {filename},1,-Inf,Inf);
-	scTime = r.readchannels_epochsamples('time',syncChannel, {filename},1,-Inf,Inf);
+    if verbose,
+        disp(['Reading stimulus video frame sync information...']);
+    end;
+    scData = r.readchannels_epochsamples('ai',syncChannel, {filename},1,-Inf,Inf);
+    scTime = r.readchannels_epochsamples('time',syncChannel, {filename},1,-Inf,Inf);
 end;
 
 if ~plotit, % if we aren't plotting, just stop
-	return;
+    return;
 end;
 
 if isempty(fig),
-	fig = figure;
+    fig = figure;
 end;
 
 figure(fig); % bring this figure to the front, if necessary
 
 if plotstimsync,
-	ax_ephys = axes('units','normalized','position',[0.10 0.4 0.8 0.5]);
+    ax_ephys = axes('units','normalized','position',[0.10 0.4 0.8 0.5]);
 else,
-	ax_ephys = axes;
+    ax_ephys = axes;
 end;
 plot(eTime,eData);
 box off;
@@ -103,16 +103,16 @@ pan on;
 title(title_string);
 
 if plotstimsync,
-	ax_sync = axes('units','normalized','position',[0.10 0.1 0.8 0.2]);
-	plot(scTime,scData);
-	set(ax_sync,'xlim',timeWindow,'ylim',syncYRange);
-	box off;
-	ylabel('Potential (Volts)');
-	hold on;
-	vlt.neuro.stimulus.plot_stimulus_timeseries(syncYStimLabel,stimCodes_time,stimCodes_time+stimDuration,'stimid',stimCodes_value);
-	pan on;
+    ax_sync = axes('units','normalized','position',[0.10 0.1 0.8 0.2]);
+    plot(scTime,scData);
+    set(ax_sync,'xlim',timeWindow,'ylim',syncYRange);
+    box off;
+    ylabel('Potential (Volts)');
+    hold on;
+    vlt.neuro.stimulus.plot_stimulus_timeseries(syncYStimLabel,stimCodes_time,stimCodes_time+stimDuration,'stimid',stimCodes_value);
+    pan on;
 
-	linkaxes([ax_ephys ax_sync],'x');
+    linkaxes([ax_ephys ax_sync],'x');
 else,
-	ax_sync = [];
+    ax_sync = [];
 end;

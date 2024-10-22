@@ -13,20 +13,20 @@ function [to_delete_list] = expell_plan(ndi_document_obj, ingestion_directory)
 to_delete_list = {};
 
 if isfield(ndi_document_obj.document_properties,'files'),
-	if isfield(ndi_document_obj.document_properties.files,'file_info'),
-		for i=1:numel(ndi_document_obj.document_properties.files.file_info),
-			locs = ndi_document_obj.document_properties.files.file_info(i).locations;
-			for j=1:numel(locs),
-				if locs(j).ingest,
-					to_delete_list{end+1} = [ingestion_directory filesep ...
-						locs(j).uid];
-					if ~isfile(to_delete_list{end}),
-						error(['File to delete does not exist: ' to_delete_list{end}]);
-					end;
-				end;
-			end;
-		end;
-	end;
+    if isfield(ndi_document_obj.document_properties.files,'file_info'),
+        for i=1:numel(ndi_document_obj.document_properties.files.file_info),
+            locs = ndi_document_obj.document_properties.files.file_info(i).locations;
+            for j=1:numel(locs),
+                if locs(j).ingest,
+                    to_delete_list{end+1} = [ingestion_directory filesep ...
+                        locs(j).uid];
+                    if ~isfile(to_delete_list{end}),
+                        error(['File to delete does not exist: ' to_delete_list{end}]);
+                    end;
+                end;
+            end;
+        end;
+    end;
 end;
 
 

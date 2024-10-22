@@ -15,7 +15,7 @@ function test_ndi_element(dirname)
 test_struct = 0;
 
 if nargin<1,
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg_saved'];
 end;
 
 disp(['Creating a new session object in directory ' dirname '.']);
@@ -25,16 +25,16 @@ E = ndi.session.dir('exp1',dirname);
 
 doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
-	for i=1:numel(doc),
-		E.database_rm(doc{i}.id());
-	end;
+    for i=1:numel(doc),
+        E.database_rm(doc{i}.id());
+    end;
 end;
 
 p = E.getprobes(); % should return 1 probe
 if numel(p)==0, % ndi.test.daq.build_intan_flat_exp hasn't been run yet
-	disp(['Need to run ndi.test.daq.build_intan_flat_exp first, doing that now...']);
-	ndi.test.daq.build_intan_flat_exp(dirname);
-	p = E.getprobes(); % should return 1 probe
+    disp(['Need to run ndi.test.daq.build_intan_flat_exp first, doing that now...']);
+    ndi.test.daq.build_intan_flat_exp(dirname);
+    p = E.getprobes(); % should return 1 probe
 end;
 
 [d,t] = readtimeseries(p{1}, 1, -Inf, Inf);
@@ -79,8 +79,8 @@ box off;
 
 doc = E.database_search(ndi.query('','isa','element',''));
 if ~isempty(doc),
-	for i=1:numel(doc),
-		E.database_rm(doc{i}.id());
-	end;
+    for i=1:numel(doc),
+        E.database_rm(doc{i}.id());
+    end;
 end;
 

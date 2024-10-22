@@ -1,25 +1,25 @@
 classdef  postgresdb < ndi.database
 
-	properties
+    properties
         db          % Stores PostgreSQL database
-		dbname		% Used to specify name of Postgres database
-	end
+        dbname        % Used to specify name of Postgres database
+    end
 
-	methods
+    methods
 
-		function ndi_postgresdb_obj = ndi.database.postgresdb(varargin)
-		% ndi.database.postgresdb make a new ndi.database.postgresdb object
-		% 
-		% NDI_POSTGRESDB_OBJ = ndi.database.postgresdb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
-		%
-		% Creates a new ndi.database.postgresdb object.
-		%
+        function ndi_postgresdb_obj = ndi.database.postgresdb(varargin)
+        % ndi.database.postgresdb make a new ndi.database.postgresdb object
+        % 
+        % NDI_POSTGRESDB_OBJ = ndi.database.postgresdb(PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
+        %
+        % Creates a new ndi.database.postgresdb object.
+        %
         % Assumes metadata is stored in [dbname].public.documents
         %
-		% COMMAND can either be 'Load' or 'New'. The second argument
-		% should be the full pathname of the location where the files
-		% should be stored on disk.
-		
+        % COMMAND can either be 'Load' or 'New'. The second argument
+        % should be the full pathname of the location where the files
+        % should be stored on disk.
+        
             assert(nargin==3 ,"Need 3 variables as input: name of database, username, and password") 
             disp(varargin);
             dbname = varargin{1};
@@ -32,7 +32,7 @@ classdef  postgresdb < ndi.database
     %             
     %             disp('objdb:')
     %                ndi_postgresdb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
-    %  				'dirname','dumbjsondb','unique_object_id_field','ndi_document.id');
+    %                  'dirname','dumbjsondb','unique_object_id_field','ndi_document.id');
 
             conn = database(dbname,username,password);
             ndi_postgresdb_obj.db = conn;
@@ -41,25 +41,25 @@ classdef  postgresdb < ndi.database
             disp(ndi_postgresdb_obj.db)
         end % ndi_postgresdb_obj()
 
-	end 
+    end 
 
-	methods, % public
-		function docids = alldocids(ndi_postgresdb_obj)
-			% ALLDOCIDS - return all document unique reference numbers for the database
+    methods, % public
+        function docids = alldocids(ndi_postgresdb_obj)
+            % ALLDOCIDS - return all document unique reference numbers for the database
             %              
-			%
-			% DOCIDS = ALLDOCIDS(NDI_POSTGRESDB_OBJ, DBNAME)
-			%
-			% Return all document unique reference strings as a cell array of strings. If there
-			% are no documents, empty is returned.
-			%
+            %
+            % DOCIDS = ALLDOCIDS(NDI_POSTGRESDB_OBJ, DBNAME)
+            %
+            % Return all document unique reference strings as a cell array of strings. If there
+            % are no documents, empty is returned.
+            %
             % NOTE: Requires Database name as input and Assuming data is stored in public.documents
                 % docid_query = "SELECT id FROM " + ndi_postgresdb_obj.dbname + ".public.documents"
                 % data = select(ndi_postgresdb_obj.db,docid_query);
 
                 table = sqlread(ndi_postgresdb_obj.db, 'public.documents');
                 docids = table.id;
-		end; % alldocids()
+        end; % alldocids()
         
         function sqlquery = ndiquery_to_sql(ndi_postgresdb_obj, ndiquery)
             % Translates an ndiquery into a SQL command
@@ -220,13 +220,13 @@ classdef  postgresdb < ndi.database
             sqlquery = select + " " + from + " " + where
             end; % ndiquery_to_sql
         
-	end; 
+    end; 
 
-	methods (Access=protected),
+    methods (Access=protected),
 
-		function new_db = do_add(ndi_postgresdb_obj, ndi_document_obj, add_parameters)
-			% sqlwrite procedure to insert Matlab data into a database
-			% table
+        function new_db = do_add(ndi_postgresdb_obj, ndi_document_obj, add_parameters)
+            % sqlwrite procedure to insert Matlab data into a database
+            % table
             % 
 %             ndi_document_obj = table(30,500000,1000,25,"Rubik's Cube", ...
 %             'VariableNames',{'productNumber' 'stockNumber' ...
@@ -245,7 +245,7 @@ classdef  postgresdb < ndi.database
         end; % do_add
 
         
-		function [ndi_document_obj, version] = do_read(ndi_postgresdb_obj, ndi_document_id, version);
+        function [ndi_document_obj, version] = do_read(ndi_postgresdb_obj, ndi_document_id, version);
             % reads and shows a document from the database with the unique ndi document ID
             % expects a version, reading the latest by default
             
@@ -268,10 +268,10 @@ classdef  postgresdb < ndi.database
             disp(sqlquery)  
             ndi_document_obj = select(ndi_postgresdb_obj.db, sqlquery)
             
-		end; % do_read
+        end; % do_read
 
         
-		function ndi_postgresdb_obj = do_remove(ndi_postgresdb_obj, ndi_document_id, versions)
+        function ndi_postgresdb_obj = do_remove(ndi_postgresdb_obj, ndi_document_id, versions)
             % removes a document from the database with the unique ndi document ID
             % expects versions as a column in the table
             
@@ -293,26 +293,26 @@ classdef  postgresdb < ndi.database
            
             execute(ndi_postgresdb_obj.db, sqlquery)
             
-		end; % do_remove
+        end; % do_remove
         
         
         
-		function [data, versions] = do_search(ndi_postgresdb_obj, searchoptions, searchparams)
-			% Takes in a list of search paramaters (an array of 
+        function [data, versions] = do_search(ndi_postgresdb_obj, searchoptions, searchparams)
+            % Takes in a list of search paramaters (an array of 
             % search op
             %
             % Note: searchoptions is not used
             
             assert( isa(searchparams,'ndi.query'), "search params are not valid")
-				searchparams = searchparams.to_searchstructure;
-				if 0, % display 
-					disp('search params');
-					for i=1:numel(searchparams),
-						searchparams(i),
-						searchparams(i).param1,
-						searchparams(i).param2,
-					end
-				end;
+                searchparams = searchparams.to_searchstructure;
+                if 0, % display 
+                    disp('search params');
+                    for i=1:numel(searchparams),
+                        searchparams(i),
+                        searchparams(i).param1,
+                        searchparams(i).param2,
+                    end
+                end;
             sql_query = ndiquery_to_sql(ndi_postgresdb_obj, searchparams)
             data = select(ndi_postgresdb_obj.db, sql_query)
             
@@ -328,35 +328,35 @@ classdef  postgresdb < ndi.database
 %             end    
             
 
-% 			ndi_document_objs = {};
-% 			[docs,doc_versions] = ndi_postgresdb_obj.db.search(searchoptions, searchparams);
-% 			for i=1:numel(docs),
-% 				ndi_document_objs{i} = ndi.document(docs{i});
-			end;
+%             ndi_document_objs = {};
+%             [docs,doc_versions] = ndi_postgresdb_obj.db.search(searchoptions, searchparams);
+%             for i=1:numel(docs),
+%                 ndi_document_objs{i} = ndi.document(docs{i});
+            end;
             
-		end; % do_search()
+        end; % do_search()
 
-% 		function [ndi_binarydoc_obj, key] = do_openbinarydoc(ndi_matlabdumbjsondb_obj, ndi_document_id, version)
-% 			ndi_binarydoc_obj = [];
-% 			[fid, key] = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
-% 			if fid>0,
-% 				[filename,permission,machineformat,encoding] = fopen(fid);
-% 				ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,'fullpathfilename',filename,...
-% 					'machineformat',machineformat,'permission',permission, 'doc_unique_id', ndi_document_id, 'key', key);
-% 				ndi_binarydoc_obj.frewind(); % move to beginning of the file
-% 			end
-% 		end; % do_binarydoc()
+%         function [ndi_binarydoc_obj, key] = do_openbinarydoc(ndi_matlabdumbjsondb_obj, ndi_document_id, version)
+%             ndi_binarydoc_obj = [];
+%             [fid, key] = ndi_matlabdumbjsondb_obj.db.openbinaryfile(ndi_document_id, version);
+%             if fid>0,
+%                 [filename,permission,machineformat,encoding] = fopen(fid);
+%                 ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,'fullpathfilename',filename,...
+%                     'machineformat',machineformat,'permission',permission, 'doc_unique_id', ndi_document_id, 'key', key);
+%                 ndi_binarydoc_obj.frewind(); % move to beginning of the file
+%             end
+%         end; % do_binarydoc()
 
-% 		function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_matlabdumbjsondb_obj, ndi_binarydoc_matfid_obj)
-% 			% DO_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC_MATFID_OBJ
-% 			%
-% 			% NDI_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NDI_MATLABDUMBJSONDB_OBJ, NDI_BINARYDOC_MATFID_OBJ, KEY, NDI_DOCUMENT_ID)
-% 			%
-% 			% Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
-% 			%	
-% 				ndi_matlabdumbjsondb_obj.db.closebinaryfile(ndi_binarydoc_matfid_obj.fid, ...
-% 					ndi_binarydoc_matfid_obj.key, ndi_binarydoc_matfid_obj.doc_unique_id);
-% 				ndi_binarydoc_matfid_obj.fclose(); 
-% 		end; % do_closebinarydoc()
-%	end;
+%         function [ndi_binarydoc_matfid_obj] = do_closebinarydoc(ndi_matlabdumbjsondb_obj, ndi_binarydoc_matfid_obj)
+%             % DO_CLOSEBINARYDOC - close and unlock an NDI_BINARYDOC_MATFID_OBJ
+%             %
+%             % NDI_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NDI_MATLABDUMBJSONDB_OBJ, NDI_BINARYDOC_MATFID_OBJ, KEY, NDI_DOCUMENT_ID)
+%             %
+%             % Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
+%             %    
+%                 ndi_matlabdumbjsondb_obj.db.closebinaryfile(ndi_binarydoc_matfid_obj.fid, ...
+%                     ndi_binarydoc_matfid_obj.key, ndi_binarydoc_matfid_obj.doc_unique_id);
+%                 ndi_binarydoc_matfid_obj.fclose(); 
+%         end; % do_closebinarydoc()
+%    end;
 end

@@ -13,7 +13,7 @@ function sg_flat(dirname)
 % from specific epoch n, along with sample0 and sample1. 
 
 if nargin < 1,
-	dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_sg'];
+    dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp_sg'];
 end;
 
 disp(['creating a new session object...']);
@@ -30,8 +30,8 @@ dt = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files
 
 dev1 = E.daqsystem_load('name','sgtest');
 if isempty(dev1),
-	dev1 = ndi.daq.system.mfdaq('sgtest', dt, ndi.daq.reader.mfdaq.spikegadgets());
-	E.daqsystem_add(dev1);
+    dev1 = ndi.daq.system.mfdaq('sgtest', dt, ndi.daq.reader.mfdaq.spikegadgets());
+    E.daqsystem_add(dev1);
 end
 
 % Now let's print some statistics

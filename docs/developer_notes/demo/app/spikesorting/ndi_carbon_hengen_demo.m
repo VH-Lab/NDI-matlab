@@ -24,7 +24,7 @@
 % Remove .ndi directory if it exists to avoid errors
 dirpath = '/Users/danielgmu/Downloads/Experiments/'
 if exist([dirpath filesep '.ndi'], 'dir') == 7
-	rmdir([dirpath filesep '.ndi'], 's');
+    rmdir([dirpath filesep '.ndi'], 's');
 end
 
 disp(['Opening experiment ' dirpath '...']);

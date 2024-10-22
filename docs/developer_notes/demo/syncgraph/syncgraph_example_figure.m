@@ -29,8 +29,8 @@ plot([t_utc(1) t_utc(end)], [0 0], 'linewidth', 1.01,'color',[0 0 0]);
 hold on;
 
 for i=1:3,
-	plot([t_elec{i}(1) t_elec{i}(end)], [1 1], 'linewidth', 1.01,'color',[0 0 0]);
-	plot([t_visstim{i}(1) t_visstim{i}(end)], [0.5 0.5], 'linewidth', 1.01,'color',[0 0 0]);
+    plot([t_elec{i}(1) t_elec{i}(end)], [1 1], 'linewidth', 1.01,'color',[0 0 0]);
+    plot([t_visstim{i}(1) t_visstim{i}(end)], [0.5 0.5], 'linewidth', 1.01,'color',[0 0 0]);
 end;
 
 box off;
