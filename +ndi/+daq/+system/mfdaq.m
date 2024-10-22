@@ -23,7 +23,7 @@
 
 classdef mfdaq < ndi.daq.system
 
-	properties (GetAcces=public,SetAccess=protected)
+	properties (GetAccess=public,SetAccess=protected)
 	end
 	properties (Access=private) % potential private variables
 	end

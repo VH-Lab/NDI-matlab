@@ -142,6 +142,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
                 report(end).data = image;
             end
         end
+      end
       function [sz,imagesize]= getsamplesize(sAPI_dev, interval, channeltype, channel)
         %
         % FUNCTION GETSAMERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
@@ -208,3 +209,4 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
         end
 
    end
+end

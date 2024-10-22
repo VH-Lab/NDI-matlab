@@ -1,4 +1,4 @@
-classdef (Abstract) ndi_daqsystem_image < ndi_daqsystem
+classdef (Abstract) ndi_daqsystem_image < ndi.daq.system
     %This is an abstract superclass of all imaging device drivers
     %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
