@@ -105,7 +105,7 @@ classdef  matlabdumbjsondb2 < ndi.database
 			filename = ndi.database.implementations.fun.doc2ingesteddbfilename(ndi_doc, filename);
 			fullfilename = [ndi_matlabdumbjsondb_obj.file_directory filesep filename];
 
-			fid = fopen(fullfilename,'r','ieee-le');
+			fid = fopen(fullfilename,'r','l');
 			if fid>0,
 				[fullfilename,permission,machineformat,encoding] = fopen(fid);
 				ndi_binarydoc_obj = ndi.database.implementations.binarydoc.matfid('fid',fid,...

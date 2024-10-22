@@ -3,7 +3,7 @@ function url = url(type, varargin)
 % 
 % [URL] = ndi.cloud.api.URL(TYPE) returns the URL for the api
 site = 'https://dev-api.ndi-cloud.com/v1/';
-did.datastructures.assign(varargin{:});
+vlt.data.assign(varargin{:});
 
 if (strcmp(type,'login'))
     url = strcat(site, 'auth/login');

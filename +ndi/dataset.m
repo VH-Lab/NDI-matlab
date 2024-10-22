@@ -311,7 +311,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 			%
 			% See also: ndi.dataset/database_add(), ndi.dataset/database_search()
 				ErrIfNotFound = 0;
-				did.datastructures.assign(varargin{:});
+				vlt.data.assign(varargin{:});
 
 				doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
 				ndi_session_ids_here = {};

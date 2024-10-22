@@ -16,7 +16,7 @@ function [header, presentation_time] = read_presentation_time_structure(filename
 %   PRESENTATION_TIME - presentation time structure data
 %
 
-fid = fopen(filename, 'rb','ieee-le');
+fid = fopen(filename, 'rb','l');
 
 % Read the header information
 header = fgetl(fid); % Read the first line as the header

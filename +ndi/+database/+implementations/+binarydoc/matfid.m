@@ -19,7 +19,7 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
 				doc_unique_id = '';
 				vlt.data.assign(varargin{:});
 				ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@vlt.file.fileobj(varargin{:});
-				ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
+				ndi_binarydoc_matfid_obj.machineformat = 'l';
 				ndi_binarydoc_matfid_obj.key = key;
 				ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
 		end; % ndi.database.implementations.binarydoc.matfid() creator

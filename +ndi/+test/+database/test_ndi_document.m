@@ -37,7 +37,7 @@ doc = E.newdocument('demoNDI',...
 %add a binary file
 
 binary_filename = [dirname filesep 'myfile.bin'];
-myfid = fopen(binary_filename,'w','ieee-le');
+myfid = fopen(binary_filename,'w','l');
 if myfid>0,
 else,
 	error(['unable to open file: ' binary_filename '.']);

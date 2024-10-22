@@ -32,7 +32,7 @@ tname = [ tname_without_extension extension ];
 f = S.database_openbinarydoc(doc,filename);
 data = f.fread(Inf);
 
-fid = fopen(tname,'wb','ieee-le');
+fid = fopen(tname,'wb','l');
 fwrite(fid,data,'uint8');
 fclose(fid);
 
