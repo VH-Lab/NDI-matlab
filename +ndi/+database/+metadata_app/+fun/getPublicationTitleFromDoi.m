@@ -32,8 +32,8 @@ function [publicationTitle, doi] = getPublicationTitleFromDoi(doi)
     isTitleItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "Title" );
     publicationTitle = documentResult.DocSum.Item( isTitleItem ).Text;
 
-    %isDoiItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "DOI" );
-    %doi = documentResult.DocSum.Item( isDoiItem ).Text;
+    % isDoiItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "DOI" );
+    % doi = documentResult.DocSum.Item( isDoiItem ).Text;
 
     if nargout == 1
         clear doi

@@ -201,7 +201,7 @@ classdef mfdaq < ndi.daq.system
             %
             %  DATA is the data collection for specific channels
 
-            %error('this function presently does not work, needs to know how to get to session');
+            % error('this function presently does not work, needs to know how to get to session');
 
             if t1<t0,
                 error(['t0 must be <= t1']);
@@ -256,7 +256,7 @@ classdef mfdaq < ndi.daq.system
                 error(['this function does not handle working with clocks yet.']);
             else,
                 epoch = timeref_or_epoch;
-                %disp('here, about to call readchannels_epochsamples')
+                % disp('here, about to call readchannels_epochsamples')
                 [timestamps,data] = readevents_epochsamples(ndi_daqsystem_mfdaq_obj,channeltype,channel,epoch,t0,t1);
             end
         end % readevents

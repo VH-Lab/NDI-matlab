@@ -127,7 +127,7 @@ classdef intan < ndi.daq.reader.mfdaq
             end
         end % filenamefromepoch
 
-        %01234567890123456789012345678901234567890123456789012345678901234567890123456789
+        % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_intan_obj, channeltype, channel, epochfiles, s0, s1)
             %  FUNCTION READ_CHANNELS - read the data based on specified channels
             %

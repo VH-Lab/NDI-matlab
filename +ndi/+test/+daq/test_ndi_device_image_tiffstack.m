@@ -4,14 +4,14 @@ function test_ndi_daqsystem_image_tiffstack( input_file_directory )
 
     global epoch_number frame_number;
     epoch_number = 1;
-    %The epoch to be tested by both .frame(n,i), and .numFrame(n). Could be changed for testing.
+    % The epoch to be tested by both .frame(n,i), and .numFrame(n). Could be changed for testing.
     frame_number = 1;
-    %the frame to be taken using .frame(n,i) function. Could be changed for testing
+    % the frame to be taken using .frame(n,i) function. Could be changed for testing
 
-    %Makes sure that the input_file_directory argument is indeed a directory,
-    %and that only one arguments is passed.
-    %If no argument is passed, then set the directories to a
-    %default.
+    % Makes sure that the input_file_directory argument is indeed a directory,
+    % and that only one arguments is passed.
+    % If no argument is passed, then set the directories to a
+    % default.
     if nargin < 1
         example_directory = [ndi.common.PathConstants.ExampleDataFolder];
         input_dir_name = [example_directory filesep 'exp_image_tiffstack' filesep 'raw_data' ];
@@ -27,11 +27,11 @@ function test_ndi_daqsystem_image_tiffstack( input_file_directory )
         mkdir(output_dir_name);
     end
 
-    %creating a new session object
+    % creating a new session object
     example_exp = ndi.session.dir('exp1',input_dir_name);
-    %creating a new filenavigator that looks for .tif files.
+    % creating a new filenavigator that looks for .tif files.
     example_filenavigator = ndi.file.navigator(example_exp,'.*\.tif\>');
-    %creating an image_tiffstack daqsystem object
+    % creating an image_tiffstack daqsystem object
     example_device = ndi.daq.system.image.tiffstack('sampleDevice',example_filenavigator);
 
 

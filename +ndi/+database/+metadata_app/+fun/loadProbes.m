@@ -25,7 +25,7 @@ function probeData = loadProbes(S)
     end
     probeData = ndi.database.metadata_app.class.ProbeData();
     probeTypeMap = containers.Map();
-    %Patch, patch-VM, patch-I, patch-attached, sharp, sharp-Vm, sharp-I, are pipettes
+    % Patch, patch-VM, patch-I, patch-attached, sharp, sharp-Vm, sharp-I, are pipettes
     probeTypeMap('patch') = 'Pipette';
     probeTypeMap('patch-Vm') = 'Pipette';
     probeTypeMap('patch-I') = 'Pipette';
@@ -34,7 +34,7 @@ function probeData = loadProbes(S)
     probeTypeMap('sharp-Vm') = 'Pipette';
     probeTypeMap('sharp-I') = 'Pipette';
 
-    %N-trodes, electrode-$, are electrodes
+    % N-trodes, electrode-$, are electrodes
     probeTypeMap('n-trode') = 'Electrode';
 
     for i = 1:numel(probes)

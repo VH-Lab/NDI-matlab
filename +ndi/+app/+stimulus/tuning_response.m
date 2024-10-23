@@ -85,7 +85,7 @@ classdef tuning_response < ndi.app
 
             for i=1:numel(doc_stim),
                 presentation_time = ndi_decoder.load_presentation_time(doc_stim{i});
-                %disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
+                % disp(['Working on doc ' int2str(i) ' of ' int2str(numel(doc_stim)) '.']);
                 % ASSUMPTION: each stimulus element epoch will overlap a single ndi_timeseries_obj epoch
                 %   therefore, we can use the first stimulus as a proxy for them all
                 if numel(presentation_time)>0, % make sure there is at least 1 stimulus

@@ -103,7 +103,7 @@ classdef PathConstants
             pathList = cell(1, numel(d));
             for i = 1:numel(d)
                 pathList{i} = fullfile(d{i}, 'ndi_common', key);
-                %addpath(d{i})  % Matlab hangs for me here; it doesn't like this being called from a constant definition
+                % addpath(d{i})  % Matlab hangs for me here; it doesn't like this being called from a constant definition
                 % error: `Unable to determine if 'ndi.common.PathConstants.CommonFolder' is a function.`...
                 %        ` The MATLAB Path or current folder changed too many times during the search.`
             end
@@ -121,7 +121,7 @@ function mustUpdateDidGlobals(value, key)
             if strcmp(key, "$NDIDOCUMENTPATH")
                 error('Could not update DID globals')
             else
-                %pass
+                % pass
             end
         end
     end

@@ -1,6 +1,6 @@
 classdef (Abstract) ndi_image < ndi.daq.system
     % An abstract class defining the main functions of the device image drivers. (frame and numframe)
-    %Designed to be a superclass of the specific drivers (eg. ndi_daqsystem_image_tiffstack)
+    % Designed to be a superclass of the specific drivers (eg. ndi_daqsystem_image_tiffstack)
 
     properties
     end

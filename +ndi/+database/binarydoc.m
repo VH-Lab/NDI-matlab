@@ -4,7 +4,7 @@ classdef binarydoc < handle
     end  % protected, accessible
 
     methods (Abstract)
-        %ndi_binarydoc_obj = ndi.database.binarydoc(varargin)
+        % ndi_binarydoc_obj = ndi.database.binarydoc(varargin)
         % ndi.database.binarydoc - create a new ndi.database.binarydoc object
         %
         % NDI_BINARYDOC_OBJ = ndi.database.binarydoc()
@@ -12,7 +12,7 @@ classdef binarydoc < handle
         % This is an abstract class, so the creator does nothing.
         %
 
-        %end; % ndi.database.binarydoc()
+        % end; % ndi.database.binarydoc()
 
         ndi_binarydoc_obj = fopen(ndi_binarydoc_obj)
         % FOPEN - open the ndi.database.binarydoc for reading/writing
@@ -22,7 +22,7 @@ classdef binarydoc < handle
         % Open the file record associated with NDI_BINARYDOC_OBJ.
         %
 
-        %end; % fopen()
+        % end; % fopen()
 
         fseek(ndi_binarydoc_obj, location, reference)
         % FSEEK - move to a location within the file stream
@@ -37,7 +37,7 @@ classdef binarydoc < handle
         %    'eof'  - end of file
         %
         % See also: FSEEK, FTELL, ndi.database.binarydoc/FTELL
-        %end % fseek()
+        % end % fseek()
 
         location = ftell(ndi_binarydoc_obj)
         % FSEEK - move to a location within the file stream
@@ -47,7 +47,7 @@ classdef binarydoc < handle
         % Returns the current LOCATION (in bytes) in a file stream.
         %
         % See also: FSEEK, FTELL, ndi.database.binarydoc/FSEEK
-        %end % ftell()
+        % end % ftell()
 
         b = feof(ndi_binarydoc_obj)
         % FEOF - is an ndi.database.binarydoc at the end of file?
@@ -58,7 +58,7 @@ classdef binarydoc < handle
         % file stream NDI_BINARYDOC_OBJ, and 0 otherwise.
         %
         % See also: FEOF, FSEEK, ndi.database.binarydoc/FSEEK
-        %end % feof
+        % end % feof
 
         count = fwrite(ndi_binarydoc_obj, data, precision, skip)
         % FWRITE - write data to an ndi.database.binarydoc
@@ -68,7 +68,7 @@ classdef binarydoc < handle
         %
         %
         % See also: FWRITE
-        %end; % fwrite()
+        % end; % fwrite()
 
         [data, count] = fread(ndi_binarydoc_obj, count, precision, skip)
         % FREAD - read data from an ndi.database.binarydoc
@@ -79,16 +79,16 @@ classdef binarydoc < handle
         % The actual COUNT is returned, along with the DATA.
         %
         % See also: FREAD
-        %end; % fread()
+        % end; % fread()
 
         ndi_binarydoc_obj = fclose(ndi_binarydoc_obj)
-        %FCLOSE - close an ndi.database.binarydoc
+        % FCLOSE - close an ndi.database.binarydoc
         %
         % FCLOSE(NDI_BINARYDOC_OBJ)
         %
         %
 
-        %end; % fclose()
+        % end; % fclose()
 
     end; % Abstract methods
 

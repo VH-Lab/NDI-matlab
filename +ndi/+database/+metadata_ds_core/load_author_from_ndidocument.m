@@ -61,7 +61,7 @@ function author = load_author_from_ndidocument(author_doc, otherContribution_doc
         end
     end
 
-    %remove the author.id field
+    % remove the author.id field
     author = rmfield(author, 'id');
 
 end

@@ -20,7 +20,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             end
 
             ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app(session, name);
-            %intiate app doc
+            % intiate app doc
             ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.appdoc(...
                 {'sorting_parameters','spike_clusters'},...
                 {'sorting_parameters','spike_clusters'},...
@@ -344,7 +344,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             errormsg = '';
             if strcmpi(appdoc_type,'sorting_parameters')
                 sorting_parameters = appdoc_struct;
-                %check parameters here
+                % check parameters here
                 fields_needed = {'graphical_mode', 'num_pca_features', 'interpolation','min_clusters','max_clusters','num_start'};
                 sizes_needed = {[1 1],[1 1],[1 1],[1 1],[1 1],[1 1]}; % all single numbers, size should be 1x1
                 [b,errormsg] = vlt.data.hasAllFields(sorting_parameters, fields_needed, sizes_needed);
@@ -352,7 +352,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                 spike_clusters = appdoc_struct;
                 fields_needed = {'epoch_info', 'clusterinfo'};
                 sizes_needed = {[1 -1], [1 -1]};
-                %check parameters here
+                % check parameters here
                 [b,errormsg] = vlt.data.hasAllFields(spike_clusters, fields_needed, sizes_needed);
             else
                 error(['Unknown appdoc_type' appdoc_type '.']);
@@ -384,7 +384,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                     se = ndi.app.spikeextractor(ndi_app_spikesorter_obj.session);
                     extraction_parameters_doc = se.find_appdoc('extraction_parameters',extraction_name);
                     if numel(extraction_parameters_doc)==0,
-                        %disp('no extraction doc, returning');
+                        % disp('no extraction doc, returning');
                         return;
                     elseif numel(extraction_parameters_doc)>1,
                         error(['Too many extraction parameters docs. Should not happen.']);
@@ -395,7 +395,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
                     % get the sorting parameters doc
                     sorting_parameters_doc = ndi_app_spikesorter_obj.find_appdoc('sorting_parameters', sorting_parameters_name);
                     if numel(sorting_parameters_doc)==0,
-                        %disp('no sorting parameters doc, returning');
+                        % disp('no sorting parameters doc, returning');
                         return;
                     elseif numel(sorting_parameters_doc)>1,
                         error(['Too many sorting parameters doc. Should not happen.']);

@@ -55,7 +55,7 @@ function gui(varargin)
         ud = get(fig,'userdata');
     end
 
-    %command,
+    % command,
 
     switch command
         case 'Main'
@@ -196,7 +196,7 @@ function gui(varargin)
                 mydaq = ud.ndi_session_obj.database_search({'base.id',ref_list{value}});
                 j_pretty = vlt.data.prettyjson(vlt.data.jsonencodenan(mydaq{1}.document_properties));
                 j_pretty = char(j_pretty); %% convert java string to a single-line matlab char vector
-                %j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
+                % j_pretty = strsplit(char(j_pretty), char(10)); split further into cell array of char vectors
                 set(findobj(fig,'tag','doc_properties'),'string',j_pretty);
             end
             ndi.gui.gui('fig',fig,'command','EnableDisable');

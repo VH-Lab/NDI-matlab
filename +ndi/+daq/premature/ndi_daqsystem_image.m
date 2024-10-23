@@ -1,6 +1,6 @@
 classdef (Abstract) ndi_daqsystem_image < ndi.daq.system
     %This is an abstract superclass of all imaging device drivers
-    %This class defines the fundumental functions that the drivers should implement (frame, and numframe)
+    % This class defines the fundumental functions that the drivers should implement (frame, and numframe)
 
     properties
     end
@@ -12,9 +12,9 @@ classdef (Abstract) ndi_daqsystem_image < ndi.daq.system
     end
 
     methods (Abstract)
-        %This function returns a specific fram 'i' from epoch 'n'
+        % This function returns a specific fram 'i' from epoch 'n'
         im = frame(obj,n,i)
-        %This function returns the number of frames in epoch 'n'
+        % This function returns the number of frames in epoch 'n'
         num = numFrame(obj,n)
     end
 

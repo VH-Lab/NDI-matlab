@@ -26,7 +26,7 @@ classdef Lab < handle
 
             guipath = [ndi.common.PathConstants.RootFolder filesep '+ndi' filesep '+gui'];
 
-            %Create lab
+            % Create lab
             obj.window = axes('position', [1/18 1/12 2/3 2/3], ...
                 'XLim', [0 24], 'YLim', [0 16]);
             axis off;
@@ -34,10 +34,10 @@ classdef Lab < handle
             obj.back = rectangle(obj.window, 'position', [0 0 24 16], ...
                 'facecolor', [1 1 1]);
 
-            %Create panel
+            % Create panel
             obj.panel = uipanel('Position', [7/9 1/12 1/6 2/3], 'BackgroundColor', 'white');
 
-            %Create edit
+            % Create edit
             obj.editable = false;
             [X, Y] = meshgrid(0:576);
             plot(obj.window, X, Y, 'k', 'Tag', 'XGrid', 'Visible', 'off');
@@ -48,7 +48,7 @@ classdef Lab < handle
                 'HorizontalAlignment', 'center', ...
                 'ButtonDownFcn', @obj.editCallback);
 
-            %Create zoom
+            % Create zoom
             obj.zIn = image(obj.window, [22.1 22.9], [15.1 15.9], ...
                 flip(imread([guipath filesep 'zoomIn.png']), 1), ...
                 'ButtonDownFcn', {@obj.setZoom 2/3});

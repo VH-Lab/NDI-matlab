@@ -20,7 +20,7 @@ classdef SpeciesData < handle
 
         function updateProperty(obj, name, value, speciesIndex)
             %updateProperty Update the value in a field for the given
-            %speciesIndex
+            % speciesIndex
 
             % if numel( obj.SpeciesList ) < speciesIndex
             %     if numel(obj.SpeciesList) == 0
@@ -51,7 +51,7 @@ classdef SpeciesData < handle
             S = {};
             for i = 1:numel(obj.SpeciesList)
                 name = obj.SpeciesList(i).Name;
-                %if name is a cell array, get the first element, if not, just use the string
+                % if name is a cell array, get the first element, if not, just use the string
                 if iscell(name)
                     name = name{1};
                 end

@@ -262,7 +262,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % in the abstract class, this returns empty
             myemptydoc = ndi.document(ndi_calculator_obj.doc_document_types{1});
             property_list_name = myemptydoc.document_properties.document_class.property_list_name;
-            %class_name = myemptydoc.document_properties.document_class.class_name
+            % class_name = myemptydoc.document_properties.document_class.class_name
             [parent,class_name,ext] = fileparts(myemptydoc.document_properties.document_class.definition);
 
             % this is not a good way to do things; every database will not be able to implement it
@@ -390,9 +390,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
         %%%% methods that override ndi.appdoc %%%%
 
-        %function struct2doc - should call calculator
-        %function doc2struct - should build the input parameters from the document
-        %function defaultstruct_appdoc - should call default search for input parameters and return a structure
+        % function struct2doc - should call calculator
+        % function doc2struct - should build the input parameters from the document
+        % function defaultstruct_appdoc - should call default search for input parameters and return a structure
 
         function b = isequal_appdoc_struct(ndi_app_appdoc_obj, appdoc_type, appdoc_struct1, appdoc_struct2)
             % ISEQUAL_APPDOC_STRUCT - are two APPDOC data structures the same (equal)?
@@ -658,23 +658,23 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     ud = get(fig,'userdata')
                     val = get(docPopupObj, 'value');
                     str = get(docPopupObj, 'string');
-                    %disp(val);
-                    %disp(str);
+                    % disp(val);
+                    % disp(str);
                     docTextObj = findobj(fig,'tag','DocTxt');
                     % Step 2, take action
                     switch val,
                         case 1, % General documentation
                             disp(['Popup is ' str{val} '.']);
                             type = 'general';
-                            %set(docTextObj,'string','Some General Document');
+                            % set(docTextObj,'string','Some General Document');
                         case 2, % searching for inputs
                             disp(['Popup is ' str{val} '.']);
                             type = 'searching for inputs';
-                            %set(docTextObj,'string','Some Input Document');
+                            % set(docTextObj,'string','Some Input Document');
                         case 3, % output documentation
                             disp(['Popup is ' str{val} '.']);
                             type = 'output';
-                            %set(docTextObj,'string','Some Output Document');
+                            % set(docTextObj,'string','Some Output Document');
                         otherwise,
                             disp(['Popup ' val ' is out of bound.']);
                     end;
@@ -855,11 +855,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     % shall we save the view that the user had? let's not right now
 
                     % save param
-                    %paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
-                    %paramval = get(paramPopupObj, 'value');
-                    %paramstrs = get(paramPopupObj, 'string');
-                    %paramstr = paramstrs{paramval};
-                    %paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
+                    % paramPopupObj = findobj(fig,'tag','ParameterCodePopup');
+                    % paramval = get(paramPopupObj, 'value');
+                    % paramstrs = get(paramPopupObj, 'string');
+                    % paramstr = paramstrs{paramval};
+                    % paramtext = get(findobj(fig,'tag','ParameterCodeTxt'),'String');
 
                     % check filename
                     filepath = '';

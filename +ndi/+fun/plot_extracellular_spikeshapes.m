@@ -13,7 +13,7 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
         g = S.database_search(ndi.query('','isa','extracellular',''));
     end;
 
-    %e = S.database_search(ndi.query('element.type','exact_string','spikes',''));
+    % e = S.database_search(ndi.query('element.type','exact_string','spikes',''));
 
     f = figure;
 

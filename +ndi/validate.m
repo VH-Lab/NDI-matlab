@@ -77,7 +77,7 @@ classdef validate
             % ndi_document_obj.document_properties.ndi_document with fields 'id', 'session_id', etc.
             schema = ndi.validate.extract_schema(ndi_document_obj);
             doc_class = ndi_document_obj.document_properties.document_class;
-            %property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
+            % property_list = getfield(ndi_document_obj.document_properties, doc_class.property_list_name);
             property_list = eval( strcat('ndi_document_obj.document_properties.', doc_class.property_list_name));
             if has_dependencies == 1
                 % pass depends_on here
@@ -147,7 +147,7 @@ classdef validate
             has_dependencies_error = 0;
             if has_dependencies == 1
                 numofdependencies = numel(ndi_document_obj.document_properties.depends_on);
-                %emptystruct(1,numofdependencies) = struct;
+                % emptystruct(1,numofdependencies) = struct;
                 ndi_validate_obj.reports.dependencies = struct();
                 % NOTE: this does not verify that 'depends-on' documents have the right class membership
                 % might want to add this in the future

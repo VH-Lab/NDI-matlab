@@ -97,7 +97,7 @@ classdef probe < ndi.element & ndi.documentservice
                         end;
                     end;
                     if ~isempty(match_probe_and_device),
-                        %underlying_epochs.epoch_number = n;
+                        % underlying_epochs.epoch_number = n;
                         underlying_epochs.epoch_id = d_et{d}(n).epoch_id;
                         underlying_epochs.epoch_session_id = d_et{d}(n).epoch_session_id;
                         underlying_epochs.epochprobemap = d_et{d}(n).epochprobemap(match_probe_and_device);

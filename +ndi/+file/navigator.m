@@ -624,11 +624,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             else,
                 if ischar(ndi_filenavigator_obj.fileparameters.filematch),
                     fmhash = DataHash(uint8(ndi_filenavigator_obj.fileparameters.filematch),'bin',algo,'hex');
-                    %fmhash = pm_hash(algo,ndi_filenavigator_obj.fileparameters.filematch); % out of date
+                    % fmhash = pm_hash(algo,ndi_filenavigator_obj.fileparameters.filematch); % out of date
                 elseif iscell(ndi_filenavigator_obj.fileparameters.filematch), % is cell
                     catstr = cell2str(ndi_filenavigator_obj.fileparameters.filematch);
-                    %catstr = cat(2,ndi_filenavigator_obj.fileparameters.filematch);
-                    %fmhash = pm_hash(algo,catstr); % out of date
+                    % catstr = cat(2,ndi_filenavigator_obj.fileparameters.filematch);
+                    % fmhash = pm_hash(algo,catstr); % out of date
                     fmhash = DataHash(uint8(catstr),'bin',algo,'hex');
                 else,
                     error(['unexpected datatype for fileparameters.filematch.']);

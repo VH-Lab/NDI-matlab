@@ -26,7 +26,7 @@ classdef AffiliationData < handle
 
         function updateProperty(obj, name, value, affiliationIndex)
             %updateProperty Update the value in a field for the given
-            %affiliationIndex
+            % affiliationIndex
 
             % Expand the AffiliationList with the default struct if necessary
             if numel( obj.AffiliationList ) < affiliationIndex

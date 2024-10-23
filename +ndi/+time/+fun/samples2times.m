@@ -9,8 +9,8 @@ function t = samples2times(s,t0_t1,sr)
     %
     %
 
-    %s = 1 + (t-t0_t1(1))*sr
-    %(s-1)/sr == (t-t0_t1(1))
+    % s = 1 + (t-t0_t1(1))*sr
+    % (s-1)/sr == (t-t0_t1(1))
 
     t = (s-1)/sr + t0_t1(1);
 

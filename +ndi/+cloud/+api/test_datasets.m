@@ -17,7 +17,7 @@ example_dataset = jsondecode(str);
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
 [status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset);
-%example organization id: '645163735ea2a39cb644cc6c'
+% example organization id: '645163735ea2a39cb644cc6c'
 [status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
 
 [status, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id);
@@ -36,8 +36,8 @@ curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://pr
 
 [status, response, url] = ndi.cloud.api.datasets.get_files_raw(dataset_id, uid);
 [status, output] = ndi.cloud.put_files(presigned_url, file_path);
-%example dataset id: '6466c110390dd305045ee10e'
-%example document id: ''6466f7e9cd19dffd5f63022c'
+% example dataset id: '6466c110390dd305045ee10e'
+% example document id: ''6466f7e9cd19dffd5f63022c'
 [status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
 all_docs = summary.documents;
 all_docs_ids = all_docs.id;

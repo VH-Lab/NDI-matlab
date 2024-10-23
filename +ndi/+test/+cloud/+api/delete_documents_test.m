@@ -25,21 +25,21 @@ function delete_documents_test(dataset_id)
     if (number_of_documents ~= numel(summary.documents))
         error('ndi.cloud.api.documents.get_documents_summary returns the same number of documents after deleting a document');
     end
-    %try getting the document that was deleted. If no error is thrown, then the document was not deleted
+    % try getting the document that was deleted. If no error is thrown, then the document was not deleted
     try
         [status, response, test_document] = ndi.cloud.api.documents.get_documents(dataset_id, test_document_id);
         error('ndi.cloud.api.documents.get_documents did not throw an error after delete_documents');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
 
-    %test bulk delete
-    %try post_bulk_delete to delete a document that does not exist
+    % test bulk delete
+    % try post_bulk_delete to delete a document that does not exist
     try
         [status, response] = ndi.cloud.api.datasets.post_bulk_delete(dataset_id, test_document_id);
         error('ndi.cloud.api.datasets.post_bulk_delete did not throw an error after using a document that does not exist');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
 
     document_ids = {};
@@ -59,20 +59,20 @@ function delete_documents_test(dataset_id)
         error('ndi.cloud.api.datasets.get_datasetId returns the same number of documents after deleting a document');
     end
 
-    %try getting the document that was deleted. If no error is thrown, then the document was not deleted
-    %try delete_document to delete a document that does not exist
+    % try getting the document that was deleted. If no error is thrown, then the document was not deleted
+    % try delete_document to delete a document that does not exist
     for i = 1:numel(document_ids)
         try
             [status, response, test_document] = ndi.cloud.api.documents.get_documents(dataset_id, document_ids(i));
             error('ndi.cloud.api.documents.get_documents did not throw an error after using post_bulk_delete');
         catch
-            %do nothing, this is the expected behavior
+            % do nothing, this is the expected behavior
         end
         try
             [status, response] = ndi.cloud.api.documents.delete_documents(dataset_id, document_ids(i));
             error('ndi.cloud.api.documents.delete_documents did not throw an error after using post_bulk_delete');
         catch
-            %do nothing, this is the expected behavior
+            % do nothing, this is the expected behavior
         end
     end
 

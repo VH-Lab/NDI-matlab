@@ -29,7 +29,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
     dir = [D.path filesep '.ndi' filesep 'files' filesep];
     file_count = 0;
     uploaded_size = 0;
-    %total_size from kb to GB
+    % total_size from kb to GB
     total_size = total_size/1e6;
     for i = 1:numel(doc_file_struct)
         if doc_file_struct(i).is_uploaded

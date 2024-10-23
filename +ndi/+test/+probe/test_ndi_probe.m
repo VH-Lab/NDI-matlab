@@ -18,7 +18,7 @@ function test_ndi_probe(dirname)
     disp(['reading session from directory ' dirname ' ...']);
     E = ndi.session.dir(dirname),
 
-    %dev1 = load(E.daqsystem,'name','intan1')
+    % dev1 = load(E.daqsystem,'name','intan1')
 
     probes = E.getprobes();
     if numel(probes)==0, % ndi.test.daq.build_intan_flat_exp hasn't been run yet

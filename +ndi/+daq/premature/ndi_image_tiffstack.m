@@ -109,19 +109,19 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
 
             file_names = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');  %%use the files as object fields later
 
-            %file_names,
+            % file_names,
             % here we want to convert t0, and t1, which are in units of sAPI_clock
             %    into i0_, t0_ and i1_, t1_ (i being local recorded interval, and t being time within that interval)
 
             [i0_,t0_] = convert(sAPI_dev,sAPI_clock,t0);
 
-            %i0_,
-            %t0_,
+            % i0_,
+            % t0_,
 
             [i1_,t1_] = convert(sAPI_dev,sAPI_clock,t1);    %may need to incorporate the getintervals func into convert func
 
-            %i1_,
-            %t1_,
+            % i1_,
+            % t1_,
 
             intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
 

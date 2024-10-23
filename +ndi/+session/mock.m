@@ -1,4 +1,4 @@
-%ndi.session.mock - a mock session class for testing
+% ndi.session.mock - a mock session class for testing
 
 classdef mock < ndi.session.dir
 

@@ -72,7 +72,7 @@ classdef mfdaq < ndi.daq.reader
             t0t1 = {[NaN NaN]};
         end % t0t1
 
-        %012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
+        % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
         function channels = getchannelsepoch(ndi_daqreader_mfdaq_obj, epochfiles)
             % GETCHANNELSEPOCH - List the channels that were sampled for this epoch
@@ -102,7 +102,7 @@ classdef mfdaq < ndi.daq.reader
             channels = channels([]);
         end; % getchannelsepoch
 
-        %012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
+        % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
         function [channels,fullchannelinfo] = getchannelsepoch_ingested(ndi_daqreader_mfdaq_obj, epochfiles, S)
             % GETCHANNELSEPOCH_INGESTED - List the channels that were sampled for this epoch
@@ -468,7 +468,7 @@ classdef mfdaq < ndi.daq.reader
 
                 d = ndi_daqreader_mfdaq_obj.getingesteddocument(epochfiles,S);
                 % need to fix this so it works with mixed channeltypes
-                %[groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
+                % [groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
                 %    ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
 
                 if ~iscell(channeltype),
@@ -539,7 +539,7 @@ classdef mfdaq < ndi.daq.reader
             data = {}; % abstract class
         end; % readevents_epochsamples_native ()
 
-        %012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
+        % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
         function sr = samplerate(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
             % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
             %
@@ -554,7 +554,7 @@ classdef mfdaq < ndi.daq.reader
             sr = []; % abstract class;
         end; % samplerate()
 
-        %012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
+        % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
         function [sr,offset,scale] = samplerate_ingested(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel, S)
             % SAMPLERATE_INGESTED - GET THE SAMPLE RATE FOR SPECIFIC CHANNEL
             %
@@ -636,7 +636,7 @@ classdef mfdaq < ndi.daq.reader
             end; %
         end;
 
-        %012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
+        % 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789 - 80 characters for documentation
 
         function d = ingest_epochfiles(ndi_daqreader_mfdaq_obj, epochfiles, epoch_id)
             % INGEST_EPOCHFILES - create an document that describes the data read by an ndi.daq.reader

@@ -86,7 +86,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
             [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_files_detail(dataset_id, file_uid);
             if verbose, disp(['Saving file ' int2str(i) '...']); end
 
-            %save the file
+            % save the file
             websave(file_path, downloadURL);
         end
         if verbose, disp(['File Downloading complete.']); end
@@ -122,7 +122,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
         docStruct = ndi.cloud.download.set_file_info(docStruct,mode,filepath);
 
         document_obj = ndi.document(docStruct);
-        %save the document in .json file
+        % save the document in .json file
         did.file.str2text(json_file_path,did.datastructures.jsonencodenan(document_obj));
     end
 

@@ -394,7 +394,7 @@ classdef pipeline
                 pipelineList{i}.calculations = {};
                 D = dir([read_dir filesep char(pipelineList{i}.pipeline_name) filesep '*.json']);
                 for d = 1:numel(D),
-                    %D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
+                    % D(d).name is the name of the nth calculator in the pipeline; you can use that to build your list of calculators
                     pipelineList{i}.calculations{d} = jsondecode(vlt.file.textfile2char([read_dir filesep char(pipelineList{i}.pipeline_name) filesep D(d).name]));
                 end
             end
@@ -417,7 +417,7 @@ classdef pipeline
             end
         end % pipelineListToChar
 
-        %}
+        % }
 
     end % static methods
 end % class

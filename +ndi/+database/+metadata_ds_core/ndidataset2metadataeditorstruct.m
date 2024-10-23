@@ -122,8 +122,8 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
         subject.BiologicalSexList = {biologicalSex_doc{1}.document_properties.openminds.fields.name};
         species_id = studiedSpecimen_doc{1}.document_properties.openminds.fields.species{1}(7:end);
         species_doc = D.database_search(ndi.query('base.id', 'exact_string',species_id));
-        %openminds_species_id = species_doc{1}.document_properties.openminds.fields.species{1}(7:end);
-        %openminds_species_doc = D.database_search(ndi.query('base.id', 'exact_string',openminds_species_id));
+        % openminds_species_id = species_doc{1}.document_properties.openminds.fields.species{1}(7:end);
+        % openminds_species_doc = D.database_search(ndi.query('base.id', 'exact_string',openminds_species_id));
 
         subject.SpeciesList = ndi.database.metadata_app.class.Species(...
             species_doc{1}.document_properties.openminds.fields.name, ...
@@ -145,7 +145,7 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
         license_doc = D.database_search(ndi.query('base.id', 'exact_string',license_id));
 
         webpage = license_doc{1, 1}.document_properties.openminds.fields.webpage{2};
-        %remove the last item after . from the end of the webpage, but keep all the other items. Might have multiple . in the url
+        % remove the last item after . from the end of the webpage, but keep all the other items. Might have multiple . in the url
         webpage = split(webpage, '.');
         webpage = webpage(1:end-1);
         webpage = strjoin(webpage, '.');

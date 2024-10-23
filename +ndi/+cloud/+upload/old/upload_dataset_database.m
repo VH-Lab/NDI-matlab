@@ -140,15 +140,15 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
 
     for i = 1:num_files
         uid = file_manifest(i).uid;
-        %upload_url = ndi.cloud.api.files.get_file_upload_url(cloud_dataset_id, uid);
-        %uploadFile(file_manifest(i).file_path, upload_url, 'DisplayMode', 'None')
+        % upload_url = ndi.cloud.api.files.get_file_upload_url(cloud_dataset_id, uid);
+        % uploadFile(file_manifest(i).file_path, upload_url, 'DisplayMode', 'None')
 
         if ~ismissing( progress_trackers(3) )
             progress_trackers(3).updateProgress(i)
         end
 
         try
-            %fprintf('File size: %d KB. ', round(file_manifest(i).bytes/1024) )
+            % fprintf('File size: %d KB. ', round(file_manifest(i).bytes/1024) )
             [~, ~, upload_url] = ndi.cloud.files.get_files(cloud_dataset_id, uid, auth_token);
             [status, response] = ndi.cloud.files.put_files(upload_url, file_manifest(i).file_path, auth_token);
         catch ME

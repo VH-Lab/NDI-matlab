@@ -143,7 +143,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             end;
 
             for i=1:numel(channel),
-                %ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
+                % ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i}),
                 switch (ndi.daq.system.mfdaq.mfdaq_prefix(channeltype{i})),
                     case 'mk',
                         % put them together, alternating stimtimes and stimofftimes in the final product
@@ -206,7 +206,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
             %
             % SR is an array of sample rates from the specified channels
             %
-            %so, these are all events, and it doesn't much matter, so
+            % so, these are all events, and it doesn't much matter, so
             % let's make a guess that should apply well in all cases
 
             sr = NaN;

@@ -53,11 +53,11 @@ function sg_flat(dirname)
     [~,~,channels] = ndi_daqsystemstring2channel(ndi.daq.daqsystemstring(tetrodes(1).devicestring));
     data = readchannels_epochsamples(dev1, {'analog_in'}, channels, 1, 1, 30000); %(device,channeltype,channels,epoch,s0,s1)
 
-    %Applies Chebyshev Type I filter to channels
+    % Applies Chebyshev Type I filter to channels
     [b,a] = cheby1(4,0.8,300/(0.5 * 30000),'high');
     data = filtfilt(b,a,data);
 
-    %Plots all samples read from all four channels
+    % Plots all samples read from all four channels
     vlt.plot.plot_multichan(data,1:30000,400); %(data, timeframe, height)
 
     E.daqsystem_rm(dev1); % remove the device so the demo works again

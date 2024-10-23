@@ -2,7 +2,7 @@ email = "katherine@walthamdatascience.com";
 password = "Ndicloud123~";
 confirmation_code = "176741";
 %% auth
-%tested successfully
+% tested successfully
 [status, auth_token, organization_id] = ndi.cloud.api.auth.login(email, password);
 [status, output] = ndi.cloud.api.auth.logout();
 [status,response] = ndi.cloud.auth.confirmation_resend(email);
@@ -16,7 +16,7 @@ confirmation_code = "176741";
 %   "code": "CodeMismatchException"
 % }
 
-%waited to be tested
+% waited to be tested
 
 
 %% datasets

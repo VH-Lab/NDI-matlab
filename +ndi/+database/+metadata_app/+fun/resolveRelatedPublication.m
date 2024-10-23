@@ -22,9 +22,9 @@ function S = resolveRelatedPublication(doi)
         doi (1,1) string %{mustBeValidDoi(doi)}
     end
 
-    %doi = cleanDoi(doi); % Local function
+    % doi = cleanDoi(doi); % Local function
 
-    %S.doi = doi;
+    % S.doi = doi;
 
     [S.title, S.doi] = ndi.database.metadata_app.fun.getPublicationTitleFromDoi(doi);
     [S.pmid, S.pmcid] = ndi.database.metadata_app.fun.getPubmedIdFromDoi(doi);

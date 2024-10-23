@@ -50,7 +50,7 @@ classdef AuthorData < handle
 
         function updateProperty(obj, name, value, authorIndex)
             %updateProperty Update the value in a field for the given
-            %authorIndex
+            % authorIndex
 
             % Expand the AuthorList with the default struct if necessary
             numAuthors = numel( obj.AuthorList );

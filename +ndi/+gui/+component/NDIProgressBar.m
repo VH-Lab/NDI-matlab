@@ -52,7 +52,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
 
             obj.Value = progressValue;
             obj.updateMessage(progressMessage)
-            %obj.Textbox.Text = progressMessage;
+            % obj.Textbox.Text = progressMessage;
             drawnow
         end
 
@@ -69,7 +69,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             % Todo: Display completed...
             if ~ismissing(obj.ProgressTracker.CompletedMessage)
                 obj.Textbox.Text = obj.ProgressTracker.CompletedMessage;
-                %else
+                % else
                 %    obj.Textbox.Text = 'Completed.';
             end
             obj.Value = 1;
@@ -98,7 +98,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             end
             obj.Axes.Units = 'pixels';
             obj.Axes.InnerPosition = [obj.Location, obj.Size];
-            %axis(obj.Axes, 'equal');
+            % axis(obj.Axes, 'equal');
 
             hold(obj.Axes, 'on')
             obj.Axes.XLim = [-1,obj.Size(1)+1];
@@ -135,7 +135,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             hFigure = ancestor(obj.Parent, 'figure');
             if matlab.ui.internal.isUIFigure(hFigure)
                 obj.Textbox = uilabel(obj.Parent);
-                %obj.Textbox.VerticalAlignment = 'top';
+                % obj.Textbox.VerticalAlignment = 'top';
                 obj.Textbox.WordWrap = 'on';
 
                 obj.Textbox.Text = obj.Text;

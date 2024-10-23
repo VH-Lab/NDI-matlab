@@ -138,7 +138,7 @@ classdef ProgressMonitor < handle
         function tRemaining = estimateRemainingTime(obj)
             %estimateRemainingTime Get string with estimated time remaining
             fractionFinished = obj.ProgressTracker.FractionComplete;
-            %fprintf('\n Elapsed time: %d, fraction; %.4f\n',seconds(obj.ElapsedTime), fractionFinished)
+            % fprintf('\n Elapsed time: %d, fraction; %.4f\n',seconds(obj.ElapsedTime), fractionFinished)
             tRemaining = round( (obj.ElapsedTime ./ fractionFinished) .* (1-fractionFinished) );
         end
 

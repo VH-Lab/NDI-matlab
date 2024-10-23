@@ -11,24 +11,24 @@ function test_ndi_filenavigator_documents(dirname)
     %   d) Create a new object based on the database entry, and test that it matches the original
     %
 
-    %No directory has passed in as a parameter
+    % No directory has passed in as a parameter
     if nargin<1
         dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
     end
 
-    %Create and NDI_session object
+    % Create and NDI_session object
     E = ndi.session.dir('exp1',dirname);
 
     fn{1} = ndi.file.navigator(E, '.*\.rhd\>');
     fn{2} = ndi.file.navigator.epochdir(E, '.*\.rhd\>');
 
-    %Delete any demo ndi.document stored in the session
+    % Delete any demo ndi.document stored in the session
     doc = E.database_search(ndi.query('','isa','filenavigator',''));
     E.database_rm(doc);
 
     % Step a)
 
-    %Test the ndi.document creater
+    % Test the ndi.document creater
     fn_doc{1} = fn{1}.newdocument();
     fn_doc{2} = fn{2}.newdocument();
     disp('Sucessfully created ndi_documents')
@@ -37,7 +37,7 @@ function test_ndi_filenavigator_documents(dirname)
     fn_doc{1}.document_properties.base
 
     % Step b)
-    %Store the document as database
+    % Store the document as database
     E.database_add(fn_doc{1});
     E.database_add(fn_doc{2});
     disp('Sucessfully added documents to the database')
@@ -54,7 +54,7 @@ function test_ndi_filenavigator_documents(dirname)
         fn_withdoc{i} = ndi.database.fun.ndi_document2ndi_object(read_doc{1},E);
     end;
 
-    %Initialize the filenavigator using the ndi.document
+    % Initialize the filenavigator using the ndi.document
 
     for i=1:numel(fn_doc),
         if eq(fn_withdoc{i},fn{i}),

@@ -1,6 +1,6 @@
 classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
     %ndi_daqsystem_image_tiffstack is a driver used to read images from a tif
-    %format.
+    % format.
     %   This class is able to return a frame at a specific epoch, and the numnber of
     %   frames in a specific epoch.
 
@@ -9,15 +9,15 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
     end
 
     methods
-        %Constructoe requiers only name and data tree as it uses the super
-        %constructor
+        % Constructor requiers only name and data tree as it uses the super
+        % constructor
         function obj = ndi_daqsystem_image_tiffstack(name, filenavigator)
             obj = obj@ndi_daqsystem_image(name,filenavigator);
             cache = {};
         end
 
-        %This function returns a specific frame at position 'i' in epoch
-        %number 'n'. It acesses the file using the filenavigator
+        % This function returns a specific frame at position 'i' in epoch
+        % number 'n'. It acesses the file using the filenavigator
         function im = frame(obj,n,i)
             [epochn_directory, fileID] = obj.filenavigator.getepochfiles(n);
             epochn_tiff_file = epochn_directory{1}; %gets the string vector with the files path
@@ -26,7 +26,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
             if fileStatus == 1%In case the file exists, but its content has changed, the function displays an error.
                 disp(['Epoch number ' num2str(n) 'has changed.']);
 
-                %In case the file exists and is the same, or the file is a new file
+                % In case the file exists and is the same, or the file is a new file
             elseif fileStatus == -1%If the file did not exist and is a new file
 
                 if obj.file2big(epochn_tiff_file)%Checks if the file is over 4GB
@@ -44,7 +44,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                     epochn = Tiff(epochn_tiff_file,'r');
                     epochn.setDirectory(i);
                     im = epochn.read;
-                    %epochn.close; not sure if I need to delete this line
+                    % epochn.close; not sure if I need to delete this line
                     obj.cache{n} = {'small',epochn_tiff_file,fileID,epochn};
                     disp('cached');
                 end%file2big
@@ -53,7 +53,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                 if obj.file2big(epochn_tiff_file)
                     fp = fopen(epochn_tiff_file);
                     info = cache{n}{4};
-                    %call organize metadata function
+                    % call organize metadata function
                     tmp1 = fread(fp, [info.Width info.Height], form, ofds(i), byteOrder);
                     im = cast(tmp1,form);
                 else
@@ -76,13 +76,13 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                     num = max(size(info));
                 else
                     epochn = Tiff(epochn_tiff_file,'r');
-                    %is there a case of 0 frames? can a Tiff file of 0 frames
-                    %exist? Not sure how to determine if that is the case.
+                    % is there a case of 0 frames? can a Tiff file of 0 frames
+                    % exist? Not sure how to determine if that is the case.
                     while ~epochn.lastDirectory
                         epochn.nextDirectory;
                     end
                     num = epochn.currentDirectory;
-                    %epochn.close;
+                    % epochn.close;
                 end
             else
                 disp('Number of frames retreived from cache');
@@ -157,7 +157,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                 else
                     byteOrder = 'ieee-le.l64';
                 end
-                %translating the byte ore of the file so it matches arguments of fread()
+                % translating the byte ore of the file so it matches arguments of fread()
             else
                 if strcmp(info.ByteOrder,'big-endian');
                     byteOrder = 'ieee-be';

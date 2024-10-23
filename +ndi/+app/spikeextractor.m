@@ -161,7 +161,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                 [spiketimes_binarydoc,spiketimes_binarydoc_filename] = ndi.file.temp_fid();
                 spikes_doc = spikes_doc.add_file('spikewaves.vsw',spikewaves_binarydoc_filename);
                 spikes_doc = spikes_doc.add_file('spiketimes.bin',spiketimes_binarydoc_filename);
-                %convert to fileobj
+                % convert to fileobj
                 spikewaves_binarydoc = vlt.file.fileobj('permission','w','fullpathfilename',spikewaves_binarydoc_filename,...
                     'machineformat','l','fid',spikewaves_binarydoc);
 
@@ -223,8 +223,8 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                             otherwise,
                                 error(['unknown threshold method']);
                         end
-                        %Accomodates spikes according to refractory period
-                        %locs_here = vlt.signal.refractory(locs_here, refractory_samples); % only apply to all events
+                        % Accomodates spikes according to refractory period
+                        % locs_here = vlt.signal.refractory(locs_here, refractory_samples); % only apply to all events
                         locs_here = locs_here(find(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end));
                         locs = [locs(:) ; locs_here];
                     end % for
@@ -243,7 +243,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                     waveforms = reshape(waveforms, spike_sample_end - spike_sample_start + 1, size(data,2), length(locs)); % Nsamples X Nchannels X Nspikes
                     waveforms = permute(waveforms,[3 1 2]); % Nspikes X Nsamples X Nchannels
 
-                    %Center spikes; if threshold is low-to-high, flip sign (assume positive-spikes)
+                    % Center spikes; if threshold is low-to-high, flip sign (assume positive-spikes)
                     [waveforms,sampleshifts] = vlt.neuro.spikesorting.centerspikes_neg( ...
                         (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign)*waveforms,center_range_samples);
                     waveforms = waveforms * (-1*extraction_doc.document_properties.spike_extraction_parameters.threshold_sign);

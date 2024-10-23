@@ -41,7 +41,7 @@ function docs = schemastructure2docstructure(schema, varargin)
         end;
 
         for i=1:numel(fns),
-            %fns{i}
+            % fns{i}
             v_i = getfield(v,fns{i});
             p_here = vlt.data.emptystruct('property',docstring{:});
             if isstruct(v_i) & ~strcmp(fns{i},'depends_on'),

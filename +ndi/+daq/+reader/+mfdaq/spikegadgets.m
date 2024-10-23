@@ -39,16 +39,16 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 number = 0;
                 name = '';
 
-                %Auxiliary
+                % Auxiliary
                 if strcmp(channels(k).name(1),'A')
-                    %Input
+                    % Input
                     if strcmp(channels(k).name(2),'i')
                         channels(k).type = 'auxiliary';
                         number = sscanf(channels(k).name, 'Ain%d');
                         name = strcat('axn',num2str(number));
                         channels(k).number = number;
                         channels(k).time_channel = 1;
-                        %Output
+                        % Output
                     else
                         channels(k).type = 'auxiliary';
                         number = sscanf(channels(k).name, 'Aout%d');
@@ -57,7 +57,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                         channels(k).time_channel = 1;
                     end
 
-                    %Digital
+                    % Digital
                 elseif strcmp(channels(k).name(1),'D')
                     if strcmp(channels(k).name(2),'i') % Input
                         channels(k).type = 'digital_in';
@@ -83,7 +83,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 channels(k).name = name;
             end
 
-            %Adds all nTrodes to the list
+            % Adds all nTrodes to the list
             for i=1:length(fileconfig.nTrodes)
                 for j=1:4 %argument for 4 channels, variable could be used later to deal with this in a more general way
                     channelNumber = fileconfig.nTrodes(i).channelInfo(j).packetLocation;
@@ -119,15 +119,15 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 number = 0;
                 name = '';
                 %
-                %Auxiliary
+                % Auxiliary
                 if strcmp(channels(k).name(1),'A')
-                    %Input
+                    % Input
                     if strcmp(channels(k).name(2),'i')
                         channels(k).type = 'auxiliary';
                         number = sscanf(channels(k).name, 'Ain%d'); %number = channels(k).name(4:end);
                         name = strcat('axn',num2str(number));
                         channels(k).number = number;
-                        %Output
+                        % Output
                     else
                         channels(k).type = 'auxiliary';
                         number = sscanf(channels(k).name, 'Aout%d'); %number = channels(k).name(5:end);
@@ -135,22 +135,22 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                         channels(k).number = number;
                     end
 
-                    %Digital
+                    % Digital
                 elseif strcmp(channels(k).name(1),'D')
-                    %Input
+                    % Input
                     if strcmp(channels(k).name(2),'i')
                         channels(k).type = 'digital_in';
                         number = sscanf(channels(k).name, 'Din%d'); %number = channels(k).name(4:end);
                         name = strcat('di',num2str(number));
                         channels(k).number = number;
-                        %Output
+                        % Output
                     else
                         channels(k).type = 'digital_out';
                         number = sscanf(channels(k).name, 'Dout%d'); %number = channels(k).name(5:end);
                         name = strcat('do',num2str(number));
                         channels(k).number = number;
                     end
-                    %MCU (digital inputs)
+                    % MCU (digital inputs)
                 else
                     channels(k).type = 'digital_in';
                     number = sscanf(channels(k).name, 'MCU_Din%d'); %str2num(channels(k).name(8:end));
@@ -163,7 +163,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
             end
 
 
-            %Adds all nTrodes to the list
+            % Adds all nTrodes to the list
             for i=1:length(fileconfig.nTrodes)
                 for j=1:4
                     channelNumber = fileconfig.nTrodes(i).channelInfo(j).packetLocation;
@@ -192,8 +192,8 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 
             fileconfig = read_SpikeGadgets_config(filename);
 
-            %Sampling rate is the same for all channels in Spike Gadgets
-            %device so it is returned by checking the file configuration
+            % Sampling rate is the same for all channels in Spike Gadgets
+            % device so it is returned by checking the file configuration
             sr = str2num(fileconfig.samplingRate);
         end
 
@@ -241,7 +241,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
             filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles);
             fileconfig = read_SpikeGadgets_config(filename);
             nTrodes = fileconfig.nTrodes;
-            %List where epochprobemap objects will be stored
+            % List where epochprobemap objects will be stored
             epochprobemap = [];
 
             for i=1:length(nTrodes)
@@ -251,15 +251,15 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 channels = [];
 
                 for j=1:length(nTrodes(i).channelInfo) %number of channels per nTrode
-                    %Array with channels of trode
+                    % Array with channels of trode
                     channels = [channels nTrodes(i).channelInfo(j).packetLocation + 1];
                 end
-                %Object that deals with channels
+                % Object that deals with channels
                 devicestringobject = ndi.daq.daqsystemstring('SpikeGadgets',{'ai','ai','ai','ai'}, channels);
                 devicestringstring = devicestringobject.devicestring();
                 % FIX: we need some way of specifying the subject, which is not in the file to my knowledge (although maybe it is)
                 obj = ndi.epoch.epochprobemap_daqsystem(name,reference,type,devicestringstring,'anteater52@nosuchlab.org');
-                %Append each newly made object to end of list
+                % Append each newly made object to end of list
                 epochprobemap = [epochprobemap obj];
             end
         end
@@ -293,22 +293,22 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 
             data = [];
 
-            %read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
-            %reading from channel 1 in list returned
-            %Reads nTrodes
-            %WARNING channeltype hard coded, ask Steve
+            % read_SpikeGadgets_trodeChannels(filename,NumChannels, channels,samplingRate,headerSize, configExists)
+            % reading from channel 1 in list returned
+            % Reads nTrodes
+            % WARNING channeltype hard coded, ask Steve
             channeltype
             if (strcmp(ndi.daq.system.mfdaq.mfdaq_type(channeltype{1}),'analog_in') || strcmp(ndi.daq.system.mfdaq.mfdaq_type(channeltype{1}), 'analog_out'))
                 data = read_SpikeGadgets_trodeChannels(filename,header.numChannels,channels-1,sr, header.headerSize,s0,s1);
 
             elseif (strcmp(channeltype,'auxiliary') || strcmp(channeltype,'aux')) %Reads analog inputs
-                %for every channel in device
+                % for every channel in device
                 for i=1:length(detailedchannels)
-                    %based on every channel to read
+                    % based on every channel to read
                     for j=1:length(channels)
-                        %check if channel number and channeltype match
+                        % check if channel number and channeltype match
                         if (strcmp(detailedchannels(i).type,'auxiliary') && detailedchannels(i).number == channels(j))
-                            %add startbyte to list of channels to read
+                            % add startbyte to list of channels to read
                             byteandbit(end+1) = str2num(detailedchannels(i).startbyte);
                         end
                     end
@@ -316,13 +316,13 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 data = read_SpikeGadgets_analogChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
 
             elseif (strcmp(channeltype,'digital_in') || strcmp(channeltype, 'digital_out')), %Reads digital inputs
-                %for every channel in device
+                % for every channel in device
                 for i=1:length(detailedchannels)
-                    %based on every channel to read
+                    % based on every channel to read
                     for j=1:length(channels)
-                        %check if channel number and channeltype match
+                        % check if channel number and channeltype match
                         if (strcmp(detailedchannels(i).type,channeltype) && detailedchannels(i).number == channels(j))
-                            %add startbyte to list of channels to read
+                            % add startbyte to list of channels to read
                             byteandbit(end+1,1) = str2num(detailedchannels(i).startbyte);
                             byteandbit(end,2) = str2num(detailedchannels(i).bit) + 1;
                         end

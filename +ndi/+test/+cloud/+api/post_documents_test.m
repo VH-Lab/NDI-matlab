@@ -43,37 +43,37 @@ function post_documents_test(dataset_id)
         [status, response, document_id] = ndi.cloud.api.documents.post_documents('test', dataset_id, 'test');
         error('ndi.cloud.api.documents.post_documents did not throw an error after using a non-struct document');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response, document_id] = ndi.cloud.api.documents.get_documents(1, 1);
         error('ndi.cloud.api.documents.get_documents did not throw an error after using an invalid dataset id');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.documents.post_documents_update('test', dataset_id, 1, 'test');
         error('ndi.cloud.api.documents.post_documents_update did not throw an error after using an invalid document id');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.files.get_files(1, 1);
         error('ndi.cloud.api.files.get_files did not throw an error after using an invalid dataset id');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.files.put_files('test', 'test');
         error('ndi.cloud.api.files.put_files did not throw an error after using an invalid url');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.files.get_files_detail(1, 1);
         error('ndi.cloud.api.files.get_files_detail did not throw an error after using an invalid dataset id');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
 end
 
@@ -183,8 +183,8 @@ function test_document_update(dataset_id)
     if ~isfield(upload_document, 'is_test') || ~upload_document.is_test
         error('ndi.cloud.api.documents.post_documents_update does not correctly update the document');
     end
-    %change back to original
-    %remove is_test field
+    % change back to original
+    % remove is_test field
     document = jsondecode(document);
     document = rmfield(document, 'is_test');
     document = jsonencode(document);

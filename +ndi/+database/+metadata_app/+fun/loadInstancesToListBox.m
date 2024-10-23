@@ -13,7 +13,7 @@ function listBox = loadInstancesToListBox(listBox, name, terms)
     instancesCellArray = {};
     if nargin > 2
         for i = 1:numel(terms)
-            %filter allInstancesCellArray to only contain instances that contain the term
+            % filter allInstancesCellArray to only contain instances that contain the term
             instancesCellArray = [instancesCellArray; allInstancesCellArray(contains(allInstancesCellArray, terms{i}))];
         end
     end

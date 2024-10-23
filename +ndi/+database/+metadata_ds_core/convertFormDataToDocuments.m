@@ -51,7 +51,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
             thisOrganizationName = thisAffiliation.memberOf(1).fullName;
             % This statement does not work because of bug in
             % openminds_MATLAB (fix on the way):
-            %thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
+            % thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
             isMatch = strcmp(thisOrganizationName, organizationNames);
             thisAuthor.affiliation(j).memberOf = organizationInstances(isMatch);
         end
@@ -280,7 +280,7 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
         try
             openMindsInstance.(propName) = value;
         catch ME
-            %warning(ME.message)
+            % warning(ME.message)
         end
     end
 end
@@ -308,9 +308,9 @@ function conversionMap = createConversionMap()
         'affiliation', getFactoryFunction('openminds.core.Affiliation'), ...
         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', addOrcidUriPrefix(value.identifier)) ...
         );
-    %'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
+    % 'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
     % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
-    %'digitalIdentifier', getFactoryFunction('openminds.core.ORCID') ...
+    % 'digitalIdentifier', getFactoryFunction('openminds.core.ORCID') ...
 
     conversionMap("openminds.core.Strain") = ...
         struct( ...

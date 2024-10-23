@@ -75,7 +75,7 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
         [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_files_detail(dataset_id, file_uid);
         if verbose, disp(['Saving file ' int2str(i) '...']); end
 
-        %save the file
+        % save the file
         websave(file_path, downloadURL);
     end
     if verbose, disp(['File Downloading complete.']); end
@@ -103,13 +103,13 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
         document = rmfield(document, 'id');
 
         document_obj = ndi.document(document);
-        %save the document in .json file
+        % save the document in .json file
         fid = fopen(json_file_path, 'w');
         fprintf(fid, '%s', did.datastructures.jsonencodenan(document_obj));
         fclose(fid);
     end
 
-    %Check if folder already exists
+    % Check if folder already exists
     if ~isfolder([output_path filesep '.ndi'])
         mkdir([output_path filesep '.ndi']);
     end
@@ -125,7 +125,7 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
     [status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, d{1});
     session_id = document.base.id;
     %%create a txt file with the session id
-    %check if file exist
+    % check if file exist
     if ~isfile(fullfile(output_path, filesep, '.ndi', 'reference.txt'))
         fid = fopen([output_path filesep '.ndi' filesep 'reference.txt'], 'w');
         fprintf(fid, '%s', session_id);

@@ -62,9 +62,9 @@ function file_manifest = list_binary_files(ndi_dataset, database_documents, verb
                     j = j + 1;
                     if ~isempty(full_file_path)
                         curr_idx = numel(file_manifest) + 1;
-                        %[~, uid, ~] = fileparts(full_file_path);
+                        % [~, uid, ~] = fileparts(full_file_path);
                         file_manifest(curr_idx).docid = ndi_document_id;
-                        %file_manifest(curr_idx).uid = uid;
+                        % file_manifest(curr_idx).uid = uid;
                         file_manifest(curr_idx).name = this_filename;
                         file_manifest(curr_idx).file_path = full_file_path;
                         file_info = dir(full_file_path);

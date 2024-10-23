@@ -95,7 +95,7 @@ function tutorial_02_05(prefix, testing)
     %    definition: '$NDIDOCUMENTPATH/ndi_document_epochid.json'
 
     stim_pres_doc{1}.document_properties.document_class.superclasses(3)
-    %ans =
+    % ans =
     %  struct with fields:
     %    definition: '$NDIDOCUMENTPATH/base.json'
 

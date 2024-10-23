@@ -106,31 +106,31 @@ function dataset_id = upload_sample_test()
         [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(1);
         error('ndi.cloud.api.datasets.get_datasetId did not throw an error after using an invalid dataset id');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.datasets.post_organization(1);
         error('ndi.cloud.api.datasets.post_organization did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(1);
         error('ndi.cloud.api.documents.get_documents_summary did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response, datasets] = ndi.cloud.api.datasets.get_organizations(1);
         error('ndi.cloud.api.datasets.get_organizations did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.datasets.post_datasetId(1, update_dataset);
         error('ndi.cloud.api.datasets.post_datasetId did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
 end
 

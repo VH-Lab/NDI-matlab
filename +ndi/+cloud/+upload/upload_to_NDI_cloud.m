@@ -23,7 +23,7 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
 
     if verbose, disp(['Getting list of previously uploaded documents...']); end;
     [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.upload.scan_for_upload(S, d, 0, dataset_id);
-    %count the number of documents to be upload by checking the is_upload flag in doc_json_struct
+    % count the number of documents to be upload by checking the is_upload flag in doc_json_struct
     docs_left = sum(~[doc_json_struct.is_uploaded]);
     files_left = sum(~[doc_file_struct.is_uploaded]);
     cur_size = 0;

@@ -22,7 +22,7 @@ classdef syncgraph < ndi.ido
             % where NDI_DOCUMENT_OBJ is an ndi.document of class syncgraph.
             %
 
-            %need to be tested after ndi.time.syncrule creator is done
+            % need to be tested after ndi.time.syncrule creator is done
             if nargin == 2 && isa(varargin{1},'ndi.session') && isa(varargin{2}, 'ndi.document')
                 ndi_syncgraph_obj.session = varargin{1};
                 [syncgraph_doc, syncrule_doc] = ndi.time.syncgraph.load_all_syncgraph_docs(varargin{1},varargin{2}.id());
@@ -358,8 +358,8 @@ classdef syncgraph < ndi.ido
             end
             if any(tf), % we already have this object
                 % in the future, we'll make this method that saves time. For initial development, we'll complain
-                %ginfo = updateepochs(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo);
-                %return;
+                % ginfo = updateepochs(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo);
+                % return;
                 error(['This graph already has epochs from ' name '.']);
             end
 
@@ -474,7 +474,7 @@ classdef syncgraph < ndi.ido
 
                 if isempty(index), % we don't have this one, we need to add it
 
-                    %underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
+                    % underlying_nodes = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 
                     [u_nodes,u_cost,u_mapping] = underlyingepochnodes(ndi_epochset_obj, enodes(i));
 

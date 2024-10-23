@@ -65,7 +65,7 @@ classdef ctest
             % Step 1: generate_mock_docs
             specific_test_inds = [];
             vlt.data.assign(varargin{:});
-            %override number_of_tests
+            % override number_of_tests
             [docs,doc_output,doc_expected_output] = ...
                 ctest_obj.generate_mock_docs(scope,number_of_tests,'specific_test_inds',specific_test_inds);
 

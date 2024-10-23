@@ -182,7 +182,7 @@ classdef  postgresdb < ndi.database
                     % such that any has a field named 'param1' with a string that
                     % TODO contains the string in 'param2'?
                     % Note: Assumed it cannot be ID
-                    %where = where +
+                    % where = where +
 
                 case 'or'
                     % are any of the searchstruct elements specified in 'param1' true?

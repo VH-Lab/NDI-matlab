@@ -21,7 +21,7 @@ function ndi_gui_v2(ndi_session_obj)
         'PointerShapeCData', scissor, 'PointerShapeHotSpot', [14 6], ...
         'defaultFigureColor', [0.8 0.8 0.8]);
 
-    %Create top bar
+    % Create top bar
     top = axes('position', [0 5/6 1 1/6]);
     axis off;
     hold on;
@@ -38,14 +38,14 @@ function ndi_gui_v2(ndi_session_obj)
     text(top, 3/4, 1/4, 'Database View', 'HorizontalAlignment', 'center', ...
         'ButtonDownFcn', @displayData);
 
-    %Create info
+    % Create info
     data = ndi.gui.Data();
 
-    %Create lab
+    % Create lab
     lab = ndi.gui.Lab();
     set(gcf, 'WindowButtonMotionFcn', @lab.move);
 
-    %Import ndi_session_obj
+    % Import ndi_session_obj
     e = ndi_session_obj.getelements();
     docs = ndi_session_obj.database_search({'base.id','(.*)'});
     d = ndi_session_obj.daqsystem_load('name','(.*)');
@@ -63,17 +63,17 @@ function ndi_gui_v2(ndi_session_obj)
         s{i} = ndi_session_obj.database_search(ndi.query('base.id','exact_string',s_id{i},''));
     end
 
-    %Add elements
+    % Add elements
     lab.addSubject(s);
 
     lab.addProbe(p);
 
     lab.addDAQ(d);
 
-    %Add documents
+    % Add documents
     data.addDoc(docs);
 
-    %Connect elements
+    % Connect elements
     for i = 1:numel(p)
         ps_id = p{i}.subject_id;
         ps = p{i}.session.database_search(ndi.query('base.id','exact_string',ps_id,''));

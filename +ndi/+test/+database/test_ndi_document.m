@@ -34,7 +34,7 @@ function test_ndi_document(dirname)
         'base.name','Demo document',...
         'demoNDI.value', 5);
 
-    %add a binary file
+    % add a binary file
 
     binary_filename = [dirname filesep 'myfile.bin'];
     myfid = fopen(binary_filename,'w','ieee-le');

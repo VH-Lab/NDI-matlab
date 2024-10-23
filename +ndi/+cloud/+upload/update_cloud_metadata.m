@@ -28,7 +28,7 @@ function [status, dataset] = update_cloud_metadata(datasetid, S)
         author_struct(i).firstName = d_authors{i}.document_properties.openminds.fields.givenName;
         author_struct(i).lastName = d_authors{i}.document_properties.openminds.fields.familyName;
         identifier_ndi = d_authors{i}.document_properties.openminds.fields.digitalIdentifier{1};
-        %remove the prefix ndi://from the identifier
+        % remove the prefix ndi://from the identifier
         identifier_ndi = identifier_ndi(7:end);
         d_identifier = S.database_search(ndi.query('base.id','contains_string', identifier_ndi));
         author_struct(i).orchid = d_identifier{1}.document_properties.openminds.fields.identifier;

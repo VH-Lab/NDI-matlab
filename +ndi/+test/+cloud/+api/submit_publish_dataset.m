@@ -48,31 +48,31 @@ function submit_publish_dataset(dataset_id)
         [status, response] = ndi.cloud.api.datasets.post_submit(dataset_id);
         error('ndi.cloud.api.datasets.get_unpublished did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.datasets.post_publish(1);
         error('ndi.cloud.api.datasets.post_publish did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response] = ndi.cloud.api.datasets.post_unpublish(1);
         error('ndi.cloud.api.datasets.post_unpublish did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response, datasets_info] = ndi.cloud.api.datasets.get_unpublished('1', '1');
         error('ndi.cloud.api.datasets.get_unpublished did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
     try
         [status, response, datasets_info] = ndi.cloud.api.datasets.get_published('1', '1');
         error('ndi.cloud.api.datasets.get_published did not throw an error after using an invalid input');
     catch
-        %do nothing, this is the expected behavior
+        % do nothing, this is the expected behavior
     end
 
 end

@@ -188,7 +188,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             %  column indicates the marker code. In the case of 'events', this is just 1. If more than one channel
             %  is requested, DATA is returned as a cell array, one entry per channel.
             %
-            %disp('reading here')
+            % disp('reading here')
             if ~iscell(channeltype),
                 channeltype = repmat({channeltype},numel(channel),1);
             end;
