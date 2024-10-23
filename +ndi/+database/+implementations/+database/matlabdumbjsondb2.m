@@ -1,5 +1,5 @@
 classdef  matlabdumbjsondb2 < ndi.database
-% matlabdumbjsondb2 - with enhanced file management
+    % matlabdumbjsondb2 - with enhanced file management
 
     properties
         db        % vlt.file.dumbjsondb object
@@ -8,18 +8,18 @@ classdef  matlabdumbjsondb2 < ndi.database
     methods
 
         function ndi_matlabdumbjsondb_obj = matlabdumbjsondb2(varargin)
-        % ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object
-        % 
-        % NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(...
-        %     PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
-        %
-        % Creates a new ndi.database.implementations.database.matlabdumbjsondb object.
-        %
-        % COMMAND can either be 'Load' or 'New'. The second argument
-        % should be the full pathname of the location where the files
-        % should be stored on disk.
-        %
-        % See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
+            % ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object
+            %
+            % NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(...
+            %     PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
+            %
+            % Creates a new ndi.database.implementations.database.matlabdumbjsondb object.
+            %
+            % COMMAND can either be 'Load' or 'New'. The second argument
+            % should be the full pathname of the location where the files
+            % should be stored on disk.
+            %
+            % See also: vlt.file.dumbjsondb, vlt.file.dumbjsondb/DUMBJSONDB
             ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj@ndi.database(varargin{:});
             ndi_matlabdumbjsondb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
                 'dirname','dumbjsondb','unique_object_id_field','base.id');
@@ -28,7 +28,7 @@ classdef  matlabdumbjsondb2 < ndi.database
             end;
         end; % ndi.database.implementations.database.matlabdumbjsondb()
 
-    end 
+    end
 
     methods, % public
         function docids = alldocids(ndi_matlabdumbjsondb_obj)
@@ -39,7 +39,7 @@ classdef  matlabdumbjsondb2 < ndi.database
             % Return all document unique reference strings as a cell array of strings. If there
             % are no documents, empty is returned.
             %
-                docids = ndi_matlabdumbjsondb_obj.db.alldocids();
+            docids = ndi_matlabdumbjsondb_obj.db.alldocids();
         end; % alldocids()
     end;
 
@@ -69,11 +69,11 @@ classdef  matlabdumbjsondb2 < ndi.database
         function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id)
             % need to read document to delete files
             ndi_doc = ndi_matlabdumbjsondb_obj.do_read(ndi_document_id);
-            if isempty(ndi_doc), 
+            if isempty(ndi_doc),
                 to_delete_list = {};
             else,
                 [to_delete_list] = ndi.database.implementations.fun.expell_plan(ndi_doc, ...
-                        ndi_matlabdumbjsondb_obj.file_directory);
+                    ndi_matlabdumbjsondb_obj.file_directory);
             end;
             ndi_matlabdumbjsondb_obj = ndi_matlabdumbjsondb_obj.db.remove(ndi_document_id);
             [b,msg] = ndi.database.implementations.fun.expell(to_delete_list);
@@ -121,20 +121,20 @@ classdef  matlabdumbjsondb2 < ndi.database
             % NDI_BINARYDOC_OBJ = DO_CLOSEBINARYDOC(NDI_MATLABDUMBJSONDB_OBJ, NDI_BINARYDOC_MATFID_OBJ, KEY, NDI_DOCUMENT_ID)
             %
             % Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
-            %    
-                ndi_binarydoc_matfid_obj.fclose(); 
+            %
+            ndi_binarydoc_matfid_obj.fclose();
         end; % do_closebinarydoc()
 
         function [file_dir] = file_directory(ndi_matlabdumbjsondb_obj)
             % FILE_DIRECTORY - return the file directory where ingested files are stored
-            % 
+            %
             % FILE_DIR = FILE_DIRECTORY(NDI_MATLABDUMBJSONDB_OBJ)
             %
             % Return the full path of the directory where binary files for the database documents
             % are stored.
             %
-                parent_dir = fileparts(ndi_matlabdumbjsondb_obj.db.paramfilename);
-                file_dir = [parent_dir filesep 'files'];
+            parent_dir = fileparts(ndi_matlabdumbjsondb_obj.db.paramfilename);
+            file_dir = [parent_dir filesep 'files'];
         end; % file_directory
     end;
 end

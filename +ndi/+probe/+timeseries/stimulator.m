@@ -1,6 +1,6 @@
 classdef stimulator < ndi.probe.timeseries
-% ndi.probe.timeseries.stimulator - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
-%
+    % ndi.probe.timeseries.stimulator - Create a new NDI_PROBE_TIMESERIES_STIMULATOR class object that handles probes that are associated with NDI_DAQSYSTEM_STIMULUS objects
+    %
     properties (GetAccess=public, SetAccess=protected)
     end
 
@@ -15,7 +15,7 @@ classdef stimulator < ndi.probe.timeseries
             % reference number equal to REFERENCE (a non-negative integer), the TYPE of the
             % probe (a string that must start with a letter and contain no white space).
             %
-                obj = obj@ndi.probe.timeseries(varargin{:});
+            obj = obj@ndi.probe.timeseries(varargin{:});
         end % ndi.probe.timeseries.stimulator()
 
         function [data, t, timeref] = readtimeseriesepoch(ndi_probe_timeseries_stimulator_obj, epoch, t0, t1)
@@ -36,7 +36,7 @@ classdef stimulator < ndi.probe.timeseries
             %    the epoch or the clock. If STIMOFF data is not provided, these values will be NaN. If marker channels 'mk'
             %    are present, then STIMOFF is taken to be occurrences where the first marker channels registers a value less than 0.
             %    Alternatively, if 'dim*' channels are present, then STIMOFF is taken to be the times when *any* of the 'dim*'
-            %    channels go off. 
+            %    channels go off.
             % DATA.STIMID is an Nx1 vector with the STIMID values. If STIMID values are not provided, these values
             %    will be NaN. If there are marker channels, the STIMID is taken to be the marker code of the second marker channel
             %    in the group. If 'dim*' channels are present, then the stimid will be 1..number of dim channels, depending upon
@@ -45,7 +45,7 @@ classdef stimulator < ndi.probe.timeseries
             %    then this will be an empty cell array of size Nx1. This is read from the first metadata channel.
             % T.STIMOPENCLOSE is an Nx2 vector of stimulus 'setup' and 'shutdown' times, if applicable. For example,
             %    a visual stimulus might begin or end with the presentation of a 'background' image. These times will
-            %    be encoded here. If there is no information about stimulus setup or shutdown, then 
+            %    be encoded here. If there is no information about stimulus setup or shutdown, then
             %    T.STIMOPENCLOSE == [T.STIMON T.STIMOFF]. If there is a third marker channel present, then STIMOPENCLOSE
             %    will be defined by +1 and -1 marks on the third marker channel.
             % T.STIMEVENTS is a cell array of stimulus event triggers that occur while the stimuli are running.
@@ -54,103 +54,103 @@ classdef stimulator < ndi.probe.timeseries
             %    There will be one entry per event channel. In a visual stimulus system, the first event channel
             %    should be data frame events (when the video monitor updates). The second event channel can be the
             %    monitor's refresh rate, if it has one.
-            % 
+            %
             % TIMEREF is an ndi.time.timereference object that refers to this EPOCH.
             %
             % See also: ndi.probe.timeseries/READTIMESERIES
             %
-                [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
-                eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
+            [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
+            eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
 
-                if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
-                    % developer note: it would be pretty easy to extend this, just loop over the devices
+            if numel(unique(devname))>1, error(['Right now, all channels must be on the same device.']); end;
+            % developer note: it would be pretty easy to extend this, just loop over the devices
 
-                md_index = find(strcmp('md',channeltype));
-                hasmetadata = ~isempty(md_index);
-                non_md = setdiff(1:numel(channel),md_index);
-                channeltype_metadata = channeltype(md_index);
-                channel_metadata = channel(md_index);
-                channeltype = channeltype(non_md);
-                channel=channel(non_md);
+            md_index = find(strcmp('md',channeltype));
+            hasmetadata = ~isempty(md_index);
+            non_md = setdiff(1:numel(channel),md_index);
+            channeltype_metadata = channeltype(md_index);
+            channel_metadata = channel(md_index);
+            channeltype = channeltype(non_md);
+            channel=channel(non_md);
 
-                [timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
-                if ~iscell(edata),
-                    timestamps = {timestamps};
-                    edata = {edata};
-                end;
-                channel_labels = getchannels(dev{1});
+            [timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
+            if ~iscell(edata),
+                timestamps = {timestamps};
+                edata = {edata};
+            end;
+            channel_labels = getchannels(dev{1});
 
-                markermode = any(strcmp('mk',channeltype));
-                dimmode = ~isempty(intersect(channeltype,{'dimp','dimn'}));
-                mk_ = 0;
-                e_ = 0;
-                md_ = 0;
-                event_data = {};
+            markermode = any(strcmp('mk',channeltype));
+            dimmode = ~isempty(intersect(channeltype,{'dimp','dimn'}));
+            mk_ = 0;
+            e_ = 0;
+            md_ = 0;
+            event_data = {};
 
-                channeltype = cat(1,channeltype(:),channeltype_metadata(:));
-                channel = cat(1,channel(:),channel_metadata(:));
-                
-                if markermode,
-                    for i=1:numel(channeltype),
-                        switch(channeltype{i}),
-                            case {'mk','text'},
-                                mk_ = mk_ + 1;
-                                switch mk_,
-                                    case 1, % stimonoff
-                                        t.stimon = timestamps{i}(find(edata{i}(:,1)>0),1);
-                                        t.stimoff = timestamps{i}(find(edata{i}(:,1)==-1),1);
-                                    case 2, % stimid
-                                        for dd=1:size(edata{i},1),
-                                            if strcmp(channeltype{i},'text'),
-                                                data.stimid(dd,1) = eval([edata{i}{dd}]);
-                                            else,
-                                                data.stimid(dd,:) = edata{i}(dd,:);
-                                            end;
+            channeltype = cat(1,channeltype(:),channeltype_metadata(:));
+            channel = cat(1,channel(:),channel_metadata(:));
+
+            if markermode,
+                for i=1:numel(channeltype),
+                    switch(channeltype{i}),
+                        case {'mk','text'},
+                            mk_ = mk_ + 1;
+                            switch mk_,
+                                case 1, % stimonoff
+                                    t.stimon = timestamps{i}(find(edata{i}(:,1)>0),1);
+                                    t.stimoff = timestamps{i}(find(edata{i}(:,1)==-1),1);
+                                case 2, % stimid
+                                    for dd=1:size(edata{i},1),
+                                        if strcmp(channeltype{i},'text'),
+                                            data.stimid(dd,1) = eval([edata{i}{dd}]);
+                                        else,
+                                            data.stimid(dd,:) = edata{i}(dd,:);
                                         end;
-                                    case 3, % stimopenclose
-                                        t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1); 
-                                        t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1); 
-                                    otherwise,
-                                        error(['Got more mark channels than expected.']);
-                                end;
-                            case 'e',
-                                e_ = e_ + 1;
-                                event_data{e_} = timestamps{i};
-                            case {'md'},
-                                data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
-                            otherwise,
-                                error(['Unknown channel.']);
-                        end
-                    end
-                    t.stimevents = event_data;
-                elseif dimmode,
-                    t.stimon = [];
-                    t.stimoff = [];
-                    data.stimid = [];
-                    counter = 0;
-                    for i=1:numel(edata),
-                        if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
-                            counter = counter + 1;
-                            t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
-                            t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
-                            data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
-                        end;
-                        if strcmp(channeltype(i),'md'),
+                                    end;
+                                case 3, % stimopenclose
+                                    t.stimopenclose(:,1) = timestamps{i}( find(edata{i}(:,1)>0) , 1);
+                                    t.stimopenclose(:,2) = timestamps{i}( find(edata{i}(:,1)==-1) , 1);
+                                otherwise,
+                                    error(['Got more mark channels than expected.']);
+                            end;
+                        case 'e',
+                            e_ = e_ + 1;
+                            event_data{e_} = timestamps{i};
+                        case {'md'},
                             data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
-                        end;
-                        if strcmp(channeltype(i),'e'),
-                            event_data{end+1} = timestamps{i};
-                        end;
+                        otherwise,
+                            error(['Unknown channel.']);
+                    end
+                end
+                t.stimevents = event_data;
+            elseif dimmode,
+                t.stimon = [];
+                t.stimoff = [];
+                data.stimid = [];
+                counter = 0;
+                for i=1:numel(edata),
+                    if ~isempty(intersect(channeltype(i),{'dimp','dimn'})),
+                        counter = counter + 1;
+                        t.stimon = [t.stimon(:); vlt.data.colvec(timestamps{i}(find(edata{i}(:,1)>0),1))];
+                        t.stimoff = [t.stimoff(:); vlt.data.colvec(edata{i}(find(edata{i}(:,1)==-1),1))];
+                        data.stimid = [data.stimid(:); counter*ones(numel(find(edata{i}(:,1)==1)),1)];
                     end;
-                    [dummy,order] = sort(t.stimon);
-                    t.stimon = t.stimon(order(:));
-                    t.stimoff = t.stimoff(order(:));
-                    data.stimid = data.stimid(order(:));
-                    t.stimopenclose(:,1) = t.stimon;
-                    t.stimopenclose(:,2) = t.stimoff;
+                    if strcmp(channeltype(i),'md'),
+                        data.parameters = getmetadata(dev{1},devepoch{1},channel(i));
+                    end;
+                    if strcmp(channeltype(i),'e'),
+                        event_data{end+1} = timestamps{i};
+                    end;
                 end;
+                [dummy,order] = sort(t.stimon);
+                t.stimon = t.stimon(order(:));
+                t.stimoff = t.stimoff(order(:));
+                data.stimid = data.stimid(order(:));
+                t.stimopenclose(:,1) = t.stimon;
+                t.stimopenclose(:,2) = t.stimoff;
+            end;
 
-                timeref = ndi.time.timereference(ndi_probe_timeseries_stimulator_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
+            timeref = ndi.time.timereference(ndi_probe_timeseries_stimulator_obj, ndi.time.clocktype('dev_local_time'), eid, 0);
         end %readtimeseriesepoch()
 
     end; % methods

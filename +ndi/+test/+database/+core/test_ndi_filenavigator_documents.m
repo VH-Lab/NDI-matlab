@@ -1,15 +1,15 @@
 function test_ndi_filenavigator_documents(dirname)
-% TEST_NDI_FILENAVIGATOR_DOCUMENTS - test creating database entries, searching, and building from documents
-%
-% ndi.test.daq.filenavigator.documents(DIRNAME)
-%
-% Given a directory that corresponds to an session, this function tries to create
-% an ndi.file.navigator object and an ndi.file.navigator.epochdir object and do the following:
-%   a) Create a new database document
-%   b) Add the database document to the database
-%   c) Search for the database document
-%   d) Create a new object based on the database entry, and test that it matches the original
-%  
+    % TEST_NDI_FILENAVIGATOR_DOCUMENTS - test creating database entries, searching, and building from documents
+    %
+    % ndi.test.daq.filenavigator.documents(DIRNAME)
+    %
+    % Given a directory that corresponds to an session, this function tries to create
+    % an ndi.file.navigator object and an ndi.file.navigator.epochdir object and do the following:
+    %   a) Create a new database document
+    %   b) Add the database document to the database
+    %   c) Search for the database document
+    %   d) Create a new object based on the database entry, and test that it matches the original
+    %
 
     %No directory has passed in as a parameter
     if nargin<1
@@ -44,12 +44,12 @@ function test_ndi_filenavigator_documents(dirname)
 
     % Step c)
 
-    % Step d) 
+    % Step d)
     for i=1:numel(fn_doc),
         read_doc = E.database_search(fn{i}.searchquery());
-        if numel(read_doc)~=1, 
+        if numel(read_doc)~=1,
             error(['Could not find document, i=' int2str(i)]);
-        end; 
+        end;
         read_doc{1}.document_properties.filenavigator,
         fn_withdoc{i} = ndi.database.fun.ndi_document2ndi_object(read_doc{1},E);
     end;

@@ -1,7 +1,7 @@
 classdef reader < ndi.ido & ndi.documentservice
-% NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
-%
-%
+    % NDI_DAQREADER - A class for objects that read samples for NDI_DAQSYSTEM objects
+    %
+    %
     properties (GetAccess=public, SetAccess=protected)
     end
 
@@ -11,11 +11,11 @@ classdef reader < ndi.ido & ndi.documentservice
             % ndi.daq.reader - create a new ndi.daq.reader object
             %
             %  OBJ = ndi.daq.reader()
-            %  
-            %  Creates an ndi.daq.reader. 
+            %
+            %  Creates an ndi.daq.reader.
             %
             %  OBJ = ndi.daq.reader(NDI_SESSION_OBJ, NDI_DOCUMENT_OBJ)
-            %    
+            %
             %  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
             %
             %  ndi.daq.reader has mostly abstract methods, it is made to be overriden.
@@ -50,13 +50,13 @@ classdef reader < ndi.ido & ndi.documentservice
             % the epoch described by EPOCHFILES. EPOCHFILES should be an ingested epoch.
             % S is the ndi.session for the dataset.
             %
-                epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-                q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
-                    ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id()) & ...
-                    ndi.query('epochid.epochid','exact_string',epochid);
-                d = S.database_search(q);
-                assert(numel(d)==1,['Found ' int2str(numel(d)) ' documents for ' epochid ', needed exactly 1.']);
-                d = d{1};
+            epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+            q = ndi.query('','isa','daqreader_epochdata_ingested') & ...
+                ndi.query('','depends_on','daqreader_id', ndi_daqreader_mfdaq_obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string',epochid);
+            d = S.database_search(q);
+            assert(numel(d)==1,['Found ' int2str(numel(d)) ' documents for ' epochid ', needed exactly 1.']);
+            d = d{1};
 
         end % getingesteddocument();
 
@@ -75,7 +75,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.clocktype
             %
-                ec = {ndi.time.clocktype('no_time')};
+            ec = {ndi.time.clocktype('no_time')};
         end % epochclock
 
         function ec = epochclock_ingested(ndi_daqreader_obj, epochfiles, S)
@@ -88,12 +88,12 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.clocktype
             %
-                ec = {};
-                d = ndi_daqreader_obj.getingesteddocument(epochfiles,S);
-                et = d.document_properties.daqreader_epochdata_ingested.epochtable;
-                for i=1:numel(et.epochclock),
-                    ec{i} = ndi.time.clocktype(et.epochclock{i});
-                end;
+            ec = {};
+            d = ndi_daqreader_obj.getingesteddocument(epochfiles,S);
+            et = d.document_properties.daqreader_epochdata_ingested.epochtable;
+            for i=1:numel(et.epochclock),
+                ec{i} = ndi.time.clocktype(et.epochclock{i});
+            end;
         end % epochclock_ingested
 
         function t0t1 = t0_t1(ndi_daqreader_obj, epochfiles)
@@ -108,7 +108,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
-                t0t1 = {[NaN NaN]};
+            t0t1 = {[NaN NaN]};
         end % t0t1
 
         function t0t1 = t0_t1_ingested(ndi_daqreader_obj, epochfiles, S)
@@ -123,20 +123,20 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
-                d = ndi_daqreader_obj.getingesteddocument(epochfiles, S);
-                et = d.document_properties.daqreader_epochdata_ingested.epochtable;
-                t0t1 = et.t0_t1;
-                if ~iscell(t0t1),
-                    t = {};
-                    if isvector(t0t1), % this fixes a to-json, from-json, to-json conversion problem
-                        t{1} = t0t1(:)';
-                    else,
-                        for i=1:size(et.t0_t1,2),
-                            t{i} = t0t1(i,:);
-                        end;
+            d = ndi_daqreader_obj.getingesteddocument(epochfiles, S);
+            et = d.document_properties.daqreader_epochdata_ingested.epochtable;
+            t0t1 = et.t0_t1;
+            if ~iscell(t0t1),
+                t = {};
+                if isvector(t0t1), % this fixes a to-json, from-json, to-json conversion problem
+                    t{1} = t0t1(:)';
+                else,
+                    for i=1:size(et.t0_t1,2),
+                        t{i} = t0t1(i,:);
                     end;
-                    t0t1 = t;
                 end;
+                t0t1 = t;
+            end;
         end % t0t1
 
         function [b,msg] = verifyepochprobemap(ndi_daqreader_obj, epochprobemap, epochfiles)
@@ -151,21 +151,21 @@ classdef reader < ndi.ido & ndi.documentservice
             % EPOCHPROBEMAP is an ndi.epoch.epochprobemap_daqsystem object.
             %
             % See also: ndi.daq.reader, ndi.epoch.epochprobemap_daqsystem
-                msg = '';
-                b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
-                if ~b,
-                    msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
-                    return;
-                end;
+            msg = '';
+            b = isa(epochprobemap, 'ndi.epoch.epochprobemap_daqsystem');
+            if ~b,
+                msg = 'epochprobemap is not a member of the class ndi.epoch.epochprobemap_daqsystem; it must be.';
+                return;
+            end;
 
-                for i=1:numel(epochprobemap),
-                    try,
-                        thedevicestring = ndi_daqreaderstring(epochprobemap(i).devicestring);
-                    catch,
-                        b = 0;
-                        msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
-                                        end
-                                end
+            for i=1:numel(epochprobemap),
+                try,
+                    thedevicestring = ndi_daqreaderstring(epochprobemap(i).devicestring);
+                catch,
+                    b = 0;
+                    msg = ['Error evaluating devicestring ' epochprobemap(i).devicestring '.'];
+                end
+            end
         end % verifyepochprobemap
 
         function d = ingest_epochfiles(ndi_daqreader_obj, epochfiles)
@@ -178,13 +178,13 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % Example:
             %    D = mydaqreader.ingest_epochfiles(epochfiles);
-            
-                                daqreader_epochdata_ingested.epochtable.epochclock = ndi_daqreader_mfdaq_obj.epockclock(epochfiles);
-                                daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
 
-                d = ndi.document('daqreader_epochdata_ingested',...
-                    'daqreader_epochdata_ingested', daqreader_epochdata_ingested);
-                d = d.set_dependency_value('daqreader_id',ndi_daqreader_obj.id());
+            daqreader_epochdata_ingested.epochtable.epochclock = ndi_daqreader_mfdaq_obj.epockclock(epochfiles);
+            daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+
+            d = ndi.document('daqreader_epochdata_ingested',...
+                'daqreader_epochdata_ingested', daqreader_epochdata_ingested);
+            d = d.set_dependency_value('daqreader_id',ndi_daqreader_obj.id());
 
         end; % ingest_epochfiles()
 
@@ -195,10 +195,10 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % Examines whether or not the ndi.daq.reader objects are equal.
             %
-                b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
-                b = b & strcmp(ndi_daqreader_obj1.id(), ndi_daqreader_obj2.id());
+            b = strcmp(class(ndi_daqreader_obj1),class(ndi_daqreader_obj2));
+            b = b & strcmp(ndi_daqreader_obj1.id(), ndi_daqreader_obj2.id());
         end; % eq()
-        
+
         %% functions that override ndi.documentservice
 
         function ndi_document_obj = newdocument(ndi_daqreader_obj)
@@ -207,11 +207,11 @@ classdef reader < ndi.ido & ndi.documentservice
             % DOC = NEWDOCUMENT(NDI_DAQREADER_OBJ)
             %
             % Creates an ndi.document object DOC that represents the
-            %    ndi.daq.reader object. 
-                ndi_document_obj = ndi.document('daqreader',...
-                    'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
-                    'base.id', ndi_daqreader_obj.id(),...
-                    'base.session_id',ndi.session.empty_id());
+            %    ndi.daq.reader object.
+            ndi_document_obj = ndi.document('daqreader',...
+                'daqreader.ndi_daqreader_class',class(ndi_daqreader_obj),...
+                'base.id', ndi_daqreader_obj.id(),...
+                'base.session_id',ndi.session.empty_id());
         end; % newdocument()
 
         function sq = searchquery(ndi_daqreader_obj)
@@ -219,12 +219,12 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             % SQ = SEARCHQUERY(NDI_DAQREADER_OBJ)
             %
-            % Creates a search query for the ndi.daq.reader object. 
-            % 
-                sq = ndi.query('base.id','exact_string', ndi_daqreader_obj.id(), '');
+            % Creates a search query for the ndi.daq.reader object.
+            %
+            sq = ndi.query('base.id','exact_string', ndi_daqreader_obj.id(), '');
         end; % searchquery()
 
     end % methods
-        
+
 end % ndi.daq.reader classdef
 

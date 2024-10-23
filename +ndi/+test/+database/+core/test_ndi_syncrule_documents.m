@@ -1,34 +1,34 @@
 function test_ndi_syncrule_documents
-% TEST_NDI_SYNCRULE_DOCUMENTS - test creating database entries, searching, and building from documents
-%
-% ndi.test.syncrule.documents(DIRNAME)
-%
-% Given a directory that corresponds to an session, this function tries to create
-% the following objects :
-%   1) ndi.time.syncrule.filematch
-%
-%   Then, the following tests actions are conducted for each document type:
-%   a) Create a new database document
-%   b) Add the database document to the database
-%   c) Search for the database document
-%   d) Create a new object based on the database entry, and test that it matches the original
-%
+    % TEST_NDI_SYNCRULE_DOCUMENTS - test creating database entries, searching, and building from documents
+    %
+    % ndi.test.syncrule.documents(DIRNAME)
+    %
+    % Given a directory that corresponds to an session, this function tries to create
+    % the following objects :
+    %   1) ndi.time.syncrule.filematch
+    %
+    %   Then, the following tests actions are conducted for each document type:
+    %   a) Create a new database document
+    %   b) Add the database document to the database
+    %   c) Search for the database document
+    %   d) Create a new object based on the database entry, and test that it matches the original
+    %
 
     dirname = [ndi.common.PathConstants.ExampleDataFolder filesep 'exp1_eg'];
 
     E = ndi.session.dir('exp1',dirname);
-     % remove any existing syncrules
+    % remove any existing syncrules
     doc = E.database_search(ndi.query('','isa','syncrule',''));
     E.database_rm(doc);
 
     object_list = { ...
-            'ndi.time.syncrule.filematch',...
-            };
+        'ndi.time.syncrule.filematch',...
+        };
 
     sr = {};
     sr_docs = {};
-     
-     % Steps a and b and c)
+
+    % Steps a and b and c)
 
     syncrule_docs = {};
 

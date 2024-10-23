@@ -15,24 +15,24 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
             %
             % See also: vlt.file.fileobj, vlt.file.fileobj/FILEOBJ
             %
-                key = '';
-                doc_unique_id = '';
-                vlt.data.assign(varargin{:});
-                ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@vlt.file.fileobj(varargin{:});
-                ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
-                ndi_binarydoc_matfid_obj.key = key;
-                ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
+            key = '';
+            doc_unique_id = '';
+            vlt.data.assign(varargin{:});
+            ndi_binarydoc_matfid_obj = ndi_binarydoc_matfid_obj@vlt.file.fileobj(varargin{:});
+            ndi_binarydoc_matfid_obj.machineformat = 'ieee-le';
+            ndi_binarydoc_matfid_obj.key = key;
+            ndi_binarydoc_matfid_obj.doc_unique_id = doc_unique_id;
         end; % ndi.database.implementations.binarydoc.matfid() creator
 
         function ndi_binarydoc_matfid_obj = fclose(ndi_binarydoc_matfid_obj)
             % FCLOSE - close an ndi.database.implementations.binarydoc.matfid object
             %
-            % Closes the file, but also clears the fullpathfilename and other fields so the 
+            % Closes the file, but also clears the fullpathfilename and other fields so the
             % user cannot re-use the object without checking out another binary document from
             % the database.
             %
-                ndi_binarydoc_matfid_obj.fclose@vlt.file.fileobj();
-                ndi_binarydoc_matfid_obj.permission = 'r';
+            ndi_binarydoc_matfid_obj.fclose@vlt.file.fileobj();
+            ndi_binarydoc_matfid_obj.permission = 'r';
         end % fclose()
     end;
 end

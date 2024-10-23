@@ -1,5 +1,5 @@
 function logger = getLogger()
-    
+
     persistent cachedLogger
     if isempty(cachedLogger)
         cachedLogger = vlt.app.log(...

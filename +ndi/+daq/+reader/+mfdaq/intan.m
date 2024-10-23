@@ -8,37 +8,37 @@
 
 classdef intan < ndi.daq.reader.mfdaq
     properties
-        
+
 
     end % properties
 
     methods
         function obj = intan(varargin)
-        % ndi.daq.reader.mfdaq.intan - Create a new NDI_DEVICE_MFDAQ_INTAN object
-        %
-        %  D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
-        %
-        %  Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
-        %  filenavigator THEFILENAVIGATOR.
-        %
+            % ndi.daq.reader.mfdaq.intan - Create a new NDI_DEVICE_MFDAQ_INTAN object
+            %
+            %  D = ndi.daq.reader.mfdaq.intan(NAME,THEFILENAVIGATOR)
+            %
+            %  Creates a new ndi.daq.reader.mfdaq.intan object with name NAME and associated
+            %  filenavigator THEFILENAVIGATOR.
+            %
             obj = obj@ndi.daq.reader.mfdaq(varargin{:})
         end
 
         function channels = getchannelsepoch(ndi_daqreader_mfdaq_intan_obj, epochfiles)
-        % GETCHANNELSEPOCH - List the channels that are available on this Intan device for a given set of files
-        %
-        %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHFILES)
-        %
-        %  Returns the channel list of acquired channels in this session
-        %
-        % CHANNELS is a structure list of all channels with fields:
-        % -------------------------------------------------------
-        % 'name'             | The name of the channel (e.g., 'ai1')
-        % 'type'             | The type of data stored in the channel
-        %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
-        % 'time_channel'     | The channel number that contains the time information for
-        %                    |    each channel.
-        %
+            % GETCHANNELSEPOCH - List the channels that are available on this Intan device for a given set of files
+            %
+            %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHFILES)
+            %
+            %  Returns the channel list of acquired channels in this session
+            %
+            % CHANNELS is a structure list of all channels with fields:
+            % -------------------------------------------------------
+            % 'name'             | The name of the channel (e.g., 'ai1')
+            % 'type'             | The type of data stored in the channel
+            %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+            % 'time_channel'     | The channel number that contains the time information for
+            %                    |    each channel.
+            %
             channels.name = 't1';
             channels.type = 'time';
             channels.time_channel = 1;
@@ -55,13 +55,13 @@ classdef intan < ndi.daq.reader.mfdaq
             %   for any new channel that hasn't been identified before,
             %   add it to the list
 
-            filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+            filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
             header = read_Intan_RHD2000_header(filename);
 
             for k=1:length(intan_channel_types),
                 if isfield(header,intan_channel_types{k}),
                     channel_type_entry = ndi_daqreader_mfdaq_intan_obj.intanheadertype2mfdaqchanneltype(...
-                            intan_channel_types{k});
+                        intan_channel_types{k});
                     channel = getfield(header, intan_channel_types{k});
                     num = numel(channel);             %% number of channels with specific type
                     for p = 1:numel(channel),
@@ -69,7 +69,7 @@ classdef intan < ndi.daq.reader.mfdaq
                         newchannel.name = ndi_daqreader_mfdaq_intan_obj.intanname2mfdaqname(...
                             ndi_daqreader_mfdaq_intan_obj,...
                             channel_type_entry,...
-                            channel(p).native_channel_name); 
+                            channel(p).native_channel_name);
                         newchannel.time_channel = 1;
                         if strcmp(newchannel.type,'auxiliary_in'),
                             newchannel.time_channel = 2;
@@ -81,14 +81,14 @@ classdef intan < ndi.daq.reader.mfdaq
         end % getchannels()
 
         function [b,msg] = verifyepochprobemap(ndi_daqreader_mfdaq_intan_obj, epochprobemap, epochfiles)
-        % VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
-        %
-        %   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, EPOCHFILES)
-        %
-        % Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
-        % with epoch files EPOCHFILES.
-        %
-        % See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
+            % VERIFYEPOCHPROBEMAP - Verifies that an EPOCHPROBEMAP is compatible with a given device and the data on disk
+            %
+            %   B = VERIFYEPOCHPROBEMAP(NDI_DAQREADER_MFDAQ_INTAN_OBJ, EPOCHPROBEMAP, EPOCHFILES)
+            %
+            % Examines the NDI_EPOCHPROBEMAP_DAQREADER EPOCHPROBEMAP and determines if it is valid for the given device
+            % with epoch files EPOCHFILES.
+            %
+            % See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
             b = 1;
             msg = '';
             % UPDATE NEEDED
@@ -96,7 +96,7 @@ classdef intan < ndi.daq.reader.mfdaq
 
         function [filename, parentdir, isdirectory] = filenamefromepochfiles(ndi_daqreader_mfdaq_intan_obj, filename_array)
             % FILENAMEFROMEPOCHFILES - return the file name that corresponds to the RHD file, or directory in case of directory
-            % 
+            %
             % [FILENAME, PARENTDIR, ISDIRECTORY] = FILENAMEFROMEPOCHFILES(NDI_DAQREADER_MFDAQ_INTAN_OBJ, FILENAME_ARRAY)
             %
             % Examines the list of filenames in FILENAME_ARRAY (cell array of full path file strings) and determines which
@@ -114,7 +114,7 @@ classdef intan < ndi.daq.reader.mfdaq
             elseif numel(index)==0,
                 error(['Need 1 .rhd file per epoch.']);
             else,
-                filename = filename_array{index}; 
+                filename = filename_array{index};
                 [parentdir, fname, ext] = fileparts(filename);
                 if strcmp(fname,'info'),
                     s2 = ['time\.dat\>']; % equivalent of *.ext on the command line
@@ -127,7 +127,7 @@ classdef intan < ndi.daq.reader.mfdaq
             end
         end % filenamefromepoch
 
-            %01234567890123456789012345678901234567890123456789012345678901234567890123456789
+        %01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_intan_obj, channeltype, channel, epochfiles, s0, s1)
             %  FUNCTION READ_CHANNELS - read the data based on specified channels
             %
@@ -140,64 +140,64 @@ classdef intan < ndi.daq.reader.mfdaq
             %
             %  EPOCH is set of epoch files
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel) 
+            %  DATA is the channel data (each column contains data from an indvidual channel)
             %
-                [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+            [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 
-                if ~iscell(channeltype),
-                    channeltype = repmat({channeltype},numel(channel),1);
-                end;
-                uniquechannel = unique(channeltype);
-                if numel(uniquechannel)~=1,
-                    error(['Only one type of channel may be read per function call at present.']);
-                end
-                intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
+            if ~iscell(channeltype),
+                channeltype = repmat({channeltype},numel(channel),1);
+            end;
+            uniquechannel = unique(channeltype);
+            if numel(uniquechannel)~=1,
+                error(['Only one type of channel may be read per function call at present.']);
+            end
+            intanchanneltype = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanchanneltype(uniquechannel{1});
 
-                sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epochfiles, channeltype, channel);
-                sr_unique = unique(sr); % get all sample rates
-                if numel(sr_unique)~=1,
-                    error(['Do not know how to handle different sampling rates across channels.']);
-                end;
+            sr = ndi_daqreader_mfdaq_intan_obj.samplerate(epochfiles, channeltype, channel);
+            sr_unique = unique(sr); % get all sample rates
+            if numel(sr_unique)~=1,
+                error(['Do not know how to handle different sampling rates across channels.']);
+            end;
 
-                sr = sr_unique;
+            sr = sr_unique;
 
-                t0 = (s0-1)/sr;
-                t1 = (s1-1)/sr;
-            
-                if strcmp(intanchanneltype,'time'),
-                    channel = 1; % time only has 1 channel in Intan RHD
-                end;
+            t0 = (s0-1)/sr;
+            t1 = (s1-1)/sr;
 
-                is_digital = 0;
-                if strcmp(intanchanneltype,'din'),
-                    is_digital = 1;
-                    alt_channel = channel;
-                    channel = 1;
-                end;
+            if strcmp(intanchanneltype,'time'),
+                channel = 1; % time only has 1 channel in Intan RHD
+            end;
 
-                if strcmp(intanchanneltype,'dout'),
-                    is_digital = 1;
-                    alt_channel = channel;
-                    channel = 1;
-                end;
-            
-                if ~isdirectory,
-                    data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
-                else,
-                    data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
-                end;
+            is_digital = 0;
+            if strcmp(intanchanneltype,'din'),
+                is_digital = 1;
+                alt_channel = channel;
+                channel = 1;
+            end;
 
-                if is_digital,
-                    digital_data = int2bit(data', 8, 0)';
-                    if size(digital_data,2)<16, % make sure our output is 16 bits wide
-                        digital_data = [digital_data zeros(size(digital_data,1),8) ];
-                    end;
-                    data = digital_data(:,alt_channel);
+            if strcmp(intanchanneltype,'dout'),
+                is_digital = 1;
+                alt_channel = channel;
+                channel = 1;
+            end;
+
+            if ~isdirectory,
+                data = read_Intan_RHD2000_datafile(filename,'',intanchanneltype,channel,t0,t1);
+            else,
+                data = read_Intan_RHD2000_directory(parentdir,'',intanchanneltype,channel,t0,t1);
+            end;
+
+            if is_digital,
+                digital_data = int2bit(data', 8, 0)';
+                if size(digital_data,2)<16, % make sure our output is 16 bits wide
+                    digital_data = [digital_data zeros(size(digital_data,1),8) ];
                 end;
+                data = digital_data(:,alt_channel);
+            end;
 
         end % readchannels_epochsamples
 
-                function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
+        function [datatype,p,datasize] = underlying_datatype(ndi_daqreader_mfdaq_obj, epochfiles, channeltype, channel)
             % UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
             %
             % [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(DEV, EPOCHFILES, CHANNELTYPE, CHANNEL)
@@ -211,36 +211,36 @@ classdef intan < ndi.daq.reader.mfdaq
             % READCHANNEL. RETURNED_DATA = (RAW_DATA+P(1))*P(2)+(RAW_DATA+P(1))*P(3) ...
             %
             % DATASIZE is the sample size in bits.
-            %                                       
+            %
             % CHANNELTYPE must be a string. It is assumed that
             % that CHANNELTYPE applies to every entry of CHANNEL.
-            %                                       
-                switch(channeltype),            
-                    case {'analog_in','analog_out'},
-                        % For the abstract class, keep the data in doubles. This will always work but may not
-                        % allow for optimal compression if not overridden
-                        datatype = 'uint16';
-                        datasize = 16;
-                        p = [32768 0.195];
-                    case {'auxiliary_in'}
-                        datatype = 'uint16';
-                        datasize = 16;
-                        p = [0 3.7400e-05];
-                    case {'time'},
-                        datatype = 'float64';
-                        datasize = 64;
-                        p = [0 1];
-                                        case {'digital_in','digital_out'},
-                        datatype = 'char';
-                        datasize = 8;
-                        p = [0 1];
-                    case {'eventmarktext','event','marker','text'}, 
-                        datatype = 'float64';
-                        datasize = 64;
-                        p = [0 1];
-                    otherwise,
-                        error(['Unknown channel type ' channeltype '.']);
-                end; %
+            %
+            switch(channeltype),
+                case {'analog_in','analog_out'},
+                    % For the abstract class, keep the data in doubles. This will always work but may not
+                    % allow for optimal compression if not overridden
+                    datatype = 'uint16';
+                    datasize = 16;
+                    p = [32768 0.195];
+                case {'auxiliary_in'}
+                    datatype = 'uint16';
+                    datasize = 16;
+                    p = [0 3.7400e-05];
+                case {'time'},
+                    datatype = 'float64';
+                    datasize = 64;
+                    p = [0 1];
+                case {'digital_in','digital_out'},
+                    datatype = 'char';
+                    datasize = 8;
+                    p = [0 1];
+                case {'eventmarktext','event','marker','text'},
+                    datatype = 'float64';
+                    datasize = 64;
+                    p = [0 1];
+                otherwise,
+                    error(['Unknown channel type ' channeltype '.']);
+            end; %
         end;
 
 
@@ -256,19 +256,19 @@ classdef intan < ndi.daq.reader.mfdaq
             %
             % SR is the list of sample rate from specified channels
             %
-                sr = [];
-                filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles); 
+            sr = [];
+            filename = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 
-                if iscell(channeltype) & numel(channeltype)==1 & numel(channel) ~=1,
-                    channeltype = repmat(channeltype,1,numel(channel));
-                end;
+            if iscell(channeltype) & numel(channeltype)==1 & numel(channel) ~=1,
+                channeltype = repmat(channeltype,1,numel(channel));
+            end;
 
-                head = read_Intan_RHD2000_header(filename);
-                for i=1:numel(channel),
-                    channeltype_here = vlt.data.celloritem(channeltype,i);
-                    freq_fieldname = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
-                    sr(i) = getfield(head.frequency_parameters,freq_fieldname);
-                end
+            head = read_Intan_RHD2000_header(filename);
+            for i=1:numel(channel),
+                channeltype_here = vlt.data.celloritem(channeltype,i);
+                freq_fieldname = ndi_daqreader_mfdaq_intan_obj.mfdaqchanneltype2intanfreqheader(channeltype_here);
+                sr(i) = getfield(head.frequency_parameters,freq_fieldname);
+            end
         end % samplerate()
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_intan_obj, epochfiles)
@@ -283,27 +283,27 @@ classdef intan < ndi.daq.reader.mfdaq
             %
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
-                            [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
-                header = read_Intan_RHD2000_header(filename);
-                if ~isdirectory,
-                    [blockinfo, bytes_per_block, bytes_present, num_data_blocks] = Intan_RHD2000_blockinfo(filename, header);
+            [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
+            header = read_Intan_RHD2000_header(filename);
+            if ~isdirectory,
+                [blockinfo, bytes_per_block, bytes_present, num_data_blocks] = Intan_RHD2000_blockinfo(filename, header);
 
-                    total_samples = 60 * num_data_blocks;
-                else,
-                    finfo = dir([parentdir filesep 'time.dat']);
-                    if isempty(finfo),
-                        error(['File time.dat necessary in directory ' parentdir ' but it was not found.']);
-                    end;
-                    total_samples = finfo.bytes / 4;
+                total_samples = 60 * num_data_blocks;
+            else,
+                finfo = dir([parentdir filesep 'time.dat']);
+                if isempty(finfo),
+                    error(['File time.dat necessary in directory ' parentdir ' but it was not found.']);
                 end;
+                total_samples = finfo.bytes / 4;
+            end;
 
-                total_time = total_samples / header.frequency_parameters.amplifier_sample_rate; % in seconds
+            total_time = total_samples / header.frequency_parameters.amplifier_sample_rate; % in seconds
 
-                t0 = 0;
-                t1 = total_time-1/header.frequency_parameters.amplifier_sample_rate;
+            t0 = 0;
+            t1 = total_time-1/header.frequency_parameters.amplifier_sample_rate;
 
-                t0t1 = {[t0 t1]};
-                    % developer note: in the Intan acquisition software, one can define a time offset; right now we aren't considering that
+            t0t1 = {[t0 t1]};
+            % developer note: in the Intan acquisition software, one can define a time offset; right now we aren't considering that
         end % t0t1
 
     end % methods
@@ -311,12 +311,12 @@ classdef intan < ndi.daq.reader.mfdaq
     methods (Static)  % helper functions
 
         function intanchanheadertype = mfdaqchanneltype2intanheadertype(channeltype)
-        % MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the ndi.daq.reader.mfdaq channel types and Intan headers
-        %
-        % INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
-        % 
-        % Given a standard ndi.daq.reader.mfdaq channel type, returns the name of the type as
-        % indicated in Intan header files.
+            % MFDAQCHANNELTYPE2INTANHEADERTYPE - Convert between the ndi.daq.reader.mfdaq channel types and Intan headers
+            %
+            % INTANCHANHEADERTYPE = MFDAQCHANNELTYPE2INTANHEADERTYPE(CHANNELTYPE)
+            %
+            % Given a standard ndi.daq.reader.mfdaq channel type, returns the name of the type as
+            % indicated in Intan header files.
 
             switch (channeltype),
                 case {'analog_in','ai'},
@@ -334,11 +334,11 @@ classdef intan < ndi.daq.reader.mfdaq
         end % mfdaqchanneltype2intanheadertype()
 
         function channeltype = intanheadertype2mfdaqchanneltype(intanchanneltype)
-        % INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.reader.mfdaq channel types 
-        %
-        % CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
-        % 
-        % Given an Intan header file type, returns the standard ndi.daq.reader.mfdaq channel type
+            % INTANHEADERTYPE2MFDAQCHANNELTYPE- Convert between Intan headers and the ndi.daq.reader.mfdaq channel types
+            %
+            % CHANNELTYPE = INTANHEADERTYPE2MFDAQCHANNELTYPE(INTANCHANNELTYPE)
+            %
+            % Given an Intan header file type, returns the standard ndi.daq.reader.mfdaq channel type
 
             switch (intanchanneltype),
                 case {'amplifier_channels'},
@@ -356,14 +356,14 @@ classdef intan < ndi.daq.reader.mfdaq
         end % mfdaqchanneltype2intanheadertype()
 
         function intanchanneltype = mfdaqchanneltype2intanchanneltype(channeltype)
-        % MFDAQCHANNELTYPE2INTANCHANNELTYPE- convert the channel type from generic format of multifuncdaqchannel 
-        %                     to the specific intan channel type
-        %
-        %    INTANCHANNELTYPE = MFDAQCHANNELTYPE2INTANCHANNELTYPE(CHANNELTYPE)
-        %
-        %     the intanchanneltype is a string of the specific channel type for intan
-        %
-            switch channeltype, 
+            % MFDAQCHANNELTYPE2INTANCHANNELTYPE- convert the channel type from generic format of multifuncdaqchannel
+            %                     to the specific intan channel type
+            %
+            %    INTANCHANNELTYPE = MFDAQCHANNELTYPE2INTANCHANNELTYPE(CHANNELTYPE)
+            %
+            %     the intanchanneltype is a string of the specific channel type for intan
+            %
+            switch channeltype,
                 case {'analog_in','ai'},
                     intanchanneltype = 'amp';
                 case {'digital_in','di'},
@@ -380,14 +380,14 @@ classdef intan < ndi.daq.reader.mfdaq
         end % mfdaqchanneltype2intanchanneltype()
 
         function [ channame ] = intanname2mfdaqname(ndi_daqreader_mfdaq_intan_obj, type, name )
-        % INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to ndi.daq.reader.mfdaq format.
-        %
-        % MFDAQNAME = INTANNAME2MFDAQNAME(ndi.daq.reader.mfdaq.intan, MFDAQTYPE, NAME)
-        %   
-        % Given an Intan native channel name (e.g., 'A-000') in NAME and a
-        % ndi.daq.reader.mfdaq channel type string (see NDI_DEVICE_MFDAQ), this function
-        % produces an ndi.daq.reader.mfdaq channel name (e.g., 'ai1').
-        %  
+            % INTANNAME2MFDAQNAME - Converts a channel name from Intan native format to ndi.daq.reader.mfdaq format.
+            %
+            % MFDAQNAME = INTANNAME2MFDAQNAME(ndi.daq.reader.mfdaq.intan, MFDAQTYPE, NAME)
+            %
+            % Given an Intan native channel name (e.g., 'A-000') in NAME and a
+            % ndi.daq.reader.mfdaq channel type string (see NDI_DEVICE_MFDAQ), this function
+            % produces an ndi.daq.reader.mfdaq channel name (e.g., 'ai1').
+            %
             sep = find(name=='-');
             isaux = 0;
             if numel(name)>=sep+4,
@@ -407,12 +407,12 @@ classdef intan < ndi.daq.reader.mfdaq
         end % intanname2mfdaqname()
 
         function headername = mfdaqchanneltype2intanfreqheader(channeltype)
-        % MFDAQCHANNELTYPE2INTANFREQHEADER - Return header name with frequency information for channel type
-        %
-        %  HEADERNAME = MFDAQCHANNELTYPE2INTANFREQHEADER(CHANNELTYPE)
-        %
-        %  Given an NDI_DEV_MFDAQ channel type string, this function returns the associated fieldname
-        %  
+            % MFDAQCHANNELTYPE2INTANFREQHEADER - Return header name with frequency information for channel type
+            %
+            %  HEADERNAME = MFDAQCHANNELTYPE2INTANFREQHEADER(CHANNELTYPE)
+            %
+            %  Given an NDI_DEV_MFDAQ channel type string, this function returns the associated fieldname
+            %
             switch channeltype,
                 case {'analog_in','ai'},
                     headername = 'amplifier_sample_rate';

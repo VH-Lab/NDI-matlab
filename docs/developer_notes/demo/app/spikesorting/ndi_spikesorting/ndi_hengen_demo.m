@@ -29,21 +29,21 @@ end
 
 E = ndi.session.dir('ts1','/Users/danielgmu/Downloads/Experiments/2019-08-22');
 
-ced_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt'); 
-ced_vis_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt'); 
+ced_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt');
+ced_vis_filenav = ndi.file.navigator(E, {'.*\.smr\>', 'probemap.txt', 'stims.mat'}, 'ndi.epoch.epochprobemap_daqsystem', 'probemap.txt');
 
 % Create daqreader objects for our daq systems
-ced_rdr = ndi.daq.reader.mfdaq.cedspike2(); 
+ced_rdr = ndi.daq.reader.mfdaq.cedspike2();
 ced_vis_rdr = ndi.daq.reader.mfdaq.stimulus.vhlabvisspike2();
 
 % Create a metadata reader for our stimulus daq system
 % This reader interprets the metadata from our visual stimuli
-ced_vis_mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')}; 
+ced_vis_mdr = {ndi.daq.metadatareader.NewStimStims('stims.mat')};
 
 measure_sys = ndi.daq.system.mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
 stim_sys = ndi.daq.system.mfdaq('ced_vis_daqsystem', ced_vis_filenav, ced_vis_rdr);
 
-E.daqsystem_add(measure_sys); 
+E.daqsystem_add(measure_sys);
 E.daqsystem_add(stim_sys);
 
 extraction_name = 'hengen_extraction_test'

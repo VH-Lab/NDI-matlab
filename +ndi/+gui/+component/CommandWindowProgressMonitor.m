@@ -1,5 +1,5 @@
 classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonitor
-   
+
     properties
         IndentSize = 0              % Size of indentation (number of spaces) if displaying progress in command window.
         ShowTimeStamp = true
@@ -11,7 +11,7 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
         PreviousMessage
     end
 
-    methods 
+    methods
         % function obj = CommandWindowProgressMonitor(options)
         %     % arguments
         %     %     options.?CommandWindowProgressMonitor
@@ -19,7 +19,7 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
         % end
     end
 
-    methods 
+    methods
         function reset(obj)
             reset@ndi.gui.component.abstract.ProgressMonitor(obj)
             obj.PreviousMessage = [];
@@ -29,11 +29,11 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
     methods (Access = protected)
 
         function updateProgressDisplay(obj)
-    
+
             if isempty(obj.PreviousMessage)
                 obj.printTitleMessage()
             end
-             
+
             msg = obj.ProgressTracker.Message;
             if ~ismissing(msg)
                 obj.updateProgressMessage(msg)
@@ -56,22 +56,22 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
     end
 
     methods (Access = private)
-        
+
         function printTitleMessage(obj)
-        % printTitleMessage - Print title / opening message    
+            % printTitleMessage - Print title / opening message
             message = obj.formatMessage( obj.getProgressTitle() );
             fprintf(message)
         end
 
         function printMessage(obj, message)
-            
+
             if ~isempty(obj.PreviousMessage) && obj.UpdateInplace
                 % char(8) = backspace
                 deletePrevStr = char(8*ones(1, length(obj.PreviousMessage)+1));
             else
                 deletePrevStr = '';
             end
-            % Print one new line to prevent messy output in case users 
+            % Print one new line to prevent messy output in case users
             % enter input on the command window.
             fprintf('%s\n%s', deletePrevStr, message);
             obj.PreviousMessage = message;
@@ -88,7 +88,7 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
 
             obj.printMessage(message)
         end
-        
+
         function message = formatMessage(obj, coreMessage)
             message = obj.indentMessage( coreMessage );
 
@@ -96,15 +96,15 @@ classdef CommandWindowProgressMonitor < ndi.gui.component.abstract.ProgressMonit
                 message = obj.prependTimestamp(message);
             end
         end
-        
+
         function indentedMessage = indentMessage(obj, message)
-        % indentMessage - Indent a message based on preferences
+            % indentMessage - Indent a message based on preferences
             indentation = repmat(' ', 1, obj.IndentSize);
             indentedMessage = sprintf('%s%s', indentation, message);
         end
 
         function message = prependTimestamp(obj, message)
-        % prependTimestamp - Prepend timestamp to a message
+            % prependTimestamp - Prepend timestamp to a message
             timeStampStr = datetime("now", "Format", obj.TimeStampFormat);
             message = sprintf('%s: %s', timeStampStr, message);
         end

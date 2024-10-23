@@ -1,12 +1,12 @@
 classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
-% ProgressTracker - Represent and track progress for a task
-%
-% This class provides properties and methods for representing the progress
-% of a task.
+    % ProgressTracker - Represent and track progress for a task
+    %
+    % This class provides properties and methods for representing the progress
+    % of a task.
 
-% Todo:
-%   [ ] Flexibility of formatting when inserting property values in a
-%       string template
+    % Todo:
+    %   [ ] Flexibility of formatting when inserting property values in a
+    %       string template
 
     properties (Dependent, SetAccess=private)
         PercentageComplete
@@ -14,19 +14,19 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
     end
 
     properties (Hidden) % Preferences / Settings
-        % UpdateInterval - Interval in seconds to trigger ProgressUpdated 
+        % UpdateInterval - Interval in seconds to trigger ProgressUpdated
         % event. Useful in cases where the CurrentStep is updated rapidly
         % but an event update is not needed at the same rate.
         UpdateInterval (1,1) = seconds(0) % In seconds
 
         % TemplateMessage - A template message that can representing the
-        % progress of a task. Template variables are represented in the 
+        % progress of a task. Template variables are represented in the
         % form {{CurrentStep}} and the following variables are supported:
         % CurrentStep, TotalSteps, PercentageComplete
         TemplateMessage (1,1) string = missing
 
         CompletedMessage (1,1) string = missing
-        
+
         % DumpFilePath - Path name for a file to dump the progress related
         % properties of an object
         DumpFilePath (1,1) string = missing
@@ -61,10 +61,10 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         MessageUpdated
         TaskCompleted
     end
-    
+
     methods % Constructor
         function obj = ProgressTracker(totalSteps)
-        % ProgressTracker - Construct a task progress object
+            % ProgressTracker - Construct a task progress object
 
             arguments
                 totalSteps (1,1) double = nan
@@ -82,7 +82,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         function percentageComplete = get.PercentageComplete(obj)
             percentageComplete = double(round((obj.CurrentStep / obj.TotalSteps) * 100));
         end
-        
+
         function fractionComplete = get.FractionComplete(obj)
             fractionComplete = (obj.CurrentStep / obj.TotalSteps);
         end
@@ -127,24 +127,24 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
             if ~isnan(obj.TotalSteps)
                 error(...
                     ['Can not set ''TotalSteps'' of class ''%s'' ', ...
-                     'because it has already been initialized. Use ', ...
-                     'the ''reset'' method if you need to reinitialize ', ...
-                     '''TotalSteps'''], mfilename('class'))
+                    'because it has already been initialized. Use ', ...
+                    'the ''reset'' method if you need to reinitialize ', ...
+                    '''TotalSteps'''], mfilename('class'))
             end
             obj.TotalSteps = newValue;
         end
-        
+
         function updateProgress(obj, currentStep)
             % Update progress by incrementing the current step
 
             % Todo: set.CurrentStep instead
-            arguments 
+            arguments
                 obj (1,1) ndi.gui.component.internal.ProgressTracker
                 currentStep (1,1) double = nan
             end
 
             if obj.IsFinished; return; end
-            
+
             % Update current step
             if isnan(currentStep)
                 obj.CurrentStep = obj.CurrentStep + 1;
@@ -169,7 +169,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                 obj.LastUpdate = tic();
             end
         end
-        
+
         function updateMessage(obj, newMessage)
             eventData = ndi.gui.component.internal.event.MessageUpdatedEventData(newMessage);
             obj.notify('MessageUpdated', eventData);
@@ -207,7 +207,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                 end
             end
         end
-        
+
         function isComplete = isComplete(obj)
             % Check if task is complete
             isComplete = (obj.CurrentStep >= obj.TotalSteps);
@@ -216,7 +216,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
 
     methods
         function asynchProgressTracker = getAsynchTaskProgress(obj)
-            
+
             % Get a temporary file
             obj.DumpFilePath = sprintf('%s_task_progress.json', tempname);
 
@@ -246,7 +246,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
             end
         end
     end
-    
+
     methods (Access = protected)
         function onTemplateMessageSet(obj)
 
@@ -260,9 +260,9 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
 
             obj.TemplateMessageProperties = matchedTokens;
         end
-        
+
         function updatedMessage = fillTemplateMessage(obj)
-            
+
             updatedMessage = obj.TemplateMessage;
 
             for propName = obj.TemplateMessageProperties
@@ -271,7 +271,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                     updatedMessage, propName, propValue);
             end
         end
-    
+
     end
 
     methods (Access = private)
@@ -281,7 +281,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                 'Name', 'TaskProgressListener', ...
                 'ExecutionMode', 'fixedRate', ...
                 'Period', max( [seconds(obj.UpdateInterval), 1]) );
-            
+
             obj.AsynchListener.TimerFcn = @(myTimerObj, thisEvent) obj.readFromFile();
             start(obj.AsynchListener)
         end
@@ -299,11 +299,11 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                         obj.TemplateMessage = S.TemplateMessage;
                     end
                 end
-    
+
                 if obj.TotalSteps ~= S.TotalSteps
                     obj.TotalSteps = S.TotalSteps;
                 end
-                
+
                 obj.updateProgress(S.CurrentStep)
             end
         end
@@ -312,10 +312,10 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
     methods (Static, Access = protected)
         function updatedMessage = replacePropertyValue(templateMessage, propertyName, propertyValue)
             % Replace a class property value in a template message
-            
+
             % Format placeholder string
             placeholder = sprintf('{{%s}}', propertyName);
-            
+
             % Replace placeholder with property value in the template message
             if round(propertyValue) == propertyValue
                 valueAsStr = num2str(propertyValue);

@@ -1,5 +1,5 @@
 classdef  didsqlite < ndi.database
-% didsqlite - a database based on sqlite
+    % didsqlite - a database based on sqlite
 
     properties
         db        % did.sqlitedb
@@ -8,21 +8,21 @@ classdef  didsqlite < ndi.database
     methods
 
         function ndi_didsqlite_obj = didsqlite(varargin)
-        % ndi.database.implementations.database.didsqlite make a new ndi.database.implementations.database.didsqlite object
-        % 
-        % NDI_DIDSQLITE_OBJ = ndi.database.implementation.database.didsqlite(...
-        %     PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
-        %
-        % Creates a new ndi.database.implementations.database.didsqlite object.
-        %
-        % COMMAND can either be 'Load' or 'New'. The second argument
-        % should be the full pathname of the location where the files
-        % should be stored on disk.
-        %
-        % See also: did.database, did.implementations.sqlitedb
+            % ndi.database.implementations.database.didsqlite make a new ndi.database.implementations.database.didsqlite object
+            %
+            % NDI_DIDSQLITE_OBJ = ndi.database.implementation.database.didsqlite(...
+            %     PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
+            %
+            % Creates a new ndi.database.implementations.database.didsqlite object.
+            %
+            % COMMAND can either be 'Load' or 'New'. The second argument
+            % should be the full pathname of the location where the files
+            % should be stored on disk.
+            %
+            % See also: did.database, did.implementations.sqlitedb
             ndi_didsqlite_obj = ndi_didsqlite_obj@ndi.database(varargin{:});
             database_filename = fullfile(ndi_didsqlite_obj.path, 'did-sqlite.sqlite');
-            ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename); 
+            ndi_didsqlite_obj.db = did.implementations.sqlitedb(database_filename);
             if ~isfolder(ndi_didsqlite_obj.file_directory),
                 mkdir(ndi_didsqlite_obj.file_directory);
             end;
@@ -32,7 +32,7 @@ classdef  didsqlite < ndi.database
             end;
         end; % ndi.database.implementations.database.didsqlite()
 
-    end 
+    end
 
     methods, % public
         function docids = alldocids(ndi_didsqlite_obj)
@@ -43,7 +43,7 @@ classdef  didsqlite < ndi.database
             % Return all document unique reference strings as a cell array of strings. If there
             % are no documents, empty is returned.
             %
-                docids = ndi_didsqlite_obj.db.get_doc_ids('a');
+            docids = ndi_didsqlite_obj.db.get_doc_ids('a');
         end; % alldocids()
     end;
 
@@ -58,7 +58,7 @@ classdef  didsqlite < ndi.database
         end; % do_add
 
         function [ndi_document_obj] = do_read(ndi_didsqlite_obj, ndi_document_id);
-            [ndi_document_obj] = ndi_didsqlite_obj.db.get_docs(ndi_document_id); 
+            [ndi_document_obj] = ndi_didsqlite_obj.db.get_docs(ndi_document_id);
             % now typecast to ndi.document from did.document
             if iscell(ndi_document_obj),
                 for i=1:numel(ndi_document_obj),
@@ -102,18 +102,18 @@ classdef  didsqlite < ndi.database
             %
             % Close and unlock the binary file associated with NDI_BINARYDOC_OBJ.
             %
-                ndi_didsqlite_obj.db.close_doc(ndi_binarydoc_matfid_obj);
+            ndi_didsqlite_obj.db.close_doc(ndi_binarydoc_matfid_obj);
         end; % do_closebinarydoc()
 
         function [file_dir] = file_directory(ndi_didsqlite_obj)
             % FILE_DIRECTORY - return the file directory where ingested files are stored
-            % 
+            %
             % FILE_DIR = FILE_DIRECTORY(NDI_DIDSQLITE_OBJ)
             %
             % Return the full path of the directory where binary files for the database documents
             % are stored.
             %
-                file_dir = [ndi_didsqlite_obj.path filesep 'files'];
+            file_dir = [ndi_didsqlite_obj.path filesep 'files'];
         end; % file_directory
     end;
 end

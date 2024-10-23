@@ -1,11 +1,11 @@
 function [result] = add_document(dataset_id, json_document)
-% create_dataset - Create a new dataset in an organization    
-    
+    % create_dataset - Create a new dataset in an organization
+
     arguments
         dataset_id (1,1) string
         json_document (1,1) string
     end
-    
+
     API_BASE_URL = "https://dev-api.ndi-cloud.com/v1/";
     auth_token = ndi.cloud.uilogin();
 

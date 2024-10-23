@@ -16,14 +16,14 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
             % TYPE is the type of recording.
             % DEVICESTRING is a string that indicates the channels that were used to acquire
             % this record.
-            % 
+            %
             %   MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(FILENAME)
-            % 
-            % Here, FILENAME is assumed to be a (full path) tab-delimitted text file in the style of 
-            % 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING) 
+            %
+            % Here, FILENAME is assumed to be a (full path) tab-delimitted text file in the style of
+            % 'vhintan_channelgrouping.txt' (see HELP VHINTAN_CHANNELGROUPING)
             % that has entries 'name<tab>ref<tab>channel_list<tab>'.
             %
-            % The device type of each channel is assumed to be 'n-trode', where n is 
+            % The device type of each channel is assumed to be 'n-trode', where n is
             % set to be the number of channels in the channel_list for each name/ref pair.
             %
             % The NDI device name for this device must be 'vhintan' (VH Intan RHD device), 'vhlv' (VH Lab Labview custom
@@ -104,9 +104,9 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 vhdevice_string = intersect(vhdevice_string, valid_vhdevice_strings);
                 if isempty(vhdevice_string)
                     error(['VHDEVICENAME must be one of ' strjoin(valid_vhdevice_strings,', ') ]);
-                end    
-                vhdevice_string = vhdevice_string{1}; 
-    
+                end
+                vhdevice_string = vhdevice_string{1};
+
                 ndi_struct = vlt.file.loadStructArray(filename);
                 fn = fieldnames(ndi_struct);
                 if ~vlt.data.eqlen(fn,{'name','ref','channel_list'}'),
@@ -119,11 +119,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                 ref_struct = vlt.file.loadStructArray([myfilepath filesep 'reference.txt']);
 
                 for i=1:length(ndi_struct),
-                tf_name = strcmp(ndi_struct(i).name,{ref_struct.name});
-                tf_ref = [ndi_struct(i).ref == [ref_struct.ref]];
-                index = intersect(tf_name,tf_ref);
-                if numel(index)~=1,
-                    disp(['Error: Looking for name ' ndi_struct(i).name ' and ref ' int2str(ndi_struct(i).ref) '.']);
+                    tf_name = strcmp(ndi_struct(i).name,{ref_struct.name});
+                    tf_ref = [ndi_struct(i).ref == [ref_struct.ref]];
+                    index = intersect(tf_name,tf_ref);
+                    if numel(index)~=1,
+                        disp(['Error: Looking for name ' ndi_struct(i).name ' and ref ' int2str(ndi_struct(i).ref) '.']);
                         disp(['Ref struct is '])
                         ref_struct,
                         disp(['Looking in filename ' filename]);
@@ -141,25 +141,25 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
                         end;
                     end
                     nextentry = ndi.setup.epoch.epochprobemap_daqsystem_vhlab(ndi_struct(i).name,...
-                            ndi_struct(i).ref,...
-                            ec_type, ...  % type
-                            [vhdevice_string ':ai' vlt.string.intseq2str(ndi_struct(i).channel_list)], ...  % device string
-                            subject_id);
+                        ndi_struct(i).ref,...
+                        ec_type, ...  % type
+                        [vhdevice_string ':ai' vlt.string.intseq2str(ndi_struct(i).channel_list)], ...  % device string
+                        subject_id);
                     obj(i) = nextentry;
                 end;
             end
 
         end;
-        
+
         function savetofile(obj, filename)
             %  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
-            %    
+            %
             %    SAVETOFILE(OBJ, FILENAME)
-            % 
+            %
             %  Writes the ndi.epoch.epochprobemap_daqsystem_vhlab object to disk in filename FILENAME (full path).
             %
-            %  
-                error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);
+            %
+            error(['Sorry, I only know how to read these files, I don''t write (yet? ever?).']);
         end;
     end  % methods
 end

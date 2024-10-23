@@ -3,8 +3,8 @@ classdef ElectrodeArray < ndi.database.metadata_app.class.Probe
         ElectrodeIdentifier
         NoofElectrodes
     end
-    
+
     methods
-       
+
     end
 end

@@ -1,11 +1,11 @@
 classdef syncrule < ndi.ido & ndi.documentservice
 
-        properties (SetAccess=protected,GetAccess=public),
+    properties (SetAccess=protected,GetAccess=public),
         parameters;        % parameters, a structure
-        end % properties
-        properties (SetAccess=protected,GetAccess=protected)
-        end % properties
-        methods
+    end % properties
+    properties (SetAccess=protected,GetAccess=protected)
+    end % properties
+    methods
         function ndi_syncrule_obj = syncrule(varargin)
             % NDI_SYNCRULE_OBJ - create a new NDI_SYNCRULE for managing synchronization
             %
@@ -16,15 +16,15 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % Creates a new ndi.time.syncrule object with the given PARAMETERS (a structure).
             % This is an abstract class, so PARAMETERS must be empty.
             %
-                parameters = [];
-                if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
-                    parameters = varargin{2}.document_properties.syncrule.parameters;
-                    ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
-                elseif nargin >0,
-                    parameters = varargin{1};
-                end;
+            parameters = [];
+            if nargin==2 & isa(varargin{1},'ndi.session') & isa(varargin{2},'ndi.document'),
+                parameters = varargin{2}.document_properties.syncrule.parameters;
+                ndi_syncrule_obj.identifier = varargin{2}.document_properties.base.id;
+            elseif nargin >0,
+                parameters = varargin{1};
+            end;
 
-                ndi_syncrule_obj = setparameters(ndi_syncrule_obj,parameters);
+            ndi_syncrule_obj = setparameters(ndi_syncrule_obj,parameters);
         end
 
         function ndi_syncrule_obj = setparameters(ndi_syncrule_obj, parameters)
@@ -37,12 +37,12 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.syncrule/ISVALIDPARAMETERS
             %
-                [b,msg] = ndi_syncrule_obj.isvalidparameters(parameters);
-                if b,
-                    ndi_syncrule_obj.parameters = parameters;
-                else,
-                    error(['Could not set parameters: ' msg ]); 
-                end
+            [b,msg] = ndi_syncrule_obj.isvalidparameters(parameters);
+            if b,
+                ndi_syncrule_obj.parameters = parameters;
+            else,
+                error(['Could not set parameters: ' msg ]);
+            end
         end % setparameters
 
         function [b,msg] = isvalidparameters(ndi_syncrule_obj, parameters)
@@ -55,15 +55,15 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % If there is an error, MSG describes the error.
             %
             % See also: ndi.time.syncrule/SETPARAMETERS
-                
-                % developer note:
-                %  Q:Why have this function? Why not just produce an error when applying the rule?
-                %  A:Because syncrules are often set far in advance of being applied to data.
-                %    It is an error one wants to see at the time of setting the rule.
 
-                b = 1; 
-                msg = '';
-                return;
+            % developer note:
+            %  Q:Why have this function? Why not just produce an error when applying the rule?
+            %  A:Because syncrules are often set far in advance of being applied to data.
+            %    It is an error one wants to see at the time of setting the rule.
+
+            b = 1;
+            msg = '';
+            return;
         end % isvalidparameters
 
         function b = eq(ndi_syncrule_obj_a, ndi_syncrule_obj_b)
@@ -73,7 +73,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % Returns 1 if the parameters of NDI_SYNCRULE_OBJ_A and NDI_SYNCRULE_OBJ_B are equal.
             % Otherwise, 0 is returned.
-                b = vlt.data.eqlen(ndi_syncrule_obj_a.parameters,ndi_syncrule_obj_b.parameters);
+            b = vlt.data.eqlen(ndi_syncrule_obj_a.parameters,ndi_syncrule_obj_b.parameters);
         end % eq()
 
         function ec = eligibleclocks(ndi_syncrule_obj)
@@ -91,7 +91,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.syncrule/INELIGIBLECLOCKS
             %
-                ec = {};
+            ec = {};
         end % eligibleclocks
 
         function ic = ineligibleclocks(ndi_syncrule_obj)
@@ -110,7 +110,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % See also: ndi.time.syncrule/ELIGIBLECLOCKS
             %
-                ic = {ndi.time.clocktype('no_time')};
+            ic = {ndi.time.clocktype('no_time')};
         end % ineligibleclocks
 
         function ees = eligibleepochsets(ndi_syncrule_obj)
@@ -128,7 +128,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % The abstract class ndi.time.syncrule always returns empty.
             %
             % See also: ndi.time.syncrule/INELIGIBLEEPOCHSETS
-                ees = {}; % 
+            ees = {}; %
         end % eligibleepochsets
 
         function ies = ineligibleepochsets(ndi_syncrule_obj)
@@ -147,7 +147,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             % The abstract class ndi.time.syncrule always returns empty.
             %
             % See also: ndi.time.syncrule/ELIGIBLEEPOCHSETS
-                ies = {}; % 
+            ies = {}; %
         end % ineligibleepochsets
 
         function [cost,mapping] = apply(ndi_syncrule_obj, epochnode_a, epochnode_b)
@@ -165,8 +165,8 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % See also: ndi.epoch.epochset/EPOCHNODES
             %
-                cost = [];
-                mapping = [];
+            cost = [];
+            mapping = [];
         end % apply
 
         %% functions that override ndi.documentservice
@@ -178,11 +178,11 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.time.syncrule object.
-                ndi_document_obj = ndi.document('syncrule',...
-                    'syncrule.ndi_syncrule_class',class(ndi_syncrule_obj),...
-                    'base.id', ndi_syncrule_obj.id(),...
-                    'base.session_id',ndi.session.empty_id(),...
-                    'syncrule.parameters', ndi_syncrule_obj.parameters);
+            ndi_document_obj = ndi.document('syncrule',...
+                'syncrule.ndi_syncrule_class',class(ndi_syncrule_obj),...
+                'base.id', ndi_syncrule_obj.id(),...
+                'base.session_id',ndi.session.empty_id(),...
+                'syncrule.parameters', ndi_syncrule_obj.parameters);
         end; % newdocument()
 
         function sq = searchquery(ndi_syncrule_obj)
@@ -192,7 +192,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
             %
             % Creates a search query for the ndi.time.syncgraph object.
             %
-                sq = ndi.query({'base.id', ndi_syncrule_obj.id() });
+            sq = ndi.query({'base.id', ndi_syncrule_obj.id() });
         end; % searchquery()
 
     end % methods

@@ -1,10 +1,10 @@
 classdef ProbeTest <  matlab.unittest.TestCase
-% ProbeTest - Unit test for testing the openMINDS tutorials.
+    % ProbeTest - Unit test for testing the openMINDS tutorials.
 
     properties
         ProbeMap = ndi.probe.fun.getProbeTypeMap()
     end
-    
+
     properties (TestParameter)
         % pass?
     end
@@ -26,7 +26,7 @@ classdef ProbeTest <  matlab.unittest.TestCase
             % Pass. No method setup routines needed
         end
     end
-    
+
     methods (Test)
         function testInitProbeTypeMap(testCase)
             probeTypeMap = ndi.probe.fun.initProbeTypeMap();

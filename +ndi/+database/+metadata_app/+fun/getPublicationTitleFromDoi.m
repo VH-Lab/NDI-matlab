@@ -10,7 +10,7 @@ function [publicationTitle, doi] = getPublicationTitleFromDoi(doi)
 
     % Search pubmed for the given DOI
     searchUrl = sprintf("esearch.fcgi?db=pubmed&term=%s", doi);
-    
+
     xmlResponse = webread(BASE_URL + searchUrl);
     searchResult = xml2struct(xmlResponse); % Local function
 
@@ -19,14 +19,14 @@ function [publicationTitle, doi] = getPublicationTitleFromDoi(doi)
     end
 
     % Make sure we got exactly one result it and retrieve it
-    assert( numel(searchResult.IdList)==1, 'Expected exactly one match for a valid DOI') 
-    
+    assert( numel(searchResult.IdList)==1, 'Expected exactly one match for a valid DOI')
+
     searchResultId = searchResult.IdList.Id;
 
     % Download the document associated with the result ID
     downloadUrl = sprintf("esummary.fcgi?db=pubmed&id=%d", searchResultId);
     xmlResponse = webread(BASE_URL + downloadUrl);
-    
+
     % Read the publication title from the document result
     documentResult = xml2struct(xmlResponse);
     isTitleItem = strcmp( [documentResult.DocSum.Item.NameAttribute], "Title" );
@@ -44,11 +44,11 @@ function S = xml2struct(xmlString)
 
     % Save to temp xml
     tempPath = [tempname, '.xml'];
-    
+
     fid = fopen(tempPath, 'w');
     fwrite(fid, xmlString);
     fclose(fid);
-    
+
     % Read search result
     S = readstruct(tempPath);
     if isfile(tempPath)
@@ -59,7 +59,7 @@ end
 function mustBeValidDoi(doi)
     pattern = '10.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+';
     assert( ~isempty(regexp(doi, pattern, 'once')), ...
-        'The doi "%s" does not appear to be valid', doi ) 
+        'The doi "%s" does not appear to be valid', doi )
 end
 
 function doi = cleanDoi(doi)

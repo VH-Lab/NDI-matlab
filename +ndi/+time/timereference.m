@@ -1,7 +1,7 @@
 classdef timereference
-% NDI.TIME.TIMEREFERENCE - a class for specifying time relative to an NDI_CLOCK
-% 
-% 
+    % NDI.TIME.TIMEREFERENCE - a class for specifying time relative to an NDI_CLOCK
+    %
+    %
     properties (SetAccess=protected, GetAccess=public)
         referent % the ndi.daq.system, ndi.probe.*,... that is referred to (must be a subclass of ndi.epoch.epochset)
         clocktype % the ndi.time.clocktype: can be 'utc', 'exp_global_time', 'dev_global_time', or 'dev_local_time'
@@ -17,7 +17,7 @@ classdef timereference
             % OBJ = NDI.TIME.TIMEREFERENCE(REFERENT, CLOCKTYPE, EPOCH, TIME)
             %
             % Creates a new ndi.time.timereference object. The REFERENT, EPOCH, and TIME must
-            % specify a unique time. 
+            % specify a unique time.
             %
             % REFERENT is any subclass of ndi.epoch.epochset object that has a 'session' property
             %   (e.g., ndi.daq.system, ndi.element, etc...).
@@ -35,57 +35,57 @@ classdef timereference
             % be searched to find the live REFERENT to create OBJ.
             %
 
-                struct_option = 0;
+            struct_option = 0;
 
-                if nargin==2 & isstruct(clocktype),
-                    struct_option = 1;
-                    session = referent; % 1st argument
-                    session_ID = session.id();
-                    timeref_struct = clocktype; % 2nd argument
-                    % THINK: does this need to change for situations involving multiple sessions?
-                    referent = session.findexpobj(timeref_struct.referent_epochsetname,timeref_struct.referent_classname);
-                    clocktype = ndi.time.clocktype(timeref_struct.clocktypestring);
-                    epoch = timeref_struct.epoch;
-                    time = timeref_struct.time;
-                end;
+            if nargin==2 & isstruct(clocktype),
+                struct_option = 1;
+                session = referent; % 1st argument
+                session_ID = session.id();
+                timeref_struct = clocktype; % 2nd argument
+                % THINK: does this need to change for situations involving multiple sessions?
+                referent = session.findexpobj(timeref_struct.referent_epochsetname,timeref_struct.referent_classname);
+                clocktype = ndi.time.clocktype(timeref_struct.clocktypestring);
+                epoch = timeref_struct.epoch;
+                time = timeref_struct.time;
+            end;
 
-                if ~( isa(referent,'ndi.epoch.epochset') ), 
-                     error(['referent must be a subclass of ndi.epoch.epochset.']);
-                else,
-                    if isprop(referent,'session') | ismethod(referent,'session'),
-                        if ~isa(referent.session,'ndi.session'),
-                            error(['The referent must have an ndi.session with a valid id.']);
-                        else,
-                            session_ID = referent.session.id(); % TODO: this doesn't explicitly check out from types
-                        end;
+            if ~( isa(referent,'ndi.epoch.epochset') ),
+                error(['referent must be a subclass of ndi.epoch.epochset.']);
+            else,
+                if isprop(referent,'session') | ismethod(referent,'session'),
+                    if ~isa(referent.session,'ndi.session'),
+                        error(['The referent must have an ndi.session with a valid id.']);
                     else,
-                        error(['The referent must have a session with a valid id.']);
+                        session_ID = referent.session.id(); % TODO: this doesn't explicitly check out from types
                     end;
+                else,
+                    error(['The referent must have a session with a valid id.']);
+                end;
+            end
+
+            if ~isa(clocktype,'ndi.time.clocktype'),
+                error(['clocktype must be a member or subclass of ndi.time.clocktype.']);
+            end
+
+            if nargin<3 & ~struct_option,
+                epoch = [];
+            end;
+
+            if nargin<4 & ~struct_option,
+                time = [];
+            end;
+
+            if clocktype.needsepoch(),
+                if isempty(epoch),
+                    error(['time is local; an EPOCH must be specified.']);
                 end
+            end;
 
-                if ~isa(clocktype,'ndi.time.clocktype'),
-                    error(['clocktype must be a member or subclass of ndi.time.clocktype.']);
-                end
-
-                if nargin<3 & ~struct_option,
-                    epoch = [];
-                end;
-
-                if nargin<4 & ~struct_option,
-                    time = [];
-                end;
-
-                if clocktype.needsepoch(),
-                    if isempty(epoch),
-                        error(['time is local; an EPOCH must be specified.']);
-                    end
-                end;
-
-                obj.referent = referent;
-                obj.session_ID = session_ID;
-                obj.clocktype = clocktype;
-                obj.epoch = epoch;
-                obj.time = time;
+            obj.referent = referent;
+            obj.session_ID = session_ID;
+            obj.clocktype = clocktype;
+            obj.epoch = epoch;
+            obj.time = time;
         end % ndi_time_reference
 
         function a = ndi_timereference_struct(ndi_timeref_obj)
@@ -102,13 +102,13 @@ classdef timereference
             % epoch                          | The epoch (either a string or a number)
             % session_ID                     | The session ID of the session that contains the epoch
             % time                           | The time
-            % 
-                a.referent_epochsetname = ndi_timeref_obj.referent.epochsetname();
-                a.referent_classname = class(ndi_timeref_obj.referent);
-                a.clocktypestring = ndi_timeref_obj.clocktype.ndi_clocktype2char();
-                a.epoch = ndi_timeref_obj.epoch;
-                a.session_ID = ndi_timeref_obj.session_ID;
-                a.time = ndi_timeref_obj.time;
+            %
+            a.referent_epochsetname = ndi_timeref_obj.referent.epochsetname();
+            a.referent_classname = class(ndi_timeref_obj.referent);
+            a.clocktypestring = ndi_timeref_obj.clocktype.ndi_clocktype2char();
+            a.epoch = ndi_timeref_obj.epoch;
+            a.session_ID = ndi_timeref_obj.session_ID;
+            a.time = ndi_timeref_obj.time;
         end % ndi_timereference_struct
 
     end % methods

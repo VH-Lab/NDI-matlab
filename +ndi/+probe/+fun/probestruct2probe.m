@@ -1,13 +1,13 @@
 function ndi_probe_obj = probestruct2probe(probestruct, exp)
-% NDI.PROBE.FUN.PROBESTRUCT2PROBE - Convert probe structures to NDI_PROBE objects
-%
-% NDI_PROBE_OBJ = ndi.probe.fun.probestruct2probe(PROBESTRUCT, EXP)
-%
-% Given an array of structures PROBESTRUCT with field 
-% 'name', 'reference', and 'type', and an ndi.session EXP,
-% this function generates the appropriate subclass of ndi.probe for
-% dealing with the PROBE and returns the objects in a cell array NDI_PROBE_OBJ.
-%
+    % NDI.PROBE.FUN.PROBESTRUCT2PROBE - Convert probe structures to NDI_PROBE objects
+    %
+    % NDI_PROBE_OBJ = ndi.probe.fun.probestruct2probe(PROBESTRUCT, EXP)
+    %
+    % Given an array of structures PROBESTRUCT with field
+    % 'name', 'reference', and 'type', and an ndi.session EXP,
+    % this function generates the appropriate subclass of ndi.probe for
+    % dealing with the PROBE and returns the objects in a cell array NDI_PROBE_OBJ.
+    %
 
     arguments
         probestruct (1,:) struct
@@ -15,7 +15,7 @@ function ndi_probe_obj = probestruct2probe(probestruct, exp)
     end
 
     probeTypeMap = ndi.probe.fun.getProbeTypeMap();
-    
+
     ndi_probe_obj = cell(1, numel(probestruct));
     for i = 1:numel(probestruct)
         if ~isKey(probeTypeMap, probestruct(i).type)
@@ -33,6 +33,6 @@ function throwProbeTypeNotFoundError(probeType)
     end
 
     error('NDI:Probe:ProbeTypeNotFound', ...
-          'Could not find exact match for "%s" in probe type map.', ...
-          probeType);
+        'Could not find exact match for "%s" in probe type map.', ...
+        probeType);
 end

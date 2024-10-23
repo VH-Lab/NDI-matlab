@@ -1,7 +1,7 @@
 classdef ingestion_help
-% A class that provides helper methods for ingesting raw data files into the database
-% 
-% 
+    % A class that provides helper methods for ingesting raw data files into the database
+    %
+    %
     methods
         function obj = ingestion_help()
             % INGESTION_HELP - helper class with methods to help ingest raw data files
@@ -21,7 +21,7 @@ classdef ingestion_help
             % data).
             %
             % For the base class, this simply returns empty.
-                cname = '';
+            cname = '';
         end; % ingestion_class()
 
         function [docs_out, doc_ids_remove] = ingest(ingestion_help_obj)
@@ -38,8 +38,8 @@ classdef ingestion_help
             %
             % In the abstract class, an empty cell array is returned for all outputs.
             %
-                docs_out = {};
-                doc_ids_remove = {};
+            docs_out = {};
+            doc_ids_remove = {};
         end; % ingest()
 
     end; % methods

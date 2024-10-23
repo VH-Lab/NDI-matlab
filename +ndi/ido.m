@@ -3,7 +3,7 @@ classdef ido < did.ido
     %
     % This class creates and retrieves unique identifiers.  The identifier is a hexidecimal string
     %  based on both the current date/time and a random number. When identifiers are sorted in
-    %  alphabetical order, they are also sorted in the order of fime of creation. 
+    %  alphabetical order, they are also sorted in the order of fime of creation.
     %
     % **Example**:
     %   i = ndi.ido();

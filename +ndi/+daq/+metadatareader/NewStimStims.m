@@ -1,7 +1,7 @@
 classdef NewStimStims < ndi.daq.metadatareader
-% NDI_DAQMETADATAREADER_NEWSTIMSTIMS - a class for reading NewStim metadata 
-%
-% 
+    % NDI_DAQMETADATAREADER_NEWSTIMSTIMS - a class for reading NewStim metadata
+    %
+    %
 
     properties (GetAccess=public, SetAccess=protected)
     end;
@@ -21,7 +21,7 @@ classdef NewStimStims < ndi.daq.metadatareader
             %  is given, it indicates a regular expression to use to search EPOCHFILES
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
-                obj = obj@ndi.daq.metadatareader(varargin{:});
+            obj = obj@ndi.daq.metadatareader(varargin{:});
         end; % ndi_daqmetadatareader_NewStimStim
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)
@@ -31,11 +31,11 @@ classdef NewStimStims < ndi.daq.metadatareader
             %
             % Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.NewStimStims
             % document, this function loads in the metadata.
-                [parentdir,filename,ext] = fileparts(file);
-                [ss,mti]=getstimscript(parentdir);
-                for i=1:numStims(ss),
-                    parameters{i} = getparameters(get(ss,i));
-                end;
+            [parentdir,filename,ext] = fileparts(file);
+            [ss,mti]=getstimscript(parentdir);
+            for i=1:numStims(ss),
+                parameters{i} = getparameters(get(ss,i));
+            end;
         end; % readmetadatafromfile()
 
     end; % methods

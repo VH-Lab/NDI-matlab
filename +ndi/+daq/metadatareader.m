@@ -1,12 +1,12 @@
 classdef metadatareader < ndi.ido & ndi.documentservice
-% NDI.DAQ.METADATAREADER.BASE - a class for reading metadata related to data acquisition, such as stimulus parameter information
-%
-% 
+    % NDI.DAQ.METADATAREADER.BASE - a class for reading metadata related to data acquisition, such as stimulus parameter information
+    %
+    %
 
     properties (GetAccess=public, SetAccess=protected)
         tab_separated_file_parameter   % regular expression to search within epochfiles for a
-                                       %   tab-separated-value file that describes stimulus
-                                       %   parameters
+        %   tab-separated-value file that describes stimulus
+        %   parameters
     end;
     properties (Access=private)
     end;
@@ -24,19 +24,19 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %  is given, it indicates a regular expression to use to search EPOCHFILES
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
-                tsv_p = '';
-                if nargin==1,
-                    tsv_p = varargin{1};
-                    varargin = {};
-                end;
+            tsv_p = '';
+            if nargin==1,
+                tsv_p = varargin{1};
+                varargin = {};
+            end;
 
-                if (nargin==2) & (isa(varargin{1},'ndi.session')) & (isa(varargin{2},'ndi.document')),
-                                    obj.identifier = varargin{2}.document_properties.base.id;
-                    if isfield(varargin{2}.document_properties,'daqmetadatareader'),
-                        tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
-                    end;
+            if (nargin==2) & (isa(varargin{1},'ndi.session')) & (isa(varargin{2},'ndi.document')),
+                obj.identifier = varargin{2}.document_properties.base.id;
+                if isfield(varargin{2}.document_properties,'daqmetadatareader'),
+                    tsv_p = varargin{2}.document_properties.daqmetadatareader.tab_separated_file_parameter;
                 end;
-                obj.tab_separated_file_parameter = tsv_p;
+            end;
+            obj.tab_separated_file_parameter = tsv_p;
         end; % ndi.daq.metadatareader
 
         function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
@@ -63,28 +63,28 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % This function can be overridden in more specialized stimulus classes.
             %
-                parameters = {};
-                if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter),
-                    tf = regexpi(epochfiles, ...
-                        ndi_daqmetadatareader_obj.tab_separated_file_parameter,...
-                        'forceCellOutput');
-                    tf = find(~cellfun(@isempty,tf));
-                    if numel(tf)>1,
-                        error(['More than one epochfile matches regular expression ' ...
-                            ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
-                            '; epochfiles were ' epochfiles{:} '.']);
-                    elseif numel(tf)==0,
-                        error(['No epochfiles match regular expression ' ...
-                            ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
-                            '; epochfiles were ' epochfiles{:} '.']);
+            parameters = {};
+            if ~isempty(ndi_daqmetadatareader_obj.tab_separated_file_parameter),
+                tf = regexpi(epochfiles, ...
+                    ndi_daqmetadatareader_obj.tab_separated_file_parameter,...
+                    'forceCellOutput');
+                tf = find(~cellfun(@isempty,tf));
+                if numel(tf)>1,
+                    error(['More than one epochfile matches regular expression ' ...
+                        ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
+                        '; epochfiles were ' epochfiles{:} '.']);
+                elseif numel(tf)==0,
+                    error(['No epochfiles match regular expression ' ...
+                        ndi_daqmetadatareader_obj.tab_separated_file_parameter ...
+                        '; epochfiles were ' epochfiles{:} '.']);
 
-                    else,
-                        if ~isfile(epochfiles{tf}),
-                            error(['No such file ' file '.']);
-                        end;
-                        parameters = ndi_daqmetadatareader_obj.readmetadatafromfile(epochfiles{tf});
+                else,
+                    if ~isfile(epochfiles{tf}),
+                        error(['No such file ' file '.']);
                     end;
+                    parameters = ndi_daqmetadatareader_obj.readmetadatafromfile(epochfiles{tf});
                 end;
+            end;
         end; % readmetadata()
 
         function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles, S)
@@ -94,13 +94,13 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             % stimulus or stimuli that were prepared to be presented in epoch with file list EPOCHFILES.
             % S is the ndi.session object associated with the data.
             %
-                parameters = {};
-                d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
-                if ~isempty(d),
-                    [tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,'data.bin','.nbf.tgz');
-                    parameters = ndi.compress.expand_metadata(tname_without_ext);
-                    delete(tname);
-                end;
+            parameters = {};
+            d = ndi_daqmetadatareader_obj.get_ingested_document(epochfiles,S);
+            if ~isempty(d),
+                [tname,tname_without_ext] = ndi.database.fun.copydocfile2temp(d,S,'data.bin','.nbf.tgz');
+                parameters = ndi.compress.expand_metadata(tname_without_ext);
+                delete(tname);
+            end;
         end; % readmetadata_ingested()
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
@@ -110,11 +110,11 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % Given a file that matches the metadata search criteria for an ndi.daq.metadatareader
             % document, this function loads in the metadata.
-                parameters = {};
-                stimparameters = vlt.file.loadStructArray(file);
-                for i=1:numel(stimparameters),
-                    parameters{i} = stimparameters(i);
-                end;
+            parameters = {};
+            stimparameters = vlt.file.loadStructArray(file);
+            for i=1:numel(stimparameters),
+                parameters{i} = stimparameters(i);
+            end;
         end;  % readmetadata
 
         function d = ingest_epochfiles(ndi_daqmetadatareader_obj, epochfiles, epoch_id)
@@ -125,18 +125,18 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             % Creates an ndi.document of type 'daqmetadatareader_epochdata_ingested' that contains the data
             % for an ndi.daq.metadatareaderobject. The document D is not added to any database.
             %
-                epochid_struct.epochid = epoch_id;
+            epochid_struct.epochid = epoch_id;
 
-                d = ndi.document('daqmetadatareader_epochdata_ingested','epochid',epochid_struct);
-                d = d.set_dependency_value('daqmetadatareader_id',ndi_daqmetadatareader_obj.id());
-                
-                filenames_we_made = {};
+            d = ndi.document('daqmetadatareader_epochdata_ingested','epochid',epochid_struct);
+            d = d.set_dependency_value('daqmetadatareader_id',ndi_daqmetadatareader_obj.id());
 
-                parameters = ndi_daqmetadatareader_obj.readmetadata(epochfiles);
-                metadatafile = ndi.file.temp_name();
-                [ratio] = ndi.compress.compress_metadata(parameters,metadatafile);
-                d = d.add_file('data.bin',[metadatafile '.nbf.tgz']);
-                filenames_we_made = {metadatafile};
+            filenames_we_made = {};
+
+            parameters = ndi_daqmetadatareader_obj.readmetadata(epochfiles);
+            metadatafile = ndi.file.temp_name();
+            [ratio] = ndi.compress.compress_metadata(parameters,metadatafile);
+            d = d.add_file('data.bin',[metadatafile '.nbf.tgz']);
+            filenames_we_made = {metadatafile};
 
         end;
 
@@ -148,18 +148,18 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             % Returns empty if there is no such document or the single docment if
             % there is such a document.
             %
-                d = [];
-                epochid = [];
+            d = [];
+            epochid = [];
 
-                try,
-                    epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-                end;
-                q = ndi.query('','depends_on','daqmetadatareader_id',ndi_daqmetadatareader_obj.id()) & ...
-                    ndi.query('epochid.epochid','exact_string',epochid);
-                d = S.database_search(q);
-                if numel(d)==1,
-                    d = d{1};
-                end;
+            try,
+                epochid = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
+            end;
+            q = ndi.query('','depends_on','daqmetadatareader_id',ndi_daqmetadatareader_obj.id()) & ...
+                ndi.query('epochid.epochid','exact_string',epochid);
+            d = S.database_search(q);
+            if numel(d)==1,
+                d = d{1};
+            end;
         end; % get_ingested_document()
 
         function tf = eq(ndi_daqmetadatareader_obj_a, ndi_daqmetadatareader_obj_b)
@@ -169,10 +169,10 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % TF is 1 if the two objects are of the same class and have the same properties.
             % TF is 0 otherwise.
-                tf = 0;
-                if strcmp(class(ndi_daqmetadatareader_obj_a),class(ndi_daqmetadatareader_obj_b)),
-                    tf = vlt.data.eqlen(properties(ndi_daqmetadatareader_obj_a),properties(ndi_daqmetadatareader_obj_b));
-                end;
+            tf = 0;
+            if strcmp(class(ndi_daqmetadatareader_obj_a),class(ndi_daqmetadatareader_obj_b)),
+                tf = vlt.data.eqlen(properties(ndi_daqmetadatareader_obj_a),properties(ndi_daqmetadatareader_obj_b));
+            end;
         end; % eq()
 
         % documentservices overriden methods
@@ -184,11 +184,11 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % Creates an ndi.document object DOC that represents the
             %    ndi.daq.reader object.
-                ndi_document_obj = ndi.document('daqmetadatareader',...
-                    'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
-                    'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
-                    'base.id', ndi_daqmetadatareader_obj.id(),...
-                    'base.session_id',ndi.session.empty_id());
+            ndi_document_obj = ndi.document('daqmetadatareader',...
+                'daqmetadatareader.ndi_daqmetadatareader_class',class(ndi_daqmetadatareader_obj),...
+                'daqmetadatareader.tab_separated_file_parameter', ndi_daqmetadatareader_obj.tab_separated_file_parameter, ...
+                'base.id', ndi_daqmetadatareader_obj.id(),...
+                'base.session_id',ndi.session.empty_id());
         end; % newdocument()
 
         function sq = searchquery(ndi_daqmetadatareader_obj)
@@ -198,7 +198,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % Creates a search query for the ndi.daq.metadatareader object.
             %
-                sq = ndi.query('base.id','exact_string',ndi_daqmetadatareader_obj.id(),'');
+            sq = ndi.query('base.id','exact_string',ndi_daqmetadatareader_obj.id(),'');
         end; % searchquery()
 
     end; % methods

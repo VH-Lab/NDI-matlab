@@ -8,37 +8,37 @@
 
 classdef blackrock < ndi.daq.reader.mfdaq
     properties
-        
+
 
     end % properties
 
     methods
         function obj = blackrock(varargin)
-        % ndi.daq.reader.mfdaq.blackrock - Create a new NDI_DEVICE_MFDAQ_BLACKROCK object
-        %
-        %  D = ndi.daq.reader.mfdaq.blackrock()
-        %
-        %  Creates a new ndi.daq.reader.mfdaq.blackrock object 
-        %
+            % ndi.daq.reader.mfdaq.blackrock - Create a new NDI_DEVICE_MFDAQ_BLACKROCK object
+            %
+            %  D = ndi.daq.reader.mfdaq.blackrock()
+            %
+            %  Creates a new ndi.daq.reader.mfdaq.blackrock object
+            %
             obj = obj@ndi.daq.reader.mfdaq(varargin{:})
         end
 
         function channels = getchannelsepoch(ndi_daqreader_mfdaq_blackrock_obj, epochfiles)
-        % GETCHANNELSEPOCH - List the channels that are available on this Blackrock device for a given set of files
-        %
-        %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES)
-        %
-        %  Returns the channel list of acquired channels in this session
-        %
-        % CHANNELS is a structure list of all channels with fields:
-        % -------------------------------------------------------
-        % 'name'             | The name of the channel (e.g., 'ai1')
-        % 'type'             | The type of data stored in the channel
-        %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
-        %
+            % GETCHANNELSEPOCH - List the channels that are available on this Blackrock device for a given set of files
+            %
+            %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES)
+            %
+            %  Returns the channel list of acquired channels in this session
+            %
+            % CHANNELS is a structure list of all channels with fields:
+            % -------------------------------------------------------
+            % 'name'             | The name of the channel (e.g., 'ai1')
+            % 'type'             | The type of data stored in the channel
+            %                    |    (e.g., 'analogin', 'digitalin', 'image', 'timestamp')
+            %
 
             [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles);
-                % to do: need to search nev file
+            % to do: need to search nev file
             channels = vlt.data.emptystruct('name','type');
             for i=1:numel(ns_h.MetaTags.ChannelID),
                 newchannel.type = 'analog_in';
@@ -57,24 +57,24 @@ classdef blackrock < ndi.daq.reader.mfdaq
             % with epoch files EPOCHFILES.
             %
             % See also: ndi.daq.reader, NDI_EPOCHPROBEMAP_DAQREADER
-                b = 1;
-                msg = '';
-                % UPDATE NEEDED
+            b = 1;
+            msg = '';
+            % UPDATE NEEDED
         end
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_blackrock_obj, channeltype, channel, epochfiles, s0, s1)
-        %  FUNCTION READ_CHANNELS - read the data based on specified channels
-        %
-        %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
-        %
-        %  CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
-        %
-        %  CHANNEL is a vector of the channel numbers to read, beginning from 1
-        %
-        %  EPOCH is set of epoch files
-        %
-        %  DATA is the channel data (each column contains data from an indvidual channel) 
-        %
+            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            %
+            %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
+            %
+            %  CHANNELTYPE is the type of channel to read (cell array of strings, one per channel)
+            %
+            %  CHANNEL is a vector of the channel numbers to read, beginning from 1
+            %
+            %  EPOCH is set of epoch files
+            %
+            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %
             [nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
 
             [ns_h,nev_h,headers] = ndi_daqreader_mfdaq_blackrock_obj.read_blackrock_headers(epochfiles);
@@ -86,7 +86,7 @@ classdef blackrock < ndi.daq.reader.mfdaq
 
             data = [];
 
-            if s0 < 1, 
+            if s0 < 1,
                 s0 = 1; % in Blackrock, the first sample is always 1
             elseif s0 > ns_h.MetaTags.DataPoints,
                 s0 = ns_h.MetaTags.DataPoints;
@@ -128,18 +128,18 @@ classdef blackrock < ndi.daq.reader.mfdaq
             %
             % SR is the list of sample rate from specified channels
             %
-                sr = [];
+            sr = [];
 
-                [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channel);
-                
-                for i=1:numel(channel),
-                    ct = vlt.data.celloritem(channeltype,i);
-                    if strcmpi(ct,'ai') | strcmpi(ct,'time'),
-                        sr(i) = ns_h.MetaTags.SamplingFreq;
-                    else,
-                        error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
-                    end;
+            [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channel);
+
+            for i=1:numel(channel),
+                ct = vlt.data.celloritem(channeltype,i);
+                if strcmpi(ct,'ai') | strcmpi(ct,'time'),
+                    sr(i) = ns_h.MetaTags.SamplingFreq;
+                else,
+                    error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
                 end;
+            end;
         end % samplerate()
 
         function [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles, channeltype, channels)
@@ -147,43 +147,43 @@ classdef blackrock < ndi.daq.reader.mfdaq
             %
             % [NS_H, NEV_H, HEADERS] = READ_BLACKROCK_HEADERS(NDI_DAQREADER_MFDAQ_BLACKROCK_OBJ, EPOCHFILES, [CHANNELTYPE, CHANNELS])
             %
-                [nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
-                if ~isempty(nsv_files{1}),
-                    ns_h = openNSx(nsv_files{1},'noread');
-                else,
-                    ns_h = [];
-                end;
-                if ~isempty(nev_files{1}),
-                    nev_h = openNEV(nev_files{1},'noread');
-                    nev_h = [];
-                end;
+            [nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
+            if ~isempty(nsv_files{1}),
+                ns_h = openNSx(nsv_files{1},'noread');
+            else,
+                ns_h = [];
+            end;
+            if ~isempty(nev_files{1}),
+                nev_h = openNEV(nev_files{1},'noread');
+                nev_h = [];
+            end;
 
-                headers.ns_rate = [];
-                if ~isempty(ns_h),
-                    headers.ns_rate = ns_h.MetaTags.SamplingFreq;
-                end;
-                headers.requestedchanneltype = [];
-                headers.requestedchannelindexes= []; 
+            headers.ns_rate = [];
+            if ~isempty(ns_h),
+                headers.ns_rate = ns_h.MetaTags.SamplingFreq;
+            end;
+            headers.requestedchanneltype = [];
+            headers.requestedchannelindexes= [];
 
-                if nargin>=3,
-                    for i=1:numel(channels),
-                        ct = vlt.data.celloritem(channeltype,i);
-                        if strcmpi(ct,'ai'),
-                            if isempty(ns_h),
-                                error(['ai channels in Blackrock must be stored in .ns# files, but there is none.']);
-                            end;
-                            index = find(ns_h.MetaTags.ChannelID==channels(i));
-                            if isempty(index),
-                                error(['Channel ' int2str(channels(i)) ' not recorded.']);
-                            else,
-                                headers.requestedchannelindexes(i) = index;
-                                headers.requestedchanneltype(i) = 1; % ns==1, nev==2
-                            end;
-                        else,
-                            error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
+            if nargin>=3,
+                for i=1:numel(channels),
+                    ct = vlt.data.celloritem(channeltype,i);
+                    if strcmpi(ct,'ai'),
+                        if isempty(ns_h),
+                            error(['ai channels in Blackrock must be stored in .ns# files, but there is none.']);
                         end;
+                        index = find(ns_h.MetaTags.ChannelID==channels(i));
+                        if isempty(index),
+                            error(['Channel ' int2str(channels(i)) ' not recorded.']);
+                        else,
+                            headers.requestedchannelindexes(i) = index;
+                            headers.requestedchanneltype(i) = 1; % ns==1, nev==2
+                        end;
+                    else,
+                        error(['At present, do not know how to handle Blackrock Micro channels of type ' ct '.']);
                     end;
                 end;
+            end;
         end; % read_blackrock_headers()
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_blackrock_obj, epochfiles)
@@ -198,11 +198,11 @@ classdef blackrock < ndi.daq.reader.mfdaq
             %
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
-                [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles); 
-                        % need to convert from duration of whole recording to time labels of the first and last sample
-                        % time of last sample = duration - 1/samplingfreq 
-                t0t1 = {[ns_h.MetaTags.Timestamp + [0 ns_h.MetaTags.DataDurationSec-1/ns_h.MetaTags.SamplingFreq]]};
-                    % developer note: in the Blackrock acquisition software, one can define a time offset; right now we aren't considering that
+            [ns_h,nev_h,headers] = read_blackrock_headers(ndi_daqreader_mfdaq_blackrock_obj, epochfiles);
+            % need to convert from duration of whole recording to time labels of the first and last sample
+            % time of last sample = duration - 1/samplingfreq
+            t0t1 = {[ns_h.MetaTags.Timestamp + [0 ns_h.MetaTags.DataDurationSec-1/ns_h.MetaTags.SamplingFreq]]};
+            % developer note: in the Blackrock acquisition software, one can define a time offset; right now we aren't considering that
         end % t0t1
 
     end % methods
@@ -211,28 +211,28 @@ classdef blackrock < ndi.daq.reader.mfdaq
 
         function [nevfiles, nsvfiles] = filenamefromepochfiles(filename_array)
             % FILENAMEFROMEPOCHFILES - return the file name that corresponds to the NEV/NSV files
-            % 
+            %
             % [NEVFILES, NSVFILES] = FILENAMEFROMEPOCHFILES(FILENAME_ARRAY)
             %
             % Examines the list of filenames in FILENAME_ARRAY (cell array of full path file strings) and determines which
             % ones have the extension '.nev' (neuro event file) and which have the extension '.ns#', where # is a number, or the source
-            % data files. 
+            % data files.
             %
-                sv = ['.*\.ns\d\>']; 
-                tf_sv = vlt.string.strcmp_substitution(sv,filename_array,'UseSubstituteString',0);
-                nsvfiles = filename_array(find(tf_sv));
+            sv = ['.*\.ns\d\>'];
+            tf_sv = vlt.string.strcmp_substitution(sv,filename_array,'UseSubstituteString',0);
+            nsvfiles = filename_array(find(tf_sv));
 
-                ne_search = ['.*\.nev\>']; 
-                tf_ne = vlt.string.strcmp_substitution(ne_search,filename_array,'UseSubstituteString',0);
-                nevfiles = filename_array(find(tf_ne));
+            ne_search = ['.*\.nev\>'];
+            tf_ne = vlt.string.strcmp_substitution(ne_search,filename_array,'UseSubstituteString',0);
+            nevfiles = filename_array(find(tf_ne));
 
-                if numel(nsvfiles)+numel(nevfiles) == 0,
-                    error(['No .ns# or .nev files found.']);
-                end;
+            if numel(nsvfiles)+numel(nevfiles) == 0,
+                error(['No .ns# or .nev files found.']);
+            end;
 
-                if numel(nsvfiles)>1,
-                    error(['More than 1 NS# file in this file list; do not know what to do.']);
-                end;
+            if numel(nsvfiles)>1,
+                error(['More than 1 NS# file in this file list; do not know what to do.']);
+            end;
         end % filenamefromepoch
 
     end % methods (Static)

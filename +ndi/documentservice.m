@@ -1,6 +1,6 @@
 classdef documentservice
-% ndi.documentservice - a class of methods that allows objects to interact with ndi.document objects
-%
+    % ndi.documentservice - a class of methods that allows objects to interact with ndi.document objects
+    %
     properties (SetAccess=protected, GetAccess=public)
 
     end; % properties
@@ -11,7 +11,7 @@ classdef documentservice
             %
             % NDI_DOCUMENTSERVICE_OBJ = ndi.documentservice();
             %
-                
+
         end; % ndi.documentservice()
 
         function ndi_document_obj = newdocument(ndi_documentservice_obj)
@@ -23,7 +23,7 @@ classdef documentservice
             %
             % The base ndi.documentservice class returns empty.
             %
-                ndi_document_obj = [];
+            ndi_document_obj = [];
         end; % newdocument
 
         function sq = searchquery(ndi_documentservice_obj)
@@ -35,9 +35,9 @@ classdef documentservice
             % ndi.document.
             %
             % The base class ndi.documentservice just returns empty.
-                sq = [];
+            sq = [];
         end; % searchquery
-    end; 
+    end;
 end
 
 

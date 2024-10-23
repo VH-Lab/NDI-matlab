@@ -1,10 +1,10 @@
 classdef commontriggers < ndi.time.syncrule
 
-        properties (SetAccess=protected,GetAccess=public),
-        end % properties
-        properties (SetAccess=protected,GetAccess=protected)
-        end % properties
-        methods
+    properties (SetAccess=protected,GetAccess=public),
+    end % properties
+    properties (SetAccess=protected,GetAccess=protected)
+    end % properties
+    methods
         function ndi_syncrule_commontriggers_obj = commontriggers(varargin)
             % NDI_SYNCRULE_COMMONTRIGGERS_OBJ - create a new ndi.time.syncrule.commontriggers for managing synchronization
             %
@@ -24,12 +24,12 @@ classdef commontriggers < ndi.time.syncrule
             % channel_daq2                 | The channel on the second daq system
             % number_fullpath_matches      | Number fullpath file matches that need to be true to check channels
             %
-                error(['not ready yet.']);
-                if nargin==0,
-                    parameters = struct('number_fullpath_matches', 2);
-                    varargin = {parameters};
-                end
-                ndi_syncrule_commontriggers_obj = ndi_syncrule_commontriggers_obj@ndi.time.syncrule(varargin{:});
+            error(['not ready yet.']);
+            if nargin==0,
+                parameters = struct('number_fullpath_matches', 2);
+                varargin = {parameters};
+            end
+            ndi_syncrule_commontriggers_obj = ndi_syncrule_commontriggers_obj@ndi.time.syncrule(varargin{:});
         end
 
         function [b,msg] = isvalidparameters(ndi_syncrule_commontriggers_obj, parameters)
@@ -45,19 +45,19 @@ classdef commontriggers < ndi.time.syncrule
             % PARAMETERS should be a structure with the following entries:
             % Field (default)              | Description
             % -------------------------------------------------------------------
-            % number_fullpath_matches (2)  | The number of full path matches of the underlying 
+            % number_fullpath_matches (2)  | The number of full path matches of the underlying
             %                              |  filenames that must match in order for the epochs to match.
             %
             % See also: ndi.time.syncrule/SETPARAMETERS
 
-                [b,msg] = vlt.data.hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
-                if b,
-                    if ~isnumeric(parameters.number_fullpath_matches),
-                        b = 0;
-                        msg = 'number_fullpath_matches must be a number.';
-                    end
+            [b,msg] = vlt.data.hasAllFields(parameters,{'number_fullpath_matches'}, {[1 1]});
+            if b,
+                if ~isnumeric(parameters.number_fullpath_matches),
+                    b = 0;
+                    msg = 'number_fullpath_matches must be a number.';
                 end
-                return;
+            end
+            return;
         end % isvalidparameters
 
         function ees = eligibleepochsets(ndi_syncrule_commontriggers_obj)
@@ -75,7 +75,7 @@ classdef commontriggers < ndi.time.syncrule
             % NDI_EPOCHSETS that use the rule must be members or descendents of the classes returned here.
             %
             % See also: ndi.time.syncrule.commontriggers/INELIGIBLEEPOCHSETS
-                ees = {'ndi.daq.system'}; % 
+            ees = {'ndi.daq.system'}; %
         end % eligibleepochsets
 
         function ies = ineligibleepochsets(ndi_syncrule_commontriggers_obj)
@@ -94,8 +94,8 @@ classdef commontriggers < ndi.time.syncrule
             % classes.
             %
             % See also: ndi.time.syncrule.commontriggers/ELIGIBLEEPOCHSETS
-                ies = cat(2,ndi_syncrule_commontriggers_obj.ineligibleepochsets@ndi.time.syncrule(),...
-                    {'ndi.epoch.epochset','ndi.epoch.epochset.param','ndi.file.navigator'}); 
+            ies = cat(2,ndi_syncrule_commontriggers_obj.ineligibleepochsets@ndi.time.syncrule(),...
+                {'ndi.epoch.epochset','ndi.epoch.epochset.param','ndi.file.navigator'});
         end % ineligibleepochsets
 
         function [cost,mapping] = apply(ndi_syncrule_commontriggers_obj, epochnode_a, epochnode_b)
@@ -109,24 +109,24 @@ classdef commontriggers < ndi.time.syncrule
             %
             % Otherwise, COST and MAPPING are empty.
             %
-                cost = [];
-                mapping = [];
+            cost = [];
+            mapping = [];
 
-                % quick content checks
-                eval(['dummy_a = ' epochnode_a.objectclass '();']);
-                eval(['dummy_b = ' epochnode_b.objectclass '();']);
-                if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end;
-                if isempty(epochnode_a.underlying_epochs), return; end; 
-                if isempty(epochnode_b.underlying_epochs), return; end; 
-                if isempty(epochnode_a.underlying_epochs.underlying), return; end; 
-                if isempty(epochnode_b.underlying_epochs.underlying), return; end; 
-                % okay, proceed
+            % quick content checks
+            eval(['dummy_a = ' epochnode_a.objectclass '();']);
+            eval(['dummy_b = ' epochnode_b.objectclass '();']);
+            if ~(isa(dummy_a,'ndi.daq.system')) | ~(isa(dummy_b,'ndi.daq.system')), return; end;
+            if isempty(epochnode_a.underlying_epochs), return; end;
+            if isempty(epochnode_b.underlying_epochs), return; end;
+            if isempty(epochnode_a.underlying_epochs.underlying), return; end;
+            if isempty(epochnode_b.underlying_epochs.underlying), return; end;
+            % okay, proceed
 
-                common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
-                if numel(common)>=ndi_syncrule_commontriggers_obj.parameters.number_fullpath_matches,
-                    cost = 1;
-                    mapping = ndi.time.timemapping([1 0]); % equality
-                end
+            common = intersect(epochnode_a.underlying_epochs.underlying,epochnode_b.underlying_epochs.underlying);
+            if numel(common)>=ndi_syncrule_commontriggers_obj.parameters.number_fullpath_matches,
+                cost = 1;
+                mapping = ndi.time.timemapping([1 0]); % equality
+            end
         end % apply
 
     end % methods

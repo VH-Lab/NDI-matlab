@@ -176,7 +176,7 @@ classdef Subject < handle
         end
         function obj = fromStruct(s)
             obj = ndi.database.metadata_app.class.Subject();
-            props = fieldnames(s); 
+            props = fieldnames(s);
             for i = 1:length(props)
                 propName = props{i};
                 propValue = s.(propName);
@@ -195,6 +195,6 @@ classdef Subject < handle
                 end
             end
         end
-    end    
+    end
 end
 

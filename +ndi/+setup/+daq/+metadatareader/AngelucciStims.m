@@ -1,7 +1,7 @@
 classdef AngelucciStims < ndi.daq.metadatareader
-% NDI_DAQMETADATAREADER_ANGELUCCISTIMS - a class for reading stims from Angelucci lab example data
-%
-% 
+    % NDI_DAQMETADATAREADER_ANGELUCCISTIMS - a class for reading stims from Angelucci lab example data
+    %
+    %
 
     properties (GetAccess=public, SetAccess=protected)
     end;
@@ -21,7 +21,7 @@ classdef AngelucciStims < ndi.daq.metadatareader
             %  is given, it indicates a regular expression to use to search EPOCHFILES
             %  for a tab-separated-value text file that describes stimulus parameters.
             %
-                obj = obj@ndi.daq.metadatareader(varargin{:});
+            obj = obj@ndi.daq.metadatareader(varargin{:});
         end; % ndi.daq.metadatareader.AngelucciStims
 
         function [parameters,stimorder,stimtimes] = readmetadatafromfile(ndi_daqmetadatareader_angelucci_stims_obj, file)
@@ -31,18 +31,18 @@ classdef AngelucciStims < ndi.daq.metadatareader
             %
             % Given a file that matches the metadata search criteria for an NDI_DAQMETADATAREADER_ANGELUCCI_STIMS
             % document, this function loads in the metadata.
-                z = load(file,'-mat');
-                base_parameters = z.stimData;
-                base_parameters.stimParams = rmfield(base_parameters.stimParams,{'stimOrder','Value'});
-                parameters = {};
-                stimorder = z.stimData.stimParams.stimOrder(:);
-                stimtimes = z.stimData.stimTimes(:);
-                for i=1:numel(z.stimData.stimParams.Value), % if stimIDs change, this will use last value
-                    stimid = z.stimData.stimParams.stimOrder(i);
-                    params_here = base_parameters;
-                    params_here.Value = z.stimData.stimParams.Value(i);
-                    parameters{stimid} = params_here;
-                end;
+            z = load(file,'-mat');
+            base_parameters = z.stimData;
+            base_parameters.stimParams = rmfield(base_parameters.stimParams,{'stimOrder','Value'});
+            parameters = {};
+            stimorder = z.stimData.stimParams.stimOrder(:);
+            stimtimes = z.stimData.stimTimes(:);
+            for i=1:numel(z.stimData.stimParams.Value), % if stimIDs change, this will use last value
+                stimid = z.stimData.stimParams.stimOrder(i);
+                params_here = base_parameters;
+                params_here.Value = z.stimData.stimParams.Value(i);
+                parameters{stimid} = params_here;
+            end;
         end; % readmetadatafromfile()
 
     end; % methods

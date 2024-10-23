@@ -1,6 +1,6 @@
 classdef timeseries < ndi.element & ndi.time.timeseries
-% NDI_ELEMENT - define or examine a element in the session
-%
+    % NDI_ELEMENT - define or examine a element in the session
+    %
     properties (SetAccess=protected, GetAccess=public)
 
     end % properties
@@ -20,7 +20,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %  Reads timeseries data from an ndi.element.timeseries object. The DATA and time information T that are
             %  returned depend on the the specific subclass of ndi.element.timeseries that is called (see READTIMESERIESEPOCH).
             %
-            %  In the base class, this function merely calls the element's probe's READTIMESERIES function. 
+            %  In the base class, this function merely calls the element's probe's READTIMESERIES function.
             %  TIMEREF_OR_EPOCH is either an ndi.time.timereference object indicating the time reference for
             %  T0, T1, or it can be a single number, which will indicate the data are to be read from that
             %  epoch.
@@ -28,55 +28,55 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %  DATA is the data for the probe.  T is a time structure, in units of TIMEREF if it is an
             %  ndi.time.timereference object or in units of the epoch if an epoch is passed.  The TIMEREF is returned.
             %
-                if ndi_element_timeseries_obj.direct,
-                    [data,t,timeref] = ndi_element_timeseries_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1);
+            if ndi_element_timeseries_obj.direct,
+                [data,t,timeref] = ndi_element_timeseries_obj.underlying_element.readtimeseries(timeref_or_epoch, t0, t1);
+            else,
+                if isa(timeref_or_epoch,'ndi.time.timereference'),
+                    timeref = timeref_or_epoch;
                 else,
-                    if isa(timeref_or_epoch,'ndi.time.timereference'),
-                        timeref = timeref_or_epoch;
-                    else,
-                        timeref_or_epoch = ndi_element_timeseries_obj.epochid(timeref_or_epoch);
-                        % find the first type of epochclock listed for this epoch
-                        et_entry = ndi_element_timeseries_obj.epochtableentry(timeref_or_epoch);
-                        timeref = ndi.time.timereference(ndi_element_timeseries_obj, ...
-                            et_entry.epoch_clock{1}, timeref_or_epoch, 0);
-                    end;
-
-                    [epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
-                            ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
-                    [epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
-                            ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
-
-                    if isempty(epoch_timeref),
-                        error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
-                    end;
-
-
-                    % now we know the epoch to read, finally!
-
-                    element_doc = ndi_element_timeseries_obj.load_element_doc();
-                    sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
-                        ndi.query('','isa','element_epoch','') & ...
-                        ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
-                    E = ndi_element_timeseries_obj.session;
-
-                    epochdoc = E.database_search(sq);
-                    if numel(epochdoc)==0,
-                        error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
-                    end;
-                    if numel(epochdoc)>1,
-                        error(['Found too many epochdoc for epoch ' epoch_timeref.epoch '.']);
-                    end;
-                    epochdoc = epochdoc{1};
-
-                    f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
-                    [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
-                    E.database_closebinarydoc(f);
-                    
-                    if isnumeric(t),
-                        t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...
-                            timeref.referent, timeref.clocktype);
-                    end;
+                    timeref_or_epoch = ndi_element_timeseries_obj.epochid(timeref_or_epoch);
+                    % find the first type of epochclock listed for this epoch
+                    et_entry = ndi_element_timeseries_obj.epochtableentry(timeref_or_epoch);
+                    timeref = ndi.time.timereference(ndi_element_timeseries_obj, ...
+                        et_entry.epoch_clock{1}, timeref_or_epoch, 0);
                 end;
+
+                [epoch_t0_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
+                    ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
+                [epoch_t1_out, epoch_timeref, msg] = ndi_element_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
+                    ndi_element_timeseries_obj, ndi.time.clocktype('dev_local_time'));
+
+                if isempty(epoch_timeref),
+                    error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
+                end;
+
+
+                % now we know the epoch to read, finally!
+
+                element_doc = ndi_element_timeseries_obj.load_element_doc();
+                sq = ndi.query('depends_on','depends_on','element_id',element_doc.id()) & ...
+                    ndi.query('','isa','element_epoch','') & ...
+                    ndi.query('epochid.epochid','exact_string',epoch_timeref.epoch,'');
+                E = ndi_element_timeseries_obj.session;
+
+                epochdoc = E.database_search(sq);
+                if numel(epochdoc)==0,
+                    error(['Could not find epochdoc for epoch ' epoch_timeref.epoch '.']);
+                end;
+                if numel(epochdoc)>1,
+                    error(['Found too many epochdoc for epoch ' epoch_timeref.epoch '.']);
+                end;
+                epochdoc = epochdoc{1};
+
+                f = E.database_openbinarydoc(epochdoc,'epoch_binary_data.vhsb');
+                [data,t] = vlt.file.custom_file_formats.vhsb_read(f,epoch_t0_out,epoch_t1_out);
+                E.database_closebinarydoc(f);
+
+                if isnumeric(t),
+                    t = ndi_element_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, ...
+                        timeref.referent, timeref.clocktype);
+                end;
+            end;
         end %readtimeseries()
 
         %%%%% ndi.element methods
@@ -102,18 +102,18 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %                     read from the probe
             % Outputs:
             %    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
-            %  
-                if ndi_element_timeseries_obj.direct,
-                    error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
-                end;
-                [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
+            %
+            if ndi_element_timeseries_obj.direct,
+                error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
+            end;
+            [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
 
-                fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
-                vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
-                epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
-                if nargout<2,
-                    ndi_element_timeseries_obj.session.database_add(epochdoc);
-                end;
+            fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
+            vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
+            epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);
+            if nargout<2,
+                ndi_element_timeseries_obj.session.database_add(epochdoc);
+            end;
 
         end; % addepoch()
 
@@ -123,15 +123,15 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             sr = 1/median(diff(t));
         end; % samplerate()
 
-                function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
-                        % TODO - need docs here
-                                ndi_document_obj = newdocument@ndi.element(ndi_element_timeseries_obj, varargin{:});
-                end % newdocument
+        function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
+            % TODO - need docs here
+            ndi_document_obj = newdocument@ndi.element(ndi_element_timeseries_obj, varargin{:});
+        end % newdocument
 
-                function sq = searchquery(ndi_element_timeseries_obj, varargin)
-                        % TODO - need docs here
-                                sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
-                end % searchquery
+        function sq = searchquery(ndi_element_timeseries_obj, varargin)
+            % TODO - need docs here
+            sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
+        end % searchquery
 
     end; % methods
 end % classdef

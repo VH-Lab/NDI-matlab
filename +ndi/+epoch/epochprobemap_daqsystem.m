@@ -67,10 +67,10 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
                 obj = [];
                 for i=1:length(ndi_struct),
                     nextentry = ndi.epoch.epochprobemap_daqsystem(ndi_struct(i).name,...
-                            ndi_struct(i).reference,...
-                            ndi_struct(i).type, ...
-                            ndi_struct(i).devicestring,...
-                            ndi_struct(i).subjectstring);
+                        ndi_struct(i).reference,...
+                        ndi_struct(i).type, ...
+                        ndi_struct(i).devicestring,...
+                        ndi_struct(i).subjectstring);
                     obj = cat(1,obj,nextentry);
                 end;
                 if isempty(obj),
@@ -118,98 +118,98 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             % Returns a structure of the parameters of an ndi.epoch.epochprobemap_daqsystem
             % object.
             %
-                fn = {'name','reference','type','devicestring','subjectstring'};
-                st = vlt.data.emptystruct(fn{:});
-                for i=1:length(ndi_epochprobemap_daqsystem_obj),
-                    mynewstruct = struct;
-                    for j=1:length(fn),
-                        mynewstruct = setfield(mynewstruct,fn{j},getfield(ndi_epochprobemap_daqsystem_obj(i),fn{j}));
-                    end;
-                    st(i) = mynewstruct;
+            fn = {'name','reference','type','devicestring','subjectstring'};
+            st = vlt.data.emptystruct(fn{:});
+            for i=1:length(ndi_epochprobemap_daqsystem_obj),
+                mynewstruct = struct;
+                for j=1:length(fn),
+                    mynewstruct = setfield(mynewstruct,fn{j},getfield(ndi_epochprobemap_daqsystem_obj(i),fn{j}));
                 end;
+                st(i) = mynewstruct;
+            end;
         end; % serialization_struct()
 
         function s = serialize(ndi_epochprobemap_daqsystem_obj)
-                        % SERIALIZE - Turn the ndi.epoch.epochprobemap object into a string
-                        %
-                        % S = SERIALIZE(NDI_EPOCHPROBEMAP_OBJ)
-                        %
-                        % Create a charater array representation of an ndi.epoch.epochprobemap_daqsystem object
-                        %
-                s = '';
-                st = ndi_epochprobemap_daqsystem_obj.serialization_struct();
-                fn = fieldnames(st);
-                for i=1:numel(fn),
-                    s=cat(2,s,fn{i});
-                    if i~=numel(fn),
+            % SERIALIZE - Turn the ndi.epoch.epochprobemap object into a string
+            %
+            % S = SERIALIZE(NDI_EPOCHPROBEMAP_OBJ)
+            %
+            % Create a charater array representation of an ndi.epoch.epochprobemap_daqsystem object
+            %
+            s = '';
+            st = ndi_epochprobemap_daqsystem_obj.serialization_struct();
+            fn = fieldnames(st);
+            for i=1:numel(fn),
+                s=cat(2,s,fn{i});
+                if i~=numel(fn),
+                    s=cat(2,s,sprintf('\t'));
+                end;
+            end;
+            s=cat(2,s,sprintf('\n'));
+            for i=1:numel(st),
+                for j=1:numel(fn),
+                    switch(fn{j}),
+                        case {'name','type','devicestring','subjectstring'},
+                            s=cat(2,s,getfield(st(i),fn{j}));
+                        case 'reference',
+                            s=cat(2,s,int2str(getfield(st(i),fn{j})));
+                    end;
+                    if j~=numel(fn),
                         s=cat(2,s,sprintf('\t'));
                     end;
                 end;
                 s=cat(2,s,sprintf('\n'));
-                for i=1:numel(st),
-                    for j=1:numel(fn),
-                        switch(fn{j}),
-                            case {'name','type','devicestring','subjectstring'},
-                                s=cat(2,s,getfield(st(i),fn{j}));
-                            case 'reference',
-                                s=cat(2,s,int2str(getfield(st(i),fn{j})));
-                        end;
-                        if j~=numel(fn),
-                            s=cat(2,s,sprintf('\t'));
-                        end;
-                    end;
-                    s=cat(2,s,sprintf('\n'));
-                end;
+            end;
 
         end; % serialize()
 
         function savetofile(ndi_epochprobemap_daqsystem_obj, filename)
-        %  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
-        %
-                %  SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
-        %
-        %  Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
-        %
-        %
+            %  SAVETOFILE - Write ndi.epoch.epochprobemap_daqsystem object array to disk
+            %
+            %  SAVETOFILE(NDI_EPOCHPROBEMAP_DAQSYSTEM_OBJ, FILENAME)
+            %
+            %  Writes the ndi.epoch.epochprobemap_daqsystem object to disk in filename FILENAME (full path).
+            %
+            %
             mystruct = ndi_epochprobemap_daqsystem_obj.serialization_struct();
             vlt.file.saveStructArray(filename, mystruct);
         end;
 
-        
+
     end  % methods
 
     methods(Static)
 
         function st = decode(s)
             % DECODE - decode table information for an ndi.epoch.epochprobemap object from a serialized string
-                        %
-                        % ST = DECODE(S)
-                        %
-                        % Return a structure ST that contains decoded information to
-                        % build an ndi.epoch.epochprobemap object from a string
-                        %
-                st = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
-                c = vlt.data.string2cell(s,sprintf('\n'));
-                if numel(c)<1,
-                    error(['There is no informtion in the serialized string s']);
-                end;
-                fn = vlt.data.string2cell(c{1},sprintf('\t'));
-                for i=2:numel(c),
-                    line_here = vlt.data.string2cell(c{i},sprintf('\t'));
-                    if numel(line_here)==numel(fn),
-                        entry_here = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
-                        entry_here(1).name = '';
-                        for j=1:numel(fn),
-                            switch(fn{j}),
-                                case {'name','type','devicestring','subjectstring'},
-                                    entry_here(1) = setfield(entry_here(1),fn{j},line_here{j});
-                                case 'reference',
-                                    entry_here(1) = setfield(entry_here(1),fn{j},str2num(line_here{j}));
-                            end;
+            %
+            % ST = DECODE(S)
+            %
+            % Return a structure ST that contains decoded information to
+            % build an ndi.epoch.epochprobemap object from a string
+            %
+            st = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
+            c = vlt.data.string2cell(s,sprintf('\n'));
+            if numel(c)<1,
+                error(['There is no informtion in the serialized string s']);
+            end;
+            fn = vlt.data.string2cell(c{1},sprintf('\t'));
+            for i=2:numel(c),
+                line_here = vlt.data.string2cell(c{i},sprintf('\t'));
+                if numel(line_here)==numel(fn),
+                    entry_here = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
+                    entry_here(1).name = '';
+                    for j=1:numel(fn),
+                        switch(fn{j}),
+                            case {'name','type','devicestring','subjectstring'},
+                                entry_here(1) = setfield(entry_here(1),fn{j},line_here{j});
+                            case 'reference',
+                                entry_here(1) = setfield(entry_here(1),fn{j},str2num(line_here{j}));
                         end;
-                        st(end+1) = entry_here;
                     end;
+                    st(end+1) = entry_here;
                 end;
+            end;
         end;
     end % methods(Static)
 end

@@ -13,18 +13,18 @@
 %           type: 'extracellular_electrode-4'
 %   devicestring: 'mydevice:ai27-28,45,88
 %
-%  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of 
+%  The form of a device string is DEVICENAME:CT####, where DEVICENAME is the name of
 %  ndi.daq.system object, CT is the channel type identifier, and #### is a list of channels.
 %  The #### list of channels should be numbered from 1, and can use the symbols '-' to
 %  indicate a sequential run of channels, and ',' to separate channels.
 %  Use a semicolon to separate channel types (e.g., 'ai27-28;di1')
-%  
+%
 %  For example:
 %     '1-5,10,17'      corresponds to [1 2 3 4 5 10 17]
 %     '2,5,11-12,8     corresponds to [2 5 11 12 8]
 %     ''               corresponds to []  % if the device doesn't have channels
 %
-% 
+%
 %  See also: ndi.daq.daqsystemstring/NDI_DEVICESTRING, NDI_DEVICESTRING/DEVICESTRING
 %
 
@@ -68,14 +68,14 @@ classdef daqsystemstring
             %
             % See also: ndi.daq.daqsystemstring
             %
-                if nargin==1,
-                    % it is a string
-                    [obj.devicename, obj.channeltype, obj.channellist] = ndi_daqsystemstring2channel(obj,devicename);
-                else,
-                    obj.devicename = devicename;
-                    obj.channeltype = channeltype;
-                    obj.channellist = channellist;
-                end;
+            if nargin==1,
+                % it is a string
+                [obj.devicename, obj.channeltype, obj.channellist] = ndi_daqsystemstring2channel(obj,devicename);
+            else,
+                obj.devicename = devicename;
+                obj.channeltype = channeltype;
+                obj.channellist = channellist;
+            end;
         end % ndi.daq.daqsystemstring
 
         function [devicename, channeltype, channel] = ndi_daqsystemstring2channel(self, devstr)
@@ -100,33 +100,33 @@ classdef daqsystemstring
             %
             % See also: ndi.daq.daqsystemstring, NDI_DEVICESTRING/DEVICESTRING
             %
-                if nargin<2,
-                    devstr = self.devicestring();
+            if nargin<2,
+                devstr = self.devicestring();
+            end
+            channeltype = {};
+            channel = [];
+            devstr(find(isspace(devstr))) = []; % remove whitespace
+            colon = find(strtrim(devstr)==':');
+            devicename = devstr(1:colon-1);
+            % now read semi-colon-delimited segments
+            if devstr(end)~=';',
+                devstr(end+1)=';';
+            end; % add a superfluous ending semi-colon to make code easier
+            separators= [colon find(devstr==';')];
+            for i=1:numel(separators)-1,
+                mysubstr = devstr(separators(i)+1:separators(i+1)-1);
+                firstnumber = find(  ~isletter(mysubstr), 1);
+                if isempty(firstnumber),
+                    error(['No number in ndi.daq.system substring: ' mysubstr '.']);
                 end
-                channeltype = {};
-                channel = [];
-                devstr(find(isspace(devstr))) = []; % remove whitespace
-                colon = find(strtrim(devstr)==':');
-                devicename = devstr(1:colon-1);
-                % now read semi-colon-delimited segments
-                if devstr(end)~=';',
-                    devstr(end+1)=';';
-                end; % add a superfluous ending semi-colon to make code easier
-                separators= [colon find(devstr==';')];
-                for i=1:numel(separators)-1,
-                    mysubstr = devstr(separators(i)+1:separators(i+1)-1);
-                    firstnumber = find(  ~isletter(mysubstr), 1);
-                    if isempty(firstnumber),
-                        error(['No number in ndi.daq.system substring: ' mysubstr '.']);
-                    end
-                    channelshere = vlt.string.str2intseq(mysubstr(firstnumber:end));
-                    channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
-                    channel = cat(2,channel,channelshere(:)');
-                end
+                channelshere = vlt.string.str2intseq(mysubstr(firstnumber:end));
+                channeltype = cat(2,channeltype,repmat({mysubstr(1:firstnumber-1)},1,numel(channelshere)));
+                channel = cat(2,channel,channelshere(:)');
+            end
         end % ndi_daqsystemstring2channel
 
         function devstr = devicestring(self);
-            % DEVICESTRING - Produce an ndi.daq.daqsystemstring character string 
+            % DEVICESTRING - Produce an ndi.daq.daqsystemstring character string
             %
             % DEVSTR = DEVICESTRING(SELF)
             %
@@ -139,29 +139,29 @@ classdef daqsystemstring
             %
             %
             % See also: ndi.daq.daqsystemstring
-                devstr = [self.devicename ':'];
-                prevchanneltype = '';
-                newchannellist = [];
-                for i=1:numel(self.channellist),
-                    currentchanneltype = self.channeltype{i};
-                    if strcmp(currentchanneltype,prevchanneltype),
-                        newchannellist(end+1) = self.channellist(i);
-                    elseif ~strcmp(currentchanneltype,prevchanneltype)
-                        % we need to write the previous channels
-                        if ~isempty(newchannellist), % do the writing
-                            devstr = cat(2,devstr, [prevchanneltype vlt.string.intseq2str(newchannellist) ]);
-                            devstr(end+1) = ';';
-                        end
-                        % start off the new list
-                        newchannellist = [self.channellist(i)];
+            devstr = [self.devicename ':'];
+            prevchanneltype = '';
+            newchannellist = [];
+            for i=1:numel(self.channellist),
+                currentchanneltype = self.channeltype{i};
+                if strcmp(currentchanneltype,prevchanneltype),
+                    newchannellist(end+1) = self.channellist(i);
+                elseif ~strcmp(currentchanneltype,prevchanneltype)
+                    % we need to write the previous channels
+                    if ~isempty(newchannellist), % do the writing
+                        devstr = cat(2,devstr, [prevchanneltype vlt.string.intseq2str(newchannellist) ]);
+                        devstr(end+1) = ';';
                     end
-                    if i==numel(self.channellist), % need to write any channels accumulated 
-                        devstr = cat(2,devstr, [currentchanneltype vlt.string.intseq2str(newchannellist) ]);
-                    end
-                    prevchanneltype = currentchanneltype;
-                end;
+                    % start off the new list
+                    newchannellist = [self.channellist(i)];
+                end
+                if i==numel(self.channellist), % need to write any channels accumulated
+                    devstr = cat(2,devstr, [currentchanneltype vlt.string.intseq2str(newchannellist) ]);
+                end
+                prevchanneltype = currentchanneltype;
+            end;
         end % devicestring
     end
 end
 
-     
+

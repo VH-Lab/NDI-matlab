@@ -14,12 +14,12 @@ classdef decoder < ndi.app
             % Creates a new ndi_app_stimulus.decoder object that can operate on
             % NDI_SESSIONS. The app is named 'ndi.app.stimulus_decoder'.
             %
-                session = [];
-                name = 'ndi_app_stimulus_decoder';
-                if numel(varargin)>0,
-                    session = varargin{1};
-                end
-                ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi.app(session, name);
+            session = [];
+            name = 'ndi_app_stimulus_decoder';
+            if numel(varargin)>0,
+                session = varargin{1};
+            end
+            ndi_app_stimulus_decoder_obj = ndi_app_stimulus_decoder_obj@ndi.app(session, name);
 
         end % ndi_app_stimulus_decoder() creator
 
@@ -40,87 +40,87 @@ classdef decoder < ndi.app
             %
             % Note that this function DOES add the new documents to the database.
             %
-                if nargin<3,
-                    reset = 0;
+            if nargin<3,
+                reset = 0;
+            end;
+            newdocs = {};
+            existingdocs = {};
+
+            E = ndi_app_stimulus_decoder_obj.session;
+
+            sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
+            sq_e = ndi.query(E.searchquery());
+            sq_stim = ndi.query('','isa','stimulus_presentation',''); % presentation
+
+            existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
+
+            if reset,
+                % delete existing documents
+                E.database_rm(existing_doc_stim);
+                existing_doc_stim = {};
+            end;
+
+            existingdocs = cat(1,existing_doc_stim(:));
+
+            % determine epochs that are finished
+            epoch_finished = {};
+
+            for i=1:numel(existing_doc_stim),
+                epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
+            end;
+
+            et = ndi_element_stim.epochtable();
+
+            epochsremaining = setdiff({et.epoch_id}, epoch_finished);
+
+            for j=1:numel(epochsremaining),
+                % decode stimuli
+                [data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
+                % stimulus
+                mystim = vlt.data.emptystruct('parameters');
+                for k=1:numel(data.parameters),
+                    mystim(k) = struct('parameters',data.parameters{k});
                 end;
-                newdocs = {};
-                existingdocs = {};
-
-                E = ndi_app_stimulus_decoder_obj.session;
-
-                sq_probe = ndi.query('','depends_on','stimulus_element_id',ndi_element_stim.id());
-                sq_e = ndi.query(E.searchquery());
-                sq_stim = ndi.query('','isa','stimulus_presentation',''); % presentation
-
-                existing_doc_stim = E.database_search(sq_probe&sq_e&sq_stim);
-
-                if reset,
-                    % delete existing documents
-                    E.database_rm(existing_doc_stim);
-                    existing_doc_stim = {};
-                end;
-
-                existingdocs = cat(1,existing_doc_stim(:));
-
-                % determine epochs that are finished 
-                epoch_finished = {};
-
-                for i=1:numel(existing_doc_stim),
-                    epoch_finished = unique(cat(2,epoch_finished,existing_doc_stim{i}.document_properties.epochid));
-                end;
-
-                et = ndi_element_stim.epochtable();
-
-                epochsremaining = setdiff({et.epoch_id}, epoch_finished);
-
-                for j=1:numel(epochsremaining),
-                    % decode stimuli
-                    [data,t,timeref] = ndi_element_stim.readtimeseriesepoch(epochsremaining{j},-Inf,Inf);
-                    % stimulus
-                    mystim = vlt.data.emptystruct('parameters');
-                    for k=1:numel(data.parameters),
-                        mystim(k) = struct('parameters',data.parameters{k});
-                    end;
-                    presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose','stimevents');
-                    for z=1:numel(t.stimon),
-                        timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
-                            'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
-                            'stimclose', t.stimopenclose(z,2) );
-                        stimevents = [];
-                        if isfield(t,'stimevents'),
-                            for kk=1:numel(t.stimevents),
-                                stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
-                                stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
-                                stimevents_indexes = find(t.stimevents{kk}>=stim_onset & t.stimevents{kk}<=stim_offset);
-                                stimevents = cat(1,stimevents,[ vlt.data.colvec(t.stimevents{kk}(stimevents_indexes)) kk*ones(numel(stimevents_indexes),1)]);
-                            end;
-                            [dummy,sortorder] = sort(stimevents(:,1));
-                            stimevents = stimevents(sortorder,:);
+                presentation_time = vlt.data.emptystruct('clocktype', 'stimopen', 'onset', 'offset', 'stimclose','stimevents');
+                for z=1:numel(t.stimon),
+                    timestruct = struct('clocktype', timeref.clocktype.ndi_clocktype2char(), ...
+                        'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
+                        'stimclose', t.stimopenclose(z,2) );
+                    stimevents = [];
+                    if isfield(t,'stimevents'),
+                        for kk=1:numel(t.stimevents),
+                            stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
+                            stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
+                            stimevents_indexes = find(t.stimevents{kk}>=stim_onset & t.stimevents{kk}<=stim_offset);
+                            stimevents = cat(1,stimevents,[ vlt.data.colvec(t.stimevents{kk}(stimevents_indexes)) kk*ones(numel(stimevents_indexes),1)]);
                         end;
-                        timestruct.stimevents = stimevents;
-                        presentation_time(end+1) = timestruct;
+                        [dummy,sortorder] = sort(stimevents(:,1));
+                        stimevents = stimevents(sortorder,:);
                     end;
-
-                    %  make a file and write the presentation_time structure
-                    presentation_time_filename = ndi.file.temp_name();
-                    ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
-                        presentation_time);
-
-                    stimulus_presentation = struct('presentation_order', data.stimid(:),...
-                        ... % 'presentation_time', presentation_time, ... % we now put this in a file
-                        'stimuli', mystim);
-                    nd = E.newdocument('stimulus_presentation',...
-                        'stimulus_presentation', stimulus_presentation, ...
-                        'epochid.epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
-                    nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
-                    nd = nd.add_file('presentation_time.bin',presentation_time_filename);
-                    newdocs{end+1} = nd;
+                    timestruct.stimevents = stimevents;
+                    presentation_time(end+1) = timestruct;
                 end;
-                E.database_add(newdocs);
-        end % 
+
+                %  make a file and write the presentation_time structure
+                presentation_time_filename = ndi.file.temp_name();
+                ndi.database.fun.write_presentation_time_structure(presentation_time_filename,...
+                    presentation_time);
+
+                stimulus_presentation = struct('presentation_order', data.stimid(:),...
+                    ... % 'presentation_time', presentation_time, ... % we now put this in a file
+                    'stimuli', mystim);
+                nd = E.newdocument('stimulus_presentation',...
+                    'stimulus_presentation', stimulus_presentation, ...
+                    'epochid.epochid',epochsremaining{j}) + ndi_app_stimulus_decoder_obj.newdocument();
+                nd = set_dependency_value(nd,'stimulus_element_id',ndi_element_stim.id());
+                nd = nd.add_file('presentation_time.bin',presentation_time_filename);
+                newdocs{end+1} = nd;
+            end;
+            E.database_add(newdocs);
+        end %
 
         function presentation_time = load_presentation_time(ndi_app_stimulus_decoder_obj, stimulus_presentation_doc)
-            % LOAD_PRESENTATION_TIME - read the presentation_time structure from binary portion    
+            % LOAD_PRESENTATION_TIME - read the presentation_time structure from binary portion
             %
             % PRESENTATION_TIME = LOAD_PRESENTATION_TIME(NDI_APP_STIMULUS_DECODER_OBJ, ...
             %      STIMULUS_PRESENTATION_DOC)
@@ -128,14 +128,14 @@ classdef decoder < ndi.app
             % Given a 'stimulus_presentation' type ndi.document, loads the presentation_time data from
             % the binary portion.
             %
-                if isfield(stimulus_presentation_doc.document_properties.stimulus_presentation,'presentation_time'), % old way
-                    warning('stimulus presentation document uses deprecated form of presentation_time storage.');
-                    presentation_time = stimulus_presentation_doc.document_properties.stimulus_presentation.presentation_time;
-                else,
-                    fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
-                    [header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
-                    fobj.fclose();
-                end;
+            if isfield(stimulus_presentation_doc.document_properties.stimulus_presentation,'presentation_time'), % old way
+                warning('stimulus presentation document uses deprecated form of presentation_time storage.');
+                presentation_time = stimulus_presentation_doc.document_properties.stimulus_presentation.presentation_time;
+            else,
+                fobj = ndi_app_stimulus_decoder_obj.session.database_openbinarydoc(stimulus_presentation_doc,'presentation_time.bin');
+                [header,presentation_time] = ndi.database.fun.read_presentation_time_structure(fobj.fullpathfilename);
+                fobj.fclose();
+            end;
         end; % load_presentation_time
     end; % methods
 

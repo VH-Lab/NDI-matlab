@@ -1,5 +1,5 @@
 function file_ids = get_uploaded_file_ids(dataset_id)
-% get_uploaded_file_ids - Get cell array of uploaded file ids.
+    % get_uploaded_file_ids - Get cell array of uploaded file ids.
 
     [auth_token, organization_id] = ndi.cloud.uilogin();
     try

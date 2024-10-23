@@ -1,26 +1,26 @@
 function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
-% UPLOAD_DATASET_DATABASE - Upload the complete database of a dataset 
-%
-%   Syntax:
-%       ndi.cloud.upload_dataset_database(NDI_DATASET, CLOUD_DATASET_ID)
-%       uploads all the documents and associated binary files for a dataset
-%       to an NDI Cloud Dataset.
-%
-%   Input arguments:
-%       NDI_DATASET : string
-%           an ndi.dataset object
-%
-%       CLOUD_DATASET_ID : string
-%           an id for a dataset on NDI cloud to upload documents and files to
-%
-%   Options (Name - Value pairs)
-%       verbose : logical
-%           Whether to display status updates. Default is true
-%
-%       show_ui : logical
-%           Whether to display progress in a gui. Default is true
+    % UPLOAD_DATASET_DATABASE - Upload the complete database of a dataset
+    %
+    %   Syntax:
+    %       ndi.cloud.upload_dataset_database(NDI_DATASET, CLOUD_DATASET_ID)
+    %       uploads all the documents and associated binary files for a dataset
+    %       to an NDI Cloud Dataset.
+    %
+    %   Input arguments:
+    %       NDI_DATASET : string
+    %           an ndi.dataset object
+    %
+    %       CLOUD_DATASET_ID : string
+    %           an id for a dataset on NDI cloud to upload documents and files to
+    %
+    %   Options (Name - Value pairs)
+    %       verbose : logical
+    %           Whether to display status updates. Default is true
+    %
+    %       show_ui : logical
+    %           Whether to display progress in a gui. Default is true
 
-    
+
     arguments
         ndi_dataset (1,1) ndi.dataset
         cloud_dataset_id (1,1) string
@@ -30,7 +30,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
 
     if options.verbose
         progress_trackers(1,3) = ndi.gui.component.internal.ProgressTracker();
-        
+
         if options.show_ui
             ndi.cloud.ui.DatasetUploadMonitor(progress_trackers);
             pause(0.05)
@@ -41,7 +41,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     else
         progress_trackers(1,3) = missing;
     end
-    
+
     % Define default/builtin disp
     disp = @(message) builtin('disp', message);
 
@@ -52,7 +52,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
         disp = @(message) updateMessage(progress_trackers(1), message);
         progress_trackers(1).setTotalSteps(1)
     end
-    
+
     if options.verbose; disp('Retrieving documents...'); end
     database_documents = ndi_dataset.database_search(ndi.query('','isa','base'));
 
@@ -85,7 +85,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
         progress_trackers(2).setTotalSteps( numel(documents_for_upload) );
         progress_trackers(2).TemplateMessage = sprintf('Uploading document {{CurrentStep}} of {{TotalSteps}} ({{PercentageComplete}}%%).');
     end
-    
+
     num_documents = numel(documents_for_upload);
     for i = 1:num_documents
         if ~ismissing( progress_trackers(2) )
@@ -112,7 +112,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     if options.verbose; disp('Working on document''s binary files...'); end
     file_manifest = ...
         ndi.database.internal.list_binary_files(...
-            ndi_dataset, database_documents, false); % verbose=false
+        ndi_dataset, database_documents, false); % verbose=false
 
     % Get file uids
     [~, all_file_uids, ~] = fileparts({file_manifest.file_path});
@@ -128,7 +128,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     % Start uploading document's binary files:
     auth_token = ndi.cloud.uilogin();
 
-    % % % % Upload file function 
+    % % % % Upload file function
     if options.verbose; disp( 'Uploading binary files...' ); end
     num_files = numel(file_manifest);
 
@@ -146,7 +146,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
         if ~ismissing( progress_trackers(3) )
             progress_trackers(3).updateProgress(i)
         end
-        
+
         try
             %fprintf('File size: %d KB. ', round(file_manifest(i).bytes/1024) )
             [~, ~, upload_url] = ndi.cloud.files.get_files(cloud_dataset_id, uid, auth_token);

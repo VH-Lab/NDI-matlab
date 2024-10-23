@@ -1,94 +1,94 @@
 function datasetInformation = ndidataset2metadataeditorstruct(D)
-%
-% DATASETINFORMATION = NDIDATASET2METADATAEDITORSTRUCT(D)
-%
-% Read an NDIMetaDataEditorApp data structure from the documents
-% in an ndi.dataset D.
-%
-% Inputs:
-%    D - an ndi.dataset object
-%
-% Outputs:
-%    DATASETINFORMATION - metadata structured used by the 
-%       NDIMetaDataEditorApp
-%
+    %
+    % DATASETINFORMATION = NDIDATASET2METADATAEDITORSTRUCT(D)
+    %
+    % Read an NDIMetaDataEditorApp data structure from the documents
+    % in an ndi.dataset D.
+    %
+    % Inputs:
+    %    D - an ndi.dataset object
+    %
+    % Outputs:
+    %    DATASETINFORMATION - metadata structured used by the
+    %       NDIMetaDataEditorApp
+    %
 
-datasetInformation = {};
-
-
-  %% Dataset
-
-dataset_version_doc = D.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.DatasetVersion'));
-
-dv_f = {};
-if numel(dataset_version_doc) > 0
-    datav = ndi.document.find_newest(dataset_version_doc);
-    dv_f = datav.document_properties.openminds.fields;
-    datasetInformation.Description{1} = dv_f.description;
-    datasetInformation.DatasetFullName = dv_f.fullName;
-    datasetInformation.DatasetShortName = dv_f.shortName;
-    datasetInformation.ReleaseDate = datetime(dv_f.releaseDate);
-    datasetInformation.VersionIdentifier = dv_f.versionIdentifier;
-    datasetInformation.VersionInnovation = dv_f.versionInnovation;
-else
-    return;
-end
-
- %% Process author information
-
-author_doc = {};
+    datasetInformation = {};
 
 
-for i = 1:numel(dv_f.author)
-    author_id = dv_f.author{i}(7:end);
-    author_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', author_id));
-end
+    %% Dataset
 
-for i = 1:numel(dv_f.otherContribution)
-    oc_id = dv_f.otherContribution{i}(7:end);
-    oc_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', oc_id));
-end
+    dataset_version_doc = D.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.DatasetVersion'));
 
-for i = 1:numel(dv_f.custodian)
-    otherContribution_id = dv_f.custodian{i}(7:end);
-    custodian_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', otherContribution_id));
-end
+    dv_f = {};
+    if numel(dataset_version_doc) > 0
+        datav = ndi.document.find_newest(dataset_version_doc);
+        dv_f = datav.document_properties.openminds.fields;
+        datasetInformation.Description{1} = dv_f.description;
+        datasetInformation.DatasetFullName = dv_f.fullName;
+        datasetInformation.DatasetShortName = dv_f.shortName;
+        datasetInformation.ReleaseDate = datetime(dv_f.releaseDate);
+        datasetInformation.VersionIdentifier = dv_f.versionIdentifier;
+        datasetInformation.VersionInnovation = dv_f.versionInnovation;
+    else
+        return;
+    end
 
-author = ndi.database.metadata_ds_core.load_author_from_ndidocument(author_doc,oc_doc, custodian_doc, D);
-datasetInformation.Author = author;
-dataType_name = {};
-for i = 1:numel(dv_f.dataType)
-    dataType_id = dv_f.dataType{i}(7:end);
-    dataType_doc = D.database_search(ndi.query('base.id', 'exact_string',dataType_id));
-    dataType_name{i} = dataType_doc{1}.document_properties.openminds.fields.name;
-end
+    %% Process author information
 
-  %% Data types
+    author_doc = {};
 
-datasetInformation.DataType = ndi.util.openminds.find_instance_name(dataType_name, 'SemanticDataType');
 
-experimentalApproach_name = {};
-for i = 1:numel(dv_f.experimentalApproach)
-    experimentalApproach_id = dv_f.experimentalApproach{i}(7:end);
-    experimentalApproach_doc = D.database_search(ndi.query('base.id', 'exact_string',experimentalApproach_id));
-    experimentalApproach_name{i} = experimentalApproach_doc{1}.document_properties.openminds.fields.name;
-end
-datasetInformation.ExperimentalApproach = ndi.util.openminds.find_instance_name(experimentalApproach_name, 'ExperimentalApproach');
+    for i = 1:numel(dv_f.author)
+        author_id = dv_f.author{i}(7:end);
+        author_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', author_id));
+    end
 
-TechniquesEmployed = {};
-for i = 1:numel(dv_f.technique)
-    techniquesEmployed_id = dv_f.technique{i}(7:end);
-    techniquesEmployed_doc = D.database_search(ndi.query('base.id', 'exact_string',techniquesEmployed_id));
-    type = techniquesEmployed_doc{1}.document_properties.openminds.openminds_type;
-    type = split(type, '/');
-    type = type{end};
-    name = techniquesEmployed_doc{1}.document_properties.openminds.openminds_id;
-    name = split(name, '/');
-    name = name{end};
-    TechniquesEmployed{i} = strcat(name, ' (', type, ')');
-end
+    for i = 1:numel(dv_f.otherContribution)
+        oc_id = dv_f.otherContribution{i}(7:end);
+        oc_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', oc_id));
+    end
 
-datasetInformation.TechniquesEmployed = TechniquesEmployed;
+    for i = 1:numel(dv_f.custodian)
+        otherContribution_id = dv_f.custodian{i}(7:end);
+        custodian_doc{i} = D.database_search(ndi.query('base.id', 'exact_string', otherContribution_id));
+    end
+
+    author = ndi.database.metadata_ds_core.load_author_from_ndidocument(author_doc,oc_doc, custodian_doc, D);
+    datasetInformation.Author = author;
+    dataType_name = {};
+    for i = 1:numel(dv_f.dataType)
+        dataType_id = dv_f.dataType{i}(7:end);
+        dataType_doc = D.database_search(ndi.query('base.id', 'exact_string',dataType_id));
+        dataType_name{i} = dataType_doc{1}.document_properties.openminds.fields.name;
+    end
+
+    %% Data types
+
+    datasetInformation.DataType = ndi.util.openminds.find_instance_name(dataType_name, 'SemanticDataType');
+
+    experimentalApproach_name = {};
+    for i = 1:numel(dv_f.experimentalApproach)
+        experimentalApproach_id = dv_f.experimentalApproach{i}(7:end);
+        experimentalApproach_doc = D.database_search(ndi.query('base.id', 'exact_string',experimentalApproach_id));
+        experimentalApproach_name{i} = experimentalApproach_doc{1}.document_properties.openminds.fields.name;
+    end
+    datasetInformation.ExperimentalApproach = ndi.util.openminds.find_instance_name(experimentalApproach_name, 'ExperimentalApproach');
+
+    TechniquesEmployed = {};
+    for i = 1:numel(dv_f.technique)
+        techniquesEmployed_id = dv_f.technique{i}(7:end);
+        techniquesEmployed_doc = D.database_search(ndi.query('base.id', 'exact_string',techniquesEmployed_id));
+        type = techniquesEmployed_doc{1}.document_properties.openminds.openminds_type;
+        type = split(type, '/');
+        type = type{end};
+        name = techniquesEmployed_doc{1}.document_properties.openminds.openminds_id;
+        name = split(name, '/');
+        name = name{end};
+        TechniquesEmployed{i} = strcat(name, ' (', type, ')');
+    end
+
+    datasetInformation.TechniquesEmployed = TechniquesEmployed;
 
     Funding = struct();
     for i = 1:numel(dv_f.funding)
@@ -124,11 +124,11 @@ datasetInformation.TechniquesEmployed = TechniquesEmployed;
         species_doc = D.database_search(ndi.query('base.id', 'exact_string',species_id));
         %openminds_species_id = species_doc{1}.document_properties.openminds.fields.species{1}(7:end);
         %openminds_species_doc = D.database_search(ndi.query('base.id', 'exact_string',openminds_species_id));
-        
+
         subject.SpeciesList = ndi.database.metadata_app.class.Species(...
-           species_doc{1}.document_properties.openminds.fields.name, ...
-           species_doc{1}.document_properties.openminds.fields.preferredOntologyIdentifier, ...
-           species_doc{1}.document_properties.openminds.fields.synonym);
+            species_doc{1}.document_properties.openminds.fields.name, ...
+            species_doc{1}.document_properties.openminds.fields.preferredOntologyIdentifier, ...
+            species_doc{1}.document_properties.openminds.fields.synonym);
         subject.sessionIdentifier = studiedSpecimen_doc{1}.document_properties.base.session_id;
         Subjects(i) = ndi.database.metadata_app.class.Subject();
         Subjects(i).SubjectName = subject.SubjectName;
@@ -143,13 +143,13 @@ datasetInformation.TechniquesEmployed = TechniquesEmployed;
     if ~isempty(dv_f.license)
         license_id = dv_f.license{1}(7:end);
         license_doc = D.database_search(ndi.query('base.id', 'exact_string',license_id));
-        
+
         webpage = license_doc{1, 1}.document_properties.openminds.fields.webpage{2};
         %remove the last item after . from the end of the webpage, but keep all the other items. Might have multiple . in the url
         webpage = split(webpage, '.');
         webpage = webpage(1:end-1);
         webpage = strjoin(webpage, '.');
-        
+
         License = split(webpage, '/');
         License = License{end};
     end
@@ -203,22 +203,22 @@ function strainInstances = loadStrain(D)
         catch ME
             if ME.identifier == "Catalog:NamedItemExists"
                 disp("Strain already exists in the catalog.");
-            %     prompt = 'Y/N [Y]: ';
-            %     str = input(prompt,'s');
-            %     if isempty(str)
-            %         str = 'Y';
-            %     end
-            %     if str == 'Y'
-            %         strainInstances.update(strain)
-            %         strainInstances.save()
-            %     else
-            %         disp("Aborted");
-            %     end
-            % else
-            %     disp("Aborted");
+                %     prompt = 'Y/N [Y]: ';
+                %     str = input(prompt,'s');
+                %     if isempty(str)
+                %         str = 'Y';
+                %     end
+                %     if str == 'Y'
+                %         strainInstances.update(strain)
+                %         strainInstances.save()
+                %     else
+                %         disp("Aborted");
+                %     end
+                % else
+                %     disp("Aborted");
             end
         end
-        
+
     end
 end
 
