@@ -28,7 +28,7 @@ function test_ndi_filenavigator_documents(dirname)
 
     % Step a)
 
-    % Test the ndi.document creater
+    % Test the ndi.document creator
     fn_doc{1} = fn{1}.newdocument();
     fn_doc{2} = fn{2}.newdocument();
     disp('Sucessfully created ndi_documents')

@@ -688,9 +688,9 @@ classdef tuning_response < ndi.app
         function tc_doc = tuningdoc_fixcellarrays(ndi_app_tuning_response_obj, tc_doc)
             % TUNINGDOC_FIXCELLARRAYS - make sure fields that are supposed to be cell arrays are cell arrays in TUNINGCURVE document
             %
-            % DEPRICATED - will cause an error
+            % DEPRECATED - will cause an error
             %
-            error(['This version is depricated. Use ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static() ']);
+            error(['This version is deprecated. Use ndi.app.stimulus.tuning_response.tuningdoc_fixcellarrays_static() ']);
             document_properties = tc_doc.document_properties;
 
             for i=1:numel(document_properties.stimulus_tuningcurve.individual_responses_real),

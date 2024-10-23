@@ -662,7 +662,7 @@ classdef document
             %
             % If LOCATION is not specified or is empty, then all locations are removed.
             %
-            % If NDI_DOCUMENT_OBJ does not have a file NAME in its file_list, then an erorr is
+            % If NDI_DOCUMENT_OBJ does not have a file NAME in its file_list, then an error is
             % generated.
             %
             % This function accepts name/value pairs that alter its default behavior:

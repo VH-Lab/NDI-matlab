@@ -5,7 +5,7 @@ function tutorial_02_05(prefix, testing)
     %
     % Runs (and tests) the code for
     %
-    % NDI Tutorial 2: Analzying your first electrophysiology experiment with NDI
+    % NDI Tutorial 2: Analyzing your first electrophysiology experiment with NDI
     %    Tutorial 2.5: Understanding and searching the NDI database
     % The tutorial is available at
     %     https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/5_searching_ndi_databases/

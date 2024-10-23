@@ -70,7 +70,7 @@ classdef timeseries < ndi.documentservice
                 g = (isinf(times) & (times > 0));
                 samples(g) = 1+sr*diff(et.t0_t1{1}(1:2));
             else,
-                samples = []; % need to be overriden
+                samples = []; % need to be overridden
             end;
         end;
 
@@ -90,7 +90,7 @@ classdef timeseries < ndi.documentservice
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 times = et.t0_t1{1}(1) + (samples-1)/sr;
             else,
-                times = []; % need to be overriden
+                times = []; % need to be overridden
             end;
         end;
 

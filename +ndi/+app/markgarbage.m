@@ -67,7 +67,7 @@ classdef markgarbage < ndi.app
             %
             % B = SAVEVALIDINTERVAL(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ, VALIDINTERVALSTRUCT)
             %
-            % Saves a VALIDINTERVALSTRUCT to an experment database, in the appropriate place for
+            % Saves a VALIDINTERVALSTRUCT to an experiment database, in the appropriate place for
             % the NDI_EPOCHSET_OBJ data.
             %
             % If the entry is a duplicate, it is not saved but b is still 1.

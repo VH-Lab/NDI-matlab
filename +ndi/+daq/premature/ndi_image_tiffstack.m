@@ -187,7 +187,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             filelist = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
             for i=1:length(filelist),
                 intervals(end+1).file = filelist{i};
-                intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparsion and get the order list
+                intervals(end).local_epoch_order = i;            % desired implementation: need to use multiple filenames to make comparison and get the order list
             end
             return;
 

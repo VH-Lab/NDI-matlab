@@ -72,7 +72,7 @@ classdef blackrock < ndi.daq.reader.mfdaq
             %
             %  EPOCH is set of epoch files
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %  DATA is the channel data (each column contains data from an individual channel)
             %
             [nev_files, nsv_files] = ndi.daq.reader.mfdaq.blackrock.filenamefromepochfiles(epochfiles);
 

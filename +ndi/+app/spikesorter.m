@@ -20,7 +20,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             end
 
             ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app(session, name);
-            % intiate app doc
+            % initiate app doc
             ndi_app_spikesorter_obj = ndi_app_spikesorter_obj@ndi.app.appdoc(...
                 {'sorting_parameters','spike_clusters'},...
                 {'sorting_parameters','spike_clusters'},...
@@ -494,7 +494,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             %
             %   INPUTS:
             %     SORTING_PARAMETERS_NAME - the name of the sorting parameter document
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the sorting parameters ndi.document with the name SORTING_PARAMETERS_NAME.
             %
             %   ------------------------------------
@@ -506,7 +506,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             %
             %   INPUTS:
             %     SORTING_PARAMETERS_NAME - the name of the sorting parameter document
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the sorting parameters ndi.document with the name SORTING_PARAMETERS_NAME.
             %
             % ----------------------------------------------------------------------------------------------
@@ -519,7 +519,7 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
             %
             %   SPIKEWAVES documents store the spike waveforms that are read during a spike extraction. It
             %   DEPENDS ON the ndi.time.timeseries object on which the extraction is performed and the SORTING_PARAMETERS
-            %   that descibed the extraction.
+            %   that described the extraction.
             %
             %   Definition: apps/spikesorter/spike_clusters
             %

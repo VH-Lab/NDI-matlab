@@ -278,7 +278,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
             %
             % EPOCH is set of files in the epoch
             %
-            % DATA is the channel data (each column contains data from an indvidual channel)
+            % DATA is the channel data (each column contains data from an individual channel)
             %
             filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles);
 

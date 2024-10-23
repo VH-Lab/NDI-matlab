@@ -18,7 +18,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             %  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
             %
-            %  ndi.daq.reader has mostly abstract methods, it is made to be overriden.
+            %  ndi.daq.reader has mostly abstract methods, it is made to be overridden.
             %
             obj = obj@ndi.ido();
 

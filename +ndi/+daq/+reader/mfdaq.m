@@ -87,7 +87,7 @@ classdef mfdaq < ndi.daq.reader
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
@@ -117,7 +117,7 @@ classdef mfdaq < ndi.daq.reader
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
@@ -320,12 +320,12 @@ classdef mfdaq < ndi.daq.reader
             %  CHANNELTYPE is a cell array of strings, describing the type of each channel to read:
             %      'event'  - TIMESTAMPS mark the occurrence of each event; DATA is a logical 1 for
             %                    each timestamp
-            %      'marker' - TIMESTAMPS mark the occurence of each event; each row of DATA is the
+            %      'marker' - TIMESTAMPS mark the occurrence of each event; each row of DATA is the
             %                    data associated with the marker (type double)
-            %      'text'   - TIMESTAMPS mark the occurence of each event; DATA is a cell array of
+            %      'text'   - TIMESTAMPS mark the occurrence of each event; DATA is a cell array of
             %                    character arrays, 1 per event
             %      'dep'    - Create events from a digital channel with positive transitions.
-            %                    TIMESTAMPS mark the occurence of each event and DATA entries are 1
+            %                    TIMESTAMPS mark the occurrence of each event and DATA entries are 1
             %      'dimp'   - Create events from a digital channel by finding impulses that exhibit
             %                    positive then negative transitions. TIMESTAMPS mark the occurrence
             %                    of each event, and DATA indicates whether the event is a positive
@@ -333,7 +333,7 @@ classdef mfdaq < ndi.daq.reader
             %      'den'    - Create events from a digital channel with negative transitions.
             %                    TIMESTAMPS mark the occurrence of each event and DATA entries are -1.
             %      'dimn'   - Create events from a digital channel by finding impulses that exhibit
-            %                    negative then positive transitions. TIMESTAMPS mark the occurence of
+            %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
             %
@@ -402,12 +402,12 @@ classdef mfdaq < ndi.daq.reader
             %  CHANNELTYPE is a cell array of strings, describing the type of each channel to read:
             %      'event'  - TIMESTAMPS mark the occurrence of each event; DATA is a logical 1 for
             %                    each timestamp
-            %      'marker' - TIMESTAMPS mark the occurence of each event; each row of DATA is the
+            %      'marker' - TIMESTAMPS mark the occurrence of each event; each row of DATA is the
             %                    data associated with the marker (type double)
-            %      'text'   - TIMESTAMPS mark the occurence of each event; DATA is a cell array of
+            %      'text'   - TIMESTAMPS mark the occurrence of each event; DATA is a cell array of
             %                    character arrays, 1 per event
             %      'dep'    - Create events from a digital channel with positive transitions.
-            %                    TIMESTAMPS mark the occurence of each event and DATA entries are 1
+            %                    TIMESTAMPS mark the occurrence of each event and DATA entries are 1
             %      'dimp'   - Create events from a digital channel by finding impulses that exhibit
             %                    positive then negative transitions. TIMESTAMPS mark the occurrence
             %                    of each event, and DATA indicates whether the event is a positive
@@ -415,7 +415,7 @@ classdef mfdaq < ndi.daq.reader
             %      'den'    - Create events from a digital channel with negative transitions.
             %                    TIMESTAMPS mark the occurrence of each event and DATA entries are -1.
             %      'dimn'   - Create events from a digital channel by finding impulses that exhibit
-            %                    negative then positive transitions. TIMESTAMPS mark the occurence of
+            %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
             %

@@ -136,7 +136,7 @@ classdef appdoc
             % according to the APPDOC_TYPE of the NDI_APPDOC_OBJ.
             %
             % In the base class, this always returns empty. It must be overridden in subclasses.
-            % The documentation for overriden functions should be in the function APPDOC_DESCRIPTION.
+            % The documentation for overridden functions should be in the function APPDOC_DESCRIPTION.
             %
             doc = [];
         end; % struct2doc()
@@ -227,7 +227,7 @@ classdef appdoc
             % In this superclass, empty is always returned. Subclasses should override
             % this function to search for each document type.
             %
-            % The documentation for subclasses should be in the overriden function
+            % The documentation for subclasses should be in the overridden function
             % APPDOC_DESCRIPTION.
             %
             doc = [];

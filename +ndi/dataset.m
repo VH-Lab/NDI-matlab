@@ -8,7 +8,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
     properties (Access = protected)
         session            % A session to hold documents for this dataset.
         % Note: This is not a session in the context of representing an
-        % experimental session, but insted an entrypoint to a session-like
+        % experimental session, but instead an entrypoint to a session-like
         % database.
     end
 
@@ -361,7 +361,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % NDI_BINARYDOC_OBJ = DATABASE_OPENBINARYDOC(NDI_DATASET_OBJ, NDI_DOCUMENT_OR_ID, FILENAME)
             %
             %  Return the open ndi.database.binarydoc object that corresponds to an ndi.document and
-            %  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+            %  NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
             %  The document is opened for reading only. Document binary streams may not be edited once the
             %  document is added to the database.
             %

@@ -223,7 +223,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
                             otherwise,
                                 error(['unknown threshold method']);
                         end
-                        % Accomodates spikes according to refractory period
+                        % Accommodates spikes according to refractory period
                         % locs_here = vlt.signal.refractory(locs_here, refractory_samples); % only apply to all events
                         locs_here = locs_here(find(locs_here > -spike_sample_start & locs_here <= length(data(:,channel))-spike_sample_end));
                         locs = [locs(:) ; locs_here];
@@ -510,7 +510,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %
             %   INPUTS:
             %     EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the extraction parameters ndi.document with the name EXTRACTION_NAME.
             %
             %   ------------------------------------
@@ -522,7 +522,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %
             %   INPUTS:
             %     EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the extraction parameters ndi.document with the name EXTRACTION_NAME.
             %
             %
@@ -582,7 +582,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
             %      EPOCH - the epoch identifier to be accessed
             %      EXTRACTION_NAME - the name of the extraction parameters document used in the extraction
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the extraction parameters modification ndi.document with the name EXTRACTION_NAME
             %      for the named EPOCHID and NDI_TIMESERIES_OBJ.
             %
@@ -597,7 +597,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %      NDI_TIMESERIES_OBJ - the ndi.time.timeseries object that was used in the extraction
             %      EPOCH - the epoch identifier to be accessed
             %      EXTRACTION_PARAMETERS_NAME - the name of the extraction parameter document
-            %   OUPUT:
+            %   OUTPUT:
             %     Returns the extraction parameters modification ndi.document with the name EXTRACTION_NAME.
             %
             % ----------------------------------------------------------------------------------------------
@@ -610,7 +610,7 @@ classdef spikeextractor < ndi.app & ndi.app.appdoc
             %
             %   SPIKEWAVES documents store the spike waveforms that are read during a spike extraction and the
             %   time of each spike in the epoch's local time. It DEPENDS ON the ndi.time.timeseries object on
-            %   which the extraction is performed and the EXTRACTION_PARAMETERS that descibed the extraction.
+            %   which the extraction is performed and the EXTRACTION_PARAMETERS that described the extraction.
             %
             %   Definition: app/spikeextractor/spikewaves
             %

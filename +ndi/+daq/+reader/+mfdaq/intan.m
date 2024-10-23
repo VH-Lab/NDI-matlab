@@ -139,7 +139,7 @@ classdef intan < ndi.daq.reader.mfdaq
             %
             %  EPOCH is set of epoch files
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %  DATA is the channel data (each column contains data from an individual channel)
             %
             [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 

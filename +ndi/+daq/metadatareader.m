@@ -145,7 +145,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % D = GET_INGESTED_DOCUMENT(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES, S)
             %
-            % Returns empty if there is no such document or the single docment if
+            % Returns empty if there is no such document or the single document if
             % there is such a document.
             %
             d = [];
@@ -175,7 +175,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             end;
         end; % eq()
 
-        % documentservices overriden methods
+        % documentservices overridden methods
 
         function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader object

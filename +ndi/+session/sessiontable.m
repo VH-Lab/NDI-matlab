@@ -165,7 +165,7 @@ classdef sessiontable
             %
             % BACKUP_SESSION_TABLE(NDI_SESSIONTABLE_OBJ)
             %
-            % Perform a backup of the sesion table file.
+            % Perform a backup of the session table file.
             % The session table file is backed up in the [USERPATH]/Preferences/NDI directory
             % and be named 'local_sessiontableNNN.txt', where NNN is a number.
             %

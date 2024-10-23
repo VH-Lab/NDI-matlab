@@ -221,7 +221,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % |-----------------------|-----------------------------------------------
             %
             % In the base class, this examines the parameters_specifications for
-            % fixed 'depends_on' entries (entires that have both a 'name' and a 'value').
+            % fixed 'depends_on' entries (entries that have both a 'name' and a 'value').
             % If it finds any, it creates a query indicating that the 'depends_on' field
             % must match the specified name and value.
             %
@@ -325,7 +325,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % provided in VALUE.
             %
             % The base class behavior of this function is simply to return true, but it
-            % can be overriden if additional criteria beyond an ndi.query are needed to
+            % can be overridden if additional criteria beyond an ndi.query are needed to
             % assess if a document is an appropriate input for the calculator.
             %
             b = 1; % base class behavior
@@ -603,7 +603,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                         'value',1);
                     y = y - doc_height;
                     uicontrol(uid.edit,'position',[x y doc_width doc_height],...
-                        'string','Please select one ducumentation type.',...
+                        'string','Please select one documentation type.',...
                         'tag','DocTxt','min',0,'max',2,'enable','inactive');
                     set(findobj(fig,'tag','DocTxt'),'units','normalized');
                     y = y - row;

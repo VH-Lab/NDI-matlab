@@ -68,7 +68,7 @@ classdef validate
             if isfield(ndi_document_obj.document_properties, 'depends_on')
                 has_dependencies = 1;
                 if ~isa(ndi_session_obj, 'ndi.session')
-                    error('You must pass in an instnce of ndi.session as your second argument to check for dependency')
+                    error('You must pass in an instance of ndi.session as your second argument to check for dependency')
                 end
             end
 
@@ -142,7 +142,7 @@ classdef validate
                 end
             end
 
-            % check if there is depends-on field, if it exsists we need to
+            % check if there is depends-on field, if it exists we need to
             % search through the ndi.session database to check
             has_dependencies_error = 0;
             if has_dependencies == 1
@@ -202,7 +202,7 @@ classdef validate
 
         function format_validator_list = load_format_validator()
             %
-            %  LOAD the the list of FormatValidator configurated based on
+            %  LOAD the the list of FormatValidator configured based on
             %  the JSON file ndi_validate_config.json
             %
             ndi.validate.checkJavaPath()
@@ -267,7 +267,7 @@ classdef validate
                 try
                     schema_json = fileread(schema_path);
                 catch
-                    error("the schema path does not exsist");
+                    error("the schema path does not exist");
                 end
             end
             if isa(ndi_document_obj, 'char') || isa(ndi_document_obj, 'string')
@@ -280,7 +280,7 @@ classdef validate
                 try
                     schema_json = fileread(schema_path);
                 catch
-                    error('The schema path does not exsist. Verify that you have created a schema file in the $NDIDOCUMENTSCHEMAPATH folder.');
+                    error('The schema path does not exist. Verify that you have created a schema file in the $NDIDOCUMENTSCHEMAPATH folder.');
                 end
             end
         end

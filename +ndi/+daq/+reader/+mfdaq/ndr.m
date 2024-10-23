@@ -84,7 +84,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %
             %  EPOCHFILES is the cell array of full path filenames for this epoch
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %  DATA is the channel data (each column contains data from an individual channel)
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             data = ndr_reader.readchannels_epochsamples(channeltype,channel,epochfiles,1,s0,s1);

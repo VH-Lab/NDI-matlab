@@ -98,7 +98,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             %
             %  EPOCHFILES is the cell array of full path filenames for this epoch
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %  DATA is the channel data (each column contains data from an individual channel)
             %
 
             if ~iscell(channeltype),

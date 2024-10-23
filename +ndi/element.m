@@ -48,7 +48,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
                 if ~isempty(element_underlying_element),
                     subject_id = element_underlying_element.subject_id;
                     if numel(varargin)==7,
-                        warning(['Ignoring input subject_id because underlying elment is given.']);
+                        warning(['Ignoring input subject_id because underlying element is given.']);
                     end;
                 elseif numel(varargin)>=7 & ~isempty(varargin{7}),
                     subject_id = varargin{7};

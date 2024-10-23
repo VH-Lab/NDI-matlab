@@ -195,7 +195,7 @@ classdef epochset
         end % epochid
 
         function et_entry = epochtableentry(ndi_epochset_obj, epoch_number)
-            % EPOCHTABLEENTRY - return the entry of the EPOCHTABLE that corresonds to an EPOCHID
+            % EPOCHTABLEENTRY - return the entry of the EPOCHTABLE that corresponds to an EPOCHID
             %
             % ET_ENTRY = EPOCHTABLEENTRY(NDI_EPOCHSET_OBJ, EPOCH_NUMBER_OR_ID)
             %

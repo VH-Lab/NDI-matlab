@@ -14,7 +14,7 @@ function [tname,tname_without_extension] = copydocfile2temp(doc, S, filename, ex
     %   FILENAME - the file of DOC to be copied
     %   EXTENSION - the extension of the filename. Should include the leading period.
     %
-    % Ouptut:
+    % Output:
     %   TNAME - the temporary filename that is created.
     %   TNAME_WITHOUT_EXT - the temporary filename without the extension.
     %

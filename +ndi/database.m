@@ -97,7 +97,7 @@ classdef database
             %
             % Return the open ndi.database.binarydoc object and VERSION that corresponds to an ndi.document and
             % the requested version (the latest version is used if the argument is omitted).
-            % NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itsef.
+            % NDI_DOCUMENT_OR_ID can be either the document id of an ndi.document or an ndi.document object itself.
             %
             % Note that this NDI_BINARYDOC_OBJ must be closed and unlocked with ndi.database/CLOSEBINARYDOC.
             % The locked nature of the binary doc is a property of the database, not the document, which is why

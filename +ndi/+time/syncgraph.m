@@ -321,7 +321,7 @@ classdef syncgraph < ndi.ido
         end; % ingest
 
         function d = get_ingested(ndi_syncgraph_obj)
-            % GET_INGESTED - get ingested docments for an ndi.syncgraph object
+            % GET_INGESTED - get ingested documents for an ndi.syncgraph object
             %
             % D = GET_INGESTED(NDI_SYNCGRAPH_OBJ)
             %

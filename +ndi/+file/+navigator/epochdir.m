@@ -3,7 +3,7 @@
 %  DT = FILENAVIGATOR_EPOCHDIR(EXP, FILETYPE)
 %
 %  Creates a new file tree object with the session name
-%  This class in inhereted from filenavigator and with epochdir organization
+%  This class in inherited from filenavigator and with epochdir organization
 %
 
 classdef epochdir < ndi.file.navigator

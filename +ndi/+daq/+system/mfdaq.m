@@ -100,7 +100,7 @@ classdef mfdaq < ndi.daq.system
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
@@ -140,7 +140,7 @@ classdef mfdaq < ndi.daq.system
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
