@@ -140,4 +140,3 @@ classdef decoder < ndi.app
     end; % methods
 
 end % ndi.app.stimulus.decoder
-

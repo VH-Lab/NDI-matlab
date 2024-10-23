@@ -69,7 +69,6 @@ function tutorial_02_05(prefix, testing)
     %      stimulus_presentation: [1x1 struct]
     %                      files: [1x1 struct]
 
-
     % Code block 2.5.2.1
     disp(['Code block 2.5.2.1:']);
 
@@ -98,7 +97,6 @@ function tutorial_02_05(prefix, testing)
     % ans =
     %  struct with fields:
     %    definition: '$NDIDOCUMENTPATH/base.json'
-
 
     % Code block 2.5.3.1
     disp(['Code block 2.5.3.1:']);
@@ -158,7 +156,6 @@ function tutorial_02_05(prefix, testing)
     %     presentation_order: [85x1 double]
     %                stimuli: [17x1 struct]
 
-
     % Code block 2.5.4.1
     disp(['Code block 2.5.4.1:'])
 
@@ -217,6 +214,3 @@ function tutorial_02_05(prefix, testing)
     docs=S.database_search(ndi.query('base.id','regexp','(.*)','')); % this finds ALL documents
     [g,nodes,mdigraph] = ndi.database.fun.docs2graph(docs);
     ndi.database.fun.plotinteractivedocgraph(docs,g,mdigraph,nodes,'layered',interactive);
-
-
-

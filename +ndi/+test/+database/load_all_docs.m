@@ -24,5 +24,3 @@ function json_filenames = load_all_docs()
             json_filenames = cat(1,json_filenames,json_docs{i}{1});
         end;
     end;
-
-

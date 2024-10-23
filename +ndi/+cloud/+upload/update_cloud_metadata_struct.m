@@ -31,4 +31,3 @@ function [status, dataset] = update_cloud_metadata_struct(dataset_id, S, size)
     % dataset_update.brainRegions = brainRegions;
     [status,dataset] = ndi.cloud.api.datasets.post_datasetId(dataset_id,dataset_update);
 end
-

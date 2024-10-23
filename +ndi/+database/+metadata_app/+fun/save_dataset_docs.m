@@ -29,6 +29,4 @@ function save_dataset_docs(S, session_id, datasetInformation)
     end;
 
     S.database_add(documentList);
-
 end
-

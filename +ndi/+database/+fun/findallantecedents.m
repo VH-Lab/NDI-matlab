@@ -27,7 +27,6 @@ function [d] = findallantecedents(E, visited, varargin)
         visited = cat(1,visited,{varargin{i}.id()});
     end;
 
-
     for i=1:numel(varargin),
         [depNames,depStruct] = dependency(varargin{i});
         ids = {depStruct.value};

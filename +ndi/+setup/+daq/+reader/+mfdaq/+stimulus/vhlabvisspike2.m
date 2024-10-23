@@ -18,7 +18,6 @@
 
 classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
     properties (GetAcces=public,SetAccess=protected)
-
     end
     properties (Access=private) % potential private variables
     end
@@ -217,4 +216,3 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
     methods (Static)  % helper functions
     end % static methods
 end
-

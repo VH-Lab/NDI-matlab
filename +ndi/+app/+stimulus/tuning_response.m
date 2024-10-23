@@ -133,7 +133,6 @@ classdef tuning_response < ndi.app
                         rdocs{end+1} = ndi_app_tuning_response_obj.compute_stimulus_response_scalar(ndi_element_stim, ...
                             ndi_timeseries_obj, doc_stim{i}, control_stim_doc{j},'freq_response',freq_response);
                     end;
-
                 end
             end
         end %
@@ -833,7 +832,6 @@ classdef tuning_response < ndi.app
                 response_stddev ; ...
                 response_stderr; ];
             resp.ind = response_ind;
-
 
         end; % tuningcurvedoc2vhlabrespstruct()
 

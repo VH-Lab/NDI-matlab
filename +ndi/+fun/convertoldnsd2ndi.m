@@ -31,7 +31,6 @@ function convertoldnsd2ndi(pathname)
         end;
     end;
 
-
     str{1} = ['find ' pathname  ' -type f -name ''*nsd*'' -exec bash -c ''mv "$1" "${1/nsd/ndi}"'' -- {} \;'];
     str{end+1} = ['find ' pathname  ' -type f -name ''*NDI*'' -exec bash -c ''mv "$1" "${1/NSD/NDI}"'' -- {} \;'];
 
@@ -48,4 +47,3 @@ function convertoldnsd2ndi(pathname)
     for i=1:numel(str),
         system(str{i});
     end;
-

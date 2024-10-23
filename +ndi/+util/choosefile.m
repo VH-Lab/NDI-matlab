@@ -63,5 +63,3 @@ function [success,filename,replaces] = choosefile(prompt, defaultfilename, dlgti
     success = 1;
     replaces = 0;
 end % choosefileordir
-
-

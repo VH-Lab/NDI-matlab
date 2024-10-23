@@ -83,4 +83,3 @@ function test_ndi_element(dirname)
             E.database_rm(doc{i}.id());
         end;
     end;
-

@@ -22,5 +22,3 @@ function console(filename)
     elseif iswin(),
         error(['Windows not supported yet.']);
     end;
-
-

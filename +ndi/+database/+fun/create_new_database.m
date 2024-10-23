@@ -22,6 +22,5 @@ function create_new_database
         opts.Interpreter = 'tex';
         answer = inputdlg(prompt,dlgtitle,dims,definput,opts);
         answer = answer{1,1};
-
     end
 end

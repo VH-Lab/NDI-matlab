@@ -131,4 +131,3 @@ classdef commontriggers < ndi.time.syncrule
 
     end % methods
 end % classdef ndi.time.syncrule.commontriggers
-

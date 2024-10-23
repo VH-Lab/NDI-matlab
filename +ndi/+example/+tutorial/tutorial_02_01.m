@@ -164,10 +164,3 @@ function tutorial_02_01(prefix, testing)
     data, % show data
     data.stimid,
     data.parameters{1}
-
-
-
-
-
-
-

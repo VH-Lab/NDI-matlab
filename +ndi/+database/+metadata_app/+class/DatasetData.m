@@ -38,7 +38,6 @@ classdef DatasetData < handle
         end
     end
 
-
     methods (Static)
 
         function S = getDefaultDatasetItem()
@@ -51,7 +50,5 @@ classdef DatasetData < handle
             S.hasVersion = '';
             S.shortName = '';
         end
-
     end
-
 end

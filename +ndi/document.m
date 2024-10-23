@@ -82,7 +82,6 @@ classdef document
             ErrorIfNotFound = 1;
             vlt.data.assign(varargin{:});
 
-
             d = dependency_value_n(ndi_document_obj, dependency_name, 'ErrorIfNotFound', 0);
             hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
             if ~hasdependencies & ErrorIfNotFound,
@@ -709,7 +708,6 @@ classdef document
 
         end; % remove_file
 
-
         function ndi_document_obj = reset_file_info(ndi_document_obj)
             % RESET_FILE_INFO - reset the file information parameters for a new did.document
             %
@@ -767,7 +765,6 @@ classdef document
         end % validate()
 
     end % methods
-
 
     methods (Static)
 
@@ -909,4 +906,3 @@ classdef document
 
     end % methods Static
 end % classdef
-

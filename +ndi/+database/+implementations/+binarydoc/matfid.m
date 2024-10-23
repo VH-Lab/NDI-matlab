@@ -36,4 +36,3 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
         end % fclose()
     end;
 end
-

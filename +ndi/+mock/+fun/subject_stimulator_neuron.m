@@ -60,15 +60,11 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
     presentation_time = vlt.data.emptystruct('clocktype','stimopen','onset','offset','stimclose','stimevents');
     stim_pres_struct.stimuli = emptystruct('parameters');
 
-
-
     t = vlt.data.colvec([ 1:10]);
 
     nde.addepoch('mockepoch',ndi.time.clocktype('UTC'), [0 100], t, ones(size(t)) );
 
     [data,t,timeref] = nde.readtimeseries('mockepoch',-Inf,Inf);
-
-
 
     nde_stimulator.addepoch('mockepoch',ndi.time.clocktype('UTC'),[0 100], [], []);
 
@@ -109,4 +105,3 @@ function [output] = subject_stimulator_neuron(ndi_session_obj)
     if add_blank,
         stim_pres_struct.stimuli(end+1,1) = struct('parameters',struct('isblank',1));
     end;
-

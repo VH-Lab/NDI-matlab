@@ -91,4 +91,3 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     end;
 
     docs = { mock_output.mock_subject stimulator_doc spikes_doc stim_pres_doc control_stim_doc stim_response_doc{1}{:} tc_docs{1}{:} };
-

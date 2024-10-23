@@ -72,4 +72,3 @@ classdef timemapping
 
     end % methods
 end % class ndi.time.timemapping
-

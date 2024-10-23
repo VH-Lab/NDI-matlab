@@ -54,15 +54,12 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
 
             filelist = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');
 
-
             channels = struct('name',[],'type',[]);
             channels = channels([]);
-
 
             intan_channel_types = {   'image'  };
 
             sapi_multifunctiondaq_channel_types = { 'image' };
-
 
             for i=1:length(filelist),
                 % then, open RHD files, and examine the headers for all channels present
@@ -106,7 +103,6 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             %
             %  REPORT is the data collection for specific image channels
 
-
             file_names = vlt.file.findfiletype(getpath(getsession(sAPI_dev)),'tif');  %%use the files as object fields later
 
             % file_names,
@@ -124,7 +120,6 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             % t1_,
 
             intanchanneltype = multifuncdaqchanneltype2intan(channeltype);
-
 
             report = vlt.data.emptystruct('channeltype','channel','epoch','frame','data');     %%initial structure
             for i = 1:size(file_names,1),
@@ -170,11 +165,8 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             %         end
             %     end
 
-
             % step 1: read header file of that image
             % step 2: look in header.frequency_parameters to pull out the rate
-
-
         end
 
         function [intervals] = getintervals(sAPI_dev)
@@ -199,14 +191,11 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
             end
             return;
 
-
             % intervals = [];
             % for (i <= size(device.stim_times,1) )
             % intervals(:,1) = device.stim_times(,2);
             % intervals(:,2) = device.stim_times(,3) - device.stim_times(,2);
             % intervals(:,3) = device.voltageForTime;
-
         end
-
     end
 end

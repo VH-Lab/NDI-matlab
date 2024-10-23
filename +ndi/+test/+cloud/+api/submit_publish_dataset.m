@@ -74,6 +74,4 @@ function submit_publish_dataset(dataset_id)
     catch
         % do nothing, this is the expected behavior
     end
-
 end
-

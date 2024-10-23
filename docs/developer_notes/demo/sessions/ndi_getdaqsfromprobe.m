@@ -27,5 +27,3 @@ function [daqnames, channel_types, channels, epochids, subject] = ndi_getdaqsfro
         channel_types{i} = CHANNELTYPE;
         channels{i} = CHANNELLIST;
     end;
-
-

@@ -8,7 +8,6 @@ function gui(varargin)
     %
     %  See also: ndi.session
 
-
     if nargin==1
         ndi_session_obj = varargin{1};
     end
@@ -97,7 +96,6 @@ function gui(varargin)
             chkbox.Style = 'Checkbox';
             chkbox.Callback = callbackstr;
 
-
             % Initialization of layout
             set(fig,'userdata',ud);
             right = ud.windowwidth;
@@ -108,12 +106,10 @@ function gui(varargin)
             set(fig,'position',[50 50 right top],'tag','ndi.gui.gui','name',['NDI: ' ud.ndi_session_obj.reference],'Visible','off');
             movegui(fig,'center');
 
-
             uicontrol(txt,'position',[0.01 0.95 0.95 0.04],'string',ud.windowlabel,'horizontalalignment','left','fontweight','bold','fontsize', 18); % Label
             uicontrol(txt,'position',[0.01 0.95-0.05 0.30 0.04],'string',['Path:' getpath(ud.ndi_session_obj)],'fontsize',13); % Path
             uicontrol(txt,'position',[0.36 0.95-0.05 0.15 0.04],'string',['Reference: ' ud.ndi_session_obj.reference],'fontsize',13); % Reference
             uicontrol(txt,'position',[0.61 0.95-0.05 0.35 0.04],'string',['ID: ' ud.ndi_session_obj.id()],'fontsize',13); % Unique Reference
-
 
             % "Update" PushButton
             uicontrol(button,'position',[0.4 0.95-0.05*2 0.1 0.04],'string','Update','tag','UpdateBt');
@@ -171,8 +167,6 @@ function gui(varargin)
             set(findobj(fig,'tag','DAQList'),'string',names,'value',[],'userdata',unique_names);
             ndi.gui.gui('fig',fig,'command','EnableDisable');
 
-
-
             %      case 'DeleDAQList'
             %         ud.ndi_session_obj,
             %         daq_list = ud.ndi_session_obj.daqsystem_load;
@@ -214,7 +208,6 @@ function gui(varargin)
             set(findobj(fig,'tag','DBList'),'string',name_list,'value',[],'userdata',doc_ref);
             ndi.gui.gui('fig',fig,'command','EnableDisable');
 
-
         case 'EnableDisable'
             v = get(findobj(fig,'tag','DBList'),'value');
             if isempty(v)
@@ -223,4 +216,3 @@ function gui(varargin)
                 set(findobj(fig,'tag','ClusterBt'),'enable','on');
             end
     end
-

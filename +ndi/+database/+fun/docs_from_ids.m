@@ -12,12 +12,10 @@ function docs = docs_from_ids(DorS,document_ids)
     % DOCS is a cell array the same size as DOCUMENT_IDS. If the document is found, it
     % is provided in DOCS{i}. Otherwise, DOCS{i} is empty.
 
-
     if isempty(document_ids),
         docs = {};
         return;
     end;
-
 
     q = [];
 
@@ -42,5 +40,3 @@ function docs = docs_from_ids(DorS,document_ids)
             end;
         end;
     end;
-
-

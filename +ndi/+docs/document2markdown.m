@@ -16,7 +16,6 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
     giturl_path = 'https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/database_documents/';
     gitvalurl_path = 'https://github.com/VH-Lab/NDI-matlab/tree/master/ndi_common/schema_documents/';
 
-
     vlt.data.assign(varargin{:});
 
     if current_depth > max_depth,
@@ -34,11 +33,9 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
     info.my_path_to_root = repmat('../',1,numel(find(info.url=='/')));
     info.localurl = [info.shortname '.md'];
 
-
     md = '';
 
     md = cat(2,md,['# ' info.shortname ' (ndi.document class)' newline newline]);
-
 
     md = cat(2,md,['## Class definition' newline newline]);
 
@@ -69,7 +66,6 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
         md = cat(2,md,[newline newline]);
     end;
     info.superclass_info = superclass_info;
-
 
     info.definition = ndi_document_obj.document_properties.document_class.definition;
     info.definition_url = strrep(info.definition, '$NDIDOCUMENTPATH/', giturl_path);
@@ -138,7 +134,6 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
         md = cat(2,md,[newline newline]);
     end;
 
-
     % superclass fields
 
     if numel(superclass_info)>0,
@@ -157,4 +152,3 @@ function [md,info] = document2markdown(ndi_document_obj, varargin)
             end;
         end;
     end;
-

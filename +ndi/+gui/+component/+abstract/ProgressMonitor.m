@@ -170,7 +170,6 @@ classdef ProgressMonitor < handle
             end
         end
 
-
         function remainingTimeStr = formatRemainingTime(obj)
             %tRemaining.Format = obj.RemainingTimeFormat;
 
@@ -193,5 +192,4 @@ classdef ProgressMonitor < handle
             end
         end
     end
-
 end

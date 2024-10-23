@@ -48,7 +48,6 @@ function exp = marderlab(exp, devname)
             epochprobemapfileparameters = {'(.*)epochprobemap.txt'};
         otherwise,
             error(['Unknown device requested ' devname '.']);
-
     end
 
     ft = ndi.file.navigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);

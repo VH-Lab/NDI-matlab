@@ -54,7 +54,6 @@ function exp = katzlab_makedev(exp, devname)
             epochprobemapfileparameters = {'epochprobemap.txt'};
         otherwise,
             error(['Unknown device requested ' devname '.']);
-
     end
 
     ft = ndi.file.navigator.epochdir(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
@@ -64,5 +63,3 @@ function exp = katzlab_makedev(exp, devname)
     eval(['mydev = ' objectclass '(devname, ft, dr, mdr );']);
 
     exp = exp.daqsystem_add(mydev);
-
-

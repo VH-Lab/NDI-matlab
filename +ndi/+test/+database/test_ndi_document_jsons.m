@@ -52,5 +52,3 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
         error_msg'
         error(['At least one ndi.document failed to be built from its definition:']);
     end;
-
-

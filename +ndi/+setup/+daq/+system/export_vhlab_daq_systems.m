@@ -1,7 +1,6 @@
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'vhlab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
-
 % Export "vhintan" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 daqSystemName = 'vhintan';
@@ -16,7 +15,6 @@ daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
     'HasEpochDirectories', true);
 
 daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
-
 
 % Export "vhspike2" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -34,7 +32,6 @@ daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
 
 daqSystemConfig2 = ndi.setup.DaqSystemConfiguration.fromConfigFile(...
     fullfile(exportDir, [daqSystemName, '.json']));
-
 
 % Export "vhvis_spike2" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

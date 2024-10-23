@@ -26,7 +26,6 @@ function [d] = findalldependencies(E, visited, varargin)
         visited = cat(1,visited,{varargin{i}.id()});
     end;
 
-
     for i=1:numel(varargin),
         q_v = ndi.query('','depends_on','*',varargin{i}.id());
         bb = E.database_search(q_v);

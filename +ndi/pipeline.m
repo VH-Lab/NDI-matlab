@@ -314,7 +314,6 @@ classdef pipeline
 
         end % pipeline_edit()
 
-
         function calcList = getCalcFromPipeline(pipelineList, pipeline_name)
             %
             % ndi.pipeline.getCalcFromPipeline - read a CALCLIST from PIPELINELIST
@@ -421,4 +420,3 @@ classdef pipeline
 
     end % static methods
 end % class
-

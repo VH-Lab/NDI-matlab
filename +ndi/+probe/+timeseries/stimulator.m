@@ -155,5 +155,3 @@ classdef stimulator < ndi.probe.timeseries
 
     end; % methods
 end
-
-

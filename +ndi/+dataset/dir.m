@@ -1,6 +1,5 @@
 classdef dir < ndi.dataset
 
-
     properties (GetAccess=public, SetAccess=protected)
         path    % the file path of the session
     end

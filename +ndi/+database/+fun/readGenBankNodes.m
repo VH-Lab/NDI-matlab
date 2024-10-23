@@ -14,7 +14,6 @@ function [G] = ndi_readGenBankNodes(filename)
         T = filename; % hidden mode for debugging
     end;
 
-
     mystr = split(T{end},sprintf('\t|\t')); % get last string
     node_max = eval(mystr{1});
 
@@ -37,5 +36,3 @@ function [G] = ndi_readGenBankNodes(filename)
     G = sparse(parents,children,ones(size(parents)),node_max,node_max,length(parents));
 
     progressbar(1);
-
-

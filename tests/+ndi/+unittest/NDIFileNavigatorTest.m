@@ -86,7 +86,6 @@ classdef NDIFileNavigatorTest < matlab.unittest.TestCase
     end
 end
 
-
 function createFolderStructure(numSubdirs)
     % Create a specified folder structure with configurable subdirectories and files
     %
@@ -106,7 +105,6 @@ function createFolderStructure(numSubdirs)
         end
     end
 end
-
 
 function createFolderStructureWithFiles(numSubdirs, numFiles, fileBaseName, fileExtensions)
     % Create a specified folder structure with configurable subdirectories and files

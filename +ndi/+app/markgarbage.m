@@ -208,5 +208,3 @@ classdef markgarbage < ndi.app
     end; % methods
 
 end % ndi.app.markgarbage
-
-

@@ -10,7 +10,6 @@ function spikeextractor
     mydirectory = [ndi.common.PathConstants.CommonFolder filesep 'example_app_sessions'];
     dirname = [mydirectory filesep 'exp_sg'];
 
-
     disp(['creating a new session object...']);
     E = ndi.session.dir('exp1', dirname);
 
@@ -20,7 +19,6 @@ function spikeextractor
     for i=1:numel(devs),
         E.daqsystem_rm(vlt.data.celloritem(devs,i));
     end;
-
 
     disp(['Now adding our acquisition device (SpikeGadgets):']);
     ft = ndi.file.navigator(E, '.*\.rec\>');  % look for .rec files
@@ -43,5 +41,3 @@ function spikeextractor
     catspikes = spike_extractor.load_spikes(myprobe,'test'),
 
     spike_sorter.spike_sort('Tetrode7', 'n-trode', 'test', 'test_sort', sparams);
-
-

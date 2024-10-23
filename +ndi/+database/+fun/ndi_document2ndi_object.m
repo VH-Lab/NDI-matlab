@@ -10,7 +10,6 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
     % in the session.
     %
 
-
     % TODO: what if ndi_session_obj does not match the current session?
 
     if ~isa(ndi_document_obj, 'ndi.document'),
@@ -42,4 +41,3 @@ function o = ndi_document2ndi_object(ndi_document_obj, ndi_session_obj)
     end;
 
     o = eval([obj_string '(ndi_session_obj, ndi_document_obj);']);
-

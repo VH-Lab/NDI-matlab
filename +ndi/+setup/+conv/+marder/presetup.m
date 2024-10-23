@@ -13,6 +13,3 @@ function S = presetup(dirname, n)
     ndi.setup.conv.marder.abf2probetable(S,'forceIgnore2',n==1)
 
     edit([dirname filesep 'probeTable.csv']);
-
-
-

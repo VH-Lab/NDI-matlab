@@ -31,5 +31,3 @@ function [prefix,number] = channelname2prefixnumber(channelname)
     prefix = strtrim(prefix); % remove whitespace
 
     number = str2num(channelname(numeric_chars(1:end)));
-
-

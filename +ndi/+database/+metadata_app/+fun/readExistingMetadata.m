@@ -25,4 +25,3 @@ function datasetInformation = read_metadata_editor(metadata_editor_docs)
     document = metadata_editor_docs{1}.document_properties.metadata_editor.metadata_structure;
     datasetInformation = ndi.database.metadata_ds_core.convertDocumentToDatasetInfo(document);
 end
-

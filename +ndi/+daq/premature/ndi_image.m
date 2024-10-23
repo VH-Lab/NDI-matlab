@@ -15,6 +15,4 @@ classdef (Abstract) ndi_image < ndi.daq.system
         im = frame(obj,n,i) % returns the image i from the epoch n of an session.
         num = numFrame(obj,n) % retunes the number of frames that an epoch n has.
     end
-
-
 end

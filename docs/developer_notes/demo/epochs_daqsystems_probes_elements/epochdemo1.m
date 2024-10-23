@@ -28,7 +28,6 @@ function epochdemo1
     fn = ndi.file.navigator(E, {'.*\.smr\>','.*\.epochmetadata\>'},...
         'ndi.epoch.epochprobemap_daqsystem','.*\.epochmetadata\>');  % look for .smr files and .epochmetadata files
 
-
     % Step 1.2: create the daqsystem object and add it to the session:
 
     dev1 = ndi.daq.system.mfdaq('myspike2',fn, ndi.daq.reader.mfdaq.cedspike2());
@@ -60,4 +59,3 @@ function epochdemo1
     box off;
 
     E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
-

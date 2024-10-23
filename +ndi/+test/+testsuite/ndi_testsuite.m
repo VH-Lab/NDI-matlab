@@ -27,7 +27,6 @@ function output = ndi_testsuite
 
     pause(5);
 
-
     w = which('ndi.test.testsuite.ndi_testsuite');
     p = fileparts(w);
     jobs = vlt.file.loadStructArray([p filesep 'ndi_testsuite_list.txt']),
@@ -72,4 +71,3 @@ function output = ndi_testsuite
             end
         end;
     end;
-

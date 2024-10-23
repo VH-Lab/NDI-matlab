@@ -30,4 +30,3 @@ classdef Organization
         end
     end
 end
-

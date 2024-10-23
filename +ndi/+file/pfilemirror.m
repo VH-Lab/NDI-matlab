@@ -7,7 +7,6 @@ function b = pfilemirror(m_path,p_path)
     % and P_PATH is the location where the mirrored .p files should be placed.
     %
 
-
     b = 0;
     files = dir(m_path);
 
@@ -48,4 +47,3 @@ function b = pfilemirror(m_path,p_path)
     end
     b = 1;
 end
-

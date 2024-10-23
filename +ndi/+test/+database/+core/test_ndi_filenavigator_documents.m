@@ -64,4 +64,3 @@ function test_ndi_filenavigator_documents(dirname)
         end;
     end;
 end
-

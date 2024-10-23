@@ -64,4 +64,3 @@ function url = url(type, varargin)
     elseif (strcmp(type, 'get_files_bulk'))
         url = strcat(site, 'datasets/', dataset_id, '/files/bulk');
     end
-

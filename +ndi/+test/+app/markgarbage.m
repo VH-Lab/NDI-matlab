@@ -61,5 +61,3 @@ function markgarbage
     disp(['Now cleaning the example so it can be run again...']);
 
     E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
-
-

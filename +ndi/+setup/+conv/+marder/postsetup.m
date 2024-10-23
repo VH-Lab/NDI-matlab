@@ -35,5 +35,3 @@ function postsetup(S)
     S.database_rm(d);
     d = ndi.setup.conv.marder.marderprobe2uberon(S)
     S.database_add(d);
-
-

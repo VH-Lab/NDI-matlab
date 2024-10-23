@@ -51,7 +51,6 @@ classdef docViewer < handle
         function addDoc(obj,docs)
             % SDV: needs documentation
 
-
             for i=1:numel(docs)
                 d = docs{i}.document_properties.ndi_document;
                 obj.fullTable(end+1,:) = {d.name d.id d.type d.datestamp};
@@ -289,6 +288,5 @@ classdef docViewer < handle
             p = plot(ax, g, 'layout', 'layered');
             highlight(p, ind-numel(find(find(d==0)<ind)), 'NodeColor', 'r', 'MarkerSize', 6);
         end
-
     end
 end

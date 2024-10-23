@@ -19,6 +19,4 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
     [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);
     [b, ~] = ndi.cloud.up.upload_to_NDI_cloud(S, dataset_id);
     [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
-
 end
-

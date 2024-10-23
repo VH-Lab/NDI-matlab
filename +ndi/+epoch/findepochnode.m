@@ -47,4 +47,3 @@ function index = findepochnode(epochnode, epochnodearray)
     end
 
     index = searchspace;
-

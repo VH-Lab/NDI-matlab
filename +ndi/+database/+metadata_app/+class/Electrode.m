@@ -58,7 +58,4 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
             openminds_obj = openminds.ephys.Electrode('name', obj.Name, 'description',obj.Description, 'deviceType', devType, 'digitalIdentifier', digitalIdentifier, 'intrinsicResistance', rst, 'manufacturer', orgC);
         end
     end
-
-
 end
-

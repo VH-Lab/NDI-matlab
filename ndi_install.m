@@ -159,7 +159,6 @@ function b = ndi_install(directory, dependencies)
 
     startup
 
-
     % embedded version
 
 function b = git_embedded_assert
@@ -228,7 +227,6 @@ function b = git_embedded_install(dirname, repository)
         b=git_embedded_clone(repository,localparentdir);
     end;
 
-
 function b = git_embedded_pull(dirname)
     % GIT_EMBEDDED_PULL - pull changes to a git repository
     %
@@ -259,7 +257,6 @@ function b = git_embedded_pull(dirname)
 
     b = pull_success;
 
-
 function b = git_embedded_isgitdirectory(dirname)
     % GIT_EMBEDDED_ISGITDIRECTORY - is a given directory a GIT directory?
     %
@@ -274,7 +271,6 @@ function b = git_embedded_isgitdirectory(dirname)
     else,
         error(['GIT not available on system.']);
     end;
-
 
 function [uptodate, changes, untracked_present] = git_embedded_status(dirname)
     % GIT_EMBEDDED_STATUS - return git working tree status
@@ -336,7 +332,6 @@ function b = git_embedded_stash(dirname)
 
     b = stash_success;
 
-
 function b = git_embedded_clone(repository, localparentdir)
     % GIT_EMBEDDED_CLONE - clone a git repository onto the local computer
     %
@@ -366,7 +361,6 @@ function b = git_embedded_clone(repository, localparentdir)
     [status,results]=system(['git -C "' localparentdir '" clone ' repository]);
 
     b = (status==0);
-
 
 function c = text2cellstr_embedded(filename)
     % TEXT2CELLSTR_EMBEDDED - Read a cell array of strings from a text file

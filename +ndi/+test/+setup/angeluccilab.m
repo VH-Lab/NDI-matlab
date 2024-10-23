@@ -31,7 +31,6 @@ function E = angeluccilab(ref, dirname)
     [d,t,timeref] = p{1}.readtimeseries(1,t_start,t_stop); % read first epoch, 100 seconds
     [ds, ts, timeref_]=stimprobe.readtimeseries(timeref,t(1),t(end));
 
-
     if 0,
 
         figure;
@@ -80,6 +79,4 @@ function E = angeluccilab(ref, dirname)
         axis([t_start t_stop A(3) A(4)]);
         box off;
 
-
     end;
-

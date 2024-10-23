@@ -16,6 +16,5 @@ function out = ndi_debug_database_stats(E)
         d_dep = ndi.database.fun.findalldependencies(E,[],stim_doc{1});
     end;
 
-
     out = vlt.data.workspace2struct;
     out = rmfield(out,'E');

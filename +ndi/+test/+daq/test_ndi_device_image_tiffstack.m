@@ -34,7 +34,6 @@ function test_ndi_daqsystem_image_tiffstack( input_file_directory )
     % creating an image_tiffstack daqsystem object
     example_device = ndi.daq.system.image.tiffstack('sampleDevice',example_filenavigator);
 
-
     disp('Counting the number of frames in the first epoch');
     disp(['The first epoch has ' num2str(example_device.numFrame(epoch_number)) ' frames']);
 
@@ -51,5 +50,4 @@ function test_ndi_daqsystem_image_tiffstack( input_file_directory )
     image = example_device.frame(epoch_number,frame_number);
     imwrite(image, [output_dir_name filesep 'example_frame.tif']);
     disp(['frame exported to "' output_dir_name '"']);
-
 end

@@ -53,4 +53,3 @@ spikesorter_hengen.add_geometry_doc(probes{1})
 spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, sorting_name, 1)
 
 spikesorter_hengen.rate_neuron_quality
-

@@ -27,7 +27,6 @@ function plottreeshrewdata(filename, varargin)
     % |-----------------------------------------------------------------------------|
     %
 
-
     electrodeChannel = 11;
     stimTriggerChannel = 2;
     syncChannel = 4;

@@ -13,7 +13,6 @@ function [b,errmsg] = copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj)
     % If
     %
 
-
     % Step 1, check to make sure we haven't previously copied the documents
 
     [refs,session_ids] = ndi_dataset_obj.session_list();
@@ -53,4 +52,3 @@ function [b,errmsg] = copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj)
     ndi_session_surrogate = ndi.session.dir(ndi_session_obj.reference, ndi_dataset_obj.getpath(), ndi_session_obj.id());
 
     ndi_session_surrogate.database_add(docs);
-

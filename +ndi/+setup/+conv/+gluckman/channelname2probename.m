@@ -37,4 +37,3 @@ function [probename, proberef, subjectname, probetype] = channelname2probename(c
 
     probename = matlab.lang.makeValidName(chName);
     proberef = 1;
-

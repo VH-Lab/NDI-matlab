@@ -66,4 +66,3 @@ function document = convertDatasetInfoToDocument(datasetInfo)
         end
     end
 end
-

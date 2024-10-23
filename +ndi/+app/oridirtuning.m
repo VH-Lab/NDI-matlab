@@ -89,7 +89,6 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             q_rdoc = ndi.query('','isa','stimulus_response_scalar','');
             rdoc = E.database_search(q_rdoc&q_relement);
 
-
             for r=1:numel(rdoc),
                 if is_oridir_stimulus_response(ndi_app_oridirtuning_obj, rdoc{r}),
                     % find the tuning curve doc
@@ -463,15 +462,10 @@ classdef oridirtuning < ndi.app & ndi.app.appdoc
             eval(['help ndi_app_oridirtuning/appdoc_description']);
         end; % appdoc_description()
 
-
-
     end; % methods
 
     methods (Static),
 
-
     end; % static methods
 
 end % ndi.app.oridirtuning
-
-

@@ -21,7 +21,6 @@ function tutorial_02_02(prefix, testing)
         prefix = [userpath filesep 'Documents' filesep 'NDI']; % or '/Users/yourusername/Desktop/' if you put it on the desktop perhaps
     end;
 
-
     if nargin<2,
         testing = 0;
     end;
@@ -66,4 +65,3 @@ function tutorial_02_02(prefix, testing)
     figure(100);
     hold on;
     vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimoff,'stimid',data.stimid);
-

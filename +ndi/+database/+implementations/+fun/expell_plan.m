@@ -28,5 +28,3 @@ function [to_delete_list] = expell_plan(ndi_document_obj, ingestion_directory)
             end;
         end;
     end;
-
-

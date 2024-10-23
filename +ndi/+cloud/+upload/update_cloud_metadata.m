@@ -35,7 +35,5 @@ function [status, dataset] = update_cloud_metadata(datasetid, S)
     end
     dataset_update.contributors = author_struct;
 
-
     [status,dataset] = ndi.cloud.api.datasets.post_datasetId(datasetid,dataset_update);
 end
-

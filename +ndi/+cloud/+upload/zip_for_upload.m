@@ -65,7 +65,6 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                 files_to_zip{end+1} = file_path;
                 cur_size = cur_size + doc_file_struct(i).bytes;
             end
-
         end
     end
 
@@ -90,4 +89,3 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
     end
     delete(h);
 end
-

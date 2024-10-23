@@ -67,5 +67,3 @@ function docs = temptable2stimulusparameters(S)
             end;
         end;
     end;
-
-

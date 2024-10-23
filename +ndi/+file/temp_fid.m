@@ -20,4 +20,3 @@ function [fid,fname] = temp_fid()
     if fid<0,
         error(['Could not open the file ' fname ' for writing.']);
     end;
-

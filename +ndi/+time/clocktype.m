@@ -162,5 +162,3 @@ classdef clocktype
 
     end % methods
 end % ndi.time.clocktype class
-
-

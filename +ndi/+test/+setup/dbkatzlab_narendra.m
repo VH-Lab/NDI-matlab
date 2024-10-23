@@ -40,7 +40,6 @@ function E = dbkatzlab_narendra(ref, dirname)
     end;
     rightlaser = rightlaser{1};
 
-
     t_start = 67;
     t_stop = 93;
 

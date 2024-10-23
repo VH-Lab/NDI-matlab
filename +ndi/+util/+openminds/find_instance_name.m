@@ -19,4 +19,3 @@ function format_names = find_instance_name(unformat_names,value)
     isMember = cellfun(@(x) any(ismember(x, unformat_names)), all_names);
     format_names = names(isMember);
 end
-

@@ -43,4 +43,3 @@ classdef Strain < handle
         end
     end
 end
-

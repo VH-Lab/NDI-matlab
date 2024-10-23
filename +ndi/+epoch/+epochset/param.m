@@ -233,4 +233,3 @@ classdef param < ndi.epoch.epochset
     end % methods
 
 end % classdef
-

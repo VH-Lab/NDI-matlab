@@ -17,5 +17,4 @@ function cbt = loadTechniquesEmployed(tree)
         node.Text = technique{i};
     end
     cbt = tree;
-
 end

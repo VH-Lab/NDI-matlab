@@ -21,4 +21,3 @@ function test_ndi_daq_documents(varargin)
     ndi.test.database.core.test_ndi_daqsystem_documents();
     ndi.test.database.core.test_ndi_syncgraph_documents(varargin{:});
     ndi.test.database.core.test_ndi_syncrule_documents(varargin{:});
-

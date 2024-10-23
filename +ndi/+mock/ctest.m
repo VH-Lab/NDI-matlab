@@ -6,7 +6,6 @@ classdef ctest
         base_scope % structure with the base scope information for the class
     end; % properties
 
-
     methods
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -69,7 +68,6 @@ classdef ctest
             [docs,doc_output,doc_expected_output] = ...
                 ctest_obj.generate_mock_docs(scope,number_of_tests,'specific_test_inds',specific_test_inds);
 
-
             % Step 2:
 
             b = [];
@@ -110,7 +108,6 @@ classdef ctest
 
         end; % plot()
 
-
         % 80 character reference; documentation should be within 80 character limit
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function [docs,doc_output,doc_expected_output] = generate_mock_docs(ctest_obj, scope, number_of_tests)
@@ -128,7 +125,6 @@ classdef ctest
             %
             % NUMBER_OF_TESTS is the number of tests to generate.
             %
-
 
             docs = {};
             doc_output = {};
@@ -174,7 +170,6 @@ classdef ctest
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function clean_mock_docs(ctest_obj)
             % CLEAN_MOCK_DOCS - remove mock/test documents
-
 
         end; % clean_mock_docs()
 
@@ -291,5 +286,3 @@ classdef ctest
 
     end; % static methods
 end
-
-

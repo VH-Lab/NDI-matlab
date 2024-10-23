@@ -34,5 +34,3 @@ function [status,response] = password_forgot(email)
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
 end
-
-

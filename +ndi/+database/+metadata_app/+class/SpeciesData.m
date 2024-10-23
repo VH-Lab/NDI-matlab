@@ -43,7 +43,6 @@ classdef SpeciesData < handle
             else
                 obj.SpeciesList(end + 1) = species;
             end
-
         end
 
         function S = getItem(obj, speciesName)

@@ -495,4 +495,3 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
 
     end % methods
 end % ndi.daq.system classdef
-

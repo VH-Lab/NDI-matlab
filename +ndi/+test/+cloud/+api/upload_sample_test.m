@@ -218,8 +218,3 @@ function status = check_dataset_metadata(datasetInformation, dataset)
         error(['Dataset: ' dataset.x_id 'relatedPublications field missing']);
     end
 end
-
-
-
-
-

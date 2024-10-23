@@ -508,7 +508,6 @@ classdef syncgraph < ndi.ido
 
                     % developer question: should we bother to check for links that matter?
                     %                     right now, let's check that the first epochnode is connected at all
-
                 end
             end
 

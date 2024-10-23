@@ -88,7 +88,6 @@ figure(100);
 hold on;
 vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimoff,'stimid',data.stimid);
 
-
 %% tutorial 2.3
 dirname = [prefix filesep 'ts_exper2']; % change this if you put the example somewhere else
 ref = 'ts_exper2';
@@ -114,7 +113,6 @@ extraction_param_struct.threshold_sign = -1;
 extraction_param_doc_2 = se.add_appdoc('extraction_parameters',extraction_param_struct,'Replace',my_extraction_name{2});
 
 % we will add a parameter document to our database that our extractor will use
-
 
 % now let's perform the extraction over all epochs
 

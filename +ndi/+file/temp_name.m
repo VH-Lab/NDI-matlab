@@ -11,4 +11,3 @@ function fname = temp_name()
     uid = i.id();
 
     fname = fullfile(ndi.common.PathConstants.TempFolder,uid);
-

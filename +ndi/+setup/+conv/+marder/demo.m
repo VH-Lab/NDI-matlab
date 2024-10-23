@@ -77,5 +77,3 @@ for i=1:numel(m_doc),
     end;
 
 end; % loop over sessions
-
-

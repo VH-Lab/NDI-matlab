@@ -44,7 +44,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             identifier = ndi_session_obj.identifier;
         end; % id()
 
-
         %%%%%% REFERENCE METHODS
 
         function refstr = unique_reference_string(ndi_session_obj)
@@ -888,4 +887,3 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     end; % methods Static
 
 end % classdef
-

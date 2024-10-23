@@ -1,7 +1,6 @@
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'yangyangwang');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
-
 % Export "yangyang_tdt_sev" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 daqSystemName = 'yangyang_tdt_sev';

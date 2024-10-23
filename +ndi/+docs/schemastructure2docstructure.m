@@ -118,4 +118,3 @@ function docs = schemastructure2docstructure(schema, varargin)
             end;
         end;
     end;
-

@@ -54,6 +54,5 @@ classdef ProbeData < matlab.mixin.Heterogeneous & handle
         function list = getPipetteList(obj)
             list = obj.PipetteList;
         end
-
     end
 end

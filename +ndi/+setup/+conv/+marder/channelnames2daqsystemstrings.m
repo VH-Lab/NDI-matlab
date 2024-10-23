@@ -41,6 +41,3 @@ function [name, ref, daqsysstr,subjectlist] = channelnames2daqsystemstrings(chNa
         ref(i+1) = 1;
         subjectlist{end+1} = subjects{2};
     end;
-
-
-

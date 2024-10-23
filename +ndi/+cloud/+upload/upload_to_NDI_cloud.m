@@ -61,11 +61,8 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
             doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
             cur_doc_idx = cur_doc_idx + 1;
         end
-
     end
     delete(h_document);
 
     [b, msg] = ndi.cloud.upload.zip_for_upload(S, doc_file_struct, total_size, dataset_id);
-
 end
-

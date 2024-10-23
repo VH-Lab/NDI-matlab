@@ -32,5 +32,3 @@ function [daqsystems, probes, elements, subjects, documents] = ndi_getsessioninf
     for i=1:numel(subjects_id),
         subjects{i} = ndi_session_obj.database_search(ndi.query('ndi.document.id','exact_string',subjects_id{i},''));
     end;
-
-

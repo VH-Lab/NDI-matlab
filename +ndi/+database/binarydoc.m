@@ -106,5 +106,4 @@ classdef binarydoc < handle
         end; % delete()
 
     end % methods
-
 end

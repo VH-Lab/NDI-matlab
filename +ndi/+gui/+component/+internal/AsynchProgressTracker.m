@@ -1,6 +1,5 @@
 classdef AsynchProgressTracker < ndi.gui.component.internal.ProgressTracker
 
-
     methods
         function updateProgress(obj, currentStep)
             % Update progress by incrementing the current step

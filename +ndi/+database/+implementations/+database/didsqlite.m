@@ -31,7 +31,6 @@ classdef  didsqlite < ndi.database
                 ndi_didsqlite_obj.db.add_branch('a');
             end;
         end; % ndi.database.implementations.database.didsqlite()
-
     end
 
     methods, % public
@@ -117,5 +116,3 @@ classdef  didsqlite < ndi.database
         end; % file_directory
     end;
 end
-
-

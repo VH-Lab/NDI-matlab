@@ -12,7 +12,6 @@ classdef cache < handle
     properties (SetAccess=protected,GetAccess=private)
     end
 
-
     methods
 
         function ndi_cache_obj = cache(varargin)

@@ -5,7 +5,6 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     %  [ ] Link subjects to ndi subjects using dependency_type?
     %  [ ] Any other dependency_type?
 
-
     arguments
         appUserData (1,1) struct % A struct with form data
         sessionId = ''
@@ -239,7 +238,6 @@ function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
     end
 end
 
-
 function openMindsInstance = instanceFactory(dataStruct, openMindsType)
 
     try
@@ -284,7 +282,6 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
         end
     end
 end
-
 
 function selectedConversionMap = getConcreteConversionMap(openMindsType)
     % getConversionMap - Get a map with function handles for converting values
@@ -336,13 +333,11 @@ function conversionMap = createConversionMap()
     conversionMap("openminds.core.Dataset") = ...
         struct();
 
-
     conversionMap("openminds.core.DatasetVersion") = ...
         struct(...
         'dataType', @(value) openminds.controlledterms.SemanticDataType(value), ...
         'experimentalApproach', @(value) openminds.controlledterms.ExperimentalApproach(value), ...
         'technique', @(value) createTechnique(value) );
-
 end
 
 function factoryFcn = getFactoryFunction(openMindsType)
@@ -358,10 +353,7 @@ function instance = convertTechnique(value)
 
     fcn = sprintf('openminds.controlledterms.%s', schemaName);
     instance = feval(fcn, instanceName);
-
-
 end
-
 
 function [strainInstanceMap] = convertStrains(items)
 
@@ -398,7 +390,6 @@ function modifiedValue = addDoiPrefix(value)
         modifiedValue = value;
     end
 end
-
 
 function modifiedValue = addOrcidUriPrefix(value)
     if ~startsWith(value, 'https://orcid.org/') && value ~= ""

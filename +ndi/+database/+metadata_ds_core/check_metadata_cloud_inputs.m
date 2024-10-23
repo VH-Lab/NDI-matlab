@@ -25,7 +25,6 @@ function is_valid = check_metadata_cloud_inputs(S)
             identifier = S.Author.digitalIdentifier;
             is_valid = is_valid && isfield(identifier, 'identifier');
         end
-
     end
     if is_valid && isfield(S, 'Funding')
         is_valid = is_valid && all(isfield(S.Funding, funding_fields));
@@ -35,4 +34,3 @@ function is_valid = check_metadata_cloud_inputs(S)
         is_valid = is_valid && isa(S.Subjects, 'ndi.database.metadata_app.class.Subject');
     end
 end
-

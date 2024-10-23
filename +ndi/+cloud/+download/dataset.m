@@ -43,7 +43,6 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     filepath = fullfile(output_path,'download','files');
     jsonpath = fullfile(output_path,'download','json');
 
-
     verbose = options.verbose;
 
     if verbose, disp(['Retrieving dataset...']); end
@@ -92,11 +91,9 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
         if verbose, disp(['File Downloading complete.']); end
     end;
 
-
     if ~isfolder(jsonpath);
         mkdir(jsonpath);
     end
-
 
     if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
     d = dataset.documents;
@@ -132,4 +129,3 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     if verbose & strcmp(mode,'local'), disp(['Will copy downloaded files into dataset..may take several minutes if the dataset is large...']); end;
 
     D = ndi.dataset.dir([],output_path,ndiDocuments);
-

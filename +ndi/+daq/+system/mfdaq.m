@@ -441,4 +441,3 @@ classdef mfdaq < ndi.daq.system
 
     end % methods (Static)
 end
-

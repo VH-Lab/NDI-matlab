@@ -37,4 +37,3 @@ function ndi_test_sessiontable
         % small risk, file not locked or checked out
         movefile(f{end},ndi.session.sessiontable.localtablefilename());
     end;
-

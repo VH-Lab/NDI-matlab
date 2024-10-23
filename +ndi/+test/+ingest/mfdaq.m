@@ -30,7 +30,6 @@ d_fingest = fnv.ingest();
 
 % removal
 
-
 q_i1 = ndi.query('','isa','daqreader_mfdaq_epochdata_ingested');
 q_i2 = ndi.query('','isa','daqmetadatareader_epochdata_ingested');
 q_i3 = ndi.query('','isa','epochfiles_ingested');

@@ -15,4 +15,3 @@ function s = times2samples(t,t0_t1,sr)
     s(g) = 1;
     g = (isinf(t) & t>0);
     s(g) = 1+sr*diff(t0_t1);
-

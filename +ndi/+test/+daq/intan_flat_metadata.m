@@ -68,4 +68,3 @@ function intan_flat_metadata(dirname)
     md = dev1.getmetadata(1,1); md{:},
 
     E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
-

@@ -37,5 +37,3 @@ function ndiDocuments = jsons2documents(jsonpath, options)
     if isempty(session_id),
         error(['Could not find session_id among documents specified. (You should not see this error.)']);
     end;
-
-

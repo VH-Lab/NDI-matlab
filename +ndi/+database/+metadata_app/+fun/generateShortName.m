@@ -7,4 +7,3 @@ function shortName = generateShortName(fullName, length)
         shortName = strjoin(words(1:length), ' ');
     end
 end
-

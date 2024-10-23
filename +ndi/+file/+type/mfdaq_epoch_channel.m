@@ -90,7 +90,6 @@ classdef mfdaq_epoch_channel
             eventmarktext_dataclass = 'eventmarktext';
             time_dataclass = 'time';
 
-
             vlt.data.assign(varargin{:});
 
             [dummy,indexes_sorted] = sort({channel_structure.type});
@@ -102,7 +101,6 @@ classdef mfdaq_epoch_channel
             index_emt = find( strcmp('event',types_available) | strcmp('marker',types_available) | strcmp('text',types_available) );
             types_available(index_emt) = [];
             types_available{end+1} = 'eventmarktext';
-
 
             for i=1:numel(types_available),
                 if ~strcmp(types_available{i},'eventmarktext'),
@@ -220,5 +218,4 @@ classdef mfdaq_epoch_channel
         end; % channelgroupdecoding()
 
     end; % methods(static)
-
 end

@@ -9,7 +9,6 @@
 classdef intan < ndi.daq.reader.mfdaq
     properties
 
-
     end % properties
 
     methods
@@ -243,8 +242,6 @@ classdef intan < ndi.daq.reader.mfdaq
             end; %
         end;
 
-
-
         function sr = samplerate(ndi_daqreader_mfdaq_intan_obj, epochfiles, channeltype, channel)
             % SAMPLERATE - GET THE SAMPLE RATE FOR SPECIFIC EPOCH AND CHANNEL
             %
@@ -431,4 +428,3 @@ classdef intan < ndi.daq.reader.mfdaq
 
     end % methods (Static)
 end
-

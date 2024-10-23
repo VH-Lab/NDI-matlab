@@ -11,6 +11,4 @@ function D = openminds_to_metadata()
     datasetInformation = metadata.datasetInfo;
     convertedDocs = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, D.id);
     D = D.database_add(convertedDocs);
-
 end
-

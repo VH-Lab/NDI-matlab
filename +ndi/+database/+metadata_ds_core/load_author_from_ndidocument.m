@@ -47,7 +47,6 @@ function author = load_author_from_ndidocument(author_doc, otherContribution_doc
         author(i).id = author_doc{i}{1}.document_properties.base.id;
     end
 
-
     for i = 1:numel(otherContribution_docs)
         otherContribution_docs_p_id = otherContribution_docs{i}{1}.document_properties.openminds.fields.contributor{1};
         for j = 1:numel(author)
@@ -63,6 +62,4 @@ function author = load_author_from_ndidocument(author_doc, otherContribution_doc
 
     % remove the author.id field
     author = rmfield(author, 'id');
-
 end
-

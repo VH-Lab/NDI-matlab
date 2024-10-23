@@ -1,7 +1,6 @@
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'marderlab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
-
 % Export "marder_ced" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 daqSystemName = 'marder_ced';

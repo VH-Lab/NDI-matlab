@@ -20,7 +20,6 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     %       show_ui : logical
     %           Whether to display progress in a gui. Default is true
 
-
     arguments
         ndi_dataset (1,1) ndi.dataset
         cloud_dataset_id (1,1) string
@@ -45,7 +44,6 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     % Define default/builtin disp
     disp = @(message) builtin('disp', message);
 
-
     % % Step 1 - Retrieve database documents
     % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     if ~ismissing( progress_trackers(1) )
@@ -59,7 +57,6 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
     if ~ismissing( progress_trackers(1) )
         progress_trackers(1).setCompleted("Retrieved all documents.")
     end
-
 
     % % Step 2 - Upload documents
     % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

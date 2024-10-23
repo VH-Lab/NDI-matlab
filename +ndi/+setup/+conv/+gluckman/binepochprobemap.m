@@ -29,8 +29,6 @@ function binepochprobemap(S, options)
         end;
     end;
 
-
-
     for i=1:numel(d),
         h = ndr.format.bjg.read_bjg_header([dirname filesep d(i).name]);
         [name,ref,daqsysstr,subjectlist,probetype] = ...
@@ -45,6 +43,3 @@ function binepochprobemap(S, options)
         [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
         probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
     end;
-
-
-

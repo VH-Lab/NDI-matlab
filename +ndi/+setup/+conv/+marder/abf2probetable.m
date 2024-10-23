@@ -65,5 +65,3 @@ function abf2probetable(S, options)
     end;
 
     writetable(probetable,[dirname filesep 'probeTable.csv']);
-
-

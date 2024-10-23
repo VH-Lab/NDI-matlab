@@ -43,4 +43,3 @@ function [source_filename_list, destination_filename_list, to_delete_list] = ing
             end;
         end;
     end;
-

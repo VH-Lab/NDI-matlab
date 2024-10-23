@@ -14,7 +14,6 @@ daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
 
 daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
 
-
 % Export "angelucci_visstim" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 daqSystemName = 'angelucci_visstim';
@@ -27,4 +26,3 @@ daqSystemConfig = ndi.setup.DaqSystemConfiguration( daqSystemName, ...
     'MetadataReaderFileParameters', 'stimData.mat' );
 
 daqSystemConfig.export(fullfile(exportDir, [daqSystemName, '.json']))
-

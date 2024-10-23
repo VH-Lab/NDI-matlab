@@ -134,6 +134,4 @@ function [b,msg, D] = download_dataset(dataset_id, output_path)
 
     D = ndi.cloud.down.make_dataset_from_docs_files(output_path, [output_path filesep '.ndi' filesep 'reference.txt'],...
         [output_path filesep 'download' filesep 'json'],[output_path filesep 'download' filesep 'files'] );
-
 end
-

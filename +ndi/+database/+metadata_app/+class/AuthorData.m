@@ -43,7 +43,6 @@ classdef AuthorData < handle
             %setAuthorList Same as authorData.AuthorList = S
             obj.AuthorList = S;
         end
-
     end
 
     methods % Public methods for setting or getting author details
@@ -108,7 +107,6 @@ classdef AuthorData < handle
             obj.AuthorList(authorIndex).affiliation(affiliationIndex)=[];
         end
 
-
         % % %         function addAffiliation(obj, authorIndex, name, identifier)
         % % %             if isempty(obj.AuthorList(authorIndex).affiliation)
         % % %                 obj.AuthorList(authorIndex).affiliation = ndi.database.metadata_app.class.AffiliationData();
@@ -124,9 +122,7 @@ classdef AuthorData < handle
         % % %         function removeAffiliation(obj, authorIndex, affiliationIndex)
         % % %             obj.AuthorList(authorIndex).affiliation.removeItem(affiliationIndex);
         % % %         end
-
     end
-
 
     methods (Static)
 
@@ -141,7 +137,5 @@ classdef AuthorData < handle
             S.givenName = '';
             S.authorRole = '';
         end
-
     end
-
 end

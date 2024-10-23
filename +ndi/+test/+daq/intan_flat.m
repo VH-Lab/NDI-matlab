@@ -60,4 +60,3 @@ function intan_flat(dirname)
     box off;
 
     E.daqsystem_rm(dev1); % remove the daqsystem so the demo can run again
-

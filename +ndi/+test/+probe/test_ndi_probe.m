@@ -42,4 +42,3 @@ function test_ndi_probe(dirname)
     ylabel('Data on channel 1 of probe 1');
     xlabel('Time (s)');
     box off;
-

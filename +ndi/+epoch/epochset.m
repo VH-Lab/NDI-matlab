@@ -408,7 +408,6 @@ classdef epochset
                             cost(numel(unodes),numel(unodes)) = 1; %  % connect to self
                             mapping{numel(unodes),numel(unodes)} = trivial_map;
 
-
                             % developer node: if we ever have multiple devices underlying an epoch,
                             %                 then  this needs editing
 
@@ -578,8 +577,6 @@ classdef epochset
             b = 1;
         end % issyncgraphroot
 
-
     end % methods
 
 end % classdef
-

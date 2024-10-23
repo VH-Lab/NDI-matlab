@@ -9,7 +9,6 @@
 classdef blackrock < ndi.daq.reader.mfdaq
     properties
 
-
     end % properties
 
     methods
@@ -237,4 +236,3 @@ classdef blackrock < ndi.daq.reader.mfdaq
 
     end % methods (Static)
 end
-

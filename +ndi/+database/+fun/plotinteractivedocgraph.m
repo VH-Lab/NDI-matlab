@@ -57,7 +57,6 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
         return;
     end;
 
-
     docs = varargin{1};
     G = varargin{2};
     mdigraph = varargin{3};
@@ -103,8 +102,3 @@ function plotinteractivedocgraph(varargin) %(docs, G, mdigraph, nodes)
     if interactive,
         set(gca,'ButtonDownFcn','ndi.database.fun.plotinteractivedocgraph');
     end;
-
-
-
-
-

@@ -113,4 +113,3 @@ classdef timereference
 
     end % methods
 end % ndi_time_reference
-

@@ -58,4 +58,3 @@ function [name, ref, daqsysstr,subjectlist, probetype] = channelnames2daqsystems
         subjectlist{end+1} = subjects{1};
         daqsysstr(end+1) = ndi.daq.daqsystemstring(daqname,{'ai','ai','ai'},[accelStruct(theorder).value]);
     end;
-

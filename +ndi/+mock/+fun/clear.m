@@ -12,5 +12,3 @@ function clear(S)
     s = S.database_search(ndi.query('subject.local_identifier','contains_string','mock'));
 
     S.database_rm(s);
-
-

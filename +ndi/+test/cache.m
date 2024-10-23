@@ -34,4 +34,3 @@ function cache
     disp(['Types left in the cache:']);
 
     {cache.table.type},
-

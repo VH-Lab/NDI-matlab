@@ -14,7 +14,6 @@ function d = saveEditor2Doc(D, datasetInfo)
     metadata_editor_docs = D.database_search(ndi.query('','isa','metadata_editor'));
     if numel(metadata_editor_docs) ~= 0
         D.database_rm(metadata_editor_docs);
-
     end
 
     document = ndi.database.metadata_ds_core.convertDatasetInfoToDocument(datasetInfo);
@@ -24,4 +23,3 @@ function d = saveEditor2Doc(D, datasetInfo)
         'metadata_editor.metadata_structure',document);
     D.database_add(d);
 end
-

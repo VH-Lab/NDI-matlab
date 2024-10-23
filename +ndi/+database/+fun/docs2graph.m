@@ -33,5 +33,3 @@ function [G,nodes,mdigraph] = ndi_docs2graph(ndi_document_obj)
     end;
 
     mdigraph = digraph(G, nodes);
-
-

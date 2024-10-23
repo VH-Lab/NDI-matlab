@@ -67,7 +67,6 @@ classdef AffiliationData < handle
             %getAffiliationName Get the full name for the given affiliation
 
             affiliationName = obj.AffiliationList(affiliationIndex).getName();
-
         end
 
         function S = getItem(obj, affiliationIndex)
@@ -99,7 +98,6 @@ classdef AffiliationData < handle
         end
     end
 
-
     methods (Static)
 
         function S = getDefaultAffiliationItem()
@@ -107,7 +105,5 @@ classdef AffiliationData < handle
             % with openMINDS
             S = ndi.database.metadata_app.class.Affiliation();
         end
-
     end
-
 end

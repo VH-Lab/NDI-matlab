@@ -18,7 +18,6 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
         options.forceIgnore2 = false;
     end
 
-
     probename = '';
     proberef = 1;
 
@@ -59,5 +58,3 @@ function [probename, proberef, subjectname] = channelname2probename(chName, subj
     if isempty(probename), % did not match standard_string,
         probename = matlab.lang.makeValidName(chName);
     end
-
-

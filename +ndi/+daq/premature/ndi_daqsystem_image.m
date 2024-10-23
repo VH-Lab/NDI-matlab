@@ -17,6 +17,4 @@ classdef (Abstract) ndi_daqsystem_image < ndi.daq.system
         % This function returns the number of frames in epoch 'n'
         num = numFrame(obj,n)
     end
-
-
 end

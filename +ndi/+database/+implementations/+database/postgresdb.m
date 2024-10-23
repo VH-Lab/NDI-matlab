@@ -40,7 +40,6 @@ classdef  postgresdb < ndi.database
 
             disp(ndi_postgresdb_obj.db)
         end % ndi_postgresdb_obj()
-
     end
 
     methods, % public
@@ -83,7 +82,6 @@ classdef  postgresdb < ndi.database
             param1 = ndiquery.param1
             param2 = ndiquery.param2
 
-
             % Basic structure of a SQL query
             % Assumes metadata is stored in 'data':
             % Outside of the id, all meta must be accessed through
@@ -95,7 +93,6 @@ classdef  postgresdb < ndi.database
                 not_id = 1;
             else
                 select = select + "id"
-
             end
 
             from = "FROM " + ndi_postgresdb_obj.dbname + ".public.documents";
@@ -119,7 +116,6 @@ classdef  postgresdb < ndi.database
                         where = where + " " + field + " = '" + param1 + "'";
                     end
 
-
                 case 'contains_string'
                     % is the field value a char array that contains 'param1'?
                     where = where + " data ->> '" + field + "' LIKE '%" + param1 + "%'";
@@ -131,7 +127,6 @@ classdef  postgresdb < ndi.database
                     else
                         where = where + " (data'" + field + "')::NUMERIC = " + param1;
                     end
-
 
                 case 'lessthan'
                     % is the field value less than 'param1' (and comparable size)
@@ -157,7 +152,6 @@ classdef  postgresdb < ndi.database
                         where = where + " (data'" + field + "')::NUMERIC > " + param1;
                     end
 
-
                 case 'greaterthaneq'
                     % is the field value greater than or equal to 'param1' (and comparable size)
                     if not_id
@@ -165,7 +159,6 @@ classdef  postgresdb < ndi.database
                     else
                         where = where + " (data'" + field + "')::NUMERIC >= " + param1;
                     end
-
 
                 case 'has_field'
                     % is the field present? (no role for 'param1' or 'param2')
@@ -175,7 +168,6 @@ classdef  postgresdb < ndi.database
                     else
                         where = where + " LENGTH('" + field + "') > 0";
                     end
-
 
                 case 'hasanysubfield_contains_string'
                     % Is the field value an array of structs or cell array of structs
@@ -197,10 +189,8 @@ classdef  postgresdb < ndi.database
                         else
                             where = where + " OR version = '" + i + "'";
                         end
-
                     end
                     where = where + ")";
-
 
                 case 'isa'
                     % is 'param1' either a superclass or the document class itself of the ndi.document?
@@ -214,8 +204,6 @@ classdef  postgresdb < ndi.database
 
                 otherwise
                     disp("error: invalid operation")
-
-
             end
             sqlquery = select + " " + from + " " + where
         end; % ndiquery_to_sql
@@ -244,7 +232,6 @@ classdef  postgresdb < ndi.database
 
         end; % do_add
 
-
         function [ndi_document_obj, version] = do_read(ndi_postgresdb_obj, ndi_document_id, version);
             % reads and shows a document from the database with the unique ndi document ID
             % expects a version, reading the latest by default
@@ -261,15 +248,11 @@ classdef  postgresdb < ndi.database
 
             if vercol_exists
                 sqlquery = sqlquery + " AND version = '" + version + "'";
-
-
-
             end
             disp(sqlquery)
             ndi_document_obj = select(ndi_postgresdb_obj.db, sqlquery)
 
         end; % do_read
-
 
         function ndi_postgresdb_obj = do_remove(ndi_postgresdb_obj, ndi_document_id, versions)
             % removes a document from the database with the unique ndi document ID
@@ -288,14 +271,11 @@ classdef  postgresdb < ndi.database
                     end
                 end
                 sqlquery = sqlquery + ")"
-
             end
 
             execute(ndi_postgresdb_obj.db, sqlquery)
 
         end; % do_remove
-
-
 
         function [data, versions] = do_search(ndi_postgresdb_obj, searchoptions, searchparams)
             % Takes in a list of search paramaters (an array of
@@ -326,7 +306,6 @@ classdef  postgresdb < ndi.database
             %                 select(ndi_postgresdb_obj.db, sql_query)
             %                 versions =
             %             end
-
 
             %             ndi_document_objs = {};
             %             [docs,doc_versions] = ndi_postgresdb_obj.db.search(searchoptions, searchparams);

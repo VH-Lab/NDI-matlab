@@ -22,7 +22,6 @@ classdef  matlabdumbjsondb < ndi.database
             ndi_matlabdumbjsondb_obj.db = vlt.file.dumbjsondb(varargin{3:end},...
                 'dirname','dumbjsondb','unique_object_id_field','base.id');
         end; % ndi.database.implementations.database.matlabdumbjsondb()
-
     end
 
     methods, % public

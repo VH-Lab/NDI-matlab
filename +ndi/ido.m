@@ -9,6 +9,4 @@ classdef ido < did.ido
     %   i = ndi.ido();
     %   id = i.id(), % view the id that was created
     %
-
 end
-

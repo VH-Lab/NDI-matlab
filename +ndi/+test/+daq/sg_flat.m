@@ -61,4 +61,3 @@ function sg_flat(dirname)
     vlt.plot.plot_multichan(data,1:30000,400); %(data, timeframe, height)
 
     E.daqsystem_rm(dev1); % remove the device so the demo works again
-

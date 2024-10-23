@@ -29,5 +29,3 @@ function d = marderprobe2uberon(S)
             d{end+1} = d_here;
         end;
     end;
-
-

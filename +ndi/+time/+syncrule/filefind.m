@@ -188,4 +188,3 @@ classdef filefind < ndi.time.syncrule
         end % apply
     end % methods
 end % classdef ndi.time.syncrule.filefind
-

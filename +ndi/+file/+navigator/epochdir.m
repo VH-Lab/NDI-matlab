@@ -94,4 +94,3 @@ classdef epochdir < ndi.file.navigator
 
     end % methods
 end
-

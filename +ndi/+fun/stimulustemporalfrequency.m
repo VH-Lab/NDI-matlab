@@ -27,4 +27,3 @@ function [tf_value, tf_name] = ndi_stimulustemporalfrequency(stimulus_parameters
             return;
         end;
     end;
-

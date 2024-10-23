@@ -46,5 +46,3 @@ function db = opendatabase(database_path, session_unique_reference)
             break;
         end
     end
-
-

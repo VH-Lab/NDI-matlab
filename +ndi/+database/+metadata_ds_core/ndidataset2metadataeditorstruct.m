@@ -15,7 +15,6 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
 
     datasetInformation = {};
 
-
     %% Dataset
 
     dataset_version_doc = D.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.DatasetVersion'));
@@ -37,7 +36,6 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
     %% Process author information
 
     author_doc = {};
-
 
     for i = 1:numel(dv_f.author)
         author_id = dv_f.author{i}(7:end);
@@ -167,7 +165,6 @@ function datasetInformation = ndidataset2metadataeditorstruct(D)
         RelatedPublication.PMCID = publicationInfo.pmcid;
     end
     datasetInformation.RelatedPublication = RelatedPublication;
-
 end
 
 function strainInstances = loadStrain(D)
@@ -218,7 +215,6 @@ function strainInstances = loadStrain(D)
                 %     disp("Aborted");
             end
         end
-
     end
 end
 
@@ -239,6 +235,3 @@ function property = readName(D, doc, name)
         property = [];
     end
 end
-
-
-

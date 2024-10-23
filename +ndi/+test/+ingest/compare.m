@@ -42,4 +42,3 @@ function b = compare(dirname1, dirname2)
             error(['Daqs ' daq1.name ' and ' daq2.name ' do not match.']);
         end;
     end;
-

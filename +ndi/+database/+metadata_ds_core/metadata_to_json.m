@@ -73,4 +73,3 @@ function dataset_update = metadata_to_json(S)
         dataset_update.associatedPublications = associate_publications_struct;
     end
 end
-

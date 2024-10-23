@@ -162,7 +162,6 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 channels(k).name = name;
             end
 
-
             % Adds all nTrodes to the list
             for i=1:length(fileconfig.nTrodes)
                 for j=1:4
@@ -332,7 +331,6 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
                 data = read_SpikeGadgets_digitalChannels(filename,header.numChannels,byteandbit,sr,header.headerSize,s0,s1);
                 data = data';
             else
-
             end
         end % readchannels_epochsamples
 

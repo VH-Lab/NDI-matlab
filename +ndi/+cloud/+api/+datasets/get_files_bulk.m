@@ -31,4 +31,3 @@ function [status, response, url] = get_files_bulk(dataset_id)
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end
 end
-

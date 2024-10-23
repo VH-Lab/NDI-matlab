@@ -86,6 +86,5 @@ classdef SubjectData < handle
                 data = vertcat(data, subjectList(i).formatTable);
             end
         end
-
     end
 end

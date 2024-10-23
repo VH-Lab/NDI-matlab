@@ -26,5 +26,3 @@ function [b,msg] = expell(to_delete_list)
             msg = ['Deleting: ' lasterr];
         end;
     end;
-
-

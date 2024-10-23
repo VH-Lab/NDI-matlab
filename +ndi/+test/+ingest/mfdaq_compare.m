@@ -28,7 +28,6 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
         'digital_in','digital_out','time'};
     event_types = {'event','marker','text'};
 
-
     for i=1:numel(et1),
         number = sscanf(et1(i).epoch_id,'t%d')
         if number<63, continue; end;
@@ -136,4 +135,3 @@ function [b,errmsg] = mfdaq_compare(daq1,daq2)
             b = 0;
         end;
     end;
-

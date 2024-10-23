@@ -56,7 +56,6 @@ function exp = angeluccilab(exp, devname)
             mdr = {ndi.setup.daq.metadatareader.AngelucciStims('stimData.mat')};
         otherwise,
             error(['Unknown device requested ' devname '.']);
-
     end
 
     ft = ndi.file.navigator(exp, fileparameters, epochprobemapclass, epochprobemapfileparameters);
@@ -66,5 +65,3 @@ function exp = angeluccilab(exp, devname)
     eval(['mydev = ' objectclass '(devname, ft, dr, mdr );']);
 
     exp = exp.daqsystem_add(mydev);
-
-

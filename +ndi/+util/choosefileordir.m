@@ -65,5 +65,3 @@ function [success,filename,replaces] = choosefileordir(dir, prompt, defaultfilen
     success = 1;
     replaces = 0;
 end % choosefileordir
-
-

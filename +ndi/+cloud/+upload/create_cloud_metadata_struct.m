@@ -98,4 +98,3 @@ function [status, response,dataset_id] = create_cloud_metadata_struct(S)
     % dataset_update.totalSize = round(size);
     [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(dataset_update);
 end
-

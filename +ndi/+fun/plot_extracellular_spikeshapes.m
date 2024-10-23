@@ -31,7 +31,6 @@ function [g] = plot_extracellular_spikeshapes(S, space, g)
         A = axis;
         y_axis = [min(A(3),y_axis(1)) max(A(4),y_axis(2))];
 
-
     end;
 
     for i=1:numel(g),

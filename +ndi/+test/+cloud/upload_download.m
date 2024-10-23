@@ -72,4 +72,3 @@ function [b,msg] = upload_download(D,metadatafile)
     disp('All finished, now deleting the temporary directory...');
 
     rmdir(newdir,'s');
-

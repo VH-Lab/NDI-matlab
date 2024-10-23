@@ -25,7 +25,6 @@ function ndi_changeobjectname(ndi_distribution_path, oldname, newname, varargin)
     %       '*object*'})               |
     %
 
-
     noOp = 1;
 
     filestoedit = {'*.m','*.txt','*object*'};
@@ -50,6 +49,3 @@ function ndi_changeobjectname(ndi_distribution_path, oldname, newname, varargin)
 
     vlt.file.filenamesearchreplace(ndi_distribution_path, {oldname}, {newname}, 'deleteOriginals',1,...
         'noOp', noOp, 'recursive', 1);
-
-
-

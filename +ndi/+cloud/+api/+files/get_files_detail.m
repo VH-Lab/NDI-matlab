@@ -33,5 +33,3 @@ function [status,file_detail,downloadUrl, response] = get_files_detail(dataset_i
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end
 end
-
-

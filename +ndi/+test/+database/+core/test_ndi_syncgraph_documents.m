@@ -32,7 +32,6 @@ function test_ndi_syncgraph_documents
     sg{1} = ndi.time.syncgraph(E);
     sg{1} = sg{1}.addrule(ndi.time.syncrule.filematch());
 
-
     disp(['Making document for ndi.time.syncgraph object.']);
     sg_docs{1} = sg{1}.newdocument();
     E.database_add(sg_docs{1});

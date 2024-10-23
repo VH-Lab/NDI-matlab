@@ -17,8 +17,6 @@ function [probename, proberef, probetype, subjectname] = channelnametable2proben
         options.nothing = 0
     end
 
-
-
     i = find(strcmp(chName,probetable.("channelName")));
 
     if isempty(i),
@@ -29,5 +27,3 @@ function [probename, proberef, probetype, subjectname] = channelnametable2proben
     proberef = probetable{i,"probeRef"};
     probetype = probetable{i,"probeType"}{1};
     subjectname = probetable{i,"subject"}{1};
-
-

@@ -38,4 +38,3 @@ function newDocStruct = set_file_info(docStruct,mode,filepath)
             end;
         end;
     end;
-

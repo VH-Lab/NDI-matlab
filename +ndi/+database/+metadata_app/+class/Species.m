@@ -61,7 +61,6 @@ classdef Species < handle
                 instance.preferredOntologyIdentifier = obj.OntologyIdentifier;
                 instances = [instances, instance]; %#ok<AGROW>
             end
-
         end
 
         function s = toStruct(obj)
@@ -77,8 +76,6 @@ classdef Species < handle
                 end
             end
         end
-
-
     end
     methods (Static)
         function obj = fromStruct(s)

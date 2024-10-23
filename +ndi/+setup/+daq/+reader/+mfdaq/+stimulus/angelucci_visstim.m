@@ -10,7 +10,6 @@
 
 classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
     properties (GetAcces=public,SetAccess=protected)
-
     end
     properties (Access=private) % potential private variables
     end
@@ -109,4 +108,3 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
     methods (Static)  % helper functions
     end % static methods
 end
-

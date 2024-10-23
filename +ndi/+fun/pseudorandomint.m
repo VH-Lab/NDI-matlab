@@ -15,7 +15,3 @@ function t = pseudorandomint()
     t_offset = datenum(now) - datenum('2022-06-01');
     t_offset = fix(t_offset * 24*60*60); % number of seconds
     t = t_offset*1000 + randi(1000) -1; % number of seconds * 1000 + random number between 1 and 1000, -1
-
-
-
-

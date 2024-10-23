@@ -107,4 +107,3 @@ classdef mfdaq < ndi.probe.timeseries
 
     end; % methods
 end
-

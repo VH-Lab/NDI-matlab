@@ -38,7 +38,6 @@ classdef DatasetVersionData < handle
         end
     end
 
-
     methods (Static)
 
         function S = getDefaultDatasetItem()
@@ -59,9 +58,5 @@ classdef DatasetVersionData < handle
             S.funding = '';
             S.Author = '';
         end
-
     end
-
 end
-
-

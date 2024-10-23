@@ -53,5 +53,4 @@ function requirements = getRequirements()
     t = vlt.file.textfile2char(filename);
 
     requirements = jsondecode(t);
-
 end

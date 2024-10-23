@@ -9,7 +9,6 @@ function delete_documents_test(dataset_id)
     %   documents/get_documents_summary
     %
 
-
     [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
     number_of_documents = numel(dataset.documents);
     test_document = struct("name", "test document");
@@ -75,6 +74,4 @@ function delete_documents_test(dataset_id)
             % do nothing, this is the expected behavior
         end
     end
-
 end
-

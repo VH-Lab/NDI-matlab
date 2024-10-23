@@ -50,7 +50,6 @@ classdef timeseries < ndi.element & ndi.time.timeseries
                     error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
                 end;
 
-
                 % now we know the epoch to read, finally!
 
                 element_doc = ndi_element_timeseries_obj.load_element_doc();
@@ -135,4 +134,3 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 
     end; % methods
 end % classdef
-

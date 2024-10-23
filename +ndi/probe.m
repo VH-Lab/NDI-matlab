@@ -248,5 +248,3 @@ classdef probe < ndi.element & ndi.documentservice
         end; % eq()
     end % methods
 end
-
-

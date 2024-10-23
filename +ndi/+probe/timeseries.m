@@ -90,5 +90,3 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
 
     end; % methods
 end
-
-

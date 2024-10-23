@@ -1,7 +1,6 @@
 exportDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', 'dbkatzlab');
 if ~isfolder(exportDir); mkdir(exportDir); end
 
-
 % Export "narendra_intan" DAQ System
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 daqSystemName = 'narendra_intan';

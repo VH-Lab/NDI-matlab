@@ -30,7 +30,6 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
     % (the first one is faster than the second).
     %
 
-
     root_node = 'Bilateria';
     nodefile = 'nodes.dmp';
     namefile = 'names.dmp';
@@ -111,5 +110,3 @@ function ndi_createGenBankControlledVocabulary(dirname, varargin)
     progressbar(1);
 
     fclose(fid);
-
-

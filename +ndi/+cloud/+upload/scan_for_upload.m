@@ -119,4 +119,3 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
             end
         end
     end
-

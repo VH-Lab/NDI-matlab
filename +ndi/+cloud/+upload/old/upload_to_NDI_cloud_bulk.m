@@ -88,4 +88,3 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     delete(h_document);
     delete(h_file);
 end
-

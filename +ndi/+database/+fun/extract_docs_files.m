@@ -54,5 +54,3 @@ function [docs,target_path] = extract_doc_files(ndi_session_obj, target_path)
             end;
         end;
     end;
-
-

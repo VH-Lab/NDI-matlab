@@ -28,7 +28,6 @@ function dnew = add_stimulus_approach(S, filename)
         error(['Could not find daq system vhvis_spike2.']);
     end;
 
-
     daq_id = daqsys.id();
     session_id = S.id();
 
@@ -66,5 +65,3 @@ function dnew = add_stimulus_approach(S, filename)
         end;
 
     end;
-
-

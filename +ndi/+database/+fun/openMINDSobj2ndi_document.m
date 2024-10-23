@@ -20,7 +20,6 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
     %   d = ndi.database.fun.openMINDSobj2ndi_document(s, session_id, 'subject', subject_docs{1}.id());
     %
 
-
     if ~iscell(openmindsObj),
         newcell = {};
         for i=1:numel(openmindsObj)
@@ -96,5 +95,3 @@ function d = openMINDSobj2ndi_document(openmindsObj, session_id, dependency_type
             d{i} = d{i}.set_dependency_value(dependency_name,dependency_value);
         end;
     end;
-
-

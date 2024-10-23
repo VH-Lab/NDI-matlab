@@ -10,7 +10,6 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
     %
     properties
 
-
     end % properties
 
     methods
@@ -116,7 +115,6 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             if numel(sr_unique)~=1,
                 error(['Do not know how to handle different sampling rates across channels.']);
             end;
-
 
             sr = sr_unique;
 
@@ -253,7 +251,6 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
             % that CHANNELTYPE applies to every entry of CHANNEL.
             %
 
-
             switch(channeltype),
                 case {'analog_in','analog_out'},
                     filename = ndi_daqreader_mfdaq_cedspike2_obj.cedspike2filelist2smrfile(epochfiles);
@@ -342,4 +339,3 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
     end % methods (Static)
 end
-

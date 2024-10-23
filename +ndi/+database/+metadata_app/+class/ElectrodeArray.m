@@ -5,6 +5,5 @@ classdef ElectrodeArray < ndi.database.metadata_app.class.Probe
     end
 
     methods
-
     end
 end

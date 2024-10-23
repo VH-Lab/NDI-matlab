@@ -2,7 +2,6 @@ function techniques = find_techniques_names(unformatted_names)
     %FIND_TECHNIQUES_NAMES Summary of this function goes here
     %   Detailed explanation goes here
 
-
     allowedTypes = openminds.core.DatasetVersion.LINKED_PROPERTIES.technique;
     allowedTypes = replace(allowedTypes, 'openminds.controlledterms.', '');
     name_to_technique = containers.Map();
@@ -29,5 +28,4 @@ function techniques = find_techniques_names(unformatted_names)
             techniques{i} = 'InvalidFormat';
         end
     end
-
 end

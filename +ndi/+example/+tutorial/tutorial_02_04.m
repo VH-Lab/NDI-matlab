@@ -57,7 +57,6 @@ function tutorial_02_04(prefix, testing)
     % Code block 2.4.2.2
     disp(['Code block 2.4.2.2:']);
 
-
     stim_pres_docs{1}.document_properties.stimulus_presentation
     % these are the fields that were decoded by ndi.app.stimulus.decoder
     % let's take a look
@@ -72,7 +71,6 @@ function tutorial_02_04(prefix, testing)
     stim_pres_docs{1}.document_properties.stimulus_presentation.stimuli(17).parameters
     % you can see that there are 4 such documents, one for each stimulus presentation in the experiment
     stim_pres_docs,
-
 
     % Code block 2.4.3.1
     disp(['Code block 2.4.3.1:']);
@@ -145,4 +143,3 @@ function tutorial_02_04(prefix, testing)
     oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.fit
     % vector tuning parameters:
     oriprops{1}{1}{1}.document_properties.orientation_direction_tuning.vector
-

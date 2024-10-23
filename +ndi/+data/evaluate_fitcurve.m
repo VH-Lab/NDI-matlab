@@ -46,7 +46,6 @@ function [y, varargout] = ndi_evaluate_fitcurve(fitcurve_doc, varargin)
         error(['Fit parameter names and fit parameter values do not have same number of entries.']);
     end;
 
-
     % Step 2: Change all variables from 'name' to 'ndi_evaluate_fitcurve_name'
 
     fit_equation_mod = fit_equation;
@@ -68,4 +67,3 @@ function [y, varargout] = ndi_evaluate_fitcurve(fitcurve_doc, varargin)
     eval([fit_equation_mod ';']);
 
     vlt.data.assign('y', eval(['ndi_evaluate_fitcurve_' fit_dependent_variables{i}]));
-

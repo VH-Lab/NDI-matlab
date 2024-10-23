@@ -42,4 +42,3 @@ function [response_type,stim_response_scalar_doc] = tuning_curve_to_response_typ
             end;
         end;
     end;
-

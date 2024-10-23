@@ -271,7 +271,6 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
                     updatedMessage, propName, propValue);
             end
         end
-
     end
 
     methods (Access = private)

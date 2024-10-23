@@ -79,5 +79,3 @@ function [out] = preptemp(t, d, temp_table, options)
     end;
 
     out = vlt.data.var2struct('type','temp','raw','range');
-
-

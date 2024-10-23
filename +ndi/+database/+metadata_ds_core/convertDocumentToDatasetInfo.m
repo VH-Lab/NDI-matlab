@@ -39,4 +39,3 @@ function datasetInformation = convertDocumentToDatasetInfo(document)
         end
     end
 end
-

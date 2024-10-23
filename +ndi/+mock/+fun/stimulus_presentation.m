@@ -60,7 +60,6 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
 
     vlt.data.assign(varargin{:});
 
-
     stimulus_N = size(X,1);
     stims = vlt.data.colvec(1:stimulus_N);
 
@@ -128,4 +127,3 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
         presentation_time);
 
     stim_pres_doc = stim_pres_doc.add_file('presentation_time.bin',presentation_time_filename);
-

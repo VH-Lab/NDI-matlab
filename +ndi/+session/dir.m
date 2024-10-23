@@ -180,4 +180,3 @@ classdef dir < ndi.session
     end; % methods
 
 end % classdef
-

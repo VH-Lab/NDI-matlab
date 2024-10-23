@@ -18,7 +18,6 @@ classdef subject < ndi.ido & ndi.documentservice
     %  does_subjectstring_match_session_document - Does an ndi.subject object already have a representation in an ndi.database? (Static)
     %
 
-
     properties (GetAccess=public, SetAccess=protected)
         local_identifier    % A string that is a local identifier in the lab, e.g. anteater23@nosuchlab.org
         description             % A string description
@@ -173,5 +172,3 @@ classdef subject < ndi.ido & ndi.documentservice
         end; % does_subjectstring_match_session_document()
     end; % static methods
 end % classdef ndi.subject
-
-

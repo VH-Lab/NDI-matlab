@@ -33,6 +33,4 @@ function dataset_metadata(S, new, options) % ,varargin)
                 a = ndi.database.metadata_app.Apps.MetadataEditorApp(S,full_file_path,options.Debug);
             end
         end
-
     end
-

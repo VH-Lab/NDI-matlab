@@ -16,4 +16,3 @@ function S = lab(labname, ref, dirname)
     S = ndi.session.dir(ref, dirname);
     S = ndi.setup.daq.addDaqSystems(S, labname);
 end
-

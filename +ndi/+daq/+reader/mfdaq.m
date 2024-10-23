@@ -24,7 +24,6 @@
 
 classdef mfdaq < ndi.daq.reader
     properties (GetAccess=public,SetAccess=protected)
-
     end
     properties (Access=private) % potential private variables
     end
@@ -225,7 +224,6 @@ classdef mfdaq < ndi.daq.reader
 
             [groups,channel_indexes_in_groups,channel_indexes_in_output] = ...
                 ndi.file.type.mfdaq_epoch_channel.channelgroupdecoding(fullchannelinfo,ch_unique{1},channel);
-
 
             %   2) identify the segments in which the requested samples belong
             data = NaN(s1-s0+1,numel(channel));
@@ -514,7 +512,6 @@ classdef mfdaq < ndi.daq.reader
 
         end; % readevents_epochsamples_ingested
 
-
         function [timestamps, data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
             %
@@ -720,7 +717,6 @@ classdef mfdaq < ndi.daq.reader
             index_emt = find( strcmp('event',types) | strcmp('marker',types) | strcmp('text',types) );
             types(index_emt) = [];
             types{end+1} = 'eventmarktext';
-
 
             for i = 1:numel(types),
                 if strcmp(types{i},'eventmarktext'),
@@ -939,4 +935,3 @@ classdef mfdaq < ndi.daq.reader
         end; % channelsepoch2timechannelinfo
     end % methods(Static)
 end % classdef
-

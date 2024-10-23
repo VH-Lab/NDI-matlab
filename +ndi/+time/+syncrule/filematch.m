@@ -127,4 +127,3 @@ classdef filematch < ndi.time.syncrule
 
     end % methods
 end % classdef ndi.time.syncrule.filematch
-

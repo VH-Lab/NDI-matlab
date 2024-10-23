@@ -63,14 +63,12 @@ function tutorial_02_03(prefix, testing)
 
     % we will add a parameter document to our database that our extractor will use
 
-
     % now let's perform the extraction over all epochs
 
     redo = 1; % redo it if we already did it
     % we know there are two probes, so do it for both
     se.extract(p{1},[],my_extraction_name{1},redo);
     se.extract(p{2},[],my_extraction_name{2},redo);
-
 
     % Code block 2.3.2.2
     disp(['Code block 2.3.2.2:']);
@@ -105,7 +103,6 @@ function tutorial_02_03(prefix, testing)
     samples = round(vlt.signal.value2sample(spiketimes, 1/(t(2)-t(1)), 0));
     plot(t(samples),d(samples),'ko'); % mark each spike peak location with a circle
 
-
     % Code block 2.3.3
 
     disp(['Code block 2.3.3.1:'])
@@ -125,7 +122,6 @@ function tutorial_02_03(prefix, testing)
     spike_cluster_doc = ssa.spike_sort(p{2},my_extraction_name{2},my_sorting_name,redo)
     ssa.clusters2neurons(p{2},my_sorting_name,my_extraction_name{2})
 
-
     % Code block 2.3.3.2
 
     disp(['Code block 2.3.3.2:'])
@@ -144,5 +140,3 @@ function tutorial_02_03(prefix, testing)
 
     disp(['Clode block 2.3.4.1:']);
     help ndi.app.spikeextractor/appdoc_description
-
-

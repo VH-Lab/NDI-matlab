@@ -9,7 +9,6 @@ function E = marderlab_hamood(ref, dirname)
     %   E = ndi.test.setups.marderlab_hamood('811_05','/Volumes/van-hooser-lab/Projects/NDI/Datasets_to_Convert/Marder/Data/811/811_05');
     %
 
-
     if nargin==0,
         disp(['No reference or dirname given, using defaults:']);
         ref = '811_105',

@@ -32,4 +32,3 @@ classdef DeviceType < handle
         end
     end
 end
-

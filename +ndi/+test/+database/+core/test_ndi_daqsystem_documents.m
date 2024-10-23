@@ -29,7 +29,6 @@ function test_ndi_daqsystem_documents
 
     devlist = ndi.setup.daq.system.listDaqSystemNames('vhlab');
 
-
     daqsys = {};
     daqsys_docs = {};
 
@@ -62,4 +61,3 @@ function test_ndi_daqsystem_documents
     % clean up for next time
     E.daqsystem_clear();
 end
-

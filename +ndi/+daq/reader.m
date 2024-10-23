@@ -227,4 +227,3 @@ classdef reader < ndi.ido & ndi.documentservice
     end % methods
 
 end % ndi.daq.reader classdef
-

@@ -1,6 +1,5 @@
 classdef dataset < handle % & ndi.ido but this cannot be a superclass because it is not a handle; we do it by construction
 
-
     properties (GetAccess=protected, SetAccess = protected)
         session_info            % A structure with the sessions here
         session_array           % An array with session objects contained in the dataset
@@ -25,7 +24,6 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % an end user will open a specific subclass such as ndi.dataset.dir.
             %
             %   ndi.dataset/GETPATH, ndi.dataset/GETREFERENCE
-
         end
 
         function identifier = id(ndi_dataset_obj)
@@ -472,4 +470,3 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
 
     end; % methods protected
 end % class
-

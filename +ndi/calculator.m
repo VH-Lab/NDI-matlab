@@ -387,7 +387,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             end;
         end; % plot()
 
-
         %%%% methods that override ndi.appdoc %%%%
 
         % function struct2doc - should call calculator
@@ -430,7 +429,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
         end; % appdoc_description()
 
     end; % methods
-
 
     methods (Static)
 
@@ -505,7 +503,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                 [calc.parameter_example_names,calc.parameter_example_code] = ndi.calculator.parameter_examples(calc.type);
             end;
 
-
             varlist_ud = {'calc','window_params','session'};
             edit = false;
 
@@ -579,7 +576,6 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
                     button_width = 100;
                     button_height = row;
                     button_center = [ linspace(edge+0.5*button_width,right-edge-0.5*button_width, 3) ];
-
 
                     % Step 2 now build it
 
@@ -1025,5 +1021,3 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
 
     end; % Static methods
 end
-
-

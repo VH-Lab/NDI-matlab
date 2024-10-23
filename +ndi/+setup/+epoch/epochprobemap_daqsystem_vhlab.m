@@ -163,5 +163,3 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
         end;
     end  % methods
 end
-
-

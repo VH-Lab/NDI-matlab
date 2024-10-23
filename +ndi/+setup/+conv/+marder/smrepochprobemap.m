@@ -29,8 +29,6 @@ function smrepochprobemap(S, options)
         end;
     end;
 
-
-
     for i=1:numel(d),
         h = ndr.format.ced.read_SOMSMR_header([dirname filesep d(i).name]);
         inc = find([h.channelinfo.kind]==1);
@@ -46,6 +44,3 @@ function smrepochprobemap(S, options)
         [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
         probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
     end;
-
-
-

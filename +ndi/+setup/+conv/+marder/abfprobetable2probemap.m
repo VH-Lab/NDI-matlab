@@ -49,4 +49,3 @@ function abfprobetable2epochprobemap(S)
         [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
         probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
     end;
-

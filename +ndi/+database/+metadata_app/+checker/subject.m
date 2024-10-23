@@ -27,4 +27,3 @@ function [score,valid,errmsg] = subject(S)
         end
     end
 end
-

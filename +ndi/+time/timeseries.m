@@ -96,4 +96,3 @@ classdef timeseries < ndi.documentservice
 
     end % methods
 end % class ndi.time.timereference
-

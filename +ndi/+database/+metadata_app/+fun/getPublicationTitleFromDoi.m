@@ -70,5 +70,4 @@ function doi = cleanDoi(doi)
     if strncmp(doi, 'doi.org/', 8)
         doi = strrep(doi, 'doi.org/', '');
     end
-
 end

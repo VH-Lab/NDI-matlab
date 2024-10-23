@@ -122,4 +122,3 @@ function [s] = openMINDSobj2struct(openmindsObj, cachekey)
         % if we were the first function, remove the cache
         ndi_cache.remove(cachekey,cachetype);
     end;
-

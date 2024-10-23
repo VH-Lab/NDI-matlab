@@ -33,5 +33,4 @@ function tutorial_02_set()
     ndi.example.tutorial.tutorial_02_04([],1);
     ndi.example.tutorial.tutorial_02_05([],1);
 
-
     disp(['If you are reading this line, all tutorial parts executed successfully.']);

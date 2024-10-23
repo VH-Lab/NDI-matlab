@@ -9,8 +9,6 @@ function syncgraph_example_figure
     %
     %
 
-
-
     t_utc = 0:0.1:300;
 
     t_elec{1} = 5:0.1:80;
@@ -20,7 +18,6 @@ function syncgraph_example_figure
     t_visstim{1} = 5+13:0.1:5+13+63;
     t_visstim{2} = 100:0.1:170;
     t_visstim{3} = 103+65+22-7:0.1:103+65+22+65;
-
 
     figure
 
@@ -36,4 +33,3 @@ function syncgraph_example_figure
     box off;
 
     axis([-10 320 -1 2]);
-

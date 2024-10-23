@@ -18,5 +18,3 @@ function id = empty_id()
             id(i) = '0';
         end;
     end;
-
-

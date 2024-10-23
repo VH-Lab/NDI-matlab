@@ -25,4 +25,3 @@ function [species, uuid] = SearchSpecies(term)
         delete(file_path);
     end
 end
-

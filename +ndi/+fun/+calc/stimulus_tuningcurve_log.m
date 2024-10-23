@@ -23,5 +23,3 @@ function log_str = stimulus_tuningcurve_log(S, doc)
             log_str = stim_tune_doc{1}.document_properties.tuningcurve_calc.log;
         end;
     end;
-
-

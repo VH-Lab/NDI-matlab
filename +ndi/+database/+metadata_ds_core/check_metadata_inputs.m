@@ -105,7 +105,6 @@ function [submit, errorStep] = check_metadata_inputs(app)
                 errmsg = sprintf('Please fill in the digital identifier for author %d', i);
                 app.EmptyDigitalIdentifierWarning.Tooltip = errmsg;
                 errorStep{2} = 2;
-
             end
             if isempty(ud.relatedPublications{i})
                 app.EmptyRelatedPublicationsWarning.Visible = 'on';
@@ -113,7 +112,6 @@ function [submit, errorStep] = check_metadata_inputs(app)
                 app.EmptyRelatedPublicationsWarning.Tooltip = errmsg;
                 errorStep{2} = 2;
             end
-
         end
     end
 
@@ -164,8 +162,6 @@ function [submit, errorStep] = check_metadata_inputs(app)
     msg = cell(1,3);
     state = 1;
 
-
-
     %% DigitalIdentifier
     % digitalIdentifierPattern = '^https://ror.org/0([0-9]|[^ILO]|[a-z]){6}[0-9]{2}$';
     % for i = 1:numAuthors
@@ -182,5 +178,3 @@ function [submit, errorStep] = check_metadata_inputs(app)
     % emailPattern = "(?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/";
 
     %%
-
-

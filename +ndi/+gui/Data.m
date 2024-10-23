@@ -38,8 +38,6 @@ classdef Data < handle
                 'BackgroundColor', [0.9 0.9 0.9], 'Visible', 'off', 'Callback', @obj.clear)];
         end
 
-
-
         function addDoc(obj, docs)
             for i=1:numel(docs)
                 obj.fullDocuments = [obj.fullDocuments; docs{i}];

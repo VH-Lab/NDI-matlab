@@ -80,8 +80,6 @@ function [genbanknames] = ndi_readGenBankNames(filename)
         end;
     end;
 
-
     progressbar(1);
 
     genbanknames = vlt.data.var2struct('genbank_commonname','scientific_name','synonym','other_commonname');
-

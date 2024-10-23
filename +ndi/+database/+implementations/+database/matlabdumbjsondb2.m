@@ -27,7 +27,6 @@ classdef  matlabdumbjsondb2 < ndi.database
                 mkdir(ndi_matlabdumbjsondb_obj.file_directory);
             end;
         end; % ndi.database.implementations.database.matlabdumbjsondb()
-
     end
 
     methods, % public
@@ -138,5 +137,3 @@ classdef  matlabdumbjsondb2 < ndi.database
         end; % file_directory
     end;
 end
-
-

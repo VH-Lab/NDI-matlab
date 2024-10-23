@@ -21,7 +21,6 @@ function [tname,tname_without_extension] = copydocfile2temp(doc, S, filename, ex
     % The calling program should delete the file TNAME when finished using delete(TNAME).
     %
 
-
     % note: this function could be expanded to include a cache so that if the same document
     % is copied again, it can be skipped, until the cache is full and the oldest or least
     % prioritized copy can be removed
@@ -35,5 +34,3 @@ function [tname,tname_without_extension] = copydocfile2temp(doc, S, filename, ex
     fid = fopen(tname,'wb','ieee-le');
     fwrite(fid,data,'uint8');
     fclose(fid);
-
-

@@ -5,7 +5,6 @@ classdef sessiontable
 
     properties
 
-
     end;
 
     methods
@@ -93,7 +92,6 @@ classdef sessiontable
             end;
 
         end; % removetableentry()
-
 
         function [b,results] = checktable(ndi_sessiontable_obj)
             %CHECKTABLE - check the session table for proper form, accessibility

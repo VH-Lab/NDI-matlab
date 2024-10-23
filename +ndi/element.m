@@ -511,5 +511,3 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
     end; % methods
 
 end % classdef
-
-

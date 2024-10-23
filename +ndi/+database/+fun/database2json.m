@@ -24,5 +24,3 @@ function database2json(S, output_path)
         j = vlt.data.jsonencodenan(d{i}.document_properties);
         vlt.file.str2text([output_path filesep d{i}.document_properties.base.id '.json'],j);
     end;
-
-

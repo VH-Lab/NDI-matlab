@@ -36,5 +36,3 @@ function [status,response] = password(oldPassword, newPassword)
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
 end
-
-

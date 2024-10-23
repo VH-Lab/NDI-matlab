@@ -36,5 +36,3 @@ function [b,msg] = ingest(source_filename_list, destination_filename_list, to_de
             msg = ['Deleting: ' lasterr];
         end;
     end;
-
-

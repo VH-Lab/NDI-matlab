@@ -35,4 +35,3 @@ function write_presentation_time_structure(filename, presentation_time)
 
     fclose(fid);
 end
-

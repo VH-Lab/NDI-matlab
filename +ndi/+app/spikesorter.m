@@ -564,4 +564,3 @@ classdef spikesorter < ndi.app & ndi.app.appdoc
     end % methods
 
 end % ndi.app.spikesorter
-

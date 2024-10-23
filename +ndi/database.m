@@ -251,5 +251,3 @@ classdef database
         end
     end % Methods (Access=Protected) protected methods
 end % classdef
-
-

@@ -196,7 +196,6 @@ classdef validate
                 error(ndi_validate_obj.errormsg)
             end
         end
-
     end
 
     methods(Static, Access = public)

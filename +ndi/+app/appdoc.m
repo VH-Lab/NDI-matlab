@@ -336,5 +336,4 @@ classdef appdoc
 
     end;
 
-
 end % ndi.app.appdoc

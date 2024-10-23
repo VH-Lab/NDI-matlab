@@ -18,4 +18,3 @@ function t = samples2times(s,t0_t1,sr)
     t(g) = t0_t1(1);
     g = (isinf(s) & s>0);
     t(g) = t0_t1(2);
-

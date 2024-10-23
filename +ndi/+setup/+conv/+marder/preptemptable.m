@@ -6,7 +6,6 @@ function preptemptable(S)
     % Write a temperature table to the session directory.
     %
 
-
     dirname = S.path();
 
     standard_temps = [ 7:4:31] ;
@@ -30,4 +29,3 @@ function preptemptable(S)
     end;
 
     save([dirname filesep 'temptable.mat'],'temptable','-mat');
-

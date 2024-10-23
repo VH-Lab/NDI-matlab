@@ -175,7 +175,6 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             vlt.file.saveStructArray(filename, mystruct);
         end;
 
-
     end  % methods
 
     methods(Static)

@@ -29,5 +29,3 @@ function dbfilename = doc2ingesteddbfilename(ndi_document_obj, filename)
     % if we are here, we didn't find one
 
     error(['Could find no ingested file for ' filename '.']);
-
-

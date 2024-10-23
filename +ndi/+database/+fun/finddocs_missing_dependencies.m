@@ -55,4 +55,3 @@ function d = ndi_finddocs_missing_dependencies(E, varargin)
     end;
 
     d = d(include);
-

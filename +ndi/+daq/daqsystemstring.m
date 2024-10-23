@@ -163,5 +163,3 @@ classdef daqsystemstring
         end % devicestring
     end
 end
-
-

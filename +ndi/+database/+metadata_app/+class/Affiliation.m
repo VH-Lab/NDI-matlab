@@ -33,9 +33,5 @@ classdef Affiliation
             S = struct;
             S.Name = obj.memberOf.getName();
         end
-
-
-
     end
 end
-

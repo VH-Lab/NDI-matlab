@@ -16,5 +16,3 @@ function makesubjects(S, n)
             [this_dir '_' sprintf('%.2d',i) '@marderlab.brandeis.edu']);
 
     end;
-
-

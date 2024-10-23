@@ -25,5 +25,3 @@ function datasetId = new_dataset(D)
     % Step 2: upload
 
     [b,msg] = ndi.cloud.upload.upload_to_NDI_cloud(D,datasetId);
-
-
