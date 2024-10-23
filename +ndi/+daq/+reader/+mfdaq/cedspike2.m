@@ -1,5 +1,5 @@
 classdef cedspike2 < ndi.daq.reader.mfdaq
-    % NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Device driver for CED Spike2
+    % NDI.DAQ.READER.MFDAQ.CEDSPIKE2 - Device driver for CED Spike2
     %
     % This class reads data from CED Spike2 .SMR or .SON file formats.
     %
@@ -14,9 +14,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
 
     methods
         function obj = cedspike2(varargin)
-            % NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
+            % NDI.DAQ.READER.MFDAQ.CEDSPIKE2 - Create a new NDI_DEVICE_MFDAQ_CEDSPIKE2 object
             %
-            %  D = NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2(NAME,THEFILENAVIGATOR)
+            %  D = NDI.DAQ.READER.MFDAQ.CEDSPIKE2(NAME,THEFILENAVIGATOR)
             %
             %  Creates a new NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2 object with name NAME and associated
             %  filenavigator THEFILENAVIGATOR.
@@ -25,9 +25,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
         end
 
         function channels = getchannelsepoch(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
-            % GETCHANNELS - List the channels that are available on this device
+            % GETCHANNELSEPOCH - List the channels that are available on this device
             %
-            %  CHANNELS = GETCHANNELS(THEDEV, EPOCHFILES)
+            %  CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)
             %
             %  Returns the channel list of acquired channels in this session
             %
@@ -87,9 +87,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
         end
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, s0, s1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
+            %  DATA = READCHANNELS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read (cell array of strings, one per
             %     channel, or single string for all channels)
@@ -152,7 +152,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
         end % readchannels_epochsamples
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_cedspike2_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_CEDSPIKE2_OBJ, EPOCHFILES)
             %
@@ -171,9 +171,9 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
         end % t0t1
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_cedspike2_obj, channeltype, channel, epochfiles, t0, t1)
-            %  FUNCTION READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
+            %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
             %
-            %  DATA = READEVENTS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+            %  DATA = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
             %
             %  CHANNELTYPE is the type of channel to read
             %  ('event','marker', etc)
@@ -291,7 +291,7 @@ classdef cedspike2 < ndi.daq.reader.mfdaq
     methods (Static)  % helper functions
 
         function smrfile = cedspike2filelist2smrfile(filelist)
-            % CEDSPIKE2SPIKELIST2SMRFILE - Identify the .SMR file out of a file list
+            % CEDSPIKE2FILELIST2SMRFILE - Identify the .SMR file out of a file list
             %
             % FILENAME = CEDSPIKE2FILELIST2SMRFILE(FILELIST)
             %

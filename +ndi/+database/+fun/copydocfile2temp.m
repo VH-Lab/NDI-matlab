@@ -1,5 +1,5 @@
 function [tname,tname_without_extension] = copydocfile2temp(doc, S, filename, extension)
-    % COPYDOC2FILENAME - copy a file from an ndi.document to the file system
+    % COPYDOCFILE2TEMP - copy a file from an ndi.document to the file system
     %
     % [TNAME,TNAME_WITHOUT_EXT] = COPYDOCFILE2TEMP(DOC, S, FILENAME, EXTENSION)
     %

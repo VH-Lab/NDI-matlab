@@ -40,6 +40,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % ndi.daq.metadatareader
 
         function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
+            % READMETADATA - Read metadata parameters
+            %
             % PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
             %
             % Returns the parameters (cell array of structures) associated with the
@@ -88,6 +90,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % readmetadata()
 
         function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles, S)
+            % READMETADATA_INGESTED - Read metadata parameters from a session database
+            %
             % PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES, S)
             %
             % Returns the parameters (cell array of structures) associated with the
@@ -104,6 +108,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % readmetadata_ingested()
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
+            % READMETADATAFROMFILE - Read metadata parameters from file
+            %
             % PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
             %
             % PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)

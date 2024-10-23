@@ -56,7 +56,7 @@ classdef mfdaq < ndi.probe.timeseries
         end % read_epochsamples()
 
         function [data,t,timeref_out] = readtimeseriesepoch(ndi_probe_timeseries_mfdaq_obj, epoch, t0, t1)
-            %  READ_EPOCHSAMPLES - read the data from a specified epoch
+            %  READTIMESERIESEPOCH - read the data from a specified epoch
             %
             %  [DATA, T, TIMEREF_OUT] = READTIMESERIESEPOCH(NDI_PROBE_TIMESERIES_MFDAQ_OBJ, EPOCH ,T0, T1)
             %

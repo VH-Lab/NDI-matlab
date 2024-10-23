@@ -3,11 +3,11 @@ classdef epochprobemap_daqsystem_vhlab < ndi.epoch.epochprobemap_daqsystem
     end % properties
     methods
         function obj = epochprobemap_daqsystem_vhlab(name_, reference_, type_, devicestring_, subjectstring_)
-            % ndi.epoch.epochprobemap_daqsystem_vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
+            % ndi.setup.epoch.epochprobemap_daqsystem_vhlab - Create a new ndi.epoch.epochprobemap_daqsystem object derived from the vhlab device implementation
             %
-            % MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI_EPOCHPROBEMAP_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
+            % MYNDI_EPOCHPROBEMAP_DAQSYSTEM = NDI.SETUP.EPOCH.EPOCHPROBEMAP_DAQSYSTEM_VHLAB(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING)
             %
-            % Creates a new ndi.epoch.epochprobemap_daqsystem with name NAME, reference REFERENCE, type TYPE,
+            % Creates a new ndi.setup.epoch.epochprobemap_daqsystem_vhlab with name NAME, reference REFERENCE, type TYPE,
             % and devicestring DEVICESTRING.
             %
             % NAME can be any string that begins with a letter and contains no whitespace. It

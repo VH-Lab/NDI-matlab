@@ -6,7 +6,7 @@ classdef filematch < ndi.time.syncrule
     end % properties
     methods
         function ndi_syncrule_filematch_obj = filematch(varargin)
-            % NDI_SYNCRULE_FILEMATCH_OBJ - create a new ndi.time.syncrule.filematch for managing synchronization
+            % FILEMATCH - create a new ndi.time.syncrule.filematch for managing synchronization
             %
             % NDI_SYNCRULE_FILEMATCH_OBJ = ndi.time.syncrule.filematch()
             %      or

@@ -19,7 +19,7 @@ classdef stimulator < ndi.probe.timeseries
         end % ndi.probe.timeseries.stimulator()
 
         function [data, t, timeref] = readtimeseriesepoch(ndi_probe_timeseries_stimulator_obj, epoch, t0, t1)
-            % READ_STIMULUSEPOCH - Read stimulus data from an ndi.probe.timeseries.stimulator object
+            % READTIMESERIESEPOCH - Read stimulus data from an ndi.probe.timeseries.stimulator object
             %
             % [DATA, T, TIMEREF] = READTIMESERIESEPOCH(NDI_PROBE_TIMESERIES_STIMULATOR_OBJ, EPOCH, T0, T1)
             %  STIMON, STIMOFF, STIMID, PARAMETERS, STIMOPENCLOSE] = ...

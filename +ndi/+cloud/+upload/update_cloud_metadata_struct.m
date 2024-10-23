@@ -1,5 +1,5 @@
 function [status, dataset] = update_cloud_metadata_struct(dataset_id, S, size)
-    % UPDATE_CLOUD_METADATA - upload metadata to the NDI Cloud
+    % UPDATE_CLOUD_METADATA_STRUCT - upload metadata to the NDI Cloud
     %
     % [STATUS, DATASET] = ndi.cloud.upload.UPDATE_CLOUD_METADATA_STRUCT(DATASETID, S, SIZE)
     %

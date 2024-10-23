@@ -34,7 +34,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
         end
 
         function channels = getchannels(sAPI_dev)
-            % FUNCTION GETCHANNELS - List the channels that are available on this device
+            % GETCHANNELS - List the channels that are available on this device
             %
             %  CHANNELS = GETCHANNELS(SAPI_DEV)
             %
@@ -93,9 +93,9 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
         end
 
         function report = read_channel(sAPI_dev,channeltype,channel,sAPI_clock, t0,t1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            % READ_CHANNEL - read the data based on specified channels
             %
-            %  REPORT = READ_CHANNELS(SAPI_DEV, CHANNELTYPE,CHANNEL,SAPI_CLOCK,T0,T1)
+            %  REPORT = READ_CHANNEL(SAPI_DEV, CHANNELTYPE,CHANNEL,SAPI_CLOCK,T0,T1)
             %
             %  CHANNELTYPE is the type of channel to read
             %  ('image', etc)
@@ -170,8 +170,7 @@ classdef ndi_image_tiffstack < handle & ndi.daq.system.mfdaq
         end
 
         function [intervals] = getintervals(sAPI_dev)
-            %   FUNCTION GETINTERVALS - list the relative time order for all the
-            %   intervals
+            % GETINTERVALS - list the relative time order for all the intervals
             %
             %   INTERVALS = GETINTERVALS(SAPI_DEV)
             %

@@ -14,12 +14,12 @@ classdef Affiliation
         end
 
         function obj = updateName(obj, value)
-            %updateProperty Update the value in a field
+            %updateName Update the value in a field
             obj.memberOf.fullName = value;
         end
 
         function obj = updateIdentifier(obj, value)
-            %updateProperty Update the value in a field
+            %updateIdentifier Update the value in a field
             obj.memberOf.digitalIdentifier.identifier = value;
         end
 

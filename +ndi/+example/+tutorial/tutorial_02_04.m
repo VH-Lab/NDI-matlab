@@ -1,7 +1,7 @@
 function tutorial_02_04(prefix, testing)
-    % ndi.example.tutorials.tutorial_02_04 - runs the code in Tutorial 2.4
+    % ndi.example.tutorial.tutorial_02_04 - runs the code in Tutorial 2.4
     %
-    % out = ndi.example.tutorials.tutorial_02_04(PREFIX, [TESTING])
+    % out = ndi.example.tutorial.tutorial_02_04(PREFIX, [TESTING])
     %
     % Runs (and tests) the code for
     %

@@ -59,7 +59,7 @@ classdef DaqSystemConfiguration
 
     methods
         function ndiSession = addToSession(obj, ndiSession)
-            % create - Create and add DAQ System to session
+            % addToSession - Create and add DAQ System to session
 
             fileNavigator = obj.createFileNavigator(ndiSession);
             daqReader = obj.createDaqReader();

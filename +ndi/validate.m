@@ -286,10 +286,10 @@ classdef validate
         end
 
         function name = extractnamefromdefinition(str)
-            %   STR - File name contains ".json" extension
+            % EXTRACTNAMEFROMDEFINITION - File name contains ".json" extension
             %   Remove the file extension
             %
-            %   NAME = EXTRACTNAME(STR)
+            %   NAME = NDI.VALIDATE.EXTRACTNAMEFROMDEFINITION(STR)
             %
             file_name = split(str, filesep);
             name = split(file_name(numel(file_name)), ".");
@@ -297,7 +297,7 @@ classdef validate
         end
 
         function str = readHashMap(java_hashmap)
-            %   java_hashmap - an instance of java.util.HashMAP
+            %   readHashMap - an instance of java.util.HashMAP
             %   turn an instance of java.util.hashmap into string useful
             %   for displaying the error messages
             %

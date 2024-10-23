@@ -151,7 +151,7 @@ classdef Subject < handle
 
     methods (Static)
         function paddedList = padList(list, targetLength, placeholder)
-            % Helper function to pad a list with a placeholder to match the target length
+            % padList - Helper function to pad a list with a placeholder to match the target length
             paddedList = list;
             if length(list) < targetLength
                 padding = cell(1, targetLength - length(list));

@@ -11,7 +11,7 @@ classdef AuthorData < handle
     methods % Public methods for interacting with author items
 
         function S = getItem(obj, authorIndex)
-            %getAuthorName Get a struct with author details for the given index
+            %getItem Get a struct with author details for the given index
             if numel( obj.AuthorList ) < authorIndex
                 S = obj.getDefaultAuthorItem();
             else
@@ -127,8 +127,6 @@ classdef AuthorData < handle
     methods (Static)
 
         function S = getDefaultAuthorItem()
-            % Todo: Consider using camelcase (i.e givenName) to conform
-            % with openMINDS
             S = struct;
             S.affiliation = struct.empty;
             S.contactInformation.email = '';

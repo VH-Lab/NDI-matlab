@@ -40,7 +40,7 @@ classdef AffiliationData < handle
         end
 
         function obj = updateName(obj, value, affiliationIndex)
-            %updateProperty Update the value in a field
+            %updateName Update the value in a field
             if numel( obj.AffiliationList ) < affiliationIndex
                 if numel(obj.AffiliationList) == 0
                     obj.AffiliationList = obj.getDefaultAffiliationItem();
@@ -52,7 +52,7 @@ classdef AffiliationData < handle
         end
 
         function obj = updateIdentifier(obj, value, affiliationIndex)
-            %updateProperty Update the value in a field
+            %updateIdentifier Update the value in a field
             if numel( obj.AffiliationList ) < affiliationIndex
                 if numel(obj.AffiliationList) == 0
                     obj.AffiliationList = obj.getDefaultAffiliationItem();
@@ -70,7 +70,7 @@ classdef AffiliationData < handle
         end
 
         function S = getItem(obj, affiliationIndex)
-            %getAffiliationName Get a struct with affiliation details for the given index
+            %getItem Get a struct with affiliation details for the given index
             if numel( obj.AffiliationList ) < affiliationIndex
                 S = obj.getDefaultAffiliationItem();
             else
@@ -101,8 +101,6 @@ classdef AffiliationData < handle
     methods (Static)
 
         function S = getDefaultAffiliationItem()
-            % Todo: Consider using camelcase (i.e givenName) to conform
-            % with openMINDS
             S = ndi.database.metadata_app.class.Affiliation();
         end
     end

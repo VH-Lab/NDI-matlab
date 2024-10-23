@@ -46,7 +46,6 @@ classdef  postgresdb < ndi.database
         function docids = alldocids(ndi_postgresdb_obj)
             % ALLDOCIDS - return all document unique reference numbers for the database
             %
-            %
             % DOCIDS = ALLDOCIDS(NDI_POSTGRESDB_OBJ, DBNAME)
             %
             % Return all document unique reference strings as a cell array of strings. If there
@@ -61,7 +60,8 @@ classdef  postgresdb < ndi.database
         end; % alldocids()
 
         function sqlquery = ndiquery_to_sql(ndi_postgresdb_obj, ndiquery)
-            % Translates an ndiquery into a SQL command
+            % NDIQUERY_TO_SQL - Translate an ndiquery into a SQL command
+            %
             % Assumes input is a ndiquery converted to struct
             % Assumes params are correct
             %
@@ -213,27 +213,25 @@ classdef  postgresdb < ndi.database
     methods (Access=protected),
 
         function new_db = do_add(ndi_postgresdb_obj, ndi_document_obj, add_parameters)
-            % sqlwrite procedure to insert Matlab data into a database
+            % DO_ADD - sqlwrite procedure to insert Matlab data into a database
             % table
             %
+            % Note: add_parameters is unused, and it is assumed the data is in
+            % public.documents
+            
             %             ndi_document_obj = table(30,500000,1000,25,"Rubik's Cube", ...
             %             'VariableNames',{'productNumber' 'stockNumber' ...
             %             'supplierNumber' 'unitCost' 'productDescription'});
             %
             %             sqlwrite(conn,tablename,data)
 
-            % Note: add_paramters is unused, and it is assumed the data is in
-            % public.documents
-            %
-
-            tablename = 'public.documents'
+            tablename = 'public.documents';
             sqlwrite(ndi_postgresdb_obj.db, tablename, ndi_document_obj)
-            new_db = ndi_postgresdb_obj
-
+            new_db = ndi_postgresdb_obj;
         end; % do_add
 
         function [ndi_document_obj, version] = do_read(ndi_postgresdb_obj, ndi_document_id, version);
-            % reads and shows a document from the database with the unique ndi document ID
+            % DO_READ - reads and shows a document from the database with the unique ndi document ID
             % expects a version, reading the latest by default
 
             sqlquery = "SELECT * FROM public.documents WHERE id = '" + ndi_document_id + "'"
@@ -255,7 +253,7 @@ classdef  postgresdb < ndi.database
         end; % do_read
 
         function ndi_postgresdb_obj = do_remove(ndi_postgresdb_obj, ndi_document_id, versions)
-            % removes a document from the database with the unique ndi document ID
+            % DO_REMOVE - remove a document from the database with the unique ndi document ID
             % expects versions as a column in the table
 
             sqlquery = "DELETE FROM public.documents WHERE id = '" + ndi_document_id + "'"
@@ -278,7 +276,7 @@ classdef  postgresdb < ndi.database
         end; % do_remove
 
         function [data, versions] = do_search(ndi_postgresdb_obj, searchoptions, searchparams)
-            % Takes in a list of search parameters (an array of
+            % DO_SEARCH - Takes in a list of search parameters (an array of
             % search op
             %
             % Note: searchoptions is not used

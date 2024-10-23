@@ -1,7 +1,7 @@
 function dataset_branch_test()
-    %DATASET_BRANCH - test the functions related to dataset branches
+    %DATASET_BRANCH_TEST - test the functions related to dataset branches
     %
-    % DATASET_BRANCH()
+    % DATASET_BRANCH_TEST()
     %
     % Test the following api commands:
     %   datasets/post_branch

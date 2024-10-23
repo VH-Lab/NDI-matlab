@@ -55,9 +55,9 @@ classdef ndr < ndi.daq.reader.mfdaq
         end;
 
         function channels = getchannelsepoch(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
-            % GETCHANNELS - List the channels that are available for this epoch for the NDR daq reader
+            % GETCHANNELSEPOCH - List the channels that are available for this epoch for the NDR daq reader
             %
-            %  CHANNELS = GETCHANNELS(NDI_DAQ_READER_MFDAQ_NDR_OBJ, EPOCHFILES)
+            %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQ_READER_MFDAQ_NDR_OBJ, EPOCHFILES)
             %
             %  Returns the channel list of acquired channels in this session
             %
@@ -73,9 +73,9 @@ classdef ndr < ndi.daq.reader.mfdaq
         end; % getchannelsepoch
 
         function data = readchannels_epochsamples(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, s0, s1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS(NDI_DAQREADER_MFDAQ_NDR_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
+            %  DATA = READCHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_NDR_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read (cell array of strings, one per
             %     channel, or single string for all channels)
@@ -91,7 +91,7 @@ classdef ndr < ndi.daq.reader.mfdaq
         end; % readchannels_epochsamples
 
         function t0t1 = t0_t1(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_DAQSYSTEM_MFDAQ_NDR_OBJ, EPOCHFILES)
             %
@@ -106,7 +106,7 @@ classdef ndr < ndi.daq.reader.mfdaq
         end % t0t1
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t0, t1)
-            %  FUNCTION READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
+            %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
             %
             %  DATA = READEVENTS_EPOCHSAMPLES_NATIVE(NDR_DAQREADER_MFDAQ_NDR_OBJ, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
             %

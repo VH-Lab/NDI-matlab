@@ -25,7 +25,7 @@ classdef NewStimStims < ndi.daq.metadatareader
         end; % ndi_daqmetadatareader_NewStimStim
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_newstimstims_obj, file)
-            % PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
+            % READMETADATAFROMFILE - read in metadata from the file that is identified
             %
             % PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_NEWSTIMSTIMS_OBJ, FILE)
             %

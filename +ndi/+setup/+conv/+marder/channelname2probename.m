@@ -1,5 +1,5 @@
 function [probename, proberef, subjectname] = channelname2probename(chName, subjects, options)
-    % CHANNELNAME2PROBE - convert a Marder channel name to a probe name
+    % CHANNELNAME2PROBENAME - convert a Marder channel name to a probe name
     %
     % [PROBENAME, PROBEREF, SUBJECTNAME] = CHANNELNAME2PROBENAME(CHNAME, SUBJECTS)
     %

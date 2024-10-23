@@ -139,7 +139,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end
 
         function [et] = buildepochtable(ndi_filenavigator_obj)
-            % EPOCHTABLE - Return an epoch table for ndi.file.navigator
+            % BUILDEPOCHTABLE - Return an epoch table for ndi.file.navigator
             %
             % ET = BUILDEPOCHTABLE(NDI_EPOCHSET_OBJ)
             %
@@ -149,7 +149,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             % 'epoch_number'            | The number of the epoch (may change)
             % 'epoch_id'                | The epoch ID code (will never change once established)
             %                           |   This uniquely specifies the epoch within the session.
-            % 'epoch_session_id'           | The ID of the session that contains this epoch.
+            % 'epoch_session_id'        | The ID of the session that contains this epoch.
             % 'epochprobemap'           | The epochprobemap object from each epoch
             % 'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
             % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates, for each ndi.time.clocktype, the start and stop
@@ -265,11 +265,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end %epochid()
 
         function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
-            % EPOCHPROBEMAPFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
+            % EPOCHIDFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
             %
-            % ECFNAME = EPOCHPROBEMAPFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
+            % ECFNAME = EPOCHIDFILENAME(NDI_FILENAVIGATOR_OBJ, NUMBER)
             %
-            % Returns the EPOCHPROBEMAPFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
+            % Returns the EPOCHIDFILENAME for the ndi.daq.system NDI_DEVICE_OBJ for epoch NUMBER.
             % If there are no files in epoch NUMBER, an error is generated.
             %
             % In the base class, ndi.epoch.epochprobemap_daqsystem data is stored as a hidden file in the same directory
@@ -575,7 +575,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end % getepochfiles()
 
         function [fullpathfilenames] = getepochfiles_number(ndi_filenavigator_obj, epoch_number)
-            % GETEPOCHFILES - Return the file paths for one recording epoch
+            % GETEPOCHFILES_NUMBER - Return the file paths for one recording epoch
             %
             %  [FULLPATHFILENAMES] = GETEPOCHFILES_NUMBER(NDI_FILENAVIGATOR_OBJ, EPOCH_NUMBER)
             %

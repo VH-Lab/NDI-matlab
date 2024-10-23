@@ -1,5 +1,5 @@
 function [result] = add_document(dataset_id, json_document)
-    % create_dataset - Create a new dataset in an organization
+    % ADD_DOCUMENT - Add a document to a dataset
 
     arguments
         dataset_id (1,1) string

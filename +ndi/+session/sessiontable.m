@@ -161,9 +161,9 @@ classdef sessiontable
         end; % isvalidtable()
 
         function backupsessiontable(ndi_sessiontable_obj)
-            % BACKUP_SESSION_TABLE - create a backup file for an ndi.session.sessiontable
+            % BACKUPSESSIONTABLE - create a backup file for an ndi.session.sessiontable
             %
-            % BACKUP_SESSION_TABLE(NDI_SESSIONTABLE_OBJ)
+            % BACKUPSESSIONTABLE(NDI_SESSIONTABLE_OBJ)
             %
             % Perform a backup of the session table file.
             % The session table file is backed up in the [USERPATH]/Preferences/NDI directory

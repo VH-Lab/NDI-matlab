@@ -1,5 +1,5 @@
 function databasehierarchy = databasehierarchyinit()
-    % NDI_DATABASEHIERARCHYINIT - Initializes the list of databases to try
+    % DATABASEHIERARCHYINIT - Initializes the list of databases to try
     %
     % ndi.database.fun.databasehierarchyinit
     %

@@ -79,7 +79,7 @@ classdef daqsystemstring
         end % ndi.daq.daqsystemstring
 
         function [devicename, channeltype, channel] = ndi_daqsystemstring2channel(self, devstr)
-            % NDI_DAQSYSTEMSTRING2CHANNELS - Convert an ndi.daq.daqsystemstring to device, channel type, channel list
+            % NDI_DAQSYSTEMSTRING2CHANNEL - Convert an ndi.daq.daqsystemstring to device, channel type, channel list
             %
             % [DEVICENAME, CHANNELTYPE, CHANNELLIST] = NDI_DAQSYSTEMSTRING2CHANNEL(SELF, DEVSTR)
             %

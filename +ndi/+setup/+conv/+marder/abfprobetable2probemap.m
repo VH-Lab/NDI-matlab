@@ -1,13 +1,12 @@
-function abfprobetable2epochprobemap(S)
-    % Create epochprobemap files for a Marder ndi session
+function abfprobetable2probemap(S)
+    % ABFPROBETABLE2PROBEMAP - Create epochprobemap files for a Marder ndi session
     %
-    % ABFPROBETABLE2EPOCHPROBEMAP(S)
+    % ABFPROBETABLE2PROBEMAP(S)
     %
     % Reads all ABF files in the NDI session S and creates corresponding
     % epochprobemap files using the 'probetable.csv' file in the main directory.
     %
-    %
-
+    
     arguments
         S (1,1)
     end

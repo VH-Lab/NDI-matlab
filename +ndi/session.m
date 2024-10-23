@@ -538,7 +538,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         %%%%%% REFERENCE methods
 
         function obj = findexpobj(ndi_session_obj, obj_name, obj_classname)
-            % FINEXPDOBJ - search an ndi.session for a specific object given name and classname
+            % FINDEXPOBJ - search an ndi.session for a specific object given name and classname
             %
             % OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
             %

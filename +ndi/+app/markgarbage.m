@@ -160,7 +160,7 @@ classdef markgarbage < ndi.app
         end % loadvalidinterval()
 
         function [intervals] = identifyvalidintervals(ndi_app_markgarbage_obj, ndi_epochset_obj, timeref, t0, t1)
-            % IDENTIFYVALIDINTERVAL - identify valid region within an interval
+            % IDENTIFYVALIDINTERVALS - identify valid region within an interval
             %
             % INTERVALS = IDENTIFYVALIDINTERVALS(NDI_APP_MARKGARBAGE_OBJ, NDI_EPOCHSET_OBJ, TIMEREF, T0, T1)
             %
@@ -203,7 +203,7 @@ classdef markgarbage < ndi.app
                 intervals = explicitly_good_intervals;
             end;
 
-        end; % identifyvalidinterval
+        end; % identifyvalidintervals
 
     end; % methods
 

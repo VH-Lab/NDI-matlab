@@ -7,7 +7,7 @@ classdef ProgressUpdatedEventData < event.EventData
 
     methods
         function eventData = ProgressUpdatedEventData(progressPercentage, currentStep, totalSteps)
-            % Constructor
+            % ProgressUpdatedEventData Constructor
             eventData.ProgressPercentage = progressPercentage;
             eventData.CurrentStep = currentStep;
             eventData.TotalSteps = totalSteps;

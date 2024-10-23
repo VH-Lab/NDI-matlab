@@ -8,12 +8,12 @@ classdef  matlabdumbjsondb2 < ndi.database
     methods
 
         function ndi_matlabdumbjsondb_obj = matlabdumbjsondb2(varargin)
-            % ndi.database.implementations.database.matlabdumbjsondb make a new ndi.database.implementations.database.matlabdumbjsondb object
+            % ndi.database.implementations.database.matlabdumbjsondb2 make a new ndi.database.implementations.database.matlabdumbjsondb object
             %
-            % NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb(...
+            % NDI_MATLABDUMBJSONDB_OBJ = ndi.database.implementation.database.matlabdumbjsondb2(...
             %     PATH, SESSION_UNIQUE_REFERENCE, COMMAND, ...)
             %
-            % Creates a new ndi.database.implementations.database.matlabdumbjsondb object.
+            % Creates a new ndi.database.implementations.database.matlabdumbjsondb2 object.
             %
             % COMMAND can either be 'Load' or 'New'. The second argument
             % should be the full pathname of the location where the files
@@ -66,6 +66,7 @@ classdef  matlabdumbjsondb2 < ndi.database
         end; % do_read
 
         function ndi_matlabdumbjsondb_obj = do_remove(ndi_matlabdumbjsondb_obj, ndi_document_id)
+            
             % need to read document to delete files
             ndi_doc = ndi_matlabdumbjsondb_obj.do_read(ndi_document_id);
             if isempty(ndi_doc),

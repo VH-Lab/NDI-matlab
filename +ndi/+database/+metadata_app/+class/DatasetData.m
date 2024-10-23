@@ -19,7 +19,7 @@ classdef DatasetData < handle
         end
 
         function S = getItem(obj)
-            %getAuthorName Get a struct with author details for the given index
+            %getItem Get a struct with dataset details for the given index
             if numel( obj.DatasetInfo ) == 0
                 S = obj.getDefaultDatasetItem();
             else
@@ -28,12 +28,12 @@ classdef DatasetData < handle
         end
 
         function S = getDataset(obj)
-            %getAuthorList Same as S = authorData.AuthorList
+            %getDataset - Same as S = datasetData.DatasetInfo
             S = obj.DatasetInfo;
         end
 
         function setDataset(obj, S)
-            %setAuthorList Same as authorData.AuthorList = S
+            %setDataset - Same as datasetData.DatasetInfo = S
             obj.DatasetInfo = S;
         end
     end
@@ -41,8 +41,6 @@ classdef DatasetData < handle
     methods (Static)
 
         function S = getDefaultDatasetItem()
-            % Todo: Consider using camelcase (i.e givenName) to conform
-            % with openMINDS
             S = struct;
             S.author = '';
             S.description = ''; %Abstract

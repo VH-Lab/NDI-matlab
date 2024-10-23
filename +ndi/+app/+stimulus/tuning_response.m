@@ -138,7 +138,7 @@ classdef tuning_response < ndi.app
         end %
 
         function response_doc = compute_stimulus_response_scalar(ndi_app_tuning_response_obj, ndi_stim_obj, ndi_timeseries_obj, stim_doc, control_doc, varargin)
-            % COMPUTE_STIMULUS_RESPONSES - compute responses to a stimulus set
+            % COMPUTE_STIMULUS_RESPONSE_SCALAR - compute responses to a stimulus set
             %
             % RESPONSE_DOC = COMPUTE_STIMULUS_RESPONSE_SCALAR(NDI_APP_TUNING_RESPONSE_OBJ, NDI_TIMESERIES_OBJ, STIM_DOC, ...)
             %

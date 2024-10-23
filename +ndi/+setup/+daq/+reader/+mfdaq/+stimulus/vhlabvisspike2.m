@@ -49,7 +49,7 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
         end % epochclock
 
         function channels = getchannelsepoch(thedev, epochfiles)
-            % FUNCTION GETCHANNELS - List the channels that are available on this device
+            % GETCHANNELSEPOCH - List the channels that are available on this device
             %
             %  CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)
             %
@@ -72,9 +72,9 @@ classdef vhlabvisspike2 < ndi.daq.reader.mfdaq.cedspike2
         end; % getchannelsepoch()
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_stimulus_vhlabvisspike2_obj, channeltype, channel, epochfiles, t0, t1)
-            %  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+            %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
             %
-            %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
+            %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(SELF, CHANNELTYPE, CHANNEL, EPOCHFILES, T0, T1)
             %
             %  SELF is the NDI_DAQSYSTEM_MFDAQ_STIMULUS_VHVISSPIKE2 object.
             %

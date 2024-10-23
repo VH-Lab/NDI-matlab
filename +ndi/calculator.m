@@ -433,9 +433,9 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
     methods (Static)
 
         function param = plot_parameters(varargin);
-            % PLOT - provide a diagnostic plot to show the results of the calculator, if appropriate
+            % PLOT_PARAMETERS - provide a diagnostic plot to show the results of the calculator, if appropriate
             %
-            % PLOT(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
+            % PLOT_PARAMETERS(NDI_CALCULATOR_OBJ, DOC_OR_PARAMETERS, ...)
             %
             % Produce a diagnostic plot that can indicate to a reader whether or not
             % the calculator has been performed in a manner that makes sense with

@@ -1,5 +1,5 @@
 function convertoldnsd2ndi(pathname)
-    % NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
+    % CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
     %
     % ndi.fun.convertoldnsd2ndi(PATHNAME)
     %

@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ - Multifunction DAQ reader class
+% NDI.DAQ.READER.MFDAQ - Multifunction DAQ reader class
 %
 % The ndi.daq.reader.mfdaq object class.
 %
@@ -58,7 +58,7 @@ classdef mfdaq < ndi.daq.reader
         end % epochclock
 
         function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
             %
@@ -137,9 +137,9 @@ classdef mfdaq < ndi.daq.reader
         end; % getchannelsepoch_ingested
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
-            %  READ_CHANNELS_EPOCHSAMPLES - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, ...
+            %  DATA = READCHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, ...
             %    EPOCHFILES, S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read. It can either be a single string or a cell
@@ -157,9 +157,9 @@ classdef mfdaq < ndi.daq.reader
         end % readchannels_epochsamples()
 
         function data = readchannels_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1, S)
-            %  READ_CHANNELS_EPOCHSAMPLES_INGESTED - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES_INGESTED - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS_EPOCHSAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, ...
+            %  DATA = READCHANNELS_EPOCHSAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, ...
             %    CHANNEL, EPOCHFILES, S0, S1, S)
             %
             %  CHANNELTYPE is the type of channel to read
@@ -513,7 +513,7 @@ classdef mfdaq < ndi.daq.reader
         end; % readevents_epochsamples_ingested
 
         function [timestamps, data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
-            %  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+            %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
             %
             %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, ...
             %     EPOCHFILES, T0, T1)
@@ -908,7 +908,7 @@ classdef mfdaq < ndi.daq.reader
         end; % standardize_channel_types
 
         function tc = channelsepoch2timechannelinfo(channelsepoch, channeltype, channelnumber)
-            % CHANNELSEPCH2TIMECHANNELINFO - look up time channel info
+            % CHANNELSEPOCH2TIMECHANNELINFO - look up time channel info
             %
             % TC = CHANNELSEPOCH2TIMECHANNELINFO(CHANNELSEPOCH, CHANNELTYPE, CHANNELNUMBER)
             %

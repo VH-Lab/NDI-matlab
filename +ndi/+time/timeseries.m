@@ -38,9 +38,9 @@ classdef timeseries < ndi.documentservice
         end; % readtimeseries()
 
         function sr = samplerate(ndi_timeseries_obj, epoch)
-            % SAMPLE_RATE - return the sample rate of an ndi.time.timeseries object
+            % SAMPLERATE - return the sample rate of an ndi.time.timeseries object
             %
-            % SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
+            % SR = SAMPLERATE(NDI_TIMESERIES_OBJ, EPOCH)
             %
             % Returns the sampling rate of a given ndi.time.timeseries object for the epoch
             % EPOCH. EPOCH can be specified as an index or EPOCH_ID.
@@ -50,7 +50,7 @@ classdef timeseries < ndi.documentservice
         end; % sample_rate
 
         function samples = times2samples(ndi_timeseries_obj, epoch, times)
-            % SAMPLES2TIMES - convert from the timeseries time to sample numbers
+            % TIMES2SAMPLES - convert from the timeseries time to sample numbers
             %
             % SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
             %
@@ -75,9 +75,9 @@ classdef timeseries < ndi.documentservice
         end;
 
         function times = samples2times(ndi_timeseries_obj, epoch, samples)
-            % TIME2SAMPLES - convert from the timeseries time to sample numbers
+            % SAMPLES2TIMES - convert from the timeseries time to sample numbers
             %
-            % SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
+            % SAMPLES = SAMPLES2TIMES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
             %
             % For a given ndi.time.timeseries object and a recording epoch EPOCH,
             % return the sample index numbers SAMPLE that corresponds to the times TIMES.

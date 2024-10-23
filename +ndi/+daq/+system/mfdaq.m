@@ -87,7 +87,7 @@ classdef mfdaq < ndi.daq.system
         end % t0_t1()
 
         function channels = getchannels(ndi_daqsystem_mfdaq_obj)
-            % FUNCTION GETCHANNELS - List the channels that are available on this device
+            % GETCHANNELS - List the channels that are available on this device
             %
             %  CHANNELS = GETCHANNELS(NDI_DAQSYSTEM_MFDAQ_OBJ)
             %
@@ -126,7 +126,7 @@ classdef mfdaq < ndi.daq.system
         end; % getchannels
 
         function channels = getchannelsepoch(ndi_daqsystem_mfdaq_obj, epoch)
-            % FUNCTION GETCHANNELSEPOCH - List the channels that are available on this device for an epoch
+            % GETCHANNELSEPOCH - List the channels that are available on this device for an epoch
             %
             %  CHANNELS = GETCHANNELSEPOCH(NDI_DAQSYSTEM_MFDAQ_OBJ, EPOCH)
             %
@@ -163,9 +163,9 @@ classdef mfdaq < ndi.daq.system
         end; % getchannels
 
         function data = readchannels_epochsamples(ndi_daqsystem_mfdaq_obj, channeltype, channel, epoch, s0, s1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            % READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
+            %  DATA = READCHANNELS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCH ,S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read
             %
@@ -185,9 +185,9 @@ classdef mfdaq < ndi.daq.system
         end % readchannels_epochsamples()
 
         function data = readchannels(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
-            % because this is an abstract class, only empty records are returned
-
-            %  FUNCTION READCHANNELS - read the data based on specified channels
+            %  READCHANNELS - read the data based on specified channels
+            %
+            %  NB: because this is an abstract class, only empty records are returned
             %
             %  DATA = READCHANNELS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
             %
@@ -233,7 +233,7 @@ classdef mfdaq < ndi.daq.system
         end %readchannels()
 
         function [timestamps,data] = readevents(ndi_daqsystem_mfdaq_obj, channeltype, channel, timeref_or_epoch, t0, t1)
-            %  FUNCTION READEVENTS - read events or markers of specified channels
+            % READEVENTS - read events or markers of specified channels
             %
             %  [TIMESTAMPS,DATA] = READEVENTS(MYDEV, CHANNELTYPE, CHANNEL, TIMEREF_OR_EPOCH, T0, T1)
             %

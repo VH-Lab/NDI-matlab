@@ -1,5 +1,5 @@
 function binepochprobemap(S, options)
-    % Create epochprobemap files for a Gluckman BIN directory
+    % BINEPOCHPROBEMAP - Create epochprobemap files for a Gluckman BIN directory
     %
     % BINEPOCHPROBEMAP(DIRNAME)
     %
