@@ -1,5 +1,5 @@
 classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
-% NDIProgressBar - Progress monitor with NDI-styled progress bar
+    % NDIProgressBar - Progress monitor with NDI-styled progress bar
 
     properties
         % Value of progress. Fractional value between 0 and 1.
@@ -16,7 +16,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
         BackgroundColor = [0.3059    0.6471    0.9725]
         ForegroundColor = [0.0314    0.1216    0.3176]
     end
-    
+
     properties (Access = private)
         Axes
         Panel
@@ -28,13 +28,13 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
 
     methods
         function obj = NDIProgressBar(propertyArgs)
-        % NDIProgressBar - Create an NDI progress bar object
-            
+            % NDIProgressBar - Create an NDI progress bar object
+
             arguments
                 propertyArgs.?ndi.gui.component.NDIProgressBar
                 propertyArgs.Parent = []
             end
-            
+
             for propertyName = string( fieldnames(propertyArgs)' )
                 obj.(propertyName) = propertyArgs.(propertyName);
             end
@@ -49,10 +49,10 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
         function updateProgressDisplay(obj)
             progressMessage = obj.getProgressMessage();
             progressValue = obj.getProgressValue();
-            
+
             obj.Value = progressValue;
             obj.updateMessage(progressMessage)
-            %obj.Textbox.Text = progressMessage;
+            % obj.Textbox.Text = progressMessage;
             drawnow
         end
 
@@ -69,8 +69,8 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             % Todo: Display completed...
             if ~ismissing(obj.ProgressTracker.CompletedMessage)
                 obj.Textbox.Text = obj.ProgressTracker.CompletedMessage;
-            %else
-            %    obj.Textbox.Text = 'Completed.';
+                % else
+                %    obj.Textbox.Text = 'Completed.';
             end
             obj.Value = 1;
         end
@@ -98,8 +98,8 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             end
             obj.Axes.Units = 'pixels';
             obj.Axes.InnerPosition = [obj.Location, obj.Size];
-            %axis(obj.Axes, 'equal');
-            
+            % axis(obj.Axes, 'equal');
+
             hold(obj.Axes, 'on')
             obj.Axes.XLim = [-1,obj.Size(1)+1];
             obj.Axes.YLim = [-1,obj.Size(2)+1];
@@ -135,7 +135,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
             hFigure = ancestor(obj.Parent, 'figure');
             if matlab.ui.internal.isUIFigure(hFigure)
                 obj.Textbox = uilabel(obj.Parent);
-                %obj.Textbox.VerticalAlignment = 'top';
+                % obj.Textbox.VerticalAlignment = 'top';
                 obj.Textbox.WordWrap = 'on';
 
                 obj.Textbox.Text = obj.Text;
@@ -152,7 +152,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
         end
 
         function drawProgressBar(obj)
-            
+
             barLength = obj.Size(1);
             barHeight = obj.Size(2);
 
@@ -167,7 +167,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
                 X2(:) = nan;
             end
 
-            obj.BarForeground = patch(obj.Axes, X2, Y2, obj.ForegroundColor);                        
+            obj.BarForeground = patch(obj.Axes, X2, Y2, obj.ForegroundColor);
         end
 
         function updateProgressBar(obj)
@@ -186,43 +186,43 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
 end
 
 function varargout = get_rectangle_coords(boxSize, cornerRadius, numCornerSegmentPoints)
-%uim.shape.rectangle Create edgecoordinates for outline of a rectangle
-% 
-%   [edgeCoordinates] = uim.shape.rectangle(boxSize) creates 
-%   edgeCoordinates for a box of size boxSize ([width, height]). This function 
-%   creates edgeCoordinates for each unit length of width and height.
-%   edgeCoordinates is a nx2 vector of x and y coordinates where 
-%   n = 2 x (height+1) + 2 x (width+1)
-%
-%   [xCoords, yCoords] = uim.shape.rectangle(boxSize) returns xCoords and 
-%   yCoords are separate vectors.
-%
-%   [xCoords, yCoords] = createBox(boxSize, cornerRadius) creates the
-%   rectangle boundary coordinates with rounded corners.
-%
-%   [xCoords, yCoords] = createBox(boxSize, cornerRadius, numCornerPoints)
-%   additionally specifies how many points to dra for round corners. Higher
-%   value gives a finer resolution (Default = 25)
-%
-% Coordinates starts in the upper left corner and traverses the box ccw
-%
-%        <--
-%  ul _ _ _ _ _          y ^
-%    |         | ^         |
-%  | |         | |         |
-%  v |_ _ _ _ _|            -------> x
-%        -->               0
+    %uim.shape.rectangle Create edgecoordinates for outline of a rectangle
+    %
+    %   [edgeCoordinates] = uim.shape.rectangle(boxSize) creates
+    %   edgeCoordinates for a box of size boxSize ([width, height]). This function
+    %   creates edgeCoordinates for each unit length of width and height.
+    %   edgeCoordinates is a nx2 vector of x and y coordinates where
+    %   n = 2 x (height+1) + 2 x (width+1)
+    %
+    %   [xCoords, yCoords] = uim.shape.rectangle(boxSize) returns xCoords and
+    %   yCoords are separate vectors.
+    %
+    %   [xCoords, yCoords] = createBox(boxSize, cornerRadius) creates the
+    %   rectangle boundary coordinates with rounded corners.
+    %
+    %   [xCoords, yCoords] = createBox(boxSize, cornerRadius, numCornerPoints)
+    %   additionally specifies how many points to dra for round corners. Higher
+    %   value gives a finer resolution (Default = 25)
+    %
+    % Coordinates starts in the upper left corner and traverses the box ccw
+    %
+    %        <--
+    %  ul _ _ _ _ _          y ^
+    %    |         | ^         |
+    %  | |         | |         |
+    %  v |_ _ _ _ _|            -------> x
+    %        -->               0
 
-%   Written by Eivind Hennestad
+    %   Written by Eivind Hennestad
 
     if nargin < 3; numCornerSegmentPoints = 25; end
     if nargin < 2; cornerRadius = 0; end
-    
+
     boxSize = round(boxSize);
 
     if any(boxSize==0)
         [xx, yy] = deal(nan);
-    
+
     elseif cornerRadius == 0
         xx = [0, 0, boxSize(1), boxSize(1)];
         yy = [boxSize(2), 0, 0, boxSize(2)];
@@ -243,7 +243,7 @@ function varargout = get_rectangle_coords(boxSize, cornerRadius, numCornerSegmen
 
         % Shift so that circle is in the 1st quadrant of the coordinate system
         xx = xx-min(xx); yy = yy-min(yy);
-   
+
         isRightSide = segmentInd==3 | segmentInd==4;
         xx(isRightSide) = xx(isRightSide) + boxSize(1) - cornerRadius*2;
 
@@ -252,7 +252,7 @@ function varargout = get_rectangle_coords(boxSize, cornerRadius, numCornerSegmen
 
         if boxSize(1) < cornerRadius
             % If the rounded corners are larger than the rectangle itself,
-            % we need to correct to prevent creating an "inverted" rounded 
+            % we need to correct to prevent creating an "inverted" rounded
             % rectangle
             thetaIntersect = acos((cornerRadius-boxSize(1)/2)/cornerRadius);
             yOffset = cornerRadius * sin(thetaIntersect);
@@ -267,7 +267,7 @@ function varargout = get_rectangle_coords(boxSize, cornerRadius, numCornerSegmen
         xx(end+1) = xx(1);
         yy(end+1) = yy(1);
     end
-    
+
     if nargout == 1
         varargout = {[xx', yy']};
     elseif nargout == 2

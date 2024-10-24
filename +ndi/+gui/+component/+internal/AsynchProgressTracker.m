@@ -1,12 +1,11 @@
 classdef AsynchProgressTracker < ndi.gui.component.internal.ProgressTracker
 
-
     methods
         function updateProgress(obj, currentStep)
             % Update progress by incrementing the current step
 
             % Todo: set.CurrentStep instead
-            arguments 
+            arguments
                 obj (1,1) ndi.gui.component.internal.ProgressTracker
                 currentStep (1,1) double = nan
             end

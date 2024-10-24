@@ -1,5 +1,5 @@
 function assertAddonOnPath(addonName, options)
-        
+
     arguments
         addonName (1,:) string = ""
         options.RequiredFor (1,1) string = ""
@@ -10,7 +10,7 @@ function assertAddonOnPath(addonName, options)
 
     % Get the required toolboxes
     requirements = getRequirements();
-    
+
     if addonName == ""
         requiredAddonNames = requirements.addons.required;
     else
@@ -46,12 +46,11 @@ function assertAddonOnPath(addonName, options)
 end
 
 function requirements = getRequirements()
-        
+
     filename = fullfile(ndi.common.PathConstants.CommonFolder, ...
         'requirements', 'ndi-matlab-addons.json');
-    
-    t = vlt.file.textfile2char(filename);
-    
-    requirements = jsondecode(t);
 
+    t = vlt.file.textfile2char(filename);
+
+    requirements = jsondecode(t);
 end

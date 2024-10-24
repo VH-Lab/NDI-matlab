@@ -4,7 +4,7 @@ classdef ProgressUpdatedEventData < event.EventData
         CurrentStep % Current step
         TotalSteps % Total steps
     end
-    
+
     methods
         function eventData = ProgressUpdatedEventData(progressPercentage, currentStep, totalSteps)
             % Constructor

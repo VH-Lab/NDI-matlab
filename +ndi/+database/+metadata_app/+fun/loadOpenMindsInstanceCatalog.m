@@ -1,15 +1,15 @@
 function catalog = loadOpenMindsInstanceCatalog(openMindsType, options)
-% loadOpenMindsInstanceCatalog - Get a catalog of controlled instances from openMINDS
-%   
-%   Syntax
-%       catalog = ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog(openMindsType)
-%
-%   Input arguments
-%       openMindsType - Name of the openMINDS type, i.e "Species"
-%
-%   Output arguments
-%       catalog - A catalog of openMINDS controlled instances.
-    
+    % loadOpenMindsInstanceCatalog - Get a catalog of controlled instances from openMINDS
+    %
+    %   Syntax
+    %       catalog = ndi.database.metadata_app.fun.loadOpenMindsInstanceCatalog(openMindsType)
+    %
+    %   Input arguments
+    %       openMindsType - Name of the openMINDS type, i.e "Species"
+    %
+    %   Output arguments
+    %       catalog - A catalog of openMINDS controlled instances.
+
     arguments
         openMindsType (1,1) string
         options.PrimaryField = "name"

@@ -1,8 +1,8 @@
 function daqSystemNames = listDaqSystemNames(labName)
-% listDaqSystemNames - List names of pre-configured DAQ systems for a lab
-    
+    % listDaqSystemNames - List names of pre-configured DAQ systems for a lab
+
     importDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', labName);
-    
+
     if ~isfolder(importDir)
         error('No DAQ systems were found for "%s"', labName);
     end

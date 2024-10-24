@@ -2,7 +2,7 @@ function probeTypeMap = initProbeTypeMap(legacy)
     arguments
         legacy (1,1) logical = false
     end
-    
+
     jsonFilePath = fullfile(ndi.toolboxdir, 'ndi_common', 'probe', 'probetype2object.json');
     probeTypeMap = jsondecode( fileread(jsonFilePath) );
 

@@ -6,7 +6,6 @@ function cbt = loadExperimentalApproach(tree)
     %   cbt - checkList nodes containing the experimental approach
     %
 
-  
     experimentalApproach = openminds.controlledterms.ExperimentalApproach.CONTROLLED_INSTANCES;
     % Create the tree nodes
     for i = 1:length(experimentalApproach)

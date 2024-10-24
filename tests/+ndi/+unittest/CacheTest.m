@@ -1,11 +1,11 @@
 classdef CacheTest <  matlab.unittest.TestCase
-% ProbeTest - Unit test for testing the openMINDS tutorials.
+    % ProbeTest - Unit test for testing the openMINDS tutorials.
 
     properties
         Cache
         TestKey = 'mykey'
     end
-    
+
     properties (TestParameter)
         % pass?
     end
@@ -30,7 +30,7 @@ classdef CacheTest <  matlab.unittest.TestCase
             % Pass. No method setup routines needed
         end
     end
-    
+
     methods (Test)
         function testCreateCache(testCase)
             % testCase.Cache = ndi.cache(...
@@ -42,7 +42,7 @@ classdef CacheTest <  matlab.unittest.TestCase
 
         function testAddElementsToCache(testCase)
             key = testCase.TestKey;
-            
+
             for i = 1:5
                 if i == 1
                     priority = 1;
@@ -65,9 +65,9 @@ classdef CacheTest <  matlab.unittest.TestCase
             disp(['About to add an element that will cause the cache to eject its lowest priority entry, which should be entry ''type 2'' ']);
 
             testCase.Cache.add(key,['type6'],rand(25,1));
-    
+
             disp(['Types left in the cache:']);
-            
+
             cachedTypes = {testCase.Cache.table.type};
             testCase.assertFalse( any(strcmp(cachedTypes, 'type2')) )
         end
