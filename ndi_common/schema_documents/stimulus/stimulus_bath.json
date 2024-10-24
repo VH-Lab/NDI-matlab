@@ -1,0 +1,15 @@
+{
+	"classname": "stimulus_bath",
+	"superclasses":  [ "base", "epochid", "stimulus_parameter_table"],
+	"depends_on": [ ],
+	"stimulus_bath": [
+		{
+			"name": "location",
+			"type": "structure",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Location of the bath (ontologyNode, name)"
+		}
+	]
+}

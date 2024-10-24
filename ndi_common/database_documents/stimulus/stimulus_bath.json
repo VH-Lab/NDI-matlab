@@ -1,0 +1,20 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_bath.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_bath.json",
+		"class_name":						"stimulus_bath",
+                "property_list_name":                                   "stimulus_bath",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"},
+			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/stimulus_parameter_table.json"}
+		]
+	},
+	"stimulus_bath": {
+		"location": {
+			"ontologyNode":				[],
+			"name":					[],
+	}
+}
+
