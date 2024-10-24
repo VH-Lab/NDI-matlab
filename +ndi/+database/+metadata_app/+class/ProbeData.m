@@ -1,11 +1,11 @@
 classdef ProbeData < matlab.mixin.Heterogeneous & handle
-%ProbeData A utility class for storing and retrieving information about probes.
+    %ProbeData A utility class for storing and retrieving information about probes.
 
     properties
-        TypeAssigned %A Map storing all the probes that have selected a type. 
+        TypeAssigned %A Map storing all the probes that have selected a type.
         ProbeList
     end
-    
+
     methods
         function obj = ProbeData()
             obj.TypeAssigned = containers.Map;
@@ -16,12 +16,12 @@ classdef ProbeData < matlab.mixin.Heterogeneous & handle
             switch probeType
                 case "Electrode"
                     probe = ndi.database.metadata_app.class.Electrode();
-                % case "Electrode Array"
-                %     probe = ndi.database.metadata_app.class.ElectrodeArray();
+                    % case "Electrode Array"
+                    %     probe = ndi.database.metadata_app.class.ElectrodeArray();
                 case "Pipette"
                     probe = ndi.database.metadata_app.class.Pipette();
-                % case "Miscellaneous"
-                %     probe = ndi.database.metadata_app.class.MiscellaneousProbe();
+                    % case "Miscellaneous"
+                    %     probe = ndi.database.metadata_app.class.MiscellaneousProbe();
             end
             obj.addNewProbe(index, probe);
         end
@@ -54,6 +54,5 @@ classdef ProbeData < matlab.mixin.Heterogeneous & handle
         function list = getPipetteList(obj)
             list = obj.PipetteList;
         end
-       
     end
 end

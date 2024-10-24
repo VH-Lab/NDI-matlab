@@ -24,7 +24,7 @@
 % Remove .ndi directory if it exists to avoid errors
 dirpath = '/Users/danielgmu/Downloads/Experiments/'
 if exist([dirpath filesep '.ndi'], 'dir') == 7
-	rmdir([dirpath filesep '.ndi'], 's');
+    rmdir([dirpath filesep '.ndi'], 's');
 end
 
 disp(['Opening experiment ' dirpath '...']);
@@ -53,4 +53,3 @@ spikesorter_hengen.add_geometry_doc(probes{1})
 spikesorter_hengen.extract_and_sort(probes{1}, extraction_name, sorting_name, 1)
 
 spikesorter_hengen.rate_neuron_quality
-

@@ -32,5 +32,4 @@ function [status, response, datasets] = get_organizations(varargin)
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end
-    end
-    
+end

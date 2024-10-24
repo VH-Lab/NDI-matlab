@@ -1,7 +1,7 @@
 classdef Species < handle
-%Species A  class for Species.
-    
-    properties 
+    %Species A  class for Species.
+
+    properties
         Name
         Synonym
         OntologyIdentifier
@@ -61,11 +61,10 @@ classdef Species < handle
                 instance.preferredOntologyIdentifier = obj.OntologyIdentifier;
                 instances = [instances, instance]; %#ok<AGROW>
             end
-
         end
 
         function s = toStruct(obj)
-            props = properties(obj); 
+            props = properties(obj);
             s = struct();
             for i = 1:length(props)
                 propName = props{i};
@@ -77,8 +76,6 @@ classdef Species < handle
                 end
             end
         end
-
-        
     end
     methods (Static)
         function obj = fromStruct(s)
@@ -90,5 +87,5 @@ classdef Species < handle
                 obj.(propName) = propValue;
             end
         end
-    end    
+    end
 end

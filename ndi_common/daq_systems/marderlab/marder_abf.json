@@ -1,0 +1,15 @@
+{
+  "Name": "marder_abf",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.ndr",
+  "MetadataReaderClass": [],
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#\\.abf\\>",
+    "#\\.epochprobemap.txt\\>"
+  ],
+  "DaqReaderFileParameters": "abf",
+  "MetadataReaderFileParameters": [],
+  "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
+  "HasEpochDirectories": false
+}

@@ -6,11 +6,6 @@ example/+tutorial/tutorial_02_04
 +mock/+fun/subject_stimulator_neuron.m
 +mock/+fun/stimulus_presentation.m
 
-
-
-
 +ndi/+calc/+vis/hartley_calc.m
 
 +ndi/+calc/+vis/stimloopsplitter_calc.m
-
-

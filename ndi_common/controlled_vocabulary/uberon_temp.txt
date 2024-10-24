@@ -1,0 +1,10 @@
+Identifier	Name
+3364	crustacean stomatogastric nervous system
+3365	crustacean stomatogastric ganglion
+3366	dorsal gastric nerve
+3367	gastropyloric nerve
+3368	lateral gastric nerve
+3369	lateral ventricular nerve
+3370	pyloric nerve
+3371	pyloric dilator nerve
+3372	median ventricular nerve

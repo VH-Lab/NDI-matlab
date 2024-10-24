@@ -1,5 +1,5 @@
 function decodedPayload = decode_jwt(jwtToken)
-% decode_jwt - Decode a JSON Web token
+    % decode_jwt - Decode a JSON Web token
 
     % Split the token into its components
     tokenParts = strsplit(jwtToken, '.');
@@ -14,7 +14,7 @@ function decodedPayload = decode_jwt(jwtToken)
     end
     payloadBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(payloadBase64);
     payloadJSON = native2unicode(payloadBytes, 'UTF-8');
-    
+
     % Ensure json payload is a row vector
     payloadJSON = reshape(payloadJSON, 1, []);
 

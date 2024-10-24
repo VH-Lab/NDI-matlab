@@ -7,7 +7,7 @@ function [pmId, pmcId] = getPubmedIdFromDoi(doi)
     doi = cleanDoi(doi); % Local function
 
     BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0";
-    
+
     requestParams = struct(...
         'idtype', 'doi', ...
         'ids', doi, ...
@@ -36,7 +36,7 @@ end
 function mustBeValidDoi(doi)
     pattern = '10.[0-9]{4,9}/[-._;()/:A-Za-z0-9]+';
     assert( ~isempty(regexp(doi, pattern, 'once')), ...
-        'The doi "%s" does not appear to be valid', doi ) 
+        'The doi "%s" does not appear to be valid', doi )
 end
 
 function doi = cleanDoi(doi)

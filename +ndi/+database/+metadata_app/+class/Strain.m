@@ -1,16 +1,16 @@
 classdef Strain < handle
     %STRAIN Summary of this class goes here
     %   Detailed explanation goes here
-    
+
     properties
         Name
     end
-    
+
     methods
         function obj = Strain(name)
             obj.Name = name;
         end
-        
+
         function updateProperty(obj, name, value)
             obj.(name)=value;
         end
@@ -22,7 +22,7 @@ classdef Strain < handle
         function str = toString(obj)
             str = obj.Name;
         end
-        
+
         function s = toStruct(obj)
             props = properties(obj);
             s = struct();
@@ -35,7 +35,7 @@ classdef Strain < handle
                     s.(propName) = propValue;
                 end
             end
-        end        
+        end
     end
     methods (Static)
         function obj = fromStruct(s)
@@ -43,4 +43,3 @@ classdef Strain < handle
         end
     end
 end
-

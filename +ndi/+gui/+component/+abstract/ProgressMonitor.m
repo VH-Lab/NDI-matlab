@@ -43,7 +43,7 @@ classdef ProgressMonitor < handle
             end
 
             for propertyName = string(fieldnames(propertyValues)')
-                obj.(propertyName) = propertyValues.(propertyName); 
+                obj.(propertyName) = propertyValues.(propertyName);
             end
         end
     end
@@ -64,9 +64,10 @@ classdef ProgressMonitor < handle
             obj.RemainingTime = [];
             obj.IsInitialized = false;
         end
-    
+
         function markComplete(obj)
-            % Note: Using markComplete method to trigger event to run 
+
+            % Note: Using markComplete method to trigger event to run
             % methods of this class. Todo: Can it be simplified?
             obj.ProgressTracker.markComplete()
         end
@@ -74,7 +75,7 @@ classdef ProgressMonitor < handle
 
     methods (Abstract, Access = protected)
         updateProgressDisplay(obj)
-        
+
         updateMessage(obj, message)
 
         finish(obj)
@@ -101,20 +102,20 @@ classdef ProgressMonitor < handle
         end
 
         function onInitalized(obj)
-            % Subclass may implement
+            % onInitalized - Subclass may implement
         end
 
         function titleMessage = getProgressTitle(obj)
             titleMessage = obj.Title;
         end
-    
+
         function progressMessage = getProgressMessage(obj)
             if ~ismissing(obj.ProgressTracker.Message)
                 msg = obj.ProgressTracker.Message;
             else
                 msg = '';
             end
-            
+
             if obj.DisplayRemainingTime
                 remainingTimeStr = obj.formatRemainingTime();
                 msg = sprintf('%s Estimated time remaining: %s', msg, remainingTimeStr);
@@ -122,8 +123,8 @@ classdef ProgressMonitor < handle
 
             progressMessage = msg;
         end
-        
-        function progressValue = getProgressValue(obj) 
+
+        function progressValue = getProgressValue(obj)
             progressValue = obj.ProgressTracker.FractionComplete;
         end
     end
@@ -136,12 +137,12 @@ classdef ProgressMonitor < handle
         end
 
         function tRemaining = estimateRemainingTime(obj)
-        %estimateRemainingTime Get string with estimated time remaining        
+            %estimateRemainingTime Get string with estimated time remaining
             fractionFinished = obj.ProgressTracker.FractionComplete;
-            %fprintf('\n Elapsed time: %d, fraction; %.4f\n',seconds(obj.ElapsedTime), fractionFinished)
+            % fprintf('\n Elapsed time: %d, fraction; %.4f\n',seconds(obj.ElapsedTime), fractionFinished)
             tRemaining = round( (obj.ElapsedTime ./ fractionFinished) .* (1-fractionFinished) );
         end
-    
+
         function onProgressTrackerSet(obj)
             obj.initializeListeners()
             obj.ProgressTracker.UpdateInterval = obj.UpdateInterval;
@@ -169,10 +170,11 @@ classdef ProgressMonitor < handle
                 obj.TaskCompletedListener = event.listener.empty;
             end
         end
-    
-    
+
         function remainingTimeStr = formatRemainingTime(obj)
-            %tRemaining.Format = obj.RemainingTimeFormat;
+            % formatRemainingTime - Format remaining time as a string
+            
+            %   tRemaining.Format = obj.RemainingTimeFormat;
 
             if isempty(obj.RemainingTime)
                 remainingTimeStr = 'N/A'; return
@@ -180,18 +182,17 @@ classdef ProgressMonitor < handle
 
             if hours(obj.RemainingTime) > 1
                 nHours = floor(hours(obj.RemainingTime));
-                nMinutes = round( minutes( obj.RemainingTime - hours(nHours)) ); 
+                nMinutes = round( minutes( obj.RemainingTime - hours(nHours)) );
                 remainingTimeStr = sprintf("%d hours, %d minutes", nHours, nMinutes);
-            
+
             elseif minutes(obj.RemainingTime) > 1
                 nMinutes = floor( minutes(obj.RemainingTime) );
-                nSeconds = round( seconds( obj.RemainingTime - minutes(nMinutes)) ); 
+                nSeconds = round( seconds( obj.RemainingTime - minutes(nMinutes)) );
                 remainingTimeStr = sprintf("%d minutes, %d seconds", nMinutes, nSeconds);
-            
+
             else
                 remainingTimeStr = sprintf("%d seconds", seconds(obj.RemainingTime));
             end
         end
     end
-
 end

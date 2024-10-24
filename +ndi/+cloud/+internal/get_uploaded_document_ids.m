@@ -1,7 +1,7 @@
 function uploaded_document_ids = get_uploaded_document_ids(dataset_id)
-% get_uploaded_document_ids - Get cell array of uploaded document ids.
-%
-%   Use api endpoint to get ids for all uploaded documents
+    % get_uploaded_document_ids - Get cell array of uploaded document ids.
+    %
+    %   Use api endpoint to get ids for all uploaded documents
 
     auth_token = ndi.cloud.uilogin();
     try

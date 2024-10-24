@@ -1,29 +1,30 @@
 classdef SubjectData < handle
-%SubjectData A utility class for storing and retrieving information about subjecs.
-    
-    properties 
+    %SubjectData A utility class for storing and retrieving information about subjecs.
+
+    properties
         % A struct array holding information for each subject. See
         SubjectList (1,:) ndi.database.metadata_app.class.Subject
     end
 
     methods
-        
+
         function removeItem(obj, subjectIndex)
-        %removeItem Remove the specified subject form the list.
-        %
-        %   Usage: 
-        %   subjectData.removeItem(subjectIndex) removes the author from the
-        %   list where subjectIndex is the index in the struct.
+            %removeItem Remove the specified subject form the list.
+            %
+            %   Usage:
+            %   subjectData.removeItem(subjectIndex) removes the author from the
+            %   list where subjectIndex is the index in the struct.
 
             obj.SubjectList(subjectIndex) = [];
         end
-        
+
         function newSubject = addItem(obj)
-        %removeItem Remove the specified subject form the list.
-        %
-        %   Usage: 
-        %   subjectData.removeItem(subjectIndex) removes the author from the
-        %   list where subjectIndex is the index in the struct.
+            %addItem Add a subject to the list.
+            %
+            %   Usage:
+            %   newSubject = subjectData.addItem(subjectIndex) adds a subject 
+            %   to the end of the list.
+
             newSubject = ndi.database.metadata_app.class.Subject;
             obj.SubjectList(end+1) = newSubject;
         end
@@ -47,17 +48,15 @@ classdef SubjectData < handle
         end
 
         function S = getItem(obj, subjectIndex)
-        %getItem Get a struct with subject details for the given index
+            %getItem Get a struct with subject details for the given index
             S = obj.SubjectList(subjectIndex);
         end
 
         function S = getSubjectList(obj)
-        %getAuthorList Same as S = authorData.AuthorList
             S = obj.SubjectList;
         end
 
         function setSubjectList(obj, S)
-        %setAuthorList Same as authorData.AuthorList = S
             obj.SubjectList = S;
         end
 
@@ -86,6 +85,5 @@ classdef SubjectData < handle
                 data = vertcat(data, subjectList(i).formatTable);
             end
         end
-
     end
 end

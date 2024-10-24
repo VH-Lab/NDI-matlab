@@ -5,7 +5,6 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     %  [ ] Link subjects to ndi subjects using dependency_type?
     %  [ ] Any other dependency_type?
 
-    
     arguments
         appUserData (1,1) struct % A struct with form data
         sessionId = ''
@@ -14,7 +13,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     import ndi.database.metadata_app.fun.loadUserInstances
     import ndi.database.metadata_app.fun.loadUserInstanceCatalog
 
-    % Organizations ("references") which are added in the app is saved to 
+    % Organizations ("references") which are added in the app is saved to
     % MATLAB's userpath. Load them here.
     organizations = loadUserInstances('affiliation_organization');
     fundingOrganizations = loadUserInstances('funder_organization');
@@ -51,7 +50,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
             thisOrganizationName = thisAffiliation.memberOf(1).fullName;
             % This statement does not work because of bug in
             % openminds_MATLAB (fix on the way):
-            %thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
+            % thisOrganizationName = thisAuthor.affiliation(j).memberOf(1).fullName;
             isMatch = strcmp(thisOrganizationName, organizationNames);
             thisAuthor.affiliation(j).memberOf = organizationInstances(isMatch);
         end
@@ -120,10 +119,10 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     % Try to create a DOI from the given value. If that fails, the value
     % should be a URL and we create a WebResource instead.
     if isfield( appUserData, 'FullDocumentation')
-        try 
+        try
             doi = openminds.core.DOI('identifier', appUserData.FullDocumentation);
             datasetVersion.fullDocumentation = doi;
-            catch
+        catch
             webResource = openminds.core.WebResource('IRI', appUserData.FullDocumentation);
             datasetVersion.fullDocumentation = webResource;
         end
@@ -139,7 +138,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
             openminds.core.DOI('identifier', addDoiPrefix(value)), ...
             {appUserData.RelatedPublication.DOI} );
     end
-    
+
     datasetVersion.dataType = cellfun(@(value) ...
         openminds.controlledterms.SemanticDataType(value), ...
         appUserData.DataType );
@@ -157,7 +156,7 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     subjects = cell(1, numel(appUserData.Subjects));
     for i = 1:numel(subjects)
         subjectItem = appUserData.Subjects(i);
-        
+
         subjects{i} = openminds.core.Subject();
         if ~isempty(subjectItem.BiologicalSexList)
             if ~iscell(subjectItem.BiologicalSexList),
@@ -210,7 +209,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
             break
         end
     end
-    if numel(dataset_version_doc) > 0 
+    if numel(dataset_version_doc) > 0
         studiedSpecimen_id = dv_f.studiedSpecimen;
     end
 
@@ -219,7 +218,7 @@ function documentList = checkSessionIds(subjectMap, documentList)
         session_id = subjectMap(studiedSpecimen_doc.document_properties.openminds.fields.lookupLabel);
         documentList{idx} = studiedSpecimen_doc.set_session_id(char(session_id));
         doc = studiedSpecimen_doc;
-        for j = 1:numel(doc.document_properties.depends_on) 
+        for j = 1:numel(doc.document_properties.depends_on)
             if (~isempty(doc.document_properties.depends_on(j).value))
                 documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(j).value);
             end
@@ -230,7 +229,7 @@ end
 function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
     [doc, idx] = ndi.document.find_doc_by_id(documentList,doc_id);
     documentList{idx} = doc.set_session_id(char(session_id));
-    if numel(doc.document_properties.depends_on) > 0 
+    if numel(doc.document_properties.depends_on) > 0
         for i = 1: numel(doc.document_properties.depends_on)
             if (~isempty(doc.document_properties.depends_on(i).value))
                 documentList = changeDependenciesDoc(documentList, session_id, doc.document_properties.depends_on(i).value);
@@ -238,7 +237,6 @@ function documentList = changeDependenciesDoc(documentList, session_id, doc_id)
         end
     end
 end
-
 
 function openMindsInstance = instanceFactory(dataStruct, openMindsType)
 
@@ -261,15 +259,15 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
         if isa(value, 'char'); value = string(value); end
 
         if isfield( conversionFunctionMap, propName )
-               
+
             conversionFcn = conversionFunctionMap.(propName);
-            
+
             if iscell(value)
                 value = cellfun(@(s) conversionFcn(s), value);
-            
+
             elseif numel(value) > 1 % array conversion
                 value = arrayfun(@(s) conversionFcn(s), value);
-            
+
             else
                 value = conversionFcn(value);
             end
@@ -280,15 +278,14 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
         try
             openMindsInstance.(propName) = value;
         catch ME
-            %warning(ME.message)
+            % warning(ME.message)
         end
     end
 end
 
-
 function selectedConversionMap = getConcreteConversionMap(openMindsType)
-% getConversionMap - Get a map with function handles for converting values
-    
+    % getConcreteConversionMap - Get a map with function handles for converting values
+
     persistent conversionMap
 
     if isempty(conversionMap)
@@ -301,48 +298,46 @@ end
 function conversionMap = createConversionMap()
 
     conversionMap = dictionary();
- 
+
     conversionMap("openminds.core.Person") = ...
         struct(...
         'contactInformation', getFactoryFunction('openminds.core.ContactInformation'), ...
-               'affiliation', getFactoryFunction('openminds.core.Affiliation'), ...
-         'digitalIdentifier', @(value) openminds.core.ORCID('identifier', addOrcidUriPrefix(value.identifier)) ...
+        'affiliation', getFactoryFunction('openminds.core.Affiliation'), ...
+        'digitalIdentifier', @(value) openminds.core.ORCID('identifier', addOrcidUriPrefix(value.identifier)) ...
         );
-        %'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
-        % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
-        %'digitalIdentifier', getFactoryFunction('openminds.core.ORCID') ...
+    % 'contactInformation', @(value) openminds.core.ContactInformation('email', value), ...
+    % 'digitalIdentifier', @(value) openminds.core.ORCID('identifier', value) ...
+    % 'digitalIdentifier', getFactoryFunction('openminds.core.ORCID') ...
 
     conversionMap("openminds.core.Strain") = ...
         struct( ...
-         'digitalIdentifier', @(value) openminds.core.RRID('identifier', value), ...
-               'stockNumber', @(value) openminds.core.StockNumber('identifier', value) ...
+        'digitalIdentifier', @(value) openminds.core.RRID('identifier', value), ...
+        'stockNumber', @(value) openminds.core.StockNumber('identifier', value) ...
         );
- 
+
     conversionMap("openminds.core.Funding") = ...
         struct(...
-            'funder', @(value) openminds.core.Organization('fullName', value) ...
+        'funder', @(value) openminds.core.Organization('fullName', value) ...
         );
 
     conversionMap("openminds.core.Affiliation") = ...
         struct(...
-                  'memberOf', getFactoryFunction('openminds.core.Organization') ...
+        'memberOf', getFactoryFunction('openminds.core.Organization') ...
         );
 
     conversionMap("openminds.core.Organization") = ...
         struct(...
-            'digitalIdentifier', @(value) openminds.core.RORID('identifier', value) ...
+        'digitalIdentifier', @(value) openminds.core.RORID('identifier', value) ...
         );
 
     conversionMap("openminds.core.Dataset") = ...
         struct();
-
 
     conversionMap("openminds.core.DatasetVersion") = ...
         struct(...
         'dataType', @(value) openminds.controlledterms.SemanticDataType(value), ...
         'experimentalApproach', @(value) openminds.controlledterms.ExperimentalApproach(value), ...
         'technique', @(value) createTechnique(value) );
-
 end
 
 function factoryFcn = getFactoryFunction(openMindsType)
@@ -358,20 +353,17 @@ function instance = convertTechnique(value)
 
     fcn = sprintf('openminds.controlledterms.%s', schemaName);
     instance = feval(fcn, instanceName);
-
-
 end
 
-
 function [strainInstanceMap] = convertStrains(items)
-    
+
     strainInstanceMap = containers.Map;
 
     % Convert items without background strains
     for i = 1:numel(items)
         thisItem = items(i);
         thisItem = rmfield(thisItem, 'backgroundStrain');
-        
+
         createStrain = getFactoryFunction('openminds.core.Strain');
         thisInstance = createStrain(thisItem);
 
@@ -382,7 +374,7 @@ function [strainInstanceMap] = convertStrains(items)
     for i = 1:numel(items)
         thisItem = items(i);
         thisInstance = strainInstanceMap(thisItem.name);
-        
+
         for j = 1:numel(thisItem.backgroundStrain)
             bgStrainName = thisItem.backgroundStrain(j);
             bgInstance = strainInstanceMap(bgStrainName);
@@ -398,7 +390,6 @@ function modifiedValue = addDoiPrefix(value)
         modifiedValue = value;
     end
 end
-
 
 function modifiedValue = addOrcidUriPrefix(value)
     if ~startsWith(value, 'https://orcid.org/') && value ~= ""

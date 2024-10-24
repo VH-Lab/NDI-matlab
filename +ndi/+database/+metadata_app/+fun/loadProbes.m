@@ -1,15 +1,15 @@
 function probeData = loadProbes(S)
-% LOADPROBES loads the probe data from ndi session
-%
-%  ndi.database.metadat_app.fun.loadProbes(S)
-% Inputs:
-%  S - ndi.session.dir object
-% Output:
-%  PROBEDATA - a ndi.database.metadat_app.class.ProbeData object that contains all the probe data in session S
-    
+    % LOADPROBES loads the probe data from ndi session
+    %
+    %  ndi.database.metadat_app.fun.loadProbes(S)
+    % Inputs:
+    %  S - ndi.session.dir object
+    % Output:
+    %  PROBEDATA - a ndi.database.metadat_app.class.ProbeData object that contains all the probe data in session S
+
     if (~(isa(S,'ndi.dataset.dir') || isa(S,'ndi.session.dir')))
-       error('METADATA_APP:loadProbes:InvalidSession, InvalidDataset',...
-          'Input must be an ndi.session object or ndi.dataset object.'); 
+        error('METADATA_APP:loadProbes:InvalidSession, InvalidDataset',...
+            'Input must be an ndi.session object or ndi.dataset object.');
     end
     probes = {};
     if isa(S,'ndi.session.dir')
@@ -25,7 +25,7 @@ function probeData = loadProbes(S)
     end
     probeData = ndi.database.metadata_app.class.ProbeData();
     probeTypeMap = containers.Map();
-    %Patch, patch-VM, patch-I, patch-attached, sharp, sharp-Vm, sharp-I, are pipettes
+    % Patch, patch-VM, patch-I, patch-attached, sharp, sharp-Vm, sharp-I, are pipettes
     probeTypeMap('patch') = 'Pipette';
     probeTypeMap('patch-Vm') = 'Pipette';
     probeTypeMap('patch-I') = 'Pipette';
@@ -33,8 +33,8 @@ function probeData = loadProbes(S)
     probeTypeMap('sharp') = 'Pipette';
     probeTypeMap('sharp-Vm') = 'Pipette';
     probeTypeMap('sharp-I') = 'Pipette';
-    
-    %N-trodes, electrode-$, are electrodes
+
+    % N-trodes, electrode-$, are electrodes
     probeTypeMap('n-trode') = 'Electrode';
 
     for i = 1:numel(probes)
@@ -46,7 +46,7 @@ function probeData = loadProbes(S)
         if regexp(probes{i}.type, 'electrode-\d')
             type = 'Electrode';
         end
-    
+
         switch type
             case 'Pipette'
                 probe_obj = ndi.database.metadata_app.class.Pipette();

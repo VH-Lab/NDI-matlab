@@ -10,9 +10,9 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         Complete
         sessionIdentifier
     end
-    
+
     methods
-       
+
         function obj = Probe()
             obj.Description = '';
             obj.DigitalIdentifier = struct('Type', 'Select type', 'Value', '');
@@ -65,12 +65,12 @@ classdef (Abstract) Probe <  handle  %matlab.mixin.Heterogeneous
         function selected = digitalIdentifierTypeSelected(obj)
             selected = ~strcmp(obj.DigitalIdentifier.Type, 'Select type');
         end
-        
+
         function properties = getProperties(obj)
             properties = struct(...
                 'Name', obj.Name, ...
                 'DeviceType', obj.DeviceType ...
-            );
+                );
         end
     end
 end

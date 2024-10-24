@@ -1,4 +1,4 @@
- % this is a manual, script-based test
+% this is a manual, script-based test
 
 S = ndi.setup.vhlab('2019-11-19','/Users/vanhoosr/Desktop/2019-11-19');
 
@@ -28,8 +28,7 @@ d_fingest = fnv.ingest();
 
 [b,d_vhvis_ingested] = ds_v.ingest(); % takes a little while
 
- % removal
-
+% removal
 
 q_i1 = ndi.query('','isa','daqreader_mfdaq_epochdata_ingested');
 q_i2 = ndi.query('','isa','daqmetadatareader_epochdata_ingested');
