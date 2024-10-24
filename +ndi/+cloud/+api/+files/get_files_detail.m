@@ -1,7 +1,7 @@
 function [status,file_detail,downloadUrl, response] = get_files_detail(dataset_id,uid)
-    % GET_FILE_DETAILS - Get the details, including the download url, for a individual file
+    % GET_FILES_DETAIL - Get the details, including the download url, for a individual file
     %
-    % [STATUS,FILE_DETAIL, DOWNLOADURL, RESPONSE] = ndi.cloud.api.files.GET_FILE_DETAILS(DATASET_ID,UID)
+    % [STATUS,FILE_DETAIL, DOWNLOADURL, RESPONSE] = ndi.cloud.api.files.GET_FILES_DETAIL(DATASET_ID,UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id

@@ -1,5 +1,5 @@
 function index = findepochnode(epochnode, epochnodearray)
-    % FINDEPOCHNODE - find an occurence of an epochnode in an array of epochnodes
+    % FINDEPOCHNODE - find an occurrence of an epochnode in an array of epochnodes
     %
     % INDEX = ndi.epoch.findepochnode(EPOCHNODE, EPOCHNODEARRAY)
     %

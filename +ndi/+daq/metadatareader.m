@@ -40,6 +40,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % ndi.daq.metadatareader
 
         function parameters = readmetadata(ndi_daqmetadatareader_obj, epochfiles)
+            % READMETADATA - Read metadata parameters
+            %
             % PARAMETERS = READMETADATA(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES)
             %
             % Returns the parameters (cell array of structures) associated with the
@@ -88,6 +90,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % readmetadata()
 
         function parameters = readmetadata_ingested(ndi_daqmetadatareader_obj, epochfiles, S)
+            % READMETADATA_INGESTED - Read metadata parameters from a session database
+            %
             % PARAMETERS = READMETADATA_INGESTED(NDI_DAQSYSTEM_STIMULUS_OBJ, EPOCHFILES, S)
             %
             % Returns the parameters (cell array of structures) associated with the
@@ -104,6 +108,8 @@ classdef metadatareader < ndi.ido & ndi.documentservice
         end; % readmetadata_ingested()
 
         function parameters = readmetadatafromfile(ndi_daqmetadatareader_obj, file)
+            % READMETADATAFROMFILE - Read metadata parameters from file
+            %
             % PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
             %
             % PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_OBJ, FILE)
@@ -145,7 +151,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             %
             % D = GET_INGESTED_DOCUMENT(NDI_DAQMETADATAREADER_OBJ, EPOCHFILES, S)
             %
-            % Returns empty if there is no such document or the single docment if
+            % Returns empty if there is no such document or the single document if
             % there is such a document.
             %
             d = [];
@@ -175,7 +181,7 @@ classdef metadatareader < ndi.ido & ndi.documentservice
             end;
         end; % eq()
 
-        % documentservices overriden methods
+        % documentservices overridden methods
 
         function ndi_document_obj = newdocument(ndi_daqmetadatareader_obj)
             % NEWDOCUMENT - create a new ndi.document for an ndi.daq.metadatareader object

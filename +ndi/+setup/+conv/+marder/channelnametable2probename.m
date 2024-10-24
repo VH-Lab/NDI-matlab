@@ -1,7 +1,7 @@
 function [probename, proberef, probetype, subjectname] = channelnametable2probename(chName, probetable, options)
-    % CHANNELNAME2PROBE - convert a Marder channel name to a probe name
+    % CHANNELNAMETABLE2PROBENAME - convert a Marder channel name to a probe name
     %
-    % [PROBENAME, PROBEREF, PROBETYPE, SUBJECTNAME] = CHANNELNAME2PROBENAME(CHNAME, PROBETABLE)
+    % [PROBENAME, PROBEREF, PROBETYPE, SUBJECTNAME] = CHANNELNAMETABLE2PROBENAME(CHNAME, PROBETABLE)
     %
     % Given a channel name (e.g., 'DGN1_A','lvn','lvn2'), returns a probe name
     % and subject name. PROBEREF is always 1.

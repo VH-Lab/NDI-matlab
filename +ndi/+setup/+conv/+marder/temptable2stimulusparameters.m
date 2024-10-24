@@ -1,5 +1,5 @@
 function docs = temptable2stimulusparameters(S)
-    % Create stimulusparameter documents for temperature for a Marder ndi session
+    % TEMPTABLE2STIMULUSPARAMETERS - Create stimulusparameter documents for temperature for a Marder ndi session
     %
     % TEMPTABLE2STIMULUSPARAMETERS(S)
     %

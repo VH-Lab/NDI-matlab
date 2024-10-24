@@ -5,7 +5,7 @@ classdef MessageUpdatedEventData < event.EventData
 
     methods
         function eventData = MessageUpdatedEventData(message)
-            % Constructor
+            % MessageUpdatedEventData Constructor
             eventData.Message = message;
         end
     end

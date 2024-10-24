@@ -123,12 +123,12 @@ classdef timeseries < ndi.element & ndi.time.timeseries
         end; % samplerate()
 
         function ndi_document_obj = newdocument(ndi_element_timeseries_obj, varargin)
-            % TODO - need docs here
+            % NEWDOCUMENT - Todo: need docs here
             ndi_document_obj = newdocument@ndi.element(ndi_element_timeseries_obj, varargin{:});
         end % newdocument
 
         function sq = searchquery(ndi_element_timeseries_obj, varargin)
-            % TODO - need docs here
+            % SEARCHQUERY - Todo: need docs here
             sq = searchquery@ndi.element(ndi_element_timeseries_obj, varargin{:});
         end % searchquery
 

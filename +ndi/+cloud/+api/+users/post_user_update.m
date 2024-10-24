@@ -5,7 +5,7 @@ function [status, response] = post_user_update(user_id, auth_token)
     %
     % Inputs:
     %   USER_ID - a string representing the user's id
-    %   AUTH_TOKEN - a string representing the authentification token
+    %   AUTH_TOKEN - a string representing the authentication token
     %
     % Outputs:
     %   STATUS - did post request work? 1 for no, 0 for yes

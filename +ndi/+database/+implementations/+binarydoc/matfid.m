@@ -28,7 +28,7 @@ classdef matfid < ndi.database.binarydoc & vlt.file.fileobj
             % FCLOSE - close an ndi.database.implementations.binarydoc.matfid object
             %
             % Closes the file, but also clears the fullpathfilename and other fields so the
-            % user cannot re-use the object without checking out another binary document from
+            % user cannot reuse the object without checking out another binary document from
             % the database.
             %
             ndi_binarydoc_matfid_obj.fclose@vlt.file.fileobj();

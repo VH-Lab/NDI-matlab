@@ -1,5 +1,5 @@
 function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datasetInformation)
-    %TEST_UPLOAD - upload a test dataset to the cloud
+    %SUBMIT_DATASET - upload a test dataset to the cloud
     % [B, MSG, DATASET_ID] = ndi.database.metadata_app.fun.submit_dataset(S, TEST_NAME)
     %
     % inputs:
@@ -13,7 +13,6 @@ function [b, status, dataset, dataset_id] = submit_dataset(S, session_id, datase
     %   DATASET - the newly created dataset
     %   DATASET_ID - the dataset id of the uploaded dataset
 
-    keyboard
     documentList = ndi.database.metadata_app.convertFormDataToDocuments(datasetInformation, session_id);
     S = ndi.database.metadata_app.fun.add_to_database(S, documentList, session_id);
     [~, ~,dataset_id] = ndi.cloud.create_cloud_metadata_struct(datasetInformation);

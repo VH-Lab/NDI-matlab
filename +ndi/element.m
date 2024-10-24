@@ -14,7 +14,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
 
     methods
         function [ndi_element_obj,element_doc] = element(varargin)
-            % NDI_ELEMENT_OBJ = ndi.element - creator for ndi.element
+            % NDI.ELEMENT - creator for ndi.element
             %
             % NDI_ELEMENT_OBJ = ndi.element(NDI_SESSION_OBJ, ELEMENT_NAME, ELEMENT_REFERENCE, ...
             %        ELEMENT_TYPE, UNDERLYING_EPOCHSET, DIRECT, [SUBJECT_ID], [DEPENDENCIES])
@@ -48,7 +48,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
                 if ~isempty(element_underlying_element),
                     subject_id = element_underlying_element.subject_id;
                     if numel(varargin)==7,
-                        warning(['Ignoring input subject_id because underlying elment is given.']);
+                        warning(['Ignoring input subject_id because underlying element is given.']);
                     end;
                 elseif numel(varargin)>=7 & ~isempty(varargin{7}),
                     subject_id = varargin{7};
@@ -396,9 +396,9 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
         end; % load_element_doc()
 
         function element_ref = doc_unique_id(ndi_element_obj)
-            % DOC_UNIQUE_REF - return the document unique reference for an ndi.element object
+            % DOC_UNIQUE_ID - return the document unique reference for an ndi.element object
             %
-            % UNIQUE_REF = DOC_UNIQUE_REF(NDI_ELEMENT_OBJ)
+            % UNIQUE_REF = DOC_UNIQUE_ID(NDI_ELEMENT_OBJ)
             %
             % Returns the document unique reference for NDI_ELEMENT_OBJ. If there is no associated
             % document for the element, then empty is returned.

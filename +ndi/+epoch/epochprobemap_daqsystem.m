@@ -134,7 +134,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             %
             % S = SERIALIZE(NDI_EPOCHPROBEMAP_OBJ)
             %
-            % Create a charater array representation of an ndi.epoch.epochprobemap_daqsystem object
+            % Create a character array representation of an ndi.epoch.epochprobemap_daqsystem object
             %
             s = '';
             st = ndi_epochprobemap_daqsystem_obj.serialization_struct();
@@ -190,7 +190,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             st = vlt.data.emptystruct('name','reference','type','devicestring','subjectstring');
             c = vlt.data.string2cell(s,sprintf('\n'));
             if numel(c)<1,
-                error(['There is no informtion in the serialized string s']);
+                error(['There is no information in the serialized string s']);
             end;
             fn = vlt.data.string2cell(c{1},sprintf('\t'));
             for i=2:numel(c),

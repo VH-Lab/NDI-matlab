@@ -300,7 +300,7 @@ classdef tuningcurve < ndi.calculator
             % provided in VALUE.
             %
             % The base class behavior of this function is simply to return true, but it
-            % can be overriden if additional criteria beyond an ndi.query are needed to
+            % can be overridden if additional criteria beyond an ndi.query are needed to
             % assess if a document is an appropriate input for the calculator.
             %
             b = 1;

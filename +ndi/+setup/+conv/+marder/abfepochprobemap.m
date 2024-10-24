@@ -1,5 +1,5 @@
 function abfepochprobemap(S, options)
-    % Create epochprobemap files for a Marder ndi session
+    % ABFEPOCHPROBEMAP - Create epochprobemap files for a Marder ndi session
     %
     % ABFEPOCHPROBEMAP(S)
     %

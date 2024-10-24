@@ -52,7 +52,7 @@ classdef pipeline
                     if isfolder(pipelinePath),
                         ud.pipelinePath = pipelinePath;
                         ud.pipelineList = []; % initially empty
-                        ud.pipelineListChar = []; % initally empty
+                        ud.pipelineListChar = []; % initially empty
                         ud.session = session;
                         set(fig,'userdata',ud);
                     else,

@@ -58,7 +58,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % If you just want the reference (not unique) just access the reference
             % property (NDI_SESSION_OBJ.reference).
             %
-            warning('unique_reference_string depricated, use id() instead.');
+            warning('unique_reference_string deprecated, use id() instead.');
             dbstack
             refstr = [ndi_session_obj.reference '_' ndi_session_obj.identifier];
         end % unique_reference_string()
@@ -538,7 +538,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
         %%%%%% REFERENCE methods
 
         function obj = findexpobj(ndi_session_obj, obj_name, obj_classname)
-            % FINEXPDOBJ - search an ndi.session for a specific object given name and classname
+            % FINDEXPOBJ - search an ndi.session for a specific object given name and classname
             %
             % OBJ = FINDEXPOBJ(NDI_EXPERIMNENT_OBJ, OBJ_NAME, OBJ_CLASSNAME)
             %
@@ -810,7 +810,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             % or a mixed cell array of ndi.document objects and ids.
             %
             % If all documents are found, then B is 1 and ERRMSG is ''. If a document ID
-            % does not exist in the database, then one occurence is noted in ERRMSG and B is 0.
+            % does not exist in the database, then one occurrence is noted in ERRMSG and B is 0.
             %
             doc_list = {};
             b = 1;

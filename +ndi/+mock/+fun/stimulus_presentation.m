@@ -32,7 +32,7 @@ function [stim_pres_doc,spiketimes] = stimulus_presentation(S, stimulus_element_
     % | Parameter (default)                | Description                                             |
     % |------------------------------------|---------------------------------------------------------|
     % | stim_duration (2)                  | Duration of each mock stimulus                          |
-    % | stim_duration_min (0.2)            | Minumum duration of a mock stimulus presentation        |
+    % | stim_duration_min (0.2)            | Minimum duration of a mock stimulus presentation        |
     % |                                    |   (set so that firing rate can be matched)              |
     % | interstimulus_interval(3)          | Interstimulus interval                                  |
     % | epochid ('mockepoch')              | The name of the stimulator epoch that is created.       |

@@ -1,7 +1,7 @@
 classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
     %ndi_daqsystem_image_tiffstack is a driver used to read images from a tif
     % format.
-    %   This class is able to return a frame at a specific epoch, and the numnber of
+    %   This class is able to return a frame at a specific epoch, and the number of
     %   frames in a specific epoch.
 
     properties
@@ -9,7 +9,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
     end
 
     methods
-        % Constructor requiers only name and data tree as it uses the super
+        % Constructor requires only name and data tree as it uses the super
         % constructor
         function obj = ndi_daqsystem_image_tiffstack(name, filenavigator)
             obj = obj@ndi_daqsystem_image(name,filenavigator);
@@ -17,7 +17,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
         end
 
         % This function returns a specific frame at position 'i' in epoch
-        % number 'n'. It acesses the file using the filenavigator
+        % number 'n'. It accesses the file using the filenavigator
         function im = frame(obj,n,i)
             [epochn_directory, fileID] = obj.filenavigator.getepochfiles(n);
             epochn_tiff_file = epochn_directory{1}; %gets the string vector with the files path
@@ -85,7 +85,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                     % epochn.close;
                 end
             else
-                disp('Number of frames retreived from cache');
+                disp('Number of frames retrieved from cache');
                 if strcmp(obj.cache{n}{1}, 'large')
                     num = max(size(cache{n}{4}));
                 else
@@ -157,7 +157,7 @@ classdef ndi_daqsystem_image_tiffstack < ndi_daqsystem_image
                 else
                     byteOrder = 'ieee-le.l64';
                 end
-                % translating the byte ore of the file so it matches arguments of fread()
+                % translating the byte order of the file so it matches arguments of fread()
             else
                 if strcmp(info.ByteOrder,'big-endian');
                     byteOrder = 'ieee-be';

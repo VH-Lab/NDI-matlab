@@ -66,6 +66,7 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
         end
 
         function finish(obj)
+            
             % Todo: Display completed...
             if ~ismissing(obj.ProgressTracker.CompletedMessage)
                 obj.Textbox.Text = obj.ProgressTracker.CompletedMessage;
@@ -186,15 +187,15 @@ classdef NDIProgressBar < ndi.gui.component.abstract.ProgressMonitor
 end
 
 function varargout = get_rectangle_coords(boxSize, cornerRadius, numCornerSegmentPoints)
-    %uim.shape.rectangle Create edgecoordinates for outline of a rectangle
+    %GET_RECTANGLE_COORDS Create edgecoordinates for outline of a rectangle
     %
-    %   [edgeCoordinates] = uim.shape.rectangle(boxSize) creates
+    %   [edgeCoordinates] = GET_RECTANGLE_COORDS(boxSize) creates
     %   edgeCoordinates for a box of size boxSize ([width, height]). This function
     %   creates edgeCoordinates for each unit length of width and height.
     %   edgeCoordinates is a nx2 vector of x and y coordinates where
     %   n = 2 x (height+1) + 2 x (width+1)
     %
-    %   [xCoords, yCoords] = uim.shape.rectangle(boxSize) returns xCoords and
+    %   [xCoords, yCoords] = GET_RECTANGLE_COORDS(boxSize) returns xCoords and
     %   yCoords are separate vectors.
     %
     %   [xCoords, yCoords] = createBox(boxSize, cornerRadius) creates the

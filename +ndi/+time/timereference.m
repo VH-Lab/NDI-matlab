@@ -12,7 +12,7 @@ classdef timereference
 
     methods
         function obj = timereference(referent, clocktype, epoch, time)
-            % NDI.TIME.TIME.REFERENCE - creates a new time reference object
+            % NDI.TIME.TIMEREFERENCE - creates a new time reference object
             %
             % OBJ = NDI.TIME.TIMEREFERENCE(REFERENT, CLOCKTYPE, EPOCH, TIME)
             %

@@ -4,7 +4,7 @@ function db = opendatabase(database_path, session_unique_reference)
     % DB = ndi.database.fun.opendatabase(DATABASE_PATH, SESSION_UNIQUE_REFERENCE)
     %
     % Searches the file path DATABASE_PATH for any known databases
-    % in NDI_DATABASEHIERACHY. If it finds a datbase of subtype ndi.database,
+    % in NDI_DATABASEHIERACHY. If it finds a database of subtype ndi.database,
     % then it is opened and returned in DB.
     %
     % If it finds no databases, then it tries to create a new database following

@@ -28,7 +28,7 @@ classdef mfdaq_epoch_channel
                 elseif ischar(varargin{1}),
                     filename = varargin{1};
                 elseif isstring(varargin{1}),
-                    filenmae = char(varargin{1});
+                    filename = char(varargin{1});
                 end;
             end;
 

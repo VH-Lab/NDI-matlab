@@ -7,7 +7,7 @@ classdef syncrule < ndi.ido & ndi.documentservice
     end % properties
     methods
         function ndi_syncrule_obj = syncrule(varargin)
-            % NDI_SYNCRULE_OBJ - create a new NDI_SYNCRULE for managing synchronization
+            % SYNCRULE - create a new NDI_SYNCRULE for managing synchronization
             %
             % NDI_SYNCRULE_OBJ = ndi.time.syncrule(...)
             %  or

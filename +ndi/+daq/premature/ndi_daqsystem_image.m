@@ -12,7 +12,7 @@ classdef (Abstract) ndi_daqsystem_image < ndi.daq.system
     end
 
     methods (Abstract)
-        % This function returns a specific fram 'i' from epoch 'n'
+        % This function returns a specific frame 'i' from epoch 'n'
         im = frame(obj,n,i)
         % This function returns the number of frames in epoch 'n'
         num = numFrame(obj,n)

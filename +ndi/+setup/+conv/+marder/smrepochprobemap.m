@@ -1,5 +1,5 @@
 function smrepochprobemap(S, options)
-    % Create epochprobemap files for a Marder SMR directory
+    % SMREPOCHPROBEMAP - Create epochprobemap files for a Marder SMR directory
     %
     % SMREPOCHPROBEMAP(DIRNAME)
     %

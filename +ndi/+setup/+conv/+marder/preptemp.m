@@ -3,7 +3,7 @@ function [out] = preptemp(t, d, temp_table, options)
     %
     % OUT = PREPTEMP(T, D, TEMP_TABLE, ...)
     %
-    % Identify the temerature of a Marder lab record. The timestamps of the
+    % Identify the temperature of a Marder lab record. The timestamps of the
     % record are provided in T, and the data in degrees C are provided in
     % D.
     %

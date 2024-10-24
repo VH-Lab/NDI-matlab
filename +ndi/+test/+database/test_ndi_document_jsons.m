@@ -1,5 +1,5 @@
 function [b, successes, failures] = test_ndi_document_jsons(generate_error)
-    % TEST_NDI_DOCUMNET_JSONS - test validity of all NDI_DOCUMENT json definitions
+    % TEST_NDI_DOCUMENT_JSONS - test validity of all NDI_DOCUMENT json definitions
     %
     % [B, SUCCESSES, FAILURES]  = ndi.test.document_jsons(GENERATE_ERROR)
     %

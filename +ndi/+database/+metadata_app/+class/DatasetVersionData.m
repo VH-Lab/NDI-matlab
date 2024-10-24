@@ -19,7 +19,7 @@ classdef DatasetVersionData < handle
         end
 
         function S = getItem(obj)
-            %getAuthorName Get a struct with author details for the given index
+            %getItem Get a struct with datasetversion details for the given index
             if numel( obj.DatasetVersionInfo ) == 0
                 S = obj.getDefaultDatasetItem();
             else
@@ -28,12 +28,10 @@ classdef DatasetVersionData < handle
         end
 
         function S = getDataset(obj)
-            %getAuthorList Same as S = authorData.AuthorList
             S = obj.DatasetVersionInfo;
         end
 
         function setDataset(obj, S)
-            %setAuthorList Same as authorData.AuthorList = S
             obj.DatasetVersionInfo = S;
         end
     end
@@ -41,8 +39,6 @@ classdef DatasetVersionData < handle
     methods (Static)
 
         function S = getDefaultDatasetItem()
-            % Todo: Consider using camelcase (i.e givenName) to conform
-            % with openMINDS
             S = struct;
             S.accessibility = '';
             S.dataType = '';

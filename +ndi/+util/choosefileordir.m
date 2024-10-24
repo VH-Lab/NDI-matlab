@@ -1,5 +1,5 @@
 function [success,filename,replaces] = choosefileordir(dir, prompt, defaultfilename, dlgtitle, extension_list)
-    % CHOOSEFILE - ask user to choose a file graphically
+    % CHOOSEFILEORDIR - ask user to choose a file graphically
     %
     % [SUCCESS, FILENAME, REPLACES] = ndi.util.choosefileordir(PROMPT, DEFAULTFILENAME, DLGTITLE, EXTENSION_LIST)
     %

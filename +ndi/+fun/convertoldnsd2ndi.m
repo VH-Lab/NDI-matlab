@@ -1,5 +1,5 @@
 function convertoldnsd2ndi(pathname)
-    % NDI_CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
+    % CONVERTOLDNSD2NDI - convert an old 'nsd' session to 'ndi'
     %
     % ndi.fun.convertoldnsd2ndi(PATHNAME)
     %
@@ -13,7 +13,7 @@ function convertoldnsd2ndi(pathname)
     % (3) All instances of 'nsd' in .m, .json, .txt *object_* files are replaced with 'ndi'.
     % (4) All instances of 'NSD' in .m, .json, .txt or *object_* files are replaced with 'NDI'.
     %
-    % This function is depricated and should be irrelevant shortly as everyone uses 'NDI' instead of 'NSD'
+    % This function is deprecated and should be irrelevant shortly as everyone uses 'NDI' instead of 'NSD'
 
     done = 0;
 

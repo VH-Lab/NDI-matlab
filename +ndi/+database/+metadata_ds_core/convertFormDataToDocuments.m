@@ -284,7 +284,7 @@ function openMindsInstance = instanceFactory(dataStruct, openMindsType)
 end
 
 function selectedConversionMap = getConcreteConversionMap(openMindsType)
-    % getConversionMap - Get a map with function handles for converting values
+    % getConcreteConversionMap - Get a map with function handles for converting values
 
     persistent conversionMap
 

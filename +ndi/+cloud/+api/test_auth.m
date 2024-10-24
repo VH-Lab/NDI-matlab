@@ -9,7 +9,7 @@ confirmation_code = "176741";
 [status,response] = ndi.cloud.auth.password_forgot(email);
 [status,response] = ndi.cloud.auth.password(oldPassword, newPassword);
 
-% unsucessful
+% unsuccessful
 [status,response] = ndi.cloud.auth.verify(email, confirmation_code);
 % {
 %   "errors": "Unable to authorize user",

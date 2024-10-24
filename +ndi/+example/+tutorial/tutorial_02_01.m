@@ -1,11 +1,11 @@
 function tutorial_02_01(prefix, testing)
-    % ndi.example.tutorials.tutorial_02_01 - runs the code in Tutorial 2.1
+    % ndi.example.tutorial.tutorial_02_01 - runs the code in Tutorial 2.1
     %
-    % out = ndi.example.tutorials.tutorial_02_01(PREFIX, [TESTING])
+    % out = ndi.example.tutorial.tutorial_02_01(PREFIX, [TESTING])
     %
     % Runs (and tests) the code for
     %
-    % NDI Tutorial 2: Analzying your first electrophysiology experiment with NDI
+    % NDI Tutorial 2: Analyzing your first electrophysiology experiment with NDI
     %    Tutorial 2.1: Reading an example dataset
     % The tutorial is available at
     %     https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset.md

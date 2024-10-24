@@ -1,7 +1,7 @@
 function S = yangyangwang(S, daqsystemname)
-    % ndi.setup.daq.system.vhlab - initialize daq systems used by VHLAB
+    % ndi.setup.daq.system.yangyangwang - initialize daq systems used by VHLAB
     %
-    % S = ndi.setup.daq.system.vhlab(S, DEVNAME)
+    % S = ndi.setup.daq.system.yangyangwang(S, DEVNAME)
     %
     % Creates daq systems that look for files in the VHLAB standard recording
     % scheme, where data from different epochs are organized into

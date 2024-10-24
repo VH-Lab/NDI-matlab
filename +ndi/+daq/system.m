@@ -179,7 +179,7 @@ classdef system < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice
         end % epochclock
 
         function t0t1 = t0_t1(ndi_epochset_obj, epoch_number)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCH_NUMBER)
             %

@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ - Multifunction DAQ reader class
+% NDI.DAQ.READER.MFDAQ - Multifunction DAQ reader class
 %
 % The ndi.daq.reader.mfdaq object class.
 %
@@ -58,7 +58,7 @@ classdef mfdaq < ndi.daq.reader
         end % epochclock
 
         function t0t1 = t0_t1(ndi_epochset_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
             %
@@ -87,7 +87,7 @@ classdef mfdaq < ndi.daq.reader
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
@@ -117,7 +117,7 @@ classdef mfdaq < ndi.daq.reader
             %  ain        | Analog input (e.g., ai1 is the first input channel)
             %  din        | Digital input (e.g., di1 is the first input channel)
             %  t          | Time - a time channel
-            %  axn        | Auxillary inputs
+            %  axn        | Auxiliary inputs
             %
             % CHANNELS is a structure list of all channels with fields:
             % -------------------------------------------------------
@@ -137,9 +137,9 @@ classdef mfdaq < ndi.daq.reader
         end; % getchannelsepoch_ingested
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1)
-            %  READ_CHANNELS_EPOCHSAMPLES - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, ...
+            %  DATA = READCHANNELS_EPOCHSAMPLES(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, CHANNEL, ...
             %    EPOCHFILES, S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read. It can either be a single string or a cell
@@ -157,9 +157,9 @@ classdef mfdaq < ndi.daq.reader
         end % readchannels_epochsamples()
 
         function data = readchannels_epochsamples_ingested(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, s0, s1, S)
-            %  READ_CHANNELS_EPOCHSAMPLES_INGESTED - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES_INGESTED - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS_EPOCHSAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, ...
+            %  DATA = READCHANNELS_EPOCHSAMPLES_INGESTED(NDI_DAQREADER_MFDAQ_OBJ, CHANNELTYPE, ...
             %    CHANNEL, EPOCHFILES, S0, S1, S)
             %
             %  CHANNELTYPE is the type of channel to read
@@ -320,12 +320,12 @@ classdef mfdaq < ndi.daq.reader
             %  CHANNELTYPE is a cell array of strings, describing the type of each channel to read:
             %      'event'  - TIMESTAMPS mark the occurrence of each event; DATA is a logical 1 for
             %                    each timestamp
-            %      'marker' - TIMESTAMPS mark the occurence of each event; each row of DATA is the
+            %      'marker' - TIMESTAMPS mark the occurrence of each event; each row of DATA is the
             %                    data associated with the marker (type double)
-            %      'text'   - TIMESTAMPS mark the occurence of each event; DATA is a cell array of
+            %      'text'   - TIMESTAMPS mark the occurrence of each event; DATA is a cell array of
             %                    character arrays, 1 per event
             %      'dep'    - Create events from a digital channel with positive transitions.
-            %                    TIMESTAMPS mark the occurence of each event and DATA entries are 1
+            %                    TIMESTAMPS mark the occurrence of each event and DATA entries are 1
             %      'dimp'   - Create events from a digital channel by finding impulses that exhibit
             %                    positive then negative transitions. TIMESTAMPS mark the occurrence
             %                    of each event, and DATA indicates whether the event is a positive
@@ -333,7 +333,7 @@ classdef mfdaq < ndi.daq.reader
             %      'den'    - Create events from a digital channel with negative transitions.
             %                    TIMESTAMPS mark the occurrence of each event and DATA entries are -1.
             %      'dimn'   - Create events from a digital channel by finding impulses that exhibit
-            %                    negative then positive transitions. TIMESTAMPS mark the occurence of
+            %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
             %
@@ -402,12 +402,12 @@ classdef mfdaq < ndi.daq.reader
             %  CHANNELTYPE is a cell array of strings, describing the type of each channel to read:
             %      'event'  - TIMESTAMPS mark the occurrence of each event; DATA is a logical 1 for
             %                    each timestamp
-            %      'marker' - TIMESTAMPS mark the occurence of each event; each row of DATA is the
+            %      'marker' - TIMESTAMPS mark the occurrence of each event; each row of DATA is the
             %                    data associated with the marker (type double)
-            %      'text'   - TIMESTAMPS mark the occurence of each event; DATA is a cell array of
+            %      'text'   - TIMESTAMPS mark the occurrence of each event; DATA is a cell array of
             %                    character arrays, 1 per event
             %      'dep'    - Create events from a digital channel with positive transitions.
-            %                    TIMESTAMPS mark the occurence of each event and DATA entries are 1
+            %                    TIMESTAMPS mark the occurrence of each event and DATA entries are 1
             %      'dimp'   - Create events from a digital channel by finding impulses that exhibit
             %                    positive then negative transitions. TIMESTAMPS mark the occurrence
             %                    of each event, and DATA indicates whether the event is a positive
@@ -415,7 +415,7 @@ classdef mfdaq < ndi.daq.reader
             %      'den'    - Create events from a digital channel with negative transitions.
             %                    TIMESTAMPS mark the occurrence of each event and DATA entries are -1.
             %      'dimn'   - Create events from a digital channel by finding impulses that exhibit
-            %                    negative then positive transitions. TIMESTAMPS mark the occurence of
+            %                    negative then positive transitions. TIMESTAMPS mark the occurrence of
             %                    each event, and DATA indicates whether the event is a negative
             %                    transition (1) or a positive transition (-1).
             %
@@ -513,7 +513,7 @@ classdef mfdaq < ndi.daq.reader
         end; % readevents_epochsamples_ingested
 
         function [timestamps, data] = readevents_epochsamples_native(ndi_daqreader_mfdaq_obj, channeltype, channel, epochfiles, t0, t1)
-            %  READEVENTS_EPOCHSAMPLES - read events or markers of specified channels for a specified epoch
+            %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch
             %
             %  [TIMESTAMPS, DATA] = READEVENTS_EPOCHSAMPLES_NATIVE(MYDEV, CHANNELTYPE, CHANNEL, ...
             %     EPOCHFILES, T0, T1)
@@ -908,7 +908,7 @@ classdef mfdaq < ndi.daq.reader
         end; % standardize_channel_types
 
         function tc = channelsepoch2timechannelinfo(channelsepoch, channeltype, channelnumber)
-            % CHANNELSEPCH2TIMECHANNELINFO - look up time channel info
+            % CHANNELSEPOCH2TIMECHANNELINFO - look up time channel info
             %
             % TC = CHANNELSEPOCH2TIMECHANNELINFO(CHANNELSEPOCH, CHANNELTYPE, CHANNELNUMBER)
             %

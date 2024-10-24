@@ -31,7 +31,7 @@ function [docs] = stimulus_response(S, parameter_struct, independent_variables, 
     % | Parameter (default)                | Description                                             |
     % |------------------------------------|---------------------------------------------------------|
     % | stim_duration (2)                  | Duration of each mock stimulus                          |
-    % | stim_duration_min (0.2)            | Minumum duration of a mock stimulus presentation        |
+    % | stim_duration_min (0.2)            | Minimum duration of a mock stimulus presentation        |
     % |                                    |   (set so that firing rate can be matched)              |
     % | interstimulus_interval(3)          | Interstimulus interval                                  |
     % |------------------------------------|---------------------------------------------------------|

@@ -66,6 +66,7 @@ classdef ProgressMonitor < handle
         end
 
         function markComplete(obj)
+
             % Note: Using markComplete method to trigger event to run
             % methods of this class. Todo: Can it be simplified?
             obj.ProgressTracker.markComplete()
@@ -101,7 +102,7 @@ classdef ProgressMonitor < handle
         end
 
         function onInitalized(obj)
-            % Subclass may implement
+            % onInitalized - Subclass may implement
         end
 
         function titleMessage = getProgressTitle(obj)
@@ -171,7 +172,9 @@ classdef ProgressMonitor < handle
         end
 
         function remainingTimeStr = formatRemainingTime(obj)
-            %tRemaining.Format = obj.RemainingTimeFormat;
+            % formatRemainingTime - Format remaining time as a string
+            
+            %   tRemaining.Format = obj.RemainingTimeFormat;
 
             if isempty(obj.RemainingTime)
                 remainingTimeStr = 'N/A'; return

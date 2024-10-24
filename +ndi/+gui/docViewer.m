@@ -49,7 +49,7 @@ classdef docViewer < handle
         end
 
         function addDoc(obj,docs)
-            % SDV: needs documentation
+            % ADDDOC - Todo: needs documentation
 
             for i=1:numel(docs)
                 d = docs{i}.document_properties.ndi_document;
@@ -218,7 +218,7 @@ classdef docViewer < handle
         end
 
         function restore(obj, ~, ~)
-            % SDV: needs documentation; are we restoring the view or the underlying data?
+            % RESTORE - Todo: needs documentation; are we restoring the view or the underlying data?
             obj.table.Data = obj.fullTable;
         end
 

@@ -16,9 +16,9 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
 
     methods
         function obj = angelucci_visstim(varargin)
-            % NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2 - Create a new multifunction DAQ object
+            % NDI.SETUP.DAQ.READER.MFDAQ.STIMULUS.ANGELUCCI_VISSTIM - Create a new multifunction DAQ object
             %
-            %  D = NDI_DAQREADER_MFDAQ_STIMULUS_ANGELUCCI_VISSTIM2(NAME, THEFILENAVIGATOR, DAQREADER)
+            %  D = NDI.SETUP.DAQ.READER.MFDAQ.STIMULUS.ANGELUCCI_VISSTIM(NAME, THEFILENAVIGATOR, DAQREADER)
             %
             %  Creates a new ndi.daq.system.mfdaq object with NAME, and FILENAVIGATOR.
             %  This is an abstract class that is overridden by specific devices.
@@ -26,7 +26,7 @@ classdef angelucci_visstim < ndi.daq.reader.mfdaq.blackrock
         end; % ndi.daq.reader.mfdaq.stimulus.angelucci_visstim()
 
         function channels = getchannelsepoch(thedev, epochfiles)
-            % FUNCTION GETCHANNELS - List the channels that are available on this device
+            % GETCHANNELSEPOCH - List the channels that are available on this device
             %
             %  CHANNELS = GETCHANNELSEPOCH(THEDEV, EPOCHFILES)
             %

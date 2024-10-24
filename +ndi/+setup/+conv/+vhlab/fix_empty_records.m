@@ -1,5 +1,5 @@
 function fix_empty_records(dirname, N)
-    % FIX_EMPTY_RECS
+    % FIX_EMPTY_RECORDS
     %
     % FIX_EMPTY_RECORDS(DIRNAME, N)
     %

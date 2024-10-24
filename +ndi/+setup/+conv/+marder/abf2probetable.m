@@ -1,7 +1,7 @@
 function abf2probetable(S, options)
-    % Populate a probetable table for a Marder ndi session
+    % ABF2PROBETABLE - Populate a probetable table for a Marder ndi session
     %
-    % ABFEPOCHPROBEMAP(S)
+    % ABF2PROBETABLE(S)
     %
     % Reads all ABF files in the NDI session S and creates a putative
     % probetable file.

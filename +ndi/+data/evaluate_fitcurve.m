@@ -1,12 +1,11 @@
-function [y, varargout] = ndi_evaluate_fitcurve(fitcurve_doc, varargin)
-    % NDI_EVALUTE_FITCURVE - evaluate a fitcurve (the standard fitcurve type)
+function [y, varargout] = evaluate_fitcurve(fitcurve_doc, varargin)
+    % EVALUATE_FITCURVE - evaluate a fitcurve (the standard fitcurve type)
     %
-    % Y = NDI_EVALUTE_FITCURVE(FITCURVE_DOC, X, ...)
+    % Y = EVALUATE_FITCURVE(FITCURVE_DOC, X, ...)
     %
     % Evaluate an FITCURVE document function for indicated values of X.
     %
-    %
-
+    
     % Step 1: extract information from document
 
     fit_equation = fitcurve_doc.document_properties.fitcurve.fit_equation;

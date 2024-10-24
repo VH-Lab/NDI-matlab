@@ -78,7 +78,7 @@ function post_documents_test(dataset_id)
 end
 
 function test_scan_for_upload(D, d, dataset_id, n)
-    % test scan_for_upload function
+    % test_scan_for_upload function
     % n is the number of documents that have been uploaded
     [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.up.scan_for_upload(D, d, 0, dataset_id);
     docs_left = sum(~[doc_json_struct.is_uploaded]);

@@ -1,4 +1,4 @@
-% NDI_DAQREADER_MFDAQ_SPIKEGADGETS - Device driver for SpikeGadgets .rec video file format
+% NDI.DAQ.READER.MFDAQ.SPIKEGADGETS - Device driver for SpikeGadgets .rec video file format
 %
 % This class reads data from video files .rec that spikegadgets use
 %
@@ -13,11 +13,11 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
 
     methods
         function obj = spikegadgets(varargin)
-            % NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS - Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object
+            % NDI.DAQ.READER.MFDAQ.SPIKEGADGETS - Create a new NDI_DEVICE_MFDAQ_SPIKEGADGETS object
             %
-            %  D = NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS(NAME,THEFILENAVIGATOR)
+            %  D = NDI.DAQ.READER.MFDAQ.SPIKEGADGETS(NAME,THEFILENAVIGATOR)
             %
-            %  Creates a new NDI_DAQSYSTEM_MFDAQ_SPIKEGADGETS object with name NAME and associated
+            %  Creates a new NDI_DAQREADER_MFDAQ_SPIKEGADGETS object with name NAME and associated
             %  filenavigator THEFILENAVIGATOR.
             %
             %
@@ -104,7 +104,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
         end
 
         function channels = getchannelsepochdetailed(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
-            % GETCHANNELSDETAILED - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER WITH EXTRA DETAILS
+            % GETCHANNELSEPOCHDETAILED - GET THE CHANNELS AVAILABLE FROM .REC FILE HEADER WITH EXTRA DETAILS
             %
             % CHANNELS = GETCHANNELSEPOCHDETAILED(NDI_DAQREADER_MFDAQ_SPIKEGADGETS_OBJ)
             %
@@ -197,7 +197,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
         end
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_spikegadgets_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
             %
@@ -264,9 +264,9 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
         end
 
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_spikegadgets_obj, channeltype, channels, epochfiles, s0, s1)
-            % FUNCTION READ_CHANNELS - read the data based on specified channels
+            % READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            % DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
+            % DATA = READCHANNELS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
             %
             % CHANNELTYPE is the type of channel to read
             % 'digital_in', 'digital_out', 'analog_in', 'analog_out' or 'auxiliary'
@@ -278,7 +278,7 @@ classdef spikegadgets < ndi.daq.reader.mfdaq
             %
             % EPOCH is set of files in the epoch
             %
-            % DATA is the channel data (each column contains data from an indvidual channel)
+            % DATA is the channel data (each column contains data from an individual channel)
             %
             filename = ndi_daqreader_mfdaq_spikegadgets_obj.filenamefromepochfiles(epochfiles);
 

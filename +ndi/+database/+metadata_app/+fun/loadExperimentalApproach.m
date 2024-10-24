@@ -1,5 +1,5 @@
 function cbt = loadExperimentalApproach(tree)
-    % loadExpApproach loads the experimental approach
+    % loadExperimentalApproach loads the experimental approach
     % and returns it as a checkList nodes.
     %
     % Output:

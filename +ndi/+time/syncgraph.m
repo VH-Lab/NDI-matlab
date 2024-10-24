@@ -321,7 +321,7 @@ classdef syncgraph < ndi.ido
         end; % ingest
 
         function d = get_ingested(ndi_syncgraph_obj)
-            % GET_INGESTED - get ingested docments for an ndi.syncgraph object
+            % GET_INGESTED - get ingested documents for an ndi.syncgraph object
             %
             % D = GET_INGESTED(NDI_SYNCGRAPH_OBJ)
             %
@@ -453,7 +453,7 @@ classdef syncgraph < ndi.ido
         end % addepoch
 
         function ginfo = addunderlyingepochs(ndi_syncgraph_obj, ndi_epochset_obj, ginfo)
-            % ADDUNDERLYINGEPOCH - add an ndi.epoch.epochset to the graph
+            % ADDUNDERLYINGEPOCHS - add an ndi.epoch.epochset to the graph
             %
             % NEW_GINFO = ADDUNDERLYINGEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_EPOCHSET_OBJ, GINFO)
             %
@@ -533,9 +533,9 @@ classdef syncgraph < ndi.ido
         end % addunderlyingnodes
 
         function ginfo = removeepoch(ndi_syncgraph_obj, ndi_daqsystem_obj, ginfo)
-            % REMOVEEPOCHS - remove an ndi.epoch.epochset from the graph
+            % REMOVEEPOCH - remove an ndi.epoch.epochset from the graph
             %
-            % GINFO = REMOVEEPOCHS(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
+            % GINFO = REMOVEEPOCH(NDI_SYNCGRAPH_OBJ, NDI_DAQSYSTEM_OBJ, GINFO)
             %
             % Remove all epoch nodes from the graph that are contributed by NDI_DAQSYSTEM_OBJ
             %

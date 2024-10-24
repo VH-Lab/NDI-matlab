@@ -1,5 +1,5 @@
 function varargout = parseOpenMINDSAtID(semanticName)
-    % parseAtID - Parse an openMINDS @id
+    % parseOpenMINDSAtID - Parse an openMINDS @id
     %
     %   Syntax:
     %       S = parseOpenMINDSAtID(semanticName)

@@ -6,7 +6,7 @@ classdef filefind < ndi.time.syncrule
     end % properties
     methods
         function ndi_syncrule_filefind_obj = filefind(varargin)
-            % NDI_SYNCRULE_FILEFIND_OBJ - create a new ndi.time.syncrule.filefind for managing synchronization
+            % NDI.TIME.SYNCRULE.FILEFIND - create a new ndi.time.syncrule.filefind for managing synchronization
             %
             % NDI_SYNCRULE_FILEFIND_OBJ = ndi.time.syncrule.filefind()
             %      or

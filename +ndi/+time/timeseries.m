@@ -38,9 +38,9 @@ classdef timeseries < ndi.documentservice
         end; % readtimeseries()
 
         function sr = samplerate(ndi_timeseries_obj, epoch)
-            % SAMPLE_RATE - return the sample rate of an ndi.time.timeseries object
+            % SAMPLERATE - return the sample rate of an ndi.time.timeseries object
             %
-            % SR = SAMPLE_RATE(NDI_TIMESERIES_OBJ, EPOCH)
+            % SR = SAMPLERATE(NDI_TIMESERIES_OBJ, EPOCH)
             %
             % Returns the sampling rate of a given ndi.time.timeseries object for the epoch
             % EPOCH. EPOCH can be specified as an index or EPOCH_ID.
@@ -50,7 +50,7 @@ classdef timeseries < ndi.documentservice
         end; % sample_rate
 
         function samples = times2samples(ndi_timeseries_obj, epoch, times)
-            % SAMPLES2TIMES - convert from the timeseries time to sample numbers
+            % TIMES2SAMPLES - convert from the timeseries time to sample numbers
             %
             % SAMPLES = TIMES2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
             %
@@ -70,14 +70,14 @@ classdef timeseries < ndi.documentservice
                 g = (isinf(times) & (times > 0));
                 samples(g) = 1+sr*diff(et.t0_t1{1}(1:2));
             else,
-                samples = []; % need to be overriden
+                samples = []; % need to be overridden
             end;
         end;
 
         function times = samples2times(ndi_timeseries_obj, epoch, samples)
-            % TIME2SAMPLES - convert from the timeseries time to sample numbers
+            % SAMPLES2TIMES - convert from the timeseries time to sample numbers
             %
-            % SAMPLES = TIME2SAMPLES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
+            % SAMPLES = SAMPLES2TIMES(NDI_TIMESERIES_OBJ, EPOCH, TIMES)
             %
             % For a given ndi.time.timeseries object and a recording epoch EPOCH,
             % return the sample index numbers SAMPLE that corresponds to the times TIMES.
@@ -90,7 +90,7 @@ classdef timeseries < ndi.documentservice
                 et = ndi_timeseries_obj.epochtableentry(epoch);
                 times = et.t0_t1{1}(1) + (samples-1)/sr;
             else,
-                times = []; % need to be overriden
+                times = []; % need to be overridden
             end;
         end;
 

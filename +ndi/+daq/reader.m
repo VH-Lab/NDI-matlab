@@ -18,7 +18,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %
             %  Creates an ndi.daq.reader from an NDI_DOCUMENT_OBJ.
             %
-            %  ndi.daq.reader has mostly abstract methods, it is made to be overriden.
+            %  ndi.daq.reader has mostly abstract methods, it is made to be overridden.
             %
             obj = obj@ndi.ido();
 
@@ -97,7 +97,7 @@ classdef reader < ndi.ido & ndi.documentservice
         end % epochclock_ingested
 
         function t0t1 = t0_t1(ndi_daqreader_obj, epochfiles)
-            % T0T1 - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_DAQREADER_OBJ, EPOCH_NUMBER)
             %
@@ -112,7 +112,7 @@ classdef reader < ndi.ido & ndi.documentservice
         end % t0t1
 
         function t0t1 = t0_t1_ingested(ndi_daqreader_obj, epochfiles, S)
-            % T0T1_INGESTED - return the t0_t1 (beginning and end) epoch times for an ingested epoch
+            % T0_T1_INGESTED - return the t0_t1 (beginning and end) epoch times for an ingested epoch
             %
             % T0T1 = T0_T1_INGESTED(NDI_DAQREADER_OBJ, EPOCH_NUMBER, S)
             %

@@ -135,7 +135,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         end
 
         function updateProgress(obj, currentStep)
-            % Update progress by incrementing the current step
+            % updateProgress - Update progress by incrementing the current step
 
             % Todo: set.CurrentStep instead
             arguments
@@ -183,7 +183,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         end
 
         function resetProgress(obj)
-            % Reset progress to start
+            % resetProgress - Reset progress to start
             obj.CurrentStep = 0;
         end
 
@@ -209,7 +209,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
         end
 
         function isComplete = isComplete(obj)
-            % Check if task is complete
+            % isComplete - Check if task is complete
             isComplete = (obj.CurrentStep >= obj.TotalSteps);
         end
     end
@@ -238,6 +238,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
 
     methods (Hidden)
         function rep = compactRepresentationForSingleLine(obj,displayConfiguration,width)
+           
             % Fit as many array elements in the available space as possible
             if isnan(obj.TotalSteps)
                 rep = matlab.display.PlainTextRepresentation(obj, '<unavailable>', displayConfiguration);
@@ -310,7 +311,7 @@ classdef ProgressTracker < handle & matlab.mixin.CustomCompactDisplayProvider
 
     methods (Static, Access = protected)
         function updatedMessage = replacePropertyValue(templateMessage, propertyName, propertyValue)
-            % Replace a class property value in a template message
+            % replacePropertyValue - Replace a class property value in a template message
 
             % Format placeholder string
             placeholder = sprintf('{{%s}}', propertyName);

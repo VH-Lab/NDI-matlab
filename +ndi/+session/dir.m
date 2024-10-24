@@ -131,7 +131,7 @@ classdef dir < ndi.session
         end;
 
         function p = ndipathname(ndi_session_dir_obj)
-        % NDSPATHNAME - Return the path of the NDI files within the session
+        % NDIPATHNAME - Return the path of the NDI files within the session
         %
         % P = NDIPATHNAME(NDI_SESSION_DIR_OBJ)
         %

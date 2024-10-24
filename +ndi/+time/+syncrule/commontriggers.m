@@ -6,7 +6,7 @@ classdef commontriggers < ndi.time.syncrule
     end % properties
     methods
         function ndi_syncrule_commontriggers_obj = commontriggers(varargin)
-            % NDI_SYNCRULE_COMMONTRIGGERS_OBJ - create a new ndi.time.syncrule.commontriggers for managing synchronization
+            % COMMONTRIGGERS - create a new ndi.time.syncrule.commontriggers for managing synchronization
             %
             % NDI_SYNCRULE_COMMONTRIGGERS_OBJ = ndi.time.syncrule.commontriggers()
             %      or

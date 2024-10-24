@@ -11,11 +11,11 @@ classdef BriggsStims < ndi.daq.metadatareader
     methods
 
         function obj = BriggsStims(varargin)
-            % NDI_DAQMETADATAREADER_BRIGGS_STIMS - Create a new multifunction DAQ object
+            % BRIGGSSTIMS - Create a new multifunction DAQ object
             %
-            %  D = NDI_DAQMETADATAREADER_BRIGGS_STIMS()
+            %  D = NDI.SETUP.DAQ.METADATAREADER.BRIGGSSTIMS()
             %  or
-            %  D = ndi.daq.metadatareader(STIMDATA_MAT_FILE)
+            %  D = NDI.SETUP.DAQ.METADATAREADER.BRIGGSSTIMS(STIMDATA_MAT_FILE)
             %
             %  Creates a new ndi.daq.metadatareader object. If TSVFILE_REGEXPRESSION
             %  is given, it indicates a regular expression to use to search EPOCHFILES
@@ -25,7 +25,7 @@ classdef BriggsStims < ndi.daq.metadatareader
         end; % ndi.daq.metadatareader.BriggsStims
 
         function [parameters,stimorder,stimtimes] = readmetadatafromfile(ndi_daqmetadatareader_angelucci_stims_obj, file)
-            % PARAMETERS = READMETADATAFROMFILE - read in metadata from the file that is identified
+            % READMETADATAFROMFILE - read in metadata from the file that is identified
             %
             % PARAMETERS = READMETADATAFROMFILE(NDI_DAQMETADATAREADER_BRIGGS_STIMS_OBJ, FILE)
             %

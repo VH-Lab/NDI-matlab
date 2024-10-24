@@ -128,9 +128,9 @@ classdef intan < ndi.daq.reader.mfdaq
 
         % 01234567890123456789012345678901234567890123456789012345678901234567890123456789
         function data = readchannels_epochsamples(ndi_daqreader_mfdaq_intan_obj, channeltype, channel, epochfiles, s0, s1)
-            %  FUNCTION READ_CHANNELS - read the data based on specified channels
+            %  READCHANNELS_EPOCHSAMPLES - read the data based on specified channels
             %
-            %  DATA = READ_CHANNELS(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
+            %  DATA = READCHANNELS_EPOCHSAMPLES(MYDEV, CHANNELTYPE, CHANNEL, EPOCHFILES ,S0, S1)
             %
             %  CHANNELTYPE is the type of channel to read (cell array of strings, one per
             %     channel, or single string for all channels)
@@ -139,7 +139,7 @@ classdef intan < ndi.daq.reader.mfdaq
             %
             %  EPOCH is set of epoch files
             %
-            %  DATA is the channel data (each column contains data from an indvidual channel)
+            %  DATA is the channel data (each column contains data from an individual channel)
             %
             [filename,parentdir,isdirectory] = ndi_daqreader_mfdaq_intan_obj.filenamefromepochfiles(epochfiles);
 
@@ -269,7 +269,7 @@ classdef intan < ndi.daq.reader.mfdaq
         end % samplerate()
 
         function t0t1 = t0_t1(ndi_daqreader_mfdaq_intan_obj, epochfiles)
-            % EPOCHCLOCK - return the t0_t1 (beginning and end) epoch times for an epoch
+            % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
             % T0T1 = T0_T1(NDI_EPOCHSET_OBJ, EPOCHFILES)
             %
