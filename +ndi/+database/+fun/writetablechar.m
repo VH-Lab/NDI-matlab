@@ -5,7 +5,7 @@ function c = writetablechar(t,varargin)
 %
 % Write a Matlab table object to a character array. Passes extra arguments
 % to writetable() so that all the arguments to writetable() can be used to
-% writeTableChar.
+% writetablechar.
 % 
 % Example:
 %   t = array2table(rand(10,3))
@@ -29,5 +29,3 @@ realfilename = fullfile(realfile(1).folder,realfile(1).name);
 c = fileread(realfilename);
 
 delete(realfilename);
-
-

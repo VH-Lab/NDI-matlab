@@ -29,18 +29,15 @@ end
 
 if ext(1)~='.'
     ext = ['.' ext];
-end; 
+end
 
 fname = [ ndi.file.temp_name() ext ];
 
 vlt.file.str2text(fname,c);
+cleanupObj = onCleanup(@(fn) delete(fname));
 
 try
     t = readtable(fname, varargin{:});
 catch ME
-    delete(fname);
     throw(ME);
 end
-
-delete(fname);
-
