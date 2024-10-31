@@ -16,3 +16,4 @@ Identifier	Name	Description
 14	Purpose: Assessing activity with temperature manipulation	States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature
 15	Purpose: To measure the pyloric rhythym	States that the purpose of the measurement is to observe the pyloric rhythym 
 16	Purpose: to measure the gastric mill rhythym	States that the purpose of the measurement is to observe the gastric mill rhythym
+17	Microelectrode voltage offset	A voltage offset measured at the end of a voltage record, in V

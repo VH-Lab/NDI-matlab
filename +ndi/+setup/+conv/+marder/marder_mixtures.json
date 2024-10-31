@@ -1,0 +1,89 @@
+{
+	"normal_saline": [
+		{
+			"ontologyName":  "NCIm:C0037494",
+			"name": "sodium chloride",
+			"value": 0.440,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0032825",
+			"name": "potassium chloride",
+			"value": 0.011,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0006686",
+			"name": "calcium chloride",
+			"value": 0.013,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0024472",
+			"name": "magnesium chloride",
+			"value": 0.013,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0041175",
+			"name": "Tromethamine",
+			"value": 0.011,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0220874",
+			"name": "maleic acid",
+			"value": 0.05,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C4048290",
+			"name": "pH",
+			"value": 7.45,
+			"ontologyUnit": "OM:Acidity",
+			"unitName": "pH"
+		}
+	],
+	"ptx": [
+		{
+			"ontologyName": "NCIm:C0031890",
+			"name": "picrotoxin",
+			"value": 1e-5,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"ttx": [
+		{
+			"ontologyName": "NCIm:C0039705",
+			"name": "tetrodotoxin",
+			"value": 1e-7,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"tea": [
+		{
+			"ontologyName": "NCIm:C0145330",
+			"name": "Chloride, Tetraethylammonium",
+			"value": 10e-3,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	],
+	"CCAP": [
+		{
+			"ontologyName": "NCIm:C0286028",
+			"name": "crustacean cardioactive peptide",
+			"value": 1e-4,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		}
+	]
+}

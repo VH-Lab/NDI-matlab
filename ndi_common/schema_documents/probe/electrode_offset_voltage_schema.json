@@ -1,0 +1,26 @@
+{
+	"classname": "electrode_offset_voltage",
+	"superclasses":  [ "base" ],
+	"depends_on": [
+		{ "name": "probe_id", "mustbenotempty": 1}
+	],
+	"probe_location": [
+		{
+			"name": "offset",
+			"type": "double",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The offset voltage of an electrode, measured in volts (V)"
+		},
+		{
+			"name": "temperature",
+			"type": "double",
+			"default_value": "",
+			"parameters": [-100000,100000,1,1],
+			"queryable": 1,
+			"documentation": "The temperature at which the measurement was made, in degrees C (can be NaN or empty)"
+		}
+	]
+}
+

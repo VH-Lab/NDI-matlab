@@ -1,0 +1,18 @@
+{
+	"upper": [
+		{"location": "uberon:3386"},
+		{"location": "uberon:3384"},
+		{"location": "uberon:3383"},
+		{"location": "uberon:3382"},
+		{"location": "uberon:3381"},
+		{"location": "uberon:3380"}
+	],
+	"lower": [
+		{ "location": "uberon:3385" }
+        ],
+	"bath": [
+		{ "location": "NCIm:C0179246"}
+	]
+}
+
+
