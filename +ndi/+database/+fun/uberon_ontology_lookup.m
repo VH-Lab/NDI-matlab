@@ -16,13 +16,25 @@ function [item] = uberon_ontology_lookup(field, value)
     %     'Name','lateral ventricular nerve');
     %
 
+    arguments 
+        field (1,:) char {mustBeMember(field,{'Name','Identifier','Description'})}
+        value (1,:) 
+    end
+
     filename = fullfile(ndi.common.PathConstants.CommonFolder,...
         'controlled_vocabulary','uberon_temp.txt');
 
-    s = loadStructArray(filename);
+    s = table2struct(readtable(filename,'delimiter','\t'));
 
-    eval(['v={s.' char(field) '};']);
+    if strcmp(field,'Identifier')
+        if startsWith(value,'uberon:')
+            value = str2double(value(1+numel('uberon:'):end));
+        end
+        % we have a number
+        item = s([s.Identifier]==value);
+        return;
+    end
 
-    index = find(strcmp(v,value));
+    v = {s.(field)};
 
-    item = s(index);
+    item = s(strcmp(v,value));

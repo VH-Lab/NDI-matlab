@@ -1,6 +1,6 @@
 {
 	"classname": "stimulus_bath",
-	"superclasses":  [ "base", "epochid", "stimulus_parameter_table"],
+	"superclasses":  [ "base", "epochid"],
 	"depends_on": [ ],
 	"stimulus_bath": [
 		{
@@ -9,7 +9,17 @@
 			"default_value": [],
 			"parameters": [],
 			"queryable": 1,
-			"documentation": "Location of the bath (ontologyNode, name)"
+			"documentation": Location of the bath (ontologyNode, name)"
+		},
+		{
+			"name": "mixture_table",
+			"type": "string",
+			"default_value": [],
+			"parameters": [],
+			"queryable": 1,
+			"documentation": "Table of bath contents (ontologyNode, name, value, ontologyUnit, unitName)"
 		}
 	]
 }
+
+

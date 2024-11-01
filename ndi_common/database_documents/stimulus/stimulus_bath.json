@@ -7,14 +7,15 @@
 		"class_version":					1,
 		"superclasses": [
 			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} ,
-			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"},
-			{ "definition":                                 "$NDIDOCUMENTPATH\/stimulus\/stimulus_parameter_table.json"}
+			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"}
 		]
 	},
 	"stimulus_bath": {
 		"location": {
 			"ontologyNode":				[],
-			"name":					[],
+			"name":					[]
+		},
+		"mixture_table": 				[]
 	}
 }
 
