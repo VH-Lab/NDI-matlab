@@ -8,7 +8,7 @@
 		{"location": "uberon:3380"}
 	],
 	"lower": [
-		{ "location": "uberon:3385" }
+		{ "location": "uberon:3385" }   
         ],
 	"bath": [
 		{ "location": "NCIm:C0179246"}

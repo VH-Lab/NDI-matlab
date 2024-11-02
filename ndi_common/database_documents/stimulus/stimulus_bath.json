@@ -1,7 +1,7 @@
 {
 	"document_class": {
 		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_bath.json",
-		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_bath.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_bath_schema.json",
 		"class_name":						"stimulus_bath",
                 "property_list_name":                                   "stimulus_bath",
 		"class_version":					1,
@@ -10,6 +10,9 @@
 			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"}
 		]
 	},
+	"depends_on": [
+		{ "name": "stimulus_element_id", "value": "" }
+	],
 	"stimulus_bath": {
 		"location": {
 			"ontologyNode":				[],

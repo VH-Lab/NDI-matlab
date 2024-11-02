@@ -29,8 +29,13 @@ for i=1:numel(et)
     eid = et(i).epoch_id;
     epochid.epochid = eid;
     for j=1:numel(stim)
+        stimid = stim{j}.id();
         for k=1:size(bathTable,1)
-            if (i>=bathTable{k,"firstFile"} && i<=bathTable{k,"lastFile"}) 
+            tokensFirst = regexp(bathTable{k,"firstFile"}, '_(\d+)\.', 'tokens');
+            tokensLast = regexp(bathTable{k,"lastFile"}, '_(\d+)\.', 'tokens');
+            firstFile = str2double(tokensFirst{1}{1});
+            lastFile = str2double(tokensLast{1}{1});
+            if (i>=firstFile && i<=lastFile) 
                 % if we are in range, add it
                 % step 1: loop over bathTargets
                 bT = bathTable{k,"bathTargets"};
@@ -38,13 +43,14 @@ for i=1:numel(et)
                     locList = bathTargets.(bT{b});
                     for l=1:numel(locList)
                         bathLoc = ndi.database.fun.uberon_ontology_lookup("Identifier",locList(l).location);
-                        mixTable = ndi.setup.conv.marder.mixtureStr2mixtureTable(bathTable{k,"mixtures"}{1},mixtureInfo)
+                        mixTable = ndi.setup.conv.marder.mixtureStr2mixtureTable(bathTable{k,"mixtures"}{1},mixtureInfo);
                         mixTableStr = ndi.database.fun.writetablechar(mixTable);
                         stimulus_bath.location.ontologyNode = locList(l).location;
                         stimulus_bath.location.name = bathLoc.Name;
                         stimulus_bath.mixture_table = mixTableStr;
                         d{end+1}=ndi.document('stimulus_bath','stimulus_bath',stimulus_bath,'epochid',epochid)+...
                             S.newdocument();
+                        d{end} = d{end}.set_dependency_value('stimulus_element_id',stimid);
                     end
                 end
             end

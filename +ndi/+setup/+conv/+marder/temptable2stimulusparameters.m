@@ -5,7 +5,7 @@ function docs = temptable2stimulusparameters(S)
     %
 
     arguments
-        S (1,1)
+        S (1,1) ndi.session 
     end
 
     dirname = S.getpath();
@@ -14,7 +14,7 @@ function docs = temptable2stimulusparameters(S)
 
     temptable = t.temptable;
 
-    stim = S.getprobes('type','stimulator')
+    stim = S.getprobes('type','stimulator');
 
     et = stim{1}.epochtable();
 
@@ -37,7 +37,7 @@ function docs = temptable2stimulusparameters(S)
         end;
         if isempty(last_match), continue; end;
 
-        for p=1:numel(stim),
+        for p=1:numel(stim)
             if strcmp(last_match.type,"constant"),
                 eid.epochid = et(i).epoch_id;
                 d_struct.ontology_name = const_o;
@@ -47,8 +47,8 @@ function docs = temptable2stimulusparameters(S)
                     'epochid',eid) + S.newdocument();
                 d_here = d_here.set_dependency_value('stimulus_element_id',stim{p}.id());
                 docs{end+1} = d_here;
-            end;
-            if strcmp(last_match.type,"change"),
+            end
+            if strcmp(last_match.type,"change")
                 eid.epochid = et(i).epoch_id;
                 d_struct1.ontology_name = temp_start;
                 d_struct1.name = 'starting temperature';
@@ -64,6 +64,6 @@ function docs = temptable2stimulusparameters(S)
                     'epochid',eid) + S.newdocument();
                 d_here = d_here.set_dependency_value('stimulus_element_id',stim{p}.id());
                 docs{end+1} = d_here;
-            end;
-        end;
-    end;
+            end
+        end
+    end
