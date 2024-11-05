@@ -35,3 +35,22 @@ function postsetup(S)
     S.database_rm(d);
     d = ndi.setup.conv.marder.marderprobe2uberon(S)
     S.database_add(d);
+
+    disp(['Setting sharp electrode offset measurements...']);
+    ndi.setup.conv.marder.makeVoltageOffsets(S);
+
+    disp(['Adding bath stimulation documents...']);
+    d=S.database_search(ndi.query('','isa','stimulus_bath'));
+    S.database_rm(d);
+    d=ndi.setup.conv.marder.marderbath(S);
+    S.database_add(d);
+
+    disp(['Adding acclimation information...']);
+    d = S.database_search(ndi.query('','isa','treatment'));
+    S.database_rm(d);
+    subs = S.database_search(ndi.query('','isa','subject'));
+    for i=1:numel(subs),
+        d = ndi.database.metadata.table2treatment(S,[S.path filesep 'acclimate.txt'],subs{i}.id());
+    end
+
+
