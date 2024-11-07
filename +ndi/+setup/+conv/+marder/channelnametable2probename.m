@@ -23,7 +23,7 @@ function [probename, proberef, probetype, subjectname] = channelnametable2proben
         error(['No match found.']);
     end;
 
-    probename = probetable{i,"probeName"}{1};
+    probename = probetable{i,"probeName"};
     proberef = probetable{i,"probeRef"};
-    probetype = probetable{i,"probeType"}{1};
-    subjectname = probetable{i,"subject"}{1};
+    probetype = probetable{i,"probeType"};
+    subjectname = probetable{i,"subject"};

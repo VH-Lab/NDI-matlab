@@ -6,35 +6,34 @@ lvn_1	lateral ventricular nerve
 mvn_1	median ventricular nerve
 pdn_1	pyloric dilator nerve
 pyn_1	pyloric nerve
+dgn_2	dorsal gastric nerve
+gpn_2	gastropyloric nerve
+lgn_2	lateral gastric nerve
+lvn_2	lateral ventricular nerve
+mvn_2	median ventricular nerve
+pdn_2	pyloric dilator nerve
+pyn_2	pyloric nerve
 LPv_1_1	lateral pyloric motor neuron
 LPv_2_1	lateral pyloric motor neuron
 LPv_1_2	lateral pyloric motor neuron
 LPv_2_2	lateral pyloric motor neuron
-LPi_1_1	lateral pyloric motor neuron
-LPi_2_1	lateral pyloric motor neuron
-LPi_1_2	lateral pyloric motor neuron
-LPi_2_2	lateral pyloric motor neuron
+LPi_1	lateral pyloric motor neuron
+LPi_2	lateral pyloric motor neuron
 LGv_1_1	lateral pyloric motor neuron
 LGv_2_1	lateral gastic nerve
 LGv_1_2	lateral gastic nerve
 LGv_2_2	lateral gastic nerve
-LGi_1_1	lateral gastic nerve
-LGi_2_1	lateral gastic nerve
-LGi_1_2	lateral gastic nerve
-LGi_2_2	lateral gastic nerve
+LGi_1	lateral gastic nerve
+LGi_2	lateral gastic nerve
 PYv_1_1	pyloric motor neuron
 PYv_2_1	pyloric motor neuron
 PYv_1_2	pyloric motor neuron
 PYv_2_2	pyloric motor neuron
-PYi_1_1	pyloric motor neuron
-PYi_2_1	pyloric motor neuron
-PYi_1_2	pyloric motor neuron
-PYi_2_2	pyloric motor neuron
+PYi_1	pyloric motor neuron
+PYi_2	pyloric motor neuron
 PDv_1_1	pyloric dilator neuron
 PDv_2_1	pyloric dilator neuron
 PDv_1_2	pyloric dilator neuron
 PDv_2_2	pyloric dilator neuron
-PDi_1_1	pyloric dilator neuron
-PDi_2_1	pyloric dilator neuron
-PDi_1_2	pyloric dilator neuron
-PDi_2_2	pyloric dilator neuron
+PDi_1	pyloric dilator neuron
+PDi_2	pyloric dilator neuron

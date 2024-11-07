@@ -91,7 +91,7 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
             % reference, check for errors
 
             if reference_ < 0 | ~vlt.data.isint(reference_) | ~vlt.data.eqlen(size(reference_),[1 1]),
-                error(['reference of ndi.epoch.epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(reference_)]);
+                error(['reference of ndi.epoch.epochprobemap_daqsystem must be a non-negative scalar integer, got ' int2str(char(reference_))]);
             end;
             obj.reference = fix(reference_);
 

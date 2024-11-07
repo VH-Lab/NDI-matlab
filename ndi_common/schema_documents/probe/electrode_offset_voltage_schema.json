@@ -4,12 +4,12 @@
 	"depends_on": [
 		{ "name": "probe_id", "mustbenotempty": 1}
 	],
-	"probe_location": [
+	"electrode_offset_voltage": [
 		{
 			"name": "offset",
 			"type": "double",
 			"default_value": "",
-			"parameters": "",
+			"parameters": [-100000,100000,1,1],
 			"queryable": 1,
 			"documentation": "The offset voltage of an electrode, measured in volts (V)"
 		},

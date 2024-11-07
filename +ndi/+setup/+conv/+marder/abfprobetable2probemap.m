@@ -42,8 +42,10 @@ function abfprobetable2probemap(S)
         for j=1:numel(h.recChNames),
             [name,ref,probeType,subjectlist] = ndi.setup.conv.marder.channelnametable2probename(h.recChNames{j},probetable);
             daqsysstr = ndi.daq.daqsystemstring(daqname,{'ai'},j);
-            probemap(end+1) = ndi.epoch.epochprobemap_daqsystem(name,ref,probeType,...
-                daqsysstr.devicestring(),subjectlist);
+            for z=1:numel(name),
+                probemap(end+1) = ndi.epoch.epochprobemap_daqsystem(name{z},ref(z),probeType{z},...
+                    daqsysstr.devicestring(),subjectlist{z});
+            end;
         end;
         [myparent,myfile,myext] = fileparts([dirname filesep d(i).name]);
         probemap.savetofile([dirname filesep myfile '.epochprobemap.txt']);
