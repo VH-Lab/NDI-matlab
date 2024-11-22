@@ -23,19 +23,19 @@ classdef dir < ndi.session
 			% See also: ndi.session, ndi.session.dir/GETPATH
 
 				if nargin<2,
-                    if nargin >= 1
-					    path = reference;
-                    end
+					if nargin >= 1
+						path = reference;
+					end
 					reference = 'temp';
 				end
 
-                ndi_session_dir_obj = ndi_session_dir_obj@ndi.session(reference);
-                
-                if nargin < 1 || isempty(path); return; end
-    
-                if ~isfolder(path),
-                    error(['Directory ' path ' does not exist.']);
-                end;
+				ndi_session_dir_obj = ndi_session_dir_obj@ndi.session(reference);
+
+				if nargin < 1 || isempty(path); return; end
+
+				if ~isfolder(path),
+					error(['Directory ' path ' does not exist.']);
+				end;
 
 				ndi_session_dir_obj.path = char(path); % Ensure type is character vector
 
