@@ -1,20 +1,20 @@
 function datasetInformation = convertDocumentToDatasetInfo(document)
-%CONVERTDOCUMENTTODATASETINFO function to convert NDI document to datasetInfo
-%   DATASETINFO = ndi.database.metadata_app.fun.CONVERTDOCUMENTTODATASETINFO(DOCUMENT)
-%   Inputs:
-%       DOCUMENT - struct containing the saved dataset information for our app
-%                  Note that this is not a set of saved metadata objects in the dataset,
-%                  but just the saved structure data from the MetaDataEditorApp
-%
-%   Outputs:
-%       DATASETINFO - struct containing the dataset information
+    %CONVERTDOCUMENTTODATASETINFO function to convert NDI document to datasetInfo
+    %   DATASETINFO = ndi.database.metadata_app.fun.CONVERTDOCUMENTTODATASETINFO(DOCUMENT)
+    %   Inputs:
+    %       DOCUMENT - struct containing the saved dataset information for our app
+    %                  Note that this is not a set of saved metadata objects in the dataset,
+    %                  but just the saved structure data from the MetaDataEditorApp
+    %
+    %   Outputs:
+    %       DATASETINFO - struct containing the dataset information
 
-datasetInformation = document; % Initialize datasetInfo with the same structure
-datasetInformation.ReleaseDate = datetime(datasetInformation.ReleaseDate);
-Subjects = ndi.database.metadata_app.class.Subject.fromStruct(datasetInformation.Subjects);
-datasetInformation.Subjects = Subjects;
-fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'TechniquesEmployed', 'Author', 'Subjects'};
-    
+    datasetInformation = document; % Initialize datasetInfo with the same structure
+    datasetInformation.ReleaseDate = datetime(datasetInformation.ReleaseDate);
+    Subjects = ndi.database.metadata_app.class.Subject.fromStruct(datasetInformation.Subjects);
+    datasetInformation.Subjects = Subjects;
+    fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'TechniquesEmployed', 'Author', 'Subjects'};
+
     for i = 1:numel(fieldsToConvert)
         fieldName = fieldsToConvert{i};
         v = getfield(datasetInformation, fieldName);
@@ -39,4 +39,3 @@ fieldsToConvert = {'Description', 'DataType', 'ExperimentalApproach', 'Technique
         end
     end
 end
-

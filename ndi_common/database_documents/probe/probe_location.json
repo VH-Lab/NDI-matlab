@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/probe\/probe_location.json",
+		"validation":						"$NDISCHEMAPATH\/probe\/probe_location_schema.json",
+		"class_name":						"probe_location",
+                "property_list_name":                                   "probe_location",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} 
+		]
+	},
+	"depends_on": [
+		{	"name": "probe_id",				
+			"value": "" 
+		}
+	],
+	"probe_location": {
+		"ontology_name":							[],
+		"name":									[]
+	}
+}
+

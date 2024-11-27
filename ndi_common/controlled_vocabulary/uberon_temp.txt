@@ -1,0 +1,24 @@
+Identifier	Name
+3364	crustacean stomatogastric nervous system
+3365	crustacean stomatogastric ganglion
+3366	dorsal gastric nerve
+3367	gastropyloric nerve
+3368	lateral gastric nerve
+3369	lateral ventricular nerve
+3370	pyloric nerve
+3371	pyloric dilator nerve
+3372	median ventricular nerve
+3373	gastric mill neuron
+3374	lateral gastric neuron
+3375	inferior cardiac neuron
+3376	pyloric motor neuron
+3377	pyloric dilator neuron
+3378	anterior burster neuron
+3379	lateral pyloric motor neuron
+3380	inferior esophageal nerve
+3381	oesophageal nerve
+3382	oesophageal ganglion
+3383	commissural ganglion
+3384	superior oesophageal nerve
+3385	stomatogastric nerve
+3386	junction of superior oesophageal nerve and stomatogastric nerve

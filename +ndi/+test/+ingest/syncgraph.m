@@ -22,4 +22,3 @@ box off;
 figure(100);
 hold on;
 vlt.neuro.stimulus.plot_stimulus_timeseries(7,t2.stimon,t2.stimon+2,'stimid',data2.stimid);
-

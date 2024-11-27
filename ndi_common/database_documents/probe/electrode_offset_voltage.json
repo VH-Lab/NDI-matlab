@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/probe\/electrode_offset_voltage.json",
+		"validation":						"$NDISCHEMAPATH\/probe\/electrode_offset_voltage_schema.json",
+		"class_name":						"electrode_offset_voltage",
+                "property_list_name":                                   "electrode_offset_voltage",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} 
+		]
+	},
+	"depends_on": [
+		{	"name": "probe_id",				
+			"value": "" 
+		}
+	],
+	"electrode_offset_voltage": {
+		"offset":							"",
+		"temperature":							""
+	}
+}
+
