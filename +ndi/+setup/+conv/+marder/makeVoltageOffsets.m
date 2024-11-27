@@ -25,7 +25,7 @@ filenameNoPath = 'MEoffset.txt';
 filename = fullfile(S.path(),filenameNoPath);
 
 if isfile(filename)
-    t = readtable(filename);
+    t = readtable(filename,'delimiter',',')
 else
     warning(['No file ' char(filename) ' found -- no action taken.']);
     return;
