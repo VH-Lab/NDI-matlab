@@ -14,15 +14,15 @@ classdef epoch < handle & matlab.mixin.SetGet
 
 			% note: will need to change underlying_epochs.underlying to underlying_epochs.object in all code
 
-    properties (SetAccess = private)
-        epoch_number (1,1) double {mustBeInteger(epoch_number)} = 0;
+    properties (SetAccess = protected)
+        epoch_number (1,1) uint64 {mustBeInteger} = 0;
         epoch_id (1,1) string = "" % Unique identifier for the epoch; could be any string 
         epoch_session_id (1,1) string {did.ido.isvalid(epoch_session_id)} = ndi.ido.unique_id % Identifier for the session containing this epoch
-        epochprobemap (1,1) {mustBeA(epochprobemap,'ndi.epoch.epochprobemap')} =  ndi.epoch.epochprobemap
+        epochprobemap (:,1) {mustBeA(epochprobemap,'ndi.epoch.epochprobemap')} =  ndi.epoch.epochprobemap
         epoch_clock cell = {} % A cell array of ndi.time.clocktype objects that describe the types of clocks available
         t0_t1 cell = {} % A cell array of ordered pairs [t0 t1] that indicates the start and stop time of the epoch in each clock
-        object (1,1) {mustBeA(object,'ndi.ido')} = ndi.ido
-        underlying_epochs {} = [] % An array of the ndi.epoch objects that underlie/comprise this epoch
+        epochset_object (:,1) {mustBeA(object,'ndi.epoch.epochset')} = ndi.epoch.epochset
+        underlying_epochs (:,1) {ndi.epoch.mustBeEpochOrEmpty} = [] % An array of the ndi.epoch objects that underlie/comprise this epoch
     end
 
     methods
@@ -61,7 +61,7 @@ classdef epoch < handle & matlab.mixin.SetGet
             % Syntax:
             %   ndi.epoch.mustBeEpochOrEmpty(value)
             % Inputs: <value>, an input
-                assert( isa(value,'ndi.epoch') | isempty(value), 'Value must be an ndi.epoch or be empty.');
+                assert( isa(value,'ndi.epoch') || isempty(value), 'Value must be an ndi.epoch or be empty.');
         end
     end % Static Methods
 end
