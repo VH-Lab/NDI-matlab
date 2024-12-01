@@ -122,7 +122,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             %  is requested, DATA is returned as a cell array, one entry per channel.
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
-            [timestamps,data] = ndr_reader.readevents_epochsamples_native(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, 1, t0, t1);
+            [timestamps,data] = ndr_reader.readevents_epochsamples_native(channeltype, channel, epochfiles, 1, t0, t1);
         end; % readevents_epochsamples_native
 
         function sr = samplerate(ndi_daq_reader_mfdaq_ndr_obj, epochfiles, channeltype, channel)
