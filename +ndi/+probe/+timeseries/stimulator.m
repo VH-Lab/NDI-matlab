@@ -43,6 +43,7 @@ classdef stimulator < ndi.probe.timeseries
             %    which 'dim*' channel turned on. For example, if the second one turned on, then the stimid is 2.
             % DATA.PARAMETERS is an Nx1 cell array of stimulus parameters. If the device provides no parameters,
             %    then this will be an empty cell array of size Nx1. This is read from the first metadata channel.
+            % DATA.ANALOG is an Nx1 vector with any analog data produced by the stimulator
             % T.STIMOPENCLOSE is an Nx2 vector of stimulus 'setup' and 'shutdown' times, if applicable. For example,
             %    a visual stimulus might begin or end with the presentation of a 'background' image. These times will
             %    be encoded here. If there is no information about stimulus setup or shutdown, then
@@ -54,11 +55,16 @@ classdef stimulator < ndi.probe.timeseries
             %    There will be one entry per event channel. In a visual stimulus system, the first event channel
             %    should be data frame events (when the video monitor updates). The second event channel can be the
             %    monitor's refresh rate, if it has one.
+            % T.ANALOG is the time of each analog sample
             %
             % TIMEREF is an ndi.time.timereference object that refers to this EPOCH.
             %
             % See also: ndi.probe.timeseries/READTIMESERIES
             %
+
+            data = struct;
+            t = struct;
+
             [dev,devname,devepoch,channeltype,channel]=ndi_probe_timeseries_stimulator_obj.getchanneldevinfo(epoch);
             eid = ndi_probe_timeseries_stimulator_obj.epochid(epoch);
 
@@ -72,7 +78,25 @@ classdef stimulator < ndi.probe.timeseries
             channel_metadata = channel(md_index);
             channeltype = channeltype(non_md);
             channel=channel(non_md);
-
+            analogIndex = find(strcmp('ai',channeltype));
+            hasAnalogData = ~isempty(analogIndex);
+            if hasAnalogData
+                sr = samplerate(dev{1}, devepoch{1}, channeltype, channel);
+                if numel(unique(sr))~=1
+                    error(['Do not know how to handle multiple sampling rates across channels.']);
+                end
+                sr = unique(sr);
+                s0 = 1+round(sr*t0);
+                s1 = 1+round(sr*t1);
+                data.analog = dev{1}.readchannels_epochsamples(channeltype(analogIndex),channel(analogIndex),devepoch{1},s0,s1);
+                timechannel = ndi.daq.reader.mfdaq.channelsepoch2timechannelinfo(dev{1}.getchannelsepoch(devepoch{1}),channeltype,channel);
+                if isnan(timechannel(1))
+                    t.analog = NaN;
+                else
+                    [t.analog] = readchannels_epochsamples(dev{1}, {'time'}, timechannel(1), devepoch{1}, s0, s1);
+                    t.analog = t.analog(:);
+                end                
+            end
             [timestamps,edata] = readevents(dev{1},channeltype,channel,devepoch{1},t0,t1);
             if ~iscell(edata),
                 timestamps = {timestamps};
