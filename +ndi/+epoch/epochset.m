@@ -579,4 +579,27 @@ classdef epochset
 
     end % methods
 
+    methods (Static)
+        function e = epochtable2epocharray(et,epochset_object)
+            % EPOCHTABLE2EPOCHARRAY - convert an epochtable to an array of ndi.epoch objects
+            % 
+            % E = EPOCHTABLE2EPOCHARRAY(ET, EPOCHSET_OBJECT)
+            %
+            % Given ET an epochtable of an ndi.epoch.epochset object, produce an array
+            % of ndi.epoch objects. It is assumed that the epochtable was generated
+            % by the ndi.epoch.epochset object EPOCHSET_OBJECT.
+            %
+                e = ndi.epoch.empty();
+                for i=1:numel(et),
+                    e_here = ndi.epoch('epoch_number',et(i).epoch_number,...
+                        'epoch_id',et(i).epoch_id,...
+                        'epoch_session_id',et(i).epoch_session_id,...
+                        'epochprobemap',et(i).epochprobemap,...
+                        'epoch_clock', [et(i).epoch_clock{:}],...
+                        't0_t1', et(i).t0_t1,...
+                        'epochset_object', epochset_object,...
+                        'underlying_epochs', []); % need something here
+                end
+        end % epochtable2epocharray
+    end % static methods
 end % classdef

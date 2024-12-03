@@ -39,7 +39,7 @@ classdef epoch < handle & matlab.mixin.SetGet
              %                           |   This epoch ID uniquely specifies the epoch.
              % 'epoch_session_id'        | The session ID that contains this epoch
              % 'epochprobemap'           | Any contents information for each epoch, usually of type ndi.epoch.epochprobemap or empty.
-             % 'epoch_clock'             | A cell array of ndi.time.clocktype objects that describe the type of clocks available
+             % 'epoch_clock'             | An array of ndi.time.clocktype objects that describe the type of clocks available
              % 't0_t1'                   | A cell array of ordered pairs [t0 t1] that indicates the start and stop of the epoch
              %                           |   for each respective epoch_clock{}. The time units of t0_t1{i} match epoch_clock{i}.
              % 'epochset_object'         | The ndi.epochset object that has the epoch
