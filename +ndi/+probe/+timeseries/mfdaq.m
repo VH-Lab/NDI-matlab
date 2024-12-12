@@ -90,7 +90,7 @@ classdef mfdaq < ndi.probe.timeseries
                 [data,t,timeref_out] = read_epochsamples(ndi_probe_timeseries_mfdaq_obj, epoch, s0, s1);
             end
 
-        end % read_epochsamples()
+        end % readtimeseriesepoch()
 
         function sr = samplerate(ndi_probe_timeseries_mfdaq_obj, epoch)
             % SAMPLERATE - GET THE SAMPLE RATE FOR A PROBE IN AN EPOCH

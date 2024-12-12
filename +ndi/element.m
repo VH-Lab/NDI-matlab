@@ -229,63 +229,63 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
             % 'underlying_epochs'       | A structure array of the ndi.epoch.epochset objects that comprise these epochs.
             %                           |   It contains fields 'underlying', 'epoch_number', and 'epoch_id'
 
-            ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
-            et = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
+                ue = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1');
+                et = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','epoch_clock','t0_t1','underlying_epochs');
 
-            % pull all the devices from the session and look for device strings that match this probe
+                % pull all the devices from the session and look for device strings that match this probe
 
-            underlying_et = et;
-            if ~isempty(ndi_element_obj.underlying_element),
-                underlying_et = ndi_element_obj.underlying_element.epochtable();
-            end;
+                underlying_et = et;
+                if ~isempty(ndi_element_obj.underlying_element)
+                    underlying_et = ndi_element_obj.underlying_element.epochtable();
+                end;
 
-            if ndi_element_obj.direct,
-                ib = 1:numel(underlying_et);
-                ia = 1:numel(underlying_et);
-            else,
-                et_added = ndi_element_obj.loadaddedepochs();
-                if isempty(ndi_element_obj.underlying_element),
-                    c = {et_added.epoch_id};
-                    ia = 1:numel(et_added);
-                    ib = [];
-                else,
-                    % if there are underlying epochs, we need to make sure we have the right mapping
-                    % of epochids between the underlying and the current level
-                    [c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
-                end;
-            end
+                if ndi_element_obj.direct
+                    ib = 1:numel(underlying_et);
+                    ia = 1:numel(underlying_et);
+                else
+                    et_added = ndi_element_obj.loadaddedepochs();
+                    if isempty(ndi_element_obj.underlying_element)
+                        c = {et_added.epoch_id};
+                        ia = 1:numel(et_added);
+                        ib = [];
+                    else
+                        % if there are underlying epochs, we need to make sure we have the right mapping
+                        % of epochids between the underlying and the current level
+                        [c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
+                    end
+                end
 
-            for n=1:numel(ia),
-                et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
-                et_(1).epoch_number = n;
-                et_(1).epoch_session_id = ndi_element_obj.session.id();
-                if ~isempty(ndi_element_obj.underlying_element),
-                    et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
-                else,
-                    et_(1).epoch_id = et_added(ia(n)).epoch_id;
-                end;
-                if ndi_element_obj.direct,
-                    et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
-                    et_(1).t0_t1 = underlying_et(ib(n)).t0_t1;
-                    et_(1).epochprobemap = underlying_et(ib(n)).epochprobemap;
-                else,
-                    et_(1).epochprobemap = []; % not applicable for non-direct elements
-                    et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
-                    et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
-                end;
-                underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
-                if ~isempty(ndi_element_obj.underlying_element),
-                    underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
-                    underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
-                    underlying_epochs.epoch_session_id = underlying_et(ib(n)).epoch_session_id;
-                    underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
-                    underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
-                    underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
-                end;
-                et_(1).underlying_epochs = underlying_epochs;
-                et(end+1) = et_;
-            end
-        end; % buildepochtable
+                for n=1:numel(ia),
+                    et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
+                    et_(1).epoch_number = n;
+                    et_(1).epoch_session_id = ndi_element_obj.session.id();
+                    if ~isempty(ndi_element_obj.underlying_element),
+                        et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
+                    else,
+                        et_(1).epoch_id = et_added(ia(n)).epoch_id;
+                    end;
+                    if ndi_element_obj.direct,
+                        et_(1).epoch_clock = underlying_et(ib(n)).epoch_clock;
+                        et_(1).t0_t1 = underlying_et(ib(n)).t0_t1;
+                        et_(1).epochprobemap = underlying_et(ib(n)).epochprobemap;
+                    else,
+                        et_(1).epochprobemap = []; % not applicable for non-direct elements
+                        et_(1).epoch_clock = et_added(ia(n)).epoch_clock;
+                        et_(1).t0_t1 = et_added(ia(n)).t0_t1(:)';
+                    end;
+                    underlying_epochs = vlt.data.emptystruct('underlying','epoch_id','epoch_session_id', 'epochprobemap','epoch_clock');
+                    if ~isempty(ndi_element_obj.underlying_element),
+                        underlying_epochs(1).underlying = ndi_element_obj.underlying_element;
+                        underlying_epochs.epoch_id = underlying_et(ib(n)).epoch_id;
+                        underlying_epochs.epoch_session_id = underlying_et(ib(n)).epoch_session_id;
+                        underlying_epochs.epochprobemap = underlying_et(ib(n)).epochprobemap;
+                        underlying_epochs.epoch_clock = underlying_et(ib(n)).epoch_clock;
+                        underlying_epochs.t0_t1 = underlying_et(ib(n)).t0_t1;
+                    end;
+                    et_(1).underlying_epochs = underlying_epochs;
+                    et(end+1) = et_;
+                end
+        end; % buildepochtable()
 
         %% unique ndi.element methods
 

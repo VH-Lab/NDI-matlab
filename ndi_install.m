@@ -69,7 +69,7 @@ function b = ndi_install(directory, dependencies)
             case 1,
                 dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/NDI-matlab/main/ndi-matlab-dependencies.json';
             case 2,
-                dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/main/vhtools_standard_distribution.json';
+                dependencies_filepath = 'https://raw.githubusercontent.com/VH-Lab/vhlab_vhtools/refs/heads/master/vhtools_standard_distribution.json';
             case 3,
                 dependencies_filepath = fullfile(ndi.util.toolboxdir, 'ndi-matlab-dependencies.json');
         end;
