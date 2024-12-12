@@ -1,4 +1,4 @@
-classdef clocktype
+classdef clocktype < matlab.mixin.Heterogeneous
     % NDI_CLOCKTYPE - a class for specifying a clock type in the NDI framework
     %
     %
