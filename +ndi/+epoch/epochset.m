@@ -74,14 +74,12 @@ classdef epochset
         end % epochtable
 
         function epochobjectarray = getepocharray(ndi_epochset_obj)
-            % EPOCHTABLE2EPOCHARRAY - convert an epochtable to an array of ndi.epoch objects
+            % GETEPOCHARRAY - Return an array of ndi.epoch objects that relates the current object's epochs to underlying epochs
             % 
-            % E = EPOCHTABLE2EPOCHARRAY(ET, EPOCHSET_OBJECT)
+            % EPOCHOBJECTARRAY = GETEPOCHARRAY(NDI_EPOCHSET_OBJ)
             %
-            % Given ET an epochtable of an ndi.epoch.epochset object, produce an array
-            % of ndi.epoch objects. It is assumed that the epochtable was generated
-            % by the ndi.epoch.epochset object EPOCHSET_OBJECT.
-            %
+            % Produce an array of ndi.epoch objects from the epoch table of this
+            % ndi.epoch.epochset object (NDI_EPOCHSET_OBJ).
 
             [et, ~] = ndi_epochset_obj.epochtable();
             
