@@ -1,4 +1,4 @@
-classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
+classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.mixin.Heterogeneous
     % ndi.element - define or examine a element in the session
     %
     properties (GetAccess=public, SetAccess=protected)
@@ -28,6 +28,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice
             % element.
             %
             set_identifier = 0;
+
+            if nargin == 0;
+                return % Support 0-argument construction
+            end
 
             needs_newdocument_call = 1;
 
