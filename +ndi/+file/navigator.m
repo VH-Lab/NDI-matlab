@@ -7,6 +7,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS)
     end
 
+    properties (Access = private)
+        cached_epochfilenames
+    end
+
     methods
         function obj = navigator(session_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
             % ndi.file.navigator - Create a new ndi.file.navigator object that is associated with an session and daqsystem
@@ -92,6 +96,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 obj.epochprobemap_fileparameters = {};
             end;
 
+            if isempty(obj.cached_epochfilenames)
+                obj.cached_epochfilenames = containers.Map(...
+                    'KeyType', 'double', 'ValueType', 'any');
+            end
         end; % filenavigator()
 
         %% functions that used to override HANDLE
@@ -308,7 +316,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             % default
             ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number);
-
+            
             % see if we need to use a different name based on EPOCHPROBEMAP_FILEPARAMETERS
 
             if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
@@ -593,6 +601,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             % developer note: possibility of caching this with some timeout
             % developer note: this function exists so you can get the epoch files without calling epochtable, which also
             %   needs to get the epoch files; infinite recursion happens
+            
+            if isKey(ndi_filenavigator_obj.cached_epochfilenames, epoch_number)
+                fullpathfilenames = ndi_filenavigator_obj.cached_epochfilenames(epoch_number);
+                return
+            end
 
             all_epochs = ndi_filenavigator_obj.selectfilegroups();
             out_of_bounds = find(epoch_number>numel(all_epochs));
@@ -604,6 +617,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             if numel(epoch_number)==1,
                 fullpathfilenames = fullpathfilenames{1};
             end
+            ndi_filenavigator_obj.cached_epochfilenames(epoch_number) = fullpathfilenames;
         end % getepochfiles_number()
 
         function fmstr = filematch_hashstring(ndi_filenavigator_obj)
