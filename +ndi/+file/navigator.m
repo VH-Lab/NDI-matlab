@@ -254,24 +254,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 epochfiles = getepochfiles(ndi_filenavigator_obj,epoch_number);
             end
 
-            try,
+            if ndi.file.navigator.isingested(epochfiles)
                 id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-            end;
-            if ~isempty(id),
-                return;
-            end;
-
-            eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
-
-            if isfile(eidfname),
-                id = text2cellstr(eidfname);
-                id = id{1};
-            else,
-                id = ['epoch_' ndi.ido.unique_id()];
-                str2text(eidfname,id);
+            else
+                eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
+                if isfile(eidfname),
+                    id = text2cellstr(eidfname);
+                    id = id{1};
+                else,
+                    id = ['epoch_' ndi.ido.unique_id()];
+                    str2text(eidfname,id);
+                end
             end
         end %epochid()
-
+        
         function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
             % EPOCHIDFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
             %
