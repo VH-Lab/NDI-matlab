@@ -17,6 +17,10 @@ Identifier	Name	Description
 15	Purpose: To measure the pyloric rhythym	States that the purpose of the measurement is to observe the pyloric rhythym 
 16	Purpose: to measure the gastric mill rhythym	States that the purpose of the measurement is to observe the gastric mill rhythym
 17	Microelectrode voltage offset	A voltage offset measured at the end of a voltage record, in V
-18	Treatment: Acclimation onset time	The subject was acclimated to a temperature at a particular onset time
+18	Treatment: Acclimation onset time	The subject was acclimated to a temperature at a particular onset time.
 19	Treatment: Acclimation temperature	The temperature (in degrees C) at which the subject was acclimated.
-20	Non-survival experiment time	The subject was used in a non-survival experiment
+20	Non-survival experiment time	The subject was used in a non-survival experiment.
+21	Treatment: left eye premature eye opening	The subject's left eye was opened prematurely, before natural eye opening.
+22	Treatment: right eye premature eye opening	The subject's right eye was opened prematurely, before natural eye opening.
+23	Treatment: natural left eye opening	The subject's left eye was allowed to open naturally.
+24	Treatment: natural right eye opening	The subject's right eye was allowed to open naturally.
