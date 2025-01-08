@@ -18,7 +18,7 @@ function EEData = getEarlyEyeOpening(D)
 % | probe_hemisphere  | Hemisphere location information of the probe   |
 % | left_eye          | Treatment information for the left eye         |
 % | right_eye         | Treatment information for the right eye        |
-% | epoch_data        | A structure with the following fields:         |
+% | spike_data        | A structure with the following fields:         |
 % |                   |    element_info: Information about the element | 
 % |                   |    epoch_data  : A structure with fields:      |
 % |                   |        epoch_id   : Epoch ID                   |
@@ -37,7 +37,7 @@ function EEData = getEarlyEyeOpening(D)
 
 
 EEData = vlt.data.emptystruct('subject_name','subject_id',...
-   'probe_name','probe_hemisphere','left_eye','right_eye','epoch_data');
+   'probe_name','probe_hemisphere','left_eye','right_eye','spike_data');
 
 % Let's inspect our subjects:
 s = D.database_search(ndi.query('','isa','subject'));
@@ -83,7 +83,7 @@ for i=1:numel(s)
             fData.probe_hemisphere = locDoc{1}.document_properties.probe_location;
         end;
 
-        fData.epoch_data = ndi.example.fun.probe2elements(probes_sub{j});
+        fData.spike_data = ndi.example.fun.probe2spiketimes(probes_sub{j});
 
         EEData(end+1) = fData;
 

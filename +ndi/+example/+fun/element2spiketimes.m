@@ -41,7 +41,7 @@ et = e.epochtable();
 epoch_data = vlt.data.emptystruct('epoch_id','spiketimes','t0_t1');
 for j=1:numel(et)
     epoch_data_here.epoch_id = et(j).epoch_id;
-    epoch_data_here.spiketimes = e.readtimeseries(et(j).epoch_id,-inf,inf);
+    [values,epoch_data_here.spiketimes] = e.readtimeseries(et(j).epoch_id,-inf,inf);
     epoch_data_here.t0_t1 = et(j).t0_t1{1};
     epoch_data(end+1) = epoch_data_here;
 end
