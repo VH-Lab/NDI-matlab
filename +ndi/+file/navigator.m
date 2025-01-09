@@ -100,6 +100,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 obj.cached_epochfilenames = containers.Map(...
                     'KeyType', 'double', 'ValueType', 'any');
             end
+            obj.private_flags = containers.Map();
         end; % filenavigator()
 
         %% functions that used to override HANDLE
@@ -477,11 +478,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             epochfiles_disk = ndi_filenavigator_obj.selectfilegroups_disk();
 
             % Step 2: see if we have any ingested epochs
+            d_ingested = [];
+                        
+            [has_ingested_epoch, ~] = ndi_filenavigator_obj.get_cached_value(obj, 'has_ingested_epoch');
 
-            epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
-                ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
-                ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
-            d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
+            checkIngested = ~isempty(has_ingested_epoch) || has_ingested_epoch;
+            
+            if checkIngested % todo: reset flag in ingest method?
+                epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
+                    ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
+                    ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
+                d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
+
+                ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', ~isempty(d_ingested);
+            end
 
             if isempty(d_ingested), % nothing ingested,
                 epochfiles = epochfiles_disk;
@@ -742,6 +752,35 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end; %
     end % methods
 
+    methods (Access = private)
+
+        function [value, hashvalue] = get_cached_value(obj, name)
+            value = [];
+            hashvalue = [];
+            [cache, objectkey] = obj.getcache();
+            valuekey = strcat(objectkey, '_', name);
+
+            if (~isempty(cache) & ~isempty(valuekey))
+                table_entry = cache.lookup(valuekey, 'value-hash');
+                if ~isempty(table_entry)
+                    value = table_entry(1).data.value;
+                    hashvalue = table_entry(1).data.hashvalue;
+                end
+            end
+        end
+
+        function add_cached_value(obj, name, value)
+            hashvalue = vlt.data.hashmatlabvariable(value);
+            [cache, objectkey] = obj.getcache();
+            valuekey = strcat(objectkey, '_', name);
+
+            if ~isempty(cache)
+                priority = 1; % use higher than normal priority
+                cache.add(valuekey,'value-hash',struct('value',value,'hashvalue',hashvalue),priority);
+            end
+        end
+    end
+    
     methods (Static) % static methods
         function b = isingested(epochfiles)
             % ISINGESTED - is a set of epochfiles ingested?
