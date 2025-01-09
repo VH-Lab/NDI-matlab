@@ -8,6 +8,8 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
     end
 
     properties (Access = private)
+        % Note: This value will be a containers.Map. This support changes
+        % being saved to object even though object is a value-type object
         cached_epochfilenames
     end
 
@@ -100,7 +102,6 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 obj.cached_epochfilenames = containers.Map(...
                     'KeyType', 'double', 'ValueType', 'any');
             end
-            obj.private_flags = containers.Map();
         end; % filenavigator()
 
         %% functions that used to override HANDLE
@@ -479,18 +480,16 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             % Step 2: see if we have any ingested epochs
             d_ingested = [];
-                        
-            [has_ingested_epoch, ~] = ndi_filenavigator_obj.get_cached_value(obj, 'has_ingested_epoch');
+            has_ingested_epoch = ndi_filenavigator_obj.get_cached_value('has_ingested_epoch', 'logical');
 
-            checkIngested = ~isempty(has_ingested_epoch) || has_ingested_epoch;
-            
-            if checkIngested % todo: reset flag in ingest method?
+            check_ingested = isempty(has_ingested_epoch) || has_ingested_epoch;
+            if check_ingested
                 epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
                     ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
                     ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
                 d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
 
-                ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', ~isempty(d_ingested);
+                ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
             end
 
             if isempty(d_ingested), % nothing ingested,
@@ -695,6 +694,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                     end;
                 end;
             end;
+            ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
         end;
 
         function [d_ingested] = find_ingested_documents(ndi_filenavigator_obj)
@@ -753,30 +753,26 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
     end % methods
 
     methods (Access = private)
-
-        function [value, hashvalue] = get_cached_value(obj, name)
+        function value = get_cached_value(obj, name, type)
             value = [];
-            hashvalue = [];
             [cache, objectkey] = obj.getcache();
             valuekey = strcat(objectkey, '_', name);
 
             if (~isempty(cache) & ~isempty(valuekey))
-                table_entry = cache.lookup(valuekey, 'value-hash');
+                table_entry = cache.lookup(valuekey, type);
                 if ~isempty(table_entry)
-                    value = table_entry(1).data.value;
-                    hashvalue = table_entry(1).data.hashvalue;
+                    value = table_entry(1).data;
                 end
             end
         end
 
-        function add_cached_value(obj, name, value)
-            hashvalue = vlt.data.hashmatlabvariable(value);
+        function add_cached_value(obj, name, type, value)
             [cache, objectkey] = obj.getcache();
             valuekey = strcat(objectkey, '_', name);
 
             if ~isempty(cache)
                 priority = 1; % use higher than normal priority
-                cache.add(valuekey,'value-hash',struct('value',value,'hashvalue',hashvalue),priority);
+                cache.add(valuekey,type,value,priority);
             end
         end
     end
