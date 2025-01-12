@@ -7,6 +7,12 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         epochprobemap_fileparameters  % The parameters for finding the epochprobemap files (see ndi.file.navigator/SETEPOCHPROBEMAPFILEPARAMETERS)
     end
 
+    properties (Access = private)
+        % Note: This value will be a containers.Map. This support changes
+        % being saved to object even though object is a value-type object
+        cached_epochfilenames
+    end
+
     methods
         function obj = navigator(session_, fileparameters_, epochprobemap_class_, epochprobemap_fileparameters_)
             % ndi.file.navigator - Create a new ndi.file.navigator object that is associated with an session and daqsystem
@@ -92,6 +98,10 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 obj.epochprobemap_fileparameters = {};
             end;
 
+            if isempty(obj.cached_epochfilenames)
+                obj.cached_epochfilenames = containers.Map(...
+                    'KeyType', 'double', 'ValueType', 'any');
+            end
         end; % filenavigator()
 
         %% functions that used to override HANDLE
@@ -246,24 +256,20 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                 epochfiles = getepochfiles(ndi_filenavigator_obj,epoch_number);
             end
 
-            try,
+            if ndi.file.navigator.isingested(epochfiles)
                 id = ndi.file.navigator.ingestedfiles_epochid(epochfiles);
-            end;
-            if ~isempty(id),
-                return;
-            end;
-
-            eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
-
-            if isfile(eidfname),
-                id = text2cellstr(eidfname);
-                id = id{1};
-            else,
-                id = ['epoch_' ndi.ido.unique_id()];
-                str2text(eidfname,id);
+            else
+                eidfname = epochidfilename(ndi_filenavigator_obj, epoch_number, epochfiles);
+                if isfile(eidfname),
+                    id = text2cellstr(eidfname);
+                    id = id{1};
+                else,
+                    id = ['epoch_' ndi.ido.unique_id()];
+                    str2text(eidfname,id);
+                end
             end
         end %epochid()
-
+        
         function eidfname = epochidfilename(ndi_filenavigator_obj, number, epochfiles)
             % EPOCHIDFILENAME - return the file path for the ndi.epoch.epochprobemap_daqsystem file for an epoch
             %
@@ -308,7 +314,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             %
             % default
             ecfname = defaultepochprobemapfilename(ndi_filenavigator_obj, number);
-
+            
             % see if we need to use a different name based on EPOCHPROBEMAP_FILEPARAMETERS
 
             if ~isempty(ndi_filenavigator_obj.epochprobemap_fileparameters),
@@ -473,11 +479,18 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             epochfiles_disk = ndi_filenavigator_obj.selectfilegroups_disk();
 
             % Step 2: see if we have any ingested epochs
+            d_ingested = [];
+            has_ingested_epoch = ndi_filenavigator_obj.get_cached_value('has_ingested_epoch', 'logical');
 
-            epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
-                ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
-                ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
-            d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
+            check_ingested = isempty(has_ingested_epoch) || has_ingested_epoch;
+            if check_ingested
+                epoch_query = ndi.query('','isa','epochfiles_ingested') & ...
+                    ndi.query('','depends_on','filenavigator_id',ndi_filenavigator_obj.id()) & ...
+                    ndi.query('base.session_id','exact_string',ndi_filenavigator_obj.session.id());
+                d_ingested = ndi_filenavigator_obj.session.database_search(epoch_query);
+
+                ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
+            end
 
             if isempty(d_ingested), % nothing ingested,
                 epochfiles = epochfiles_disk;
@@ -593,6 +606,11 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             % developer note: possibility of caching this with some timeout
             % developer note: this function exists so you can get the epoch files without calling epochtable, which also
             %   needs to get the epoch files; infinite recursion happens
+            
+            if isKey(ndi_filenavigator_obj.cached_epochfilenames, epoch_number)
+                fullpathfilenames = ndi_filenavigator_obj.cached_epochfilenames(epoch_number);
+                return
+            end
 
             all_epochs = ndi_filenavigator_obj.selectfilegroups();
             out_of_bounds = find(epoch_number>numel(all_epochs));
@@ -604,6 +622,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
             if numel(epoch_number)==1,
                 fullpathfilenames = fullpathfilenames{1};
             end
+            ndi_filenavigator_obj.cached_epochfilenames(epoch_number) = fullpathfilenames;
         end % getepochfiles_number()
 
         function fmstr = filematch_hashstring(ndi_filenavigator_obj)
@@ -675,6 +694,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                     end;
                 end;
             end;
+            ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
         end;
 
         function [d_ingested] = find_ingested_documents(ndi_filenavigator_obj)
@@ -732,6 +752,31 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
         end; %
     end % methods
 
+    methods (Access = private)
+        function value = get_cached_value(obj, name, type)
+            value = [];
+            [cache, objectkey] = obj.getcache();
+            valuekey = strcat(objectkey, '_', name);
+
+            if (~isempty(cache) & ~isempty(valuekey))
+                table_entry = cache.lookup(valuekey, type);
+                if ~isempty(table_entry)
+                    value = table_entry(1).data;
+                end
+            end
+        end
+
+        function add_cached_value(obj, name, type, value)
+            [cache, objectkey] = obj.getcache();
+            valuekey = strcat(objectkey, '_', name);
+
+            if ~isempty(cache)
+                priority = 1; % use higher than normal priority
+                cache.add(valuekey,type,value,priority);
+            end
+        end
+    end
+    
     methods (Static) % static methods
         function b = isingested(epochfiles)
             % ISINGESTED - is a set of epochfiles ingested?
