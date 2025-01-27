@@ -24,8 +24,8 @@ function t = all_documents2markdown(varargin)
         [doc_path d(i).name],
         if strcmp([doc_path d(i).name],'ndi_validate_config.json'),
             continue;
-        end; % special file
-        doc = ndi.document([doc_path d(i).name]);
+        end; % special file        
+        doc = ndi.document([d(i).name(1:end-5)]); % drop .json
         [md,info] = ndi.docs.document2markdown(doc);
         [input_path filesep d(i).name],
         vlt.file.createpath([output_path info.localurl]);
