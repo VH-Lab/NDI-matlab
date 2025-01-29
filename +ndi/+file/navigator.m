@@ -694,7 +694,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
                     end;
                 end;
             end;
-            ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(d_ingested));
+            ndi_filenavigator_obj.add_cached_value('has_ingested_epoch', 'logical', ~isempty(docs_out));
         end;
 
         function [d_ingested] = find_ingested_documents(ndi_filenavigator_obj)
