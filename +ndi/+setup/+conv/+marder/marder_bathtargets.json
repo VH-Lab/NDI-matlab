@@ -1,14 +1,14 @@
 {
 	"upper": [
-		{"location": "uberon:8910022"},
-		{"location": "uberon:8910018"},
-		{"location": "uberon:8910021"},
-		{"location": "uberon:8910021"},
-		{"location": "uberon:8910019"},
-		{"location": "uberon:8910017"}
+		{"location": "UBERON:8910022"},
+		{"location": "UBERON:8910018"},
+		{"location": "UBERON:8910021"},
+		{"location": "UBERON:8910021"},
+		{"location": "UBERON:8910019"},
+		{"location": "UBERON:8910017"}
 	],
 	"lower": [
-		{ "location": "uberon:8910010" }   
+		{ "location": "UBERON:8910010" }   
         ],
 	"bath": [
 		{ "location": "NCIm:C0179246"}

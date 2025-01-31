@@ -41,7 +41,7 @@ function docs = temptable2stimulusparameters(S)
             if strcmp(last_match.type,"constant"),
                 eid.epochid = et(i).epoch_id;
                 d_struct.ontology_name = const_o;
-                d_struct.name = 'constant temperature';
+                d_struct.name = 'Command temperature constant';
                 d_struct.value = last_match.temp{1};
                 d_here = ndi.document('stimulus_parameter','stimulus_parameter',d_struct,...
                     'epochid',eid) + S.newdocument();

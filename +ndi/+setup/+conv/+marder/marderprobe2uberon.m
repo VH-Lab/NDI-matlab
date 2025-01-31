@@ -24,7 +24,7 @@ function d = marderprobe2uberon(S)
             if isempty(ontol),
                 error(['Could not find entry ' char(t{index,"name"}{1}) '.']);
             end;
-            identifier = ['uberon:' int2str(ontol(1).Identifier)];
+            identifier = ['UBERON:' int2str(ontol(1).Identifier)];
             pl.ontology_name = identifier;
             pl.name = t{index,"name"}{1};
             d_here = ndi.document('probe_location','probe_location',pl) + S.newdocument();

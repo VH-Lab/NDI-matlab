@@ -56,8 +56,8 @@ function [item] = uberon_ontology_lookup(field, value)
     s = table2struct(readtable(filename,'delimiter','\t'));
 
     if strcmp(field,'Identifier')
-        if startsWith(value,'uberon:')
-            value = str2double(value(1+numel('uberon:'):end));
+        if startsWith(value,'UBERON:')
+            value = str2double(value(1+numel('UBERON:'):end));
         end
         % we have a number
         item = s([s.Identifier]==value);
