@@ -48,9 +48,5 @@ function [labels, docs] = lookup_uberon_term(term_name, options)
       labels{i} = docs(i).label;
   end
 
-  % Check if any results were found
-  if isempty(labels)
-      warning('Term not found in UBERON ontology.');
-  end
 end
 

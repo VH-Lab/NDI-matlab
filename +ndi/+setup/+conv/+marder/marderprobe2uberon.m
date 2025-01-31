@@ -20,7 +20,7 @@ function d = marderprobe2uberon(S)
         index = find(strcmp(p{i}.name,t.("probe")));
         if ~isempty(index),
             disp(['Found entry for ' p{i}.name '...']);
-            ontol = ndi.database.fun.uberon_ontology_lookup('Name',t{index,"name"});
+            ontol = ndi.database.fun.uberon_ontology_lookup('Name',t{index,"name"}{1});
             if isempty(ontol),
                 error(['Could not find entry ' char(t{index,"name"}{1}) '.']);
             end;

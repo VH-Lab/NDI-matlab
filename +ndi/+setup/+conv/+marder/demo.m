@@ -25,7 +25,7 @@ for i=1:numel(m_doc),
 
     stim_param_docs = S.database_search(q_m & q_const);
 
-    lvn = ndi.database.fun.uberon_ontology_lookup('Name','lateral ventricular nerve');
+    lvn = ndi.database.fun.uberon_ontology_lookup('Name','lateral ventricular nerve (sensu Cancer borealis)');
     probe_locs_q = ndi.query('probe_location.ontology_name','exact_string',['uberon:' int2str(lvn.Identifier)]);
     pD = S.database_search(probe_locs_q);
     P = {}; % probe list

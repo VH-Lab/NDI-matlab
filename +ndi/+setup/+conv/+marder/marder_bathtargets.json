@@ -1,14 +1,14 @@
 {
 	"upper": [
-		{"location": "uberon:3386"},
-		{"location": "uberon:3384"},
-		{"location": "uberon:3383"},
-		{"location": "uberon:3382"},
-		{"location": "uberon:3381"},
-		{"location": "uberon:3380"}
+		{"location": "uberon:8910022"},
+		{"location": "uberon:8910018"},
+		{"location": "uberon:8910021"},
+		{"location": "uberon:8910021"},
+		{"location": "uberon:8910019"},
+		{"location": "uberon:8910017"}
 	],
 	"lower": [
-		{ "location": "uberon:3385" }   
+		{ "location": "uberon:8910010" }   
         ],
 	"bath": [
 		{ "location": "NCIm:C0179246"}

@@ -13,7 +13,7 @@ function [item] = uberon_ontology_lookup(field, value)
     %
     % Example:
     %   item = ndi.database.fun.uberon_ontology_lookup(...
-    %     'Name','lateral ventricular nerve');
+    %     'Name','lateral ventricular nerve (sensu Cancer borealis)');
     %
 
     arguments 
@@ -21,7 +21,34 @@ function [item] = uberon_ontology_lookup(field, value)
         value (1,:) 
     end
 
+    isRealUberon = false;
 
+    if strcmp(field,'Name')
+       [labels,docs] = ndi.database.fun.lookup_uberon_term(value,'exact',true);
+       if numel(docs)==1
+           isRealUberon = true;
+           item.Description = docs.description{1};
+           item.Identifier = str2double(regexp(docs.obo_id, 'UBERON:(\d+)', 'tokens', 'once'));
+           item.Name = labels{1};
+       end;
+    elseif strcmp(field,'Identifier')
+        if ischar(value) | isstring(value),
+            valueStr = char(value);
+        else,
+            valueStr = ['UBERON:' int2str(value)];
+        end;
+        [labels,docs] = ndi.database.fun.lookup_uberon_term(valueStr,'queryFields','obo_id','exact',true);
+        if numel(docs)==1
+           isRealUberon = true;
+           item.Description = docs.description{1};
+           item.Identifier = str2double(regexp(docs.obo_id, 'UBERON:(\d+)', 'tokens', 'once'));
+           item.Name = labels{1};
+        end
+    end
+
+    if isRealUberon
+        return;
+    end
 
     filename = fullfile(ndi.common.PathConstants.CommonFolder,...
         'controlled_vocabulary','uberon_temp.txt');
