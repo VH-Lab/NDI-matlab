@@ -161,6 +161,7 @@
             - ndi.database.fun.findallantecedents: 'NDI-matlab/reference/+ndi/+database/+fun/findallantecedents.m.md'
             - ndi.database.fun.findalldependencies: 'NDI-matlab/reference/+ndi/+database/+fun/findalldependencies.m.md'
             - ndi.database.fun.finddocs_missing_dependencies: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
+            - ndi.database.fun.lookup_uberon_term: 'NDI-matlab/reference/+ndi/+database/+fun/lookup_uberon_term.m.md'
             - ndi.database.fun.ndi_document2ndi_object: 'NDI-matlab/reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
             - ndi.database.fun.ndicloud_ontology_lookup: 'NDI-matlab/reference/+ndi/+database/+fun/ndicloud_ontology_lookup.m.md'
             - ndi.database.fun.openMINDSobj2ndi_document: 'NDI-matlab/reference/+ndi/+database/+fun/openMINDSobj2ndi_document.m.md'
@@ -183,7 +184,6 @@
               - ndi.database.implementations.database.didsqlite: 'NDI-matlab/reference/+ndi/+database/+implementations/+database/didsqlite.m.md'
               - ndi.database.implementations.database.matlabdumbjsondb: 'NDI-matlab/reference/+ndi/+database/+implementations/+database/matlabdumbjsondb.m.md'
               - ndi.database.implementations.database.matlabdumbjsondb2: 'NDI-matlab/reference/+ndi/+database/+implementations/+database/matlabdumbjsondb2.m.md'
-              - ndi.database.implementations.database.postgresdb: 'NDI-matlab/reference/+ndi/+database/+implementations/+database/postgresdb.m.md'
             - fun PACKAGE:
               - ndi.database.implementations.fun.doc2ingesteddbfilename: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/doc2ingesteddbfilename.m.md'
               - ndi.database.implementations.fun.expell: 'NDI-matlab/reference/+ndi/+database/+implementations/+fun/expell.m.md'
@@ -268,6 +268,7 @@
           - ndi.docs.all_documents2markdown: 'NDI-matlab/reference/+ndi/+docs/all_documents2markdown.m.md'
           - ndi.docs.build: 'NDI-matlab/reference/+ndi/+docs/build.m.md'
           - ndi.docs.calcbuild: 'NDI-matlab/reference/+ndi/+docs/calcbuild.m.md'
+          - ndi.docs.concatenateFiles: 'NDI-matlab/reference/+ndi/+docs/concatenateFiles.m.md'
           - ndi.docs.document2markdown: 'NDI-matlab/reference/+ndi/+docs/document2markdown.m.md'
           - ndi.docs.schemastructure2docstructure: 'NDI-matlab/reference/+ndi/+docs/schemastructure2docstructure.m.md'
         - element PACKAGE:
@@ -282,7 +283,9 @@
         - example PACKAGE:
           - fun PACKAGE:
             - ndi.example.fun.element2spiketimes: 'NDI-matlab/reference/+ndi/+example/+fun/element2spiketimes.m.md'
+            - ndi.example.fun.find_epochids_with_temperature: 'NDI-matlab/reference/+ndi/+example/+fun/find_epochids_with_temperature.m.md'
             - ndi.example.fun.getEarlyEyeOpening: 'NDI-matlab/reference/+ndi/+example/+fun/getEarlyEyeOpening.m.md'
+            - ndi.example.fun.get_unique_bath_components: 'NDI-matlab/reference/+ndi/+example/+fun/get_unique_bath_components.m.md'
             - ndi.example.fun.mfdaqsysepoch2timetablestruct: 'NDI-matlab/reference/+ndi/+example/+fun/mfdaqsysepoch2timetablestruct.m.md'
             - ndi.example.fun.probe2elements: 'NDI-matlab/reference/+ndi/+example/+fun/probe2elements.m.md'
             - ndi.example.fun.probe2spiketimes: 'NDI-matlab/reference/+ndi/+example/+fun/probe2spiketimes.m.md'

@@ -19,6 +19,7 @@ function concatenateFiles(directory, outputFile, options)
 %                         ignore.
 %           'Extensions': A cell array of strings specifying the file
 %                         extensions to include (e.g., {'.txt', '.log'}).
+%           'ParentDir':  A path to be prepended to the files in 'IgnoreFile'
 %
 %   Example:
 %       concatenateFiles('my_data_dir', 'combined_data.txt');
@@ -37,6 +38,7 @@ arguments
     outputFile (1,:) {mustBeText}
     options.IgnoreFile (1,:) {mustBeText} = ''  % Default empty string
     options.Extensions (1,:) cell {mustBeText} = {} % Default empty cell array
+    options.ParentDir (1,:) char {mustBeText} = '';
 end
 
 % Load ignore list if provided
@@ -46,6 +48,9 @@ if ~isempty(options.IgnoreFile)
         ignoreList = jsondecode(fileread(options.IgnoreFile));
         if ~iscellstr(ignoreList) %check if it's a cell array of strings
             error("Ignore file must contain a json array of strings.");
+        end
+        for i=1:numel(ignoreList)
+            ignoreList{i} = [options.ParentDir filesep ignoreList{i}];
         end
     catch e
         warning('Error reading or parsing ignore file: %s. Ignoring ignore list.', e.message);
@@ -74,7 +79,7 @@ try
             continue; % Skip if extension doesn't match
         end
 
-        if ~isempty(ignoreList) && any(strcmp(file.name, ignoreList))
+        if ~isempty(ignoreList) && any(strcmp(fullPath, ignoreList))
             continue; % Skip if file is in ignore list
         end
 
