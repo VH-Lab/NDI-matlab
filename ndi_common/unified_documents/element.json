@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Element Document Schema",
+  "description": "",
+  "type": "object",
+  "required": ["document_class", "depends_on", "element"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/element.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/element_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["element"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["element"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "enum": ["$NDIDOCUMENTPATH/base.json"]
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. subject_id must not be empty, underlying_element_id may be empty.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["underlying_element_id", "subject_id"]
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      },
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "mustbenotempty": {
+        "underlying_element_id": false,
+        "subject_id": true
+      }
+    },
+    "element": {
+      "type": "object",
+      "description": "",
+      "required": ["ndi_element_class", "name", "reference", "type", "direct"],
+      "properties": {
+        "ndi_element_class": {
+          "type": "string",
+          "description": "The name of the ndi.element class that is stored.",
+          "default": "ndi.element",
+          "queryable": true
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of element. Elements are uniquely defined by a name, reference, and type.",
+          "default": "",
+          "queryable": true
+        },
+        "reference": {
+          "type": "integer",
+          "description": "The reference number of the element. Elements are uniquely defined by a name, reference, and type.",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 100000,
+          "queryable": true
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the element. Common probe types are in probetype2object.json",
+          "default": "",
+          "queryable": true
+        },
+        "direct": {
+          "type": "integer",
+          "description": "Does this element directly feed data from an underlying element?",
+          "default": 0,
+          "enum": [0, 1],
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
