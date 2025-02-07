@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Animal Subject Schema",
+  "description": "",
+  "type": "object",
+  "required": ["document_class", "animalsubject"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/animalsubject.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/animalsubject_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["animalsubject"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["animalsubject"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "default": "$NDIDOCUMENTPATH/base.json"
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "animalsubject": {
+      "type": "object",
+      "description": "",
+      "required": ["node_at_ontology"],
+      "properties": {
+        "node_at_ontology": {
+          "type": "string",
+          "description": "A node@ontology label for the species.",
+          "default": "",
+          "maxLength": 10000,
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
