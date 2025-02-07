@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Session Document Schema",
+  "description": "Schema for NDI session documents that inherit from base",
+  "type": "object",
+  "required": ["document_class", "depends_on", "session"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/session.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/session_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["session"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["session"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "enum": ["$NDIDOCUMENTPATH/base.json"]
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "List of document dependencies",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "session": {
+      "type": "object",
+      "required": ["reference"],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "description": "The reference of an ndi.session (can be any string)",
+          "default": "12345",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
