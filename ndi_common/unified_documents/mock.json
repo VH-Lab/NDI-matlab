@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Mock Document Schema",
+  "description": "",
+  "type": "object",
+  "required": ["document_class", "mock"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/mock.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/mock_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["mock"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["mock"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "enum": ["$NDIDOCUMENTPATH/base.json"]
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "mock": {
+      "type": "object",
+      "description": "",
+      "required": ["ismock", "reference", "type", "direct"],
+      "properties": {
+        "ismock": {
+          "type": "integer",
+          "description": "A parameter that denotes the document as a mock document",
+          "enum": [1],
+          "default": 1,
+          "queryable": true
+        },
+        "reference": {
+          "type": "integer",
+          "description": "The reference number of the element. Elements are uniquely defined by a name, reference, and type.",
+          "default": 1,
+          "minimum": 0,
+          "maximum": 100000,
+          "queryable": true
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of the element. Common probe types are in probetype2object.json",
+          "default": "",
+          "queryable": true
+        },
+        "direct": {
+          "type": "integer",
+          "description": "Does this element directly feed data from an underlying element?",
+          "enum": [0, 1],
+          "default": 0,
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
