@@ -1,0 +1,88 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Dataset Session Info Schema",
+  "description": "",
+  "type": "object",
+  "required": ["document_class", "depends_on", "dataset_session_info"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/dataset_session_info.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/dataset_session_info_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["dataset_session_info"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["dataset_session_info"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "enum": ["$NDIDOCUMENTPATH/base.json"]
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "List of document dependencies",
+      "items": {
+        "type": "string",
+        "description": ""
+      },
+      "default": []
+    },
+    "dataset_session_info": {
+      "type": "object",
+      "description": "",
+      "required": ["dataset_session_info"],
+      "properties": {
+        "dataset_session_info": {
+          "type": "object",
+          "description": "Session information about for an ndi.dataset object",
+          "default": "",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
