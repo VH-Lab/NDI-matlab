@@ -459,6 +459,17 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             exp_path = ndi_filenavigator_obj.path();
             epochfiles_disk = memoizedFindFileGroups(exp_path, ndi_filenavigator_obj.fileparameters.filematch);
+            % drop hidden files
+            for i=1:numel(epochfiles_disk)
+                incl = [];
+                for j=1:numel(epochfiles_disk{i})
+                    [par,fname] = fileparts(epochfiles_disk{i}{j});
+                    if fname(1)~='.'
+                        incl(end+1) = j;
+                    end
+                end
+                epochfiles_disk{i} = epochfiles_disk{i}(incl);
+            end
         end;
 
         function [epochfiles] = selectfilegroups(ndi_filenavigator_obj)

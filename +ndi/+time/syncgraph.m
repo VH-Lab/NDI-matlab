@@ -197,6 +197,7 @@ classdef syncgraph < ndi.ido
                 if ~isempty(table_entry),
                     ginfo = table_entry(1).data.graphinfo;
                     hashvalue = table_entry(1).data.hashvalue;
+                    ginfo = ndi.time.syncgraph.cache2ginfo(ginfo);
                 end;
             end
         end % cached_epochtable
@@ -228,7 +229,8 @@ classdef syncgraph < ndi.ido
                 hashvalue = vlt.data.hashmatlabvariable(ginfo);
                 priority = 1;
                 cache.remove(key,'syncgraph-hash');
-                cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo,'hashvalue',hashvalue),priority);
+                ginfo_small = ndi.time.syncgraph.ginfo2cache(ginfo);
+                cache.add(key,'syncgraph-hash',struct('graphinfo',ginfo_small,'hashvalue',hashvalue),priority);
             end
         end % set_cached_graphinfo
 
@@ -504,7 +506,7 @@ classdef syncgraph < ndi.ido
                     ginfo.nodes = cat(2,ginfo.nodes,u_nodes(nanshere));
                     ginfo.G = newG;
                     ginfo.mapping = [ginfo.mapping mapping_upperright ; mapping_lowerleft mapping_lowerright ];
-                    ginfo.syncRuleG = newSyncRuleG;
+                    ginfo.syncRuleG = sparse(newSyncRuleG);
 
                     % developer question: should we bother to check for links that matter?
                     %                     right now, let's check that the first epochnode is connected at all
@@ -822,6 +824,45 @@ classdef syncgraph < ndi.ido
                 m = ndi.time.timemapping(m{min_c_loc});
             end;
         end;
+
+        function ginfo_small = ginfo2cache(ginfo)
+        % GINFO2CACHE Make a smaller version of the GINFO for storage in the cache
+        %
+        % GINFO_SMALL = GINFO2CACHE(GINFO)
+        % 
+            tf = ~cellfun(@isempty,ginfo.mapping(:));
+            mapping_linear = ginfo.mapping(tf);
+            G_sparse = ginfo.G;
+            G_sparse(isinf(G_sparse)) = 0;
+            G_sparse = sparse(G_sparse);
+            ginfo_small.nodes = ginfo.nodes;
+            ginfo_small.G_sparse = G_sparse;
+            ginfo_small.mapping_linear = mapping_linear;
+            ginfo_small.mapping_indexes = find(tf);
+            ginfo_small.diG = ginfo.diG;
+            ginfo_small.syncRuleIDs = ginfo.syncRuleIDs;
+            ginfo_small.syncRuleG = ginfo.syncRuleG;
+        end
+
+        function ginfo_big = cache2ginfo(ginfo_small)
+        % CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache
+        %
+        % GINFO_BIG = GINFO2CACHE(GINFO_SMALL)
+        % 
+           if ~isfield(ginfo_small,'mapping_linear')
+               ginfo_big = ginfo_small; % no compression
+               return;
+           end
+           ginfo_big.nodes = ginfo_small.nodes;
+           G = full(ginfo_small.G_sparse);
+           G(G==0) = Inf;
+           ginfo_big.G = G;
+           ginfo_big.mapping = cell(numel(ginfo_big.nodes),numel(ginfo_big.nodes));
+           ginfo_big.mapping(ginfo_small.mapping_indexes) = ginfo_small.mapping_linear;
+           ginfo_big.diG = ginfo_small.diG;
+           ginfo_big.syncRuleIDs = ginfo_small.syncRuleIDs;
+           ginfo_big.syncRuleG = ginfo_small.syncRuleG;
+        end % cache2ginfo
 
     end % static methods
 

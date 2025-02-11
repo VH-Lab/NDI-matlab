@@ -25,11 +25,15 @@ bathTargets = jsondecode(fileread(fullfile(marderFolder,"marder_bathtargets.json
 
 bathTable = readtable(fullfile(S.getpath(),"bath_table.csv"),"Delimiter",',');
 
+locTable = vlt.data.emptystruct('Identifier','bathLoc');
+
+
 for i=1:numel(et)
     eid = et(i).epoch_id;
     epochid.epochid = eid;
     for j=1:numel(stim)
         stimid = stim{j}.id();
+        disp(['Working on stimulator ' int2str(j) ' of ' int2str(numel(stim)) ', epoch ' int2str(i) ' of ' int2str(numel(et)) '.']);
         for k=1:size(bathTable,1)
             tokensFirst = regexp(bathTable{k,"firstFile"}, '_(\d+)\.', 'tokens');
             tokensLast = regexp(bathTable{k,"lastFile"}, '_(\d+)\.', 'tokens');
@@ -42,7 +46,13 @@ for i=1:numel(et)
                 for b=1:numel(bT)
                     locList = bathTargets.(bT{b});
                     for l=1:numel(locList)
-                        bathLoc = ndi.database.fun.uberon_ontology_lookup("Identifier",locList(l).location);
+                        index = find(strcmp(locList(l).location,{locTable.Identifier}));
+                        if isempty(index),
+                            bathLoc = ndi.database.fun.uberon_ontology_lookup("Identifier",locList(l).location);
+                            locTable(end+1) = struct('Identifier',locList(l).location,'bathLoc',bathLoc);
+                        else
+                            bathLoc = locTable(index).bathLoc;
+                        end
                         mixTable = ndi.setup.conv.marder.mixtureStr2mixtureTable(bathTable{k,"mixtures"}{1},mixtureInfo);
                         mixTableStr = ndi.database.fun.writetablechar(mixTable);
                         stimulus_bath.location.ontologyNode = locList(l).location;

@@ -24,14 +24,14 @@ classdef cache < handle
             %
             % Parameter (default)         | Description
             % ------------------------------------------------------------
-            % maxMemory (100e6)           | Max memory for cache, in bytes (100MB default)
+            % maxMemory (1e9)             | Max memory for cache, in bytes (1GB default)
             % replacement_rule ('fifo')   | Replacement rule (see NDI_CACHE/SET_REPLACEMENT_RULE
             %
             % Note that the cache is not 'secure', any function can query the data added.
             %
             % See also: vlt.data.namevaluepair
 
-            maxMemory = 100e6; % 100 MB
+            maxMemory = 1e9; % 1 GB
             replacement_rule = 'fifo';
 
             vlt.data.assign(varargin{:});
@@ -183,7 +183,7 @@ classdef cache < handle
             end
             [y,i] = sortrows(stats,[1 thesign*2]);
             cumulative_memory_saved = cumsum([ndi_cache_obj.table(i).bytes]);
-            spot = find(cumulative_memory_saved>=freebytes,1,'first'),
+            spot = find(cumulative_memory_saved>=freebytes,1,'first');
             if isempty(spot),
                 error(['did not expect to be here.']);
             end;
