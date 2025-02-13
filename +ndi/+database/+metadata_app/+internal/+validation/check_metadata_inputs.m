@@ -1,6 +1,11 @@
 function [submit, errorStep] = check_metadata_inputs(app)
-    %CHECK_METADATA_INPUTS Summary of this function goes here
-    %   Detailed explanation goes here
+% CHECK_METADATA_INPUTS - Check metadata entered in the Metadata Editor
+
+% Note: 
+%   - This function is not used. 
+%   - It is also very out of date
+%   - However, it could serve as a blueprint for a function to validate
+%     metadata entered in the MetadataEditorApp
 
     fig = app.UIFigure;
     ud = fig.UserData;
