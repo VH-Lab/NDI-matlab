@@ -5,11 +5,10 @@ function [daqSystemNames, daqSystemConfigFiles] = listDaqSystemNames(labName)
         labName (1,1) string = missing
     end
 
-    ndi.globals;
-    rootPath = fullfile(ndi_globals.path.commonpath, 'daq_systems');
+    rootPath = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems');
 
     if ~ismissing(labName)
-        importDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', labName);
+        importDir = fullfile(rootPath, labName);
     
         if ~isfolder(importDir)
             error('No DAQ systems were found for "%s"', labName)

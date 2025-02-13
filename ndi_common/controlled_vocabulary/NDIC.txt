@@ -10,3 +10,17 @@ Identifier	Name	Description
 9	Has not experienced cricket hunting	Indicates that the animal has not had experience with hunting for crickets
 10	Session Timeline	"A relative experimental session timeline; major stimulation events are, by default, considered numerically from 1 to N"
 11	Postnatal day	"Postnatal day' is a specific unit to measure the age of an organism that is born live (viviparous animals), starting with the day of birth (postnatal day 0). Often abbreviated in written documents with a capital P (as in P0, P10, etc)."""
+12	Command temperature constant	"The temperature of an experimental object has been commanded to be a certain value"
+13	Command temperature start	"The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch"
+14	Command temperature end	"The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch"
+14	Purpose: Assessing activity with temperature manipulation	States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature
+15	Purpose: To measure the pyloric rhythym	States that the purpose of the measurement is to observe the pyloric rhythym 
+16	Purpose: to measure the gastric mill rhythym	States that the purpose of the measurement is to observe the gastric mill rhythym
+17	Microelectrode voltage offset	A voltage offset measured at the end of a voltage record, in V
+18	Treatment: Acclimation onset time	The subject was acclimated to a temperature at a particular onset time.
+19	Treatment: Acclimation temperature	The temperature (in degrees C) at which the subject was acclimated.
+20	Non-survival experiment time	The subject was used in a non-survival experiment.
+21	Treatment: left eye premature eye opening	The subject's left eye was opened prematurely, before natural eye opening.
+22	Treatment: right eye premature eye opening	The subject's right eye was opened prematurely, before natural eye opening.
+23	Treatment: natural left eye opening	The subject's left eye was allowed to open naturally.
+24	Treatment: natural right eye opening	The subject's right eye was allowed to open naturally.

@@ -1,7 +1,7 @@
 classdef Subject < handle
     %SUBJECT Summary of this class goes here
     %   Detailed explanation goes here
-    
+
     properties
         SubjectName (1,1) string = missing
         BiologicalSexList (1,:)
@@ -10,12 +10,12 @@ classdef Subject < handle
         StrainMap
         sessionIdentifier (1,1) string
     end
-    
+
     methods
         function obj = Subject()
             obj.StrainMap = containers.Map;
         end
-        
+
         function updateProperty(obj, name, idx, value)
             obj.(name)(idx)=value;
         end
@@ -57,13 +57,13 @@ classdef Subject < handle
         end
 
         function sortedSpeciesList = sortSpeciesList(obj)
-            speciesList = obj.SpeciesList;            
+            speciesList = obj.SpeciesList;
             uuids = zeros(1, numel(speciesList));
             for i = 1:numel(speciesList)
                 uuids(i) = speciesList(i).getUuid();
             end
             [~, sortedIndices] = sort(uuids);
-            sortedSpeciesList = speciesList(sortedIndices);    
+            sortedSpeciesList = speciesList(sortedIndices);
         end
 
         function str = toStringArr(obj, name)
@@ -96,7 +96,7 @@ classdef Subject < handle
             paddedLists{3} = speciesList;
             strainList = obj.toStringArr("StrainList");
             paddedLists{4} = strainList;
-            % 
+            %
             % paddedLists{1} = paddedLists{1}';
             % paddedLists{2} = paddedLists{2}';
             % paddedLists{3} = paddedLists{3}';
@@ -109,7 +109,7 @@ classdef Subject < handle
                 'BiologicalSex', paddedLists{2}, ...
                 'Species', paddedLists{3}, ...
                 'Strain', paddedLists{4} ...
-            );
+                );
         end
 
         function equal = isEqual(obj, subject)
@@ -127,11 +127,31 @@ classdef Subject < handle
                 equal = 0;
             end
         end
+
+        function s = toStruct(obj)
+            props = properties(obj); % Get all properties of the class
+            s = struct();
+            for j = 1:length(props)
+                propName = props{j};
+                propValue = obj.(propName);
+                if isobject(propValue) && ismethod(propValue, 'toStruct')
+                    if ~isempty(propValue) % Check if the object is not empty
+                        s.(propName) = propValue.toStruct(); % Recursively convert to struct
+                    end
+                elseif isa(propValue, 'containers.Map')
+                    continue;
+                else
+                    if ~isempty(propValue)
+                        s.(propName) = propValue;
+                    end
+                end
+            end
+        end
     end
 
     methods (Static)
         function paddedList = padList(list, targetLength, placeholder)
-            % Helper function to pad a list with a placeholder to match the target length
+            % padList - Helper function to pad a list with a placeholder to match the target length
             paddedList = list;
             if length(list) < targetLength
                 padding = cell(1, targetLength - length(list));
@@ -154,6 +174,26 @@ classdef Subject < handle
                 b=a;
             end
         end
+        function obj = fromStruct(s)
+            obj = ndi.database.metadata_app.class.Subject();
+            props = fieldnames(s);
+            for i = 1:length(props)
+                propName = props{i};
+                propValue = s.(propName);
+                if isempty(propValue)
+                    obj.(propName) = '';
+                elseif numel(propValue) == 0
+                    obj.(propName) = '';
+                elseif propName == "SpeciesList"
+                    obj.(propName) = ndi.database.metadata_app.class.Species.fromStruct(propValue);
+                elseif propName == "StrainList"
+                    obj.(propName) = ndi.database.metadata_app.class.Strain.fromStruct(propValue);
+                elseif propName == "StrainMap"
+                    obj.(propName) = propValue;
+                else
+                    obj.(propName) = propValue;
+                end
+            end
+        end
     end
 end
-

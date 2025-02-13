@@ -1,7 +1,7 @@
 classdef Species < handle
-%Species A  class for Species.
-    
-    properties 
+    %Species A  class for Species.
+
+    properties
         Name
         Synonym
         OntologyIdentifier
@@ -38,14 +38,6 @@ classdef Species < handle
             str = obj.Name;
         end
 
-        function properties = toStruct(obj)
-            properties = struct(...
-                'Name', obj.Name, ...
-                'Synonym', obj.Synonym, ...
-                'OntologyIdentifier', obj.OntologyIdentifier ...
-            );
-        end
-
         function equal = isEqual(obj, species)
             if (isfield(species, 'OntologyIdentifier') && obj.getProperty('OntologyIdentifier') == species.getProperty('OntologyIdentifier'))
                 equal = 1;
@@ -69,7 +61,31 @@ classdef Species < handle
                 instance.preferredOntologyIdentifier = obj.OntologyIdentifier;
                 instances = [instances, instance]; %#ok<AGROW>
             end
-
         end
-    end    
+
+        function s = toStruct(obj)
+            props = properties(obj);
+            s = struct();
+            for i = 1:length(props)
+                propName = props{i};
+                propValue = obj.(propName);
+                if isempty(propValue)
+                    obj.(propName) = '';
+                else
+                    s.(propName) = propValue;
+                end
+            end
+        end
+    end
+    methods (Static)
+        function obj = fromStruct(s)
+            obj = ndi.database.metadata_app.class.Species(s.Name, s.OntologyIdentifier, s.Synonym);
+            props = fieldnames(s);
+            for i = 1:length(props)
+                propName = props{i};
+                propValue = s.(propName);
+                obj.(propName) = propValue;
+            end
+        end
+    end
 end

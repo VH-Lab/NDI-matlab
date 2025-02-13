@@ -3,7 +3,7 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
         IntrinsicResistance
         IntrinsicResistanceUnit
     end
-    
+
     methods
         function obj = Electrode(varargin)
             obj.ClassType = "Electrode";
@@ -18,8 +18,8 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
                 selected = 1;
             end
         end
-        %check if intrinsic resistance is filled and if unit is selected
-        %return false if value is filled but unit is not selected
+        % check if intrinsic resistance is filled and if unit is selected
+        % return false if value is filled but unit is not selected
         function filled = intrinsicResistanceCheck(obj)
             if ~isempty(obj.IntrinsicResistance) && ~obj.intrinsicResistanceUnitSelected()
                 filled = 0;
@@ -32,7 +32,7 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
             if isempty(obj.Name)
                 error('Electrode name is required')
             end
-            
+
             if isempty(obj.DeviceType)
                 error('Electrode device type is required')
             end
@@ -46,19 +46,16 @@ classdef Electrode < ndi.database.metadata_app.class.Probe
             devType = openminds.controlledterms.DeviceType('name', obj.DeviceType, 'description', obj.Description);
 
             if obj.intrinsicResistanceUnitSelected()
-                units = openminds.controlledterms.UnitOfMeasurement('name', obj.IntrinsicResistanceUnit); 
+                units = openminds.controlledterms.UnitOfMeasurement('name', obj.IntrinsicResistanceUnit);
                 rst = openminds.core.QuantitativeValue('value',  str2double(obj.IntrinsicResistance), 'unit', units);
             else
-                units = openminds.controlledterms.UnitOfMeasurement('name', ''); 
+                units = openminds.controlledterms.UnitOfMeasurement('name', '');
                 rst = openminds.core.QuantitativeValue('value', str2double(obj.IntrinsicResistance), 'unit', units);
             end
             ror = openminds.core.RORID('identifier', obj.Manufacturer.RORId);
             orgC = openminds.core.Organization('digitalIdentifier', ror, 'fullName', obj.Manufacturer.AffiliationName);
-            
+
             openminds_obj = openminds.ephys.Electrode('name', obj.Name, 'description',obj.Description, 'deviceType', devType, 'digitalIdentifier', digitalIdentifier, 'intrinsicResistance', rst, 'manufacturer', orgC);
         end
     end
-
-       
 end
-

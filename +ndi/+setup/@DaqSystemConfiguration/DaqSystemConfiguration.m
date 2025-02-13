@@ -1,22 +1,22 @@
 classdef DaqSystemConfiguration
-%DaqSystemConfiguration Parameters for configuring a DAQ System.
+    %DaqSystemConfiguration Parameters for configuring a DAQ System.
 
     properties
         % Name - A name for the DAQ system device
         Name (1,1) string = ""
 
-        % DaqSystemClass - Full class name for the class to use for 
+        % DaqSystemClass - Full class name for the class to use for
         % creating an NDI DAQ system object
         DaqSystemClass (1,1) string = "ndi.daq.system.mfdaq"
 
-        % DaqReaderClass - Full class name for the class to use for 
+        % DaqReaderClass - Full class name for the class to use for
         % creating an NDI DAQ reader object
         DaqReaderClass (1,1) string = "ndi.daq.reader.mfdaq"
-        
-        % MetadataReaderClass - Full class name for the class to use for 
+
+        % MetadataReaderClass - Full class name for the class to use for
         % creating an NDI metadata reader object
         MetadataReaderClass (1,:) string = string.empty
-        
+
         % EpochProbeMapClass - Full name of class that specifies the epoch
         % probe map.
         EpochProbeMapClass (1,1) string = "ndi.epoch.epochprobemap_daqsystem"
@@ -32,11 +32,11 @@ classdef DaqSystemConfiguration
         % MetadataReaderFileParameters - A list of file parameters that are
         % specific to the Metadata Reader (subset of FileParameters).
         MetadataReaderFileParameters (1,:) string = string.empty
-        
+
         % EpochProbeMapFileParameters - A list of file parameters that are
         % specific to Epoch Probe Map (subset of FileParameters).
         EpochProbeMapFileParameters (1,:) string = string.empty
-        
+
         % HasEpochDirectories - Whether epochs are organized in
         % subdirectories.
         HasEpochDirectories (1,1) logical = false
@@ -59,7 +59,7 @@ classdef DaqSystemConfiguration
 
     methods
         function ndiSession = addToSession(obj, ndiSession)
-        % create - Create and add DAQ System to session
+            % addToSession - Create and add DAQ System to session
 
             fileNavigator = obj.createFileNavigator(ndiSession);
             daqReader = obj.createDaqReader();
@@ -75,7 +75,7 @@ classdef DaqSystemConfiguration
         end
 
         function export(obj, configFileName)
-        % export - Export a DAQ System configuration to json
+            % export - Export a DAQ System configuration to json
             propertyNames = properties(obj);
 
             S = struct;
@@ -93,7 +93,7 @@ classdef DaqSystemConfiguration
 
     methods (Access = private)
         function fileNavigator = createFileNavigator(obj, ndiSession)
-        % createFileNavigator - Create an instance of a file navigator    
+            % createFileNavigator - Create an instance of a file navigator
             if obj.HasEpochDirectories
                 navigatorClass = @ndi.file.navigator.epochdir;
             else
@@ -126,7 +126,7 @@ classdef DaqSystemConfiguration
                             'UniformOutput', false);
                     else
                         assert( numel(obj.MetadataReaderFileParameters) == numel(obj.MetadataReaderClass), ...
-                           'Expected one metadata reader per metadata file parameter')
+                            'Expected one metadata reader per metadata file parameter')
                         metadataReader = arrayfun(@(i) feval(obj.MetadataReaderClass(i), char(obj.MetadataReaderFileParameters(i))), ...
                             1:numel(obj.MetadataReaderFileParameters), ...
                             'UniformOutput', false);
@@ -141,8 +141,8 @@ classdef DaqSystemConfiguration
 
     methods (Static)
         function daqSystemConfiguration = fromConfigFile(configFilePath)
-        % fromConfigFile - Create a DAQ system configuration object from file
-         
+            % fromConfigFile - Create a DAQ system configuration object from file
+
             if isfile(configFilePath)
                 [~, name] = fileparts(configFilePath);
                 S = jsondecode( fileread(configFilePath) );
@@ -156,8 +156,7 @@ classdef DaqSystemConfiguration
         end
 
         function daqSystemConfiguration = fromLabDevice(labName, deviceName)
-            ndi.globals; 
-            importDir = fullfile(ndi_globals.path.commonpath, 'daq_systems', labName);
+            importDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems', labName);
             configFilePath = fullfile(importDir, [deviceName, '.json']);
             daqSystemConfiguration = ndi.setup.DaqSystemConfiguration.fromConfigFile(configFilePath);
         end

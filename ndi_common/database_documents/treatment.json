@@ -1,0 +1,26 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/treatment.json",
+		"validation":						"$NDISCHEMAPATH\/treatment_schema.json",
+		"comment":						"A treatment of a subject (that is not associated with a particular recording epoch). Treatments that are associated with recording epochs are usually characterized as stimulations. This document type does not contain a full protocol but may contain a link to a protocol with a dependency.",
+		"class_name":						"treatment",
+		"property_list_name":					"treatment",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json"}
+		]
+	},
+	"depends_on": [
+		{ "name": "subject_id", "value": [] },
+		{ "name": "manipulation_id", "value": [] },
+		{ "name": "protocol_id", "value": [] }
+
+	],
+	"treatment": {
+		"ontologyName":						"",
+		"name":							"",
+		"numeric_value":					"",
+		"string_value":						""
+	}
+}
+

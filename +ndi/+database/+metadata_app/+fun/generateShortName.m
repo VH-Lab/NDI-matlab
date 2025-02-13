@@ -1,5 +1,5 @@
 function shortName = generateShortName(fullName, length)
-    
+
     words = strsplit(fullName, ' ');
     if numel(words) <= length
         shortName = fullName;
@@ -7,4 +7,3 @@ function shortName = generateShortName(fullName, length)
         shortName = strjoin(words(1:length), ' ');
     end
 end
-
