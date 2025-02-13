@@ -164,17 +164,19 @@ classdef DatasetWizardApp < ndi.gui.window.wizard.WizardApp
 
             hWaitbar = uiprogressdlg(app.UIFigure, "Indeterminate", "on", ...
                 "Message", "Please wait while opening DAQ System Configurator");
+            waitbarCleanupObj = onCleanup(@() delete(hWaitbar));
 
-            h = DAQSystemUI(app.DatasetRootDirectory, epochFolder, epochOrganization, daqSystem);
+            h = NDIDaqSystemConfig(app.DatasetRootDirectory, epochFolder, epochOrganization, daqSystem);
+            appCleanupObj = onCleanup(@() delete(h));
+            clear waitbarCleanupObj
             
-            delete(hWaitbar)
             % Wait for user to finish editing
             uiwait(h);
             
             % % Get updated data.
             updatedDaqSystem = h.DaqSystemConfiguration;
 
-            delete(h)
+            clear appCleanupObj
         end
     end
 
