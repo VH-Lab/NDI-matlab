@@ -21,7 +21,7 @@ function [status, response,dataset_id] = create_cloud_metadata_struct(S)
 
     clear dataset_update;
 
-    % is_valid = ndi.cloud.fun.check_metadata_cloud_inputs(S);
+    % is_valid = ndi.database.metadata_ds_core.check_metadata_cloud_inputs(S);
     % if ~is_valid
     %     error('NDI:CLOUD:CREATE_CLOUD_METADATA_STRUCT', 'S is missing required fields');
     % end
