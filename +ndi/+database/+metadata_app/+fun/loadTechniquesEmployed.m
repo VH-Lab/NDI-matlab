@@ -7,7 +7,6 @@ function cbt = loadTechniquesEmployed(tree)
     %   cbt - checkList nodes containing the TechniquesEmployed
     %
 
-    treeNodes = [];
     technique = openminds.controlledterms.Technique.CONTROLLED_INSTANCES;
     % Create the tree nodes
     for i = 1:length(technique)

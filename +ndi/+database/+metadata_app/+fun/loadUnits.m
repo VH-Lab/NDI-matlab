@@ -6,9 +6,7 @@ function cbt = loadUnits(tree)
     % Output:
     %   cbt - checkList nodes containing the loadUnits
     %
-
-    treeNodes = [];
-
+    
     units = openminds.controlledterms.UnitOfMeasurement.CONTROLLED_INSTANCES;
 
     % Create the tree nodes
