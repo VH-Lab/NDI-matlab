@@ -106,22 +106,6 @@ classdef AuthorData < handle
         function removeAffiliation(obj, authorIndex, affiliationIndex)
             obj.AuthorList(authorIndex).affiliation(affiliationIndex)=[];
         end
-
-        % % %         function addAffiliation(obj, authorIndex, name, identifier)
-        % % %             if isempty(obj.AuthorList(authorIndex).affiliation)
-        % % %                 obj.AuthorList(authorIndex).affiliation = ndi.database.metadata_app.class.AffiliationData();
-        % % %             else
-        % % %                 size = obj.AuthorList(authorIndex).affiliation.getSize();
-        % % %                 af = ndi.database.metadata_app.class.Affiliation();
-        % % %                 af.memberOf.fullName = name;
-        % % %                 af.memberOf.digitalIdentifier.identifier = identifier;
-        % % %                 obj.AuthorList(authorIndex).affiliation.addItem(af);
-        % % %             end
-        % % %         end
-        % % %
-        % % %         function removeAffiliation(obj, authorIndex, affiliationIndex)
-        % % %             obj.AuthorList(authorIndex).affiliation.removeItem(affiliationIndex);
-        % % %         end
     end
 
     methods (Static)
