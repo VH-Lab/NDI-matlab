@@ -23,12 +23,18 @@
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
-          "enum": ["projectvar"]
+          "enum": ["projectvar"],
+          "enumDescriptions": {
+            "projectvar": "Specifies this document as a project variable class type"
+          }
         },
         "property_list_name": {
           "type": "string",
           "description": "Name of the property list",
-          "enum": ["projectvar"]
+          "enum": ["projectvar"],
+          "enumDescriptions": {
+            "projectvar": "Defines the property list name for project variable documents"
+          }
         },
         "class_version": {
           "type": "integer",
@@ -46,7 +52,10 @@
               "definition": {
                 "type": "string",
                 "description": "Path to the base document definition",
-                "enum": ["$NDIDOCUMENTPATH/base.json"]
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
               }
             }
           },
@@ -56,28 +65,17 @@
       }
     },
     "depends_on": {
-      "type": "array",
+      "type": "object",
       "description": "Document dependencies",
-      "items": {
-        "type": "object",
-        "required": ["name", "value"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "enum": ["element_id"],
-            "description": "Name of the dependency"
-          },
-          "value": {
-            "type": "string",
-            "description": "Value of the dependency"
-          }
+      "default": {},
+      "properties": {
+        "element_id": {
+          "type": "string",
+          "description": "Identifier for the element. Must not be empty."
         }
       },
-      "minItems": 1,
-      "maxItems": 1,
-      "mustbenotempty": {
-        "element_id": true
-      }
+      "required": ["element_id"],
+      "additionalProperties": false
     },
     "projectvar": {
       "type": "object",
