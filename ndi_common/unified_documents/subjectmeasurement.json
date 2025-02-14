@@ -23,12 +23,18 @@
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
-          "enum": ["subjectmeasurement"]
+          "enum": ["subjectmeasurement"],
+          "enumDescriptions": {
+            "subjectmeasurement": "Specifies this document as a subject measurement class type"
+          }
         },
         "property_list_name": {
           "type": "string",
           "description": "Name of the property list",
-          "enum": ["subjectmeasurement"]
+          "enum": ["subjectmeasurement"],
+          "enumDescriptions": {
+            "subjectmeasurement": "Defines the property list name for subject measurement documents"
+          }
         },
         "class_version": {
           "type": "integer",
@@ -46,7 +52,10 @@
               "definition": {
                 "type": "string",
                 "description": "Path to the base document definition",
-                "enum": ["$NDIDOCUMENTPATH/base.json"]
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
               }
             }
           },
@@ -56,28 +65,17 @@
       }
     },
     "depends_on": {
-      "type": "array",
+      "type": "object",
       "description": "Document dependencies",
-      "items": {
-        "type": "object",
-        "required": ["name", "value"],
-        "properties": {
-          "name": {
-            "type": "string",
-            "enum": ["subject_id"],
-            "description": "Name of the dependency"
-          },
-          "value": {
-            "type": "string",
-            "description": "Value of the dependency"
-          }
+      "default": {},
+      "properties": {
+        "subject_id": {
+          "type": "string",
+          "description": "Identifier for the subject. Must not be empty."
         }
       },
-      "minItems": 1,
-      "maxItems": 1,
-      "mustbenotempty": {
-        "subject_id": true
-      }
+      "required": ["subject_id"],
+      "additionalProperties": false
     },
     "subjectmeasurement": {
       "type": "object",
