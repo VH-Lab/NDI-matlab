@@ -23,12 +23,18 @@
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
-          "enum": ["session"]
+          "enum": ["session"],
+          "enumDescriptions": {
+            "session": "Specifies this document as a session class type"
+          }
         },
         "property_list_name": {
           "type": "string",
           "description": "Name of the property list",
-          "enum": ["session"]
+          "enum": ["session"],
+          "enumDescriptions": {
+            "session": "Defines the property list name for session documents"
+          }
         },
         "class_version": {
           "type": "integer",
@@ -46,7 +52,10 @@
               "definition": {
                 "type": "string",
                 "description": "Path to the base document definition",
-                "enum": ["$NDIDOCUMENTPATH/base.json"]
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
               }
             }
           },
@@ -57,11 +66,30 @@
     },
     "depends_on": {
       "type": "array",
-      "description": "List of document dependencies",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
       "items": {
-        "type": "string"
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["subject_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "subject_id": "Identifier linking to the associated subject document. Must not be empty."
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
       },
-      "default": []
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "subject_id": true
+      }
     },
     "session": {
       "type": "object",
