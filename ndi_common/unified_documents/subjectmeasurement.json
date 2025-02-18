@@ -65,17 +65,31 @@
       }
     },
     "depends_on": {
-      "type": "object",
-      "description": "Document dependencies",
-      "default": {},
-      "properties": {
-        "subject_id": {
-          "type": "string",
-          "description": "Identifier for the subject. Must not be empty."
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["subject_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "subject_id": "Identifier linking to the subject document. Must not be empty."
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
         }
       },
-      "required": ["subject_id"],
-      "additionalProperties": false
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "subject_id": true
+      }
     },
     "subjectmeasurement": {
       "type": "object",
