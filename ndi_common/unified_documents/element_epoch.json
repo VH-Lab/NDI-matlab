@@ -67,17 +67,31 @@
       }
     },
     "depends_on": {
-      "type": "object",
-      "description": "Document dependencies",
-      "default": {},
-      "properties": {
-        "element_id": {
-          "type": "string",
-          "description": "Identifier for the element that this epoch belongs to. Must not be empty."
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["element_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "element_id": "Identifier linking to the parent element document. Must not be empty."
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
         }
       },
-      "required": ["element_id"],
-      "additionalProperties": false
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "element_id": true
+      }
     },
     "files": {
       "type": "object",
