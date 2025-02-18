@@ -23,12 +23,18 @@
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
-          "enum": ["element"]
+          "enum": ["element"],
+          "enumDescriptions": {
+            "element": "Specifies this document as an element class type"
+          }
         },
         "property_list_name": {
           "type": "string",
           "description": "Name of the property list",
-          "enum": ["element"]
+          "enum": ["element"],
+          "enumDescriptions": {
+            "element": "Defines the property list name for element documents"
+          }
         },
         "class_version": {
           "type": "integer",
@@ -46,7 +52,10 @@
               "definition": {
                 "type": "string",
                 "description": "Path to the base document definition",
-                "enum": ["$NDIDOCUMENTPATH/base.json"]
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
               }
             }
           },
@@ -57,17 +66,23 @@
     },
     "depends_on": {
       "type": "array",
-      "description": "Document dependencies with validation rules. subject_id must not be empty, underlying_element_id may be empty.",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
       "items": {
         "type": "object",
         "required": ["name", "value"],
         "properties": {
           "name": {
             "type": "string",
-            "enum": ["underlying_element_id", "subject_id"]
+            "enum": ["underlying_element_id", "subject_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "underlying_element_id": "Identifier linking to the underlying element document. May be empty.",
+              "subject_id": "Identifier linking to the subject document. Must not be empty."
+            }
           },
           "value": {
-            "type": "string"
+            "type": "string",
+            "description": "Value of the dependency"
           }
         }
       },
@@ -115,6 +130,10 @@
           "description": "Does this element directly feed data from an underlying element?",
           "default": 0,
           "enum": [0, 1],
+          "enumDescriptions": {
+            "0": "Element does not directly feed data from underlying element",
+            "1": "Element directly feeds data from underlying element"
+          },
           "queryable": true
         }
       }
