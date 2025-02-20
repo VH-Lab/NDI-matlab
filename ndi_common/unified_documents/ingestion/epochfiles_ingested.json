@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "depends_on", "epochfiles_ingested"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/ingestion/epochfiles_ingested.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/ingestion/epochfiles_ingested_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["epochfiles_ingested"],
+          "enumDescriptions": {
+            "epochfiles_ingested": "Class for tracking ingested epoch files and their metadata"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["epochfiles_ingested"],
+          "enumDescriptions": {
+            "epochfiles_ingested": "Properties specific to ingested epoch files"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "Base class providing common functionality for all NDI classes"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["filenavigator_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "filenavigator_id": "File navigator identifier - Required for accessing epoch files"
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "filenavigator_id": true
+      }
+    },
+    "epochfiles_ingested": {
+      "type": "object",
+      "description": "",
+      "required": ["epoch_id", "files", "epochprobemap"],
+      "properties": {
+        "epoch_id": {
+          "type": "string",
+          "description": "The epoch_id of for the set of epoch files being stored",
+          "default": "",
+          "queryable": true
+        },
+        "files": {
+          "type": "array",
+          "description": "A string array of filenames for the ingested epoch",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "queryable": true
+        },
+        "epochprobemap": {
+          "type": "string",
+          "description": "The epochprobemap for the epoch",
+          "default": "",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
