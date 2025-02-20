@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "filenavigator"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/daq/filenavigator.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/daq/filenavigator_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["filenavigator"],
+          "enumDescriptions": {
+            "filenavigator": "File navigation class for managing data file access and organization"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["filenavigator"],
+          "enumDescriptions": {
+            "filenavigator": "Properties specific to the file navigation system"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "Base class providing common functionality for all NDI classes"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the dependency"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 0,
+      "maxItems": 0
+    },
+    "filenavigator": {
+      "type": "object",
+      "description": "",
+      "required": ["ndi_filenavigator_class", "fileparameters", "epochprobemap_class", "epochprobemap_fileparameters"],
+      "properties": {
+        "ndi_filenavigator_class": {
+          "type": "string",
+          "description": "The name of the ndi.file.navigator class type that is being stored.",
+          "default": "",
+          "queryable": true
+        },
+        "fileparameters": {
+          "type": "string",
+          "description": "The file parameters for finding epochs.",
+          "default": "",
+          "queryable": true
+        },
+        "epochprobemap_class": {
+          "type": "string",
+          "description": "The name of the ndi.epoch.probemap class type that is being stored.",
+          "default": "",
+          "queryable": true
+        },
+        "epochprobemap_fileparameters": {
+          "type": "string",
+          "description": "The file parameters for finding epochprobemaps.",
+          "default": "",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
