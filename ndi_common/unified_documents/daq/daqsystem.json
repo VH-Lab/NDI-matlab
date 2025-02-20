@@ -85,7 +85,7 @@
           }
         }
       },
-      "minItems": 3,
+      "minItems": 2,
       "maxItems": 3,
       "mustbenotempty": {
         "filenavigator_id": true,
