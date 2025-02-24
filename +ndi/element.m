@@ -190,7 +190,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
             % TODO: this must be a bug, it's just self-referential
-            t0t1 = ndi_element_obj.t0_t1(epoch_number);
+            et = epochtableentry(ndi_element_obj, epoch_number);
+            t0t1 = et.t0_t1;
         end; % t0t1()
 
         function [cache,key] = getcache(ndi_element_obj)

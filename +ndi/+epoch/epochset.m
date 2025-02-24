@@ -570,13 +570,25 @@ classdef epochset
             cost = inf(numel(nodes));
             mapping = cell(numel(nodes));
 
-            for i=1:numel(nodes),
-                for j=1:numel(nodes),
-                    if j==i,
+            for i=1:numel(nodes)
+                for j=1:numel(nodes)
+                    if j==i
                         cost(i,j) = 1;
                         mapping{i,j} = trivial_mapping;
-                    else,
-                        [cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
+                    else
+                        if strcmp(nodes(i).epoch_id,nodes(j).epoch_id) && strcmp(nodes(i).epoch_session_id,nodes(j).epoch_session_id)
+                            m = diff(nodes(j).t0_t1) / diff(nodes(i).t0_t1);
+                            b = nodes(j).t0_t1(1)-m*nodes(i).t0_t1(1);
+                            cost(i,j) = 1;
+                            mapping{i,j} = ndi.time.timemapping([m b]);
+                        else
+                            [cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
+                            if ~isinf(cost(i,j))
+                                delta = abs(nodes(i).t0_t1(1)-nodes(j).t0_t1(1));
+                                cost(i,j) = cost(i,j) + delta;
+                                cost(i,j),
+                            end
+                        end
                     end
                 end
             end

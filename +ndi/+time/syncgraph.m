@@ -226,7 +226,7 @@ classdef syncgraph < ndi.ido
             % See also: CACHE_GRAPHINFO
             [cache,key] = getcache(ndi_syncgraph_obj);
             if ~isempty(cache),
-                hashvalue = vlt.data.hashmatlabvariable(ginfo);
+                hashvalue = 0; % why use this? vlt.data.hashmatlabvariable(ginfo);
                 priority = 1;
                 cache.remove(key,'syncgraph-hash');
                 ginfo_small = ndi.time.syncgraph.ginfo2cache(ginfo);
@@ -377,8 +377,6 @@ classdef syncgraph < ndi.ido
 
             ginfo.nodes = cat(2,ginfo.nodes(:)',newnodes(:)');
 
-            % developer note: will probably have to change G to a sparse matrix with zero meaning 'no connection'
-
             ginfo.G = [ ginfo.G inf(oldn,newn); inf(newn,oldn) newcost ] ;
             ginfo.mapping = [ ginfo.mapping cell(oldn,newn) ; cell(newn,oldn) newmapping];
             ginfo.syncRuleG = [ ginfo.syncRuleG  zeros(oldn,newn); zeros(newn,oldn) zeros(size(newcost)) ];
@@ -388,14 +386,15 @@ classdef syncgraph < ndi.ido
             % the brute force way; could be better if we expect low diversity of epoch_clocks, which we do;
             % we can do better, could search for all clocka->clockb instances
 
-            for i=1:oldn,
-                for j=oldn+1:oldn+newn,
-                    if i~=j,
+            for i=1:oldn
+                for j=oldn+1:oldn+newn
+                    if i~=j
                         [ginfo.G(i,j),ginfo.mapping{i,j}] = ...
                             ginfo.nodes(i).epoch_clock.epochgraph_edge(ginfo.nodes(j).epoch_clock);
                         [ginfo.G(j,i),ginfo.mapping{j,i}] = ...
                             ginfo.nodes(j).epoch_clock.epochgraph_edge(ginfo.nodes(i).epoch_clock);
-                    end;
+                        delta = abs(ginfo.nodes(i).t0_t1(1)-ginfo.nodes(j).t0_t1(1));
+                    end
                 end
             end
 
@@ -470,8 +469,11 @@ classdef syncgraph < ndi.ido
 
             enodes = epochnodes(ndi_epochset_obj);
             % do we search for duplicates?
-
+ 
+            mylog = ndi.common.getLogger();
             for i=1:numel(enodes),
+                mylog.msg('system',5,['Working through graph, element ' int2str(i) ' of ' int2str(numel(enodes)) '...']);
+
                 index = ndi.epoch.findepochnode(enodes(i), ginfo.nodes);
 
                 if isempty(index), % we don't have this one, we need to add it
@@ -517,15 +519,18 @@ classdef syncgraph < ndi.ido
             c_utc = ndi.time.clocktype('utc');
             c_exp_global_time = ndi.time.clocktype('exp_global_time');
             equivalent_clock_list = {c_utc, c_exp_global_time};
-            for i=1:numel(equivalent_clock_list),
+            for i=1:numel(equivalent_clock_list)
                 matches = find(cellfun(@(x) eq(x,equivalent_clock_list{i}),{ginfo.nodes.epoch_clock}));
-                for j=1:numel(matches),
-                    for k=1:numel(matches),
-                        ginfo.G(matches(j),matches(k)) = 1;
-                        ginfo.mapping{matches(j),matches(k)} = ndi.time.timemapping([1 0]);
-                    end;
-                end;
-            end;
+                for j=1:numel(matches)
+                    for k=1:numel(matches)
+                        if (matches(j)~=matches(k)) &  strcmp(ginfo.nodes(matches(i)).objectname,ginfo.nodes(matches(j)).objectname)
+                            % self is still 1, and across-object maps are still 1
+                            ginfo.G(matches(j),matches(k)) = 77;
+                            ginfo.mapping{matches(j),matches(k)} = ndi.time.timemapping([1 0]);
+                        end
+                    end
+                end
+            end
 
             Gtable = ginfo.G;
             Gtable(find(isinf(Gtable))) = 0;
@@ -579,18 +584,30 @@ classdef syncgraph < ndi.ido
 
             % Step 0: check inputs
 
-            if isempty(timeref_in.epoch)
-                error(['Right now we do not support non-epoch input time...soon!']);
-            end
+            in_epochid = '';
 
-            if ~isempty(timeref_in.epoch),
+            if ~isempty(timeref_in.epoch)
                 if isnumeric(timeref_in.epoch) % we have an epoch number
                     in_epochid = epochid(timeref_in.referent, timeref_in.epoch);
                 else,
                     in_epochid = timeref_in.epoch;
                 end
-            else,
-                % we would figure this out from start and stop times
+            else
+                % this only works with a global type clock
+                ndi.time.clocktype.assertGlobal(timeref_in.clocktype);
+                et = timeref_in.referent.epochtable();
+                for j=1:numel(et)
+                    index = find(cellfun(@(x) eq(x,timeref_in.clocktype),et(j).epoch_clock));
+                    if ~isempty(index)
+                        if et(j).t0_t1{index}(1)<=(timeref_in.time+t_in) && (timeref_in.time+t_in)<=et(j).t0_t1{index}(2) 
+                            in_epochid = et(j).epoch_id;
+                            break;
+                        end
+                    end
+                end
+                if isempty(in_epochid)
+                    error(['Did not find parent epoch for timeref.']);
+                end
             end
 
             ginfo = graphinfo(ndi_syncgraph_obj);
@@ -633,34 +650,38 @@ classdef syncgraph < ndi.ido
             % STEP 2: narrow the search for the destination node. It has to match our referent and it has to
             %     match the requested clock type
 
-            destinationnodeindexes = ndi.epoch.findepochnode(...
-                struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), ...
-                'epoch_clock', clocktype_out), ginfo.nodes);
+            destinationNodeProperties = struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out), ...
+                'epoch_clock', clocktype_out);
+            if ndi.time.clocktype.isGlobal(clocktype_out) & ndi.time.clocktype.isGlobal(timeref_in.clocktype)
+                destinationNodeProperties.time_value = timeref_in.time+t_in;
+            end
 
-            if isempty(destinationnodeindexes),
+            destinationnodeindexes = ndi.epoch.findepochnode(...
+                destinationNodeProperties, ginfo.nodes);
+
+            if isempty(destinationnodeindexes)
                 % no candidate output nodes, see if any are there any from that referent
                 any_referent_outs = ndi.epoch.findepochnode(...
                     struct('objectname', epochsetname(referent_out), 'objectclass', class(referent_out)), ...
                     ginfo.nodes);
-                if isempty(any_referent_outs), % add the referent to the table and try again
+                if isempty(any_referent_outs) % add the referent to the table and try again
                     new_ginfo = ndi_syncgraph_obj.addunderlyingepochs(referent_out,ginfo);
-                    if numel(new_ginfo.nodes)~=numel(ginfo.nodes), % if we added a node, we can keep searching
+                    if numel(new_ginfo.nodes)~=numel(ginfo.nodes) % if we added a node, we can keep searching
                         [t_out,timeref_out,msg] = time_convert(ndi_syncgraph_obj, timeref_in, t_in, referent_out, clocktype_out);
                         return;
-                    end;
-                end;
+                    end
+                end
                 % if we are still here, we failed in our search
                 msg = ['Could not find any such destination node.'];
                 return;
             end
 
             % STEP 3: are there any paths from our source to any of the candidate destinations?
-
             D = distances(ginfo.diG,sourcenodeindex,destinationnodeindexes);
             indexes = find(~isinf(D));
             if numel(indexes)>1,
-                msg = 'too many matches, do not know what to do.';
-                return
+                [minDistance,minIndex] = min(D);
+                indexes = indexes(minIndex);
             elseif numel(indexes)==0,
                 msg = 'Cannot get there from here, no path';
                 return;
@@ -673,7 +694,6 @@ classdef syncgraph < ndi.ido
                 ginfo.nodes(destinationnodeindex).epoch_id, 0);
 
             path = shortestpath(ginfo.diG, sourcenodeindex, destinationnodeindex);
-
             if ~isempty(path),
                 t_out = t_in-timeref_in.time;
                 for i=1:numel(path)-1,

@@ -23,7 +23,7 @@ function index = findepochnode(epochnode, epochnodearray)
 
     searchspace = 1:numel(epochnodearray);
 
-    parameters = {'objectname','objectclass','epoch_id','epoch_clock','epoch_session_id'};
+    parameters = {'objectname','objectclass','epoch_id','epoch_clock','epoch_session_id','time_value'};
 
     if numel(epochnode)>1,
         error(['EPOCHNODE must be a single entry.']);
@@ -35,12 +35,15 @@ function index = findepochnode(epochnode, epochnodearray)
             value = getfield(epochnode,parameters{i});
         end;
         if ~isempty(value)
-            switch(parameters{i}),
+            switch(parameters{i})
                 case {'objectname','objectclass','epoch_id','epoch_session_id'},
                     eval(['subspacesearch = find(strcmp(value,{epochnodearray(searchspace).' parameters{i} '}));']);
-                case 'epoch_clock',
+                case 'epoch_clock'
                     idx = cellfun(@(x) eq(x,value), {epochnodearray(searchspace).epoch_clock});
                     subspacesearch = find(idx);
+                case 'time_value'
+                    idx = cellfun(@(x) all(x(1)<=value) & all(x(2)>=value), {epochnodearray(searchspace).t0_t1} );
+                    subspacesearch = find(idx);                    
             end
             searchspace = searchspace(subspacesearch);
         end

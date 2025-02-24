@@ -87,7 +87,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
             % and NDI_CLOCKTYPE_B.
             %
             % The following NDI_CLOCKTYPES, if they exist, are linked across epochs with
-            % a cost of 1 and a linear mapping rule with shift 1 and offset 0:
+            % a cost of 2 and a linear mapping rule with shift 1 and offset 0:
             %   'utc' -> 'utc'
             %   'utc' -> 'approx_utc'
             %   'exp_global_time' -> 'exp_global_time'
@@ -111,7 +111,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
 
             index = find(  strcmp(ndi_clocktype_a.type,from_list) & strcmp(ndi_clocktype_b.type,to_list) );
             if ~isempty(index),
-                cost = 1;
+                cost = 100;
                 mapping = ndi.time.timemapping([1 0]); % trivial mapping
             end
         end  % epochgraph_edge
@@ -161,4 +161,37 @@ classdef clocktype < matlab.mixin.Heterogeneous
         end % ne()
 
     end % methods
+
+    methods (Static)
+        function assertGlobal(ndi_clocktype_obj)
+            % ASSERTGLOBAL - produce an error if the clocktype is not a global type
+            %
+            % assertGlobal(ndi_clocktype_obj)
+            %
+            % Example:
+            %   ndi.time.clocktype.assertGlobal(myClocktype);
+            %
+
+            validTypes = {'utc','approx_utc','exp_global_time','approx_exp_global_time','dev_global_time','approx_dev_global_time'};
+
+            if ~any(strcmp(ndi_clocktype_obj.type,validTypes))
+                assert(0,['ndi.time.clocktype field ''type'' must be one of ' strjoin(validTypes,',') '.']);
+            end
+        end
+        function b = isGlobal(ndi_clocktype_obj)
+            % ISGLOBAL - check if is a global type
+            %
+            % b = ISGLOBAL(ndi_clocktype_obj)
+            %
+            % Example:
+            %   b=ndi.time.clocktype.isGlobal(myClocktype);
+            %
+
+            validTypes = {'utc','approx_utc','exp_global_time','approx_exp_global_time','dev_global_time','approx_dev_global_time'};
+            b = 1;
+            if ~any(strcmp(ndi_clocktype_obj.type,validTypes))
+                b=0;
+            end
+        end
+    end
 end % ndi.time.clocktype class

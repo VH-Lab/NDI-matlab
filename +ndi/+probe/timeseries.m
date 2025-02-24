@@ -41,41 +41,86 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                 timeref = ndi.time.timereference(ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'), timeref_or_epoch, 0);
             end;
 
-            [epoch_t0_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
+            [epoch_t0_out, epoch0_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t0, ...
                 ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'));
-            [epoch_t1_out, epoch_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
+            [epoch_t1_out, epoch1_timeref, msg] = ndi_probe_timeseries_obj.session.syncgraph.time_convert(timeref, t1, ...
                 ndi_probe_timeseries_obj, ndi.time.clocktype('dev_local_time'));
 
-            if isempty(epoch_timeref),
+            if isempty(epoch0_timeref) | isempty(epoch1_timeref)
                 error(['Could not find time mapping (maybe wrong epoch name?): ' msg ]);
-            end;
+            end
 
-            epoch = epoch_timeref.epoch;
+            [er,et,gt0_t1] = ndi.epoch.epochrange(epoch0_timeref.referent,ndi.time.clocktype('dev_local_time'),epoch0_timeref.epoch,epoch1_timeref.epoch);
+
+            epoch = epoch0_timeref.epoch;
+
+            data = [];
+            t = [];
 
             if nargin <2,  % some readtimeseriesepoch() methods may be able to save time if the time information is not requested
-                [data] = ndi_probe_timeseries_obj.readtimeseriesepoch(epoch, epoch_t0_out, epoch_t1_out);
-            else,
-                [data,t] = ndi_probe_timeseries_obj.readtimeseriesepoch(epoch, epoch_t0_out, epoch_t1_out);
-                % now need to convert t back to timeref units
-                if isnumeric(t),
-                    t = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, t, timeref.referent, timeref.clocktype);
-                elseif isstruct(t),
-                    fn = fieldnames(t);
-                    for i=1:numel(fn),
-                        t_data_here = getfield(t,fn{i});
-                        if ~iscell(t_data_here),
-                            t = setfield(t, fn{i}, ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
-                                t_data_here, timeref.referent, timeref.clocktype));
-                        else,
-                            for jj=1:numel(t_data_here),
-                                t_data_here{jj} = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_timeref, ...
-                                    t_data_here{jj}, timeref.referent, timeref.clocktype);
-                            end;
-                            t = setfield(t, fn{i}, t_data_here);
-                        end;
+                for i=1:numel(er)
+                    if (i==1)
+                        startTime = epoch_t0_out;
+                    else
+                        startTime = gt0_t1(i,1);
                     end
-                end;
-            end;
+                    if (i==numel(er))
+                        stopTime = epoch_t1_out;
+                    else
+                        stopTime = gt0_t1(i,2);
+                    end
+                    [data_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
+                    data = cat(1,data,data_here);
+                end
+            else
+                for i=1:numel(er)
+                    if (i==1)
+                        startTime = epoch_t0_out;
+                    else
+                        startTime = gt0_t1(i,1);
+                    end
+                    if (i==numel(er))
+                        stopTime = epoch_t1_out;
+                    else
+                        stopTime = gt0_t1(i,2);
+                    end
+                    [data_here,t_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
+                    t_here = t_here(:);
+                    data = cat(1,data,data_here);                    
+                    % now need to convert t back to timeref units
+                    epoch_here_timeref = ndi.time.timereference(epoch0_timeref.referent,epoch0_timeref.clocktype,er{i},epoch0_timeref.time);
+                    if isnumeric(t_here)
+                        t_here = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_here_timeref, t_here, timeref.referent, timeref.clocktype);
+                        t = cat(1,t,t_here);
+                    elseif isstruct(t_here)
+                        fn = fieldnames(t_here);
+                        for j=1:numel(fn)
+                            t_data_here = getfield(t_here,fn{j});
+                            if isfield(t,fn{j})
+                                t_old = getfield(t,fn{j});
+                            else
+                                t_old = [];
+                            end
+                            if ~iscell(t_data_here)
+                                t_here = setfield(t_here, fn{j}, ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_here_timeref, ...
+                                    t_data_here, timeref.referent, timeref.clocktype));
+                                t = setfield(t,fn{j},cat(1,t_old,getfield(t_here,fn{j})));
+                            else
+                                for jj=1:numel(t_data_here)
+                                    t_data_here{jj} = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_here_timeref, ...
+                                        t_data_here{jj}, timeref.referent, timeref.clocktype);
+                                    if isempty(t_old) & numel(t_old)<jj
+                                        t_new{jj} = t_data_here{jj};
+                                    else
+                                        t_new{jj} = cat(1,t_old{jj},t_data_here{jj});
+                                    end
+                                end
+                                t = setfield(t, fn{j}, t_new); % t_data_here is a set of cell arrays
+                            end                            
+                        end
+                    end
+                end
+            end
         end %readtimeseries()
 
         function ndi_document_obj = newdocument(ndi_probe_timeseries_obj, varargin)
