@@ -164,6 +164,7 @@ classdef cache < handle
             % Clears all entries from the NDI.CACHE object NDI_CACHE_OBJ.
             %
             ndi_cache_obj = ndi_cache_obj.remove(1:numel(ndi_cache_obj.table),[]);
+            clear memoize;
         end % clear
 
         function ndi_cache_obj = freebytes(ndi_cache_obj, freebytes)
