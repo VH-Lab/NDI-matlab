@@ -499,6 +499,7 @@ classdef syncgraph < ndi.ido
                     [newG, G_indexes, numnewnodes] = vlt.graph.mergegraph(ginfo.G, u_cost, nodenumbers2_1);
                     [newSyncRuleG, newSyncRuleG_indexes, numnewnodes] = vlt.graph.mergegraph(ginfo.syncRuleG, 0*u_cost, nodenumbers2_1);
                     newSyncRuleG(isinf(newSyncRuleG)) = 0;
+                    newSyncRuleG(isnan(newSyncRuleG)) = 0; % trying
                     mapping_upperright = cell(size(ginfo.G,1), numnewnodes);
                     mapping_upperright(G_indexes.upper_right.merged) = u_mapping(G_indexes.upper_right.G2);
                     mapping_lowerleft = cell(numnewnodes,size(ginfo.G,1));
@@ -508,7 +509,9 @@ classdef syncgraph < ndi.ido
                     ginfo.nodes = cat(2,ginfo.nodes,u_nodes(nanshere));
                     ginfo.G = newG;
                     ginfo.mapping = [ginfo.mapping mapping_upperright ; mapping_lowerleft mapping_lowerright ];
-                    ginfo.syncRuleG = sparse(newSyncRuleG);
+                    syncRulesmall = spalloc(size(newSyncRuleG,1),size(newSyncRuleG,2),nnz(newSyncRuleG));
+                    syncRulesmall(:) = newSyncRuleG(:);
+                    ginfo.syncRuleG = syncRulesmall; % seems to hog memory without sparse reconversion
 
                     % developer question: should we bother to check for links that matter?
                     %                     right now, let's check that the first epochnode is connected at all
@@ -578,6 +581,14 @@ classdef syncgraph < ndi.ido
             % If the conversion cannot be made, T_OUT is empty and MSG contains a text message describing
             % why the conversion could not be made.
             %
+
+            arguments
+                ndi_syncgraph_obj (1,1) ndi.time.syncgraph
+                timeref_in (1,1) ndi.time.timereference
+                t_in double
+                referent_out (1,1) ndi.epoch.epochset
+                clocktype_out (1,1) ndi.time.clocktype
+            end
             t_out = [];
             timeref_out = [];
             msg = '';

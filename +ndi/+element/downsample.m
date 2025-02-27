@@ -33,6 +33,12 @@ end
 
 mylog = ndi.common.getLogger();
 
+ % first check to see if it already exists
+
+e = D.getelements('element.name',name_out,'element.reference',reference_out);
+
+assert(isempty(e),['Element with name ' name_out ' and reference ' int2str(reference_out) ' already exists. Delete it before making a new one.']);
+
 % Create the new ndi.element.timeseries object
 elem_out = ndi.element.timeseries(D, name_out, reference_out,...
     ndi_element_timeseries_obj_in.type,...
@@ -54,15 +60,17 @@ for epoch_i = 1:numel(et)
     % Downsample the time series data
     [t_down, data_down] = ndi.util.downsampleTimeseries(t, data, LP);
     % Find dev_local_time epoch
+
+    epoch_clock_str = {};
+    t0_t1 = [];
     for k = 1:numel(et(epoch_i).epoch_clock)
-        if et(epoch_i).epoch_clock{k} == ndi.time.clocktype('dev_local_time')
-            dev_local_time_index = k;
-            break;
-        end
+        epoch_clock_str{k} = et(epoch_i).epoch_clock{k}.type;
+        t0_t1([1 2],k) = et(epoch_i).t0_t1{k}(:);
     end
+
+    epoch_clock_str = strjoin(epoch_clock_str,',');
 
     % Add the downsampled data to the new object
     elem_out.addepoch(ndi_element_timeseries_obj_in.epochid(epoch_i),...
-        ndi.time.clocktype('dev_local_time'),...
-        et(epoch_i).t0_t1{dev_local_time_index}, t_down, data_down);
+        epoch_clock_str,t0_t1, t_down, data_down);
 end

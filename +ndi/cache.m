@@ -31,7 +31,7 @@ classdef cache < handle
             %
             % See also: vlt.data.namevaluepair
 
-            maxMemory = 1e9; % 1 GB
+            maxMemory = 1e9; % 10 GB
             replacement_rule = 'fifo';
 
             vlt.data.assign(varargin{:});

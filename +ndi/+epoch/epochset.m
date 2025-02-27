@@ -527,7 +527,7 @@ classdef epochset
                     priority = 1; % use higher than normal priority
                     data.cost = cost;
                     data.mapping = mapping;
-                    data.hashvalue = hash;
+                    data.hashvalue = hash;                    
                     cache.add(key,epochgraph_type,data,priority);
                 end
             end;
@@ -584,9 +584,8 @@ classdef epochset
                         else
                             [cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
                             if ~isinf(cost(i,j))
-                                delta = abs(nodes(i).t0_t1(1)-nodes(j).t0_t1(1));
-                                cost(i,j) = cost(i,j) + delta;
-                                cost(i,j),
+                                %delta = abs(nodes(i).t0_t1(1)-nodes(j).t0_t1(1));
+                                %cost(i,j) = cost(i,j);
                             end
                         end
                     end

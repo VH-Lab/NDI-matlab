@@ -87,7 +87,7 @@ classdef clocktype < matlab.mixin.Heterogeneous
             % and NDI_CLOCKTYPE_B.
             %
             % The following NDI_CLOCKTYPES, if they exist, are linked across epochs with
-            % a cost of 2 and a linear mapping rule with shift 1 and offset 0:
+            % a cost of 100 and a linear mapping rule with shift 1 and offset 0:
             %   'utc' -> 'utc'
             %   'utc' -> 'approx_utc'
             %   'exp_global_time' -> 'exp_global_time'
