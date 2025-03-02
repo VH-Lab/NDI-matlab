@@ -70,7 +70,8 @@ for i=1:numel(et)
         ', subepoch ' int2str(i) ' of ' int2str(numel(et)) '.']);    
     [d,t] = ndi_element_timeseries_obj_in.readtimeseries(i,-inf,inf);
     time = cat(1,time,nextTime(1,idx_dev_local_time) + t(:));
-    data = cat(1,data,d);    for k=1:numel(et(i).epoch_clock),
+    data = cat(1,data,d);
+    for k=1:numel(et(i).epoch_clock),
         if i==1
             t0_t1(1,k) = et(1).t0_t1{k}(1);
         end
