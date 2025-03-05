@@ -86,6 +86,9 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                     end
                     [data_here,t_here] = ndi_probe_timeseries_obj.readtimeseriesepoch(er{i}, startTime, stopTime);
                     t_here = t_here(:);
+                    if size(data_here,1)==-1+size(t_here,1), % sometimes some readers are a data sample short
+                        t_here(end) = [];
+                    end;
                     data = cat(1,data,data_here);                    
                     % now need to convert t back to timeref units
                     epoch_here_timeref = ndi.time.timereference(epoch0_timeref.referent,epoch0_timeref.clocktype,er{i},epoch0_timeref.time);
