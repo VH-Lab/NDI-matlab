@@ -4,10 +4,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     properties (GetAccess=public, SetAccess = protected)
         reference         % A string reference for the session
         identifier        % A unique identifier
+    end
+    properties (GetAccess=public, SetAccess = protected, Transient)
         syncgraph         % An ndi.time.syncgraph object related to this session
         cache             % An ndi.cache object for the session's use
     end
-    properties (GetAccess=protected, SetAccess = protected)
+    properties (GetAccess=protected, SetAccess = protected, Transient)
         database          % An ndi.database associated with this session
     end
     methods
