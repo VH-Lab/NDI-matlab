@@ -1,7 +1,7 @@
-function [status, response] = post_unpublish(dataset_id)
-    % POST_UNPUBLISH - unpublish a dataset
+function [status, response] = unpublish_dataset(dataset_id)
+    % UNPUBLISH_DATASET - unpublish a dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_UNPUBLISH(DATASET_ID)
+    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.UNPUBLISH_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
@@ -24,7 +24,7 @@ function [status, response] = post_unpublish(dataset_id)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_unpublish', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('unpublish_dataset', 'dataset_id', dataset_id));
 
     response = req.send(url);
     status = 1;

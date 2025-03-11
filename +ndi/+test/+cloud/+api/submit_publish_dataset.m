@@ -7,7 +7,7 @@ function submit_publish_dataset(dataset_id)
     %
     %    datasets/post_submit
     %    datasets/post_publish
-    %    datasets/post_unpublish
+    %    datasets/unpublish_dataset
     %    datasets/get_published
     %    datasets/get_unpublished
 
@@ -29,7 +29,7 @@ function submit_publish_dataset(dataset_id)
         error('Dataset id does not exist in the published datasets');
     end
     %% test unpublish
-    [status, response] = ndi.cloud.api.datasets.post_unpublish(dataset_id);
+    [status, response] = ndi.cloud.api.datasets.unpublish_dataset(dataset_id);
     [status, response, datasets_info] = ndi.cloud.api.datasets.get_published(1, total_number_published);
     found = 0;
     for i = 1:numel(datasets_info.datasets)
@@ -57,8 +57,8 @@ function submit_publish_dataset(dataset_id)
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.datasets.post_unpublish(1);
-        error('ndi.cloud.api.datasets.post_unpublish did not throw an error after using an invalid input');
+        [status, response] = ndi.cloud.api.datasets.unpublish_dataset(1);
+        error('ndi.cloud.api.datasets.unpublish_dataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

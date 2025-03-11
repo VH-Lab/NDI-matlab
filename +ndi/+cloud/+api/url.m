@@ -47,7 +47,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/publish');
     elseif (strcmp(type,'post_submit'))
         url = strcat(site, 'datasets/', dataset_id, '/submit');
-    elseif (strcmp(type,'post_unpublish'))
+    elseif (strcmp(type,'unpublish_dataset'))
         url = strcat(site, 'datasets/', dataset_id, '/unpublish');
     elseif (strcmp(type,'delete_document'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
