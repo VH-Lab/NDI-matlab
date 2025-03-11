@@ -525,8 +525,10 @@ classdef epochset
                 if ~isempty(cache),
                     epochgraph_type = ['epochgraph-hashvalue'];
                     priority = 1; % use higher than normal priority
-                    data.cost = cost;
-                    data.mapping = mapping;
+                    ginfo.cost = cost;
+                    ginfo.mapping = mapping;
+                    ginfo_small = ndi.epoch.epochset.ginfo2cache(ginfo);
+                    data.ginfo = ginfo_small;
                     data.hashvalue = hash;                    
                     cache.add(key,epochgraph_type,data,priority);
                 end
@@ -615,8 +617,9 @@ classdef epochset
                 eg_data = cache.lookup(key,epochgraph_type);
                 if ~isempty(eg_data),
                     if matchedepochtable(ndi_epochset_obj, eg_data(1).data.hashvalue);
-                        cost = eg_data(1).data.cost;
-                        mapping = eg_data(1).data.mapping;
+                        ginfo = ndi.epoch.epochset.cache2ginfo(eg_data(1).data.ginfo);
+                        cost = ginfo.cost;
+                        mapping = ginfo.mapping;
                     else,
                         cache.remove(key,epochgraph_type); % it's out of date, clean it up
                     end
@@ -639,4 +642,38 @@ classdef epochset
 
     end % methods
 
+    methods (Static)
+        function ginfo_small = ginfo2cache(ginfo)
+        % GINFO2CACHE Make a smaller version of the GINFO for storage in the cache
+        %
+        % GINFO_SMALL = GINFO2CACHE(GINFO)
+        % 
+            tf = ~cellfun(@isempty,ginfo.mapping(:));
+            mapping_linear = ginfo.mapping(tf);
+            cost_sparse = ginfo.cost;
+            cost_sparse(isinf(cost_sparse)) = 0;
+            cost_sparse = sparse(cost_sparse);
+            ginfo_small.cost_sparse = cost_sparse;
+            ginfo_small.mapping_linear = mapping_linear;
+            ginfo_small.mapping_indexes = find(tf);
+        end
+
+        function ginfo_big = cache2ginfo(ginfo_small)
+        % CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache
+        %
+        % GINFO_BIG = GINFO2CACHE(GINFO_SMALL)
+        % 
+           if ~isfield(ginfo_small,'mapping_linear')
+               ginfo_big = ginfo_small; % no compression
+               return;
+           end
+           ginfo_big.nodes = ginfo_small.nodes;
+           cost = full(ginfo_small.cost_sparse);
+           cost(cost==0) = Inf;
+           ginfo_big.cost = cost;
+           ginfo_big.mapping = cell(size(cost,1),size(cost,1));
+           ginfo_big.mapping(ginfo_small.mapping_indexes) = ginfo_small.mapping_linear;
+        end % cache2ginfo
+
+    end % methods(Static)
 end % classdef
