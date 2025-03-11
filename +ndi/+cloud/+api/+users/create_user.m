@@ -1,7 +1,7 @@
-function [status, response] = post_user(email, name, password)
-    % POST_USER - create a new user
+function [status, response] = create_user(email, name, password)
+    % CREATE_USER - create a new user
     %
-    % [STATUS,RESPONSE] = ndi.cloud.user.post_users(EMAIL, NAME, PASSWORD)
+    % [STATUS,RESPONSE] = ndi.cloud.user.create_user(EMAIL, NAME, PASSWORD)
     %
     % Inputs:
     %   EMAIL - a string representing the user's e-mail
