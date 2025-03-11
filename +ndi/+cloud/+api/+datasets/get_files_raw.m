@@ -15,7 +15,7 @@ function [status, response, url] = get_files_raw(dataset_id, uid)
     %   RESPONSE - the get request summary
     %   URL - the upload URL to PUT the file to
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
     % Construct the curl command with the organization ID and authentication token
     url = matlab.net.URI(ndi.cloud.api.url('get_files_raw', 'dataset_id', dataset_id, 'uid', uid));
 

@@ -13,7 +13,7 @@ function [status, response, datasets] = get_published(page, page_size)
     %   DATASETS - a high level summary of all published datasets
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     page = int2str(page);
     page_size = int2str(page_size);

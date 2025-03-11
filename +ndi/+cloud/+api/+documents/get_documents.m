@@ -13,7 +13,7 @@ function [status, response, document] = get_documents(dataset_id, document_id)
     %   DOCUMENT - A document object required by the user
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_documents', 'dataset_id', dataset_id, 'document_id', document_id));
 

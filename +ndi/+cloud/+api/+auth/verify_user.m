@@ -11,7 +11,7 @@ function [status, response] = verify_user(email, confirmation_code)
     %   RESPONSE - the response summary
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
     json = struct('email', email, 'confirmationCode', confirmation_code);
 
     method = matlab.net.http.RequestMethod.POST;

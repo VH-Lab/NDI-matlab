@@ -12,7 +12,8 @@ function [status,file_detail,downloadUrl, response] = get_files_detail(dataset_i
     %   FILE_DETAIL - the details of the file
     %   DOWNLOADURL - the download url for the file
     %   RESPONSE - the response from the server
-    [auth_token, ~] = ndi.cloud.uilogin();
+    
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_files_detail', 'dataset_id', dataset_id, 'uid', uid));
 

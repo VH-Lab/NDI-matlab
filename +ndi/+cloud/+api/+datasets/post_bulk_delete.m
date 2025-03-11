@@ -11,7 +11,7 @@ function [status, response] = post_bulk_delete(dataset_id,document_ids)
     %   STATUS - did the post request work? 1 for no, 0 for yes
     %   response - the post request response
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
     json = struct();
     json.documentIds = document_ids;
 

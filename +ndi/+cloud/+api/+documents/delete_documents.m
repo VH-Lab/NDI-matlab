@@ -12,7 +12,7 @@ function [status, response] = delete_documents(dataset_id, document_id)
     %   RESPONSE - a message saying if the document was deleted or not
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.DELETE;
 

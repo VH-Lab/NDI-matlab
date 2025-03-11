@@ -12,7 +12,7 @@ function [status, response] = post_branch(dataset_id, branch_name)
     %   RESPONSE - the updated dataset summary
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     json = struct('branchName', branch_name);
 

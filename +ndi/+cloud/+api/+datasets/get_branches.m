@@ -11,7 +11,8 @@ function [status, response, branches] = get_branches(dataset_id)
     %   RESPONSE - the get request summary
     %   BRANCHES - the branches required by the user
     %
-    [auth_token, ~] = ndi.cloud.uilogin();
+    
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_branches', 'dataset_id', dataset_id));
 

@@ -11,7 +11,7 @@ function [status, response] = post_unpublish(dataset_id)
     %   RESPONSE - the dataset was unpublished
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 

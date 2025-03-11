@@ -11,7 +11,7 @@ function [status,dataset, response] = get_datasetId(dataset_id)
     %   DATASET - the dataset required by the user
     %   RESPONSE - the response from the server
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_datasetId', 'dataset_id', dataset_id));
 

@@ -12,7 +12,7 @@ function [status, response, summary] = get_documents_summary(dataset_id)
     %   SUMMARY - The list of documents in the dataset
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_documents_summary', 'dataset_id', dataset_id));
 

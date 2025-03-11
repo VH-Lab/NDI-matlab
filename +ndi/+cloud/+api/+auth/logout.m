@@ -10,7 +10,7 @@ function [status, response] = logout()
     %   RESPONSE - the response summary
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 

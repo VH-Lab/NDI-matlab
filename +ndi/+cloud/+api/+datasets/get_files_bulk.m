@@ -11,7 +11,8 @@ function [status, response, url] = get_files_bulk(dataset_id)
     %   RESPONSE - the get request summary
     %   URL - the upload URL to PUT the file to
     %
-    [auth_token, ~] = ndi.cloud.uilogin();
+    
+    auth_token = ndi.cloud.authenticate();
 
     url = matlab.net.URI(ndi.cloud.api.url('get_files_bulk', 'dataset_id', dataset_id));
 

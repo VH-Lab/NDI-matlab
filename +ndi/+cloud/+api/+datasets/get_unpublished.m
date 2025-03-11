@@ -12,7 +12,7 @@ function [status, response, datasets] = get_unpublished(page, page_size)
     %   RESPONSE - the updated dataset summary
     %   DATASETS - a high level summary of all unpublished datasets
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     page = int2str(page);
     page_size = int2str(page_size);

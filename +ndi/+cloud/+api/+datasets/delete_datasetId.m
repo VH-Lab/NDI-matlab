@@ -12,7 +12,7 @@ function [status, response] = delete_datasetId(dataset_id)
     %   RESPONSE - the delete confirmation
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.DELETE;
 

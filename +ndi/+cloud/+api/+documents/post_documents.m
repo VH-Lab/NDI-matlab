@@ -16,7 +16,7 @@ function [status, response, document_id] = post_documents(file_path, dataset_id,
     fprintf(fid,'%s',document);
     fclose(fid);
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 

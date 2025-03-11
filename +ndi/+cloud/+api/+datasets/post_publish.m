@@ -11,7 +11,7 @@ function [status, response] = post_publish(dataset_id)
     %   RESPONSE - the dataset was published
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 
