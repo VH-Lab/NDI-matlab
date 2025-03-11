@@ -51,4 +51,4 @@ example_document = jsonencode(example_document);
 [status, response, document_id] = ndi.cloud.api.documents.add_document(docName, dataset_id, example_document);
 
 [status, response] = ndi.cloud.api.datasets.unpublish_dataset(dataset_id);
-[status, response] = ndi.cloud.api.datasets.post_publish(dataset_id);
+[status, response] = ndi.cloud.api.datasets.publish_dataset(dataset_id);

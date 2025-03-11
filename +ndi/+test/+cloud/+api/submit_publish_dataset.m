@@ -6,7 +6,7 @@ function submit_publish_dataset(dataset_id)
     % Test the following api commands:
     %
     %    datasets/post_submit
-    %    datasets/post_publish
+    %    datasets/publish_dataset
     %    datasets/unpublish_dataset
     %    datasets/get_published
     %    datasets/get_unpublished
@@ -15,7 +15,7 @@ function submit_publish_dataset(dataset_id)
     % [status, response] = ndi.cloud.api.datasets.post_submit(dataset_id);
 
     %% test publish
-    [status, response] = ndi.cloud.api.datasets.post_publish(dataset_id);
+    [status, response] = ndi.cloud.api.datasets.publish_dataset(dataset_id);
     [status, response, datasets_info] = ndi.cloud.api.datasets.get_published(1, 1);
     total_number_published = datasets_info.totalNumber;
     found = 0;
@@ -51,8 +51,8 @@ function submit_publish_dataset(dataset_id)
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.datasets.post_publish(1);
-        error('ndi.cloud.api.datasets.post_publish did not throw an error after using an invalid input');
+        [status, response] = ndi.cloud.api.datasets.publish_dataset(1);
+        error('ndi.cloud.api.datasets.publish_dataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
