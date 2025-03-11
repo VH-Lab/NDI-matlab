@@ -49,7 +49,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/submit');
     elseif (strcmp(type,'post_unpublish'))
         url = strcat(site, 'datasets/', dataset_id, '/unpublish');
-    elseif (strcmp(type,'delete_documents'))
+    elseif (strcmp(type,'delete_document'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
     elseif (strcmp(type,'get_documents'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);

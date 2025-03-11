@@ -1,7 +1,7 @@
-function [status, response] = delete_documents(dataset_id, document_id)
-    % DELETE_DOCUMENTS - delete a document from the dataset
+function [status, response] = delete_document(dataset_id, document_id)
+    % DELETE_DOCUMENT - delete a document from the dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.documents.DELETE_DOCUMENTS(DATASET_ID, DOCUMENT_ID)
+    % [STATUS,RESPONSE] = ndi.cloud.api.documents.DELETE_DOCUMENT(DATASET_ID, DOCUMENT_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -22,7 +22,7 @@ function [status, response] = delete_documents(dataset_id, document_id)
 
     req = matlab.net.http.RequestMessage(method, headers);
 
-    url = matlab.net.URI(ndi.cloud.api.url('delete_documents', 'dataset_id', dataset_id, 'document_id', document_id));
+    url = matlab.net.URI(ndi.cloud.api.url('delete_document', 'dataset_id', dataset_id, 'document_id', document_id));
 
     response = req.send(url);
     status = 1;
