@@ -23,7 +23,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/branches');
     elseif (strcmp(type,'get_files_detail'))
         url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
-    elseif (strcmp(type,'get_datasetId'))
+    elseif (strcmp(type,'get_dataset'))
         url = strcat(site, 'datasets/', dataset_id);
     elseif (strcmp(type,'get_files'))
         url = strcat(site, 'datasets/', dataset_id, '/files/', uid);

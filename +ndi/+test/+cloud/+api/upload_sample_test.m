@@ -34,9 +34,9 @@ function dataset_id = upload_sample_test()
     end
 
     %% test getting the dataset
-    [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+    [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if status
-        error(['ndi.cloud.api.datasets.get_datasetId() failed to retrieve the dataset' response]);
+        error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset' response]);
     end
 
     if ~isfield(dataset, 'x_id')
@@ -61,9 +61,9 @@ function dataset_id = upload_sample_test()
     if status
         error(['ndi.cloud.api.datasets.post_datasetId() failed to update the dataset' response]);
     end
-    [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+    [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if status
-        error(['ndi.cloud.api.datasets.get_datasetId() failed to retrieve the dataset after updating the metadata' response]);
+        error(['ndi.cloud.api.datasets.get_dataset() failed to retrieve the dataset after updating the metadata' response]);
     end
 
     if ~isfield(dataset, 'doi')
@@ -103,8 +103,8 @@ function dataset_id = upload_sample_test()
 
     %% test invalid inputs
     try
-        [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(1);
-        error('ndi.cloud.api.datasets.get_datasetId did not throw an error after using an invalid dataset id');
+        [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(1);
+        error('ndi.cloud.api.datasets.get_dataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end

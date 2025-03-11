@@ -1,7 +1,7 @@
-function [status,dataset, response] = get_datasetId(dataset_id)
-    % GET_DATASETID - get a dataset
+function [status,dataset, response] = get_dataset(dataset_id)
+    % GET_DATASET - Get a dataset given it's dataset id
     %
-    % [STATUS,DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASETID(DATASET_ID)
+    % [STATUS,DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -13,7 +13,7 @@ function [status,dataset, response] = get_datasetId(dataset_id)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_datasetId', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('get_dataset', 'dataset_id', dataset_id));
 
     method = matlab.net.http.RequestMethod.GET;
 

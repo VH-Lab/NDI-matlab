@@ -34,7 +34,7 @@ function post_documents_test(dataset_id)
         error(['ndi.cloud.up.upload_to_NDI_cloud() failed to upload the dataset' msg]);
     end
 
-    [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+    [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 
     %% test post_document_update
     test_document_update(dataset_id)
@@ -107,9 +107,9 @@ function test_post_documents(d, dataset_id)
             error('ndi.cloud.api.documents.get_documents does not return a document struct');
         end
 
-        [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+        [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
         if numel(dataset.documents) ~= 1
-            error('ndi.cloud.api.datasets.get_datasetId does not return the correct number of documents');
+            error('ndi.cloud.api.datasets.get_dataset does not return the correct number of documents');
         end
         break;
     end

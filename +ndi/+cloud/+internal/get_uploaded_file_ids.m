@@ -3,7 +3,7 @@ function file_ids = get_uploaded_file_ids(dataset_id)
 
     [auth_token, organization_id] = ndi.cloud.uilogin();
     try
-        % [~, result, ~] = ndi.cloud.datasets.get_datasetId(dataset_id, auth_token);
+        % [~, result, ~] = ndi.cloud.datasets.get_dataset(dataset_id, auth_token);
         [~, ~, datasets] = ndi.cloud.datasets.get_organizations(organization_id, auth_token);
         dataset_names = {};
         for i=1:numel(datasets),

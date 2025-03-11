@@ -51,14 +51,14 @@ function dataset_branch_test()
     end
     [status, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
     try
-        [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
-        error('ndi.cloud.api.dataset.get_datasetId did not throw an error after using an invalid dataset id');
+        [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+        error('ndi.cloud.api.dataset.get_dataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
     try
-        [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(branched_dataset_id);
-        error('ndi.cloud.api.dataset.get_datasetId did not throw an error after using an invalid dataset id');
+        [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(branched_dataset_id);
+        error('ndi.cloud.api.dataset.get_dataset did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
