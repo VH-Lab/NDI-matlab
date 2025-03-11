@@ -1,7 +1,7 @@
-function [status, response] = post_datasetId(dataset_id, dataset)
-    % POST_DATASETID - update a dataset to NDI Cloud
+function [status, response] = update_dataset(dataset_id, dataset)
+    % UPDATE_DATASET - update a dataset to NDI Cloud
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_DATASETID(DATASET_ID, DATASET)
+    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.UPDATE_DATASET(DATASET_ID, DATASET)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
@@ -25,7 +25,7 @@ function [status, response] = post_datasetId(dataset_id, dataset)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_datasetId', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('update_dataset', 'dataset_id', dataset_id));
 
     response = req.send(url);
     status = 1;

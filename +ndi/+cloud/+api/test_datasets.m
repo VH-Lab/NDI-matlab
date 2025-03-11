@@ -16,7 +16,7 @@ example_dataset = jsondecode(str);
 
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
-[status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset);
+[status, response] = ndi.cloud.api.datasets.update_dataset(dataset_id, update_dataset);
 % example organization id: '645163735ea2a39cb644cc6c'
 [status, response, datasets] = ndi.cloud.api.datasets.list_datasets(organization_id);
 

@@ -39,7 +39,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/branch');
     elseif (strcmp(type,'bulk_delete_documents'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/bulk-delete');
-    elseif (strcmp(type,'post_datasetId'))
+    elseif (strcmp(type,'update_dataset'))
         url = strcat(site, 'datasets/', dataset_id);
     elseif (strcmp(type,'post_organization'))
         url = strcat(site, 'organizations/', organization_id, '/datasets');

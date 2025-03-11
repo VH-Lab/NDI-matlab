@@ -9,7 +9,7 @@ function dataset_id = upload_sample_test()
     %    datasets/post_organization
     %    documents/get_documents_summary
     %    datasets/list_datasets
-    %    datasets/post_datasetId
+    %    datasets/update_dataset
     %
     % Tests the following functions:
     %
@@ -57,9 +57,9 @@ function dataset_id = upload_sample_test()
 
     %% test updating the dataset
     update_dataset.doi = "https://doi.org://10.1000/123456789";
-    [status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset);
+    [status, response] = ndi.cloud.api.datasets.update_dataset(dataset_id, update_dataset);
     if status
-        error(['ndi.cloud.api.datasets.post_datasetId() failed to update the dataset' response]);
+        error(['ndi.cloud.api.datasets.update_dataset() failed to update the dataset' response]);
     end
     [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if status
@@ -67,7 +67,7 @@ function dataset_id = upload_sample_test()
     end
 
     if ~isfield(dataset, 'doi')
-        error('ndi.cloud.api.datasets.post_datasetId failed to update the dataset');
+        error('ndi.cloud.api.datasets.update_dataset failed to update the dataset');
     end
 
     %% test get_documents_summary
@@ -127,8 +127,8 @@ function dataset_id = upload_sample_test()
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.datasets.post_datasetId(1, update_dataset);
-        error('ndi.cloud.api.datasets.post_datasetId did not throw an error after using an invalid input');
+        [status, response] = ndi.cloud.api.datasets.update_dataset(1, update_dataset);
+        error('ndi.cloud.api.datasets.update_dataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end
