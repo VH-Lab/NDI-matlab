@@ -1,6 +1,6 @@
-function [status,response] = verify(email, confirmation_code)
-    % VERIFY - verifies a user via the confirmation code sent in e-mail
-    % [STATUS,RESPONSE] = ndi.cloud.api.auth.verify(EMAIL, CONFIRMATION_CODE)
+function [status, response] = verify_user(email, confirmation_code)
+    % VERIFY_USER - verifies a user via the confirmation code sent in e-mail
+    % [STATUS, RESPONSE] = ndi.cloud.api.auth.verify_user(EMAIL, CONFIRMATION_CODE)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to verify
@@ -25,7 +25,7 @@ function [status,response] = verify(email, confirmation_code)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('verify'));
+    url = matlab.net.URI(ndi.cloud.api.url('verify_user'));
 
     response = req.send(url);
     status = 1;
