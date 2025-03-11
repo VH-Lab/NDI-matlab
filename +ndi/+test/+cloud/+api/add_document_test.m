@@ -40,7 +40,7 @@ function add_document_test(dataset_id)
     test_document_update(dataset_id)
 
     try
-        [status, response, document_id] = ndi.cloud.api.documents.add_document('test', dataset_id, 'test');
+        [status, response, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, 'test');
         error('ndi.cloud.api.documents.add_document did not throw an error after using a non-struct document');
     catch
         % do nothing, this is the expected behavior
@@ -94,8 +94,7 @@ function test_add_document(d, dataset_id)
             continue;
         end
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
-        fname = ndi.file.temp_name();
-        [status, response_doc, document_id] = ndi.cloud.api.documents.add_document(fname, dataset_id, document);
+        [status, response_doc, document_id] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
         if status ~= 0
             error(response_doc);
         end

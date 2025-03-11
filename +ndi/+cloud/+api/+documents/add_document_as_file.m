@@ -1,5 +1,5 @@
-function [status, response, document_id] = add_document(file_path, dataset_id, document)
-    % ADD_DOCUMENT - add a document to the dataset
+function [status, response, document_id] = add_document_as_file(dataset_id, document)
+    % ADD_DOCUMENT - add a document to the dataset using a file for upload
     %
     % [STATUS, RESPONSE, DOCUMENT_ID] = ndi.cloud.api.documents.ADD_DOCUMENT(DATASET_ID, DOCUMENT)
     %
@@ -11,10 +11,11 @@ function [status, response, document_id] = add_document(file_path, dataset_id, d
     %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - the new document summary
     %
+    % Note: use this function if documents are too large to send as json
 
-    fid = fopen(file_path,'w');
-    fprintf(fid,'%s',document);
-    fclose(fid);
+    % Todo: merge with add_document
+
+    [file_path, file_cleanup_obj] = saveDocumentToTemporaryFile(document);
 
     auth_token = ndi.cloud.authenticate();
 
@@ -32,9 +33,7 @@ function [status, response, document_id] = add_document(file_path, dataset_id, d
     url = matlab.net.URI(ndi.cloud.api.url('add_document', 'dataset_id', dataset_id));
 
     response = req.send(url);
-    if exist(file_path, 'file')==2,
-        delete(file_path);
-    end
+
     status = 1;
     if (response.StatusCode == 200)
         status = 0;
@@ -42,3 +41,17 @@ function [status, response, document_id] = add_document(file_path, dataset_id, d
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
+
+    clear file_cleanup_obj
+end
+
+function [file_path, file_cleanup_obj] = saveDocumentToTemporaryFile(document)
+    
+    file_path = [tempname, '.json'];
+
+    fid = fopen(file_path, 'w');
+    fprintf(fid, '%s', document);
+    fclose(fid);
+
+    file_cleanup_obj = onCleanup(@() delete(file_path));
+end
