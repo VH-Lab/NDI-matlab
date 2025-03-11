@@ -1,7 +1,7 @@
-function [status, response, dataset_id] = post_organization(dataset)
-    % POST_ORGANIZATION - Create a new dataset
+function [status, response, dataset_id] = create_dataset(dataset)
+    % CREATE_DATASET - Create a new dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_ORGANIZATION(DATASET)
+    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET(DATASET)
     %
     % Inputs:
     %   DATASET - a JSON object representing the dataset
@@ -24,7 +24,7 @@ function [status, response, dataset_id] = post_organization(dataset)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_organization', 'organization_id', organization_id));
+    url = matlab.net.URI(ndi.cloud.api.url('create_dataset', 'organization_id', organization_id));
 
     response = req.send(url);
     status = 1;

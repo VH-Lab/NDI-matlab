@@ -12,7 +12,7 @@ fileName = '/Users/cxy/Documents/MATLAB/tools/NDI-matlab/+ndi/+cloud/+api/exampl
 str = fileread(fileName);
 example_dataset = jsondecode(str);
 
-[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(example_dataset);
+[status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(example_dataset);
 
 update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
@@ -25,7 +25,7 @@ update_dataset.name = "updated example dataset";
 [status, response, datasets] = ndi.cloud.api.datasets.list_datasets(organization_id);
 id = "64d4c79bbafd38dfb30b1824";
 [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
-[status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organizationId, example_dataset);
+[status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(organizationId, example_dataset);
 [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 page = 1;
 page_size = 1;

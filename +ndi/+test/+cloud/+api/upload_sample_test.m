@@ -6,7 +6,7 @@ function dataset_id = upload_sample_test()
     % Tests the following api commands:
     %
     %    datasets/get_datasetid
-    %    datasets/post_organization
+    %    datasets/create_dataset
     %    documents/get_documents_summary
     %    datasets/list_datasets
     %    datasets/update_dataset
@@ -25,12 +25,12 @@ function dataset_id = upload_sample_test()
     datasetInformation = metadata.datasetInformation;
     metadata_json = ndi.database.metadata_app.fun.metadata_to_json(datasetInformation);
     %% test posting a dataset
-    [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(metadata_json);
+    [status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
     if status
-        error(['ndi.cloud.api.datasets.post_organization() failed to create a new dataset' response]);
+        error(['ndi.cloud.api.datasets.create_dataset() failed to create a new dataset' response]);
     end
     if ~ischar(dataset_id) || length(dataset_id) ~= 24
-        error('ndi.cloud.api.datasets.post_organization() failed to return a valid dataset_id');
+        error('ndi.cloud.api.datasets.create_dataset() failed to return a valid dataset_id');
     end
 
     %% test getting the dataset
@@ -109,8 +109,8 @@ function dataset_id = upload_sample_test()
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.datasets.post_organization(1);
-        error('ndi.cloud.api.datasets.post_organization did not throw an error after using an invalid input');
+        [status, response] = ndi.cloud.api.datasets.create_dataset(1);
+        error('ndi.cloud.api.datasets.create_dataset did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

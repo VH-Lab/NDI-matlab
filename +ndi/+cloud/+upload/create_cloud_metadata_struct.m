@@ -96,5 +96,5 @@ function [status, response,dataset_id] = create_cloud_metadata_struct(S)
     end
     % dataset_update.brainRegions = brainRegions;
     % dataset_update.totalSize = round(size);
-    [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(dataset_update);
+    [status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(dataset_update);
 end

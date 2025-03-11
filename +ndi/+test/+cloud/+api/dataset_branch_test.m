@@ -8,7 +8,7 @@ function dataset_branch_test()
     %   datasets/get_branches
 
     example_dataset.name = "test branch dataset";
-    [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(example_dataset);
+    [status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(example_dataset);
     [status, response] = ndi.cloud.api.datasets.create_dataset_branch(dataset_id, 'new test branch');
     [status, response, branches] = ndi.cloud.api.datasets.get_branches(dataset_id);
     if (numel(branches) ~= 1)

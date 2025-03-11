@@ -23,9 +23,9 @@ function [b,msg] = upload_download(D,metadatafile)
 
     tic;
 
-    [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(metadata_json);
+    [status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
     if status,
-        msg=['ndi.cloud.api.datasets.post_organization() failed to create a new dataset' response];
+        msg=['ndi.cloud.api.datasets.create_dataset() failed to create a new dataset' response];
         return;
     end;
 
