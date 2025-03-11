@@ -1,7 +1,7 @@
-function [status,response] = password_forgot(email)
-    % PASSWORD_FORGOT - sends a password reset e-mail
+function [status, response] = reset_password(email)
+    % RESET_PASSWORD - sends a password reset e-mail
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.auth.password_forgot(EMAIL)
+    % [STATUS, RESPONSE] = ndi.cloud.api.auth.reset_password(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the
@@ -24,7 +24,7 @@ function [status,response] = password_forgot(email)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('password_forgot'));
+    url = matlab.net.URI(ndi.cloud.api.url('reset_password'));
 
     response = req.send(url);
     status = 1;
