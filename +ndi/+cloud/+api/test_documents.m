@@ -5,7 +5,7 @@ document_id = summary.documents.id;
 docName = 'exampledocument.json';
 str_doc = fileread(docName);
 example_document = jsondecode(str_doc);
-[status, response] = ndi.cloud.api.documents.post_documents_update(dataset_id, document_id, example_document);
+[status, response] = ndi.cloud.api.documents.update_document(dataset_id, document_id, example_document);
 
 docName = '41268d7e0d7a3d86_c0d7e2ce1ad7d0af.json';
 str_doc = fileread(docName);

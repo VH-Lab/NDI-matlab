@@ -7,7 +7,7 @@ function post_documents_test(dataset_id)
     %
     %    datasets/post_documents
     %    documents/get_documents
-    %    documents/post_documents_update
+    %    documents/update_document
     %    files/get_file_upload_url
     %    files/put_files
     %    files/get_file_details
@@ -52,8 +52,8 @@ function post_documents_test(dataset_id)
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.documents.post_documents_update('test', dataset_id, 1, 'test');
-        error('ndi.cloud.api.documents.post_documents_update did not throw an error after using an invalid document id');
+        [status, response] = ndi.cloud.api.documents.update_document('test', dataset_id, 1, 'test');
+        error('ndi.cloud.api.documents.update_document did not throw an error after using an invalid document id');
     catch
         % do nothing, this is the expected behavior
     end
@@ -172,7 +172,7 @@ function test_document_update(dataset_id)
     document.is_test = 1;
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
-    [status, response] = ndi.cloud.api.documents.post_documents_update(fname, dataset_id, document_id, document);
+    [status, response] = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
     if status
         error(response);
     end
@@ -181,7 +181,7 @@ function test_document_update(dataset_id)
         error(response);
     end
     if ~isfield(upload_document, 'is_test') || ~upload_document.is_test
-        error('ndi.cloud.api.documents.post_documents_update does not correctly update the document');
+        error('ndi.cloud.api.documents.update_document does not correctly update the document');
     end
     % change back to original
     % remove is_test field
@@ -189,7 +189,7 @@ function test_document_update(dataset_id)
     document = rmfield(document, 'is_test');
     document = jsonencode(document);
     [fid,fname] = ndi.file.temp_fid();
-    [status, response] = ndi.cloud.api.documents.post_documents_update(fname, dataset_id, document_id, document);
+    [status, response] = ndi.cloud.api.documents.update_document(fname, dataset_id, document_id, document);
     if status
         error(response);
     end
@@ -198,6 +198,6 @@ function test_document_update(dataset_id)
         error(response);
     end
     if isfield(upload_document, 'is_test')
-        error('ndi.cloud.api.documents.post_documents_update does not correctly update the document');
+        error('ndi.cloud.api.documents.update_document does not correctly update the document');
     end
 end

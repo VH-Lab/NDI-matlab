@@ -1,7 +1,7 @@
-function [status, response] = post_documents_update(file_path, dataset_id, document_id, document)
-    % POST_DOCUMENTS_UPDATE - update a document
+function [status, response] = update_document(file_path, dataset_id, document_id, document)
+    % UPDATE_DOCUMENT - update a document
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS_UPDATE(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
+    % [STATUS,RESPONSE] = ndi.cloud.api.documents.UPDATE_DOCUMENT(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
     %
     % Inputs:
     %   FILE_PATH - a string representing the file path
@@ -31,7 +31,7 @@ function [status, response] = post_documents_update(file_path, dataset_id, docum
 
     req = matlab.net.http.RequestMessage(method, headers, provider);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_documents_update', 'dataset_id', dataset_id, 'document_id', document_id));
+    url = matlab.net.URI(ndi.cloud.api.url('update_document', 'dataset_id', dataset_id, 'document_id', document_id));
 
     response = req.send(url);
     if exist(file_path, 'file')==2,
