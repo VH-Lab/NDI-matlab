@@ -61,6 +61,6 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
     elseif (strcmp(type, 'get_dataset_details'))
         url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
-    elseif (strcmp(type, 'get_files_bulk'))
+    elseif (strcmp(type, 'get_file_collection_upload_url'))
         url = strcat(site, 'datasets/', dataset_id, '/files/bulk');
     end

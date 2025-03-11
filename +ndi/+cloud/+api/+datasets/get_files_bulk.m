@@ -1,7 +1,7 @@
-function [status, response, url] = get_files_bulk(dataset_id)
-    %GET_FILES_BULK - get an upload URL for all file that will be published to the NDI Cloud
+function [status, response, url] = get_file_collection_upload_url(dataset_id)
+    %GET_FILE_COLLECTION_UPLOAD_URL - get an upload URL for all file that will be published to the NDI Cloud
     %
-    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILES_BULK(DATASET_ID)
+    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_COLLECTION_UPLOAD_URL(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -14,7 +14,7 @@ function [status, response, url] = get_files_bulk(dataset_id)
     
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_files_bulk', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('get_file_collection_upload_url', 'dataset_id', dataset_id));
 
     method = matlab.net.http.RequestMethod.GET;
 

@@ -52,7 +52,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
                     waitbar(file_count/files_left, h, sprintf('Uploading file %d of %d. Size %.2f GB out of %.2f GB...', file_count, files_left, uploaded_size, total_size));
                 catch
                 end
-                [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
+                [status, response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
                 [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
 
                 if exist(zip_file, 'file')
@@ -81,7 +81,7 @@ function [b, msg] = zip_for_upload(D, doc_file_struct, total_size, dataset_id)
             waitbar(file_count/files_left, h, sprintf('Uploading file %d of %d. Size %.2f GB out of %.2f GB...', file_count, files_left, uploaded_size, total_size));
         catch
         end
-        [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
+        [status, response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
         [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_file);
         if exist(zip_file, 'file')
             delete(zip_file);
