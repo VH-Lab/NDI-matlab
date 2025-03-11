@@ -1,14 +1,14 @@
-function [status, response] = publish_dataset(dataset_id)
-    % PUBLISH_DATASET - publish a dataset
+function [status, response] = submit_dataset(dataset_id)
+    % SUBMIT_DATASET - submit a dataset for review
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.PUBLISH_DATASET(DATASET_ID)
+    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.SUBMIT_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
     %
     % Outputs:
     %   STATUS - did the post request work? 1 for no, 0 for yes
-    %   RESPONSE - the dataset was published
+    %   RESPONSE - the dataset was submitted
     %
 
     auth_token = ndi.cloud.authenticate();
@@ -24,7 +24,7 @@ function [status, response] = publish_dataset(dataset_id)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('publish_dataset', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('submit_dataset', 'dataset_id', dataset_id));
 
     response = req.send(url);
     status = 1;

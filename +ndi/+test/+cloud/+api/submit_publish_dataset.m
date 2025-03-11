@@ -5,14 +5,14 @@ function submit_publish_dataset(dataset_id)
     %
     % Test the following api commands:
     %
-    %    datasets/post_submit
+    %    datasets/submit_dataset
     %    datasets/publish_dataset
     %    datasets/unpublish_dataset
     %    datasets/get_published
     %    datasets/get_unpublished
 
     %% test submit
-    % [status, response] = ndi.cloud.api.datasets.post_submit(dataset_id);
+    % [status, response] = ndi.cloud.api.datasets.submit_dataset(dataset_id);
 
     %% test publish
     [status, response] = ndi.cloud.api.datasets.publish_dataset(dataset_id);
@@ -45,7 +45,7 @@ function submit_publish_dataset(dataset_id)
     [status, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
 
     try
-        [status, response] = ndi.cloud.api.datasets.post_submit(dataset_id);
+        [status, response] = ndi.cloud.api.datasets.submit_dataset(dataset_id);
         error('ndi.cloud.api.datasets.get_unpublished did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
