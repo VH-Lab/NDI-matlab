@@ -1,7 +1,7 @@
-function [status, response, summary] = get_documents_summary(dataset_id)
-    % GET_DOCUMENTS_SUMMARY - get a document summaries for a dataset
+function [status, response, summary] = list_dataset_documents(dataset_id)
+    % LIST_DATASET_DOCUMENTS - Get a list of summaries for all documents of a dataset
     %
-    % [STATUS,RESPONSE,SUMMARY] = ndi.cloud.api.documents.GET_DOCUMENTS_SUMMARY(DATASET_ID)
+    % [STATUS, RESPONSE, SUMMARY] = ndi.cloud.api.documents.LIST_DATASET_DOCUMENTS(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -14,7 +14,7 @@ function [status, response, summary] = get_documents_summary(dataset_id)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_documents_summary', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('list_dataset_documents', 'dataset_id', dataset_id));
 
     method = matlab.net.http.RequestMethod.GET;
 

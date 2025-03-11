@@ -163,7 +163,7 @@ function test_post_files(S, d, dataset_id)
 end
 
 function test_document_update(dataset_id)
-    [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+    [status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     if status
         error(response);
     end

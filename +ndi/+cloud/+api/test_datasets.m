@@ -42,7 +42,7 @@ curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://pr
 all_docs = summary.documents;
 all_docs_ids = all_docs.id;
 [status, response, document] = ndi.cloud.api.documents.get_documents('6466c110390dd305045ee10e', all_docs(3).id);
-[status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+[status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
 
 docName = 'exampledocument.json';
 str_doc = fileread(docName);

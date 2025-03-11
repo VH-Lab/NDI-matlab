@@ -6,7 +6,7 @@ function delete_documents_test(dataset_id)
     % Test the following api commands:
     %   documents/delete_document
     %   documents/bulk_delete_documents
-    %   documents/get_documents_summary
+    %   documents/list_dataset_documents
     %
 
     [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
@@ -20,9 +20,9 @@ function delete_documents_test(dataset_id)
     if (number_of_documents ~= numel(dataset.documents))
         error('ndi.cloud.api.datasets.get_dataset returns the same number of documents after deleting a document');
     end
-    [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+    [status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     if (number_of_documents ~= numel(summary.documents))
-        error('ndi.cloud.api.documents.get_documents_summary returns the same number of documents after deleting a document');
+        error('ndi.cloud.api.documents.list_dataset_documents returns the same number of documents after deleting a document');
     end
     % try getting the document that was deleted. If no error is thrown, then the document was not deleted
     try

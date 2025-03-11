@@ -7,7 +7,7 @@ function dataset_id = upload_sample_test()
     %
     %    datasets/get_datasetid
     %    datasets/create_dataset
-    %    documents/get_documents_summary
+    %    documents/list_dataset_documents
     %    datasets/list_datasets
     %    datasets/update_dataset
     %
@@ -70,10 +70,10 @@ function dataset_id = upload_sample_test()
         error('ndi.cloud.api.datasets.update_dataset failed to update the dataset');
     end
 
-    %% test get_documents_summary
-    [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+    %% test list_dataset_documents
+    [status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
     if status
-        error(['ndi.cloud.api.documents.get_documents_summary() failed to retrieve the documents summary' response]);
+        error(['ndi.cloud.api.documents.list_dataset_documents() failed to retrieve the documents summary' response]);
     end
     if ~isfield(summary, 'documents')
         error('Does not return a documents summary struct');
@@ -115,8 +115,8 @@ function dataset_id = upload_sample_test()
         % do nothing, this is the expected behavior
     end
     try
-        [status, response, summary] = ndi.cloud.api.documents.get_documents_summary(1);
-        error('ndi.cloud.api.documents.get_documents_summary did not throw an error after using an invalid input');
+        [status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(1);
+        error('ndi.cloud.api.documents.list_dataset_documents did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

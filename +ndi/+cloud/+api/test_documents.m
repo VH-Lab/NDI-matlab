@@ -1,6 +1,6 @@
 
 test_dataset_id = '645164a95ea2a39cb644cc71';
-[status, response, summary] = ndi.cloud.api.documents.get_documents_summary(dataset_id);
+[status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
 document_id = summary.documents.id;
 docName = 'exampledocument.json';
 str_doc = fileread(docName);

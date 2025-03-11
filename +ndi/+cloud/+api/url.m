@@ -53,7 +53,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
     elseif (strcmp(type,'get_documents'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
-    elseif (strcmp(type,'get_documents_summary'))
+    elseif (strcmp(type,'list_dataset_documents'))
         url = strcat(site, 'datasets/', dataset_id, '/documents');
     elseif (strcmp(type,'add_document'))
         url = strcat(site, 'datasets/', dataset_id, '/documents');

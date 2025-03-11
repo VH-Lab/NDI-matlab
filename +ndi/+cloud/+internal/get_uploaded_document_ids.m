@@ -5,7 +5,7 @@ function uploaded_document_ids = get_uploaded_document_ids(dataset_id)
 
     auth_token = ndi.cloud.uilogin();
     try
-        [~, result, ~] = ndi.cloud.documents.get_documents_summary(dataset_id, auth_token);
+        [~, result, ~] = ndi.cloud.documents.list_dataset_documents(dataset_id, auth_token);
     catch ME
         rethrow(ME)
     end
