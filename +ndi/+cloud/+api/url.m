@@ -37,7 +37,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/unpublished?page=', page, '&pageSize=', page_size);
     elseif (strcmp(type,'create_dataset_branch'))
         url = strcat(site, 'datasets/', dataset_id, '/branch');
-    elseif (strcmp(type,'post_bulk_delete'))
+    elseif (strcmp(type,'bulk_delete_documents'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/bulk-delete');
     elseif (strcmp(type,'post_datasetId'))
         url = strcat(site, 'datasets/', dataset_id);
