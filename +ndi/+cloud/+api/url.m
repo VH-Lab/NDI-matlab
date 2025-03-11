@@ -29,7 +29,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/files/', uid);
     elseif (strcmp(type,'get_raw_file_upload_url'))
         url = strcat(site, 'datasets/', dataset_id, '/files/raw/', uid);
-    elseif (strcmp(type,'get_organizations'))
+    elseif (strcmp(type,'list_datasets'))
         url = strcat(site, 'organizations/', organization_id, '/datasets');
     elseif (strcmp(type,'get_published'))
         url = strcat(site, 'datasets/published?page=', page, '&pageSize=', page_size);

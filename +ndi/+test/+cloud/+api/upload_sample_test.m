@@ -8,7 +8,7 @@ function dataset_id = upload_sample_test()
     %    datasets/get_datasetid
     %    datasets/post_organization
     %    documents/get_documents_summary
-    %    datasets/get_organizations
+    %    datasets/list_datasets
     %    datasets/post_datasetId
     %
     % Tests the following functions:
@@ -82,11 +82,11 @@ function dataset_id = upload_sample_test()
     if ~isempty(summary.documents)
         error('Documents summary should be empty');
     end
-    %% test get_organizations
+    %% test list_datasets
     if 0,
-        [status, response, datasets] = ndi.cloud.api.datasets.get_organizations();
+        [status, response, datasets] = ndi.cloud.api.datasets.list_datasets();
         if status
-            error(['ndi.cloud.api.datasets.get_organizations() failed to retrieve the datasets' response]);
+            error(['ndi.cloud.api.datasets.list_datasets() failed to retrieve the datasets' response]);
         end
 
         match = 0;
@@ -121,8 +121,8 @@ function dataset_id = upload_sample_test()
         % do nothing, this is the expected behavior
     end
     try
-        [status, response, datasets] = ndi.cloud.api.datasets.get_organizations(1);
-        error('ndi.cloud.api.datasets.get_organizations did not throw an error after using an invalid input');
+        [status, response, datasets] = ndi.cloud.api.datasets.list_datasets(1);
+        error('ndi.cloud.api.datasets.list_datasets did not throw an error after using an invalid input');
     catch
         % do nothing, this is the expected behavior
     end

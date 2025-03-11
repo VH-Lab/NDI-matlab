@@ -18,11 +18,11 @@ update_dataset = example_dataset;
 update_dataset.name = "updated example dataset";
 [status, response] = ndi.cloud.api.datasets.post_datasetId(dataset_id, update_dataset);
 % example organization id: '645163735ea2a39cb644cc6c'
-[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
+[status, response, datasets] = ndi.cloud.api.datasets.list_datasets(organization_id);
 
 [status, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
 
-[status, response, datasets] = ndi.cloud.api.datasets.get_organizations(organization_id);
+[status, response, datasets] = ndi.cloud.api.datasets.list_datasets(organization_id);
 id = "64d4c79bbafd38dfb30b1824";
 [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(organizationId, example_dataset);
