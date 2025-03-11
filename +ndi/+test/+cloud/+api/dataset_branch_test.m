@@ -38,18 +38,18 @@ function dataset_branch_test()
 
     %% test delete dataset branch
     try
-        [status, dataset, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id);
-        error('ndi.cloud.api.dataset.delete_datasetId did not throw an error while deleting a dataset with branches');
+        [status, dataset, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
+        error('ndi.cloud.api.dataset.delete_dataset did not throw an error while deleting a dataset with branches');
     catch
         % do nothing, this is the expected behavior
     end
     branched_dataset_id = branches(1).datasetId;
-    [status, response] = ndi.cloud.api.datasets.delete_datasetId(branched_dataset_id);
+    [status, response] = ndi.cloud.api.datasets.delete_dataset(branched_dataset_id);
     [status, response, branches] = ndi.cloud.api.datasets.get_branches(dataset_id);
     if (numel(branches) ~= 0)
         error('ndi.cloud.api.dataset.get_branches did not return the correct number of branches after deleting a branch');
     end
-    [status, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id);
+    [status, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
     try
         [status, dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
         error('ndi.cloud.api.dataset.get_datasetId did not throw an error after using an invalid dataset id');

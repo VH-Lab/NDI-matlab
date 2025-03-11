@@ -42,7 +42,7 @@ function submit_publish_dataset(dataset_id)
         error('Dataset id still exists in the published datasets');
     end
 
-    [status, response] = ndi.cloud.api.datasets.delete_datasetId(dataset_id);
+    [status, response] = ndi.cloud.api.datasets.delete_dataset(dataset_id);
 
     try
         [status, response] = ndi.cloud.api.datasets.post_submit(dataset_id);

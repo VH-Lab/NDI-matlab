@@ -1,8 +1,8 @@
-function [status, response] = delete_datasetId(dataset_id)
-    % DELETE_DATASETID - Delete a dataset. Datasets cannot be deleted if they
+function [status, response] = delete_dataset(dataset_id)
+    % DELETE_DATASET - Delete a dataset. Datasets cannot be deleted if they
     % have been branched off of
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.DELETE_DATASETID(DATASET_ID)
+    % [STATUS, RESPONSE] = ndi.cloud.api.datasets.DELETE_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -22,7 +22,7 @@ function [status, response] = delete_datasetId(dataset_id)
 
     req = matlab.net.http.RequestMessage(method, headers);
 
-    url = matlab.net.URI(ndi.cloud.api.url('delete_datasetId', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('delete_dataset', 'dataset_id', dataset_id));
 
     response = req.send(url);
     status = 1;

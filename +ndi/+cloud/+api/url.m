@@ -17,7 +17,7 @@ function url = url(type, varargin)
         url = strcat(site, 'auth/password/forgot');
     elseif (strcmp(type,'verify_user'))
         url = strcat(site, 'auth/verify');
-    elseif (strcmp(type,'delete_datasetId'))
+    elseif (strcmp(type,'delete_dataset'))
         url = strcat(site, 'datasets/', dataset_id);
     elseif (strcmp(type,'get_branches'))
         url = strcat(site, 'datasets/', dataset_id, '/branches');
