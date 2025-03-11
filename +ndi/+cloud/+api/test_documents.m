@@ -18,4 +18,4 @@ example_document = jsonencode(example_document);
 [status, response, document_id] = ndi.cloud.api.documents.add_document(docName, dataset_id, example_document);uid = response.files.file_info.locations.uid;
 
 document_id = '64e7d4694724787310421737';
-[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
+[status, response, document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);

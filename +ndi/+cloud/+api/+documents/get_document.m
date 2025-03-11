@@ -1,7 +1,7 @@
-function [status, response, document] = get_documents(dataset_id, document_id)
-    % GET_DOCUMENTS - get a document
+function [status, response, document] = get_document(dataset_id, document_id)
+    % GET_DOCUMENT - get a document
     %
-    % [STATUS,RESPONSE,DOCUMENT] = ndi.cloud.api.documents.GET_DOCUMENTS(DATASET_ID, DOCUMENT_ID)
+    % [STATUS,RESPONSE,DOCUMENT] = ndi.cloud.api.documents.GET_DOCUMENT(DATASET_ID, DOCUMENT_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -15,7 +15,7 @@ function [status, response, document] = get_documents(dataset_id, document_id)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_documents', 'dataset_id', dataset_id, 'document_id', document_id));
+    url = matlab.net.URI(ndi.cloud.api.url('get_document', 'dataset_id', dataset_id, 'document_id', document_id));
 
     method = matlab.net.http.RequestMethod.GET;
 

@@ -55,7 +55,7 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
             continue;
         end
 
-        [status, response, docStruct] = ndi.cloud.api.documents.get_documents(dataset.x_id, document_id);
+        [status, response, docStruct] = ndi.cloud.api.documents.get_document(dataset.x_id, document_id);
         if status
             b = 0;
             msg = response;

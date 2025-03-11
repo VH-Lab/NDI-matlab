@@ -26,8 +26,8 @@ function delete_documents_test(dataset_id)
     end
     % try getting the document that was deleted. If no error is thrown, then the document was not deleted
     try
-        [status, response, test_document] = ndi.cloud.api.documents.get_documents(dataset_id, test_document_id);
-        error('ndi.cloud.api.documents.get_documents did not throw an error after delete_document');
+        [status, response, test_document] = ndi.cloud.api.documents.get_document(dataset_id, test_document_id);
+        error('ndi.cloud.api.documents.get_document did not throw an error after delete_document');
     catch
         % do nothing, this is the expected behavior
     end
@@ -62,8 +62,8 @@ function delete_documents_test(dataset_id)
     % try delete_document to delete a document that does not exist
     for i = 1:numel(document_ids)
         try
-            [status, response, test_document] = ndi.cloud.api.documents.get_documents(dataset_id, document_ids(i));
-            error('ndi.cloud.api.documents.get_documents did not throw an error after using bulk_delete_documents');
+            [status, response, test_document] = ndi.cloud.api.documents.get_document(dataset_id, document_ids(i));
+            error('ndi.cloud.api.documents.get_document did not throw an error after using bulk_delete_documents');
         catch
             % do nothing, this is the expected behavior
         end

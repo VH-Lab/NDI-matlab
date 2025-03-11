@@ -38,10 +38,10 @@ curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://pr
 [status, output] = ndi.cloud.put_files(presigned_url, file_path);
 % example dataset id: '6466c110390dd305045ee10e'
 % example document id: ''6466f7e9cd19dffd5f63022c'
-[status, response, document] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
+[status, response, document] = ndi.cloud.api.documents.get_document(dataset_id, document_id);
 all_docs = summary.documents;
 all_docs_ids = all_docs.id;
-[status, response, document] = ndi.cloud.api.documents.get_documents('6466c110390dd305045ee10e', all_docs(3).id);
+[status, response, document] = ndi.cloud.api.documents.get_document('6466c110390dd305045ee10e', all_docs(3).id);
 [status, response, summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
 
 docName = 'exampledocument.json';
