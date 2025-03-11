@@ -7,15 +7,15 @@ function url = url(type, varargin)
 
     if (strcmp(type,'login'))
         url = strcat(site, 'auth/login');
-    elseif (strcmp(type,'confirmation_resend'))
+    elseif (strcmp(type,'resend_confirmation'))
         url = strcat(site, 'auth/confirmation/resend');
     elseif (strcmp(type,'logout'))
         url = strcat(site, 'auth/logout');
-    elseif (strcmp(type,'password'))
+    elseif (strcmp(type,'update_password'))
         url = strcat(site, 'auth/password');
-    elseif (strcmp(type,'password_forgot'))
+    elseif (strcmp(type,'reset_password'))
         url = strcat(site, 'auth/password/forgot');
-    elseif (strcmp(type,'verify'))
+    elseif (strcmp(type,'verify_user'))
         url = strcat(site, 'auth/verify');
     elseif (strcmp(type,'delete_datasetId'))
         url = strcat(site, 'datasets/', dataset_id);
