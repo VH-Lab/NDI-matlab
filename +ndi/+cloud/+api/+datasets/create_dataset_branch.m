@@ -1,7 +1,7 @@
-function [status, response] = post_branch(dataset_id, branch_name)
-    % POST_BRANCH - branch a given dataset
+function [status, response] = create_dataset_branch(dataset_id, branch_name)
+    % CREATE_DATASET_BRANCH - branch a given dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.POST_BRANCH(DATASET_ID, BRANCH_NAME)
+    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET_BRANCH(DATASET_ID, BRANCH_NAME)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -27,7 +27,7 @@ function [status, response] = post_branch(dataset_id, branch_name)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_branch', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('create_dataset_branch', 'dataset_id', dataset_id));
 
     response = req.send(url);
     status = 1;
