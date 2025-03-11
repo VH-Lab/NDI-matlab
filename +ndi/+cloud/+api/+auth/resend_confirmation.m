@@ -1,14 +1,14 @@
-function [status,response] = confirmation_resend(email)
-    % CONFIRMATION_RESEND - Resends the verification code via email
+function [status, response] = resend_confirmation(email)
+    % RESEND_CONFIRMATION - Resends the verification code via email
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.auth.confirmation_resend(EMAIL)
+    % [STATUS, RESPONSE] = ndi.cloud.api.auth.resend_confirmation(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the
     %   verification
     %
     % Outputs:
-    %   STATUS - did the confirmation sent? 1 for no, 0 for yes
+    %   STATUS - did the confirmation send? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 
@@ -25,7 +25,7 @@ function [status,response] = confirmation_resend(email)
 
     req = matlab.net.http.RequestMessage(method, header, body);
 
-    url = matlab.net.URI(url = ndi.cloud.api.url('confirmation_resend'));
+    url = matlab.net.URI(url = ndi.cloud.api.url('resend_confirmation'));
 
     response = req.send(url);
     if (response.StatusCode == 200 || response.StatusCode == 201)
