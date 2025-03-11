@@ -53,7 +53,7 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
             if verbose,
                 disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
             end;
-            [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document);
+            [status, response_doc] = ndi.cloud.api.documents.add_document(path, dataset_id, document);
             if status ~= 0
                 b = 0;
                 msg = response_doc;

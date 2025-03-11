@@ -14,7 +14,7 @@ function delete_documents_test(dataset_id)
     test_document = struct("name", "test document");
     test_document = jsonencode(test_document);
     [fid,fname] = ndi.file.temp_fid();
-    [status, response, test_document_id] = ndi.cloud.api.documents.post_documents(fname, dataset_id, test_document);
+    [status, response, test_document_id] = ndi.cloud.api.documents.add_document(fname, dataset_id, test_document);
     [status, response] = ndi.cloud.api.documents.delete_documents(dataset_id, test_document_id);
     [status, dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if (number_of_documents ~= numel(dataset.documents))
@@ -46,7 +46,7 @@ function delete_documents_test(dataset_id)
         test_document = struct("name", "test document");
         test_document = jsonencode(test_document);
         [fid,fname] = ndi.file.temp_fid();
-        [status, response, test_document_id] = ndi.cloud.api.documents.post_documents(fname, dataset_id, test_document);
+        [status, response, test_document_id] = ndi.cloud.api.documents.add_document(fname, dataset_id, test_document);
         if status ~= 0
             error(response);
         end

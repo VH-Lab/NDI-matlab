@@ -1,7 +1,7 @@
-function [status, response, document_id] = post_documents(file_path, dataset_id, document)
-    % POST_DOCUMENTS - add a document to the dataset
+function [status, response, document_id] = add_document(file_path, dataset_id, document)
+    % ADD_DOCUMENT - add a document to the dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.documents.POST_DOCUMENTS(DATASET_ID, DOCUMENT)
+    % [STATUS, RESPONSE, DOCUMENT_ID] = ndi.cloud.api.documents.ADD_DOCUMENT(DATASET_ID, DOCUMENT)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -29,7 +29,7 @@ function [status, response, document_id] = post_documents(file_path, dataset_id,
 
     req = matlab.net.http.RequestMessage(method, headers, provider);
 
-    url = matlab.net.URI(ndi.cloud.api.url('post_documents', 'dataset_id', dataset_id));
+    url = matlab.net.URI(ndi.cloud.api.url('add_document', 'dataset_id', dataset_id));
 
     response = req.send(url);
     if exist(file_path, 'file')==2,

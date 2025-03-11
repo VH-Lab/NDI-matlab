@@ -1,11 +1,11 @@
-function post_documents_test(dataset_id)
-    %POST_DOCUMENTS_TEST - tests the api commands used to post documents
+function add_document_test(dataset_id)
+    %ADD_DOCUMENT_TEST - tests the api commands used to post documents
     %
-    % POST_DOCUMENTS_TEST(dataset_id)
+    % ADD_DOCUMENT_TEST(dataset_id)
     %
     % Tests the following api commands:
     %
-    %    datasets/post_documents
+    %    datasets/add_document
     %    documents/get_documents
     %    documents/update_document
     %    files/get_file_upload_url
@@ -22,8 +22,8 @@ function post_documents_test(dataset_id)
     d = D.database_search(ndi.query('','isa','base'));
     test_scan_for_upload(D, d, dataset_id, 0);
 
-    %% test post_documents function
-    test_post_documents(d, dataset_id);
+    %% test add_document function
+    test_add_document(d, dataset_id);
 
     %% test scan_for_upload function again
     test_scan_for_upload(D, d, dataset_id, 1);
@@ -40,8 +40,8 @@ function post_documents_test(dataset_id)
     test_document_update(dataset_id)
 
     try
-        [status, response, document_id] = ndi.cloud.api.documents.post_documents('test', dataset_id, 'test');
-        error('ndi.cloud.api.documents.post_documents did not throw an error after using a non-struct document');
+        [status, response, document_id] = ndi.cloud.api.documents.add_document('test', dataset_id, 'test');
+        error('ndi.cloud.api.documents.add_document did not throw an error after using a non-struct document');
     catch
         % do nothing, this is the expected behavior
     end
@@ -88,14 +88,14 @@ function test_scan_for_upload(D, d, dataset_id, n)
     end
 end
 
-function test_post_documents(d, dataset_id)
+function test_add_document(d, dataset_id)
     for i=1:numel(d)
         if isfield(d{i}.document_properties, 'files')
             continue;
         end
         document = did.datastructures.jsonencodenan(d{i}.document_properties);
         fname = ndi.file.temp_name();
-        [status, response_doc, document_id] = ndi.cloud.api.documents.post_documents(fname, dataset_id, document);
+        [status, response_doc, document_id] = ndi.cloud.api.documents.add_document(fname, dataset_id, document);
         if status ~= 0
             error(response_doc);
         end
