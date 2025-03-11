@@ -21,7 +21,7 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id);
     elseif (strcmp(type,'get_branches'))
         url = strcat(site, 'datasets/', dataset_id, '/branches');
-    elseif (strcmp(type,'get_files_detail'))
+    elseif (strcmp(type,'get_file_details'))
         url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
     elseif (strcmp(type,'get_dataset'))
         url = strcat(site, 'datasets/', dataset_id);
@@ -59,8 +59,6 @@ function url = url(type, varargin)
         url = strcat(site, 'datasets/', dataset_id, '/documents');
     elseif (strcmp(type,'post_documents_update'))
         url = strcat(site, 'datasets/', dataset_id, '/documents/', document_id);
-    elseif (strcmp(type, 'get_dataset_details'))
-        url = strcat(site, 'datasets/', dataset_id, '/files/', uid, '/detail');
     elseif (strcmp(type, 'get_file_collection_upload_url'))
         url = strcat(site, 'datasets/', dataset_id, '/files/bulk');
     end

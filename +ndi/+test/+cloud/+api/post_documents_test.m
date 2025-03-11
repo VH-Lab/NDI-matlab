@@ -10,7 +10,7 @@ function post_documents_test(dataset_id)
     %    documents/post_documents_update
     %    files/get_files
     %    files/put_files
-    %    files/get_files_detail
+    %    files/get_file_details
 
     % TODO: test scan_for_upload function. If correctly detects the number of files that have been uploaded
     dirname = [ndi.common.PathConstants.ExampleDataFolder filesep '..' filesep 'example_datasets' filesep 'sample_test'];
@@ -70,8 +70,8 @@ function post_documents_test(dataset_id)
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.files.get_files_detail(1, 1);
-        error('ndi.cloud.api.files.get_files_detail did not throw an error after using an invalid dataset id');
+        [status, response] = ndi.cloud.api.files.get_file_details(1, 1);
+        error('ndi.cloud.api.files.get_file_details did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
@@ -150,7 +150,7 @@ function test_post_files(S, d, dataset_id)
                         end
                         S.database_closebinarydoc(file_obj);
 
-                        [status,file_detail,downloadUrl, response] = ndi.cloud.api.files.get_files_detail(dataset_id,uid);
+                        [status,file_detail,downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
                         if status
                             error(response);
                         end
