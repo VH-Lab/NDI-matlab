@@ -34,7 +34,7 @@ page_size = 1;
 [status, response, datasets] = ndi.cloud.api.datasets.get_unpublished(page, page_size);
 curl -X PUT -T /path/to/local/file.jpg -H "Content-Type: image/jpeg" "https://presigned-url"
 
-[status, response, url] = ndi.cloud.api.datasets.get_files_raw(dataset_id, uid);
+[status, response, url] = ndi.cloud.api.datasets.get_raw_file_upload_url(dataset_id, uid);
 [status, output] = ndi.cloud.put_files(presigned_url, file_path);
 % example dataset id: '6466c110390dd305045ee10e'
 % example document id: ''6466f7e9cd19dffd5f63022c'

@@ -1,9 +1,9 @@
-function [status, response, url] = get_files_raw(dataset_id, uid)
-    % GET_FILES_RAW - get an upload URL for a raw data file that will be
+function [status, response, url] = get_raw_file_upload_url(dataset_id, uid)
+    % GET_RAW_FILE_UPLOAD_URL - get an upload URL for a raw data file that will be
     % published to AWS Open Data after review
-    % Same functionality as ndi.cloud.api.files.GET_FILES_RAW
+    % Same functionality as ndi.cloud.api.files.GET_RAW_FILE_UPLOAD_URL
     %
-    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILES_RAW(DATASET_ID, UID)
+    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_RAW_FILE_UPLOAD_URL(DATASET_ID, UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -17,7 +17,7 @@ function [status, response, url] = get_files_raw(dataset_id, uid)
 
     auth_token = ndi.cloud.authenticate();
     % Construct the curl command with the organization ID and authentication token
-    url = matlab.net.URI(ndi.cloud.api.url('get_files_raw', 'dataset_id', dataset_id, 'uid', uid));
+    url = matlab.net.URI(ndi.cloud.api.url('get_raw_file_upload_url', 'dataset_id', dataset_id, 'uid', uid));
 
     method = matlab.net.http.RequestMethod.GET;
 
