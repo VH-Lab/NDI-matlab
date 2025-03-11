@@ -8,7 +8,7 @@ function post_documents_test(dataset_id)
     %    datasets/post_documents
     %    documents/get_documents
     %    documents/post_documents_update
-    %    files/get_files
+    %    files/get_file_upload_url
     %    files/put_files
     %    files/get_file_details
 
@@ -58,8 +58,8 @@ function post_documents_test(dataset_id)
         % do nothing, this is the expected behavior
     end
     try
-        [status, response] = ndi.cloud.api.files.get_files(1, 1);
-        error('ndi.cloud.api.files.get_files did not throw an error after using an invalid dataset id');
+        [status, response] = ndi.cloud.api.files.get_file_upload_url(1, 1);
+        error('ndi.cloud.api.files.get_file_upload_url did not throw an error after using an invalid dataset id');
     catch
         % do nothing, this is the expected behavior
     end
@@ -138,7 +138,7 @@ function test_post_files(S, d, dataset_id)
                     j = j + 1;
                     if ~isempty(file_obj),
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
-                        [status, response, upload_url] = ndi.cloud.api.files.get_files(dataset_id, uid);
+                        [status, response, upload_url] = ndi.cloud.api.files.get_file_upload_url(dataset_id, uid);
                         if status ~= 0
                             msg = response;
                             error(msg);

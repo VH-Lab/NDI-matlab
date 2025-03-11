@@ -1,9 +1,9 @@
-function [status, response, url] = get_files(dataset_id, uid)
-    % GET_FILES - get an upload URL for an artifact file that will be published
+function [status, response, url] = get_file_upload_url(dataset_id, uid)
+    % GET_FILE_UPLOAD_URL - get an upload URL for an artifact file that will be published
     % to the NDI Cloud
-    % Same functionality as ndi.cloud.api.files.GET_FILES
+    % Same functionality as ndi.cloud.api.files.GET_FILE_UPLOAD_URL
     %
-    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILES(DATASET_ID, UID)
+    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_UPLOAD_URL(DATASET_ID, UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -18,7 +18,7 @@ function [status, response, url] = get_files(dataset_id, uid)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_files', 'dataset_id', dataset_id, 'uid', uid));
+    url = matlab.net.URI(ndi.cloud.api.url('get_file_upload_url', 'dataset_id', dataset_id, 'uid', uid));
 
     method = matlab.net.http.RequestMethod.GET;
 

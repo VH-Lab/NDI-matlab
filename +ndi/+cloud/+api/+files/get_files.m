@@ -1,9 +1,9 @@
-function [status, response, upload_url] = get_files(dataset_id, uid)
-    % GET_FILES - get an upload URL for an artifact file that will be
+function [status, response, upload_url] = get_file_upload_url(dataset_id, uid)
+    % GET_FILE_UPLOAD_URL - get an upload URL for an artifact file that will be
     % published to NDI Cloud
-    % Same functionality as ndi.cloud.api.datasets.GET_FILES
+    % Same functionality as ndi.cloud.api.datasets.GET_FILE_UPLOAD_URL
     %
-    % [STATUS,RESPONSE,UPLOAD_URL] = ndi.cloud.api.files.GET_FILES(DATASET_ID, UID)
+    % [STATUS,RESPONSE,UPLOAD_URL] = ndi.cloud.api.files.GET_FILE_UPLOAD_URL(DATASET_ID, UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -15,5 +15,5 @@ function [status, response, upload_url] = get_files(dataset_id, uid)
     %   RESPONSE - the upload summary
     %   UPLOAD_URL - the upload URL to put the file to
     %
-    [status, response, upload_url] = ndi.cloud.api.datasets.get_files(dataset_id, uid);
+    [status, response, upload_url] = ndi.cloud.api.datasets.get_file_upload_url(dataset_id, uid);
 end
