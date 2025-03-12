@@ -10,8 +10,8 @@ function url = url(endpointName, options)
         options.document_id (1,1) string = ""
         options.file_uid (1,1) string = ""
         options.organization_id (1,1) string = ""
-        options.page (1,1) double = nan
-        options.page_size (1,1) double = nan
+        options.page (1,1) double = 1
+        options.page_size (1,1) double = 20
     end
     options = processOptions(options);
     
@@ -39,7 +39,7 @@ function url = url(endpointName, options)
         endpointMap("list_datasets")                  = "/organizations/{organizationId}/datasets";
         endpointMap("create_dataset")                 = "/organizations/{organizationId}/datasets";
         endpointMap("get_published")                  = "/datasets/published?page={page}&pageSize={page_size}";
-        endpointMap("listUnpublishedDatasets")        = "/datasets/unpublished?page={page}&pageSize={page_size}";
+        endpointMap("get_unpublished")                = "/datasets/unpublished?page={page}&pageSize={page_size}";
         endpointMap("get_raw_file_upload_url")        = "/datasets/{datasetId}/files/raw/{uid}";
         endpointMap("get_file_upload_url")            = "/datasets/{datasetId}/files/{uid}";
         endpointMap("get_file_collection_upload_url") = "/datasets/{datasetId}/files/bulk";
@@ -53,6 +53,7 @@ function url = url(endpointName, options)
         endpointMap("update_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("bulk_delete_documents")          = "/datasets/{datasetId}/documents/bulk-delete";
+        endpointMap("bulk_upload_documents")          = "/datasets/{datasetId}/documents/bulk-upload";
         endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";

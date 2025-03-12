@@ -15,7 +15,7 @@ function [status, file_detail, downloadUrl, response] = get_file_details(dataset
     
     auth_token = ndi.cloud.authenticate();
 
-    url = ndi.cloud.api.url('get_file_details', 'dataset_id', dataset_id, 'uid', uid);
+    url = ndi.cloud.api.url('get_file_details', 'dataset_id', dataset_id, 'file_uid', uid);
 
     method = matlab.net.http.RequestMethod.GET;
 
@@ -25,7 +25,7 @@ function [status, file_detail, downloadUrl, response] = get_file_details(dataset
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
         status = 0;
         file_detail = response.Body.Data;

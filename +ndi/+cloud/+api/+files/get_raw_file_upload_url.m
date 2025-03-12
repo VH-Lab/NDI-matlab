@@ -16,5 +16,5 @@ function [status, response, upload_url] = get_raw_file_upload_url(dataset_id, ui
     %   UPLOAD_URL - the upload URL to put the file to
     %
 
-    [status, response, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(dataset_id, uid);
+    [status, response, upload_url] = ndi.cloud.api.datasets.get_raw_file_upload_url(dataset_id, uid);
 end

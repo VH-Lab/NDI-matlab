@@ -13,6 +13,11 @@ function [status, response, datasets] = get_published(page, page_size)
     %   DATASETS - a high level summary of all published datasets
     %
 
+    arguments
+        page (1,1) int32 = 1
+        page_size (1,1) int32 = 20
+    end
+
     auth_token = ndi.cloud.authenticate();
 
     url = ndi.cloud.api.url('get_published', 'page', page, 'page_size', page_size);

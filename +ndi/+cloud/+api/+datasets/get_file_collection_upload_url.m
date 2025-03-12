@@ -1,4 +1,4 @@
-function [status, response, url] = get_file_collection_upload_url(dataset_id)
+function [status, response, uploadUrl] = get_file_collection_upload_url(dataset_id)
     %GET_FILE_COLLECTION_UPLOAD_URL - get an upload URL for all file that will be published to the NDI Cloud
     %
     % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_COLLECTION_UPLOAD_URL(DATASET_ID)
@@ -24,10 +24,10 @@ function [status, response, url] = get_file_collection_upload_url(dataset_id)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+
     if (response.StatusCode == 200)
         status = 0;
-        url = response.Body.Data.url;
+        uploadUrl = response.Body.Data.url;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);
     end

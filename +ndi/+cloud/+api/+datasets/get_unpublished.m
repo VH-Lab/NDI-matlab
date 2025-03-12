@@ -11,7 +11,12 @@ function [status, response, datasets] = get_unpublished(page, page_size)
     %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %   DATASETS - a high level summary of all unpublished datasets
-
+    
+    arguments
+        page (1,1) int32 = 1
+        page_size (1,1) int32 = 20
+    end
+    
     auth_token = ndi.cloud.authenticate();
 
     url = ndi.cloud.api.url('get_unpublished', 'page', page, 'page_size', page_size);
