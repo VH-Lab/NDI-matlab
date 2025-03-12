@@ -1,7 +1,7 @@
 function url = url(endpointName, options)
     %URL - a function that returns the URL for a named api endpoint
     %
-    % [URL] = ndi.cloud.api.URL(TYPE) returns the URL for the api
+    % URL = ndi.cloud.api.URL(TYPE) returns the URL for the api
     
     arguments
         endpointName (1,1) string
@@ -71,7 +71,7 @@ function url = url(endpointName, options)
         end
     end
 
-    url = apiBaseUrl + endpointPath;
+    url = matlab.net.URI( apiBaseUrl + endpointPath );
 end
 
 function endpointPath = replacePathParameter(endpointPath, parameterName, params)

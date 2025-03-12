@@ -30,7 +30,7 @@ function [status, response, document_id] = add_document_as_file(dataset_id, docu
 
     req = matlab.net.http.RequestMessage(method, headers, provider);
 
-    url = matlab.net.URI(ndi.cloud.api.url('add_document', 'dataset_id', dataset_id));
+    url = ndi.cloud.api.url('add_document', 'dataset_id', dataset_id);
 
     response = req.send(url);
 

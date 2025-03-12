@@ -22,7 +22,7 @@ function [status, response] = delete_dataset(dataset_id)
 
     req = matlab.net.http.RequestMessage(method, headers);
 
-    url = matlab.net.URI(ndi.cloud.api.url('delete_dataset', 'dataset_id', dataset_id));
+    url = ndi.cloud.api.url('delete_dataset', 'dataset_id', dataset_id);
 
     response = req.send(url);
     status = 1;

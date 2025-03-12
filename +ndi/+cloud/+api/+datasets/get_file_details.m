@@ -15,7 +15,7 @@ function [status, file_detail, downloadUrl, response] = get_file_details(dataset
     
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_file_details', 'dataset_id', dataset_id, 'uid', uid));
+    url = ndi.cloud.api.url('get_file_details', 'dataset_id', dataset_id, 'uid', uid);
 
     method = matlab.net.http.RequestMethod.GET;
 

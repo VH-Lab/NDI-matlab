@@ -24,7 +24,7 @@ function [status, response] = reset_password(email)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('reset_password'));
+    url = ndi.cloud.api.url('reset_password');
 
     response = req.send(url);
     status = 1;

@@ -24,7 +24,7 @@ function [status, response, dataset_id] = create_dataset(dataset)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('create_dataset', 'organization_id', organization_id));
+    url = ndi.cloud.api.url('create_dataset', 'organization_id', organization_id);
 
     response = req.send(url);
     status = 1;

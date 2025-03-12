@@ -17,7 +17,7 @@ function [status, response, datasets] = list_datasets(organization_id)
         organization_id = getenv('NDI_CLOUD_ORGANIZATION_ID');
     end
 
-    url = matlab.net.URI(ndi.cloud.api.url('list_datasets', 'organization_id', organization_id));
+    url = ndi.cloud.api.url('list_datasets', 'organization_id', organization_id);
     method = matlab.net.http.RequestMethod.GET;
     acceptField = matlab.net.http.HeaderField('accept','application/json');
     authorizationField = matlab.net.http.HeaderField('Authorization', ['Bearer ' auth_token]);

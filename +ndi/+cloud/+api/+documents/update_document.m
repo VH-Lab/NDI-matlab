@@ -31,7 +31,7 @@ function [status, response] = update_document(file_path, dataset_id, document_id
 
     req = matlab.net.http.RequestMessage(method, headers, provider);
 
-    url = matlab.net.URI(ndi.cloud.api.url('update_document', 'dataset_id', dataset_id, 'document_id', document_id));
+    url = ndi.cloud.api.url('update_document', 'dataset_id', dataset_id, 'document_id', document_id);
 
     response = req.send(url);
     if exist(file_path, 'file')==2,

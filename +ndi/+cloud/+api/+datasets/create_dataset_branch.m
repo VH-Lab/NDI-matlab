@@ -27,7 +27,7 @@ function [status, response] = create_dataset_branch(dataset_id, branch_name)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('create_dataset_branch', 'dataset_id', dataset_id));
+    url = ndi.cloud.api.url('create_dataset_branch', 'dataset_id', dataset_id);
 
     response = req.send(url);
     status = 1;

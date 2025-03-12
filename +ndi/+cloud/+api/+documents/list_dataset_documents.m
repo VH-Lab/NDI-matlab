@@ -14,7 +14,7 @@ function [status, response, summary] = list_dataset_documents(dataset_id)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('list_dataset_documents', 'dataset_id', dataset_id));
+    url = ndi.cloud.api.url('list_dataset_documents', 'dataset_id', dataset_id);
 
     method = matlab.net.http.RequestMethod.GET;
 

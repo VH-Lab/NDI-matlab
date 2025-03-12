@@ -15,7 +15,7 @@ function [status, response, document] = get_document(dataset_id, document_id)
 
     auth_token = ndi.cloud.authenticate();
 
-    url = matlab.net.URI(ndi.cloud.api.url('get_document', 'dataset_id', dataset_id, 'document_id', document_id));
+    url = ndi.cloud.api.url('get_document', 'dataset_id', dataset_id, 'document_id', document_id);
 
     method = matlab.net.http.RequestMethod.GET;
 

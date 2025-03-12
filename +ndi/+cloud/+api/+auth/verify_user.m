@@ -25,7 +25,7 @@ function [status, response] = verify_user(email, confirmation_code)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('verify_user'));
+    url = ndi.cloud.api.url('verify_user');
 
     response = req.send(url);
     status = 1;

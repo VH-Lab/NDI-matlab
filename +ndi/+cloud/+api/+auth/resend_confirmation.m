@@ -25,7 +25,7 @@ function [status, response] = resend_confirmation(email)
 
     req = matlab.net.http.RequestMessage(method, header, body);
 
-    url = matlab.net.URI(url = ndi.cloud.api.url('resend_confirmation'));
+    url = ndi.cloud.api.url('resend_confirmation');
 
     response = req.send(url);
     if (response.StatusCode == 200 || response.StatusCode == 201)

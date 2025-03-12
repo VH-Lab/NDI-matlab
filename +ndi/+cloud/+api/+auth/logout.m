@@ -23,7 +23,7 @@ function [status, response] = logout()
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('logout'));
+    url = ndi.cloud.api.url('logout');
 
     response = req.send(url);
     status = 1;

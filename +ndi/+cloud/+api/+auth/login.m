@@ -25,7 +25,7 @@ function [status, auth_token, organization_id] = login(email, password)
 
     req = matlab.net.http.RequestMessage(method, header, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('login'));
+    url = ndi.cloud.api.url('login');
 
     response = req.send(url);
     status = 1;
