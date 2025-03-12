@@ -1,7 +1,7 @@
-function [status, response] = update_password(oldPassword, newPassword)
-    % UPDATE_PASSWORD - update a user's password
+function [status, response] = change_password(oldPassword, newPassword)
+    % CHANGE_PASSWORD - Change a user's password
     %
-    % [STATUS, RESPONSE] = ndi.cloud.api.auth.UPDATE_PASSWORD(OLDPASSWORD, NEWPASSWORD)
+    % [STATUS, RESPONSE] = ndi.cloud.api.auth.CHANGE_PASSWORD(OLDPASSWORD, NEWPASSWORD)
     %
     % Inputs:
     %   OLDPASSWORD - a string representing the old password
@@ -26,7 +26,7 @@ function [status, response] = update_password(oldPassword, newPassword)
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('update_password'));
+    url = matlab.net.URI(ndi.cloud.api.url('change_password'));
 
     response = req.send(url);
     status = 1;

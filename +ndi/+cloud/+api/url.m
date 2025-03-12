@@ -11,7 +11,7 @@ function url = url(type, varargin)
         url = strcat(site, 'auth/confirmation/resend');
     elseif (strcmp(type,'logout'))
         url = strcat(site, 'auth/logout');
-    elseif (strcmp(type,'update_password'))
+    elseif (strcmp(type,'change_password'))
         url = strcat(site, 'auth/password');
     elseif (strcmp(type,'reset_password'))
         url = strcat(site, 'auth/password/forgot');
