@@ -5,12 +5,12 @@ confirmation_code = "176741";
 % tested successfully
 [status, auth_token, organization_id] = ndi.cloud.api.auth.login(email, password);
 [status, output] = ndi.cloud.api.auth.logout();
-[status,response] = ndi.cloud.auth.confirmation_resend(email);
-[status,response] = ndi.cloud.auth.password_forgot(email);
-[status,response] = ndi.cloud.auth.password(oldPassword, newPassword);
+[status,response] = ndi.cloud.api.auth.resend_confirmation(email);
+[status,response] = ndi.cloud.api.auth.password_forgot(email);
+[status,response] = ndi.cloud.api.auth.password(oldPassword, newPassword);
 
 % unsuccessful
-[status,response] = ndi.cloud.auth.verify(email, confirmation_code);
+[status,response] = ndi.cloud.api.auth.verify(email, confirmation_code);
 % {
 %   "errors": "Unable to authorize user",
 %   "code": "CodeMismatchException"
@@ -18,12 +18,12 @@ confirmation_code = "176741";
 
 % waited to be tested
 
-%% datasets
-prefix = [userpath filesep 'Documents' filesep 'NDI'];
-foldername = "/Users/cxy/Documents/NDI/2023-03-08/";
-filename = "/Users/cxy/Documents/NDI/2023-03-08/t*";
-ls([foldername filesep 't*'])
-
-S = ndi.session.dir("2023-03-08",[foldername]);
-
-type (fullfile(filename,'t00001','stims.tsv'))
+% % %% datasets
+% % prefix = [userpath filesep 'Documents' filesep 'NDI'];
+% % foldername = "/Users/cxy/Documents/NDI/2023-03-08/";
+% % filename = "/Users/cxy/Documents/NDI/2023-03-08/t*";
+% % ls([foldername filesep 't*'])
+% % 
+% % S = ndi.session.dir("2023-03-08",[foldername]);
+% % 
+% % type (fullfile(filename,'t00001','stims.tsv'))
