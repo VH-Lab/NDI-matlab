@@ -8,7 +8,6 @@ function [response] = resend_confirmation(email)
     %   verification
     %
     % Outputs:
-    %   STATUS - did the confirmation send? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 

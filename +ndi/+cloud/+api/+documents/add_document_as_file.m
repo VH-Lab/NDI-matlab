@@ -8,7 +8,6 @@ function [response, document_id] = add_document_as_file(dataset_id, document)
     %   DOCUMENT - a string of JSON object representing the new document
     %
     % Outputs:
-    %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - the new document summary
     %
     % Note: use this function if documents are too large to send as json

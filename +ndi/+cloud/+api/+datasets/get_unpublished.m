@@ -8,7 +8,6 @@ function [response, datasets] = get_unpublished(page, page_size)
     %   DATASET - an integer representing the number of results per page
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %   DATASETS - a high level summary of all unpublished datasets
     

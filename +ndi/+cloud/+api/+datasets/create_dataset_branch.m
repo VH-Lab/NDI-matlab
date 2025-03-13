@@ -8,7 +8,6 @@ function [response] = create_dataset_branch(dataset_id, branch_name)
     %   BRANCH_NAME - a string representing the branch name
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %
 

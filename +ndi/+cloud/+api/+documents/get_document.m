@@ -8,7 +8,6 @@ function [response, document] = get_document(dataset_id, document_id)
     %   DOCUMENT_ID -  a string representing the document id
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %   DOCUMENT - A document object required by the user
     %

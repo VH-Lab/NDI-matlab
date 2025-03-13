@@ -8,7 +8,6 @@ function [auth_token, organization_id] = login(email, password)
     %   PASSWORD - a string representing the user's password
     %
     % Outputs:
-    %   STATUS - did the user logs in successfully? 1 for no, 0 for yes
     %   AUTH_TOKEN - bearer token
     %   ORGANIZATION_ID - the organization id that the user belongs to
     %

@@ -8,7 +8,6 @@ function [response] = change_password(oldPassword, newPassword)
     %   NEWPASSWORD - a string representing the new password
     %
     % Outputs:
-    %   STATUS - did the new password correctly set? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 

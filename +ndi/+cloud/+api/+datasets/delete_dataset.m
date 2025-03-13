@@ -8,7 +8,6 @@ function [response] = delete_dataset(dataset_id, options)
     %   DATASET_ID - a string representing the dataset id
     %
     % Outputs:
-    %   STATUS - did delete request work? 1 for no, 0 for yes
     %   RESPONSE - the delete confirmation
     %
 

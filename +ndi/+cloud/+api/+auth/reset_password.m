@@ -8,7 +8,6 @@ function [response] = reset_password(email)
     %   e-mail
     %
     % Outputs:
-    %   STATUS - did the e-mail sent? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
     json = struct('email', email);

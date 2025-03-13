@@ -7,7 +7,6 @@ function [response, dataset_id] = create_dataset(dataset)
     %   DATASET - a JSON object representing the dataset
     %
     % Outputs:
-    %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - the new dataset summary
     %   DATASET_ID - the id of the newly created dataset
 

@@ -7,7 +7,6 @@ function [response] = verify_user(email, confirmation_code)
     %   CONFIRMATION_CODE - the code send to the email
     %
     % Outputs:
-    %   STATUS - is the confirmation code correct? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 

@@ -8,7 +8,6 @@ function [response] = put_files(presigned_url, file_path)
     %   FILE_PATH - a string representing the path to the file to be uploaded
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the response of the upload
 
     method = matlab.net.http.RequestMethod.PUT;

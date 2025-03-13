@@ -7,7 +7,6 @@ function [status,dataset, response] = get_dataset(dataset_id)
     %   DATASET_ID - a string representing the dataset id
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   DATASET - the dataset required by the user
     %   RESPONSE - the response from the server
 

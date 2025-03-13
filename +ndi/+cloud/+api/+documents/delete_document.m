@@ -8,7 +8,6 @@ function [response] = delete_document(dataset_id, document_id)
     %   DOCUMENT_ID -  a string representing the document id
     %
     % Outputs:
-    %   STATUS - did delete request work? 1 for no, 0 for yes
     %   RESPONSE - a message saying if the document was deleted or not
     %
 

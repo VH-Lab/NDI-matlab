@@ -11,7 +11,6 @@ function [response, uploadUrl] = get_raw_file_upload_url(dataset_id, uid)
     %   reference the file in documents
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get request summary
     %   URL - the upload URL to PUT the file to
 

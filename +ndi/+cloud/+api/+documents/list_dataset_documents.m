@@ -7,7 +7,6 @@ function [response, summary] = list_dataset_documents(dataset_id)
     %   DATASET_ID - a string representing the dataset id
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get response
     %   SUMMARY - The list of documents in the dataset
     %

@@ -7,7 +7,6 @@ function [response, uploadUrl] = get_file_collection_upload_url(dataset_id)
     %   DATASET_ID - a string representing the id of the dataset
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get request summary
     %   URL - the upload URL to PUT the file to
     %

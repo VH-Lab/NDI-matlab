@@ -11,7 +11,6 @@ function [response] = update_document(file_path, dataset_id, document_id, docume
     %   document
     %
     % Outputs:
-    %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - the updated document summary
     %
     fid = fopen(file_path,'w');

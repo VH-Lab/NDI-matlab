@@ -9,7 +9,6 @@ function [response] = create_user(email, name, password)
     %   PASSWORD - a string representing the user's password
     %
     % Outputs:
-    %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - a message indicates if the user is created or not
     %
 

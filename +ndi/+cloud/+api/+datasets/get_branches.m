@@ -7,7 +7,6 @@ function [response, branches] = get_branches(dataset_id)
     %   DATASET_ID - a string representing the dataset id
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get request summary
     %   BRANCHES - the branches required by the user
     %

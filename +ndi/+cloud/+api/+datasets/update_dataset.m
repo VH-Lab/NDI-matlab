@@ -8,7 +8,6 @@ function [response] = update_dataset(dataset_id, dataset)
     %   DATASET - the updated version of the dataset in JSON-formatted text
     %
     % Outputs:
-    %   STATUS - did the post request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %
 

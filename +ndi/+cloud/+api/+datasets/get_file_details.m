@@ -8,7 +8,6 @@ function [file_detail, downloadUrl, response] = get_file_details(dataset_id,uid)
     %   UID - a string representing the file uid
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   FILE_DETAIL - the details of the file
     %   DOWNLOADURL - the download url for the file
     %   RESPONSE - the response from the server

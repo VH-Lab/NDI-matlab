@@ -7,7 +7,6 @@ function [response] = unpublish_dataset(dataset_id)
     %   DATASET_ID - an id of the dataset
     %
     % Outputs:
-    %   STATUS - did the post request work? 1 for no, 0 for yes
     %   RESPONSE - the dataset was unpublished
     %
 

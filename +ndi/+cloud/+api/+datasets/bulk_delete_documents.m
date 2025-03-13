@@ -8,7 +8,6 @@ function [response] = bulk_delete_documents(dataset_id,document_ids)
     %   DOCUMENT_IDS - a cell array of document ids to delete
     %
     % Outputs:
-    %   STATUS - did the post request work? 1 for no, 0 for yes
     %   response - the post request response
 
     auth_token = ndi.cloud.authenticate();

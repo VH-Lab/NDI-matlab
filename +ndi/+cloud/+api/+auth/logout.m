@@ -6,7 +6,6 @@ function [response] = logout()
     % Inputs:
     %
     % Outputs:
-    %   STATUS - did user log out? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 

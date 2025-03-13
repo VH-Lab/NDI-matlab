@@ -8,7 +8,6 @@ function [response, name, email, organizations] = get_user(user_id, auth_token)
     %   AUTH_TOKEN - a string representing the authentication token
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - a message indicates if the user is found
     %   NAME - a string representing the user's name
     %   EMAIL - a string representing the user's e-mail

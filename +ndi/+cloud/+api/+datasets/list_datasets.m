@@ -4,7 +4,6 @@ function [response, datasets] = list_datasets(organization_id)
     % [RESPONSE, DATASETS] = ndi.cloud.api.datasets.LIST_DATASETS()
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get request summary
     %   DATASETS - A high level summary of all datasets in the organization
 
