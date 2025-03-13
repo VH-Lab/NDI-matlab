@@ -19,8 +19,4 @@ function response = put_files(presigned_url, file_path)
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
-    % cmd = sprintf("curl '%s' --upload-file '%s'", presigned_url, file_path);
-
-    % Run the curl command and capture the output
-    % [status, output] = system(cmd);
 end
