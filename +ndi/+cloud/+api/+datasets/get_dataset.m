@@ -1,4 +1,4 @@
-function [status,dataset, response] = get_dataset(dataset_id)
+function [dataset, response] = get_dataset(dataset_id)
     % GET_DATASET - Get a dataset given it's dataset id
     %
     % [DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASET(DATASET_ID)

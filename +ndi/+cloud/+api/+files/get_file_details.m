@@ -12,6 +12,6 @@ function [file_detail, downloadUrl, response] = get_file_details(dataset_id, uid
     %   DOWNLOADURL - the download url for the file
     %   RESPONSE - the response from the server
     
-    [status, file_detail, downloadUrl, response] = ...
+    [file_detail, downloadUrl, response] = ...
         ndi.cloud.api.datasets.get_file_details(dataset_id, uid);
 end
