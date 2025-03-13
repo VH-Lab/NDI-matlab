@@ -133,21 +133,10 @@ function test_post_files(S, d, dataset_id)
                     if ~isempty(file_obj),
                         [~,uid,~] = fileparts(file_obj.fullpathfilename);
                         [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(dataset_id, uid);
-                        if status ~= 0
-                            msg = response;
-                            error(msg);
-                        end
                         response = ndi.cloud.api.files.put_files(upload_url, file_obj.fullpathfilename);
-                        if status ~= 0
-                            msg = response;
-                            error(msg);
-                        end
                         S.database_closebinarydoc(file_obj);
 
-                        [status,file_detail,downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
-                        if status
-                            error(response);
-                        end
+                        [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(dataset_id,uid);
                         return;
                     end;
                 end;

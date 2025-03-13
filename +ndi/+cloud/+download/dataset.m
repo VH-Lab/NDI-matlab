@@ -55,12 +55,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
 
     if verbose, disp(['Retrieving dataset...']); end
 
-    [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
-    if status
-        b = 0;
-        msg = response;
-        error(msg);
-    end
+    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 
     if strcmp(mode,'local') % download files
 
