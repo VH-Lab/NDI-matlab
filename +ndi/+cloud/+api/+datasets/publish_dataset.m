@@ -1,7 +1,7 @@
-function [response] = publish_dataset(dataset_id)
+function response = publish_dataset(dataset_id)
     % PUBLISH_DATASET - publish a dataset
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.PUBLISH_DATASET(DATASET_ID)
+    % RESPONSE = ndi.cloud.api.datasets.PUBLISH_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset

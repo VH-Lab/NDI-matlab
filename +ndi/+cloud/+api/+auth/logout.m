@@ -1,7 +1,7 @@
-function [response] = logout()
+function response = logout()
     % LOGOUT - logs a user out and invalidates their token
     %
-    % [RESPONSE] = ndi.cloud.api.auth.LOGOUT()
+    % RESPONSE = ndi.cloud.api.auth.LOGOUT()
     %
     % Inputs:
     %

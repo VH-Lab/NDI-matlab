@@ -1,7 +1,7 @@
-function [response] = update_dataset(dataset_id, dataset)
+function response = update_dataset(dataset_id, dataset)
     % UPDATE_DATASET - update a dataset to NDI Cloud
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.UPDATE_DATASET(DATASET_ID, DATASET)
+    % RESPONSE = ndi.cloud.api.datasets.UPDATE_DATASET(DATASET_ID, DATASET)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset

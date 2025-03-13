@@ -1,7 +1,7 @@
-function [response] = submit_dataset(dataset_id)
+function response = submit_dataset(dataset_id)
     % SUBMIT_DATASET - submit a dataset for review
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.SUBMIT_DATASET(DATASET_ID)
+    % RESPONSE = ndi.cloud.api.datasets.SUBMIT_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset

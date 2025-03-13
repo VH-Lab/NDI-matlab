@@ -1,7 +1,7 @@
-function [response] = change_password(oldPassword, newPassword)
+function response = change_password(oldPassword, newPassword)
     % CHANGE_PASSWORD - Change a user's password
     %
-    % [RESPONSE] = ndi.cloud.api.auth.CHANGE_PASSWORD(OLDPASSWORD, NEWPASSWORD)
+    % RESPONSE = ndi.cloud.api.auth.CHANGE_PASSWORD(OLDPASSWORD, NEWPASSWORD)
     %
     % Inputs:
     %   OLDPASSWORD - a string representing the old password

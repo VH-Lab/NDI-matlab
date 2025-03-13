@@ -1,7 +1,7 @@
-function [response] = create_dataset_branch(dataset_id, branch_name)
+function response = create_dataset_branch(dataset_id, branch_name)
     % CREATE_DATASET_BRANCH - branch a given dataset
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET_BRANCH(DATASET_ID, BRANCH_NAME)
+    % RESPONSE = ndi.cloud.api.datasets.CREATE_DATASET_BRANCH(DATASET_ID, BRANCH_NAME)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset

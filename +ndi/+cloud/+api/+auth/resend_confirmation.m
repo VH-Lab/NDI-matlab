@@ -1,7 +1,7 @@
-function [response] = resend_confirmation(email)
+function response = resend_confirmation(email)
     % RESEND_CONFIRMATION - Resends the verification code via email
     %
-    % [RESPONSE] = ndi.cloud.api.auth.resend_confirmation(EMAIL)
+    % RESPONSE = ndi.cloud.api.auth.resend_confirmation(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the

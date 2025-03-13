@@ -1,7 +1,7 @@
-function [response] = delete_document(dataset_id, document_id)
+function response = delete_document(dataset_id, document_id)
     % DELETE_DOCUMENT - delete a document from the dataset
     %
-    % [RESPONSE] = ndi.cloud.api.documents.DELETE_DOCUMENT(DATASET_ID, DOCUMENT_ID)
+    % RESPONSE = ndi.cloud.api.documents.DELETE_DOCUMENT(DATASET_ID, DOCUMENT_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id

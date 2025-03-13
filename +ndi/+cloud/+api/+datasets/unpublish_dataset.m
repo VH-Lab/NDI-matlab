@@ -1,7 +1,7 @@
-function [response] = unpublish_dataset(dataset_id)
+function response = unpublish_dataset(dataset_id)
     % UNPUBLISH_DATASET - unpublish a dataset
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.UNPUBLISH_DATASET(DATASET_ID)
+    % RESPONSE = ndi.cloud.api.datasets.UNPUBLISH_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset

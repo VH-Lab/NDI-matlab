@@ -1,8 +1,8 @@
-function [response] = delete_dataset(dataset_id, options)
+function response = delete_dataset(dataset_id, options)
     % DELETE_DATASET - Delete a dataset. Datasets cannot be deleted if they
     % have been branched off of
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.DELETE_DATASET(DATASET_ID)
+    % RESPONSE = ndi.cloud.api.datasets.DELETE_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id

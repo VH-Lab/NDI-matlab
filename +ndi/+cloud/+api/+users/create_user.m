@@ -1,7 +1,7 @@
-function [response] = create_user(email, name, password)
+function response = create_user(email, name, password)
     % CREATE_USER - create a new user
     %
-    % [RESPONSE] = ndi.cloud.user.create_user(EMAIL, NAME, PASSWORD)
+    % RESPONSE = ndi.cloud.user.create_user(EMAIL, NAME, PASSWORD)
     %
     % Inputs:
     %   EMAIL - a string representing the user's e-mail

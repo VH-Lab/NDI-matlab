@@ -1,7 +1,7 @@
-function [response] = bulk_delete_documents(dataset_id,document_ids)
+function response = bulk_delete_documents(dataset_id,document_ids)
     %BULK_DELETE_DOCUMENTS - Delete a set of documents from the dataset
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.BULK_DELETE_DOCUMENTS(DATASET_ID, DOCUMENT_IDS)
+    % RESPONSE = ndi.cloud.api.datasets.BULK_DELETE_DOCUMENTS(DATASET_ID, DOCUMENT_IDS)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset

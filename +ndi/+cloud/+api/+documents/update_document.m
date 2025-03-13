@@ -1,7 +1,7 @@
-function [response] = update_document(file_path, dataset_id, document_id, document)
+function response = update_document(file_path, dataset_id, document_id, document)
     % UPDATE_DOCUMENT - update a document
     %
-    % [RESPONSE] = ndi.cloud.api.documents.UPDATE_DOCUMENT(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
+    % RESPONSE = ndi.cloud.api.documents.UPDATE_DOCUMENT(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
     %
     % Inputs:
     %   FILE_PATH - a string representing the file path

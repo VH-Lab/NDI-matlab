@@ -1,6 +1,7 @@
-function [response] = verify_user(email, confirmation_code)
+function response = verify_user(email, confirmation_code)
     % VERIFY_USER - verifies a user via the confirmation code sent in e-mail
-    % [RESPONSE] = ndi.cloud.api.auth.verify_user(EMAIL, CONFIRMATION_CODE)
+    %
+    % RESPONSE = ndi.cloud.api.auth.verify_user(EMAIL, CONFIRMATION_CODE)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to verify

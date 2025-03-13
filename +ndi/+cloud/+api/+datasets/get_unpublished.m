@@ -1,7 +1,7 @@
 function [response, datasets] = get_unpublished(page, page_size)
     % GET_UNPUBLISHED - get all submitted but unpublished datasets
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.GET_UNPUBLISHED(PAGE, PAGE_SIZE)
+    % RESPONSE = ndi.cloud.api.datasets.GET_UNPUBLISHED(PAGE, PAGE_SIZE)
     %
     % Inputs:
     %   PAGE - an integer representing the page of result to get

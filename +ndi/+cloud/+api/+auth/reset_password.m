@@ -1,7 +1,7 @@
-function [response] = reset_password(email)
+function response = reset_password(email)
     % RESET_PASSWORD - sends a password reset e-mail
     %
-    % [RESPONSE] = ndi.cloud.api.auth.reset_password(EMAIL)
+    % RESPONSE = ndi.cloud.api.auth.reset_password(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the

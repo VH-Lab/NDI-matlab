@@ -1,7 +1,7 @@
-function [response] = put_files(presigned_url, file_path)
+function response = put_files(presigned_url, file_path)
     % PUT_FILES - upload the file at FILE_PATH to the presigned url
     %
-    % [OUTPUT] = ndi.cloud.api.files.PUT_FILES(PRESIGNED_URL, FILE_PATH)
+    % RESPONSE = ndi.cloud.api.files.PUT_FILES(PRESIGNED_URL, FILE_PATH)
     %
     % Inputs:
     %   PRESIGNED_URL - a string representing the url obtained from ndi.cloud.api.files.get_file_upload_url or get_raw_file_upload_url

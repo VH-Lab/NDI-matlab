@@ -1,7 +1,7 @@
 function [response, dataset_id] = create_dataset(dataset)
     % CREATE_DATASET - Create a new dataset
     %
-    % [RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET(DATASET)
+    % RESPONSE = ndi.cloud.api.datasets.CREATE_DATASET(DATASET)
     %
     % Inputs:
     %   DATASET - a JSON object representing the dataset
