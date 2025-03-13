@@ -37,7 +37,7 @@ function response = delete_dataset(dataset_id, options)
         % Accept this and try to get dataset to confirm it is deleted
         if options.ConfirmDeletion
             try % This should fail
-                [~, ~, ~] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+                [~, ~] = ndi.cloud.api.datasets.get_dataset(dataset_id);
                 warning('Dataset with id "%s" might not have been deleted', dataset_id)
             catch ME
                 if strcmp(ME.message, 'Failed to run command. Not Found')
