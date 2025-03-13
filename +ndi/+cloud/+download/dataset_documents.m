@@ -55,12 +55,8 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
             continue;
         end
 
-        [status, response, docStruct] = ndi.cloud.api.documents.get_document(dataset.x_id, document_id);
-        if status
-            b = 0;
-            msg = response;
-            error(msg);
-        end
+        [response, docStruct] = ndi.cloud.api.documents.get_document(dataset.x_id, document_id);
+        
         if verbose, disp(['Saving document ' int2str(i) '...']); end
 
         docStruct = rmfield(docStruct, 'id');

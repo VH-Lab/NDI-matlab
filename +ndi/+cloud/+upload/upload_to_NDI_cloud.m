@@ -47,12 +47,7 @@ function [b, msg] = upload_to_NDI_cloud(S, dataset_id, varargin)
             if verbose,
                 disp(['Uploading ' int2str(cur_doc_idx) ' JSON portions of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
             end;
-            [status, response_doc] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
-            if status ~= 0
-                b = 0;
-                msg = response_doc;
-                error(msg);
-            end
+            ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
             doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
             cur_doc_idx = cur_doc_idx + 1;
         end

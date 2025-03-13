@@ -47,8 +47,8 @@ end
 function isSuccess = login(userName, password)
     isSuccess = false;
 
-    [status, token, organization_id] = ndi.cloud.api.auth.login(userName, password);
-    if status == 0 && ~strcmp(token, 'Unable to Login')
+    [token, organization_id] = ndi.cloud.api.auth.login(userName, password);
+    if ~strcmp(token, 'Unable to Login')
         setenv('NDI_CLOUD_TOKEN', token)
         setenv('NDI_CLOUD_ORGANIZATION_ID', organization_id)
         isSuccess = true;
