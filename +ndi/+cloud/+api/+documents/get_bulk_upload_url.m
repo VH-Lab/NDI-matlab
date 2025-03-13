@@ -15,7 +15,7 @@ function uploadUrl = get_bulk_upload_url(dataset_id)
         dataset_id (1,1) string
     end
 
-    api_url = ndi.cloud.api.url('bulk_upload_documents', dataset_id);
+    api_url = ndi.cloud.api.url('bulk_upload_documents', 'dataset_id', dataset_id);
     opts = ndi.cloud.internal.get_weboptions_with_auth_header();
     result = webwrite(api_url, [], opts);
     uploadUrl = result.url;
