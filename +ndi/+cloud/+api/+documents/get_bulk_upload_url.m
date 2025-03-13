@@ -1,8 +1,8 @@
 function uploadUrl = get_bulk_upload_url(dataset_id)
     % get_bulk_upload_url - Get URL for uploading documents in bulk
     %
-    % uploadUrl = get_bulk_upload_url(dataset_id) returns a signed url to 
-    %   upload a zip file containing one or more json files containing document 
+    % uploadUrl = get_bulk_upload_url(dataset_id) returns a signed url to
+    %   upload a zip file containing one or more json files containing document
     %   data (as a root-level array) for the specified dataset
     %
     % Inputs:

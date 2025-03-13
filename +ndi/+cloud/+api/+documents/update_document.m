@@ -36,7 +36,6 @@ function response = update_document(file_path, dataset_id, document_id, document
     if exist(file_path, 'file')==2,
         delete(file_path);
     end
-    
 
     if (response.StatusCode == 200)
         % Request succeeded

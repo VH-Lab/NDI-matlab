@@ -32,7 +32,6 @@ function [response, document_id] = add_document_as_file(dataset_id, document)
     url = ndi.cloud.api.url('add_document', 'dataset_id', dataset_id);
 
     response = req.send(url);
-
     
     if (response.StatusCode == 200)
         % Request succeeded

@@ -21,7 +21,7 @@ function url = url(endpointName, options)
     if isempty(endpointMap)
         try
             endpointMap = dictionary();
-        catch 
+        catch
             endpointMap = containers.Map("KeyType", "char", "ValueType", "char");
         end
         endpointMap("login")                          = "/auth/login";
@@ -85,7 +85,6 @@ function endpointPath = replacePathParameter(endpointPath, parameterName, params
     endpointPath = strrep(endpointPath, sprintf('{%s}', parameterName), parameterValue);
 end
 
-
 function options = processOptions(options)
     % Todo: Should not be necessary
     options = renameStructField(options, 'file_uid', 'uid');
@@ -96,7 +95,7 @@ function options = processOptions(options)
     options = renameStructField(options, 'page_size', 'pageSize');
 
     function s = renameStructField(s, oldname, newname)
-        s.(newname) = s.(oldname); 
+        s.(newname) = s.(oldname);
     end
 end
 
