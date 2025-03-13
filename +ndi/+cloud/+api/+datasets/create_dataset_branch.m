@@ -1,7 +1,7 @@
-function [status, response] = create_dataset_branch(dataset_id, branch_name)
+function [response] = create_dataset_branch(dataset_id, branch_name)
     % CREATE_DATASET_BRANCH - branch a given dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET_BRANCH(DATASET_ID, BRANCH_NAME)
+    % [RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET_BRANCH(DATASET_ID, BRANCH_NAME)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -30,9 +30,9 @@ function [status, response] = create_dataset_branch(dataset_id, branch_name)
     url = ndi.cloud.api.url('create_dataset_branch', 'dataset_id', dataset_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

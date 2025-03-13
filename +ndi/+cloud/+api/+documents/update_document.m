@@ -1,7 +1,7 @@
-function [status, response] = update_document(file_path, dataset_id, document_id, document)
+function [response] = update_document(file_path, dataset_id, document_id, document)
     % UPDATE_DOCUMENT - update a document
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.documents.UPDATE_DOCUMENT(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
+    % [RESPONSE] = ndi.cloud.api.documents.UPDATE_DOCUMENT(FILE_PATH, DATASET_ID, DOCUMENT_ID, DOCUMENT)
     %
     % Inputs:
     %   FILE_PATH - a string representing the file path
@@ -37,10 +37,10 @@ function [status, response] = update_document(file_path, dataset_id, document_id
     if exist(file_path, 'file')==2,
         delete(file_path);
     end
-    status = 1;
+    
 
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         document_id = response.Body.Data.id;
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);

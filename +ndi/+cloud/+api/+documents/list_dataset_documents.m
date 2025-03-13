@@ -1,7 +1,7 @@
-function [status, response, summary] = list_dataset_documents(dataset_id)
+function [response, summary] = list_dataset_documents(dataset_id)
     % LIST_DATASET_DOCUMENTS - Get a list of summaries for all documents of a dataset
     %
-    % [STATUS, RESPONSE, SUMMARY] = ndi.cloud.api.documents.LIST_DATASET_DOCUMENTS(DATASET_ID)
+    % [RESPONSE, SUMMARY] = ndi.cloud.api.documents.LIST_DATASET_DOCUMENTS(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -24,9 +24,9 @@ function [status, response, summary] = list_dataset_documents(dataset_id)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         summary = response.Body.Data;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

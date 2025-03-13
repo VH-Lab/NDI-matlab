@@ -1,7 +1,7 @@
-function [status, response, datasets] = get_unpublished(page, page_size)
+function [response, datasets] = get_unpublished(page, page_size)
     % GET_UNPUBLISHED - get all submitted but unpublished datasets
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.GET_UNPUBLISHED(PAGE, PAGE_SIZE)
+    % [RESPONSE] = ndi.cloud.api.datasets.GET_UNPUBLISHED(PAGE, PAGE_SIZE)
     %
     % Inputs:
     %   PAGE - an integer representing the page of result to get
@@ -29,9 +29,9 @@ function [status, response, datasets] = get_unpublished(page, page_size)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         datasets = response.Body.Data;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

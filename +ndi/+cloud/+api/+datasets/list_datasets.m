@@ -1,7 +1,7 @@
-function [status, response, datasets] = list_datasets(organization_id)
+function [response, datasets] = list_datasets(organization_id)
     % LIST_DATASETS - Get a list of all datasets in an organization
     %
-    % [STATUS,RESPONSE, DATASETS] = ndi.cloud.api.datasets.LIST_DATASETS()
+    % [RESPONSE, DATASETS] = ndi.cloud.api.datasets.LIST_DATASETS()
     %
     % Outputs:
     %   STATUS - did get request work? 1 for no, 0 for yes
@@ -24,9 +24,9 @@ function [status, response, datasets] = list_datasets(organization_id)
     headers = [acceptField authorizationField];
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         datasets = response.Body.Data.datasets;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

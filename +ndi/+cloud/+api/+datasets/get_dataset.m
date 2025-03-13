@@ -1,7 +1,7 @@
 function [status,dataset, response] = get_dataset(dataset_id)
     % GET_DATASET - Get a dataset given it's dataset id
     %
-    % [STATUS,DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASET(DATASET_ID)
+    % [DATASET, RESPONSE] = ndi.cloud.api.datasets.GET_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -23,9 +23,9 @@ function [status,dataset, response] = get_dataset(dataset_id)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         dataset = response.Body.Data;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

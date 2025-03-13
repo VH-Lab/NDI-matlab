@@ -1,7 +1,7 @@
-function [status, response, dataset_id] = create_dataset(dataset)
+function [response, dataset_id] = create_dataset(dataset)
     % CREATE_DATASET - Create a new dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET(DATASET)
+    % [RESPONSE] = ndi.cloud.api.datasets.CREATE_DATASET(DATASET)
     %
     % Inputs:
     %   DATASET - a JSON object representing the dataset
@@ -27,9 +27,9 @@ function [status, response, dataset_id] = create_dataset(dataset)
     url = ndi.cloud.api.url('create_dataset', 'organization_id', organization_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 201)
-        status = 0;
+        % Request succeeded
         dataset_id = response.Body.Data.id;
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);

@@ -1,7 +1,7 @@
-function [status, response, name, email, organizations] = get_user(user_id, auth_token)
+function [response, name, email, organizations] = get_user(user_id, auth_token)
     % GET_USER - get a user
     %
-    % [STATUS,RESPONSE, NAME, EMAIL, ORGANIZATIONS] = ndi.cloud.user.get_user(USER_ID, AUTH_TOKEN)
+    % [RESPONSE, NAME, EMAIL, ORGANIZATIONS] = ndi.cloud.user.get_user(USER_ID, AUTH_TOKEN)
     %
     % Inputs:
     %   USER_ID - a string representing the user's id

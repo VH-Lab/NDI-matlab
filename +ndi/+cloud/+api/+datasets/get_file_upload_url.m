@@ -1,9 +1,9 @@
-function [status, response, uploadUrl] = get_file_upload_url(dataset_id, uid)
+function [response, uploadUrl] = get_file_upload_url(dataset_id, uid)
     % GET_FILE_UPLOAD_URL - get an upload URL for an artifact file that will be published
     % to the NDI Cloud
     % Same functionality as ndi.cloud.api.files.GET_FILE_UPLOAD_URL
     %
-    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_UPLOAD_URL(DATASET_ID, UID)
+    % [RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_UPLOAD_URL(DATASET_ID, UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
@@ -28,9 +28,9 @@ function [status, response, uploadUrl] = get_file_upload_url(dataset_id, uid)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         uploadUrl = response.Body.Data.url;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

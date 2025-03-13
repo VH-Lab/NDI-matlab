@@ -1,7 +1,7 @@
-function [status, response] = resend_confirmation(email)
+function [response] = resend_confirmation(email)
     % RESEND_CONFIRMATION - Resends the verification code via email
     %
-    % [STATUS, RESPONSE] = ndi.cloud.api.auth.resend_confirmation(EMAIL)
+    % [RESPONSE] = ndi.cloud.api.auth.resend_confirmation(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the
@@ -29,7 +29,7 @@ function [status, response] = resend_confirmation(email)
 
     response = req.send(url);
     if (response.StatusCode == 200 || response.StatusCode == 201)
-        status = 1;
+        
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

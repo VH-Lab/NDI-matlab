@@ -1,7 +1,7 @@
-function [status, file_detail, downloadUrl, response] = get_file_details(dataset_id,uid)
+function [file_detail, downloadUrl, response] = get_file_details(dataset_id,uid)
     % GET_FILE_DETAILS - Get the details, including the download url, for a individual file
     %
-    % [STATUS, FILE_DETAIL, DOWNLOADURL, RESPONSE] = ndi.cloud.api.datasets.GET_FILE_DETAILS(DATASET_ID,UID)
+    % [FILE_DETAIL, DOWNLOADURL, RESPONSE] = ndi.cloud.api.datasets.GET_FILE_DETAILS(DATASET_ID,UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -27,7 +27,7 @@ function [status, file_detail, downloadUrl, response] = get_file_details(dataset
     response = send(request, url);
     
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         file_detail = response.Body.Data;
         downloadUrl = file_detail.downloadUrl;
     else

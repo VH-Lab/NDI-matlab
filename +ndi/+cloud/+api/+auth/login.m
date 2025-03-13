@@ -1,4 +1,4 @@
-function [status, auth_token, organization_id] = login(email, password)
+function [auth_token, organization_id] = login(email, password)
     % LOGIN - logs in a user
     %
     % [AUTH_TOKEN,ORGANIZATION_ID] = ndi.cloud.api.auth.LOGIN(EMAIL, PASSWORD)
@@ -28,9 +28,9 @@ function [status, auth_token, organization_id] = login(email, password)
     url = ndi.cloud.api.url('login');
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         auth_token = response.Body.Data.token;
         organization_id = response.Body.Data.user.organizations.id;
     else

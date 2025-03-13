@@ -1,7 +1,7 @@
-function [status, response] = reset_password(email)
+function [response] = reset_password(email)
     % RESET_PASSWORD - sends a password reset e-mail
     %
-    % [STATUS, RESPONSE] = ndi.cloud.api.auth.reset_password(EMAIL)
+    % [RESPONSE] = ndi.cloud.api.auth.reset_password(EMAIL)
     %
     % Inputs:
     %   EMAIL - a string representing the email address used to send the
@@ -27,9 +27,9 @@ function [status, response] = reset_password(email)
     url = ndi.cloud.api.url('reset_password');
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200 || response.StatusCode == 201)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

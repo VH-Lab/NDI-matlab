@@ -1,7 +1,7 @@
-function [status, response] = bulk_delete_documents(dataset_id,document_ids)
+function [response] = bulk_delete_documents(dataset_id,document_ids)
     %BULK_DELETE_DOCUMENTS - Delete a set of documents from the dataset
     %
-    % [STATUS, RESPONSE] = ndi.cloud.api.datasets.BULK_DELETE_DOCUMENTS(DATASET_ID, DOCUMENT_IDS)
+    % [RESPONSE] = ndi.cloud.api.datasets.BULK_DELETE_DOCUMENTS(DATASET_ID, DOCUMENT_IDS)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
@@ -29,9 +29,9 @@ function [status, response] = bulk_delete_documents(dataset_id,document_ids)
     url = ndi.cloud.api.url('bulk_delete_documents', 'dataset_id', dataset_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

@@ -1,9 +1,9 @@
-function [status, response, upload_url] = get_raw_file_upload_url(dataset_id, uid)
+function [response, upload_url] = get_raw_file_upload_url(dataset_id, uid)
     % GET_RAW_FILE_UPLOAD_URL - get an upload URL for a raw data file that will be
     % published to AWS Open Data after review.
     % Same functionality as ndi.cloud.api.datasets.GET_RAW_FILE_UPLOAD_URL
     %
-    % [STATUS,RESPONSE,UPLOAD_URL] = ndi.cloud.api.files.GET_RAW_FILE_UPLOAD_URL(DATASET_ID, UID)
+    % [RESPONSE,UPLOAD_URL] = ndi.cloud.api.files.GET_RAW_FILE_UPLOAD_URL(DATASET_ID, UID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id

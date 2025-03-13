@@ -1,7 +1,7 @@
-function [status, response, branches] = get_branches(dataset_id)
+function [response, branches] = get_branches(dataset_id)
     % GET_BRANCHES - get the branches of a dataset
     %
-    % [STATUS,RESPONSE,BRANCHES] = ndi.cloud.api.datasets.GET_BRANCHES(DATASET_ID)
+    % [RESPONSE,BRANCHES] = ndi.cloud.api.datasets.GET_BRANCHES(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -24,9 +24,9 @@ function [status, response, branches] = get_branches(dataset_id)
 
     request = matlab.net.http.RequestMessage(method, headers);
     response = send(request, url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         branches = response.Body.Data.branches;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

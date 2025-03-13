@@ -1,7 +1,7 @@
-function [status, response, document_id] = add_document_as_file(dataset_id, document)
+function [response, document_id] = add_document_as_file(dataset_id, document)
     % ADD_DOCUMENT - add a document to the dataset using a file for upload
     %
-    % [STATUS, RESPONSE, DOCUMENT_ID] = ndi.cloud.api.documents.ADD_DOCUMENT(DATASET_ID, DOCUMENT)
+    % [RESPONSE, DOCUMENT_ID] = ndi.cloud.api.documents.ADD_DOCUMENT(DATASET_ID, DOCUMENT)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
@@ -34,9 +34,9 @@ function [status, response, document_id] = add_document_as_file(dataset_id, docu
 
     response = req.send(url);
 
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         document_id = response.Body.Data.id;
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
