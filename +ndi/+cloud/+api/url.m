@@ -54,6 +54,7 @@ function url = url(endpointName, options)
         endpointMap("delete_document")                = "/datasets/{datasetId}/documents/{documentId}";
         endpointMap("bulk_delete_documents")          = "/datasets/{datasetId}/documents/bulk-delete";
         endpointMap("bulk_upload_documents")          = "/datasets/{datasetId}/documents/bulk-upload";
+        endpointMap("bulk_download_documents")        = "/datasets/{datasetId}/documents/bulk-download";
         endpointMap("list_dataset_documents")         = "/datasets/{datasetId}/documents";
         endpointMap("add_document")                   = "/datasets/{datasetId}/documents";
         endpointMap("search_datasets")                = "/datasets/search";
