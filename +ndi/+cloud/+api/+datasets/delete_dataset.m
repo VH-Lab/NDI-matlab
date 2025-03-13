@@ -1,4 +1,4 @@
-function [status, response] = delete_dataset(dataset_id)
+function [status, response] = delete_dataset(dataset_id, options)
     % DELETE_DATASET - Delete a dataset. Datasets cannot be deleted if they
     % have been branched off of
     %
@@ -11,6 +11,11 @@ function [status, response] = delete_dataset(dataset_id)
     %   STATUS - did delete request work? 1 for no, 0 for yes
     %   RESPONSE - the delete confirmation
     %
+
+    arguments
+        dataset_id (1,1) string
+        options.ConfirmDeletion (1,1) logical = true
+    end
 
     auth_token = ndi.cloud.authenticate();
 
@@ -28,6 +33,21 @@ function [status, response] = delete_dataset(dataset_id)
     status = 1;
     if (response.StatusCode == 204)
         status = 0;
+    elseif (response.StatusCode == 504)
+        % Delete dataset endpoint always runs into a gateway timeout error.
+        % Accept this and try to get dataset to confirm it is deleted
+        if options.ConfirmDeletion
+            try % This should fail
+                [~, ~, ~] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+                warning('Dataset with id "%s" might not have been deleted', dataset_id)
+            catch ME
+                if strcmp(ME.message, 'Failed to run command. Not Found')
+                    fprint('Dataset with id "%s" deleted from NDI Cloud.\n')
+                else
+                    rethrow(ME)
+                end
+            end
+        end
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
