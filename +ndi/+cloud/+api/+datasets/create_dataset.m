@@ -11,7 +11,7 @@ function [status, response, dataset_id] = create_dataset(dataset)
     %   RESPONSE - the new dataset summary
     %   DATASET_ID - the id of the newly created dataset
 
-    [auth_token, organization_id] = ndi.cloud.uilogin();
+    [auth_token, organization_id] = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 

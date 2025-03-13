@@ -1,4 +1,4 @@
-function token = authenticate()
+function [token, organizationID] = authenticate()
 % authenticate - Authenticate using secret, environment or GUI Form
     
     if isAuthenticated()
@@ -11,8 +11,11 @@ function token = authenticate()
         ndi.cloud.uilogin();
     end
 
-    if nargout == 1
+    if nargout >= 1
         token = ndi.cloud.internal.get_active_token();
+    end
+    if nargout >= 2
+        organizationID = getenv("NDI_CLOUD_ORGANIZATION_ID");
     end
 end
 
