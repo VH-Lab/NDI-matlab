@@ -41,7 +41,7 @@ function response = delete_dataset(dataset_id, options)
                 warning('Dataset with id "%s" might not have been deleted', dataset_id)
             catch ME
                 if strcmp(ME.message, 'Failed to run command. Not Found')
-                    fprintf('Dataset with id "%s" deleted from NDI Cloud.\n')
+                    fprintf('Dataset with id "%s" deleted from NDI Cloud.\n', dataset_id)
                 else
                     rethrow(ME)
                 end
