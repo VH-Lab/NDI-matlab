@@ -14,7 +14,7 @@ function [response, document_id] = add_document_as_file(dataset_id, document)
 
     % Todo: merge with add_document
 
-    [file_path, file_cleanup_obj] = saveDocumentToTemporaryFile(document);
+    [file_path, file_cleanup_obj] = saveDocumentToTemporaryFile(document); %#ok<ASGLU>
 
     auth_token = ndi.cloud.authenticate();
 

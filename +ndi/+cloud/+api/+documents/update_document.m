@@ -33,13 +33,13 @@ function response = update_document(file_path, dataset_id, document_id, document
     url = ndi.cloud.api.url('update_document', 'dataset_id', dataset_id, 'document_id', document_id);
 
     response = req.send(url);
-    if exist(file_path, 'file')==2,
+    if isfile(file_path)
         delete(file_path);
     end
 
     if (response.StatusCode == 200)
         % Request succeeded
-        document_id = response.Body.Data.id;
+        % document_id = response.Body.Data.id;
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end
