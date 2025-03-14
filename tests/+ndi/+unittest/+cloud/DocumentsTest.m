@@ -153,7 +153,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             t1 = tic;
             while ~isFinished && toc(t1) < timeOut
                 try
-                    websave('downloaded.zip', downloadUrl)
+                    websave('downloaded.zip', downloadUrl);
                     isFinished = true;
                 catch ME
                     pause(1)
