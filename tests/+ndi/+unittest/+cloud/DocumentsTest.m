@@ -22,7 +22,6 @@ classdef DocumentsTest < matlab.unittest.TestCase
     end
 
     methods (Test)
-
         function verifyNoDocuments(testCase)
             [~, dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
             testCase.verifyEqual(...
@@ -115,12 +114,68 @@ classdef DocumentsTest < matlab.unittest.TestCase
             % Verify that document is uploaded
             testCase.verifyNumDocumentsEqual(0, "post deletion")
         end
+
+        function testDocumentBulkUploadAndDownload(testCase)
+            import matlab.unittest.fixtures.WorkingFolderFixture
+            testCase.applyFixture(WorkingFolderFixture)
+
+            % Create test documents
+            numDocuments = 5;
+            testDocuments = createTestDocuments(numDocuments);
+
+            % Upload documents
+            zipFilePath = ndi.cloud.upload.zip_documents_for_upload(testDocuments);
+            uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(testCase.DatasetID);
+            ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+            
+            % Check if documents are uploaded:
+            isFinished = false;
+            timeOut = 10;
+            t1 = tic;
+            while ~isFinished && toc(t1) < timeOut
+                [~, dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
+                if numel(dataset.documents) == numDocuments
+                    isFinished = true;
+                else
+                    pause(1)
+                end
+            end
+
+            % Get IDs of uploaded documents
+            testCase.verifyEqual(numel(dataset.documents), numDocuments)
+            documentIds = dataset.documents;
+            
+            % Download documents using bulk download
+            downloadUrl = ndi.cloud.api.documents.get_bulk_download_url(testCase.DatasetID, documentIds);
+            
+            isFinished = false;
+            timeOut = 10;
+            t1 = tic;
+            while ~isFinished && toc(t1) < timeOut
+                try
+                    websave('downloaded.zip', downloadUrl)
+                    isFinished = true;
+                catch ME
+                    pause(1)
+                end
+            end
+
+            % Unzip documents and compare with originals
+            jsonFile = unzip('downloaded.zip');
+            downloadedDocuments = jsondecode(fileread(jsonFile{1}));
+            for i = 1:numDocuments
+                testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
+            end
+            
+            % Clean up (delete documents)
+            ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+        end
     end
 
     methods % Non-test methods
         function documentId = addDocumentToDataset(testCase)
         % addDocumentToDataset - Create document and add it to the test dataset
-            testDocument = createTestDocument();
+            testDocument = createTestDocuments(1);
             
             % Create a new document
             document = ndi.cloud.api.documents.add_document(testCase.DatasetID, testDocument);
@@ -146,10 +201,20 @@ classdef DocumentsTest < matlab.unittest.TestCase
     end
 end
 
-function testDocument = createTestDocument()
-    randomName = sprintf("Test Document %s", char(randi([65 90], 1, 5)) );
-    testDocument = struct("name", randomName);
-    testDocument = jsonencode(testDocument);
+function testDocuments = createTestDocuments(numDocuments)
+    arguments
+        numDocuments (1,1) uint32 = 1
+    end
+    testDocuments = cell(1, numDocuments);
+
+    for i = 1:numDocuments
+        randomName = sprintf("Test Document %s", char(randi([65 90], 1, 5)) );
+        newTestDocument = struct("name", randomName);
+        testDocuments{i} = jsonencode(newTestDocument);
+    end
+    if numDocuments == 1
+        testDocuments = newTestDocument{1};
+    end
 end
 
 function deleteDataset(datasetId)
