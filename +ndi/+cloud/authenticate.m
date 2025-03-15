@@ -26,7 +26,7 @@ end
 
 function isSuccess = authenticatedWithSecret()
     isSuccess = false;
-    if exist("isSecret", "file")
+    if exist("isSecret", "file") % Introduced in R2024a
         if isSecret("NDI_CLOUD_USERNAME")
             userName = getSecret("NDI_CLOUD_USERNAME");
             password = getSecret("NDI_CLOUD_PASSWORD");
@@ -37,10 +37,18 @@ end
 
 function isSuccess = authenticatedWithEnvironmentVariable()
     isSuccess = false;
-    if isenv("NDI_CLOUD_USERNAME")
+    if exist("isenv", "file") % Introduced in R2022b
+        if isenv("NDI_CLOUD_USERNAME") && isenv("NDI_CLOUD_PASSWORD")
+            userName = getenv("NDI_CLOUD_USERNAME");
+            password = getenv("NDI_CLOUD_PASSWORD");
+            isSuccess = login(userName, password);
+        end
+    else
         userName = getenv("NDI_CLOUD_USERNAME");
         password = getenv("NDI_CLOUD_PASSWORD");
-        isSuccess = login(userName, password);
+        if ~isempty(userName) && ~isempty(password)
+            isSuccess = login(userName, password);
+        end
     end
 end
 
