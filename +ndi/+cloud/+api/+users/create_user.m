@@ -1,7 +1,7 @@
-function [status, response] = create_user(email, name, password)
+function response = create_user(email, name, password)
     % CREATE_USER - create a new user
     %
-    % [STATUS,RESPONSE] = ndi.cloud.user.create_user(EMAIL, NAME, PASSWORD)
+    % RESPONSE = ndi.cloud.user.create_user(EMAIL, NAME, PASSWORD)
     %
     % Inputs:
     %   EMAIL - a string representing the user's e-mail
@@ -9,7 +9,6 @@ function [status, response] = create_user(email, name, password)
     %   PASSWORD - a string representing the user's password
     %
     % Outputs:
-    %   STATUS - did post request work? 1 for no, 0 for yes
     %   RESPONSE - a message indicates if the user is created or not
     %
 

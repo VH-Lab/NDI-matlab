@@ -85,13 +85,14 @@ function [doc_json_struct, doc_file_struct, total_size] = scan_for_upload(S, d, 
     clear db_cleanup_obj
 
     if (~new)
-        [doc_status,doc_resp,doc_summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
-        [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
+        [doc_resp, doc_summary] = ndi.cloud.api.documents.list_dataset_documents(dataset_id);
+
+        [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
         already_uploaded_docs = {};
         if numel(doc_summary.documents) > 0, already_uploaded_docs = {doc_summary.documents.ndiId}; end; % prior version
         % if numel(doc_resp.documents) > 0, already_uploaded_docs = {doc_resp.documents.ndiId}; end;
         % [ids_left,document_indexes_to_upload] = setdiff(all_docs, already_uploaded_docs); % prior version
-        [ids_left,document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
+        [ids_left, document_indexes_to_upload] = setdiff(all_doc_ids, already_uploaded_docs);
         if numel(ids_left) == 0
             for i = 1:numel(doc_json_struct)
                 doc_json_struct(i).is_uploaded = true;

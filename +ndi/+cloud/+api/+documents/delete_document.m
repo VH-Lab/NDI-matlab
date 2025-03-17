@@ -1,14 +1,13 @@
-function [status, response] = delete_document(dataset_id, document_id)
+function response = delete_document(dataset_id, document_id)
     % DELETE_DOCUMENT - delete a document from the dataset
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.documents.DELETE_DOCUMENT(DATASET_ID, DOCUMENT_ID)
+    % RESPONSE = ndi.cloud.api.documents.DELETE_DOCUMENT(DATASET_ID, DOCUMENT_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the dataset id
     %   DOCUMENT_ID -  a string representing the document id
     %
     % Outputs:
-    %   STATUS - did delete request work? 1 for no, 0 for yes
     %   RESPONSE - a message saying if the document was deleted or not
     %
 
@@ -25,9 +24,9 @@ function [status, response] = delete_document(dataset_id, document_id)
     url = ndi.cloud.api.url('delete_document', 'dataset_id', dataset_id, 'document_id', document_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

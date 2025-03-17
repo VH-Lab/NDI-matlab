@@ -1,12 +1,11 @@
-function [status, response] = logout()
+function response = logout()
     % LOGOUT - logs a user out and invalidates their token
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.auth.LOGOUT()
+    % RESPONSE = ndi.cloud.api.auth.LOGOUT()
     %
     % Inputs:
     %
     % Outputs:
-    %   STATUS - did user log out? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 
@@ -26,9 +25,9 @@ function [status, response] = logout()
     url = ndi.cloud.api.url('logout');
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

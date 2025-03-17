@@ -1,14 +1,13 @@
-function [status, response] = update_dataset(dataset_id, dataset)
+function response = update_dataset(dataset_id, dataset)
     % UPDATE_DATASET - update a dataset to NDI Cloud
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.UPDATE_DATASET(DATASET_ID, DATASET)
+    % RESPONSE = ndi.cloud.api.datasets.UPDATE_DATASET(DATASET_ID, DATASET)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
     %   DATASET - the updated version of the dataset in JSON-formatted text
     %
     % Outputs:
-    %   STATUS - did the post request work? 1 for no, 0 for yes
     %   RESPONSE - the updated dataset summary
     %
 
@@ -28,9 +27,9 @@ function [status, response] = update_dataset(dataset_id, dataset)
     url = ndi.cloud.api.url('update_dataset', 'dataset_id', dataset_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         response = response.Body.Data;
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);

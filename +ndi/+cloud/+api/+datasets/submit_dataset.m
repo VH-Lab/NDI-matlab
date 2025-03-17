@@ -1,13 +1,12 @@
-function [status, response] = submit_dataset(dataset_id)
+function response = submit_dataset(dataset_id)
     % SUBMIT_DATASET - submit a dataset for review
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.datasets.SUBMIT_DATASET(DATASET_ID)
+    % RESPONSE = ndi.cloud.api.datasets.SUBMIT_DATASET(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - an id of the dataset
     %
     % Outputs:
-    %   STATUS - did the post request work? 1 for no, 0 for yes
     %   RESPONSE - the dataset was submitted
     %
 
@@ -27,9 +26,9 @@ function [status, response] = submit_dataset(dataset_id)
     url = ndi.cloud.api.url('submit_dataset', 'dataset_id', dataset_id);
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

@@ -1,13 +1,12 @@
-function [status, response, uploadUrl] = get_file_collection_upload_url(dataset_id)
+function [response, uploadUrl] = get_file_collection_upload_url(dataset_id)
     %GET_FILE_COLLECTION_UPLOAD_URL - get an upload URL for all file that will be published to the NDI Cloud
     %
-    % [STATUS,RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_COLLECTION_UPLOAD_URL(DATASET_ID)
+    % [RESPONSE,URL] = ndi.cloud.api.datasets.GET_FILE_COLLECTION_UPLOAD_URL(DATASET_ID)
     %
     % Inputs:
     %   DATASET_ID - a string representing the id of the dataset
     %
     % Outputs:
-    %   STATUS - did get request work? 1 for no, 0 for yes
     %   RESPONSE - the get request summary
     %   URL - the upload URL to PUT the file to
     %
@@ -26,7 +25,7 @@ function [status, response, uploadUrl] = get_file_collection_upload_url(dataset_
     response = send(request, url);
 
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         uploadUrl = response.Body.Data.url;
     else
         error('Failed to run command. %s', response.StatusLine.ReasonPhrase);

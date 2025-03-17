@@ -22,9 +22,8 @@ classdef FilesTest < matlab.unittest.TestCase
         function createTestDataset(testCase)
             % Create a dataset for testing
             datasetInfo = struct("name", testCase.DatasetName);
-            [status, ~, testCase.DatasetID] = ...
+            [~, testCase.DatasetID] = ...
                 ndi.cloud.api.datasets.create_dataset(datasetInfo); 
-            assert(status == 0, 'Failed to create test dataset')
             testCase.addTeardown(@() deleteDataset(testCase.DatasetID));
         end
 
@@ -50,10 +49,9 @@ classdef FilesTest < matlab.unittest.TestCase
             % Test getting an upload URL for a file
             fileUID = testCase.generateFileUID();
             
-            [status, response, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
+            [response, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, fileUID);
             
-            testCase.verifyEqual(status, 0, 'Expected API call to succeed');
             testCase.verifyNotEmpty(upload_url, 'Expected non-empty upload URL');
             testCase.verifyTrue(ischar(upload_url) || isstring(upload_url), ...
                 'Expected upload URL to be a string');
@@ -63,10 +61,9 @@ classdef FilesTest < matlab.unittest.TestCase
             % Test getting an upload URL for a raw file
             fileUID = testCase.generateFileUID();
             
-            [status, ~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
+            [~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
                 testCase.DatasetID, fileUID);
             
-            testCase.verifyEqual(status, 0, 'Expected API call to succeed');
             testCase.verifyNotEmpty(upload_url, 'Expected non-empty upload URL');
             testCase.verifyTrue(ischar(upload_url) || isstring(upload_url), ...
                 'Expected upload URL to be a string');
@@ -77,15 +74,12 @@ classdef FilesTest < matlab.unittest.TestCase
             fileUID = testCase.generateFileUID();
             
             % Get upload URL
-            [status, ~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
+            [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, fileUID);
-            testCase.verifyEqual(status, 0, 'Failed to get upload URL');
             
             % Upload file
-            [status, response] = ndi.cloud.api.files.put_files(...
+            response = ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            
-            testCase.verifyEqual(status, 0, 'Expected file upload to succeed');
         end
 
         function testGetFileDetails(testCase)
@@ -93,19 +87,17 @@ classdef FilesTest < matlab.unittest.TestCase
             fileUID = testCase.generateFileUID();
             
             % Upload a file first
-            [~, ~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
+            [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, fileUID);
-            [status, ~] = ndi.cloud.api.files.put_files(...
+            ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            testCase.verifyEqual(status, 0, 'Failed to upload test file');
             
-            pause(2)
+            pause(5) % Give server time to register file
 
             % Get file details
-            [status, file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(...
+            [file_detail, downloadUrl, response] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, fileUID);
             
-            testCase.verifyEqual(status, 0, 'Expected API call to succeed');
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
             testCase.verifyNotEmpty(downloadUrl, 'Expected non-empty download URL');
             testCase.verifyClass(file_detail, 'struct', 'Expected file details to be a struct');
@@ -118,21 +110,18 @@ classdef FilesTest < matlab.unittest.TestCase
             fileUID = testCase.generateFileUID();
             
             % Step 1: Get upload URL
-            [status1, ~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
+            [~, upload_url] = ndi.cloud.api.files.get_file_upload_url(...
                 testCase.DatasetID, fileUID);
-            testCase.verifyEqual(status1, 0, 'Failed to get upload URL');
             
             % Step 2: Upload file
-            [status2, ~] = ndi.cloud.api.files.put_files(...
+            ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            testCase.verifyEqual(status2, 0, 'Failed to upload file');
             
             pause(2)
             
             % Step 3: Get file details
-            [status3, file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
+            [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, fileUID);
-            testCase.verifyEqual(status3, 0, 'Failed to get file details');
             
             % Verify file details
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
@@ -150,21 +139,18 @@ classdef FilesTest < matlab.unittest.TestCase
             fileUID = testCase.generateFileUID();
             
             % Step 1: Get raw file upload URL
-            [status1, ~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
+            [~, upload_url] = ndi.cloud.api.files.get_raw_file_upload_url(...
                 testCase.DatasetID, fileUID);
-            testCase.verifyEqual(status1, 0, 'Failed to get raw file upload URL');
             
             % Step 2: Upload file
-            [status2, ~] = ndi.cloud.api.files.put_files(...
+            ndi.cloud.api.files.put_files(...
                 upload_url, testCase.TestFilePath);
-            testCase.verifyEqual(status2, 0, 'Failed to upload raw file');
             
             pause(5) % Todo: Use retry loop for getting download url
 
             % Step 3: Get file details
-            [status3, file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
+            [file_detail, downloadUrl, ~] = ndi.cloud.api.files.get_file_details(...
                 testCase.DatasetID, fileUID);
-            testCase.verifyEqual(status3, 0, 'Failed to get raw file details');
             
             % Verify file details
             testCase.verifyNotEmpty(file_detail, 'Expected non-empty file details');
@@ -189,21 +175,7 @@ classdef FilesTest < matlab.unittest.TestCase
 end
 
 function deleteDataset(datasetId)
-    try
-        [status, ~] = ndi.cloud.api.datasets.delete_dataset(datasetId);
-    catch
-        % Expecting fail - dataset might be in a state that prevents deletion
-        for i = 1:5
-            try % This should fail if dataset is deleted
-                [~, ~, ~] = ndi.cloud.api.datasets.get_dataset(datasetId);                    
-            catch
-                return % We want previous command to fail
-            end
-            pause(1); % Wait a bit before trying again
-        end
-    end
-    % If we get here, dataset might not have been deleted
-    warning('Dataset with id "%s" might not have been deleted', datasetId)
+    ndi.cloud.api.datasets.delete_dataset(datasetId);
 end
 
 function deleteFile(filePath)
