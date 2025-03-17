@@ -125,7 +125,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             timeOut = 10;
             t1 = tic;
             while ~isFinished && toc(t1) < timeOut
-                [~, dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
+                [dataset, ~] = ndi.cloud.api.datasets.get_dataset(testCase.DatasetID);
                 if numel(dataset.documents) == numDocuments
                     isFinished = true;
                 else
@@ -158,7 +158,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             for i = 1:numDocuments
                 testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
             end
-            
+
             % Clean up (delete documents)
             ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
         end
@@ -205,7 +205,7 @@ function testDocuments = createTestDocuments(numDocuments)
         testDocuments{i} = jsonencode(newTestDocument);
     end
     if numDocuments == 1
-        testDocuments = newTestDocument{1};
+        testDocuments = testDocuments{1};
     end
 end
 
@@ -214,7 +214,6 @@ function deleteDataset(datasetId)
         ndi.cloud.api.datasets.delete_dataset(datasetId);
     catch
         % Expecting fail
-
         for i = 1:numel(5)
             try % This should fail
                 [~, ~] = ndi.cloud.api.datasets.get_dataset(datasetId);                    
