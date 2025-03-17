@@ -116,9 +116,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testDocuments = createTestDocuments(numDocuments);
 
             % Upload documents
-            zipFilePath = ndi.cloud.upload.zip_documents_for_upload(testDocuments);
-            uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(testCase.DatasetID);
-            ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+            ndi.cloud.upload.upload_document_collection(testCase.DatasetID, testDocuments)
             
             % Check if documents are uploaded:
             isFinished = false;
@@ -138,23 +136,9 @@ classdef DocumentsTest < matlab.unittest.TestCase
             documentIds = dataset.documents;
             
             % Download documents using bulk download
-            downloadUrl = ndi.cloud.api.documents.get_bulk_download_url(testCase.DatasetID, documentIds);
-            
-            isFinished = false;
-            timeOut = 10;
-            t1 = tic;
-            while ~isFinished && toc(t1) < timeOut
-                try
-                    websave('downloaded.zip', downloadUrl);
-                    isFinished = true;
-                catch ME
-                    pause(1)
-                end
-            end
-
-            % Unzip documents and compare with originals
-            jsonFile = unzip('downloaded.zip');
-            downloadedDocuments = jsondecode(fileread(jsonFile{1}));
+            downloadedDocuments = ...
+                ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds);
+           
             for i = 1:numDocuments
                 testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
             end
