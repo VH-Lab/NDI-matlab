@@ -146,7 +146,7 @@ function upload_dataset_database(ndi_dataset, cloud_dataset_id, options)
 
         try
             % fprintf('File size: %d KB. ', round(file_manifest(i).bytes/1024) )
-            [~, ~, upload_url] = ndi.cloud.files.get_files(cloud_dataset_id, uid, auth_token);
+            [~, ~, upload_url] = ndi.cloud.files.get_file_upload_url(cloud_dataset_id, uid, auth_token);
             [status, response] = ndi.cloud.files.put_files(upload_url, file_manifest(i).file_path, auth_token);
         catch ME
             warning(ME.identifier, '%s', ME.message)

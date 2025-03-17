@@ -55,7 +55,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
 
     if verbose, disp(['Retrieving dataset...']); end
 
-    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
+    [status,dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
     if status
         b = 0;
         msg = response;
@@ -86,7 +86,7 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
                 if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
                 continue;
             end
-            [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_files_detail(dataset_id, file_uid);
+            [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(dataset_id, file_uid);
             if verbose, disp(['Saving file ' int2str(i) '...']); end
 
             % save the file

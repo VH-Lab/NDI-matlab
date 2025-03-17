@@ -44,16 +44,11 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
         doc_id = d{i}.document_properties.base.id;
         if (~doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded)
             document = did.datastructures.jsonencodenan(d{i}.document_properties);
-            temp_dir = ndi.common.PathConstants.TempFolder;
-            ido_ = ndi.ido;
-            rand_num = ido_.identifier;
-            temp_filename = sprintf("file_%s.json", rand_num);
-            path = fullfile(temp_dir,temp_filename);
             waitbar(cur_doc_idx/docs_left, h_document, sprintf('Uploading Document: %s. %d of %d...', doc_id, cur_doc_idx, docs_left));
             if verbose,
                 disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
             end;
-            [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document);
+            [status, response_doc] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
             if status ~= 0
                 b = 0;
                 msg = response_doc;
@@ -79,7 +74,7 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     end
 
     zip(zip_filename, files_to_zip);
-    [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
+    [status, response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
     [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_filename);
     if exist(zip_filename, 'file')
         delete(zip_filename);

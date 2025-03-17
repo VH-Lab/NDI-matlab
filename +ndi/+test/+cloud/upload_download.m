@@ -15,7 +15,7 @@ function [b,msg] = upload_download(D,metadatafile)
 
     metadata = load(metadatafile);
     datasetInformation = metadata.datasetInformation;
-    metadata_json = ndi.cloud.fun.metadata_to_json(datasetInformation);
+    metadata_json = ndi.database.metadata_ds_core.metadata_to_json(datasetInformation);
 
     b = 0;
 
@@ -23,13 +23,13 @@ function [b,msg] = upload_download(D,metadatafile)
 
     tic;
 
-    [status, response, dataset_id] = ndi.cloud.api.datasets.post_organization(metadata_json);
+    [status, response, dataset_id] = ndi.cloud.api.datasets.create_dataset(metadata_json);
     if status,
-        msg=['ndi.cloud.api.datasets.post_organization() failed to create a new dataset' response];
+        msg=['ndi.cloud.api.datasets.create_dataset() failed to create a new dataset' response];
         return;
     end;
 
-    [b_upload, msg_upload] = ndi.database.fun.upload_to_NDI_cloud(D, dataset_id);
+    [b_upload, msg_upload] = ndi.cloud.upload.upload_to_NDI_cloud(D, dataset_id);
 
     if ~b_upload,
         msg = msg_upload;
@@ -52,7 +52,7 @@ function [b,msg] = upload_download(D,metadatafile)
 
     tic;
 
-    [b_download,msg_download] = ndi.cloud.download_dataset(dataset_id,newdir);
+    [b_download,msg_download] = ndi.cloud.download.dataset(dataset_id,'local',newdir);
 
     if ~b_download,
         msg = msg_download;

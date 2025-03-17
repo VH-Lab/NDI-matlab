@@ -13,11 +13,14 @@ function [status, response, datasets] = get_published(page, page_size)
     %   DATASETS - a high level summary of all published datasets
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    arguments
+        page (1,1) int32 = 1
+        page_size (1,1) int32 = 20
+    end
 
-    page = int2str(page);
-    page_size = int2str(page_size);
-    url = matlab.net.URI(ndi.cloud.api.url('get_published', 'page', page, 'page_size', page_size));
+    auth_token = ndi.cloud.authenticate();
+
+    url = ndi.cloud.api.url('get_published', 'page', page, 'page_size', page_size);
 
     method = matlab.net.http.RequestMethod.GET;
 
