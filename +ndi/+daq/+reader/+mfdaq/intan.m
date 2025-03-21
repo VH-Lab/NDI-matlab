@@ -115,7 +115,7 @@ classdef intan < ndi.daq.reader.mfdaq
             else,
                 filename = filename_array{index};
                 [parentdir, fname, ext] = fileparts(filename);
-                if strcmp(fname,'info'),
+                if contains(fname,'info'),
                     s2 = ['time\.dat\>']; % equivalent of *.ext on the command line
                     tf2 = vlt.string.strcmp_substitution(s2,filename_array,'UseSubstituteString',0);
                     if any(tf),
