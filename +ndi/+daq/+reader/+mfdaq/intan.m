@@ -287,7 +287,7 @@ classdef intan < ndi.daq.reader.mfdaq
 
                 total_samples = 60 * num_data_blocks;
             else,
-                finfo = dir([parentdir filesep 'time.dat']);
+                finfo = dir([parentdir filesep '*time.dat']);
                 if isempty(finfo),
                     error(['File time.dat necessary in directory ' parentdir ' but it was not found.']);
                 end;
