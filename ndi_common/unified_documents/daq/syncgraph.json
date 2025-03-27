@@ -1,97 +1,76 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/blob/main/ndi_common/schema_documents/daq/syncgraph_schema.json",
+  "title": "Sync Graph",
+  "description": "Schema for synchronization graph",
   "type": "object",
-  "description": "",
-  "required": ["document_class", "depends_on", "syncgraph"],
   "properties": {
     "document_class": {
       "type": "object",
-      "description": "",
-      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "description": "Document class definitions and properties",
+      "required": ["class_name", "class_version", "superclasses"],
       "properties": {
-        "definition": {
-          "type": "string",
-          "description": "Path to the document definition file",
-          "default": "$NDIDOCUMENTPATH/daq/syncgraph.json"
-        },
-        "validation": {
-          "type": "string",
-          "description": "Path to the schema validation file",
-          "default": "$NDISCHEMAPATH/daq/syncgraph_schema.json"
-        },
         "class_name": {
           "type": "string",
-          "description": "",
-          "enum": ["syncgraph"],
-          "enumDescriptions": {
-            "syncgraph": "Synchronization graph class for managing temporal relationships between data streams"
-          }
-        },
-        "property_list_name": {
-          "type": "string",
-          "description": "",
-          "enum": ["syncgraph"],
-          "enumDescriptions": {
-            "syncgraph": "Properties specific to the synchronization graph system"
-          }
+          "description": "Name of the document class",
+          "pattern": "^[a-z][a-z0-9_]*$"
         },
         "class_version": {
           "type": "integer",
           "description": "Version number of the document class",
-          "default": 1
+          "minimum": 1
         },
         "superclasses": {
           "type": "array",
-          "description": "",
+          "description": "Parent classes from which this class inherits properties and behavior",
           "items": {
             "type": "object",
             "required": ["definition"],
             "properties": {
               "definition": {
                 "type": "string",
-                "description": "",
-                "enum": ["$NDIDOCUMENTPATH/base.json"],
-                "enumDescriptions": {
-                  "$NDIDOCUMENTPATH/base.json": "Base class providing common functionality for all NDI classes"
-                }
+                "description": "Path to the superclass document definition"
               }
             }
-          },
-          "minItems": 1,
-          "maxItems": 1
+          }
         }
       }
     },
     "depends_on": {
       "type": "array",
-      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "description": "Document dependencies with validation rules",
       "items": {
         "type": "object",
         "required": ["name", "value"],
         "properties": {
           "name": {
             "type": "string",
-            "enum": ["syncrule_id"],
-            "description": "Name of the dependency",
-            "enumDescriptions": {
-              "syncrule_id": "Synchronization rule identifier - Optional reference to a syncrule document that defines temporal relationships"
-            }
+            "description": "Name of the dependency"
           },
           "value": {
             "type": "string",
             "description": "Value of the dependency"
           }
         }
-      },
-      "minItems": 0,
-      "maxItems": 1,
-      "mustbenotempty": {
-        "syncrule_id": false
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "Files associated with this document",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of associated files",
+          "items": {
+            "type": "string"
+          }
+        }
       }
     },
     "syncgraph": {
       "type": "object",
-      "description": "",
+      "description": "Synchronization graph properties",
       "required": ["ndi_syncgraph_class"],
       "properties": {
         "ndi_syncgraph_class": {
@@ -109,5 +88,6 @@
       "$ref": "$NDISCHEMAPATH/base_schema.json"
     }
   ],
+  "required": ["document_class", "depends_on", "files", "syncgraph"],
   "additionalProperties": false
 }
