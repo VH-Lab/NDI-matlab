@@ -3,7 +3,7 @@ function documents = download_document_collection(datasetId, documentIds, option
 
     arguments
         datasetId (1,1) string
-        documentIds (1,:) string
+        documentIds (1,:) string = "" % Default: Will download all documents
         options.Timeout = 10
     end
     
