@@ -24,14 +24,14 @@ classdef cache < handle
             %
             % Parameter (default)         | Description
             % ------------------------------------------------------------
-            % maxMemory (1e9)             | Max memory for cache, in bytes (1GB default)
+            % maxMemory (10e9)            | Max memory for cache, in bytes (10GB default)
             % replacement_rule ('fifo')   | Replacement rule (see NDI_CACHE/SET_REPLACEMENT_RULE
             %
             % Note that the cache is not 'secure', any function can query the data added.
             %
             % See also: vlt.data.namevaluepair
 
-            maxMemory = 1e9; % 10 GB
+            maxMemory = 10e9; % 10 GB
             replacement_rule = 'fifo';
 
             vlt.data.assign(varargin{:});

@@ -309,9 +309,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 for i=1:numel(dependent_docs),
                     ndi_session_obj.database.remove(dependent_docs{i});
                 end;
-                for i=1:numel(doc_list),
-                    ndi_session_obj.database.remove(doc_list);
-                end;
+                ndi_session_obj.database.remove(doc_list);
             else,
                 error(['Did not think we could get here..notify steve.']);
             end;

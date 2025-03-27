@@ -50,46 +50,111 @@
 			"unitName": "pH"
 		}
 	],
-	"grace_saline_8": [
+	"grace_saline": [
 		{
 			"ontologyName":  "NCIm:C0037494",
 			"name": "sodium chloride",
-			"value": 0.440,
+			"value": 0.45,
 			"ontologyUnit": "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0032825",
 			"name": "potassium chloride",
-			"value": 0.011,
+			"value": 0.00992,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0006686",
 			"name": "calcium chloride",
-			"value": 0.013,
+			"value": 0.00892,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0024472",
 			"name": "magnesium chloride",
-			"value": 0.013,
+			"value": 0.030,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C1572489",
+			"name": "magnesium sulfate anhydrous",
+			"value": 0.016,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName": "NCIm:C0041175",
 			"name": "Tromethamine",
-			"value": 0.011,
+			"value": 0.012,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName": "NCIm:C0220874",
 			"name": "maleic acid",
-			"value": 0.05,
+			"value": 0.00544,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C4048290",
+			"name": "pH",
+			"value": 7.5,
+			"ontologyUnit": "OM:Acidity",
+			"unitName": "pH"
+		}
+	],
+	"grace_saline_8": [
+		{
+			"ontologyName":  "NCIm:C0037494",
+			"name": "sodium chloride",
+			"value": 0.45,
+			"ontologyUnit": "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0032825",
+			"name": "potassium chloride",
+			"value": 0.00992,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0006686",
+			"name": "calcium chloride",
+			"value": 0.00892,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C0024472",
+			"name": "magnesium chloride",
+			"value": 0.030,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C1572489",
+			"name": "magnesium sulfate anhydrous",
+			"value": 0.016,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0041175",
+			"name": "Tromethamine",
+			"value": 0.012,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName": "NCIm:C0220874",
+			"name": "maleic acid",
+			"value": 0.00544,
 			"ontologyUnit": "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
@@ -105,49 +170,56 @@
 		{
 			"ontologyName":  "NCIm:C0037494",
 			"name": "sodium chloride",
-			"value": 0.440,
+			"value": 0.45,
 			"ontologyUnit": "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0032825",
 			"name": "potassium chloride",
-			"value": 0.011,
+			"value": 0.00992,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0006686",
 			"name": "calcium chloride",
-			"value": 0.013,
+			"value": 0.00892,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName":  "NCIm:C0024472",
 			"name": "magnesium chloride",
-			"value": 0.013,
+			"value": 0.030,
+			"ontologyUnit":  "OM:MolarVolumeUnit",
+			"unitName": "Molar"
+		},
+		{
+			"ontologyName":  "NCIm:C1572489",
+			"name": "magnesium sulfate anhydrous",
+			"value": 0.016,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName": "NCIm:C0041175",
 			"name": "Tromethamine",
-			"value": 0.011,
+			"value": 0.012,
 			"ontologyUnit":  "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName": "NCIm:C0220874",
 			"name": "maleic acid",
-			"value": 0.05,
+			"value": 0.00544,
 			"ontologyUnit": "OM:MolarVolumeUnit",
 			"unitName": "Molar"
 		},
 		{
 			"ontologyName": "NCIm:C4048290",
 			"name": "pH",
-			"value": 7,
+			"value": 7.0,
 			"ontologyUnit": "OM:Acidity",
 			"unitName": "pH"
 		}
