@@ -143,6 +143,16 @@ classdef DocumentsTest < matlab.unittest.TestCase
                 testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
             end
 
+            % Download subset of documents using bulk download
+            docIdx = [1,3,5];
+
+            downloadedDocumentSubset = ...
+                ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
+           
+            for i = 1:numel(docIdx)
+                testCase.verifyEqual(testDocuments{docIdx(i)}, jsonencode(downloadedDocumentSubset(i)))
+            end
+
             % Clean up (delete documents)
             ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
         end
