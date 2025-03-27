@@ -1,70 +1,76 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/blob/main/ndi_common/schema_documents/daq/daqreader_schema.json",
+  "title": "DAQ Reader",
+  "description": "Schema for data acquisition reader",
   "type": "object",
-  "description": "",
-  "required": ["document_class", "daqreader"],
   "properties": {
     "document_class": {
       "type": "object",
-      "description": "",
-      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "description": "Document class definitions and properties",
+      "required": ["class_name", "class_version", "superclasses"],
       "properties": {
-        "definition": {
-          "type": "string",
-          "description": "Path to the document definition file",
-          "default": "$NDIDOCUMENTPATH/daq/daqreader.json"
-        },
-        "validation": {
-          "type": "string",
-          "description": "Path to the schema validation file",
-          "default": "$NDISCHEMAPATH/daq/daqreader_schema.json"
-        },
         "class_name": {
           "type": "string",
-          "description": "",
-          "enum": ["daqreader"],
-          "enumDescriptions": {
-            "daqreader": "Specifies this document as a DAQ reader class type"
-          }
-        },
-        "property_list_name": {
-          "type": "string",
-          "description": "",
-          "enum": ["daqreader"],
-          "enumDescriptions": {
-            "daqreader": "Defines the property list name for DAQ reader documents"
-          }
+          "description": "Name of the document class",
+          "pattern": "^[a-z][a-z0-9_]*$"
         },
         "class_version": {
           "type": "integer",
           "description": "Version number of the document class",
-          "default": 1
+          "minimum": 1
         },
         "superclasses": {
           "type": "array",
-          "description": "",
+          "description": "Parent classes from which this class inherits properties and behavior",
           "items": {
             "type": "object",
             "required": ["definition"],
             "properties": {
               "definition": {
                 "type": "string",
-                "description": "",
-                "enum": ["$NDIDOCUMENTPATH/base.json"],
-                "enumDescriptions": {
-                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
-                }
+                "description": "Path to the superclass document definition"
               }
             }
+          }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the dependency"
           },
-          "minItems": 1,
-          "maxItems": 1
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "Files associated with this document",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of associated files",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
     "daqreader": {
       "type": "object",
-      "description": "",
+      "description": "Data acquisition reader properties",
       "required": ["ndi_daqreader_class"],
       "properties": {
         "ndi_daqreader_class": {
@@ -82,5 +88,6 @@
       "$ref": "$NDISCHEMAPATH/base_schema.json"
     }
   ],
+  "required": ["document_class", "depends_on", "files", "daqreader"],
   "additionalProperties": false
 }
