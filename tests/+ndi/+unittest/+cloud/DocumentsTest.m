@@ -116,9 +116,7 @@ classdef DocumentsTest < matlab.unittest.TestCase
             testDocuments = createTestDocuments(numDocuments);
 
             % Upload documents
-            zipFilePath = ndi.cloud.upload.zip_documents_for_upload(testDocuments);
-            uploadUrl = ndi.cloud.api.documents.get_bulk_upload_url(testCase.DatasetID);
-            ndi.cloud.api.files.put_files(uploadUrl, zipFilePath);
+            ndi.cloud.upload.upload_document_collection(testCase.DatasetID, testDocuments)
             
             % Check if documents are uploaded:
             isFinished = false;
@@ -135,32 +133,33 @@ classdef DocumentsTest < matlab.unittest.TestCase
 
             % Get IDs of uploaded documents
             testCase.verifyEqual(numel(dataset.documents), numDocuments)
-            documentIds = dataset.documents;
             
-            % Download documents using bulk download
-            downloadUrl = ndi.cloud.api.documents.get_bulk_download_url(testCase.DatasetID, documentIds);
-            
-            isFinished = false;
-            timeOut = 10;
-            t1 = tic;
-            while ~isFinished && toc(t1) < timeOut
-                try
-                    websave('downloaded.zip', downloadUrl);
-                    isFinished = true;
-                catch ME
-                    pause(1)
-                end
-            end
-
-            % Unzip documents and compare with originals
-            jsonFile = unzip('downloaded.zip');
-            downloadedDocuments = jsondecode(fileread(jsonFile{1}));
+            % Download all documents using bulk download
+            downloadedDocuments = ...
+                ndi.cloud.download.download_document_collection(testCase.DatasetID);
+           
             for i = 1:numDocuments
                 testCase.verifyEqual(testDocuments{i}, jsonencode(downloadedDocuments(i)))
             end
 
+            % Download subset of documents using bulk download
+            docIdx = [1,3,5];
+            documentIds = dataset.documents;
+
+            downloadedDocumentSubset = ...
+                ndi.cloud.download.download_document_collection(testCase.DatasetID, documentIds(docIdx));
+           
+            for i = 1:numel(docIdx)
+                testCase.verifyEqual(testDocuments{docIdx(i)}, jsonencode(downloadedDocumentSubset(i)))
+            end
+
             % Clean up (delete documents)
             ndi.cloud.api.datasets.bulk_delete_documents(testCase.DatasetID, documentIds);
+
+            % Download all documents after using bulk delete
+            downloadedDocuments = ...
+                ndi.cloud.download.download_document_collection(testCase.DatasetID);
+            testCase.verifyEmpty(downloadedDocuments)
         end
     end
 
