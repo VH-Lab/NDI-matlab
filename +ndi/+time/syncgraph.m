@@ -485,9 +485,9 @@ classdef syncgraph < ndi.ido
                     % now we have a set of elements to add to the graph
 
                     u_node_index_in_main = NaN(numel(u_nodes),1);
-                    for j=1:numel(u_nodes),
+                    for j=1:numel(u_nodes)
                         myindex = ndi.epoch.findepochnode(u_nodes(j), ginfo.nodes);
-                        if ~isempty(myindex),
+                        if ~isempty(myindex)
                             u_node_index_in_main(j) = myindex;
                         end
                     end
