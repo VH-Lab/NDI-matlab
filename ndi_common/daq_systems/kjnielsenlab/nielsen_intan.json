@@ -1,0 +1,20 @@
+{
+  "Name": "neilsen_intan",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.daq.reader.mfdaq.intan",
+  "MetadataReaderClass": "ndi.daq.metadatareader",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#_time.dat",
+    "#_info.rhd",
+    "#_digitalin.dat",
+    "#_analogin.dat",
+    "#_amplifier.dat",
+    "epochprobemap.txt"
+  ],
+  "DaqReaderFileParameters": [],
+  "MetadataReaderFileParameters": [
+  ],
+  "EpochProbeMapFileParameters": "epochprobemap.txt",
+  "HasEpochDirectories": true
+}
