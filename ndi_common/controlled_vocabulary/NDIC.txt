@@ -14,8 +14,8 @@ Identifier	Name	Description
 13	Command temperature start	"The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch"
 14	Command temperature end	"The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch"
 14	Purpose: Assessing activity with temperature manipulation	States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature
-15	Purpose: To measure the pyloric rhythym	States that the purpose of the measurement is to observe the pyloric rhythym 
-16	Purpose: to measure the gastric mill rhythym	States that the purpose of the measurement is to observe the gastric mill rhythym
+15	Purpose: To measure the pyloric rhythm	States that the purpose of the measurement is to observe the pyloric rhythm 
+16	Purpose: to measure the gastric mill rhythm	States that the purpose of the measurement is to observe the gastric mill rhythm
 17	Microelectrode voltage offset	A voltage offset measured at the end of a voltage record, in V
 18	Treatment: Acclimation onset time	The subject was acclimated to a temperature at a particular onset time.
 19	Treatment: Acclimation temperature	The temperature (in degrees C) at which the subject was acclimated.
