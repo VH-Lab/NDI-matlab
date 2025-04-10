@@ -6,15 +6,18 @@
 		"property_list_name":					"epochclocktimes",
 		"class_version":					1,
 		"superclasses": [
-			{ "definition":					"$NDIDOCUMENTPATH\/base.json"}
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json"},
 			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json"}
 		]
 	},
-	"epockclocktimes": { 
+	"epochclocktimes": { 
 		"epochclocktimes": [
-		"clocktype":						"",
-		"t0":							0,
-		"t1":							0
-	] }
+            {
+		        "clocktype":						"",
+		        "t0":							0,
+		        "t1":							0
+            }
+	    ]
+    }
 }
 
