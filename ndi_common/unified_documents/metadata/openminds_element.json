@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "depends_on", "openminds_element"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/metadata/openminds_element.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/metadata/openminds_element.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["openminds_element"],
+          "enumDescriptions": {
+            "openminds_element": "Specifies this document as an OpenMinds element class type"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["openminds_element"],
+          "enumDescriptions": {
+            "openminds_element": "Defines the property list name for OpenMinds element documents"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json", "$NDIDOCUMENTPATH/metadata/openminds.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance",
+                  "$NDIDOCUMENTPATH/metadata/openminds.json": "References the openminds document definition file for inheritance"
+                }
+              }
+            }
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["element_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "element_id": "Required identifier linking to the element document"
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "element_id": true
+      }
+    },
+    "openminds_element": {
+      "type": "object",
+      "description": ""
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    },
+    {
+      "description": "Inherits all properties from openminds schema",
+      "$ref": "$NDISCHEMAPATH/metadata/openminds_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}

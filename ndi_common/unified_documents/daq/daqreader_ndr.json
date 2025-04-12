@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/blob/main/ndi_common/schema_documents/daq/daqreader_ndr_schema.json",
+  "title": "DAQ Reader NDR",
+  "description": "Schema for NDR data acquisition reader",
+  "type": "object",
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "Document class definitions and properties",
+      "required": ["class_name", "class_version", "superclasses"],
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "minimum": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "Parent classes from which this class inherits properties and behavior",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the superclass document definition"
+              }
+            }
+          },
+          "minItems": 2
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the dependency"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "Files associated with this document",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of associated files",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "daqreader_ndr": {
+      "type": "object",
+      "description": "NDR data acquisition reader properties",
+      "required": ["ndr_reader_string", "ndi_daqreader_ndr_class"],
+      "properties": {
+        "ndr_reader_string": {
+          "type": "string",
+          "description": "The NDR reader type is stored here.",
+          "default": "RHD",
+          "queryable": true
+        },
+        "ndi_daqreader_ndr_class": {
+          "type": "string",
+          "description": "The class type is stored here.",
+          "default": "ndi.daq.reader.mfdaq.ndr",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    },
+    {
+      "description": "Inherits all properties from daqreader schema",
+      "$ref": "$NDISCHEMAPATH/daq/daqreader_schema.json"
+    }
+  ],
+  "required": ["document_class", "depends_on", "files", "daqreader_ndr"],
+  "additionalProperties": false
+}

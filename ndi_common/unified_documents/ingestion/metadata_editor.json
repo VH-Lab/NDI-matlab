@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "metadata_editor"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/ingestion/metadata_editor.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/ingestion/metadata_editor_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["metadata_editor"],
+          "enumDescriptions": {
+            "metadata_editor": "Class for managing and editing metadata structures"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["metadata_editor"],
+          "enumDescriptions": {
+            "metadata_editor": "Properties specific to the metadata editor"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "Base class providing common functionality for all NDI classes"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "metadata_editor": {
+      "type": "object",
+      "description": "",
+      "required": ["metadata_structure"],
+      "properties": {
+        "metadata_structure": {
+          "type": "array",
+          "description": "The metadata structure from our editor.",
+          "default": [],
+          "items": {
+            "type": "object",
+            "description": ""
+          },
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}

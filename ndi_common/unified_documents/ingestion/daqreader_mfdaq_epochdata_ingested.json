@@ -1,0 +1,169 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "depends_on", "files", "daqreader_mfdaq_epochdata_ingested"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/ingestion/daqreader_mfdaq_epochdata_ingested.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/ingestion/daqreader_mfdaq_epochdata_ingested_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["daqreader_mfdaq_epochdata_ingested"],
+          "enumDescriptions": {
+            "daqreader_mfdaq_epochdata_ingested": "Class for tracking ingested epoch data from MFDAQ reader"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["daqreader_mfdaq_epochdata_ingested"],
+          "enumDescriptions": {
+            "daqreader_mfdaq_epochdata_ingested": "Properties specific to ingested epoch data from MFDAQ reader"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        // Schema doc includes epochid in superclasses but implementation only shows base and daqreader_epochdata_ingested
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": [
+                  "$NDIDOCUMENTPATH/base.json",
+                  "$NDIDOCUMENTPATH/ingestion/daqreader_epochdata_ingested.json"
+                ],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "Base class providing common functionality for all NDI classes",
+                  "$NDIDOCUMENTPATH/ingestion/daqreader_epochdata_ingested.json": "Parent class for DAQ reader epoch data ingestion"
+                }
+              }
+            }
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["daqreader_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "daqreader_id": "DAQ reader identifier - Required for accessing MFDAQ epoch data"
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "daqreader_id": true
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of required files",
+          "items": {
+            "type": "string",
+            "enum": [
+              "channel_list.bin",
+              "ai_group1_seg.nbf_#", "ai_group2_seg.nbf_#", "ai_group3_seg.nbf_#", "ai_group4_seg.nbf_#", "ai_group5_seg.nbf_#",
+              "ai_group6_seg.nbf_#", "ai_group7_seg.nbf_#", "ai_group8_seg.nbf_#", "ai_group9_seg.nbf_#", "ai_group10_seg.nbf_#",
+              "ao_group1_seg.nbf_#", "ao_group2_seg.nbf_#", "ao_group3_seg.nbf_#", "ao_group4_seg.nbf_#", "ao_group5_seg.nbf_#",
+              "ao_group6_seg.nbf_#", "ao_group7_seg.nbf_#", "ao_group8_seg.nbf_#", "ao_group9_seg.nbf_#", "ao_group10_seg.nbf_#",
+              "ax_group1_seg.nbf_#", "ax_group2_seg.nbf_#", "ax_group3_seg.nbf_#", "ax_group4_seg.nbf_#", "ax_group5_seg.nbf_#",
+              "ax_group6_seg.nbf_#", "ax_group7_seg.nbf_#", "ax_group8_seg.nbf_#", "ax_group9_seg.nbf_#", "ax_group10_seg.nbf_#",
+              "di_group1_seg.nbf_#", "di_group2_seg.nbf_#", "di_group3_seg.nbf_#", "di_group4_seg.nbf_#", "di_group5_seg.nbf_#",
+              "di_group6_seg.nbf_#", "di_group7_seg.nbf_#", "di_group8_seg.nbf_#", "di_group9_seg.nbf_#", "di_group10_seg.nbf_#",
+              "do_group1_seg.nbf_#", "do_group2_seg.nbf_#", "do_group3_seg.nbf_#", "do_group4_seg.nbf_#", "do_group5_seg.nbf_#",
+              "do_group6_seg.nbf_#", "do_group7_seg.nbf_#", "do_group8_seg.nbf_#", "do_group9_seg.nbf_#", "do_group10_seg.nbf_#",
+              "evmktx_group1_seg.nbf_#",
+              "ti_group1_seg.nbf_#", "ti_group2_seg.nbf_#", "ti_group3_seg.nbf_#", "ti_group4_seg.nbf_#", "ti_group5_seg.nbf_#",
+              "ti_group6_seg.nbf_#", "ti_group7_seg.nbf_#", "ti_group8_seg.nbf_#", "ti_group9_seg.nbf_#", "ti_group10_seg.nbf_#"
+            ],
+            "enumDescriptions": {
+              "channel_list.bin": "Required binary file containing channel information"
+            }
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "daqreader_mfdaq_epochdata_ingested": {
+      "type": "object",
+      "description": "",
+      "required": ["parameters"],
+      "properties": {
+        "parameters": {
+          "type": "object",
+          "description": "Parameters such as the samples in analog and digital segments",
+          "required": ["sample_analog_segment", "sample_digital_segment"],
+          "properties": {
+            "sample_analog_segment": {
+              "type": "integer",
+              "description": "Number of samples in analog segments",
+              "default": 1000000,
+              "queryable": true
+            },
+            "sample_digital_segment": {
+              "type": "integer",
+              "description": "Number of samples in digital segments",
+              "default": 1000000,
+              "queryable": true
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    },
+    {
+      "description": "Inherits all properties from daqreader_epochdata_ingested schema",
+      "$ref": "$NDISCHEMAPATH/ingestion/daqreader_epochdata_ingested_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}

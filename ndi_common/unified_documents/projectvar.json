@@ -1,0 +1,146 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Variable Schema",
+  "description": "",
+  "type": "object",
+  "required": ["document_class", "depends_on", "projectvar"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/projectvar.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/projectvar_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["projectvar"],
+          "enumDescriptions": {
+            "projectvar": "Specifies this document as a project variable class type"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["projectvar"],
+          "enumDescriptions": {
+            "projectvar": "Defines the property list name for project variable documents"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": "",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the base document definition",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules. Each dependency is specified as a name/value pair.",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "enum": ["element_id"],
+            "description": "Name of the dependency",
+            "enumDescriptions": {
+              "element_id": "Identifier linking to the associated element document. Must not be empty."
+            }
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 1,
+      "mustbenotempty": {
+        "element_id": true
+      }
+    },
+    "projectvar": {
+      "type": "object",
+      "description": "",
+      "required": ["project", "type", "user", "lab", "description", "date"],
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "The name of the project.",
+          "default": "",
+          "queryable": true
+        },
+        "type": {
+          "type": "string",
+          "description": "A string that is free for the user to choose.",
+          "default": "",
+          "queryable": true
+        },
+        "user": {
+          "type": "string",
+          "description": "A string that is free for the user to choose.",
+          "default": "",
+          "queryable": true
+        },
+        "lab": {
+          "type": "string",
+          "description": "A string that is free for the user to choose that should reflect the lab where the work was done.",
+          "default": "",
+          "queryable": true
+        },
+        "description": {
+          "type": "string",
+          "description": "A string that is free for the user to choose that should describe the work that was done.",
+          "default": "",
+          "queryable": true
+        },
+        "date": {
+          "type": "string",
+          "description": "A time stamp of the measurement.",
+          "default": "",
+          "format": "date-time",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}

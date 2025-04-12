@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Base Document Schema",
+  "description": "Base schema that defines common properties for NDI documents",
+  "type": "object",
+  "required": ["document_class", "base"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/base.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/base_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "enum": ["base"]
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "Name of the property list",
+          "enum": ["base"]
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "List of superclass definitions",
+          "items": {
+            "type": "object",
+            "description": ""
+          },
+          "maxItems": 0
+        }
+      }
+    },
+    "base": {
+      "type": "object",
+      "required": ["id", "session_id", "name", "datestamp"],
+      "properties": {
+        "session_id": {
+          "type": "string",
+          "description": "Session ID for base document class.",
+          "default": "",
+          "maxLength": 33,
+          "queryable": true,
+          "format": "did_uid"
+        },
+        "id": {
+          "type": "string",
+          "description": "Unique ID for base document class.",
+          "default": "",
+          "maxLength": 33,
+          "queryable": true,
+          "format": "did_uid"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of document for base document class.",
+          "default": "",
+          "queryable": true
+        },
+        "datestamp": {
+          "type": "string",
+          "description": "Datestamp of document creation in UTC.",
+          "default": "2018-12-05T18:36:47.241Z",
+          "queryable": true,
+          "format": "date-time"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

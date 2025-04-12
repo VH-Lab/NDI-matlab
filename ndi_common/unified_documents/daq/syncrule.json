@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/blob/main/ndi_common/schema_documents/daq/syncrule_schema.json",
+  "title": "Sync Rule",
+  "description": "Schema for synchronization rule",
+  "type": "object",
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "Document class definitions and properties",
+      "required": ["class_name", "class_version", "superclasses"],
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "minimum": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "Parent classes from which this class inherits properties and behavior",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the superclass document definition"
+              }
+            }
+          }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the dependency"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "description": "Files associated with this document",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of associated files",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "syncrule": {
+      "type": "object",
+      "description": "Synchronization rule properties",
+      "required": ["ndi_syncrule_class", "parameters"],
+      "properties": {
+        "ndi_syncrule_class": {
+          "type": "string",
+          "description": "The ndi.syncrule object class name that is being stored.",
+          "default": "",
+          "queryable": true
+        },
+        "parameters": {
+          "anyOf": [
+            {
+              "type": "object",
+              "description": "The parameters that define the syncrule."
+            },
+            {
+              "type": "array",
+              "description": "The parameters that define the syncrule as an array."
+            }
+          ],
+          "default": {},
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "required": ["document_class", "depends_on", "files", "syncrule"],
+  "additionalProperties": false
+}

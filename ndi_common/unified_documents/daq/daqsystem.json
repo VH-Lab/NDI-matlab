@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VH-Lab/NDI-matlab/blob/main/ndi_common/schema_documents/daq/daqsystem_schema.json",
+  "title": "DAQ System",
+  "description": "Schema for data acquisition system",
+  "type": "object",
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "Document class definitions and properties",
+      "required": ["class_name", "class_version", "superclasses"],
+      "properties": {
+        "class_name": {
+          "type": "string",
+          "description": "Name of the document class",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "minimum": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "Parent classes from which this class inherits properties and behavior",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "Path to the superclass document definition"
+              }
+            }
+          }
+        }
+      }
+    },
+    "depends_on": {
+      "type": "array",
+      "description": "Document dependencies with validation rules",
+      "items": {
+        "type": "object",
+        "required": ["name", "value"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the dependency"
+          },
+          "value": {
+            "type": "string",
+            "description": "Value of the dependency"
+          }
+        }
+      },
+      "minItems": 3,
+      "allOf": [
+        {
+          "contains": {
+            "properties": {
+              "name": { "const": "filenavigator_id" },
+              "value": { "minLength": 1 }
+            },
+            "required": ["name", "value"]
+          }
+        },
+        {
+          "contains": {
+            "properties": {
+              "name": { "const": "daqreader_id" },
+              "value": { "minLength": 1 }
+            },
+            "required": ["name", "value"]
+          }
+        }
+      ]
+    },
+    "files": {
+      "type": "object",
+      "description": "Files associated with this document",
+      "required": ["file_list"],
+      "properties": {
+        "file_list": {
+          "type": "array",
+          "description": "List of associated files",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "daqsystem": {
+      "type": "object",
+      "description": "Data acquisition system properties",
+      "required": ["ndi_daqsystem_class"],
+      "properties": {
+        "ndi_daqsystem_class": {
+          "type": "string",
+          "description": "The name of the ndi.daqsystem class object that is being stored.",
+          "default": "",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "required": ["document_class", "depends_on", "files", "daqsystem"],
+  "additionalProperties": false
+}

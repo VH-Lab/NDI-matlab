@@ -1,0 +1,114 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "ngrid"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/data/ngrid.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/data/ngrid_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["ngrid"],
+          "enumDescriptions": {
+            "ngrid": "Specifies this document as an n-grid class type"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["ngrid"],
+          "enumDescriptions": {
+            "ngrid": "Defines the property list name for n-grid documents"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "ngrid": {
+      "type": "object",
+      "description": "",
+      "required": ["data_size", "data_type", "data_dim", "coordinates"],
+      "properties": {
+        "data_size": {
+          "type": "integer",
+          "description": "The size of each sample in bytes",
+          "minimum": 1,
+          "maximum": 2000000,
+          "default": 1,
+          "queryable": true
+        },
+        "data_type": {
+          "type": "string",
+          "description": "The data type (float32, uint16, etc)",
+          "default": "",
+          "queryable": true
+        },
+        "data_dim": {
+          "type": "array",
+          "description": "Vector with the dimensions of the data",
+          "format": "matrix",
+          "items": {
+            "type": "number"
+          },
+          "default": "",
+          "queryable": true
+        },
+        "coordinates": {
+          "type": "array",
+          "description": "Not sure",
+          "format": "matrix",
+          "items": {
+            "type": "number"
+          },
+          "default": "",
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}

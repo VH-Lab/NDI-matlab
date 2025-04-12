@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "description": "",
+  "required": ["document_class", "binaryseries_parameters"],
+  "properties": {
+    "document_class": {
+      "type": "object",
+      "description": "",
+      "required": ["definition", "validation", "class_name", "property_list_name", "class_version", "superclasses"],
+      "properties": {
+        "definition": {
+          "type": "string",
+          "description": "Path to the document definition file",
+          "default": "$NDIDOCUMENTPATH/data/binaryseries_parameters.json"
+        },
+        "validation": {
+          "type": "string",
+          "description": "Path to the schema validation file",
+          "default": "$NDISCHEMAPATH/data/binaryseries_parameters_schema.json"
+        },
+        "class_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["binaryseries_parameters"],
+          "enumDescriptions": {
+            "binaryseries_parameters": "Specifies this document as a binary series parameters class type"
+          }
+        },
+        "property_list_name": {
+          "type": "string",
+          "description": "",
+          "enum": ["binaryseries_parameters"],
+          "enumDescriptions": {
+            "binaryseries_parameters": "Defines the property list name for binary series parameters documents"
+          }
+        },
+        "class_version": {
+          "type": "integer",
+          "description": "Version number of the document class",
+          "default": 1
+        },
+        "superclasses": {
+          "type": "array",
+          "description": "",
+          "items": {
+            "type": "object",
+            "required": ["definition"],
+            "properties": {
+              "definition": {
+                "type": "string",
+                "description": "",
+                "enum": ["$NDIDOCUMENTPATH/base.json"],
+                "enumDescriptions": {
+                  "$NDIDOCUMENTPATH/base.json": "References the base document definition file for inheritance"
+                }
+              }
+            }
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
+    },
+    "binaryseries_parameters": {
+      "type": "object",
+      "description": "",
+      "required": [
+        "time_size",
+        "time_type",
+        "data_size",
+        "data_type",
+        "data_dim",
+        "samples_regular_intervals"
+      ],
+      "properties": {
+        "time_size": {
+          "type": "integer",
+          "description": "The size of each time sample in bytes.",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 32,
+          "queryable": true
+        },
+        "time_type": {
+          "type": "string",
+          "description": "The data type of the time sample (uint32, float32, etc).",
+          "default": "float32",
+          "queryable": true
+        },
+        "data_size": {
+          "type": "integer",
+          "description": "The size of each data sample in bytes.",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 32,
+          "queryable": true
+        },
+        "data_type": {
+          "type": "string",
+          "description": "The data type of the time sample in bytes.",
+          "default": "float32",
+          "queryable": true
+        },
+        "data_dim": {
+          "type": "integer",
+          "description": "The dimension of each data sample (integer).",
+          "minimum": 1,
+          "maximum": 100000,
+          "default": 1,
+          "queryable": true
+        },
+        "samples_regular_intervals": {
+          "type": "integer",
+          "description": "0/1 Are the samples taken at regular intervals? (0=no, 1=yes).",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0,
+          "queryable": true
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Inherits all properties from base schema",
+      "$ref": "$NDISCHEMAPATH/base_schema.json"
+    }
+  ],
+  "additionalProperties": false
+}
