@@ -1,0 +1,16 @@
+{
+  "Name": "vhvis_spike2",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenAnalyzer",
+  "MetadataReaderClass": "ndi.daq.metadatareader.NielsenAnalyzerStims",
+  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#_info\\.rhd\\>",
+    "#_digitalin\\.dat\\>",
+    "#.analyzer\\>""
+  ],
+  "DaqReaderFileParameters": "rhd",
+  "MetadataReaderFileParameters": "(.*)\\.analyzer\\>",
+  "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
+  "HasEpochDirectories": true
+}

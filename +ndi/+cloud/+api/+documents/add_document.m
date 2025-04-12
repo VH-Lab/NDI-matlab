@@ -1,4 +1,4 @@
-function [result] = add_document(dataset_id, json_document)
+function result = add_document(dataset_id, json_document)
     % ADD_DOCUMENT - Add a document to a dataset
 
     arguments

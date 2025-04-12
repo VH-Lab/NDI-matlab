@@ -90,6 +90,24 @@ classdef ndr < ndi.daq.reader.mfdaq
             data = ndr_reader.readchannels_epochsamples(channeltype,channel,epochfiles,1,s0,s1);
         end; % readchannels_epochsamples
 
+        function ec = epochclock(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
+            % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
+            %
+            % EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
+            %
+            % Return the clock types available for this epoch as a cell array
+            % of ndi.time.clocktype objects (or sub-class members).
+            %
+            % See also: ndi.time.clocktype
+            %
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            ec_ndr = ndr_reader.epochclock(epochfiles,1);
+            ec = {};
+            for i=1:numel(ec_ndr)
+                ec{i} = ndi.time.clocktype(ec_ndr{i}.type);
+            end
+        end % epochclock
+
         function t0t1 = t0_t1(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
             % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %

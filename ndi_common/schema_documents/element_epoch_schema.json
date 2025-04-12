@@ -20,9 +20,9 @@
 			"name": "t0_t1",
 			"type": "matrix",
 			"default_value": [0,0],
-			"parameters": [2,1],
+			"parameters": [2,NaN],
 			"queryable": 1,
-			"documentation": "The beginning and end of the epoch, in epoch clock time units."
+			"documentation": "The beginning and end of the epoch, in epoch clock time units. Each column is for a different epock clock type."
 		}
 	]
 }

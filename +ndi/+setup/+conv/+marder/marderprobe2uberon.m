@@ -8,7 +8,8 @@ function d = marderprobe2uberon(S)
     p = S.getprobes('type','n-trode');
     p1 = S.getprobes('type','sharp-Vm');
     p2 = S.getprobes('type','sharp-Im');
-    p = cat(1,p,p1,p2);
+    p3 = S.getprobes('type','ppg');
+    p = cat(1,p,p1,p2,p3);
 
     filepath = fileparts(mfilename('fullpath'));
 

@@ -4,10 +4,12 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
     properties (GetAccess=public, SetAccess = protected)
         reference         % A string reference for the session
         identifier        % A unique identifier
+    end
+    properties (GetAccess=public, SetAccess = protected, Transient)
         syncgraph         % An ndi.time.syncgraph object related to this session
         cache             % An ndi.cache object for the session's use
     end
-    properties (GetAccess=protected, SetAccess = protected)
+    properties (GetAccess=protected, SetAccess = protected, Transient)
         database          % An ndi.database associated with this session
     end
     methods
@@ -307,9 +309,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 for i=1:numel(dependent_docs),
                     ndi_session_obj.database.remove(dependent_docs{i});
                 end;
-                for i=1:numel(doc_list),
-                    ndi_session_obj.database.remove(doc_list);
-                end;
+                ndi_session_obj.database.remove(doc_list);
             else,
                 error(['Did not think we could get here..notify steve.']);
             end;

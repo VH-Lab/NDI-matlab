@@ -24,15 +24,15 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     msg = '';
     b = 1;
 
-    if isempty(output_path),
+    if isempty(output_path)
         output_path = uigetdir(pwd,'Select a directory where the dataset should be placed...');
-
-        if ~ischar(output_path),
+        if isnumeric(output_path)
             b = 0;
             msg = 'Cancelling per user request.';
             D = [];
-        end;
-    end;
+            return;
+        end
+    end
 
     output_path = char(output_path);
     %%Construct a folder to hold our ndi.dataset.dir object
@@ -43,26 +43,25 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
     filepath = fullfile(output_path,'download','files');
     jsonpath = fullfile(output_path,'download','json');
 
+    if ~isfolder(filepath)
+        mkdir(filepath);
+    end
+
+    if ~isfolder(jsonpath)
+        mkdir(jsonpath);
+    end
+
     verbose = options.verbose;
 
     if verbose, disp(['Retrieving dataset...']); end
 
-    [status,dataset, response] = ndi.cloud.api.datasets.get_datasetId(dataset_id);
-    if status
-        b = 0;
-        msg = response;
-        error(msg);
-    end
+    [dataset, response] = ndi.cloud.api.datasets.get_dataset(dataset_id);
 
-    if strcmp(mode,'local'), % download files
-
-        if ~isfolder(filepath),
-            mkdir(filepath);
-        end;
+    if strcmp(mode,'local') % download files
 
         files = dataset.files;
 
-        if verbose,
+        if verbose
             disp(['Will download ' int2str(numel(files)) ' files...']);
         end
 
@@ -82,46 +81,17 @@ function [b,msg, D] = dataset(dataset_id, mode, output_path, options)
                 if verbose, disp(['File ' int2str(i) ' already exists. Skipping...']); end
                 continue;
             end
-            [~, ~, downloadURL, ~] = ndi.cloud.api.datasets.get_files_detail(dataset_id, file_uid);
+            [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(dataset_id, file_uid);
             if verbose, disp(['Saving file ' int2str(i) '...']); end
 
             % save the file
             websave(file_path, downloadURL);
         end
         if verbose, disp(['File Downloading complete.']); end
-    end;
-
-    if ~isfolder(jsonpath);
-        mkdir(jsonpath);
     end
 
-    if verbose, disp(['Will download ' int2str(numel(dataset.documents)) ' documents...']); end
-    d = dataset.documents;
-
-    for i = 1:numel(d)
-        if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
-        document_id = d{i};
-        json_file_path = fullfile(jsonpath,[document_id '.json']);
-        if isfile(json_file_path)
-            if verbose, disp(['Document ' int2str(i) ' already exists. Skipping...']); end
-            continue;
-        end
-
-        [status, response, docStruct] = ndi.cloud.api.documents.get_documents(dataset_id, document_id);
-        if status
-            b = 0;
-            msg = response;
-            error(msg);
-        end
-        if verbose, disp(['Saving document ' int2str(i) '...']); end
-
-        docStruct = rmfield(docStruct, 'id');
-        docStruct = ndi.cloud.download.set_file_info(docStruct,mode,filepath);
-
-        document_obj = ndi.document(docStruct);
-        % save the document in .json file
-        did.file.str2text(json_file_path,did.datastructures.jsonencodenan(document_obj));
-    end
+    % use helper function for documents
+    [b_,msg_,] = ndi.cloud.download.dataset_documents(dataset, mode, jsonpath, filepath, 'verbose', verbose);
 
     ndiDocuments = ndi.cloud.download.jsons2documents(jsonpath);
 

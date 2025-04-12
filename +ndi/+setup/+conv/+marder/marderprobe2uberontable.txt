@@ -37,3 +37,5 @@ PDv_1_2	pyloric dilator neuron
 PDv_2_2	pyloric dilator neuron
 PDi_1	pyloric dilator neuron
 PDi_2	pyloric dilator neuron
+ppg_heart	heart
+ppg_pylorus	pylorus

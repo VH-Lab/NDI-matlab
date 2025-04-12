@@ -1,0 +1,15 @@
+{
+	"classname": "epochclocktimes",
+	"superclasses":  [ "base", "epochid"],
+	"depends_on": [
+	],
+	"epochclocktimes": [
+		{
+			"name": "epochclocktimes",
+			"type": "structure",
+			"default_value": [],
+			"queryable": 1,
+			"documentation": "Structure array of clocktype, t0, t1 for each clocktype in the epoch."
+		}
+	]
+}

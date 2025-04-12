@@ -43,6 +43,8 @@
 		"type":"accelerometer","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"thermometer","classname":"ndi.probe.timeseries.mfdaq"
+	},{
+		"type":"ppg","classname":"ndi.probe.timeseries.mfdaq"
 	}
 ]
 

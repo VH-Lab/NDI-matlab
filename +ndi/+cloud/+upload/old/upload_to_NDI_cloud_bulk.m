@@ -22,7 +22,7 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     if verbose, disp(['Working on documents...']); end;
 
     if verbose, disp(['Getting list of previously uploaded documents...']); end;
-    [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.up.scan_for_upload(S, d, 0, dataset_id);
+    [doc_json_struct,doc_file_struct, total_size] = ndi.cloud.upload.scan_for_upload(S, d, 0, dataset_id);
     % count the number of documents to be upload by checking the is_upload flag in doc_json_struct
     docs_left = sum(~[doc_json_struct.is_uploaded]);
     files_left = sum(~[doc_file_struct.is_uploaded]);
@@ -44,21 +44,11 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
         doc_id = d{i}.document_properties.base.id;
         if (~doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded)
             document = did.datastructures.jsonencodenan(d{i}.document_properties);
-            temp_dir = ndi.common.PathConstants.TempFolder;
-            ido_ = ndi.ido;
-            rand_num = ido_.identifier;
-            temp_filename = sprintf("file_%s.json", rand_num);
-            path = fullfile(temp_dir,temp_filename);
             waitbar(cur_doc_idx/docs_left, h_document, sprintf('Uploading Document: %s. %d of %d...', doc_id, cur_doc_idx, docs_left));
             if verbose,
                 disp(['Uploading ' int2str(cur_doc_idx) ' of ' int2str(docs_left) ' (' num2str(100*(cur_doc_idx)/docs_left)  '%)' ])
             end;
-            [status, response_doc] = ndi.cloud.api.documents.post_documents(path, dataset_id, document);
-            if status ~= 0
-                b = 0;
-                msg = response_doc;
-                error(msg);
-            end
+            [response_doc] = ndi.cloud.api.documents.add_document_as_file(dataset_id, document);
             doc_json_struct(doc_id_to_idx(doc_id)).is_uploaded = 1;
             cur_doc_idx = cur_doc_idx + 1;
         end
@@ -79,8 +69,8 @@ function [b, msg] = upload_to_NDI_cloud_bulk(S, dataset_id, varargin)
     end
 
     zip(zip_filename, files_to_zip);
-    [status, response, upload_url] = ndi.cloud.api.datasets.get_files_bulk(dataset_id);
-    [status, response] = ndi.cloud.api.files.put_files(upload_url, zip_filename);
+    [response, upload_url] = ndi.cloud.api.datasets.get_file_collection_upload_url(dataset_id);
+    [response] = ndi.cloud.api.files.put_files(upload_url, zip_filename);
     if exist(zip_filename, 'file')
         delete(zip_filename);
     end
