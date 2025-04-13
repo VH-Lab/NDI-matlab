@@ -15,11 +15,6 @@
           "description": "Path to the document definition file",
           "default": "$NDIDOCUMENTPATH/epochid.json"
         },
-        "validation": {
-          "type": "string",
-          "description": "Path to the schema validation file",
-          "default": "$NDISCHEMAPATH/epochid_schema.json"
-        },
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
@@ -72,7 +67,7 @@
   "allOf": [
     {
       "description": "Inherits all properties from base schema",
-      "$ref": "$NDISCHEMAPATH/base_schema.json"
+      "$ref": "$NDIDOCUMENTPATH/base.json"
     }
   ],
   "additionalProperties": false

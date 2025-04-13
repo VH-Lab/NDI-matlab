@@ -15,11 +15,6 @@
           "description": "Path to the document definition file",
           "default": "$NDIDOCUMENTPATH/app.json"
         },
-        "validation": {
-          "type": "string",
-          "description": "Path to the schema validation file",
-          "default": "$NDISCHEMAPATH/app_schema.json"
-        },
         "class_name": {
           "type": "string",
           "description": "Name of the document class",
