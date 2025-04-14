@@ -1,13 +1,13 @@
 {
-  "Name": "vhvis_spike2",
+  "Name": "nielsen_vis",
   "DaqSystemClass": "ndi.daq.system.mfdaq",
-  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenAnalyzer",
-  "MetadataReaderClass": "ndi.daq.metadatareader.NielsenAnalyzerStims",
-  "EpochProbeMapClass": "ndi.setup.epoch.epochprobemap_daqsystem",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisintan",
+  "MetadataReaderClass": "ndi.daq.metadatareader.NielsenLabStims",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
   "FileParameters": [
     "#_info\\.rhd\\>",
     "#_digitalin\\.dat\\>",
-    "#.analyzer\\>""
+    "#.analyzer\\>"
   ],
   "DaqReaderFileParameters": "rhd",
   "MetadataReaderFileParameters": "(.*)\\.analyzer\\>",
