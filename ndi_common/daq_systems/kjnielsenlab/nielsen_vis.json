@@ -7,9 +7,10 @@
   "FileParameters": [
     "#_info\\.rhd\\>",
     "#_digitalin\\.dat\\>",
-    "#.analyzer\\>"
+    "#.analyzer\\>",
+    "epochprobemap.txt"
   ],
-  "DaqReaderFileParameters": "rhd",
+  "DaqReaderFileParameters": "",
   "MetadataReaderFileParameters": "(.*)\\.analyzer\\>",
   "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
   "HasEpochDirectories": true

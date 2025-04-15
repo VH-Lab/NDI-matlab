@@ -32,7 +32,7 @@ classdef NielsenLabStims < ndi.daq.metadatareader
             % Given a file that matches the metadata search criteria for an ndi.daq.metadatareader.NielsenLabStims
             % document, this function loads in the metadata.
 
-            z = load(file);
+            z = load(file,'-mat');
             parameters = ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters(z.Analyzer);
 
         end; % readmetadatafromfile()

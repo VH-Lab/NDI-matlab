@@ -87,7 +87,7 @@ classdef decoder < ndi.app
                         'stimopen', t.stimopenclose(z, 1), 'onset', t.stimon(z), 'offset', t.stimoff(z), ...
                         'stimclose', t.stimopenclose(z,2) );
                     stimevents = [];
-                    if isfield(t,'stimevents'),
+                    if isfield(t,'stimevents')&~isempty(t.stimevents),
                         for kk=1:numel(t.stimevents),
                             stim_onset = nanmin(timestruct.onset,timestruct.stimopen);
                             stim_offset = nanmax(timestruct.offset,timestruct.stimclose);
