@@ -1,11 +1,25 @@
 function app = NDIDaqSystemConfig(datasetFolder, epochFolder, epochOrganization, daqSystemConfiguration)
 % NDIDaqSystemConfig - Launcher for the DAQ System Configuration App
 %
-%   Syntax: 
-%       NDIDaqSystemConfig(datasetFolder)
-    
-    % Todo: Add detailed docstring
-    
+% Syntax: 
+%   app = NDIDaqSystemConfig(datasetFolder) opens the NDI DAQ System
+%        Configurator for a selected dataset.
+%
+% Input Arguments:
+%   datasetFolder (string)      - The path to a root dataset folder for an NDI dataset.
+%   epochFolder (string)        - The relative path (relative to datasetFolder) to
+%                                 one subfolder containing epoch files
+%   epochOrganization (string)  - The organization type of the epochs, which can
+%                                 be "flat" or "nested".
+%   daqSystemConfiguration (1,1) ndi.setup.DaqSystemConfiguration - An instance
+%                                 of the DAQ system configuration class.
+%
+% Output Arguments:
+%   app - An instance of the DAQ System Configurator GUI.
+%
+% If inputs are not provided, a set of dialogs will prompt the user for the
+% necessary information to launch the app.
+
     arguments
         datasetFolder (1,1) string = missing
         epochFolder (1,1) string = missing
