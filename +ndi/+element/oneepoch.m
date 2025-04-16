@@ -40,12 +40,10 @@ mylog = ndi.common.getLogger();
 
 e = D.getelements('element.name',name_out,'element.reference',reference_out);
 
-if ~isempty(e),
+if ~isempty(e)
 	D.database_rm(e{1}.id());
 	e = [];
-end;
-
-assert(isempty(e),['Element with name ' name_out ' and reference ' int2str(reference_out) ' already exists. Delete it before making a new one.']);
+end
 
 % Create the new ndi.element.timeseries object
 elem_out = ndi.element.timeseries(D, name_out, reference_out,...
@@ -62,7 +60,6 @@ time = [];
 nextTime = zeros(1,numel(et(1).epoch_clock));
 t0_t1 = zeros(2,numel(et(1).epoch_clock));
 idx_dev_local_time = find(cellfun(@(x) eq(ndi.time.clocktype('dev_local_time'),x),et(1).epoch_clock));
-
 
 for i=1:numel(et)
     mylog.msg('system',5,...
