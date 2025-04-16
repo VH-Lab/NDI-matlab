@@ -58,4 +58,8 @@ function S = lab(labName, ref, dirname)
     % This function typically finds definitions in ndi.path.commonpath/daq_systems/labName
     S = ndi.setup.daq.addDaqSystems(S, labName);
 
+    % by default, include syncrule for same file names
+    nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
+    S.syncgraph_addrule(nsf);
+
 end % function lab
