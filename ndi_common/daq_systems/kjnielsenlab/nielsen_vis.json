@@ -1,0 +1,17 @@
+{
+  "Name": "nielsen_vis",
+  "DaqSystemClass": "ndi.daq.system.mfdaq",
+  "DaqReaderClass": "ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisintan",
+  "MetadataReaderClass": "ndi.daq.metadatareader.NielsenLabStims",
+  "EpochProbeMapClass": "ndi.epoch.epochprobemap_daqsystem",
+  "FileParameters": [
+    "#_info\\.rhd\\>",
+    "#_digitalin\\.dat\\>",
+    "#.analyzer\\>",
+    "epochprobemap.txt"
+  ],
+  "DaqReaderFileParameters": "",
+  "MetadataReaderFileParameters": "(.*)\\.analyzer\\>",
+  "EpochProbeMapFileParameters": "(.*)epochprobemap.txt",
+  "HasEpochDirectories": true
+}

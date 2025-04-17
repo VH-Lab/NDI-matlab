@@ -562,6 +562,8 @@ classdef tuning_response < ndi.app
             %                       |      complete repetitions of the stimulus set, then the
             %                       |      closest stimulus with field 'controlid' is chosen.
             %                       |
+            %                       |   hasfield: Find stimuli that have a parameter with the name
+            %                       |      passed in 'controlid'
             %                       |
             %                       -----------|
             % controlid ('isblank')            | For some methods, the parameter that defines whether
@@ -577,23 +579,35 @@ classdef tuning_response < ndi.app
 
             vlt.data.assign(varargin{:});
 
-            switch (lower(control_stim_method)),
-                case 'psuedorandom'
+            switch (lower(control_stim_method))
+                case {'psuedorandom','hasfield'}
                     control_stim_id_method.method = control_stim_method;
                     control_stim_id_method.controlid = controlid;
                     control_stim_id_method.controlid_value = controlid_value;
 
                     controlstimid = [];
-                    for n=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
-                        if vlt.data.fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
-                                struct('field',controlid,'operation','exact_number','param1',controlid_value,'param2',[])),
-                            controlstimid(end+1) = n;
-                        end;
-                    end;
+
+                    if strcmp(control_stim_method,'pseudorandom')
+                        for n=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
+                            if vlt.data.fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
+                                    struct('field',controlid,'operation','exact_number','param1',controlid_value,'param2',[])),
+                                controlstimid(end+1) = n;
+                            end
+                        end
+                    elseif strcmp(control_stim_method,'hasfield')
+                        for n=1:numel(stim_doc.document_properties.stimulus_presentation.stimuli),
+                            if vlt.data.fieldsearch(stim_doc.document_properties.stimulus_presentation.stimuli(n).parameters, ...
+                                    struct('field',controlid,'operation','hasfield','param1',[],'param2',[])),
+                                controlstimid(end+1) = n;
+                            end
+                        end
+                    else
+                        error(['Unknown control_stim_method ' control_stim_method '.']);
+                    end
 
                     % what if we have more than one? bail out for now
 
-                    if numel(controlstimid)>1,
+                    if numel(controlstimid)>1
                         error(['Do not know what to do with more than one control stimulus type.']);
                     end;
 

@@ -109,6 +109,7 @@ classdef timeseries < ndi.probe & ndi.time.timeseries
                                     t_data_here, timeref.referent, timeref.clocktype));
                                 t = setfield(t,fn{j},cat(1,t_old,getfield(t_here,fn{j})));
                             else
+                                t_new = {};
                                 for jj=1:numel(t_data_here)
                                     t_data_here{jj} = ndi_probe_timeseries_obj.session.syncgraph.time_convert(epoch_here_timeref, ...
                                         t_data_here{jj}, timeref.referent, timeref.clocktype);
