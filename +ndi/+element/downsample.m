@@ -81,5 +81,5 @@ for i = 1:numel(missing_ids)
     % Add the downsampled data to the new object
     elem_out.addepoch(ndi_element_timeseries_obj_in.epochid(epoch_i),...
         epoch_clock_str,t0_t1, t_down, data_down);
-    D.cache.clear();
 end
+D.cache.clear();
