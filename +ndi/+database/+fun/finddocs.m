@@ -7,8 +7,8 @@ function [docs] = finddocs(S,elementID,epochID,documentType)
 %   Description:
 %       This function constructs database queries using `ndi.query` based
 %       on the provided session object, element ID, epoch ID, and document
-%       type. It then combines these queries and executes a search using 
-%       to retrieve matching documents.
+%       type. It then combines these queries and executes a search to 
+%       retrieve matching documents.
 %
 %   Input Arguments:
 %       S (ndi.session | ndi.dataset object)
