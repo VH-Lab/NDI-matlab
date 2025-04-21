@@ -67,19 +67,24 @@ for i = 1:numel(missing_ids)
     [data, t] = ndi_element_timeseries_obj_in.readtimeseries(epoch_i,-inf,inf);
 
     % Downsample the time series data
-    [t_down, data_down] = ndi.util.downsampleTimeseries(t, data, LP);
-    
-    % Find dev_local_time epoch
-    epoch_clock_str = {};
-    t0_t1 = [];
-    for k = 1:numel(et(epoch_i).epoch_clock)
-        epoch_clock_str{k} = et(epoch_i).epoch_clock{k}.type;
-        t0_t1([1 2],k) = et(epoch_i).t0_t1{k}(:);
-    end
-    epoch_clock_str = strjoin(epoch_clock_str,',');
+    t_down = downsample(t,LP);
+    data_down = decimate(data,LP,'fir');
 
+    % Get clock types and recalculate downsampled t0_t1 for each
+    epoch_clocks = et(epoch_i).epoch_clock;
+    ecs = cellfun(@(c) c.type,epoch_clocks,'UniformOutput',false);
+    t0_t1 = zeros(numel(epoch_clocks),2);
+    for k = 1:numel(epoch_clocks)
+        t0_t1(1,k) = et(epoch_i).t0_t1{k}(1);
+        if ndi.time.clocktype.isGlobal(epoch_clocks{k})
+            t0_t1(2,k) = t0_t1(1,k) + t_down(end)/(24*60*60);
+        else
+            t0_t1(2,k) = t_down(end);
+        end
+    end
+    
     % Add the downsampled data to the new object
     elem_out.addepoch(ndi_element_timeseries_obj_in.epochid(epoch_i),...
-        epoch_clock_str,t0_t1, t_down, data_down);
+        strjoin(ecs,','),t0_t1, t_down, data_down);
 end
 D.cache.clear();

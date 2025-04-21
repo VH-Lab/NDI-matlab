@@ -1,0 +1,17 @@
+{
+	"classname": "oneepoch",
+	"superclasses":  [ "base", "epochid", "element_epoch"],
+	"depends_on": [
+		{ "name": "element_id", "mustbenotempty": 1}
+	],
+    "oneepoch": [
+		{
+			"name": "epoch_ids",
+			"type": "string",
+			"default_value": [],
+            "parameters": "",
+			"queryable": 1,
+			"documentation": "The name(s) of the epoch ids that were concatenated."
+		}
+	]
+}

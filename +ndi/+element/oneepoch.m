@@ -36,111 +36,91 @@ end
 
 mylog = ndi.common.getLogger();
 
-% Get the element and associate epoch table
+% Get the element and associated epoch table
 e = D.getelements('element.name',name_out,'element.reference',reference_out);
+element_exists = ~isempty(e);
+epoch_id = ['whole_session_' ndi_element_timeseries_obj_in.session.reference];
 et = ndi_element_timeseries_obj_in.epochtable();
+t0_t1_in = vertcat(et.t0_t1);
+epoch_ids = {et.epoch_id};
 
 % Check if there is a global clock, if not, use dev_local_time
-clock_ind = find(cellfun(@(x) ndi.time.clocktype.isGlobal(x),et(1).epoch_clock),1);
-if isempty(clock_ind)
-    clock_ind = find(cellfun(@(x) eq(ndi.time.clocktype('dev_local_time'),x),et(1).epoch_clock),1);
+epoch_clocks = et(1).epoch_clock;
+ecs = cellfun(@(c) c.type,epoch_clocks,'UniformOutput',false);
+% clock_ind = find(cellfun(@(x) ndi.time.clocktype.isGlobal(x),epoch_clocks),1);
+% if isempty(clock_ind)
+    clock_ind = find(contains(ecs,'dev_local_time'));
     clock_global = false;
-    if isempty(clock_ind)
-        error('No global or local clock found in this elements epochtable.')
-    end
-else
-    clock_global = true;
-end
-
-% Get the relevant t0_t1 values for the clock used here
-et_t0_t1 = vertcat(et.t0_t1);
-et_t0_t1 = vertcat(et_t0_t1{:,clock_ind});
-
-% NEED TO FIGURE OUT BEST WAY TO ORGANIZE CODE FOR GETTING ET_T0_T1 WHEN E
-% IS EMPTY, BUT CLOCK IS EITHER LOCAL OR GLOBAL
-et_t0_t1 = datetime(et_t0_t1,'ConvertFrom','datenum');
+%     if isempty(clock_ind)
+%         error('No global or local clock found in this elements epochtable.')
+%     end
+% else
+%     clock_global = true;
+% end
 
 % Create a new ndi.element.timeseries object if one does not already exist
-if isempty(e)
+if ~element_exists
     elem_out = ndi.element.timeseries(D, name_out, reference_out,...
-        ndi_element_timeseries_obj_in.type,...
-        ndi_element_timeseries_obj_in,...
-        false); % not direct
+        ndi_element_timeseries_obj_in.type,ndi_element_timeseries_obj_in,false);
+    time = [];
     data = [];
-    time_global = [];
-    epoch_i = 1:numel(et);
+    new_epochs = 1:numel(et);
 else
     % If one does exist, read the data
     elem_out = e{1};
     [data,time] = elem_out.readtimeseries(1,-inf,inf);
-
-    if ~clock_global
-        % If clock is local, find missing epochs based on cumulative t1
-        samplingFreq = time(2)-time(1);
-        cumulative_t1 = [0;cumsum(et_t0_t1(:,2)+samplingFreq)];
-        et_t0_t1 = seconds([cumulative_t1(1:end-1),cumulative_t1(2:end)]);
-        time_global = seconds(time);
-
-        % CHECK THAT THIS WILL WORK WITH T1 GIVEN THAT IT DOESN"T CHANGE
-        % WITH DOWNSAMPLING
-        lastSaved = find(time(end) <= et_t0_t1(:,2),1,'last');
-        if isempty(lastSaved)
-            error('Could not detect missing epochs to append.')
-        elseif lastSaved == numel(e)
-            return
-        else
-            epoch_i = lastSaved+1;
-        end
-
-    else
-        % If clock is global, find missing epochs from t0_t1
-        et_t0_t1 = datetime(et_t0_t1,'ConvertFrom','datenum');
-        oneepoch_t0 = elem_out.epochtable.t0_t1{clock_ind}(1);
-        oneepoch_t0 = datetime(oneepoch_t0,'ConvertFrom','datenum');
-        time_global = oneepoch_t0 + seconds(time);
-        missing = false(size(et));
-        for i = 1:numel(et)
-            missing(i) = ~any(time_global >= et_t0_t1(i,1) & ...
-                time_global <= et_t0_t1(i,2));
-        end
-        if ~any(missing)
-            return
-        end
-        epoch_i = find(missing);
+    if clock_global
+        epoch_t0 = e{1}.epochtable.t0_t1{clock_ind}(1);
+        time = epoch_t0 + time/(24*60*60);
     end
+
+    % Compare existing epoch ids with current ones
+    epochdoc = ndi.database.fun.finddocs(D,elem_out.id(),epoch_id,'oneepoch');
+    oneepoch_ids = split(epochdoc{1}.document_properties.oneepoch.epoch_ids,',');
+    new_epochs = find(~contains(epoch_ids,oneepoch_ids));
 end
 
 % Get data from all new epochs
-for i = epoch_i
+for i = new_epochs
     mylog.msg('system',5,...
         ['Working on new element ' name_out ' : ' int2str(reference_out) ...
         ', subepoch ' int2str(i) ' of ' int2str(numel(et)) '.']);    
     [d,t] = ndi_element_timeseries_obj_in.readtimeseries(i,-inf,inf);
-    time_global = cat(1,time_global,et_t0_t1(i,1) + seconds(t(:)));
+    if clock_global
+        epoch_t0 = t0_t1_in{i,clock_ind}(1);
+        t = epoch_t0 + t/(24*60*60);
+    elseif clock_local & ~isempty(time)
+        t = time(end) + t(2)-t(1) + t(:);
+    end
+    time = cat(1,time,t(:));
     data = cat(1,data,d);
 end
 
-% Check that all time points are in order, if not, sort
-[time_global,sortOrder] = sort(time_global);
-if ~all(diff(sortOrder) == 1)
-    data = data(sortOrder);
+% Check that all time points are in order and convert to local time
+if clock_global
+    [time,sortOrder] = sort(time);
+    if ~all(diff(sortOrder) == 1)
+        data = data(sortOrder);
+    end
+    time = 24*60*60*(time - time(1));
 end
 
-% Convert time
-time = seconds(time_global - time_global(1));
-t0 = time([1,end]);
-t1 = convertTo(time_global([1,end]),'datenum');
-ecs = arrayfun(@(k) et(1).epoch_clock{k}.type,1:numel(et(1).epoch_clock),'UniformOutput',false);
-
-epoch_id = ['whole_session_' ndi_element_timeseries_obj_in.session.reference];
-
-% Remove old doc from database
-doc_old = ndi.database.fun.finddocs(D,elem_out.id(),epoch_id,'element_epoch');
-if ~isempty(doc_old)
-    D.database_rm(doc_old);
+% Retrieve t0_t1 for each clock type
+t0_t1 = zeros(numel(epoch_clocks),2);
+for k = 1:numel(epoch_clocks)
+    t0_t1(1,k) = t0_t1_in{1,k}(1);
+    if ndi.time.clocktype.isGlobal(epoch_clocks{k})
+        t0_t1(2,k) = t0_t1(1,k) + time(end)/(24*60*60);
+    else
+        t0_t1(2,k) = time(end);
+    end
 end
 
-% Add new oneepoch to database
+% Add oneepoch to database
+if element_exists
+    D.database_rm(epochdoc);
+end
+
 [elem_out,epochdoc] = elem_out.addepoch(epoch_id,...
-    strjoin(ecs,','), [t0,t1], time, data);
+    strjoin(ecs,','), t0_t1, time, data, strjoin(epoch_ids,','));
 D.database_add(epochdoc);
