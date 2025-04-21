@@ -1,5 +1,5 @@
 function instanceCatalog = loadUserInstanceCatalog(openMindsType, options)
-% loadUserInstanceCatalog - Load a catalog of user metadata instances
+    % loadUserInstanceCatalog - Load a catalog of user metadata instances
 
     arguments
         openMindsType (1,1) string

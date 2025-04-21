@@ -43,7 +43,7 @@ stim_pres_doc{1}.document_properties
   %             document_class: [1x1 struct]
   %                    epochid: 't00001'
   %                epochid_fix: [1x1 struct]
-  %               ndi_document: [1x1 struct]
+  %               base: [1x1 struct]
   %      stimulus_presentation: [1x1 struct]
 ```
 
@@ -51,9 +51,9 @@ We have used an [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi
 
 Here we see that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have a property called `document_properties` that contains all of the text information that is stored in the document. We will look through all of these properties here, and we also direct you to the documentation page for the ndi.document class [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/).
 
-## 2.5.2 All [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have the fields `document_class` and `ndi_document`.
+## 2.5.2 All [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have the fields `document_class` and `base`.
 
-The `document_class` fields contain critical information about the class, such as the file that contains its definition, its full class name and its short class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/ndi_document_epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/ndi_document_epochid/) documents. 
+The `document_class` fields contain critical information about the class, such as the file that contains its definition, its full class name and its short class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/) documents. 
 
 Let's look at the data that specifies the superclasses:
 
@@ -66,7 +66,7 @@ stim_pres_doc{1}.document_properties.document_class
 %  struct with fields:
 %            definition: '$NDIDOCUMENTPATH/stimulus/stimulus_presentation.json'
 %            validation: '$NDISCHEMAPATH/stimulus/stimulus_presentation_schema.json'
-%            class_name: 'ndi_document_stimulus_stimulus_presentation'
+%            class_name: 'stimulus_presentation'
 %    property_list_name: 'stimulus_presentation'
 %         class_version: 1
 %          superclasses: [3x1 struct]
@@ -74,20 +74,20 @@ stim_pres_doc{1}.document_properties.document_class
 stim_pres_doc{1}.document_properties.document_class.superclasses(1)
 % ans = 
 %   struct with fields:
-%    definition: '$NDIDOCUMENTPATH/ndi_document.json'
+%    definition: '$NDIDOCUMENTPATH/base.json'
 
 stim_pres_doc{1}.document_properties.document_class.superclasses(2)
 % ans = 
 %  struct with fields:
-%    definition: '$NDIDOCUMENTPATH/ndi_document_epochid.json'
+%    definition: '$NDIDOCUMENTPATH/epochid.json'
 
 stim_pres_doc{1}.document_properties.document_class.superclasses(3)
 %ans = 
 %  struct with fields:
-%    definition: '$NDIDOCUMENTPATH/ndi_document.json'
+%    definition: '$NDIDOCUMENTPATH/base.json'
 ```
 
-All documents have [ndi_document](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) as a superclass. Note that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is the name of the software object in Matlab (and Python), whereas [ndi_document](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) is the name of the database object type that has the following fields:
+All documents have [base](https://vh-lab.github.io/NDI-matlab/documents/base/) as a superclass. Note that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is the name of the software object in Matlab (and Python), whereas [base](https://vh-lab.github.io/NDI-matlab/documents/base/) is the name of the database object type that has the following fields:
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
@@ -98,9 +98,9 @@ All documents have [ndi_document](https://vh-lab.github.io/NDI-matlab/documents/
 | **datestamp** | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |
 | **database_version** | - | character array (ASCII) | Version of this document in the database |
 
-The most useful item in each [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is its unique identifier `id`. This is a globally unique identifier, which means that no other [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) or corresponding [ndi_document](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) anywhere in the universe has the same identifier. It is constructed of two hexidecimal strings: the first is based on the time of creation in Universal Controlled Time (UTC), and the second is created by a random number generator. This constructions means that `ndi.document` ids are not only unique, but also that sorting them alphabetically will give you the creation order of the documents. This can come in handy from time to time.
+The most useful item in each [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is its unique identifier `id`. This is a globally unique identifier, which means that no other [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) or corresponding [base](https://vh-lab.github.io/NDI-matlab/documents/base/) anywhere in the universe has the same identifier. It is constructed of two hexidecimal strings: the first is based on the time of creation in Universal Controlled Time (UTC), and the second is created by a random number generator. This constructions means that `ndi.document` ids are not only unique, but also that sorting them alphabetically will give you the creation order of the documents. This can come in handy from time to time.
 
-## 2.5.3 Searching for [ndi_documents](https://vh-lab.github.io/NDI-matlab/documents/ndi_document/) with [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/)
+## 2.5.3 Searching for [base](https://vh-lab.github.io/NDI-matlab/documents/base/) with [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/)
 
 Performing analyses or analyses of analyses in NDI involves searching for previous entries in the database, building upon them, and writing the
 results back to the database. The object [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) allows one to express database searches. Let's learn about [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) with a few examples.
@@ -142,7 +142,7 @@ q_stim_and_stim_decoder_docs{1}.document_properties
  %            document_class: [1x1 struct]
  %                   epochid: 't00001'
  %               epochid_fix: [1x1 struct]
- %              ndi_document: [1x1 struct]
+ %              base: [1x1 struct]
  %     stimulus_presentation: [1x1 struct]
 
 q_stim_and_stim_decoder_docs{1}.document_properties.app
@@ -185,7 +185,7 @@ NDI_QUERY_OBJ = ndi.query(FIELD, OPERATION, PARAM1, PARAM2)
 |`'hasfield'`| is the field present? (no role for `'param1'` or `'param2'`) |
 |`'hasanysubfield_contains_string'` | Is the field value an array of structs or cell array of structs such that any has a field named `'param1'` with a string that contains the string in `'param2'`? |
 |`'or'`| are any of the searchstruct elements specified in '`param1`' true? |
-|`'isa'`| is `'param1'` either a superclass or the document class itself of the ndi_document? |
+|`'isa'`| is `'param1'` either a superclass or the document class itself of the base? |
 |`'depends_on'`| does the document depend on an item with name `'param1'` and value `'param2'`? |
 
 
@@ -207,7 +207,7 @@ stim_pres_doc{1}.document_properties.depends_on
 
  % what is this node at 412687d3ae63489a_40d1d65fa08bb81a ?
 
-mydoc = S.database_search(ndi.query('ndi_document.id','exact_string', ...
+mydoc = S.database_search(ndi.query('base.id','exact_string', ...
     stim_pres_doc{1}.document_properties.depends_on(1).value,''));
 
 mydoc{1}.document_properties
@@ -216,7 +216,7 @@ mydoc{1}.document_properties
 %           depends_on: [2x1 struct]
 %       document_class: [1x1 struct]
 %              element: [1x1 struct]
-%         ndi_document: [1x1 struct]
+%         base: [1x1 struct]
 
 mydoc{1}.document_properties.element
 % ans = 
@@ -236,7 +236,7 @@ Some documents have a lot of depends_on items. Let's examine our ctx_1 neuron th
 ```matlab
 e = S.getelements('element.type','spikes');
 
-spikes_doc = S.database_search(ndi.query('ndi_document.id','exact_string',e{1}.id(),''))
+spikes_doc = S.database_search(ndi.query('base.id','exact_string',e{1}.id(),''))
 spikes_doc = spikes_doc{1}
 
 for i=1:numel(spikes_doc.document_properties.depends_on),
@@ -257,7 +257,7 @@ NDI databases (and any analysis project) has a beautiful underlying structure th
 
 ```matlab
 interactive = 1; % set it to zero if you have Matlab 2020a or later for DataTip navigation! Try it!
-docs=S.database_search(ndi.query('ndi_document.id','regexp','(.*)','')); % this finds ALL documents
+docs=S.database_search(ndi.query('base.id','regexp','(.*)','')); % this finds ALL documents
 [g,nodes,mdigraph] = ndi.database.fun.docs2graph(docs);
 ndi.database.fun.plotinteractivedocgraph(docs,g,mdigraph,nodes,'layered',interactive);
 ```

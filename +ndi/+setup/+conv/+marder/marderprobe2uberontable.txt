@@ -1,0 +1,41 @@
+probe	name
+dgn_1	dorsal gastric nerve (sensu Cancer borealis)
+gpn_1	gastropyloric nerve (sensu Cancer borealis)
+lgn_1	lateral gastric nerve (sensu Cancer borealis)
+lvn_1	lateral ventricular nerve (sensu Cancer borealis)
+mvn_1	median ventricular nerve (sensu Cancer borealis)
+pdn_1	pyloric dilator nerve (sensu Cancer borealis)
+pyn_1	pyloric nerve (sensu Cancer borealis)
+dgn_2	dorsal gastric nerve (sensu Cancer borealis)
+gpn_2	gastropyloric nerve (sensu Cancer borealis)
+lgn_2	lateral gastric nerve (sensu Cancer borealis)
+lvn_2	lateral ventricular nerve (sensu Cancer borealis)
+mvn_2	median ventricular nerve (sensu Cancer borealis)
+pdn_2	pyloric dilator nerve (sensu Cancer borealis)
+pyn_2	pyloric nerve (sensu Cancer borealis)
+LPv_1_1	lateral pyloric motor neuron
+LPv_2_1	lateral pyloric motor neuron
+LPv_1_2	lateral pyloric motor neuron
+LPv_2_2	lateral pyloric motor neuron
+LPi_1	lateral pyloric motor neuron
+LPi_2	lateral pyloric motor neuron
+LGv_1_1	lateral pyloric motor neuron
+LGv_2_1	lateral gastic nerve
+LGv_1_2	lateral gastic nerve
+LGv_2_2	lateral gastic nerve
+LGi_1	lateral gastic nerve
+LGi_2	lateral gastic nerve
+PYv_1_1	pyloric motor neuron
+PYv_2_1	pyloric motor neuron
+PYv_1_2	pyloric motor neuron
+PYv_2_2	pyloric motor neuron
+PYi_1	pyloric motor neuron
+PYi_2	pyloric motor neuron
+PDv_1_1	pyloric dilator neuron
+PDv_2_1	pyloric dilator neuron
+PDv_1_2	pyloric dilator neuron
+PDv_2_2	pyloric dilator neuron
+PDi_1	pyloric dilator neuron
+PDi_2	pyloric dilator neuron
+ppg_heart	heart
+ppg_pylorus	pylorus

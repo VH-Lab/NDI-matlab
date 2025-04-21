@@ -1,12 +1,12 @@
 [
 	{
 		"type":"n-trode","classname":"ndi.probe.timeseries.mfdaq"
-	} ,{
+	},{
 		"type":"electrode-$","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"patch","classname":"ndi.probe.timeseries.mfdaq"
 	},{
-		"type":"patch-Vm","classname":"ndi.probe_timeseries.mfdaq"
+		"type":"patch-Vm","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"patch-I","classname":"ndi.probe.timeseries.mfdaq"
 	},{
@@ -16,7 +16,7 @@
 	},{
 		"type":"sharp-Vm","classname":"ndi.probe.timeseries.mfdaq"
 	},{
-		"type":"sharp-I","classname":"ndi.probe.timeseries.mfdaq"
+		"type":"sharp-Im","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"wide-field-imaging","classname":"ndi_probe.timage"
 	},{
@@ -35,6 +35,16 @@
 		"type":"reward-well","classname":"ndi.probe.timeseries.mfdaq"
 	},{
 		"type":"stimulator","classname":"ndi.probe.timeseries.stimulator"
+	},{
+		"type":"ecg","classname":"ndi.probe.timeseries.mfdaq"
+	},{
+		"type":"eeg","classname":"ndi.probe.timeseries.mfdaq"
+	},{
+		"type":"accelerometer","classname":"ndi.probe.timeseries.mfdaq"
+	},{
+		"type":"thermometer","classname":"ndi.probe.timeseries.mfdaq"
+	},{
+		"type":"ppg","classname":"ndi.probe.timeseries.mfdaq"
 	}
 ]
 

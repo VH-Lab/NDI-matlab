@@ -1,0 +1,8 @@
+Identifier	Name
+3373	gastric mill neuron
+3374	lateral gastric neuron
+3375	inferior cardiac neuron
+3376	pyloric motor neuron
+3377	pyloric dilator neuron
+3378	anterior burster neuron
+3379	lateral pyloric motor neuron

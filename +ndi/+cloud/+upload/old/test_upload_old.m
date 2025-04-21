@@ -14,19 +14,19 @@ ced_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt'}, ...
     'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 ced_rdr = ndi.daq.reader.mfdaq.cedspike2();
 ced_system = ndi.daq.system.mfdaq('ced_daqsystem', ced_filenav, ced_rdr);
- % if you haven't already added the daq system, you can add it here:
+% if you haven't already added the daq system, you can add it here:
 S.daqsystem_add(ced_system);
 
- % let's look at the epochs the daq.system can find
+% let's look at the epochs the daq.system can find
 et = ced_system.epochtable(); % should see a 4 element answer
 f = ced_system.filenavigator.getepochfiles(1); % you should see the files from epoch 1, t00001
 
 vis_filenav = ndi.file.navigator(S, {'.*\.smr\>', 'probemap.txt', 'stims.tsv'},...
-     'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
+    'ndi.epoch.epochprobemap_daqsystem','probemap.txt');
 vis_rdr = ndi.daq.reader.mfdaq.cedspike2();
 vis_mdrdr = ndi.daq.metadatareader('stims.tsv');
 vis_system = ndi.daq.system.mfdaq('vis_daqsystem', vis_filenav, vis_rdr, {vis_mdrdr});
- % if you haven't already added the daq system, you can add it here:
+% if you haven't already added the daq system, you can add it here:
 S.daqsystem_add(vis_system);
 nsf = ndi.time.syncrule.filematch(struct('number_fullpath_matches',2));
 S.syncgraph_addrule(nsf);
@@ -88,11 +88,10 @@ figure(100);
 hold on;
 vlt.neuro.stimulus.plot_stimulus_timeseries(7,t.stimon,t.stimoff,'stimid',data.stimid);
 
-
 %% tutorial 2.3
 dirname = [prefix filesep 'ts_exper2']; % change this if you put the example somewhere else
 ref = 'ts_exper2';
-S = ndi.setup.vhlab(ref,dirname);  
+S = ndi.setup.vhlab(ref,dirname);
 
 % let's find our probes that correspond to extracellular electrodes
 
@@ -115,11 +114,10 @@ extraction_param_doc_2 = se.add_appdoc('extraction_parameters',extraction_param_
 
 % we will add a parameter document to our database that our extractor will use
 
-
 % now let's perform the extraction over all epochs
 
 redo = 1; % redo it if we already did it
- % we know there are two probes, so do it for both
+% we know there are two probes, so do it for both
 se.extract(p{1},[],my_extraction_name{1},redo);
 se.extract(p{2},[],my_extraction_name{2},redo);
 
@@ -141,18 +139,18 @@ stim_pres_docs{1}.document_properties.stimulus_presentation
 % these are the fields that were decoded by ndi.app.stimulus.decoder
 % let's take a look
 
- % here is information about the presentation time of the first stimulus
+% here is information about the presentation time of the first stimulus
 stim_pres_docs{1}.document_properties.stimulus_presentation.presentation_time(1)
 
- % here is information about the presentation order of the first 10 stimuli shown:
+% here is information about the presentation order of the first 10 stimuli shown:
 
 stim_pres_docs{1}.document_properties.stimulus_presentation.presentation_order(1:10)
 
- % We see that the first stimulus that was presented was stimulus number 4. Let's take a look at its properties:
+% We see that the first stimulus that was presented was stimulus number 4. Let's take a look at its properties:
 
 stim_pres_docs{1}.document_properties.stimulus_presentation.stimuli(4).parameters
 
- % We can also take a look at the control or blank stimulus properties:
+% We can also take a look at the control or blank stimulus properties:
 
 stim_pres_docs{1}.document_properties.stimulus_presentation.stimuli(17).parameters
 
@@ -163,12 +161,12 @@ stim_pres_docs,
 rapp = ndi.app.stimulus.tuning_response(S);
 cs_doc = rapp.label_control_stimuli(stimprobe,redo);
 
- % see the control stimulus identifier for all the stimuli
+% see the control stimulus identifier for all the stimuli
 cs_doc{1}.document_properties.control_stimulus_ids.control_stimulus_ids
- % see the method used to identify the control stimulus for each stimulus:
+% see the method used to identify the control stimulus for each stimulus:
 cs_doc{1}.document_properties.control_stimulus_ids.control_stimulus_id_method
 
- % see the help for the label_control_stimuli function:
+% see the help for the label_control_stimuli function:
 help ndi.app.stimulus.tuning_response.label_control_stimuli
 
 e = S.getelements('element.type','spikes');
@@ -187,19 +185,19 @@ stim_pres_doc{1}.document_properties.document_class;
 stim_pres_doc{1}.document_properties.document_class.superclasses(1);
 stim_pres_doc{1}.document_properties.document_class.superclasses(2);
 stim_pres_doc{1}.document_properties.document_class.superclasses(3);
-q_stim = ndi.query('document_class.class_name','contains_string','stim',''); 
+q_stim = ndi.query('document_class.class_name','contains_string','stim','');
 stim_docs = S.database_search(q_stim);
 q_stim_decoder = ndi.query('app.name','exact_string','ndi_app_stimulus_decoder','');
 q_stim_and_stim_decoder_docs = S.database_search(q_stim_decoder & q_stim);
 
 %%
 filename = 'special_char.json';
-str_doc = fileread(filename); 
-bug_document = jsondecode(str_doc); 
-[status, response] = ndi.cloud.api.documents.post_documents(dataset_id, bug_document);
+str_doc = fileread(filename);
+bug_document = jsondecode(str_doc);
+[response] = ndi.cloud.api.documents.add_document(dataset_id, bug_document);
 
 %%
 
-[B,MSG] = ndi.cloud.up.upload_to_NDI_cloud(S, email, password, dataset_id);
+[B,MSG] = ndi.cloud.upload.upload_to_NDI_cloud(S, email, password, dataset_id);
 %%
 prefix = [filesep 'Users' filesep 'cxy' filesep 'Documents' filesep 'MATLAB' filesep 'data' filesep '2021-04-01'];

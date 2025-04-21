@@ -1,0 +1,14 @@
+{
+    "RootFolder": "path",
+    "CommonFolder": "commonpath",
+    "DocumentFolder": "documentpath",
+    "DocumentSchemaFolder": "documentschemapath",
+    "ExampleDataFolder": "exampleexperpath",
+    "TempFolder": "temppath",
+    "TestFolder": "testpath",
+    "FileCacheFolder": "filecachepath",
+    "LogFolder": "logpath",
+    "Preferences": "preferences",
+    "CalcDoc": "calcdoc",
+    "CalcDocSchema": "calcdocschema"
+}

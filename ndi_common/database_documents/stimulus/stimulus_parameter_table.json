@@ -1,0 +1,22 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/stimulus\/stimulus_parameter_table.json",
+		"validation":						"$NDISCHEMAPATH\/stimulus\/stimulus_parameter_table.json",
+		"class_name":						"stimulus_parameter_table",
+                "property_list_name":                                   "stimulus_parameter_table",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":                                 "$NDIDOCUMENTPATH\/base.json"} ,
+			{ "definition":                                 "$NDIDOCUMENTPATH\/epochid.json"} 
+		]
+	},
+	"depends_on": [
+		{	"name": "stimulus_element_id",				
+			"value": "" 
+		}
+	],
+	"stimulus_parameter_table": {
+		"string":							[]
+	}
+}
+

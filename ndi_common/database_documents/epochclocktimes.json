@@ -1,0 +1,23 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/epochclocktimes.json",
+		"validation":						"$NDISCHEMAPATH\/epochclocktimes_schema.json",
+		"class_name":						"epochclocktimes",
+		"property_list_name":					"epochclocktimes",
+		"class_version":					1,
+		"superclasses": [
+			{ "definition":					"$NDIDOCUMENTPATH\/base.json"},
+			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json"}
+		]
+	},
+	"epochclocktimes": { 
+		"epochclocktimes": [
+            {
+		        "clocktype":						"",
+		        "t0":							0,
+		        "t1":							0
+            }
+	    ]
+    }
+}
+
