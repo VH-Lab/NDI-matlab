@@ -10,14 +10,9 @@
 			{ "definition":					"$NDIDOCUMENTPATH\/epochid.json"}
 		]
 	},
-	"epochclocktimes": { 
-		"epochclocktimes": [
-            {
-		        "clocktype":						"",
-		        "t0":							0,
-		        "t1":							0
-            }
-	    ]
+	"epochclocktimes": {
+		        "clocktype":					"",
+		        "t0_t1":						""
     }
 }
 
