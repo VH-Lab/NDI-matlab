@@ -706,13 +706,6 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
                 end;
             end;
             doc = ndi_session_obj.database_search(q_E&q_t);
-            incl = [];
-            for i=1:numel(doc)
-                if strcmp(doc{i}.document_properties.document_class.class_name,'element')
-                    incl = cat(1,incl,i);
-                end
-            end
-            doc = doc(incl);
             elements = {};
             for i=1:numel(doc),
                 elements{i} = ndi.database.fun.ndi_document2ndi_object(doc{i}, ndi_session_obj);
