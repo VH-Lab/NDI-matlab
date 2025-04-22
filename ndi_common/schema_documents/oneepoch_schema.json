@@ -6,6 +6,14 @@
 	],
     "oneepoch": [
 		{
+			"name": "ndi_oneepoch_class",
+			"type": "string",
+			"default_value": "ndi.element",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The name of the ndi.element class that is stored."
+		},
+        {
 			"name": "epoch_ids",
 			"type": "string",
 			"default_value": [],

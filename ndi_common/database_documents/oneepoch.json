@@ -17,5 +17,6 @@
 		}
 	],
 	"oneepoch": {
+        "ndi_oneepoch_class":           "ndi.element",
 		"epoch_ids":					""}
 }

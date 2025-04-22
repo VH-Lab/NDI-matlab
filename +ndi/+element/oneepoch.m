@@ -47,16 +47,16 @@ epoch_ids = {et.epoch_id};
 % Check if there is a global clock, if not, use dev_local_time
 epoch_clocks = et(1).epoch_clock;
 ecs = cellfun(@(c) c.type,epoch_clocks,'UniformOutput',false);
-% clock_ind = find(cellfun(@(x) ndi.time.clocktype.isGlobal(x),epoch_clocks),1);
-% if isempty(clock_ind)
+clock_ind = find(cellfun(@(x) ndi.time.clocktype.isGlobal(x),epoch_clocks),1);
+if isempty(clock_ind)
     clock_ind = find(contains(ecs,'dev_local_time'));
     clock_global = false;
-%     if isempty(clock_ind)
-%         error('No global or local clock found in this elements epochtable.')
-%     end
-% else
-%     clock_global = true;
-% end
+    if isempty(clock_ind)
+        error('No global or local clock found in this elements epochtable.')
+    end
+else
+    clock_global = true;
+end
 
 % Create a new ndi.element.timeseries object if one does not already exist
 if ~element_exists
@@ -89,7 +89,7 @@ for i = new_epochs
     if clock_global
         epoch_t0 = t0_t1_in{i,clock_ind}(1);
         t = epoch_t0 + t/(24*60*60);
-    elseif clock_local & ~isempty(time)
+    elseif ~clock_global & ~isempty(time)
         t = time(end) + t(2)-t(1) + t(:);
     end
     time = cat(1,time,t(:));
