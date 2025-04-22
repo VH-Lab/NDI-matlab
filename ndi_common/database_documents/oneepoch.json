@@ -6,17 +6,9 @@
 		"property_list_name":				"oneepoch",
 		"class_version":					1,
 		"superclasses": [
-			{  "definition":				"$NDIDOCUMENTPATH\/base.json" },
-			{  "definition":				"$NDIDOCUMENTPATH\/epochid.json" },
             {  "definition":				"$NDIDOCUMENTPATH\/element_epoch.json" }
 		]
 	},
-    "depends_on": [
-		{	"name": "element_id",
-			"value": "" 
-		}
-	],
 	"oneepoch": {
-        "ndi_oneepoch_class":           "ndi.element",
 		"epoch_ids":					""}
 }

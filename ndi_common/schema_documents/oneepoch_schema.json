@@ -1,18 +1,7 @@
 {
 	"classname": "oneepoch",
-	"superclasses":  [ "base", "epochid", "element_epoch"],
-	"depends_on": [
-		{ "name": "element_id", "mustbenotempty": 1}
-	],
+	"superclasses":  ["element_epoch"],
     "oneepoch": [
-		{
-			"name": "ndi_oneepoch_class",
-			"type": "string",
-			"default_value": "ndi.element",
-			"parameters": "",
-			"queryable": 1,
-			"documentation": "The name of the ndi.element class that is stored."
-		},
         {
 			"name": "epoch_ids",
 			"type": "string",
