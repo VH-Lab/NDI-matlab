@@ -1,6 +1,6 @@
 {
 	"classname": "oneepoch",
-	"superclasses":  ["element_epoch"],
+	"superclasses":  ["element_epoch","base","epochid"],
     "oneepoch": [
         {
 			"name": "epoch_ids",
