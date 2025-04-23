@@ -10,15 +10,15 @@
 			"default_value": "",
 			"parameters": "",
 			"queryable": 1,
-			"documentation": "The clock type of the data."
+			"documentation": "The clock type(s) of the data."
 		},
         {
 			"name": "t0_t1",
 			"type": "matrix",
 			"default_value": [0,0],
-			"parameters": [1,2],
+			"parameters": [2,NaN],
 			"queryable": 1,
-			"documentation": "The beginning and end of the time series."
+			"documentation": "The beginning and end of the time series in epoch clock time units. Each column is for a different epock clock type."
 		}
 	]
 }
