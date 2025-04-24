@@ -5,12 +5,14 @@
       - demoNDI : 'NDI-matlab/documents/demoNDI.md'
       - element : 'NDI-matlab/documents/element.md'
       - element_epoch : 'NDI-matlab/documents/element_epoch.md'
+      - epochclocktimes : 'NDI-matlab/documents/epochclocktimes.md'
       - epochid : 'NDI-matlab/documents/epochid.md'
       - mock : 'NDI-matlab/documents/mock.md'
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
       - subject : 'NDI-matlab/documents/subject.md'
       - subjectmeasurement : 'NDI-matlab/documents/subjectmeasurement.md'
+      - treatment : 'NDI-matlab/documents/treatment.md'
       - apps:
         - calculators:
           - simple_calc : 'NDI-matlab/documents/apps/calculators/simple_calc.md'
@@ -40,6 +42,7 @@
         - filenavigator : 'NDI-matlab/documents/daq/filenavigator.md'
         - syncgraph : 'NDI-matlab/documents/daq/syncgraph.md'
         - syncrule : 'NDI-matlab/documents/daq/syncrule.md'
+        - files:
       - data:
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
@@ -49,6 +52,7 @@
         - daqreader_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqreader_epochdata_ingested.md'
         - daqreader_mfdaq_epochdata_ingested : 'NDI-matlab/documents/ingestion/daqreader_mfdaq_epochdata_ingested.md'
         - epochfiles_ingested : 'NDI-matlab/documents/ingestion/epochfiles_ingested.md'
+        - metadata_editor : 'NDI-matlab/documents/ingestion/metadata_editor.md'
         - syncrule_mapping : 'NDI-matlab/documents/ingestion/syncrule_mapping.md'
       - metadata:
         - openminds : 'NDI-matlab/documents/metadata/openminds.md'
@@ -57,8 +61,14 @@
         - openminds_subject : 'NDI-matlab/documents/metadata/openminds_subject.md'
       - neuron:
         - neuron_extracellular : 'NDI-matlab/documents/neuron/neuron_extracellular.md'
+      - probe:
+        - electrode_offset_voltage : 'NDI-matlab/documents/probe/electrode_offset_voltage.md'
+        - probe_location : 'NDI-matlab/documents/probe/probe_location.md'
       - stimulus:
         - control_stimulus_ids : 'NDI-matlab/documents/stimulus/control_stimulus_ids.md'
+        - stimulus_bath : 'NDI-matlab/documents/stimulus/stimulus_bath.md'
+        - stimulus_parameter : 'NDI-matlab/documents/stimulus/stimulus_parameter.md'
+        - stimulus_parameter_table : 'NDI-matlab/documents/stimulus/stimulus_parameter_table.md'
         - stimulus_presentation : 'NDI-matlab/documents/stimulus/stimulus_presentation.md'
         - stimulus_response : 'NDI-matlab/documents/stimulus/stimulus_response.md'
         - stimulus_response_scalar : 'NDI-matlab/documents/stimulus/stimulus_response_scalar.md'
