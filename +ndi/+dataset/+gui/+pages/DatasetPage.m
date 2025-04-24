@@ -26,8 +26,13 @@ classdef DatasetPage < ndi.gui.window.wizard.abstract.Page
 
     
     methods % Constructor
-        function obj = DatasetPage()
-            %obj.AppData = ndi.dataset.gui.models.DatasetInfo();
+        function obj = DatasetPage(pageData)
+            arguments
+                pageData ndi.dataset.gui.models.DatasetInfo = ...
+                    ndi.dataset.gui.models.DatasetInfo()
+            end
+
+            obj.PageData = pageData;
         end
     end
 
