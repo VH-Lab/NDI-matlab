@@ -75,7 +75,7 @@ else
     end
 
     % Compare existing epoch ids with current ones
-    epochdoc = ndi.database.fun.finddocs(D,elem_out.id(),epoch_id,'oneepoch');
+    epochdoc = ndi.database.fun.finddocs_elementEpochType(D,elem_out.id(),epoch_id,'oneepoch');
     oneepoch_ids = split(epochdoc{1}.document_properties.oneepoch.epoch_ids,',');
     new_epochs = find(~contains(epoch_ids,oneepoch_ids));
 end
