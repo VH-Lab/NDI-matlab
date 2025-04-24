@@ -1,8 +1,8 @@
-function [docs] = finddocs(S,elementID,epochID,documentType)
-%FINDDOCS Searches for documents in the NDI database.
+function [docs] = finddocs_elementEpochType(S,elementID,epochID,documentType)
+%FINDDOCS_ELEMENTEPOCHTYPE Searches for documents in the NDI database.
 %
 %   Syntax:
-%       docs = FINDDOCS(sessionObj,elementID,epochID,documentType)
+%       docs = FINDDOCS_ELEMENTEPOCHTYPE(sessionObj,elementID,epochID,documentType)
 %
 %   Description:
 %       This function constructs database queries using `ndi.query` based
