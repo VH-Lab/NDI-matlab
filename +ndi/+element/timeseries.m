@@ -80,7 +80,7 @@ classdef timeseries < ndi.element & ndi.time.timeseries
 
         %%%%% ndi.element methods
 
-        function [ndi_element_timeseries_obj, epochdoc] = addepoch(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints)
+        function [ndi_element_timeseries_obj, epochdoc] = addepoch(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, timepoints, datapoints, epochids)
             % ADDEPOCH - add an epoch to the ndi.element
             %
             % [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_TIMESERIES_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, TIMEPOINTS, DATAPOINTS)
@@ -99,14 +99,18 @@ classdef timeseries < ndi.element & ndi.time.timeseries
             %                     of the EPOCHCLOCK.
             %   DATAPOINTS:    the data points that accompany each timepoint (must be TxXxY...), or can be 'probe' to
             %                     read from the probe
+            %   EPOCHIDS:      The epoch ids of the original epochs (used in conjunction with a oneepoch document).
             % Outputs:
             %    If a second output is requested in EPOCHDOC, then the DOC is NOT added to the database
             %
             if ndi_element_timeseries_obj.direct,
                 error(['Cannot add external observations to an ndi.element that is directly based on another ndi.element.']);
             end;
-            [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1,0);
-
+            if nargin < 7
+                [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, 0);
+            else
+                [ndi_element_timeseries_obj, epochdoc] = addepoch@ndi.element(ndi_element_timeseries_obj, epochid, epochclock, t0_t1, 0, epochids);
+            end
             fname = [ndi.common.PathConstants.TempFolder filesep epochdoc.id() '.vhsb'];
             vlt.file.custom_file_formats.vhsb_write(fname,timepoints,datapoints,'use_filelock',0);
             epochdoc = epochdoc.add_file('epoch_binary_data.vhsb',fname);

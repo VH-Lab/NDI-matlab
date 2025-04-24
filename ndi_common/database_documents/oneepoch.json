@@ -1,0 +1,14 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/oneepoch.json",
+		"validation":						"$NDISCHEMAPATH\/oneepoch_schema.json",
+		"class_name":						"oneepoch",
+		"property_list_name":				"oneepoch",
+		"class_version":					1,
+		"superclasses": [
+            {  "definition":				"$NDIDOCUMENTPATH\/element_epoch.json" }
+		]
+	},
+	"oneepoch": {
+		"epoch_ids":					""}
+}

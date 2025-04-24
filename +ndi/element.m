@@ -319,10 +319,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
         end; %elementstring()
 
-        function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db)
+        function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db, epochids)
             % ADDEPOCH - add an epoch to the ndi.element
             %
-            % [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, [ADD_TO_DB])
+            % [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, [ADD_TO_DB], [EPOCHIDS])
             %
             % Registers the data for an epoch with the NDI_ELEMENT_OBJ.
             %
@@ -334,7 +334,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %   T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
             %                     the probe, in units of the epock clock
             %   ADD_TO_DB:     0/1 Should we actually add the epoch document to the database? Default 0.
-            %
+            %   EPOCHIDS:      The epoch ids of the original epochs (used in conjunction with a oneepoch document).
+            
             if nargin < 5,
                 add_to_db = 0;
             end;
@@ -362,9 +363,18 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else
                     t0_t1_input = t0_t1;
                 end
-                epochdoc = E.newdocument('element_epoch', ...
-                    'element_epoch.epoch_clock', epochclockstr, ...
-                    'element_epoch.t0_t1', t0_t1_input, 'epochid.epochid',epochid);
+                if nargin < 6
+                    epochdoc = E.newdocument('element_epoch', ...
+                        'element_epoch.epoch_clock', epochclockstr, ...
+                        'element_epoch.t0_t1', t0_t1_input,...
+                        'epochid.epochid',epochid);
+                else
+                    epochdoc = E.newdocument('oneepoch', ...
+                        'element_epoch.epoch_clock', epochclockstr, ...
+                        'element_epoch.t0_t1', t0_t1_input,...
+                        'epochid.epochid',epochid,...
+                        'oneepoch.epoch_ids',epochids);
+                end
                 epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
                 if add_to_db,
                     E.database_add(epochdoc);

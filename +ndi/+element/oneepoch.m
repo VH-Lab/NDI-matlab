@@ -36,58 +36,91 @@ end
 
 mylog = ndi.common.getLogger();
 
- % first check to see if it already exists
-
+% Get the element and associated epoch table
 e = D.getelements('element.name',name_out,'element.reference',reference_out);
-
-if ~isempty(e),
-	D.database_rm(e{1}.id());
-	e = [];
-end;
-
-assert(isempty(e),['Element with name ' name_out ' and reference ' int2str(reference_out) ' already exists. Delete it before making a new one.']);
-
-% Create the new ndi.element.timeseries object
-elem_out = ndi.element.timeseries(D, name_out, reference_out,...
-    ndi_element_timeseries_obj_in.type,...
-    ndi_element_timeseries_obj_in,...
-    false); % not direct
-
-% Get the epoch table
+element_exists = ~isempty(e);
+epoch_id = ['whole_session_' ndi_element_timeseries_obj_in.session.reference];
 et = ndi_element_timeseries_obj_in.epochtable();
+t0_t1_in = vertcat(et.t0_t1);
+epoch_ids = {et.epoch_id};
 
-data = [];
-time = [];
+% Check if there is a global clock, if not, use dev_local_time
+epoch_clocks = et(1).epoch_clock;
+ecs = cellfun(@(c) c.type,epoch_clocks,'UniformOutput',false);
+clock_ind = find(cellfun(@(x) ndi.time.clocktype.isGlobal(x),epoch_clocks),1);
+if isempty(clock_ind)
+    clock_ind = find(contains(ecs,'dev_local_time'));
+    clock_global = false;
+    if isempty(clock_ind)
+        error('No global or local clock found in this elements epochtable.')
+    end
+else
+    clock_global = true;
+end
 
-nextTime = zeros(1,numel(et(1).epoch_clock));
-t0_t1 = zeros(2,numel(et(1).epoch_clock));
-idx_dev_local_time = find(cellfun(@(x) eq(ndi.time.clocktype('dev_local_time'),x),et(1).epoch_clock));
+% Create a new ndi.element.timeseries object if one does not already exist
+if ~element_exists
+    elem_out = ndi.element.timeseries(D, name_out, reference_out,...
+        ndi_element_timeseries_obj_in.type,ndi_element_timeseries_obj_in,false);
+    time = [];
+    data = [];
+    new_epochs = 1:numel(et);
+else
+    % If one does exist, read the data
+    elem_out = e{1};
+    [data,time] = elem_out.readtimeseries(1,-inf,inf);
+    if clock_global
+        epoch_t0 = e{1}.epochtable.t0_t1{clock_ind}(1);
+        time = epoch_t0 + time/(24*60*60);
+    end
 
+    % Compare existing epoch ids with current ones
+    epochdoc = ndi.database.fun.finddocs(D,elem_out.id(),epoch_id,'oneepoch');
+    oneepoch_ids = split(epochdoc{1}.document_properties.oneepoch.epoch_ids,',');
+    new_epochs = find(~contains(epoch_ids,oneepoch_ids));
+end
 
-for i=1:numel(et)
+% Get data from all new epochs
+for i = new_epochs
     mylog.msg('system',5,...
         ['Working on new element ' name_out ' : ' int2str(reference_out) ...
         ', subepoch ' int2str(i) ' of ' int2str(numel(et)) '.']);    
     [d,t] = ndi_element_timeseries_obj_in.readtimeseries(i,-inf,inf);
-    time = cat(1,time,nextTime(1,idx_dev_local_time) + t(:));
+    if clock_global
+        epoch_t0 = t0_t1_in{i,clock_ind}(1);
+        t = epoch_t0 + t/(24*60*60);
+    elseif ~clock_global & ~isempty(time)
+        t = time(end) + t(2)-t(1) + t(:);
+    end
+    time = cat(1,time,t(:));
     data = cat(1,data,d);
-    for k=1:numel(et(i).epoch_clock),
-        if i==1
-            t0_t1(1,k) = et(1).t0_t1{k}(1);
-        end
-        nextTime(1,k) = nextTime(1,k) + et(i).t0_t1{k}(2) - et(i).t0_t1{k}(1);
-    end;
 end
 
-ecs = {};
-for k=1:numel(et(1).epoch_clock)
-    ecs{k} = et(1).epoch_clock{k}.type;
-    t0_t1(2,k) = t0_t1(1,k) + nextTime(k);
+% Check that all time points are in order and convert to local time
+if clock_global
+    [time,sortOrder] = sort(time);
+    if ~all(diff(sortOrder) == 1)
+        data = data(sortOrder);
+    end
+    time = 24*60*60*(time - time(1));
 end
 
-epoch_id = ['whole_session_' ndi_element_timeseries_obj_in.session.reference];
+% Retrieve t0_t1 for each clock type
+t0_t1 = zeros(numel(epoch_clocks),2);
+for k = 1:numel(epoch_clocks)
+    t0_t1(1,k) = t0_t1_in{1,k}(1);
+    if ndi.time.clocktype.isGlobal(epoch_clocks{k})
+        t0_t1(2,k) = t0_t1(1,k) + time(end)/(24*60*60);
+    else
+        t0_t1(2,k) = time(end);
+    end
+end
+
+% Add oneepoch to database
+if element_exists
+    D.database_rm(epochdoc);
+end
 
 [elem_out,epochdoc] = elem_out.addepoch(epoch_id,...
-        strjoin(ecs,','), t0_t1, time, data);
-
+    strjoin(ecs,','), t0_t1, time, data, strjoin(epoch_ids,','));
 D.database_add(epochdoc);
