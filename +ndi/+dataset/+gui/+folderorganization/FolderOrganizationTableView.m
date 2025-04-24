@@ -32,13 +32,9 @@ classdef FolderOrganizationTableView < handle
 
         function showAdvancedOptions(obj)
             obj.ShowAdvancedOptions = true;
-
-            obj.UITable.reset()
-            drawnow
-
-            obj.UITable.ColumnNames = {'Select subfolder example', 'Set subfolder type', 'Exclusion list', 'Inclusion list'};
-            obj.UITable.ColumnWidth = {185, 175, 150, 150};
-            obj.UITable.MaximumColumnWidth = [300, 140, 300, 300];
+            
+            obj.UITable.VisibleColumns = [true,true,true,true];
+            obj.UITable.ColumnWidth(1:2) = {185, 175};
 
             obj.updateTableView()
             drawnow
@@ -48,12 +44,8 @@ classdef FolderOrganizationTableView < handle
         function hideAdvancedOptions(obj)
             obj.ShowAdvancedOptions = false;
 
-            obj.UITable.reset()
-            drawnow
-        
-            obj.UITable.ColumnNames = {'Select subfolder example', 'Set subfolder type'};
-            obj.UITable.ColumnWidth = {'2x', '1x'};
-            obj.UITable.MaximumColumnWidth = [300, 140];
+            obj.UITable.VisibleColumns = [true,true,false,false];
+            obj.UITable.ColumnWidth(1:2) = {'2x', '1x'};
 
             obj.updateTableView()
             drawnow
@@ -89,7 +81,7 @@ classdef FolderOrganizationTableView < handle
             end
 
             if ~obj.ShowAdvancedOptions
-                S = rmfield(S, {'Expression', 'IgnoreList'});
+                %S = rmfield(S, {'Expression', 'IgnoreList'});
             end
 
             % Assign the struct array as the tables data...

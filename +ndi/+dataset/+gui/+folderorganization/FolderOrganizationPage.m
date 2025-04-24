@@ -49,14 +49,14 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
             obj.DataModel = dataModel;
             if obj.IsInitialized
                 % Todo: update differently....
-                obj.UITable.SubfolderStructure = dataModel.FolderLevels; %#ok<MCSUP>
+                obj.View.update() %#ok<MCSUP>
             end
         end
 
         function set.RootDirectory(obj, rootDirectory)
             obj.RootDirectory = rootDirectory;
             if obj.IsInitialized
-                obj.UITable.RootDirectory = rootDirectory; %#ok<MCSUP>
+                % Todo(?) Update data model root directory
             end
         end
 
@@ -189,8 +189,21 @@ classdef FolderOrganizationPage < ndi.gui.window.wizard.abstract.Page
 
         function onPresetTemplateSelected(obj, event)
             filePath = obj.PresetFolderModels( event.Value );
-            folderModel = ndi.dataset.gui.models.FolderOrganizationModel.fromJson(filePath);
-            obj.UITable.SubfolderStructure = folderModel.FolderLevels;
+            templateFolderModel = ndi.dataset.gui.models.FolderOrganizationModel.fromJson(filePath);
+            
+            oldFolderLevels = obj.DataModel.FolderLevels;
+            newFolderLevels = templateFolderModel.FolderLevels;
+           
+            % Update names based on current selections
+            for i = 1:numel(newFolderLevels)
+                if i <= numel(oldFolderLevels)
+                    newFolderLevels(i).Name = oldFolderLevels(i).Name;
+                end
+            end
+
+            obj.DataModel.FolderLevels = newFolderLevels;
+
+            obj.View.update()
         end
     end
 
