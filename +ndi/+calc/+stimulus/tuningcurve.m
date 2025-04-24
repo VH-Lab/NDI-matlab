@@ -160,7 +160,17 @@ classdef tuningcurve < ndi.calculator
                         doc = {};
                         return;
                     end;
-                else,
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'constant')
+                    pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+                    if numel(pva)~=1, % we have variation in the parameter requested, quit
+                        doc = {};
+                        return;
+                    end
+                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'not')
+                    constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
+                        'operation','~hasfield','param1','','param2','');
+                    constraint(end+1) = constraint_here;
+                else
                     constraint_here = struct('field',parameters.input_parameters.selection(i).property,...
                         'operation',parameters.input_parameters.selection(i).operation,...
                         'param1',parameters.input_parameters.selection(i).value,...
@@ -195,13 +205,16 @@ classdef tuningcurve < ndi.calculator
             tuningcurve_calc.log = log_str;
 
             doc = {};
-
             for i=1:N_deal,
                 deal_log_str = '';
                 stim_property_list_values = [];
 
                 constraints_mod = constraint;
-                eval(['[' deal_str ']=ind2sub(deal_constraints_dim,i);']);
+                if numel(deal_constraints_dim)==1
+                    eval(['[' deal_str ']=1;']);
+                else
+                    eval(['[' deal_str ']=ind2sub(deal_constraints_dim,i);']);
+                end
                 for j=1:numel(deal_constraints),
                     deal_here = deal_constraints{j}(sz_{j});
                     if isstruct(deal_here),

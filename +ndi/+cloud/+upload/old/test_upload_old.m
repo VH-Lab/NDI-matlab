@@ -194,10 +194,10 @@ q_stim_and_stim_decoder_docs = S.database_search(q_stim_decoder & q_stim);
 filename = 'special_char.json';
 str_doc = fileread(filename);
 bug_document = jsondecode(str_doc);
-[status, response] = ndi.cloud.api.documents.post_documents(dataset_id, bug_document);
+[response] = ndi.cloud.api.documents.add_document(dataset_id, bug_document);
 
 %%
 
-[B,MSG] = ndi.cloud.up.upload_to_NDI_cloud(S, email, password, dataset_id);
+[B,MSG] = ndi.cloud.upload.upload_to_NDI_cloud(S, email, password, dataset_id);
 %%
 prefix = [filesep 'Users' filesep 'cxy' filesep 'Documents' filesep 'MATLAB' filesep 'data' filesep '2021-04-01'];

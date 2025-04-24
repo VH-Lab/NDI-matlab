@@ -525,9 +525,11 @@ classdef epochset
                 if ~isempty(cache),
                     epochgraph_type = ['epochgraph-hashvalue'];
                     priority = 1; % use higher than normal priority
-                    data.cost = cost;
-                    data.mapping = mapping;
-                    data.hashvalue = hash;
+                    ginfo.cost = cost;
+                    ginfo.mapping = mapping;
+                    ginfo_small = ndi.epoch.epochset.ginfo2cache(ginfo);
+                    data.ginfo = ginfo_small;
+                    data.hashvalue = hash;                    
                     cache.add(key,epochgraph_type,data,priority);
                 end
             end;
@@ -570,13 +572,24 @@ classdef epochset
             cost = inf(numel(nodes));
             mapping = cell(numel(nodes));
 
-            for i=1:numel(nodes),
-                for j=1:numel(nodes),
-                    if j==i,
+            for i=1:numel(nodes)
+                for j=1:numel(nodes)
+                    if j==i
                         cost(i,j) = 1;
                         mapping{i,j} = trivial_mapping;
-                    else,
-                        [cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
+                    else
+                        if strcmp(nodes(i).epoch_id,nodes(j).epoch_id) && strcmp(nodes(i).epoch_session_id,nodes(j).epoch_session_id)
+                            m = diff(nodes(j).t0_t1) / diff(nodes(i).t0_t1);
+                            b = nodes(j).t0_t1(1)-m*nodes(i).t0_t1(1);
+                            cost(i,j) = 1;
+                            mapping{i,j} = ndi.time.timemapping([m b]);
+                        else
+                            [cost(i,j),mapping{i,j}] = nodes(i).epoch_clock.epochgraph_edge(nodes(j).epoch_clock);
+                            if ~isinf(cost(i,j))
+                                %delta = abs(nodes(i).t0_t1(1)-nodes(j).t0_t1(1));
+                                %cost(i,j) = cost(i,j);
+                            end
+                        end
                     end
                 end
             end
@@ -604,8 +617,9 @@ classdef epochset
                 eg_data = cache.lookup(key,epochgraph_type);
                 if ~isempty(eg_data),
                     if matchedepochtable(ndi_epochset_obj, eg_data(1).data.hashvalue);
-                        cost = eg_data(1).data.cost;
-                        mapping = eg_data(1).data.mapping;
+                        ginfo = ndi.epoch.epochset.cache2ginfo(eg_data(1).data.ginfo);
+                        cost = ginfo.cost;
+                        mapping = ginfo.mapping;
                     else,
                         cache.remove(key,epochgraph_type); % it's out of date, clean it up
                     end
@@ -628,4 +642,38 @@ classdef epochset
 
     end % methods
 
+    methods (Static)
+        function ginfo_small = ginfo2cache(ginfo)
+        % GINFO2CACHE Make a smaller version of the GINFO for storage in the cache
+        %
+        % GINFO_SMALL = GINFO2CACHE(GINFO)
+        % 
+            tf = ~cellfun(@isempty,ginfo.mapping(:));
+            mapping_linear = ginfo.mapping(tf);
+            cost_sparse = ginfo.cost;
+            cost_sparse(isinf(cost_sparse)) = 0;
+            cost_sparse = sparse(cost_sparse);
+            ginfo_small.cost_sparse = cost_sparse;
+            ginfo_small.mapping_linear = mapping_linear;
+            ginfo_small.mapping_indexes = find(tf);
+        end
+
+        function ginfo_big = cache2ginfo(ginfo_small)
+        % CACHE2GINFO Make a regular GINFO from the smaller information stored in the cache
+        %
+        % GINFO_BIG = GINFO2CACHE(GINFO_SMALL)
+        % 
+           if ~isfield(ginfo_small,'mapping_linear')
+               ginfo_big = ginfo_small; % no compression
+               return;
+           end
+           ginfo_big.nodes = ginfo_small.nodes;
+           cost = full(ginfo_small.cost_sparse);
+           cost(cost==0) = Inf;
+           ginfo_big.cost = cost;
+           ginfo_big.mapping = cell(size(cost,1),size(cost,1));
+           ginfo_big.mapping(ginfo_small.mapping_indexes) = ginfo_small.mapping_linear;
+        end % cache2ginfo
+
+    end % methods(Static)
 end % classdef

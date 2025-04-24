@@ -1,4 +1,4 @@
-function [status, auth_token, organization_id] = login(email, password)
+function [auth_token, organization_id] = login(email, password)
     % LOGIN - logs in a user
     %
     % [AUTH_TOKEN,ORGANIZATION_ID] = ndi.cloud.api.auth.LOGIN(EMAIL, PASSWORD)
@@ -8,7 +8,6 @@ function [status, auth_token, organization_id] = login(email, password)
     %   PASSWORD - a string representing the user's password
     %
     % Outputs:
-    %   STATUS - did the user logs in successfully? 1 for no, 0 for yes
     %   AUTH_TOKEN - bearer token
     %   ORGANIZATION_ID - the organization id that the user belongs to
     %
@@ -25,12 +24,12 @@ function [status, auth_token, organization_id] = login(email, password)
 
     req = matlab.net.http.RequestMessage(method, header, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('login'));
+    url = ndi.cloud.api.url('login');
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
         auth_token = response.Body.Data.token;
         organization_id = response.Body.Data.user.organizations.id;
     else

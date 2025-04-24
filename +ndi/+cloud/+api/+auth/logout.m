@@ -1,16 +1,15 @@
-function [status, response] = logout()
+function response = logout()
     % LOGOUT - logs a user out and invalidates their token
     %
-    % [STATUS,RESPONSE] = ndi.cloud.api.auth.LOGOUT()
+    % RESPONSE = ndi.cloud.api.auth.LOGOUT()
     %
     % Inputs:
     %
     % Outputs:
-    %   STATUS - did user log out? 1 for no, 0 for yes
     %   RESPONSE - the response summary
     %
 
-    [auth_token, ~] = ndi.cloud.uilogin();
+    auth_token = ndi.cloud.authenticate();
 
     method = matlab.net.http.RequestMethod.POST;
 
@@ -23,12 +22,12 @@ function [status, response] = logout()
 
     req = matlab.net.http.RequestMessage(method, headers, body);
 
-    url = matlab.net.URI(ndi.cloud.api.url('logout'));
+    url = ndi.cloud.api.url('logout');
 
     response = req.send(url);
-    status = 1;
+    
     if (response.StatusCode == 200)
-        status = 0;
+        % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
     end

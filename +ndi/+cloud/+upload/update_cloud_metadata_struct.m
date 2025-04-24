@@ -29,5 +29,5 @@ function [status, dataset] = update_cloud_metadata_struct(dataset_id, S, size)
     % round up the bytes to the nearest kilobyte
     dataset_update.totalSize = round(size);
     % dataset_update.brainRegions = brainRegions;
-    [status,dataset] = ndi.cloud.api.datasets.post_datasetId(dataset_id,dataset_update);
+    [dataset] = ndi.cloud.api.datasets.update_dataset(dataset_id,dataset_update);
 end

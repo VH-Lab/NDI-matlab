@@ -24,14 +24,14 @@ classdef cache < handle
             %
             % Parameter (default)         | Description
             % ------------------------------------------------------------
-            % maxMemory (1e9)             | Max memory for cache, in bytes (1GB default)
+            % maxMemory (10e9)            | Max memory for cache, in bytes (10GB default)
             % replacement_rule ('fifo')   | Replacement rule (see NDI_CACHE/SET_REPLACEMENT_RULE
             %
             % Note that the cache is not 'secure', any function can query the data added.
             %
             % See also: vlt.data.namevaluepair
 
-            maxMemory = 1e9; % 1 GB
+            maxMemory = 10e9; % 10 GB
             replacement_rule = 'fifo';
 
             vlt.data.assign(varargin{:});
@@ -162,8 +162,11 @@ classdef cache < handle
             % NDI_CACHE_OBJ = CLEAR(NDI_CACHE_OBJ)
             %
             % Clears all entries from the NDI.CACHE object NDI_CACHE_OBJ.
+            % Also clears all memoized caches (CLEARALLMEMOIZEDCACHES).
             %
             ndi_cache_obj = ndi_cache_obj.remove(1:numel(ndi_cache_obj.table),[]);
+            clearAllMemoizedCaches;
+            clear memoize;
         end % clear
 
         function ndi_cache_obj = freebytes(ndi_cache_obj, freebytes)

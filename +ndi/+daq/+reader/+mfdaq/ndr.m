@@ -90,6 +90,24 @@ classdef ndr < ndi.daq.reader.mfdaq
             data = ndr_reader.readchannels_epochsamples(channeltype,channel,epochfiles,1,s0,s1);
         end; % readchannels_epochsamples
 
+        function ec = epochclock(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
+            % EPOCHCLOCK - return the ndi.time.clocktype objects for an epoch
+            %
+            % EC = EPOCHCLOCK(NDI_DAQREADER_MFDAQ_OBJ, EPOCHFILES)
+            %
+            % Return the clock types available for this epoch as a cell array
+            % of ndi.time.clocktype objects (or sub-class members).
+            %
+            % See also: ndi.time.clocktype
+            %
+            ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            ec_ndr = ndr_reader.epochclock(epochfiles,1);
+            ec = {};
+            for i=1:numel(ec_ndr)
+                ec{i} = ndi.time.clocktype(ec_ndr{i}.type);
+            end
+        end % epochclock
+
         function t0t1 = t0_t1(ndi_daq_reader_mfdaq_ndr_obj, epochfiles)
             % T0_T1 - return the t0_t1 (beginning and end) epoch times for an epoch
             %
@@ -104,6 +122,29 @@ classdef ndr < ndi.daq.reader.mfdaq
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
             t0t1 = ndr_reader.t0_t1(epochfiles,1);
         end % t0t1
+
+        function [datatype,p,datasize] = underlying_datatype(ndi_daq_reader_mfdaq_ndr_obj, epochfiles, channeltype, channel)
+            % UNDERLYING_DATATYPE - get the underlying data type for a channel in an epoch
+            %
+            % [DATATYPE,P,DATASIZE] = UNDERLYING_DATATYPE(NDI_DAQSYSTEM_MFDAQ_NDR_OBJ, EPOCHFILES, CHANNELTYPE, CHANNEL)
+            %
+            % Return the underlying datatype for the requested channel.
+            %
+            % DATATYPE is a type that is suitable for passing to FREAD or FWRITE
+            %  (e.g., 'float64', 'uint16', etc. See help fread.)
+            %
+            % P is a matrix of polynomials that converts between the double data that is returned by
+            % READCHANNEL. RETURNED_DATA = (RAW_DATA+P(i,1))*P(i,2)+(RAW_DATA+P(i,1))*P(i,3) ...
+            % There is one row of P for each entry of CHANNEL.
+            %
+            % DATASIZE is the sample size in bits.
+            %
+            % CHANNELTYPE must be a string. It is assumed that
+            % that CHANNELTYPE applies to every entry of CHANNEL.
+            %
+            ndr_reader_obj = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
+            [datatype,p,datasize] = ndr_reader_obj.ndr_reader_base.underlying_datatype(epochfiles, 1, channeltype, channel);
+        end
 
         function [timestamps,data] = readevents_epochsamples_native(ndi_daq_reader_mfdaq_ndr_obj, channeltype, channel, epochfiles, t0, t1)
             %  READEVENTS_EPOCHSAMPLES_NATIVE - read events or markers of specified channels for a specified epoch

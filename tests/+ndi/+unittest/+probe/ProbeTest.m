@@ -1,5 +1,5 @@
 classdef ProbeTest <  matlab.unittest.TestCase
-    % ProbeTest - Unit test for testing the openMINDS tutorials.
+    % ProbeTest - Unit test for testing the probe type map.
 
     properties
         ProbeMap = ndi.probe.fun.getProbeTypeMap()

@@ -190,7 +190,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             % See also: ndi.time.clocktype, EPOCHCLOCK
             %
             % TODO: this must be a bug, it's just self-referential
-            t0t1 = ndi_element_obj.t0_t1(epoch_number);
+            et = epochtableentry(ndi_element_obj, epoch_number);
+            t0t1 = et.t0_t1;
         end; % t0t1()
 
         function [cache,key] = getcache(ndi_element_obj)
@@ -238,6 +239,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
 
                 % pull all the devices from the session and look for device strings that match this probe
 
+                epoch_mapping = true;
+
                 underlying_et = et;
                 if ~isempty(ndi_element_obj.underlying_element)
                     underlying_et = ndi_element_obj.underlying_element.epochtable();
@@ -256,15 +259,26 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         % if there are underlying epochs, we need to make sure we have the right mapping
                         % of epochids between the underlying and the current level
                         [c,ia,ib] = intersect({et_added.epoch_id}, {underlying_et.epoch_id});
+
+                        if isempty(ia)
+                            % it is legal for there to be no mapping
+                            epoch_mapping = false;
+                            ia = 1:numel(et_added);
+                            ib = 1:numel(et_added);
+                        end
                     end
                 end
 
-                for n=1:numel(ia),
+                for n=1:numel(ia)
                     et_ = vlt.data.emptystruct('epoch_number','epoch_id','epoch_session_id','epochprobemap','underlying_epochs');
                     et_(1).epoch_number = n;
                     et_(1).epoch_session_id = ndi_element_obj.session.id();
-                    if ~isempty(ndi_element_obj.underlying_element),
-                        et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
+                    if ~isempty(ndi_element_obj.underlying_element)
+                        if epoch_mapping
+                            et_(1).epoch_id = underlying_et(ib(n)).epoch_id;
+                        else
+                            et_(1).epoch_id = et_added(ia(n)).epoch_id;
+                        end
                     else,
                         et_(1).epoch_id = et_added(ia(n)).epoch_id;
                     end;
@@ -305,10 +319,10 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             elementstr = [ndi_element_obj.name ' | ' int2str(ndi_element_obj.reference)];
         end; %elementstring()
 
-        function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db)
+        function [ndi_element_obj, epochdoc] = addepoch(ndi_element_obj, epochid, epochclock, t0_t1, add_to_db, epochids)
             % ADDEPOCH - add an epoch to the ndi.element
             %
-            % [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, [ADD_TO_DB])
+            % [NDI_ELEMENT_OBJ, EPOCHDOC] = ADDEPOCH(NDI_ELEMENT_OBJ, EPOCHID, EPOCHCLOCK, T0_T1, [ADD_TO_DB], [EPOCHIDS])
             %
             % Registers the data for an epoch with the NDI_ELEMENT_OBJ.
             %
@@ -320,7 +334,8 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
             %   T0_T1:         The starting time and ending time of the existence of information about the ELEMENT on
             %                     the probe, in units of the epock clock
             %   ADD_TO_DB:     0/1 Should we actually add the epoch document to the database? Default 0.
-            %
+            %   EPOCHIDS:      The epoch ids of the original epochs (used in conjunction with a oneepoch document).
+            
             if nargin < 5,
                 add_to_db = 0;
             end;
@@ -338,9 +353,28 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                 else,
                     elementdoc = elementdoc{1};
                 end;
-                epochdoc = E.newdocument('element_epoch', ...
-                    'element_epoch.epoch_clock', epochclock.ndi_clocktype2char(), ...
-                    'element_epoch.t0_t1', vlt.data.colvec(t0_t1), 'epochid.epochid',epochid);
+                if isa(epochclock,'ndi.time.clocktype')
+                    epochclockstr = epochclock.ndi_clocktype2char();
+                else
+                    epochclockstr = epochclock;
+                end
+                if numel(t0_t1)==2,
+                    t0_t1_input = vlt.data.colvec(t0_t1);
+                else
+                    t0_t1_input = t0_t1;
+                end
+                if nargin < 6
+                    epochdoc = E.newdocument('element_epoch', ...
+                        'element_epoch.epoch_clock', epochclockstr, ...
+                        'element_epoch.t0_t1', t0_t1_input,...
+                        'epochid.epochid',epochid);
+                else
+                    epochdoc = E.newdocument('oneepoch', ...
+                        'element_epoch.epoch_clock', epochclockstr, ...
+                        'element_epoch.t0_t1', t0_t1_input,...
+                        'epochid.epochid',epochid,...
+                        'oneepoch.epoch_ids',epochids);
+                end
                 epochdoc = epochdoc.set_dependency_value('element_id',elementdoc.id());
                 if add_to_db,
                     E.database_add(epochdoc);
@@ -371,8 +405,15 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                     newet.epoch_number = i;
                     newet.epoch_id = potential_epochdocs{i}.document_properties.epochid.epochid;
                     newet.epochprobemap = '';
-                    newet.epoch_clock = {ndi.time.clocktype(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock)};
-                    newet.t0_t1 = {potential_epochdocs{i}.document_properties.element_epoch.t0_t1};
+                    clock_types = strtrim(split(potential_epochdocs{i}.document_properties.element_epoch.epoch_clock,','));
+                    ec = {};
+                    t0_t1 = {};
+                    for k=1:numel(clock_types)
+                        ec{k} = ndi.time.clocktype(clock_types{k});
+                        t0_t1{k} = vlt.data.rowvec(potential_epochdocs{i}.document_properties.element_epoch.t0_t1(:,k));
+                    end
+                    newet.epoch_clock = ec;
+                    newet.t0_t1 = t0_t1;
                     newet.underlying_epochs = []; % leave this for buildepochtable
                     et_added(end+1) = newet;
                     epochdocs{end+1} = potential_epochdocs{i};
@@ -482,6 +523,7 @@ classdef element < ndi.ido & ndi.epoch.epochset & ndi.documentservice & matlab.m
                         underlying_id = newdoc.id();
                     end;
                 end;
+                ndi_document_obj = ndi_document_obj.setproperties('base.id',ndi_element_obj.identifier);
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'underlying_element_id',underlying_id);
                 ndi_document_obj = set_dependency_value(ndi_document_obj,'subject_id',ndi_element_obj.subject_id);
                 for i=1:numel(ndi_element_obj.dependencies),

@@ -11,9 +11,10 @@ function [b, successes, failures] = test_ndi_document_jsons(generate_error)
     % If GENERATE_ERROR is present and is 1, then an error is generated if B is 0.
     %
 
-    if nargin<1,
-        generate_error = 0;
-    end;
+    arguments % Argument validation block replaces nargin check
+        % Define generate_error: must be scalar (1,1), logical (true/false), default false
+        generate_error (1,1) logical = false
+    end
 
     b = 0;
     successes = {};
