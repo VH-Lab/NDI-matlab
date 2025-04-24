@@ -152,7 +152,7 @@ classdef DatasetWizardApp < ndi.gui.window.wizard.WizardApp
             page = app.getPage("DAQ Systems");
             page.PageData = app.AppData.DaqSystemsCollection;
 
-            page = app.getPage("Subject");
+            page = app.getPage("Edit Subjects");
             page.RootDirectory = app.DatasetRootDirectory;
         end
     end
