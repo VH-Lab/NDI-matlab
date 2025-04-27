@@ -34,7 +34,7 @@ nav:
         - 1.1 Introduction: 'NDI-matlab/tutorials/ndimodel/1_intro.md'
         - 1.2 Real world vocabulary: 'NDI-matlab/tutorials/ndimodel/2_ndimodel_vocabulary.md'
       - 2 Analzying your first electrophysiology experiment with NDI:
-        - 2.1 Reading an example dataset: 'NDI-matlabtutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
+        - 2.1 Reading an example dataset: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset.md'
         - 2.2 Automating data reading with NDI: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/2_theautomatedway.md'
         - 2.3 Using apps to analyze data (example - spike sorting): 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting.md'
         - 2.4 Analyzing spiking responses and tuning curve properties: 'NDI-matlab/tutorials/analyzing_first_physiology_experiment/4_analyzing_tuning_curves.md'
@@ -60,6 +60,7 @@ nav:
       - epochclocktimes : 'NDI-matlab/documents/epochclocktimes.md'
       - epochid : 'NDI-matlab/documents/epochid.md'
       - mock : 'NDI-matlab/documents/mock.md'
+      - oneepoch : 'NDI-matlab/documents/oneepoch.md'
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
       - subject : 'NDI-matlab/documents/subject.md'
@@ -94,7 +95,6 @@ nav:
         - filenavigator : 'NDI-matlab/documents/daq/filenavigator.md'
         - syncgraph : 'NDI-matlab/documents/daq/syncgraph.md'
         - syncrule : 'NDI-matlab/documents/daq/syncrule.md'
-        - files:
       - data:
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
@@ -297,6 +297,7 @@ nav:
             - ndi.database.fun.find_ingested_docs: 'NDI-matlab/reference/+ndi/+database/+fun/find_ingested_docs.m.md'
             - ndi.database.fun.findallantecedents: 'NDI-matlab/reference/+ndi/+database/+fun/findallantecedents.m.md'
             - ndi.database.fun.findalldependencies: 'NDI-matlab/reference/+ndi/+database/+fun/findalldependencies.m.md'
+            - ndi.database.fun.finddocs_elementEpochType: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_elementEpochType.m.md'
             - ndi.database.fun.finddocs_missing_dependencies: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
             - ndi.database.fun.lookup_uberon_term: 'NDI-matlab/reference/+ndi/+database/+fun/lookup_uberon_term.m.md'
             - ndi.database.fun.ndi_document2ndi_object: 'NDI-matlab/reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
@@ -410,6 +411,7 @@ nav:
           - ndi.docs.schemastructure2docstructure: 'NDI-matlab/reference/+ndi/+docs/schemastructure2docstructure.m.md'
         - element PACKAGE:
           - ndi.element.downsample: 'NDI-matlab/reference/+ndi/+element/downsample.m.md'
+          - ndi.element.missingepochs: 'NDI-matlab/reference/+ndi/+element/missingepochs.m.md'
           - ndi.element.oneepoch: 'NDI-matlab/reference/+ndi/+element/oneepoch.m.md'
           - ndi.element.oneepoch_bkup: 'NDI-matlab/reference/+ndi/+element/oneepoch_bkup.m.md'
           - ndi.element.timeseries: 'NDI-matlab/reference/+ndi/+element/timeseries.m.md'

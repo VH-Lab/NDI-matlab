@@ -8,6 +8,7 @@
       - epochclocktimes : 'NDI-matlab/documents/epochclocktimes.md'
       - epochid : 'NDI-matlab/documents/epochid.md'
       - mock : 'NDI-matlab/documents/mock.md'
+      - oneepoch : 'NDI-matlab/documents/oneepoch.md'
       - projectvar : 'NDI-matlab/documents/projectvar.md'
       - session : 'NDI-matlab/documents/session.md'
       - subject : 'NDI-matlab/documents/subject.md'
@@ -42,7 +43,6 @@
         - filenavigator : 'NDI-matlab/documents/daq/filenavigator.md'
         - syncgraph : 'NDI-matlab/documents/daq/syncgraph.md'
         - syncrule : 'NDI-matlab/documents/daq/syncrule.md'
-        - files:
       - data:
         - binaryseries_parameters : 'NDI-matlab/documents/data/binaryseries_parameters.md'
         - fitcurve : 'NDI-matlab/documents/data/fitcurve.md'
