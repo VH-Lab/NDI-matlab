@@ -164,6 +164,7 @@
             - ndi.database.fun.find_ingested_docs: 'NDI-matlab/reference/+ndi/+database/+fun/find_ingested_docs.m.md'
             - ndi.database.fun.findallantecedents: 'NDI-matlab/reference/+ndi/+database/+fun/findallantecedents.m.md'
             - ndi.database.fun.findalldependencies: 'NDI-matlab/reference/+ndi/+database/+fun/findalldependencies.m.md'
+            - ndi.database.fun.finddocs_elementEpochType: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_elementEpochType.m.md'
             - ndi.database.fun.finddocs_missing_dependencies: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
             - ndi.database.fun.lookup_uberon_term: 'NDI-matlab/reference/+ndi/+database/+fun/lookup_uberon_term.m.md'
             - ndi.database.fun.ndi_document2ndi_object: 'NDI-matlab/reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
@@ -277,6 +278,7 @@
           - ndi.docs.schemastructure2docstructure: 'NDI-matlab/reference/+ndi/+docs/schemastructure2docstructure.m.md'
         - element PACKAGE:
           - ndi.element.downsample: 'NDI-matlab/reference/+ndi/+element/downsample.m.md'
+          - ndi.element.missingepochs: 'NDI-matlab/reference/+ndi/+element/missingepochs.m.md'
           - ndi.element.oneepoch: 'NDI-matlab/reference/+ndi/+element/oneepoch.m.md'
           - ndi.element.oneepoch_bkup: 'NDI-matlab/reference/+ndi/+element/oneepoch_bkup.m.md'
           - ndi.element.timeseries: 'NDI-matlab/reference/+ndi/+element/timeseries.m.md'
