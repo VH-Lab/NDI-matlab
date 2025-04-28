@@ -151,7 +151,7 @@ classdef ndr < ndi.daq.reader.mfdaq
             % SR is the list of sample rate from specified channels in samples/sec.
             %
             ndr_reader = ndr.reader(ndi_daq_reader_mfdaq_ndr_obj.ndr_reader_string);
-            sr = ndr_reader.samplerate(channeltype,channel,epochfiles,1);
+            sr = ndr_reader.samplerate(epochfiles,1,channeltype,channel);
         end; % samplerate
 
         function ndi_document_obj = newdocument(ndi_daqreader_obj)
