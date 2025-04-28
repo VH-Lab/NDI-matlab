@@ -77,7 +77,7 @@ classdef query < did.query
             %   q = ndi.query('','isa','ndi.document.base') % match any ndi.document.base or subclass
 
             % Argument block identical to did.query to ensure consistent interface
-            arguments (Input)
+            arguments
                 field % Type checking depends on nargin, handled by superclass
                 % Operation is required if nargin >= 2, must be member of valid list
                 op (1,:) {mustBeMember(op, {'regexp', 'exact_string', 'contains_string', ...

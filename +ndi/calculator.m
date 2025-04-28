@@ -44,13 +44,17 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             % DOCS = RUN(NDI_CALCULATOR_OBJ, DOCEXISTSACTION, PARAMETERS)
             %
-            %
             % DOCEXISTSACTION can be 'Error', 'NoAction', 'Replace', or 'ReplaceIfDifferent'
             % For calculators, 'ReplaceIfDifferent' is equivalent to 'NoAction' because
             % the input parameters define the calculator.
             %
-            % Step 1: set up input parameters; they can either be completely specified by
-            % the caller, or defaults can be used
+            % This function is primarily intended to be called by external programs and users.
+            %
+
+
+
+              % Step 1: set up input parameters; they can either be completely specified by
+              % the caller, or defaults can be used
 
             docs = {};
             docs_tocat = {};
@@ -116,6 +120,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             % Returns a list of the default search parameters for finding appropriate inputs
             % to the calculator.
+            % 
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
             %
             parameters.input_parameters = [];
             parameters.depends_on = vlt.data.emptystruct('name','value');
@@ -129,6 +137,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % Identifies all possible sets of specific input PARAMETERS that can be
             % used as inputs to the calculator. PARAMETERS is a cell array of parameter
             % structures with fields 'input_parameters' and 'depends_on'.
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
             %
             % PARAMETERS_SPECIFICATION is a structure with the following fields:
             % |----------------------------------------------------------------------|
@@ -225,6 +237,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % If it finds any, it creates a query indicating that the 'depends_on' field
             % must match the specified name and value.
             %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
             query = vlt.data.emptystruct('name','query');
             if isfield(parameters_specification.input_parameters,'depends_on')
                 for i=1:numel(parameters_specification.input_parameters.depends_on),
@@ -260,6 +276,11 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % |------------------------|----------------------------------|
             %
             % in the abstract class, this returns empty
+            %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
             myemptydoc = ndi.document(ndi_calculator_obj.doc_document_types{1});
             property_list_name = myemptydoc.document_properties.document_class.property_list_name;
             % class_name = myemptydoc.document_properties.document_class.class_name
@@ -306,6 +327,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % It is necessary to "columnize" the substructures because Matlab does not not necessarily preserve that
             % orientation when data is written to or read from JSON.
             %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
             if ~isempty(input_parameters1),
                 input_parameters1 = vlt.data.columnize_struct(input_parameters1);
             end;
@@ -328,6 +353,10 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % can be overridden if additional criteria beyond an ndi.query are needed to
             % assess if a document is an appropriate input for the calculator.
             %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
             b = 1; % base class behavior
         end; % is_valid_dependency_input()
 
@@ -338,8 +367,13 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             % Perform the calculator and return an ndi.document with the answer.
             %
+            % This function is primarily intended as an internal function but is left exposed
+            % (not private) so that it can be used for debugging. But in general, user code should
+            % not call this function.
+            %
             % In the base class, this always returns empty.
             doc = {};
+
         end; % calculate()
 
         function h=plot(ndi_calculator_obj, doc_or_parameters, varargin)
@@ -350,6 +384,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % Produce a diagnostic plot that can indicate to a reader whether or not
             % the calculator has been performed in a manner that makes sense with
             % its input data. Useful for debugging / validating a calculator.
+            %
+            % This function is intended to be called by external users and code.
             %
             % Handles to the figure, the axes, and any objects created are returned in H.
             %
@@ -414,6 +450,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % Returns the help information for the document type for an NDI
             % calculator object.
             %
+            % This function is intended to be called by external users or code.
+            %
             text = ndi.calculator.docfiletext(class(ndi_calculator_obj), 'output');
         end; %doc_about()
 
@@ -424,6 +462,8 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             %
             % Returns the help information for the document type for an NDI
             % calculator object.
+            %
+            % This function is intended to be called by external users or code.
             %
             text = ndi_calculator_obj.doc_about();
         end; % appdoc_description()
@@ -456,6 +496,7 @@ classdef calculator < ndi.app & ndi.app.appdoc & ndi.mock.ctest
             % | suppress_title (0)        | 0/1 Should we suppress the title?    |
             % |---------------------------|--------------------------------------|
             %
+
             newfigure = 0;
             holdstate = 0;
             suppress_x_label = 0;

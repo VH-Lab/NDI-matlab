@@ -53,7 +53,7 @@ Here we see that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2
 
 ## 2.5.2 All [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have the fields `document_class` and `base`.
 
-The `document_class` fields contain critical information about the class, such as the file that contains its definition, its full class name and its short class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/) documents. 
+The `document_class` fields contain critical information about the class, such as the file that contains its definition and its class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/) documents. 
 
 Let's look at the data that specifies the superclasses:
 
@@ -108,8 +108,8 @@ results back to the database. The object [ndi.query](https://vh-lab.github.io/ND
 #### Code block 2.5.3.1. Type this into Matlab.
 
 ```matlab
-% search for document classes that contain the string 'stim'
-q_stim = ndi.query('document_class.class_name','contains_string','stim',''); 
+% search for document classes of type 'stimulus_presentation'
+q_stim = ndi.query('','isa','stimulus_presentation',''); 
 stim_docs = S.database_search(q_stim)
   % returns 35 matches for me
 
