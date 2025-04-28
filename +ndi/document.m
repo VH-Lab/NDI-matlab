@@ -835,8 +835,13 @@ classdef document
                 s = vlt.data.emptystruct;
             end
 
-            % Step 1): read the information we have here
+            % Make sure DID path constants contains NDI path constants
+            if ~contains('$NDISCHEMAPATH', did.common.PathConstants.definitions.keys)
+                ndi.common.PathConstants.updateDIDConstants()
+            end
 
+            % Step 1): read the information we have here
+            
             t = did.document.readjsonfilelocation(jsonfilelocationstring);
             j = jsondecode(t);
             s = j;
@@ -854,7 +859,7 @@ classdef document
                 end
             end
 
-            % Step 2): integrate the superclasses into the document we are building
+            % Step 3): integrate the superclasses into the document we are building
 
             for i=1:numel(s_super),
                 % merge s and s_super{i}

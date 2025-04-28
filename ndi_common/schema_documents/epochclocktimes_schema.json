@@ -5,11 +5,20 @@
 	],
 	"epochclocktimes": [
 		{
-			"name": "epochclocktimes",
-			"type": "structure",
-			"default_value": [],
+			"name": "clocktype",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
 			"queryable": 1,
-			"documentation": "Structure array of clocktype, t0, t1 for each clocktype in the epoch."
+			"documentation": "The clock type(s) of the data."
+		},
+        {
+			"name": "t0_t1",
+			"type": "matrix",
+			"default_value": [0,0],
+			"parameters": [2,NaN],
+			"queryable": 1,
+			"documentation": "The beginning and end of the time series in epoch clock time units. Each column is for a different epock clock type."
 		}
 	]
 }

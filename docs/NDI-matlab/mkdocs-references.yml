@@ -123,6 +123,7 @@
           - ndi.daq.system: 'NDI-matlab/reference/+ndi/+daq/system.m.md'
           - metadatareader PACKAGE:
             - ndi.daq.metadatareader.NewStimStims: 'NDI-matlab/reference/+ndi/+daq/+metadatareader/NewStimStims.m.md'
+            - ndi.daq.metadatareader.NielsenLabStims: 'NDI-matlab/reference/+ndi/+daq/+metadatareader/NielsenLabStims.m.md'
           - reader PACKAGE:
             - ndi.daq.reader.mfdaq: 'NDI-matlab/reference/+ndi/+daq/+reader/mfdaq.m.md'
             - mfdaq PACKAGE:
@@ -163,6 +164,7 @@
             - ndi.database.fun.find_ingested_docs: 'NDI-matlab/reference/+ndi/+database/+fun/find_ingested_docs.m.md'
             - ndi.database.fun.findallantecedents: 'NDI-matlab/reference/+ndi/+database/+fun/findallantecedents.m.md'
             - ndi.database.fun.findalldependencies: 'NDI-matlab/reference/+ndi/+database/+fun/findalldependencies.m.md'
+            - ndi.database.fun.finddocs_elementEpochType: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_elementEpochType.m.md'
             - ndi.database.fun.finddocs_missing_dependencies: 'NDI-matlab/reference/+ndi/+database/+fun/finddocs_missing_dependencies.m.md'
             - ndi.database.fun.lookup_uberon_term: 'NDI-matlab/reference/+ndi/+database/+fun/lookup_uberon_term.m.md'
             - ndi.database.fun.ndi_document2ndi_object: 'NDI-matlab/reference/+ndi/+database/+fun/ndi_document2ndi_object.m.md'
@@ -276,6 +278,7 @@
           - ndi.docs.schemastructure2docstructure: 'NDI-matlab/reference/+ndi/+docs/schemastructure2docstructure.m.md'
         - element PACKAGE:
           - ndi.element.downsample: 'NDI-matlab/reference/+ndi/+element/downsample.m.md'
+          - ndi.element.missingepochs: 'NDI-matlab/reference/+ndi/+element/missingepochs.m.md'
           - ndi.element.oneepoch: 'NDI-matlab/reference/+ndi/+element/oneepoch.m.md'
           - ndi.element.oneepoch_bkup: 'NDI-matlab/reference/+ndi/+element/oneepoch_bkup.m.md'
           - ndi.element.timeseries: 'NDI-matlab/reference/+ndi/+element/timeseries.m.md'
@@ -418,6 +421,7 @@
               - mfdaq PACKAGE:
                 - stimulus PACKAGE:
                   - ndi.setup.daq.reader.mfdaq.stimulus.angelucci_visstim: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/angelucci_visstim.m.md'
+                  - ndi.setup.daq.reader.mfdaq.stimulus.nielsenvisintan: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/nielsenvisintan.m.md'
                   - ndi.setup.daq.reader.mfdaq.stimulus.vhlabvisspike2: 'NDI-matlab/reference/+ndi/+setup/+daq/+reader/+mfdaq/+stimulus/vhlabvisspike2.m.md'
             - system PACKAGE:
               - ndi.setup.daq.system.export_angeluccilab_daq_systems: 'NDI-matlab/reference/+ndi/+setup/+daq/+system/export_angeluccilab_daq_systems.m.md'
@@ -435,6 +439,8 @@
           - epoch PACKAGE:
             - ndi.setup.epoch.epochprobemap_daqsystem_vhlab: 'NDI-matlab/reference/+ndi/+setup/+epoch/epochprobemap_daqsystem_vhlab.m.md'
           - stimulus PACKAGE:
+            - kjnielsenlab PACKAGE:
+              - ndi.setup.stimulus.kjnielsenlab.extractStimulusParameters: 'NDI-matlab/reference/+ndi/+setup/+stimulus/+kjnielsenlab/extractStimulusParameters.m.md'
             - vhlab PACKAGE:
               - ndi.setup.stimulus.vhlab.add_stimulus_approach: 'NDI-matlab/reference/+ndi/+setup/+stimulus/+vhlab/add_stimulus_approach.m.md'
           - @DaqSystemConfiguration FOLDER:
@@ -537,14 +543,3 @@
             - ndi.util.openminds.find_techniques_names: 'NDI-matlab/reference/+ndi/+util/+openminds/find_techniques_names.m.md'
         - validators PACKAGE:
           - ndi.validators.mustBeEpochInput: 'NDI-matlab/reference/+ndi/+validators/mustBeEpochInput.m.md'
-      - tests FOLDER:
-        - ndi PACKAGE:
-          - unittest PACKAGE:
-            - ndi.unittest.CacheTest: 'NDI-matlab/reference/tests/+ndi/+unittest/CacheTest.m.md'
-            - ndi.unittest.NDIFileNavigatorTest: 'NDI-matlab/reference/tests/+ndi/+unittest/NDIFileNavigatorTest.m.md'
-            - cloud PACKAGE:
-              - ndi.unittest.cloud.AuthTest: 'NDI-matlab/reference/tests/+ndi/+unittest/+cloud/AuthTest.m.md'
-              - ndi.unittest.cloud.DocumentsTest: 'NDI-matlab/reference/tests/+ndi/+unittest/+cloud/DocumentsTest.m.md'
-              - ndi.unittest.cloud.FilesTest: 'NDI-matlab/reference/tests/+ndi/+unittest/+cloud/FilesTest.m.md'
-            - probe PACKAGE:
-              - ndi.unittest.probe.ProbeTest: 'NDI-matlab/reference/tests/+ndi/+unittest/+probe/ProbeTest.m.md'
