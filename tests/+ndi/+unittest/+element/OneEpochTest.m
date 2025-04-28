@@ -4,145 +4,90 @@ classdef OneEpochTest < matlab.unittest.TestCase
     %   verifying the output.
 
     properties (Constant)
-        SR = 20000; % Sampling rate for test files (Hz)
-        NumSamples = 999; % Number of samples per channel
-        NumChannels = 3; % Number of channels
-        HeaderBytes = 8;  % Standard header size for WM files
-        ByteOrder = 'ieee-le'; % Default byte order
-        DataType = 'int16'; % Data type for samples
+        NumSubjects = 2; % Number of subjects
+        NumSamples = 100; % Number of samples per channel
+        NumChannels = 3; % Number of channels per subject
+        NumEpochs = 3; % Number of epochs
+        SampleRate = 100; % Sampling rate (Hz)
     end
        
     properties (SetAccess = protected)
         TempDir char % Temporary directory for test files
+        Session % Store the NDI session
         DataFile char  % Store the full path to the data file
         ProbeFile char % Store the full path to the epoch probe map file
         Reader % The reader object instance
         HeaderInfo struct = struct() % Store the parsed header info
+        Probes % Store the NDI probes
+        OneEpoch % Store the OneEpoch elements
+        
     end
-
-    %  methods('matlab.unittest.TestCase')
 
     % Runs once before all tests in the class
     methods (TestClassSetup)
         function setupSession(testCase)
             disp('Setting up test session for ndi.element.onepoch...');
 
-            % Create a temporary directory
-            import matlab.unittest.fixtures.WorkingFolderFixture
-            tempFolderFix = testCase.applyFixture(WorkingFolderFixture);
-            disp(tempFolderFix.SetupDescription);
-            testCase.TempDir = tempFolderFix.Folder;
-
-            % Generate Filename based on white matter parameters
-            dateStringForFilename = string(datetime('now'), 'yyyy_MM_dd__HH_mm_ss');
-            durationSec = double(testCase.NumSamples) / testCase.SR;
-            durationMin = floor(durationSec / 60);
-            durationSecRem = round(rem(durationSec, 60));
-            devType = ['testdev_' num2str(testCase.NumChannels) 'ch']; % Example device type
-            baseFilename = sprintf('HSW_%s__%02dmin_%02dsec__%s_%dsps', ...
-                dateStringForFilename,durationMin, durationSecRem, ...
-                devType, testCase.SR);
-            testCase.DataFile = fullfile(testCase.TempDir, strcat(baseFilename,'.bin'));
-
-            % Initialize the reader here
-            testCase.Reader = ndr.reader('whitematter');
-            testCase.assertClass(testCase.Reader, 'ndr.reader', 'Reader initialization failed.');
-
-            % Generate Data
-            data = zeros(testCase.NumSamples, testCase.NumChannels, testCase.DataType);
-            for c = 1:testCase.NumChannels
-                start_val = (c-1) * 1000 + 1;
-                end_val = start_val + testCase.NumSamples - 1;
-                data(:, c) = cast(start_val:end_val,testCase.DataType)';
-            end
-
-            % Interleave data (MATLAB stores column-major, file needs row-major samples)
-            % Reshape to Samples x Channels, then transpose to Channels x Samples, then linearize
-            interleavedData = reshape(data', 1, []);
-
-            % Write file
-            fid = fopen(testCase.DataFile, 'w', testCase.ByteOrder);
-            testCase.addTeardown(@fclose,fid)
-            testCase.assertNotEqual(fid, -1, ['Could not open test file for writing: ' testCase.DataFile]);
-
-            % Write dummy header
-            fwrite(fid, zeros(1, testCase.HeaderBytes), 'uint8');
-
-            % Write interleaved data
-            count = fwrite(fid, interleavedData, testCase.DataType);
+            % Create temporary directory and NDI session
+            import ndi.unittest.fixtures.CreateWhiteMatterSessionFixture
+            whiteMatterSession = testCase.applyFixture(CreateWhiteMatterSessionFixture);
+            testCase.TempDir = whiteMatterSession.TempDir;
+            testCase.Session = whiteMatterSession.Session;
             
-            % Close file and get HeaderInfo
-            fclose(fid);
-            testCase.assertEqual(count, numel(interleavedData), 'Incorrect number of samples written to test file.');
-            testCase.HeaderInfo = ndr.format.whitematter.header(testCase.DataFile);
-            disp(['Created test file: ' testCase.DataFile ' with ' num2str(testCase.NumChannels) ' channels.']);
-            disp('Setup complete.');
-            
-            % Create epochprobemap files
-            for i = 1:testCase.NumChannels
-                probemap(i) = ndi.epoch.epochprobemap_daqsystem(sprintf('channel%i',i),...
-                    1,'ppg','whitematter','wmTest');
-            end
-            testCase.ProbeFile = fullfile(testCase.TempDir, strcat(baseFilename,'.epochprobemap.txt'));
-            probemap.savetofile(testCase.ProbeFile)
-            
-            % Start NDI session and add White Matter DAQ system
-            S = ndi.session.dir('temp',testCase.TempDir);
-            wm_filenav = ndi.file.navigator(S, ...
-                {'#.bin', '#.epochprobemap.txt'}, ...
-                'ndi.epoch.epochprobemap_daqsystem','#.epochprobemap.txt');
-            wm_rdr = ndi.daq.reader.mfdaq.ndr('whitematter');
-            wm_system = ndi.daq.system.mfdaq('wm_daqsystem', wm_filenav, wm_rdr);
-            if ~isempty(S.daqsystem_load)
-                S.daqsystem_clear();
-            end
-            S.daqsystem_add(wm_system);
-
-            % et = wm_filenav.epochtable()
-            % ef = et(1).underlying_epochs.underlying
-            % wm_system.getchannelsepoch(1)
-
-            S.ingest()
-            S.getprobes
-            
-        end
-
-        function setupClass(testCase)
-            
-            testCase.ndi_session = ndi.session.dir(testCase.ndi_session_path);
-            p = testCase.ndi_session.getprobes('type','ppg');
-            testCase.ndi_element_timeseries_in = p{1};
-            testCase.name_out = [testCase.ndi_element_timeseries_in.name,'_test'];
-            testCase.ref_out = testCase.ndi_element_timeseries_in.reference;
-
-            % Create a temporary working directory to run tests in
-            % testCase.applyFixture(matlab.unittest.fixtures.WorkingFolderFixture);
-            % 
-            % % Create an empty database with a starting branch
-            % testCase.db = did.implementations.sqlitedb(testCase.db_filename);
-            % 
-            % testCase.generateTree()
+            % Add subjects to NDI session
+            import ndi.unittest.fixtures.AddWhiteMatterSubjectsFixture
+            f = AddWhiteMatterSubjectsFixture(testCase.Session,testCase.NumSubjects);
+            whiteMatterSubjects = testCase.applyFixture(f);
+            testCase.Session = whiteMatterSubjects.Session;
+            disp('Class Setup complete.');
         end
     end
 
     methods (TestMethodSetup)
-        % Setup for each test
+        function addTestData(testCase)
+            % Add epochs to NDI session
+            testCase.Session = ndi.unittest.helper.addWhiteMatterEpochs(testCase.Session);
+
+            % Ingest data and get probes
+            testCase.Session.ingest();
+            testCase.Probes = testCase.Session.getprobes();
+        end
+        
+        function runOneEpoch(testCase)
+            % Run onepoch to concatenate epochs
+            for i = 1:numel(testCase.Probes)
+                testCase.OneEpoch{i} = ndi.element.oneepoch(testCase.Session,...
+                    testCase.Probes{i},...
+                    [testCase.Probes{i}.name '_oneepoch'],...
+                    testCase.Probes{i}.reference);
+            end
+        end
+    end
+
+    methods(TestMethodTeardown)
+        function removeTestData(testCase)
+            disp('need to remove epochs and clear cache')
+        end
     end
 
     methods (Test)
         % Test methods
-
-        function oneepochTest(testCase)
-            [testCase.ndi_element_timeseries_out] = ...
-                ndi.element.oneepoch(testCase.ndi_session,...
-                testCase.ndi_element_timeseries_in,...
-                testCase.name_out,testCase.ref_out);
+        function testClass(testCase)
+             for i = 1:numel(testCase.Probes)
+                 testCase.assertClass(testCase.OneEpoch{i},'ndi.element.timeseries',...
+                    'OneEpoch is not an NDI element timeseries.');
+             end
+             disp('test1')
         end
 
-        function unimplementedTest(testCase)
-            testCase.verifyFail("Unimplemented test");
+        function testClass2(testCase)
+             for i = 1:numel(testCase.Probes)
+                 testCase.assertClass(testCase.OneEpoch{i},'ndi.element.timeseries',...
+                    'OneEpoch is not an NDI element timeseries.');
+             end
+             disp('test2')
         end
-
+        
         % output time and data should have the same length
         % output epoch table should only have one epoch
         % output should work even if oneepoch already existed
