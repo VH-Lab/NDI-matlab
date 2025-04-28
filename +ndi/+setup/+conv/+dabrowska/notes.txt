@@ -1,0 +1,50 @@
+
+
+Sessions:
+
+filename2session()
+
+
+
+Need a list of variables to extract from each file
+
+
+
+
+SessionRef
+SessionPath
+
+
+
+
+
+Need the reference and path
+
+Store at strain/conditiontype/date
+
+
+
+
+
+Session Reference is whole string
+
+
+
+
+Subject:
+  
+
+
+Variable:
+
+Conditions:
+  {
+      V1==DrugProtocol
+      V2==Pre
+  }
+ Result:
+  { 
+     BathStim: "target", "bathstring"
+  }
+
+}

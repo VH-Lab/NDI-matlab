@@ -1,0 +1,75 @@
+[
+  {
+    "VariableName": "SessionRef",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(^[^/]+/[^/]+/[^/]+)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "SessionPath",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(^[^/]+/[^/]+/[^/]+)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathStimulationDrugList",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "/([^/]+)_IV_Curves",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathStimulationDrug1",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(?<=/)([^/_]+)(?:_[^/]*)?(?=_IV_Curves)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathStimulationDrug2",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(?<=/)[^/_]+_(.+?)(?=_IV_Curves)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "ProbeLocationString",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "_([^_/]+)_neurons",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsExpMatFile",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(experiment\\d+trial\\d+\\.mat$)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "SubjectIDString",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/([^/]+)/",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathConditionString",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "^(?:[^/]+/){3}((?:(?!\\.mat)[^/])+)(?:/|$)",
+    "FunctionName": ""
+  }
+]
+
