@@ -1,4 +1,4 @@
-function [S,dataFileNames,probeFileNames] = addWhiteMatterEpochs(S,options)
+function [dataFileNames,probeFileNames] = createWhiteMatterEpochs(S,options)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 % Create data for each epoch
