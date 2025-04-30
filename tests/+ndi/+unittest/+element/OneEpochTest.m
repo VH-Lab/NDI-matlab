@@ -1,114 +1,75 @@
 classdef OneEpochTest < matlab.unittest.TestCase
-    %ONEEPOCHTEST is a unittest for testing the functionality of the 
-    %   NDI.ELEMENT.ONEPOCH function by creating temporary test files and 
-    %   verifying the output.
-    %
-    %   TestClassSetup
-    %       1. Create temporary directory and NDI session
-    %       2. Add subjects to NDI session
-    %
-    %   TestMethodTeardown
-    %       1. 
-    %
-    %   Tests
-
-
-    properties (Constant)
-        NumSubjects = 2; % Number of subjects
-        NumSamples = 100; % Number of samples per channel
-        NumChannels = 3; % Number of channels per subject
-        NumEpochs = 3; % Number of epochs
-        SampleRate = 100; % Sampling rate (Hz)
-    end
+%ONEEPOCHTEST is a unittest for testing the functionality of the 
+%   NDI.ELEMENT.ONEPOCH function by creating temporary test files and 
+%   verifying the output.
+%
+%   TestClassSetup
+%       - setup - Create temporary directory and NDI session and add subjects
+%
+%   TestMethodTeardown
+%       - teardown - Remove all elements from database
+%
+%   Test
+%       1. testNewDataset - test oneepoch on new dataset
+%       2. testAdditionalData - test one epoch when additional data is 
+%           added to existing dataset
+%       3. testDuplicateAction - test one epoch when existing data set is 
+%           unchanged
+%
+%   Methods
+%       - addTestData - add epochs to the directory and getprobes
+%       - addOneEpochElements - run oneepoch
+%       - testOneEpoch - run tests comparing oneepoch to expected output
+%
+% See also: NDI.UNITTEST.FIXTURES.CREATEWHITEMATTERSESSIONFIXTURE,
+%   NDI.UNITTEST.FIXTURES.CREATEWHITEMATTERSUBJECTSFIXTURE,
+%   NDI.UNITTEST.FIXTURES.CREATEWHITEMATTEREPOCHSFIXTURE
        
     properties (SetAccess = protected)
         TempDir char % Temporary directory for test files
         Session % Store the NDI session
-        DataFile char  % Store the full path to the data file
-        ProbeFile char % Store the full path to the epoch probe map file
-        Reader % The reader object instance
-        HeaderInfo struct = struct() % Store the parsed header info
-        Probes % Store the NDI probes
-        OneEpoch % Store the OneEpoch elements
-        
+        Probes cell % Cell array that stores the NDI probes
+        OneEpoch cell % Cell array that stores the OneEpoch elements
+    end
+
+    properties (ClassSetupParameter)
+        NumSubjects = {1,2} % Number of subjects
+    end
+
+    properties (TestParameter)
+        NumEpochs = {1,2} % Number of epochs
     end
 
     % Runs once before all tests in the class
     methods (TestClassSetup)
-        function setupSession(testCase)
-            disp('Setting up test session for ndi.element.onepoch...');
+        function setupSession(testCase,NumSubjects)
 
             % Create temporary directory and NDI session
             import ndi.unittest.fixtures.CreateWhiteMatterSessionFixture
             whiteMatterSession = testCase.applyFixture(CreateWhiteMatterSessionFixture);
             testCase.TempDir = whiteMatterSession.TempDir;
             testCase.Session = whiteMatterSession.Session;
+            disp(whiteMatterSession.SetupDescription)
             
             % Add subjects to NDI session
-            import ndi.unittest.fixtures.AddWhiteMatterSubjectsFixture
-            f = AddWhiteMatterSubjectsFixture(testCase.Session,testCase.NumSubjects);
-            whiteMatterSubjects = testCase.applyFixture(f);
+            import ndi.unittest.fixtures.CreateWhiteMatterSubjectsFixture
+            whiteMatterSubjects = CreateWhiteMatterSubjectsFixture(testCase.Session,...
+                'NumSubjects',NumSubjects);
+            testCase.applyFixture(whiteMatterSubjects);
             testCase.Session = whiteMatterSubjects.Session;
+            disp(whiteMatterSubjects.SetupDescription)
             
             % Ingest
             testCase.Session.ingest();
-            disp('Class Setup complete.');
         end
     end
 
     methods(TestMethodTeardown)
         function teardown(testCase)
-            testCase.clearAllElements(testCase);
-            testCase.clearTestData(testCase);
-        end
-    end
-
-    methods (Test)
-        % Test methods
-        function testNewDataset(testCase)
-            testCase.addTestData(testCase);
-            testCase.addOneEpochElements(testCase);
-            testCase.testOneEpoch(testCase);
-        end
-
-        function testAdditionalData(testCase)
-            testCase.addTestData(testCase);
-            testCase.addOneEpochElements(testCase);
-            for i = 1:numel(testCase.Probes)
-                testCase.assertClass(testCase.OneEpoch{i},'ndi.element.timeseries',...
-                    'OneEpoch is not an NDI element timeseries.');
-            end
-            testCase.addTestData(testCase);
-            testCase.addOneEpochElements(testCase);
-            testCase.testOneEpoch(testCase);
-        end
-
-        function testDuplicateAction(testCase)
-            testCase.addTestData(testCase);
-            testCase.addOneEpochElements(testCase);
-            testCase.addOneEpochElements(testCase);
-            testCase.testOneEpoch(testCase);
-        end
-    end
-
-    methods (Static)
-        function addTestData(testCase)
-            % Add epochs to NDI session
-            ndi.unittest.helper.createWhiteMatterEpochs(testCase.Session);
-
-            % Get probes
-            testCase.Probes = testCase.Session.getprobes();
-        end
-
-        function clearTestData(testCase)
-            % Remove all epochs from temporary directory
-            filenames = dir(testCase.TempDir);
-            for i = find(~[filenames.isdir])
-                delete(filenames(i).name);
-            end
-        end
-
-        function clearAllElements(testCase)
+            import matlab.unittest.fixtures.SuppressedWarningsFixture
+            testCase.applyFixture( ...
+                SuppressedWarningsFixture('NDISESSION:deletingDependents'))
+            
             % Remove all elements from database
             for i = 1:numel(testCase.Probes)
                 testCase.Session.database_rm(testCase.Probes{i}.id);
@@ -116,7 +77,66 @@ classdef OneEpochTest < matlab.unittest.TestCase
             testCase.Probes = testCase.Session.getprobes;
             testCase.Session.cache.clear;
         end
+    end
 
+    methods (Test)
+        % Test methods
+        function testNewDataset(testCase,NumEpochs)
+            % Add test data to temp dir
+            testCase.addTestData(testCase,NumEpochs);
+
+            % Add oneepoch elements to database
+            testCase.addOneEpochElements(testCase);
+
+            % Test output
+            disp('   Checking oneepoch for test data.')
+            testCase.testOneEpoch(testCase);
+        end
+
+        function testAdditionalData(testCase,NumEpochs)
+            % Add test data to temp dir
+            testCase.addTestData(testCase,NumEpochs);
+
+            % Add oneepoch elements to database
+            testCase.addOneEpochElements(testCase);
+
+            % Add more test data (simulate new acquistion)
+            testCase.addTestData(testCase);
+
+            % Add new oneepoch elements to database
+            testCase.addOneEpochElements(testCase);
+
+            % Test output
+            disp('   Checking oneepoch for additional data.')
+            testCase.testOneEpoch(testCase);
+        end
+
+        function testDuplicateAction(testCase,NumEpochs)
+            % Add test data to temp dir
+            testCase.addTestData(testCase,NumEpochs);
+
+            % Add new oneepoch elements to database
+            testCase.addOneEpochElements(testCase);
+            
+            % Try adding running oneepoch again
+            testCase.addOneEpochElements(testCase);
+
+            % Test output
+            disp('   Checking oneepoch run again.')
+            testCase.testOneEpoch(testCase);
+        end
+    end
+
+    methods (Static)
+        function addTestData(testCase,NumEpochs)
+            % Add epochs to NDI session
+            import ndi.unittest.fixtures.CreateWhiteMatterEpochsFixture
+            whiteMatterEpochs = CreateWhiteMatterEpochsFixture(testCase.Session,...
+                'NumEpochs',NumEpochs);
+            testCase.applyFixture(whiteMatterEpochs);
+            testCase.Probes = testCase.Session.getprobes();
+            disp(whiteMatterEpochs.SetupDescription)
+        end
         
         function addOneEpochElements(testCase)
             % Run onepoch to concatenate epochs
@@ -126,16 +146,6 @@ classdef OneEpochTest < matlab.unittest.TestCase
                     [testCase.Probes{i}.name '_oneepoch'],...
                     testCase.Probes{i}.reference);
             end
-        end
-        
-        function removeOneEpochElements(testCase)
-            for i = 1:numel(testCase.Probes)
-                e = testCase.Session.getelements('element.name',...
-                    [testCase.Probes{i}.name '_oneepoch'],...
-                    'element.reference',testCase.Probes{i}.reference);
-                testCase.Session.database_rm(e{1}.id);
-            end
-            testCase.OneEpoch = [];
         end
 
         function testOneEpoch(testCase)

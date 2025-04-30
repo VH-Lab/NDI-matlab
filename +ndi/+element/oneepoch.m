@@ -121,8 +121,6 @@ if element_exists
     D.database_rm(epochdoc);
 end
 
-class(data)
-
 [elem_out,epochdoc] = elem_out.addepoch(epoch_id,...
     strjoin(ecs,','), t0_t1, time, data, strjoin(epoch_ids,','));
 D.database_add(epochdoc);

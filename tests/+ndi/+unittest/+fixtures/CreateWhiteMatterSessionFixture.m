@@ -1,4 +1,6 @@
 classdef CreateWhiteMatterSessionFixture < matlab.unittest.fixtures.Fixture
+% Create an NDI session using the whitematter reader in a temporary
+% directory
 
     properties (SetAccess = private)
         TempDir % Temporary directory
@@ -11,7 +13,6 @@ classdef CreateWhiteMatterSessionFixture < matlab.unittest.fixtures.Fixture
             % Create a temporary directory
             import matlab.unittest.fixtures.WorkingFolderFixture
             tempFolderFix = fixture.applyFixture(WorkingFolderFixture('WithSuffix','_WhiteMatter'));
-            disp(tempFolderFix.SetupDescription);
             fixture.TempDir = tempFolderFix.Folder;
 
             % Start NDI session
@@ -29,10 +30,17 @@ classdef CreateWhiteMatterSessionFixture < matlab.unittest.fixtures.Fixture
             S.daqsystem_add(wm_system);
 
             fixture.Session = S;
+
+            fixture.SetupDescription = tempFolderFix.SetupDescription;
+            fixture.TeardownDescription = ['   Cleared white matter session from database.',...
+                newline,'   Deleted the temporary folder "',fixture.TempDir,'".'];
         end
 
         function teardown(fixture)
+            
+            % Clear session from database
             fixture.Session.database_clear('yes');
+            disp(fixture.TeardownDescription)
         end
     end
 end

@@ -1,4 +1,5 @@
-classdef AddWhiteMatterSubjectsFixture < matlab.unittest.fixtures.Fixture
+classdef CreateWhiteMatterSubjectsFixture < matlab.unittest.fixtures.Fixture
+% Add white matter subjects to an NDI session
 
     properties (SetAccess = private)
         Session % Temporary NDI session
@@ -7,9 +8,14 @@ classdef AddWhiteMatterSubjectsFixture < matlab.unittest.fixtures.Fixture
     end
 
     methods
-        function fixture = AddWhiteMatterSubjectsFixture(Session,NumSubjects)
+        function fixture = CreateWhiteMatterSubjectsFixture(Session,options)
+            arguments
+                Session {mustBeA(Session,{'ndi.session', 'ndi.dataset'})}
+                options.NumSubjects (1,1) double {mustBePositive} = 2;
+            end
+
             fixture.Session = Session;
-            fixture.NumSubjects = NumSubjects;
+            fixture.NumSubjects = options.NumSubjects;
         end
 
         function setup(fixture)
@@ -22,6 +28,10 @@ classdef AddWhiteMatterSubjectsFixture < matlab.unittest.fixtures.Fixture
                 mysubdoc = mysub.newdocument + fixture.Session.newdocument();
                 fixture.Session.database_add(mysubdoc);
             end
+
+            fixture.SetupDescription = sprintf('   Added %i subject(s) to the white matter session.',...
+                fixture.NumSubjects);
+            fixture.TeardownDescription = sprintf('   Deleted subject(s) from the white matter session');
         end
 
         function teardown(fixture)
