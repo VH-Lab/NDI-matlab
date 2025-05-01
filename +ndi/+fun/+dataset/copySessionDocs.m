@@ -8,18 +8,22 @@ function modified_docs = copySessionDocs(D, target)
 %   1. Creates two subdirectories within TARGET: 'documents' and 'files'.
 %   2. Searches D for all documents that are of class 'base' (ndi.document objects).
 %   3. For each found document:
-%      a. Retrieves the list of associated binary files.
-%      b. Copies each binary file to the 'TARGET/files' directory.
-%      c. Creates a modified copy of the document in memory where the file references
-%         point to the newly copied files in 'TARGET/files'. The original documents
-%         within D remain unchanged.
-%   4. Saves all the modified document objects into a single .mat file named
+%      a. Retrieves the list of associated binary files (by their logical names).
+%      b. For each file, constructs a unique filename based on the document ID
+%         and the logical filename (e.g., 'docID__logicalName').
+%      c. Copies the binary file content from the source database to the
+%         'TARGET/files' directory using the unique filename. If any copy fails,
+%         an error is thrown and the function terminates.
+%      d. Creates a modified copy of the document in memory. The file references
+%         in this copy point to the newly copied files (with unique names)
+%         in 'TARGET/files', but retain their original logical names internally.
+%      e. If any step in processing a document fails, an error is thrown.
+%   4. Saves all the successfully modified document objects into a single .mat file named
 %      'copied_documents.mat' within the 'TARGET/documents' directory.
 %   5. Returns a cell array MODIFIED_DOCS containing all the modified document objects.
 %
 %   This function allows creating a self-contained snapshot of the documents and
-%   their associated files, which can be useful for archiving, sharing, or
-%   reconstructing parts of an NDI session/dataset without altering the original.
+%   their associated files, ensuring file uniqueness in the target directory.
 %   It is intended to be placed in the +ndi/+fun/+dataset namespace.
 %
 %   Inputs:
@@ -33,11 +37,15 @@ function modified_docs = copySessionDocs(D, target)
 %       % Assuming 'mySession' is an existing ndi.session object
 %       % and '/path/to/backup' is the desired backup location
 %       target_folder = '/path/to/backup/session_copy';
-%       copied_docs = ndi.fun.dataset.copySessionDocs(mySession, target_folder); % Example call from namespace
-%       disp(['Documents and files copied to ' target_folder]);
-%       % Now, '/path/to/backup/session_copy/documents/copied_documents.mat'
+%       try
+%           copied_docs = ndi.fun.dataset.copySessionDocs(mySession, target_folder); % Example call from namespace
+%           disp(['Documents and files copied to ' target_folder]);
+%       catch ME
+%           disp(['ERROR during copy process: ' ME.identifier ' - ' ME.message]);
+%       end
+%       % If successful, '/path/to/backup/session_copy/documents/copied_documents.mat'
 %       % contains the document metadata, and '/path/to/backup/session_copy/files/'
-%       % contains copies of the associated binary files.
+%       % contains copies of the associated binary files (with unique names).
 %
 
 % --- Input Validation ---
@@ -52,7 +60,6 @@ target = char(target);
 disp(['Creating target directories in ' target '...']);
 doc_dir = fullfile(target, 'documents');
 files_dir = fullfile(target, 'files');
-
 % Use isfolder instead of exist(...,'dir')
 if ~isfolder(target)
     mkdir(target);
@@ -68,8 +75,8 @@ disp('Directories created.');
 % --- Step 3: Search for base documents ---
 disp('Searching for all base documents...');
 % Search for all documents that are derived from 'base'
-q = ndi.query('','isa','base'); % [cite: 37, 57]
-docs_original = D.database_search(q); % [cite: 37]
+q = ndi.query('','isa','base'); %
+docs_original = D.database_search(q); %
 disp(['Found ' num2str(numel(docs_original)) ' documents.']);
 
 if isempty(docs_original)
@@ -84,63 +91,82 @@ modified_docs = {}; % Initialize cell array for modified documents
 
 for i = 1:numel(docs_original)
     doc_orig = docs_original{i};
-    disp(['Processing document ' num2str(i) '/' num2str(numel(docs_original)) ': ID ' doc_orig.id()]); % [cite: 615, 618]
-
+    current_doc_id = doc_orig.id(); % Get ID once for messages
+    disp(['Processing document ' num2str(i) '/' num2str(numel(docs_original)) ': ID ' current_doc_id]); %
+    
     try
         % Create a copy to modify, leaving the original untouched
         doc_copy = ndi.document(doc_orig.document_properties); % Create a copy
-
-        file_list = doc_copy.current_file_list(); % [cite: 612, 653] Get list of files for this doc
+        
+        file_list = doc_copy.current_file_list(); % Get list of files for this doc
         new_file_info = {}; % To store parameters for add_file
-
+        
         if ~isempty(file_list)
             disp(['  Found ' num2str(numel(file_list)) ' associated files. Copying...']);
-
+            
             for k = 1:numel(file_list)
-                fname = file_list{k};
-                disp(['    Copying file: ' fname]);
+                fname = file_list{k}; % This is the logical name
+                
+                % ** MODIFICATION START: Create unique filename **
+                % Sanitize the original filename part for use in the new name
+                safe_fname_part = matlab.lang.makeValidName(fname);
+                % Create a unique name using doc ID and sanitized original name
+                unique_dest_fname = [current_doc_id '__' safe_fname_part];
+                disp(['    Logical name: ' fname ' -> Unique physical name: ' unique_dest_fname]);
+                % ** MODIFICATION END **
 
                 % Find original file path using database_existbinarydoc
-                [tf, src_path] = D.database_existbinarydoc(doc_copy.id(), fname); % [cite: 442, 458, 480, 521]
+                [tf, src_path] = D.database_existbinarydoc(current_doc_id, fname); %
 
-                % Use isfile instead of exist(...,'file')
                 if tf && isfile(src_path)
-                    dest_path = fullfile(files_dir, fname);
+                    % ** MODIFICATION: Use unique filename for destination **
+                    dest_path = fullfile(files_dir, unique_dest_fname);
                     try
                         copyfile(src_path, dest_path);
                         % Prepare info for re-adding the file reference
-                        % Use minimal info, assuming defaults for ingest/delete
-                         new_file_info{end+1} = {fname, dest_path, 'ingest', 0, 'delete_original', 0}; % [cite: 632]
+                        % Use the ORIGINAL logical name 'fname', but the NEW path 'dest_path'
+                        % Set ingest=0, delete_original=0 because the file now physically exists at dest_path
+                         new_file_info{end+1} = {fname, dest_path, 'ingest', 0, 'delete_original', 0}; %
                     catch copy_err
-                        warning(['Could not copy file ' src_path ' to ' dest_path '. Error: ' copy_err.message]);
-                        % Skip adding this file reference back if copy failed
+                        % Throw error if copy fails
+                        error('ndi:copySessionDocs:FileCopyFailed', ...
+                              'Could not copy source file %s for logical name %s (document %s) to %s. Original error: %s', ...
+                              src_path, fname, current_doc_id, dest_path, copy_err.message);
                     end
                 else
-                    warning(['Could not find source path for file ' fname ' associated with document ' doc_copy.id() '. Skipping copy.']);
+                     % Throw error if source file is missing
+                    error('ndi:copySessionDocs:SourceFileNotFound', ...
+                          'Could not find source path or file for logical name %s associated with document %s.', ...
+                           fname, current_doc_id);
                 end
             end % loop over files
         else
             disp('  No associated files found for this document.');
         end
-
+        
         % Reset file info on the copy and add back the new references
-        doc_copy = doc_copy.reset_file_info(); % [cite: 622, 694]
+        doc_copy = doc_copy.reset_file_info(); %
         for k=1:numel(new_file_info)
-            doc_copy = doc_copy.add_file(new_file_info{k}{:}); % [cite: 611, 632]
+            % new_file_info{k}{1} is the original logical name
+            % new_file_info{k}{2} is the new physical path (with unique filename)
+            doc_copy = doc_copy.add_file(new_file_info{k}{:}); %
         end
-
+        
         modified_docs{end+1} = doc_copy; % Add the modified document to our list
-
+        
     catch doc_process_err
-        warning(['Error processing document ID ' doc_orig.id() ': ' doc_process_err.message '. Skipping this document.']);
-        continue; % Skip to the next document
+        % Any error during document processing is now fatal
+        error('ndi:copySessionDocs:DocumentProcessingFailed', ...
+              'Error processing document ID %s: %s', ...
+              current_doc_id, doc_process_err.message);
     end
 end
 disp('Finished processing documents.');
 
 % --- Step 6: Save modified documents to .mat file ---
+% This part is reached only if all documents and files were processed without error
 mat_file_path = fullfile(doc_dir, 'copied_documents.mat');
-disp(['Saving modified documents to ' mat_file_path '...']);
+disp(['Saving successfully processed documents to ' mat_file_path '...']);
 try
     save(mat_file_path, 'modified_docs', '-v7.3'); % Use v7.3 for potentially large files
     disp('Saving complete.');
@@ -148,7 +174,6 @@ catch save_err
     error(['Could not save the modified documents to ' mat_file_path '. Error: ' save_err.message]);
 end
 
-disp('NDI document copy process finished.');
+disp('NDI document copy process finished successfully.');
 
 end % main function
-
