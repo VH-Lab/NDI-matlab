@@ -1,5 +1,21 @@
 
 
+
+Current strategy:
+
+Use Nansen-inspired variables to project each file to a table row that includes many extracted variables
+
+Build sessions and daq systems and epochprobemap.txt files with these parameters
+
+
+
+
+
+
+
+
+
+
 Sessions:
 
 filename2session()

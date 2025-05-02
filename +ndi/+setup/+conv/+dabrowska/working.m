@@ -11,7 +11,7 @@ filefileList = filefileList(incl);
 incl = []; for i=1:numel(filefileList), if ~startsWith(filefileList{i},'._'), incl(end+1) = i; end; end
 filefileList = filefileList(incl);
 
-t = ndi.setup.conv.datalocation.processFileManifest(filefileList,j,'relativePathPrefix','dabrowska/');
+t = ndi.setup.conv.datalocation.processFileManifest(filefileList,j,'relativePathPrefix','Dabrowska/');
 
 
   % hangers on
@@ -24,3 +24,5 @@ L1 = (cellfun(@(x) ~isequaln(x,NaN), t.IsExpMatFile)) & cellfun(@(x) isequaln(x,
  % probes: dabrowska_current: patch-I
  %    dabrowska_voltage: patch-V
  %    dabrowska_stimulator: stimulator
+
+bath_background
