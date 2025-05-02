@@ -185,8 +185,8 @@ function variableTable = processFileManifest(fileManifest, varStructArray, optio
                                          % fprintf('--- END DETAILED DEBUG ---\n');
                                          % --- End Optional Debug ---
 
-                                        warning('processFileManifest:RegexNoTokens', ...
-                                                'Regex matched for variable "%s", but no captured tokens found or format unexpected. Assigning NaN.', varDef.VariableName);
+                                        %warning('processFileManifest:RegexNoTokens', ...
+                                        %        'Regex matched for variable "%s", but no captured tokens found or format unexpected. Assigning NaN.', varDef.VariableName);
                                         extractedValue = NaN;
                                     end
                                 catch ME_Token
