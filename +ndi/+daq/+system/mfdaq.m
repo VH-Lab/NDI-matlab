@@ -312,7 +312,6 @@ classdef mfdaq < ndi.daq.system
                     channeltype, channel, ndi_daqsystem_mfdaq_obj.session());
             end;
         end;
-
     end; % methods
 
     methods (Static), % functions that don't need the object

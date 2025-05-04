@@ -9,8 +9,16 @@
 		"https://github.com/VH-lab/DID-matlab",
 		"https://github.com/VH-lab/NDR-matlab",
 		"https://github.com/ehennestad/Catalog",
+		"https://github.com/ehennestad/StructEditor",
+		"https://github.com/ehennestad/WidgetTable",
+		"https://github.com/ehennestad/openMINDS-MATLAB-GUI",
 		"https://github.com/a-ma72/mksqlite",
 		"https://github.com/Waltham-Data-Science/NDI-compress-matlabp",
-		"fex://c519502d-d45f-4dbd-8564-df06ab49717f"
+		"https://github.com/VervaekeLab/NANSEN",
+		"fex://7504e82c-a4fa-4757-8c5c-ad77094a8acd",
+		"fex://3171ed18-2788-4e49-a0cf-785bbd4d0a13",
+		"fex://d00d9727-fdd6-417d-9ee8-99c97b77eef5",
+		"fex://e5a9c7a3-4a80-11e4-9553-005056977bd0",
+		"fex://78895307-cc36-4970-8b66-0697da8f9352"
         ]
 }
