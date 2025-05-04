@@ -341,6 +341,19 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             ndi_session_obj.database.clear(areyousure);
         end; % database_clear()
 
+        function database_erase(ndi_session_obj, areyousure)
+            % DATABASE_ERASE - deletes the entire database folder
+            %
+            % DATABASE_ERASE(NDI_SESSION_OBJ, AREYOUSURE)
+            %
+            %   Deletes the session in the database.
+            %
+            % Use with care. If AREYOUSURE is 'yes' then the
+            % function will proceed. Otherwise, it will not.
+            %
+            ndi_session_obj.database.erase(areyousure);
+        end; % database_erase()
+
         function [b,errmsg] = validate_documents(ndi_session_obj, document)
             % VALIDATE_DOCUMENTS - validate whether documents belong to a session
             %

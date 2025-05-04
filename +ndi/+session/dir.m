@@ -183,4 +183,17 @@ classdef dir < ndi.session
         end; % creator_args()
     end; % methods
 
+    methods (Static)
+        function exists = exists(path)
+            exists = false;
+            files = dir(path);
+            if any(contains({files(:).name},'.ndi'))
+                files = dir(fullfile(path,'.ndi'));
+                if any(contains({files(:).name},'reference.txt'))
+                    exists = true;
+                end
+            end
+        end
+    end
+
 end % classdef

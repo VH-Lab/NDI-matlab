@@ -72,7 +72,7 @@ classdef navigator < ndi.ido & ndi.epoch.epochset.param & ndi.documentservice & 
 
             if ~isempty(session_),
                 if ~isa(session_,'ndi.session'),
-                    error(['experiement must be an ndi.session object']);
+                    error(['experiment must be an ndi.session object']);
                 else,
                     obj.session= session_;
                 end;
