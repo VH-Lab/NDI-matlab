@@ -230,6 +230,34 @@
       "should_succeed": true,
       "expected_id": "9606",
       "expected_name": "Homo sapiens"
-    }      
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:8",
+      "should_succeed": true,
+      "expected_id": "8",
+      "expected_name": "Experienced cricket hunting"
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:postnatal day",
+      "should_succeed": true,
+      "expected_id": "11",
+      "expected_name": "Postnatal day"
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:9999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "NDIC",
+      "lookup_string": "NDIC:No such purpose here",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    }
   ]
 }
