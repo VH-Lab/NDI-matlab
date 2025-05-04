@@ -258,6 +258,27 @@
       "should_succeed": false,
       "expected_id": "",
       "expected_name": ""
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:SCR_006472",
+      "should_succeed": true,
+      "expected_id": "RRID:SCR_006472",
+      "expected_name": "NCBI"
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:RGD_70508",
+      "should_succeed": true,
+      "expected_id": "RRID:RGD_70508",
+      "expected_name": "SD"
+    },
+    {
+      "ontology": "RRID",
+      "lookup_string": "RRID:NoSuchRID_000",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
     }
   ]
 }

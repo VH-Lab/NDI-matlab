@@ -39,7 +39,11 @@
     {
       "prefix": "CL",
       "ontology_name": "CL"
-    }
+    },
+    {
+       "prefix": "RRID",
+       "ontology_name": "RRID"
+    }  
   ],
   "Ontologies": [
     {
@@ -81,6 +85,11 @@
       "name": "CL",
       "homepage": "http://obofoundry.org/ontology/cl.html",
       "api_url": "https://www.ebi.ac.uk/ols/api/ontologies/cl"
+    },
+    {
+     "name": "RRID",
+     "homepage": "https://scicrunch.org/resources",
+     "api_url": "https://scicrunch.org/api/1/resolver/"
     }
   ]
 }
