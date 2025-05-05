@@ -14,29 +14,13 @@ jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrows
 j = jsondecode(fileread(jsonPath));
 variableTable = ndi.setup.conv.datalocation.processFileManifest(fileList,...
     j,'relativePathPrefix','Dabrowska/');
-variableTable = variableTable(1:100,:);
+% variableTable = variableTable(100:200,:);
 
 %% Create NDI sessions
-S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable);
+S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable,...
+    'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
 [sessionArray,variableTable.sessionInd] = S.sessionIndices;
 
 %% Add DAQ system
-navigator = ndi.file.navigator(sessionArray{1}, ...
-    {'#.mat', '#.epochprobemap.txt'}, ...
-    'ndi.epoch.epochprobemap_daqsystem','#.epochprobemap.txt');
-reader = ndi.daq.reader.mfdaq.ndr('dabrowska');
-daqName = 'dabrowska_mat';
-S.addDaqSystem(daqName,reader,navigator);
-
-%% hangers on
-
-L1 = (cellfun(@(x) ~isequaln(x,NaN), t.IsExpMatFile)) & cellfun(@(x) isequaln(x,NaN), t.BathConditionString);
-
-
- % need to add table constant elements, join 
- % epochprobmap_daqsystem: dabrowska_intracell
- % probes: dabrowska_current: patch-I
- %    dabrowska_voltage: patch-V
- %    dabrowska_stimulator: stimulator
-
-bath_background
+labName = 'dabrowskalab';
+S.addDaqSystem(labName,'Overwrite',true)

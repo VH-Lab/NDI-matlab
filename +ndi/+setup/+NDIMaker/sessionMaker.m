@@ -1,214 +1,201 @@
 % Folder: +ndi/+setup/+NDIMaker/
 classdef sessionMaker < handle % Using handle class for reference behavior (objects are passed by reference)
-    % SESSIONMAKER Class to manage session creation setup based on file manifests.
-    % Facilitates extracting metadata from file paths and organizing information
-    % needed to potentially create NDI session objects.
+%SESSIONMAKER Manages session creation setup based on a variable table.
+%   The SESSIONMAKER class facilitates the setup and creation of
+%   ndi.session.dir objects. It identifies unique sessions, handles 
+%   existing session directories (with an option to overwrite),
+%   and provides mechanisms to associate DAQ systems with these sessions.
 
     properties (Access = public)
-        path
-        variableTable               % Table holding SessionRef and SessionPath variables to define each session
-        sessions                    % Cell array intended to hold ndi.session.dir objects created later. Initialized empty.
-        tableInd                    % Array of indices relating the sessions to rows in the variableTable
-        daqSystems                  % Struct array describing DAQ systems. Expected fields: 'daqReader', 'fileNavigator'. Must be set externally.
+        path (1,:) char         % Base directory path where session folders are located or will be created.
+        variableTable table     % Input table containing session definition information. Must contain 'SessionRef' and 'SessionPath' variables.
+        sessions cell           % Cell array holding the created/loaded ndi.session.dir objects.
+        tableInd (:,1) double   % Array mapping rows of the input 'variableTable' to session indices. Invalid 'variableTable' rows will have NaN entries.
+        daqSystems struct       % Struct array holding DAQ system information for each session. Contains fields 'filenavigator' and 'daqreader'.
     end
 
     methods
         function obj = sessionMaker(path,variableTable,options)
-            % SESSIONMAKER Constructor for the sessionMaker class
-            % Initializes properties to default empty values suitable for 
-            % their types and creates sessions.
+            %SESSIONMAKER Constructor for the sessionMaker class.
+            %   OBJ = SESSIONMAKER(PATH, VARIABLETABLE) creates a sessionMaker object.
+            %   It identifies unique sessions based on the 'SessionRef' column in
+            %   VARIABLETABLE, validates corresponding 'SessionPath' entries, and
+            %   either creates new NDI session directories or loads existing ones.
+            %
+            %   OBJ = SESSIONMAKER(..., 'Name', Value) allows specifying additional options:
+            %
+            %   Input Arguments:
+            %       path            - The absolute path to the base directory containing
+            %                           session folders. Must be an existing folder.
+            %       variableTable   - A MATLAB table defining the sessions. Must contain
+            %                           'SessionRef' and 'SessionPath' columns. Other 
+            %                           columns can be included and potentially used for 
+            %                           validation via the 'NonNaNVariableNames' option.
+            %
+            %   Name-Value Arguments:
+            %       Overwrite        - If false, existing sessions are loaded without 
+            %                            modification. If true, existing NDI session 
+            %                           databases found at the specified paths will be 
+            %                           erased and recreated. Default: false.
+            %       NonNaNVariableNames - Additional variable names in 'variableTable'. 
+            %                           Values in these columns must not be NaN for a 
+            %                           valid session to be created. By default, only 
+            %                           'SessionRef' is checked for NaNs. Default: {}.
+            %
+            %   Output Arguments:
+            %       obj (sessionMaker)  - The constructed sessionMaker object.
+
+            % Input argument validation using the arguments block
             arguments
                 path (1,:) char {mustBeFolder}
                 variableTable table
-                options.Overwrite logical = false;
+                options.Overwrite (1,1) logical = false;
+                options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {};
             end
 
+            % Assign properties from inputs
             obj.path = path;
             obj.variableTable = variableTable;
-            
-            % Find which rows of the variable table are valid for sessions
-            % (i.e. valid SessionRef with a .mat file)
-            nanInd = cellfun(@(sr) any(isnan(sr)), variableTable.SessionRef);
-            matInd = cellfun(@(sr) ~any(isnan(sr)), variableTable.IsExpMatFile);
-            validInd = find(~nanInd & matInd);
-            [sessionRefs,sessionInd,tableInd] = unique(variableTable.SessionRef(validInd));
-            sessionInd = validInd(sessionInd);
-            obj.tableInd = nan(height(variableTable),1);
-            obj.tableInd(validInd) = tableInd;
 
-            % Create sessions (if not already created)
-            obj.sessions = cell(size(sessionRefs));
-            for i = 1:numel(sessionRefs)
-                sessionPath = fullfile(path,variableTable.SessionPath{sessionInd(i)});
-                if ndi.session.dir.exists(sessionPath)
-                    obj.sessions{i} = ndi.session.dir(sessionPath);
-                    if options.Overwrite
-                        % Delete existing session and create new one
-                        obj.sessions{i}.database_erase;
-                        obj.sessions{i} = ndi.session.dir(sessionRefs{i},sessionPath);
-                    end
-                else
-                    obj.sessions{i} = ndi.session.dir(sessionRefs{i},sessionPath);
-                end
-                mksqlite('close')
+            % Ensure NonNaNVariableNames is a cell array for consistent processing
+            if ~iscell(options.NonNaNVariableNames)
+                options.NonNaNVariableNames = {options.NonNaNVariableNames};
             end
 
-            % Intialize daq system variable
-            obj.daqSystems = struct('daqReader', {}, 'fileNavigator', {});
-        end
+            % --- Identify Valid Session Rows ---
+            % Start by checking 'SessionRef' for NaN values.
+            nanInd = cellfun(@(sr) ~any(isnan(sr)), variableTable.SessionRef);
+
+            % Apply additional NaN checks based on NonNaNVariableNames option
+            for i = 1:numel(options.NonNaNVariableNames)
+                 % Check if the specified column exists
+                 if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
+                     warning('sessionMaker:NonNaNVariableNames', 'Variable "%s" provided in NonNaNVariableNames not found in variableTable. Skipping check.', options.NonNaNVariableNames{i});
+                     continue; % Skip to the next variable name if the current one doesn't exist
+                 end
+                % Update nanInd: a row is valid only if it passes the previous checks AND the current variable check
+                nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)), ...
+                    variableTable.(options.NonNaNVariableNames{i}));
+            end
+            validInd = find(nanInd); % Get linear indices of valid rows
+
+            % --- Determine Unique Sessions ---
+            % Extract SessionRef values from the valid rows
+            validSessionRefs = variableTable.SessionRef(validInd);
+            % Find unique session references among the valid ones
+            [sessionRefs,sessionInd,tableInd] = unique(validSessionRefs,'stable'); % 'stable' preserves order of first appearance
+            % sessionInd now points into 'validInd'. We need the original row index from 'variableTable'.
+            firstOccurrenceInd = validInd(sessionInd); % Indices in the original variableTable for the first occurrence of each unique session
+
+            % --- Populate tableInd Property ---
+            % Initialize tableInd with NaNs for all rows
+            obj.tableInd = nan(height(variableTable),1);
+            % For the valid rows, assign the index from tableInd, which maps to the unique session index
+            obj.tableInd(validInd) = tableInd;
+
+            % --- Create or Load NDI Session Objects ---
+            obj.sessions = cell(size(sessionRefs)); % Preallocate cell array for ndi.session.dir objects
+            for i = 1:numel(sessionRefs) % Iterate through unique sessions
+                % Get the full path for the current session using the path from the *first occurrence* row
+                sessionPath = fullfile(path, variableTable.SessionPath{firstOccurrenceInd(i)});
+                sessionRef = sessionRefs{i}; % The unique session reference identifier
+
+                % Check if the session directory and NDI database exist
+                if ndi.session.dir.exists(sessionPath)
+                    % Session exists: Load it
+                    obj.sessions{i} = ndi.session.dir(sessionPath);
+                    % Check if Overwrite option is enabled
+                    if options.Overwrite
+                        % Delete the existing session database
+                        ndi.session.dir.database_erase(obj.sessions{i}, 'yes');
+                        % Create a new session object with the reference and path
+                        obj.sessions{i} = ndi.session.dir(sessionRef, sessionPath);
+                    end
+                else
+                    % Session does not exist: Create it
+                    obj.sessions{i} = ndi.session.dir(sessionRef, sessionPath); % Create with reference and path
+                end
+                
+                % Close any open database connections
+                mksqlite('close');
+            end
+
+            % Initialize the daqSystems property as an empty struct with the specified fields
+            obj.daqSystems = struct('filenavigator', {}, 'daqreader', {});
+            % Ensure it has the correct size corresponding to the number of sessions
+            obj.daqSystems(numel(obj.sessions)).filenavigator = []; % Preallocate size
+
+        end % constructor sessionMaker
 
         function [sessions,ind] = sessionIndices(obj)
-            %SESSIONINDICES returns the session array and indices of the
-            %   variableTable corresponding to those sessions
+            %SESSIONINDICES Returns the session objects and their corresponding table indices.
+            %   [SESSIONS, IND] = sessionIndices(OBJ) returns the cell array of
+            %   ndi.session.dir objects managed by this sessionMaker instance and
+            %   an array indicating which session corresponds to each row of the
+            %   original variableTable.
+            %
+            %   Output Arguments:
+            %       sessions (cell) - Cell array of ndi.session.dir objects, where
+            %                       sessions{k} is the k-th unique session.
+            %       ind (:,1) double - Array of the same height as the original
+            %                       variableTable. `ind(r)` gives the index `k` such
+            %                       that `sessions{k}` is the session associated with
+            %                       row `r` of the table. Rows not associated with a
+            %                       valid session will have NaN values.
 
             sessions = obj.sessions;
             ind = obj.tableInd;
-        end
 
-        function addDaqSystem(obj,daqName,reader,navigator)
-            daq_system = ndi.daq.system.mfdaq(daqName, navigator, reader);
+        end % sessionIndices
+
+        function addDaqSystem(obj, labName, options)
+            %ADDDAQSYSTEM Adds DAQ system definitions from a specified lab to all managed sessions.
+            %   ADDDAQSYSTEM(OBJ, LABNAME) searches for DAQ system definitions
+            %   associated with LABNAME (a folder name within the NDI DAQ
+            %   system configuration directory) and adds them to each NDI session
+            %   managed by the sessionMaker object (obj.sessions). It then loads
+            %   the DAQ reader and file navigator objects for each session and stores
+            %   them in the obj.daqSystems property.
+            %
+            %   ADDDAQSYSTEM(..., 'Overwrite', true) allows overwriting existing DAQ
+            %   system definitions within the sessions if they already exist. The
+            %   default is false (no overwrite).
+            %
+            %   Input Arguments:
+            %       obj     - The sessionMaker instance.
+            %       labName - The name of the lab configuration directory
+            %                   containing the DAQ system definition files.
+            %
+            %   Name-Value Arguments:
+            %       Overwrite - Whether to overwrite existing DAQ system 
+            %                   entries in the sessions. Default: false.
+
+            arguments
+                obj
+                labName (1,:) char
+                options.Overwrite (1,1) logical = false;
+            end
+
+            % Check that the daq_system directory for the lab exists
+            try
+                ndi.setup.daq.system.listDaqSystemNames(labName);
+            catch ME
+                % If listDaqSystemNames errors, rethrow a more specific error
+                importDir = fullfile(ndi.common.PathConstants.CommonFolder, 'daq_systems'); % Get expected base path for DAQ systems
+                error('SESSIONMAKER:invalidDAQDirName','%s is not a valid subdirectory of %s',...
+                    labName,importDir);
+            end
+
             for i = 1:numel(obj.sessions)
-                if ~isempty(obj.sessions{i}.daqsystem_load)
-                    obj.sessions{i}.daqsystem_clear();
-                end
-                obj.sessions{i}.daqsystem_add(daq_system);
+                % Add DAQ systems to each session
+                ndi.setup.daq.addDaqSystems(obj.sessions{i},labName,options.Overwrite);
+
+                % Load the DAQ system information back from the session
+                daq_info = obj.sessions{i}.daqsystem_load;
+                obj.daqSystems(i).filenavigator = daq_info.filenavigator;
+                obj.daqSystems(i).daqreader = daq_info.daqreader;
             end
         end
 
-        % function setManifest(obj, fileManifest, options)
-        %     % SETMANIFEST Sets the file manifest property and optionally trims a relative path prefix.
-        %     %
-        %     % Args:
-        %     %   obj (ndi.setup.NDIMaker.sessionMaker): The object instance.
-        %     %   fileManifest (cell vector): A cell array of strings (or char arrays),
-        %     %                                where each element is a relative file path.
-        %     %
-        %     % Optional Name-Value Args:
-        %     %   relativePathTrim (char vector | string): A prefix string to remove from the beginning
-        %     %                                            of each path in fileManifest. Defaults to ''.
-        % 
-        %     arguments
-        %         obj                       (1,1) ndi.setup.NDIMaker.sessionMaker % Ensure it's operating on a valid object instance
-        %         fileManifest              (:,1) cell {mustBeVector, mustBeText} % Column cell vector of text
-        %         options.relativePathTrim  (1,:) {mustBeTextScalarOrCharVector} = '' % Allow char row vector or string scalar, default empty
-        %     end
-        % 
-        %     originalManifest = fileManifest; % Keep a copy of the input
-
-        %     % --- Apply relativePathTrim if provided ---
-        %     prefixToTrim = options.relativePathTrim;
-        %     % Ensure prefix is a char vector for consistent processing
-        %     if isstring(prefixToTrim)
-        %         prefixChar = char(prefixToTrim);
-        %     else
-        %         prefixChar = prefixToTrim; % Assume it's already char
-        %     end
-        % 
-        %     if ~isempty(prefixChar)
-        %         prefixLen = length(prefixChar);
-        %         processedManifest = cell(size(originalManifest)); % Preallocate output
-        %         for k = 1:numel(originalManifest)
-        %             originalPath = originalManifest{k};
-        %             % Ensure path is char for comparison/indexing
-        %             if ~ischar(originalPath)
-        %                originalPath = char(originalPath);
-        %             end
-        % 
-        %             processedManifest{k} = originalPath; % Default: keep original path
-        %             originalPathLen = length(originalPath);
-        % 
-        %             % Check if path is long enough AND starts with the prefix
-        %             if originalPathLen >= prefixLen && strncmp(originalPath, prefixChar, prefixLen)
-        %                 % It starts with the prefix
-        %                 if originalPathLen > prefixLen
-        %                     % Extract the rest of the path
-        %                     processedManifest{k} = originalPath(prefixLen+1:end);
-        %                 else
-        %                     % Prefix matches the entire path -> Result is empty char
-        %                     processedManifest{k} = '';
-        %                     warning('sessionMaker:setManifest:PrefixIsFullPath', ...
-        %                             'The prefix "%s" matches the entire path "%s". Resulting path is empty.', ...
-        %                             prefixChar, originalPath);
-        %                 end
-        %             % else: Path doesn't start with prefix or is shorter, keep original (default already set)
-        %             end
-        %         end
-        %         obj.fileManifest = processedManifest; % Store the processed manifest
-        %     else
-        %         obj.fileManifest = originalManifest; % Store the original manifest if no prefix provided
-        %     end
-        %      % --- End of prefix processing ---
-        % end
-        % 
-        % function computeDataLocationVariables(obj)
-        %     % COMPUTEDATALOCATIONVARIABLES Extracts variables from file paths.
-        %     %   Runs the external function 'processFileManifest' using the object's
-        %     %   'fileManifest' and 'dataLocationVariableRules' properties.
-        %     %   Stores the resulting structure in the 'dataLocationVariables' property.
-        %     %   Requires 'processFileManifest.m' to be on the MATLAB path.
-        % 
-        %     % --- Input Validation ---
-        %     if isempty(obj.fileManifest)
-        %         error('sessionMaker:computeDataLocationVariables:NoManifest', ...
-        %               'The ''fileManifest'' property is empty. Call setManifest() first.');
-        %     end
-        %     if isempty(obj.dataLocationVariableRules) || ~isstruct(obj.dataLocationVariableRules)
-        %         error('sessionMaker:computeDataLocationVariables:NoRules', ...
-        %               'The ''dataLocationVariableRules'' property is empty or not a struct array. Ensure it is set correctly before calling this method.');
-        %     end
-        % 
-        %     % --- Check for external function dependency ---
-        %     if isempty(which('processFileManifest'))
-        %         error('sessionMaker:computeDataLocationVariables:MissingFunction',...
-        %               'The required function ''processFileManifest.m'' was not found on the MATLAB path.');
-        %     end
-        % 
-        %     % --- Execute processing ---
-        %     try
-        %         % Call the external function using the object's properties
-        %         fprintf('Computing data location variables...\n'); % Optional progress message
-        %         extractedData = processFileManifest(obj.fileManifest, obj.dataLocationVariableRules);
-        % 
-        %         % Store the results in the object's property
-        %         obj.dataLocationVariables = extractedData;
-        %         fprintf('... Computation complete. Results stored in dataLocationVariables.\n'); % Optional completion message
-        % 
-        %     catch ME
-        %         warning('sessionMaker:computeDataLocationVariables:ExecutionError', ...
-        %                 'An error occurred while running processFileManifest: %s', ME.message);
-        %         % Display stack trace for debugging
-        %         disp(ME.getReport);
-        %         % Rethrow the error to halt execution and indicate failure clearly
-        %         rethrow(ME);
-        %     end
-        % end
-
-        % --- Placeholder for other potential methods ---
-        % function addDaqSystem(obj, reader, navigator)
-        %   % Method to populate the DaqSystems property
-        % end
-        %
-        % function setRules(obj, rulesStruct)
-        %   % Method to explicitly set the dataLocationVariableRules
-        %   % Could include validation specific to the rules structure
-        %   obj.dataLocationVariableRules = rulesStruct;
-        % end
-        %
-        % function sessionObjects = createSessions(obj, varargin)
-        %    % Method that would use fileManifest, dataLocationVariables, DaqSystems, etc.
-        %    % to instantiate ndi.session.dir objects and store them in obj.sessions
-        %    error('Not yet implemented');
-        % end
-        % -------------------------------------------------
-
-    end % methods block
-end % classdef
-
-% --- Custom Validator (Helper Function) ---
-% Place this outside the classdef block if needed, or define locally within methods if preferred.
-% This validator is used in the 'arguments' block of setManifest.
-function mustBeTextScalarOrCharVector(input)
-    if ~(ischar(input) && (isrow(input) || isempty(input))) && ~(isstring(input) && isscalar(input))
-        error('Value must be a character row vector or a scalar string.');
-    end
-end
+    end % methods
+end % sessionMaker
