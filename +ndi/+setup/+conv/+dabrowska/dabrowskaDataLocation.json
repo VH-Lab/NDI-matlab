@@ -70,6 +70,54 @@
     "StringDetectInput": "",
     "StringFormat": "^(?:[^/]+/){3}((?:(?!\\.mat)[^/])+)(?:/|$)",
     "FunctionName": ""
+  },
+  {
+    "VariableName": "RecordingDate",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/((?i)[a-z]{3} \\d{1,2} \\d{4})",
+    "FunctionName": ""
+  },    
+  {
+    "VariableName": "IsWildType",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)Wild[- ]type)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "sliceLabel",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/(?i)[a-z]{3} \\d{1,2} \\d{4} *([a-zA-Z])?(?:/|$)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "isCRFCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)CRF_BNST_neurons)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "isOTRCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)OTR_BNST_neurons)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "isAVPCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)AVPCre_BNST_neurons)",
+    "FunctionName": ""
   }
 ]
 
