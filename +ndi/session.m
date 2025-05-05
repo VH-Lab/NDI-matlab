@@ -304,7 +304,7 @@ classdef session < handle % & ndi.documentservice & % ndi.ido Matlab does not al
             if iscell(doc_list),
                 dependent_docs = ndi.database.fun.findalldependencies(ndi_session_obj,[],doc_list{:});
                 if numel(dependent_docs)>1,
-                    warning(['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
+                    warning('NDISESSION:deletingDependents',['Also deleting ' int2str(numel(dependent_docs)) ' dependent docs.']);
                 end;
                 for i=1:numel(dependent_docs),
                     ndi_session_obj.database.remove(dependent_docs{i});
