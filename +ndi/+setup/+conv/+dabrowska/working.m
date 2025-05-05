@@ -16,12 +16,9 @@ t = ndi.setup.conv.datalocation.processFileManifest(filefileList,j,'relativePath
  % constants
 
 t{:,"SpeciesOntologyID"} = "NCBITaxon:10116"; % Rattus norvegicus
-
-
+t{:,"SubjectPostfix"} = "@dabrowska-lab.rosalindfranklin.edu";
 
  % how to assign strains?
-
-
 
  % how to assign species:
 
