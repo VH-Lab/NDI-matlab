@@ -101,7 +101,7 @@ classdef OneEpochTest < matlab.unittest.TestCase
             testCase.addOneEpochElements(testCase);
 
             % Add more test data (simulate new acquistion)
-            testCase.addTestData(testCase);
+            testCase.addTestData(testCase,NumEpochs);
 
             % Add new oneepoch elements to database
             testCase.addOneEpochElements(testCase);
@@ -173,9 +173,8 @@ classdef OneEpochTest < matlab.unittest.TestCase
                 oneepoch_data = oneepoch.readtimeseries(1,-Inf,Inf);
                 testCase.verifySize(oneepoch_data,size(probe_data),...
                     'OneEpoch does not return the expected number of samples.')
-                testCase.verifyClass(oneepoch_data,class(probe_data),...
-                    'OneEpoch is of a different class than the original timeseries.')
-
+                testCase.verifyEqual(oneepoch_data,double((probe_data)),...
+                    'OneEpoch data points do not match the original timeseries.')
             end
         end
     end
