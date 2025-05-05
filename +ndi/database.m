@@ -213,26 +213,6 @@ classdef database
             end;
         end % clear
 
-        function erase(ndi_database_obj, areyousure)
-            % ERASE - deletes the entire ndi.database folder
-            %
-            % ERASE(NDI_DATABASE_OBJ, [AREYOUSURE])
-            %
-            % Use with care. If AREYOUSURE is 'yes' then the
-            % function will proceed. Otherwise, it will not.
-            %
-            % See also: ndi.database/CLEAR, ndi.database/REMOVE 
-
-            if nargin<2,
-                areyousure = 'no';
-            end;
-            if strcmpi(areyousure,'Yes')
-                rmdir(ndi_database_obj.path,'s'); % remove database folder
-            else,
-                disp('Not erasing database folder because user did not indicate they sure.');
-            end;
-        end % erase
-
         function [ndi_document_objs] = search(ndi_database_obj, searchparams)
             % SEARCH - search for an ndi.document from an ndi.database
             %
