@@ -1,28 +1,26 @@
+% Set paths
+myDir = '/Users/jhaley/Documents/MATLAB';
+myPath = fullfile(myDir,'data','Dabrowska');
 
+% Get files
+[dirList,isDir] = vlt.file.manifest(myPath);
+fileList = dirList(~isDir);
+% include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
+%     ~contains(fileList,'.DS_Store'); 
+% fileList = fileList(include);
 
-myPath = '/Users/vanhoosr/Library/CloudStorage/GoogleDrive-steve@walthamdatascience.com/Shared drives/Dabrowska';
+% Get variable table
+jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowskaDataLocation.json');
+j = jsondecode(fileread(jsonPath));
+variableTable = ndi.setup.conv.datalocation.processFileManifest(fileList,...
+    j,'relativePathPrefix','Dabrowska/');
+% variableTable = variableTable(100:200,:);
 
+%% Create NDI sessions
+S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable,...
+    'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
+[sessionArray,variableTable.sessionInd] = S.sessionIndices;
 
-[fileList,isDir] = vlt.file.manifest(pwd);
-filefileList = fileList(~isDir);
-
-incl = []; for i=1:numel(filefileList), if ~contains(filefileList{i},'/._'), incl(end+1) = i; end; end
-filefileList = filefileList(incl);
-incl = []; for i=1:numel(filefileList), if ~startsWith(filefileList{i},'._'), incl(end+1) = i; end; end
-filefileList = filefileList(incl);
-
-t = ndi.setup.conv.datalocation.processFileManifest(filefileList,j,'relativePathPrefix','Dabrowska/');
-
-
-  % hangers on
-
-L1 = (cellfun(@(x) ~isequaln(x,NaN), t.IsExpMatFile)) & cellfun(@(x) isequaln(x,NaN), t.BathConditionString);
-
-
- % need to add table constant elements, join 
- % epochprobmap_daqsystem: dabrowska_intracell
- % probes: dabrowska_current: patch-I
- %    dabrowska_voltage: patch-V
- %    dabrowska_stimulator: stimulator
-
-bath_background
+%% Add DAQ system
+labName = 'dabrowskalab';
+S.addDaqSystem(labName,'Overwrite',true)
