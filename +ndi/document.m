@@ -251,8 +251,9 @@ classdef document
             %
             names = {};
             depend_struct = vlt.data.emptystruct('name','value');
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on');
-            if hasdependencies,
+            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on') & ...
+                ~isempty(ndi_document_obj.document_properties.depends_on);
+            if hasdependencies
                 names = {ndi_document_obj.document_properties.depends_on.name};
                 depend_struct = ndi_document_obj.document_properties.depends_on;
             end;

@@ -554,7 +554,7 @@ classdef tuning_response < ndi.app
             % Parameter (default)              | Description
             % ------------------------------------------------------------------------
             % control_stim_method              | The method to be used to find the control stimulu for
-            %  ('psuedorandom')                |    each stimulus:
+            %  ('pseudorandom')                |    each stimulus:
             %                       -----------|
             %                       |   pseudorandom: Find the stimulus with a parameter
             %                       |      'controlid' that is in the same pseudorandom trial. In the
@@ -571,7 +571,7 @@ classdef tuning_response < ndi.app
             % controlid_value (1)              | For some methods, the parameter value of 'controlid' that
             %                                  |    defines whether a stimulus is a control stimulus or not.
 
-            control_stim_method = 'psuedorandom';
+            control_stim_method = 'pseudorandom';
             controlid = 'isblank';
             controlid_value = 1;
             ndi_decoder = ndi.app.stimulus.decoder(ndi_app_tuning_response_obj.session);
@@ -580,7 +580,7 @@ classdef tuning_response < ndi.app
             vlt.data.assign(varargin{:});
 
             switch (lower(control_stim_method))
-                case {'psuedorandom','hasfield'}
+                case {'pseudorandom','hasfield'}
                     control_stim_id_method.method = control_stim_method;
                     control_stim_id_method.controlid = controlid;
                     control_stim_id_method.controlid_value = controlid_value;
