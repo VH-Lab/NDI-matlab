@@ -37,10 +37,9 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             %                            modification. If true, existing NDI session 
             %                           databases found at the specified paths will be 
             %                           erased and recreated. Default: false.
-            %       NonNaNVariableNames - Additional variable names in 'variableTable'. 
-            %                           Values in these columns must not be NaN for a 
-            %                           valid session to be created. By default, only 
-            %                           'SessionRef' is checked for NaNs. Default: {}.
+            %       NonNaNVariableNames - Variable names in 'variableTable'.Values in 
+            %                           these columns must not be NaN for a valid 
+            %                           session to be created. Default: {}.
             %
             %   Output Arguments:
             %       obj (sessionMaker)  - The constructed sessionMaker object.
@@ -63,10 +62,8 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             end
 
             % --- Identify Valid Session Rows ---
-            % Start by checking 'SessionRef' for NaN values.
-            nanInd = cellfun(@(sr) ~any(isnan(sr)), variableTable.SessionRef);
-
-            % Apply additional NaN checks based on NonNaNVariableNames option
+            % Check for NaN values based on NonNaNVariableNames option
+            nanInd = true(height(variableTable),1);
             for i = 1:numel(options.NonNaNVariableNames)
                  % Check if the specified column exists
                  if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
@@ -117,7 +114,7 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 end
                 
                 % Close any open database connections
-                mksqlite('close');
+                % mksqlite('close');
             end
 
             % Initialize the daqSystems property as an empty struct with the specified fields

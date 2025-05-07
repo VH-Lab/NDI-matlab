@@ -1,21 +1,5 @@
 [
   {
-    "VariableName": "SessionRef",
-    "SubfolderLevel": [3],
-    "StringDetectMode": "regex",
-    "StringDetectInput": "",
-    "StringFormat": "(^[^/]+/[^/]+/[^/]+)",
-    "FunctionName": ""
-  },
-  {
-    "VariableName": "SessionPath",
-    "SubfolderLevel": [3],
-    "StringDetectMode": "regex",
-    "StringDetectInput": "",
-    "StringFormat": "(^[^/]+/[^/]+/[^/]+)",
-    "FunctionName": ""
-  },
-  {
     "VariableName": "BathStimulationDrugList",
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",

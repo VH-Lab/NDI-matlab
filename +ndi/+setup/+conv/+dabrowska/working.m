@@ -75,7 +75,7 @@ What are the species?
 What are the strains?
 
 
-% jess's working lines
+%% jess's working lines
 
 % Set paths
 myDir = '/Users/jhaley/Documents/MATLAB';
@@ -84,18 +84,21 @@ myPath = fullfile(myDir,'data','Dabrowska');
 % Get files
 [dirList,isDir] = vlt.file.manifest(myPath);
 fileList = dirList(~isDir);
-% include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
-%     ~contains(fileList,'.DS_Store'); 
-% fileList = fileList(include);
+include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
+    ~contains(fileList,'.DS_Store'); 
+fileList = fileList(include);
 
 % Get variable table
 jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowskaDataLocation.json');
 j = jsondecode(fileread(jsonPath));
-variableTable = ndi.setup.conv.datalocation.processFileManifest(fileList,...
-    j,'relativePathPrefix','Dabrowska/');
-% variableTable = variableTable(100:200,:);
+variableTable = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
+variableTable{:,'SessionRef'} = {'Dabrowska'};
+variableTable{:,'SessionPath'} = {'Dabrowska'};
+variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
+variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 
 %% Create NDI sessions
+myPath = fullfile(myDir,'data');
 S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
 [sessionArray,variableTable.sessionInd] = S.sessionIndices;
@@ -103,3 +106,27 @@ S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable,...
 %% Add DAQ system
 labName = 'dabrowskalab';
 S.addDaqSystem(labName,'Overwrite',true)
+
+%% Create subjects
+for i = 1:height(variableTable)
+    if isnan(variableTable.IsExpMatFile{i})
+        variableTable.SubjectString{i} = {''};
+    else
+        variableTable.SubjectString{i} = {ndi.setup.conv.dabrowska.createSubjectInformation(variableTable(i,:))};
+    end
+end
+
+%% Create epoch probe maps
+
+probeTable = table();
+probeTable.name(1:3) = {'bath','Vm','I'};
+probeTable.reference(1:3) = {1,1,1};
+probeTable.type(1:3) = {'stimulator','patch-Vm','patch-I'};
+probeTable.deviceString(1:3) = {'dabrowskalab:ai1','dabrowskalab:ai1','dabrowskalab:ao1'};
+
+recordingDates = datetime(variableTable.RecordingDate,'InputFormat','MMM dd yyyy');
+sliceLabel = variableTable.sliceLabel;
+sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
+variableTable{:,'ProbePostfix'} = cellfun(@(rd,sl) ['_',char(rd,'yyMMdd'),'_',sl],recordingDates,sliceLabel);
+
+did.db.tableCrossJoin(probeTable,variableTable(11,'SubjectString'))

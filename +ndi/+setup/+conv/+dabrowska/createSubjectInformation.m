@@ -113,8 +113,8 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
         % Ensure inputDateFormat matches the actual format of recordingDateValue
         inputDateFormat = 'MMM dd yyyy'; % Corrected year format specifier
         datetimeObj = datetime(recordingDateValue, 'InputFormat', inputDateFormat);
-        outputDateFormat = 'yyyy_mm_dd'; % Using standard MM for month
-        formattedDate = datestr(datetimeObj, outputDateFormat);
+        outputDateFormat = 'yyMMdd'; % Using standard MM for month
+        formattedDate = char(datetimeObj,outputDateFormat);
     catch ME_DateFormat
         warning('createSubjectInformation:DateFormatError', ...
                 'Could not parse RecordingDate "%s" with format "%s". Error: %s. Returning NaN outputs.', ...
