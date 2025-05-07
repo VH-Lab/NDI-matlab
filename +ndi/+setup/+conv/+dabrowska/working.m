@@ -110,23 +110,33 @@ S.addDaqSystem(labName,'Overwrite',true)
 %% Create subjects
 for i = 1:height(variableTable)
     if isnan(variableTable.IsExpMatFile{i})
-        variableTable.SubjectString{i} = {''};
+        variableTable.SubjectString{i} = '';
     else
-        variableTable.SubjectString{i} = {ndi.setup.conv.dabrowska.createSubjectInformation(variableTable(i,:))};
+        variableTable.SubjectString{i} = ndi.setup.conv.dabrowska.createSubjectInformation(variableTable(i,:));
     end
 end
 
 %% Create epoch probe maps
 
-probeTable = table();
-probeTable.name(1:3) = {'bath','Vm','I'};
-probeTable.reference(1:3) = {1,1,1};
-probeTable.type(1:3) = {'stimulator','patch-Vm','patch-I'};
-probeTable.deviceString(1:3) = {'dabrowskalab:ai1','dabrowskalab:ai1','dabrowskalab:ao1'};
+% Create probeTable
+name = {'bath';'Vm';'I'};
+reference = {1;1;1};
+type = {'stimulator';'patch-Vm';'patch-I'};
+deviceString = {'dabrowskalab:ai1';'dabrowskalab:ai1';'dabrowskalab:ao1'};
+probeTable = table(name,reference,type,deviceString);
 
-recordingDates = datetime(variableTable.RecordingDate,'InputFormat','MMM dd yyyy');
-sliceLabel = variableTable.sliceLabel;
+% Create probePostfix
+epochInd = ~isnan(variableTable.sessionInd);
+recordingDates = datetime(variableTable.RecordingDate(epochInd),...
+    'InputFormat','MMM dd yyyy');
+recordingDates = cellstr(char(recordingDates,'yyMMdd'));
+sliceLabel = variableTable.sliceLabel(epochInd);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
-variableTable{:,'ProbePostfix'} = cellfun(@(rd,sl) ['_',char(rd,'yyMMdd'),'_',sl],recordingDates,sliceLabel);
+variableTable{epochInd,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
+    recordingDates,sliceLabel,'UniformOutput',false);
 
-did.db.tableCrossJoin(probeTable,variableTable(11,'SubjectString'))
+% Create epoch probe maps
+ndi.setup.NDIMaker.epochProbeMapMaker(path,variableTable,probeTable,...
+    'Overwrite',true,...
+    'NonNaNVariableNames','IsExpMatFile',...
+    'ProbePostfix','ProbePostFix');

@@ -32,9 +32,9 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             %                           columns can be included and potentially used for 
             %                           validation via the 'NonNaNVariableNames' option.
             %
-            %   Name-Value Arguments:
+            %   Optional Name-Value Arguments:
             %       Overwrite        - If false, existing sessions are loaded without 
-            %                            modification. If true, existing NDI session 
+            %                           modification. If true, existing NDI session 
             %                           databases found at the specified paths will be 
             %                           erased and recreated. Default: false.
             %       NonNaNVariableNames - Variable names in 'variableTable'.Values in 
