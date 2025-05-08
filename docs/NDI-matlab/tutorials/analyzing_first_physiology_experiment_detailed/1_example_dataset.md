@@ -2,7 +2,7 @@
 ## Getting started with NDI
 
 
-This tutorial is an alternative to [Tutorial 2.1](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset/) that is designed for users who are less familiar with programming. It will provide a brief overview of Matlab and object-oriented programming, more in-depth information about the methods and syntax used, and a guide on how to navigate the website and its documentation. 
+This tutorial is an alternative to [Tutorial 2.1](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/analyzing_first_physiology_experiment/1_example_dataset/) that is designed for users who are less familiar with programming. It will provide a brief overview of Matlab and object-oriented programming, more in-depth information about the methods and syntax used, and a guide on how to navigate the website and its documentation. 
 
 ## Basics of Matlab
 Matlab is a language specifically designed for calculations, data visualization, and pattern recognition. It is less flexible in some areas than traditional programming languages, but it excels when working with matrices and **arrays**, which are data structures that contain multiple elements. It includes many built-in tools and additional libraries for a large variety of tasks.
@@ -12,7 +12,7 @@ Matlab allows for object-oriented programming, a programming paradigm where data
 Classes define the states and behaviors of its objects, and constructors determine the initial values of a given object's attributes, called **variables.** Variables are used within programs to store all kinds of information, including numbers, individual characters, strings of characters, or arrays, which include a larger number of any given type of variable. Unlike many other programming languages, we do not have to specifically state a variable's type when declaring it.
 
 We will start with learning to read an example dataset into NDI. We assume you have already
-[installed NDI](https://vh-lab.github.io/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/tutorials/ndimodel/1_intro/). These data are available in a
+[installed NDI](https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/ndimodel/1_intro/). These data are available in a
 compressed folder
 [here](https://drive.google.com/file/d/1j7IAeMSrH64-qIDLB5EJYUofJSdinwuU/view?usp=sharing). To learn more about Matlab, take a look at <mathwork website link>.
 Prior to starting the code, put the "ts_exper1" folder into your NDI folder. The NDI folder should be listed under MATLAB\Documents\NDI, which is created during the installation of NDI. The MATLAB folder itself is found in the default Documents folder in the Finder.
@@ -75,7 +75,7 @@ In this block, we again assign a path to a variable. In this case, we use the fu
 The next line introduces the concept of packages and their functions. Packages are folders that are used primarily to organize related classes and functions; they can also contain other subpackages. The syntax of our class tells us how the packages are structured: the main package is named "ndi," our subpackage is named "example," and the next subpackage is called "tutorial."  Functions are files that contain multiple lines of code that receive inputs. As opposed to a script, which is a program that performs exactly the same way every time, functions are more like mathematical equations, having varied outputs or effects depending on their inputs. Our function is called plottreeshrewdata, which naturally plots the tree shrew neural data that our electrode gathered. This particular function requires an input parameter. In this case, this function requires a path to a specific file, which it will plot based on the file's data. Functions are useful when you have a specific piece of code that must be repeated several times and also requires many unique inputs. 
 
 Information about NDI packages and classes can be found in the documentation on the sidebar. The sidebar shows the hierarchy of packages and classes under the document reference and the syntax, descriptions of each parameter, and overall function of every method under the code reference. 
-This particular method is found [here](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bexample/%2Btutorial/plottreeshrewdata.m/). Looking at the documentation is one of the best ways to familiarize yourself with the different classes and methods of any program. 
+This particular method is found [here](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bexample/%2Btutorial/plottreeshrewdata.m/). Looking at the documentation is one of the best ways to familiarize yourself with the different classes and methods of any program. 
 
 This function shows the raw voltage recording and the stimulus timing information. Each stimulus appears as a number and its duration is indicated by the black bar. You can pan with the mouse to scroll through the recording.
 
@@ -85,11 +85,11 @@ This function shows the raw voltage recording and the stimulus timing informatio
 Metadata is "data about data"- in this case, metadata is all information about the probes themselves, including their names, types, and unique identification. In this example, we have already prepared the metadata files that are necessary for NDI to read the data. Let's look at them in turn.
 
 First, we need to tell NDI what **probes** we have in our experiment. A **probe** is anything that measures or stimulates; one end of a probe 
-is connected to a **subject**, and the other end of a probe is connected to a data acquisition device. We first create an object of class [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Again, the name of this object tells us that it was created from class epochprobemap, which is a class of the epoch package, which is itself a subpackage of the ndi package. Both classes we have seen are in the epoch package, indicating that they both relate to the function and display of epochs. The organization of packages can help us determine what the packages' contents should generally do; as always, make sure to look at the documentation for more specific information about a particular file.
+is connected to a **subject**, and the other end of a probe is connected to a data acquisition device. We first create an object of class [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Again, the name of this object tells us that it was created from class epochprobemap, which is a class of the epoch package, which is itself a subpackage of the ndi package. Both classes we have seen are in the epoch package, indicating that they both relate to the function and display of epochs. The organization of packages can help us determine what the packages' contents should generally do; as always, make sure to look at the documentation for more specific information about a particular file.
 
 
 We usually tell NDI how the probe is connected with a little code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example, we will use the
-generic [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file. This line introduces the first instance of a class method. Methods are the operations of a class, taking in inputs called parameters and performing an action, often returning an output. This particular method is a **constructor,** which is a class method that takes in values and instantiates an object of the class with those specific values. 
+generic [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file. This line introduces the first instance of a class method. Methods are the operations of a class, taking in inputs called parameters and performing an action, often returning an output. This particular method is a **constructor,** which is a class method that takes in values and instantiates an object of the class with those specific values. 
 
 If we take a closer look at this class, we see the example constructor
 MYNDI_EPOCHPROBEMAP_DAQSYSTEM = ndi.epoch.epochprobemap(NAME, REFERENCE, TYPE, DEVICESTRING, SUBJECTSTRING). This is the general form of a constructor in Matlab: first is the name of the object, which is everything on the left side of the equals sign, then the name of the class that the constructor is part of, which is ndi.epoch.epochprobemap in this case, then each parameter, which is the list of words separated by commas. Note that the name of the object is the name used internally by our program, and is not necessarily the same as the NAME argument that we provide when we make the object. 
@@ -138,9 +138,9 @@ data can be read directly, but here we have made another tab-delimited text file
 type (fullfile(prefix,'ts_exper1','t00001','stims.tsv'))
 ```
 
-### 3.1.4 Gaining access to the data in NDI: [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) and [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects
+### 3.1.4 Gaining access to the data in NDI: [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) and [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects
 
-Now all that remains is to open the data directory (folder) as an [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) object, and make [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects to read your data. We will use an [ndi.session.dir](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bsession/dir.m/) object, which allows us to read information from a directory on disk. 
+Now all that remains is to open the data directory (folder) as an [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) object, and make [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects to read your data. We will use an [ndi.session.dir](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bsession/dir.m/) object, which allows us to read information from a directory on disk. 
 
 We will create a new ndi.system object by calling the constructor with the reference name we wish to give to the session and the pathname to our data:
 
@@ -163,17 +163,17 @@ S.getprobes()
 
 Unless you ran this demo before, you won't see any probes here (it will return an empty cell array). This is the first method we've seen that is not a constructor. Note that we must call this method along with our session object: this is an example of a non-static method, which belongs to a specific object of the class. Much like calling functions, you use a dot between the name of the object and the name of the method. The parentheses after the method are necessary for every method, even if they have no arguments like in this case.
 
-We need to make new [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects for our data acquisition system and our stimulator. Our devices are
-multifunction data acquisition systems, so we use the [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) subtype.
+We need to make new [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects for our data acquisition system and our stimulator. Our devices are
+multifunction data acquisition systems, so we use the [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) subtype.
 
-An [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) object consists of three components: an
-[ndi.file.navigator](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/) object whose job it is to find the files or
+An [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) object consists of three components: an
+[ndi.file.navigator](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/) object whose job it is to find the files or
 streams associated with
-each epoch of data, an [ndi.daq.reader](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) object whose job it is to read the raw data from the files, and an
-[ndi.daq.metadatareader](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/metadatareader.m/) (optionally) whose
+each epoch of data, an [ndi.daq.reader](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) object whose job it is to read the raw data from the files, and an
+[ndi.daq.metadatareader](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/metadatareader.m/) (optionally) whose
 job is to read any metadata associated with the epoch (such as stimulus parameter information). 
 
-First, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object that we will call `'ced_daqsystem'` to
+First, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object that we will call `'ced_daqsystem'` to
 read the electrode data from our CED SMR files.
 
 #### Code block 3.1.4.3. Building an ndi.daq.system.mfdaq object. Type this in to Matlab:
@@ -189,7 +189,7 @@ S.daqsystem_add(ced_system);
 
 Note: If you ran the tutorial before, you may have added `ced_system` to your session `S` already. That's fine, you'll get an error if you try to do it again. If you want to remove all your daq systems, you can call `ndi.session.daqsystem_clear()` by typing `S.daqsystem_clear()`, and then you can add them again.
 
-We first create the file navigator object, ced_filenav, utilizing the ndi.file.navigator constructor. As always, we need to specify the parameters of this navigator object. The properties of this class are listed [here](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/), and will also be listed here for convenience.
+We first create the file navigator object, ced_filenav, utilizing the ndi.file.navigator constructor. As always, we need to specify the parameters of this navigator object. The properties of this class are listed [here](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/), and will also be listed here for convenience.
 
 
 
@@ -229,7 +229,7 @@ The method ced_system.filenavigator.getepochfiles(1) assigns all the files in ep
 
 The two lines of code described above are used to take a look at what epochs and epoch files exist in our session. 
 
-Second, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object for our visual stimulus system. The setup for this DAQ system will be very similar to the prior example. 
+Second, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object for our visual stimulus system. The setup for this DAQ system will be very similar to the prior example. 
 
 #### Code block 3.1.4.5. Building another ndi.daq.system.mfdaq object. Type this in to Matlab:
 
@@ -262,7 +262,7 @@ We create an object nsf of class ndi.time.synchrule.filematch, which dictates th
 
 This object is added to the session through the syncgraph_addrule() method so that NDI knows which DAQ systems to synchronize in our experiment. We know that the stimulator (vis_system) and the data acquisition system (ced_system) are in sync because they both share spike2data.smr and probemap.txt. 
 
-### 3.1.5 Opening the data in NDI: accessing probes via from [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/)
+### 3.1.5 Opening the data in NDI: accessing probes via from [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/)
 
 Now we can use NDI to see the probes that these daq systems can find and to access the data from those probes. Let's look at the electrode probe data first.
 
@@ -296,7 +296,7 @@ Finally, the p{i} shows the contents of element i of array p. Since i is our loo
 Before we take a look at the epoch data for each probe, we need to specify the probe in question. To get access to the probe that we want, we create an array p_ctx1_list utilizing the getprobes method while specifying the name and reference number. In the parenthesis of the method we write the name of the field followed by its value, so the method returns all probes with name 'ctx' and reference number 1. When we run this line of code we see that p_ctx1_list is a 1x1 cell array, so only one probe matches these criteria.
 
 You can see that probe 1 has a *name* of `ctx`, a *reference* of `1`, and it is of *type* `n-trode`, or an n-channel electrode. It has a software
-object type of [ndi.probe.timeseries.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/), which simply means it is associated with multifunction DAQ systems and returns timeseries observations.
+object type of [ndi.probe.timeseries.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/), which simply means it is associated with multifunction DAQ systems and returns timeseries observations.
 
 We then assign the first element(probe 1) in array p to the variable p_ctx1.
 ```	 p_ctx1 = p_ctx1_list{1}.	```
@@ -354,7 +354,7 @@ This code is nearly identical to what we used in code block 3.1.5.1.
 
 Now let's read the data from our stimulator. To do this, we are going to ask NDI to read the stimulus timing information
 in the time units of our electrode probe `p_ctx`. You'll notice that when we read data from `p_ctx1`, `readtimeseries` returned
-an [ndi.time.timereference](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) object `timeref_p_ctx1`.
+an [ndi.time.timereference](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) object `timeref_p_ctx1`.
 Let's examine this quickly:
 
 #### Code block 3.1.5.4. Taking a look at the ndi.time.timereference object. Type this in to Matlab:
@@ -365,7 +365,7 @@ timeref_p_ctx1
 
 You'll see a structure with the following fields:
 
-| `timeref_p_ctx1`  | [timereference](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) with properties |
+| `timeref_p_ctx1`  | [timereference](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) with properties |
 | ---- | ---- |
 | referent |  `[1x1 ndi.probe.timeseries.mfdaq]` | 
 | clocktype |  `[1x1 ndi.time.clocktype]` |
@@ -406,7 +406,7 @@ data.parameters{1}
 ```
 
 Here we examined several fields of the variables `data` and `t` returned from `readtimeseries` from our
-[ndi.probe.timeseries.stimulator](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/).
+[ndi.probe.timeseries.stimulator](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/).
 
 You can see that `t` is a structure with 2 fields, `stimon` and `stimoff`. Our system kept track of when each stimulus began, but in these recordings, we did not have our data acquisition system
 keep track of when our stimulus turned off. (For later analysis, we will need to read this from the stimulus parameters.)

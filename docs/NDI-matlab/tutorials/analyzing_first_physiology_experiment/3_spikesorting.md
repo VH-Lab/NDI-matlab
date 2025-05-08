@@ -8,7 +8,7 @@ Clearly, one could write functions in Matlab that read the data and perform some
 great to share (or borrow) those functions across the open source community, and to develop "apps" that excel at performing
 specific tasks. NDI allows both approaches.
 
-### Tutorial 2.3.1: What is an 'app' in NDI? [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/) objects
+### Tutorial 2.3.1: What is an 'app' in NDI? [ndi.app](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/app.m/) objects
 
 An app for our purposes is any application program that can read data from NDI and perform some analysis or
 computation on this data. Some apps exist outside of NDI, and know how to read data from NDI experiments and
@@ -16,18 +16,18 @@ write results back to NDI experimental sessions. One example of such an app is t
 JRClust. 
 
 There is another set of apps that are developed specifically for NDI that are members of a special parent class
-called [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/). This parent class performs some services to help app developers maintain a consistant approach to
+called [ndi.app](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/app.m/). This parent class performs some services to help app developers maintain a consistant approach to
 make it easier for users and programmers that want to use the app to easily figure out what it does and how to 
 use it. 
 
 Here, we will examine one of these apps that we made for spike extraction. Just like Windows computers come with
-NotePad and Mac computers come with TextEdit, our [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/) is a plain-but-usable program for
+NotePad and Mac computers come with TextEdit, our [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/) is a plain-but-usable program for
 extracting spike waveforms from voltage records. It is suitable for spike extraction situations where the channel count for each electrode is low, such as single electrodes or tetrodes. It is not suitable for dense, multichannel electrodes like NeuroPixels or dense NeuroNexus probes.
 
 We will use the program first as though we knew how to use it by magic, and then we will go through how one could
 figure out how to use the program if one didn't know.
 
-### Tutorial 2.3.2: Extracting spikes using [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/)
+### Tutorial 2.3.2: Extracting spikes using [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/)
 
 #### Code block 2.3.2.1. Type this into Matlab.
 
@@ -104,7 +104,7 @@ samples = round(vlt.signal.value2sample(spiketimes, 1/(t(2)-t(1)), 0));
 plot(t(samples),d(samples),'ko'); % mark each spike peak location with a circle 
 ```
 
-### 2.3.3 Spike sorting using [ndi.app.spikesorter](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikesorter.m/)
+### 2.3.3 Spike sorting using [ndi.app.spikesorter](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikesorter.m/)
 
 Now we will feed our results to our plain spikesorting application, which relies on either Kmeans clustering the KlustaKwik clustering tool (Harris KD, *J. Neurophys.*, 2000).
 
@@ -144,15 +144,15 @@ plot(T,d(samples2), 'gs');
 
 You can observe that most of the spiketimes that were detected on the first probe are part of neuron 1, but there are some lower amplitude peaks that are not.
 
-### 2.3.4 How can we learn about the functionality of [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m) objects?
+### 2.3.4 How can we learn about the functionality of [ndi.app](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/app.m) objects?
 
-In section 2.2, we used [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/) as though we were born knowning what to do. How could we learn how to use a new app if there isn't a tutorial available?
+In section 2.2, we used [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/) as though we were born knowning what to do. How could we learn how to use a new app if there isn't a tutorial available?
 
 There are three great ways to learn about what apps do and how to use them. 
 
 1. Read the main documentation for the app by typing `help *appclass*` or `doc *appclass*` into the Matlab command line. For example, try `help ndi.app.spikeextractor`.
 
-2. Many apps follow what we call the ``appdoc`` convention for creating the documents that they create and loading the documents and data that they have generated. This is a convention that have developed relatively recently, and we are in the process of converting all of our included ndi.app objects to use this form. If an app follows [ndi.app.appdoc](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/) (which means it is a member of the [ndi.app.appdoc](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/) class), then they will have a set of methods called:
+2. Many apps follow what we call the ``appdoc`` convention for creating the documents that they create and loading the documents and data that they have generated. This is a convention that have developed relatively recently, and we are in the process of converting all of our included ndi.app objects to use this form. If an app follows [ndi.app.appdoc](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/) (which means it is a member of the [ndi.app.appdoc](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/) class), then they will have a set of methods called:
 
 | Method | Description |
 | ------ | ------      |
@@ -162,7 +162,7 @@ There are three great ways to learn about what apps do and how to use them.
 | *find_appdoc* | Find the NDI document for a given type, using the app |
 | *loaddata_appdoc* | Load binary data associated with an NDI document, using the app |
 
-Let's look at the document types that are written and needed by [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/): 
+Let's look at the document types that are written and needed by [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/): 
 
 #### Code block 2.3.4.1. Type this into Matlab
 
@@ -170,7 +170,7 @@ Let's look at the document types that are written and needed by [ndi.app.spikeex
 help ndi.app.spikeextractor/appdoc_description
 ```
 
-You see a long bit of text that describes all of the document types that are generated and calculated by [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/).
+You see a long bit of text that describes all of the document types that are generated and calculated by [ndi.app.spikeextractor](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/spikeextractor.m/).
 
 Here's a table of the document types and their "about" info for ndi.app.spikeextractor:
 

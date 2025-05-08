@@ -3,7 +3,7 @@ Neuroscience Data Interface - A means of specifying and accessing neuroscience d
 
 Available at https://github.com/VH-Lab/NDI-matlab
 
-Installation instructions: https://vh-lab.github.io/NDI-matlab/installation/
+Installation instructions: https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/
 
 Notes for manual installers: 
 
@@ -13,7 +13,7 @@ It is recommended that the developer also install vhlab_vhtools, available at ht
 
 It is assumed that the function `ndi_Init.m` is run at startup. Please add this to your `startup.m` file. (If you use the http://github.com/VH-Lab/vhlab_vhtools distribution, it will be run automatically.)
 
-Documentation is at https://vh-lab.github.io/NDI-matlab/
+Documentation is at https://vh-lab.github.io/NDI-matlab/NDI-matlab/
 
 Still in early development
 
