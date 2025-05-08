@@ -2,11 +2,11 @@
 
 ## Q: Can I use NDI to analyze data recorded in any format?
 
-**A**: Yes. The NDI system includes pieces of code called [`ndi.daq.reader` objects](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) which interpret data recorded with different acquisition devices. Each `ndi.daq.reader` is specific to a particular device, and `ndi.daq.reader` objects [already exist](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Breader/mfdaq.m/) for devices by several neuroscience software manufacturers.
+**A**: Yes. The NDI system includes pieces of code called [`ndi.daq.reader` objects](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) which interpret data recorded with different acquisition devices. Each `ndi.daq.reader` is specific to a particular device, and `ndi.daq.reader` objects [already exist](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Breader/mfdaq.m/) for devices by several neuroscience software manufacturers.
 
 ## Q: Can I use NDI if my lab builds our own devices and measuring tools?
 
-**A**: Yes. You will need to write one piece of code - an [`ndi.daq.reader` object](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) - for each original DAQ system you use. Possibly, you will also need to create an `ndi.daq.metadatareader to read metadata, such as stimulus information for custom stimuli. Once these are created, your data can be read and analyzed with NDI.
+**A**: Yes. You will need to write one piece of code - an [`ndi.daq.reader` object](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) - for each original DAQ system you use. Possibly, you will also need to create an `ndi.daq.metadatareader to read metadata, such as stimulus information for custom stimuli. Once these are created, your data can be read and analyzed with NDI.
 
 ## Q: Do I need to change the way my lab organizes our data files in order to use NDI?
 

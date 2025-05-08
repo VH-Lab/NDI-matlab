@@ -3,7 +3,7 @@
 ## 2.4 Analyzing stimulus responses
 
 In the last tutorial, we saw how to use applications to identify spikes from electrophysiology recordings. Now we will employ another plain app 
-for calculating responses to stimulation. Note that this tutorial requires that you have completed [Tutorial 2.3](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/) (the analysis here depends on the spike sorted results of Tutorial 2.3).
+for calculating responses to stimulation. Note that this tutorial requires that you have completed [Tutorial 2.3](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/) (the analysis here depends on the spike sorted results of Tutorial 2.3).
 
 ### 2.4.1 Sinusoidal gratings to assess direction and orientation preferences and spatial frequency preferences
 
@@ -31,7 +31,7 @@ stimprobe = stimprobe{1}; % grab the first one, should be our stimulus monitor
 ### 2.4.2 Gathering stimulus information
 
 The first step in analyzing stimuli is to gather information about the stimulus presentations that were performed in the experiment. We use a 
-small dedicated app for this purpose called [ndi.app.stimulus.decoder](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/decoder.m/).
+small dedicated app for this purpose called [ndi.app.stimulus.decoder](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/decoder.m/).
 
 #### Code Block 2.4.2.1. Type this into Matlab.
 
@@ -82,7 +82,7 @@ rapp = ndi.app.stimulus.tuning_response(S);
 cs_doc = rapp.label_control_stimuli(stimprobe,redo);
 ```
 
-Let's examine what it did. We see that the [ndi.app.stimuli.tuning_response](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/) app each of the 85 stimuli with the "blank" stimulus that was presented closest in time:
+Let's examine what it did. We see that the [ndi.app.stimuli.tuning_response](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/) app each of the 85 stimuli with the "blank" stimulus that was presented closest in time:
 
 #### Code Block 2.4.3.2. Type this into Matlab.
 
@@ -99,7 +99,7 @@ help ndi.app.stimulus.tuning_response.label_control_stimuli
 ### 2.4.4 Calculating stimulus responses
 
 Once the control stimuli have been labeled (if desired; it is optional), then one can proceed to calcuate the stimulus responses. To do this, we 
-can employ the [ndi.app.stimuli.tuning_response]((https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/) app. This program will calculate the mean response to each stimulus. Because gratings are a periodic stimulus, this function will also calculate the response at the fundamental stimulus temporal frequency (F1 component) and at twice this temporal frequency (F2 component).
+can employ the [ndi.app.stimuli.tuning_response]((https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/%2Bstimulus/tuning_response.m/) app. This program will calculate the mean response to each stimulus. Because gratings are a periodic stimulus, this function will also calculate the response at the fundamental stimulus temporal frequency (F1 component) and at twice this temporal frequency (F2 component).
 
 #### Code block 2.4.4.1. Type this into Matlab.
 
@@ -139,7 +139,7 @@ rdocs{1}{1}{1}.document_properties.stimulus_response_scalar.responses.control_re
 
 ### 2.4.5 Computing an orientation/direction tuning curve and calculating orientation/direction index values
 
-Now that we have all of the responses to the individual stimuli, we can create a tuning curve, which examines how the response of the neuron depends on a particular stimulus parameter. In this case, the stimulus is 'angle', which corresponds to the direction of the sinusoidal grating stimulus. We have built a specific application [ndi.app.oridirtuning](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/oridirtuning.m/) to process tuning curves in response to oriented stimuli, or stimuli moving in particular directions. 
+Now that we have all of the responses to the individual stimuli, we can create a tuning curve, which examines how the response of the neuron depends on a particular stimulus parameter. In this case, the stimulus is 'angle', which corresponds to the direction of the sinusoidal grating stimulus. We have built a specific application [ndi.app.oridirtuning](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/oridirtuning.m/) to process tuning curves in response to oriented stimuli, or stimuli moving in particular directions. 
 
 After generating the tuning curve, we can calculate many, many index values that characterize the tuning of each cell. The function that calculates the orientation and direction index values pulls up a plot. If you look at the plot that examines the mean response for `ctx_1`, you can see that the cell responds strongly to gratings drifting at 120 degrees and 300 degrees (0 degrees is up; 90 degrees is to the right).
 

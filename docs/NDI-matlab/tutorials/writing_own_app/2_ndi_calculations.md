@@ -3,16 +3,16 @@
 ## 7.2: Writing a simple calculation
 
 Usually, end user scientists do not want to develop an app, but instead want to develop a consistent and tested
-method for performing a calculation. We have developed an NDI mini-app class called [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/) for that purpose.
+method for performing a calculation. We have developed an NDI mini-app class called [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/) for that purpose.
 
-[ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/) objects require very little in the way of construction:
+[ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/) objects require very little in the way of construction:
 
 1. A single document type that they produce
 2. A function that creates the document type from input parameters
 3. A function that searches for all possible inputs to the function
 4. A short documentation for the document type
 
-Once we have these ingredients, we have an [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/) that can be run as simply as
+Once we have these ingredients, we have an [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/) that can be run as simply as
 
 #### Code block 7.2.0.1 (Don't type into the Matlab command line until the end, at the bottom.)
 
@@ -21,11 +21,11 @@ c = ndi.calc.example.simple(S); % where S is an ndi.session
 c.run('NoAction'); % will run but will not replace existing calculations with the same parameters
 ```
 
-We will cover the develop of a very simple calculation: [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/)
+We will cover the develop of a very simple calculation: [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/)
 
 ### 7.2.1 ndi.calc.example.simple
 
-Our simple example will be very simple and silly, but illustrates the process of creating an [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/).
+Our simple example will be very simple and silly, but illustrates the process of creating an [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/).
 
 We will create a calculation that creates a document for each 'ndi.probe' object that simply has a field called
 'answer' that is equal to 5. It is not useful for anything other than demonstrating the steps necessary to create a calculation, but you
@@ -33,7 +33,7 @@ can use it to design calculations that perform useful analysis and save the resu
 
 ### 7.2.2 Designing the database document
 
-Let's look at the design of the database document definition for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/), which we placed in `ndi_common/database_documents/apps/calculations/simple_calc.json`:
+Let's look at the design of the database document definition for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/), which we placed in `ndi_common/database_documents/apps/calculations/simple_calc.json`:
 
 #### Code block 7.2.2.1: Database documentation definition for `simple_calc` (Do not type into Matlab command line)
 
@@ -82,13 +82,13 @@ case is a simple field "answer".
 We are now ready to write the calculation code. This is the code that we will call to make our calculation.  The code has four functions. 
 
 The first function that is needed is the *creator*. This function has the same name as the class and does any building that is necessary
-to make the calculation function. Because [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/) is a subclass of [ndi.app](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/app.m/) and [ndi.appdoc](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/), most of our initialization is handled for us.
-Our code object `simple` is a subclass of [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/), which has a handy routine that can be used to tell the object what document it should
+to make the calculation function. Because [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/) is a subclass of [ndi.app](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/app.m/) and [ndi.appdoc](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bapp/appdoc.m/), most of our initialization is handled for us.
+Our code object `simple` is a subclass of [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/), which has a handy routine that can be used to tell the object what document it should
 make. 
 
 Here is a snapshot of the creator function. Note that this code snippet can't stand on its own; we will give the full object code at the bottom.
 
-#### Code block 7.2.3.1: Creator for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
+#### Code block 7.2.3.1: Creator for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
 
 ```matlab
 		function simple_obj = simple(session)
@@ -108,7 +108,7 @@ The second function is the `calculate` function that actually performs the calcu
 to have the same fields as the structure that holds the central data of the document; in this case, it needs to be a structure with the fields
 of `simple` in the document above (`input_parameters`, `depends_on`,`simple`).
 
-#### Code block 7.2.3.2: `calculate` function for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
+#### Code block 7.2.3.2: `calculate` function for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
 
 ```matlab
 	function doc = calculate(ndi_calculation_obj, parameters)
@@ -140,7 +140,7 @@ correctly so that the function can perform its calculation. The user can do this
 object search for all of the possible inputs on which it can perform the calculation. This allows the calculation to be called simply by the `run`
 function. 
 
-#### Code block 7.2.3.3: `default_search_for_input_parameters` function for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
+#### Code block 7.2.3.3: `default_search_for_input_parameters` function for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
 
 ```matlab
 		function parameters = default_search_for_input_parameters(ndi_calculation_obj)
@@ -160,7 +160,7 @@ function.
 The last function that we need is a documentation function that simply returns its own help as a text string. This allows other programs to
 see the documentation for the calculation, and gives programmers/users a consistent place in the help to look for a description of what the calculation does.
 
-#### Code block 7.2.3.4 `doc_about` for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
+#### Code block 7.2.3.4 `doc_about` for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/) (do not type into Matlab command line):
 
 ```matlab
 		function doc_about(ndi_calculation_obj)
@@ -184,7 +184,7 @@ see the documentation for the calculation, and gives programmers/users a consist
 
 Putting it all together, we can look at the entire calculation:
 
-#### Code block 7.2.3.5: Full object code for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/):
+#### Code block 7.2.3.5: Full object code for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/):
 
 ```matlab
 classdef simple < ndi.calculation
@@ -291,7 +291,7 @@ D{1}.document_properties.simple, % should be struct with field 'answer' == 5
 D{1}.document_properties.depends_on  % should have name of 'probe_id'
 ```
 
-The other way to call a calculation is to use a very targeted set of parameters. If you want to perform your calculation only on specific items, such in the case of [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/),
+The other way to call a calculation is to use a very targeted set of parameters. If you want to perform your calculation only on specific items, such in the case of [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/),
 a specific probe or probes, then you can do that, too, by specifying the specific inputs that you want to search for. 
 
 #### Code block 7.3.1.4 Running the calculation, asking the program to find a specific input to the calculation (type into the Matlab command line).
@@ -308,7 +308,7 @@ d2{1}.document_properties.simple, % should be struct with field 'answer' == 5
 d2{1}.document_properties.depends_on  % should have name of 'probe_id' and p{1}'s probe id
 ```
 
-One can use some additional queries to find specific or parameterized documents to use as inputs for a calculation. See `help ndi.calculation.search_for_input_parameters` or look at the [ndi.calculation](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/calculation.m/) help page.
+One can use some additional queries to find specific or parameterized documents to use as inputs for a calculation. See `help ndi.calculation.search_for_input_parameters` or look at the [ndi.calculation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/calculation.m/) help page.
 
 ### 7.1.6 Discussion/Feedback
 
