@@ -35,9 +35,19 @@ classdef stimulusBathMaker < handle
             obj.bathtargetsStruct = jsondecode(fileread(obj.bathtargetsFilename));
         end
 
-        function docs = createBathDoc(obj,epochNum, bathtargetString, mixtureString)
+        % function table2bathDocs(variableTable)
+        % need to build mixture string
+        % Post/Pre = aCSF
+        % no post/pre w/o plus = manning_compound
+        % + additional location
+        % save json file table that maps info in variable table to mixture
+        % names
+
+        function docs = createBathDoc(obj, stimulatorid, epochid, bathtargetString, mixtureString)
             %METHOD1 Summary of this method goes here
             %   Detailed explanation goes here
+
+           
             
             % Get mixtureTable corresponding to mixtureString
             mixtureNames = fieldnames(obj.mixtureStruct);

@@ -145,3 +145,10 @@ ndi.setup.NDIMaker.epochProbeMapMaker(myPath,variableTable,probeTable,...
 
 sb = ndi.setup.NDIMaker.stimulusBathMaker(sessionArray{1},'dabrowska');
 docs = sb.createBathDoc(1,'all','cutting_solution');
+
+%%
+filename = 'Dabrowska/Electrophysiology Data - Transgenic/AVP_IV_Curves_CRF_BNST_neurons/Aug 18 2021/AVP/experiment001trial017.mat';
+myPath = '/Users/jhaley/Documents/MATLAB/data/marder/972_141';
+filename = '972_141_0000.abf';
+session = ndi.session.dir(myPath);
+epochid = ndi.fun.epoch.filename2epochid(session,filename)
