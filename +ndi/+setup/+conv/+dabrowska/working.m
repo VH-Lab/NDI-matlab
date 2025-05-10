@@ -151,4 +151,5 @@ filename = 'Dabrowska/Electrophysiology Data - Transgenic/AVP_IV_Curves_CRF_BNST
 myPath = '/Users/jhaley/Documents/MATLAB/data/marder/972_141';
 filename = '972_141_0000.abf';
 session = ndi.session.dir(myPath);
-epochid = ndi.fun.epoch.filename2epochid(session,filename)
+% probes = session.getprobes;
+epochid = ndi.fun.epoch.filename2epochid(session,filename);
