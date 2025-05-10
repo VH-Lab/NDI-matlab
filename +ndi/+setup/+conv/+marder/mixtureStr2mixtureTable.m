@@ -18,10 +18,10 @@ function t = mixtureString2mixtureTable(str,mixtureStruct)
 %        unitName :   The name of the unit, usually 'Molar'
 %
 % Example:  
-%    str = 'normal_saline,10e-4 ptx';
+%    str = 'normal_saline';
 %    marderFolder = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+setup','+conv','+marder');
 %    mixtureStruct = jsondecode(fileread(fullfile(marderFolder,"marder_mixtures.json")));
-%    t = ndi.setup.conv.marder.mixtureString2mixtureTable((str,mixtureStruct)
+%    t = ndi.setup.conv.marder.mixtureStr2mixtureTable(str,mixtureStruct)
 %    % a table of entries
 
 t = vlt.data.emptytable("ontologyName","string","name","string","value",...

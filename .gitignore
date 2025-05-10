@@ -7,3 +7,7 @@
 *.asv
 *.m~
 __pycache__
+docs/NDI-matlab/documents/
+site/
+mkdocs.yml
+docs/NDI-matlab/reference/
