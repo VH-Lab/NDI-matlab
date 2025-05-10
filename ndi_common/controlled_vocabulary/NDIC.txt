@@ -24,3 +24,5 @@ Identifier	Name	Description
 22	Treatment: right eye premature eye opening	The subject's right eye was opened prematurely, before natural eye opening.
 23	Treatment: natural left eye opening	The subject's left eye was allowed to open naturally.
 24	Treatment: natural right eye opening	The subject's right eye was allowed to open naturally.
+25  Before optogenetic tetanus  The recording examines the item before an optogenetic tetanus stimulus.
+26  After optogenetic tetanus  The recording examines the item after an optogenetic tetanus stimulus.
