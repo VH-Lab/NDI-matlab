@@ -22,7 +22,7 @@ function [epochid] = filename2epochid(session,filename)
 % Input argument validation
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.database.dir'})}
-    filename (1,:) char {mustBeFile}
+    filename (1,:) char
 end
 
 % Get cached epoch table

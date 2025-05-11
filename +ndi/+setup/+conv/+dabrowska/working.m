@@ -144,10 +144,15 @@ ndi.setup.NDIMaker.epochProbeMapMaker(myPath,variableTable,probeTable,...
 %% Stimulus Bath
 
 sb = ndi.setup.NDIMaker.stimulusBathMaker(sessionArray{1},'dabrowska');
-docs = sb.createBathDoc(1,'all','cutting_solution');
+%docs = sb.createBathDoc(1,'bath','cutting_solution');
 
 %%
-% how to extra folder level pre/post/etc.? using regex
+
+jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowksa_mixtures_dictionary.json');
+mixture_dictionary = jsondecode(fileread(jsonPath));
+docs = sb.table2bathDocs(variableTable,'BathVariable','bath',...
+    'MixtureVariable','BathConditionNew',...
+    'MixtureDictionary',mixture_dictionary);
 %%
 filename = 'Dabrowska/Electrophysiology Data - Transgenic/AVP_IV_Curves_CRF_BNST_neurons/Aug 18 2021/AVP/experiment001trial017.mat';
 myPath = '/Users/jhaley/Documents/MATLAB/data/marder/972_141';
