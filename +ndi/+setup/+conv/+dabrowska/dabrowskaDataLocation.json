@@ -32,6 +32,14 @@
     "FunctionName": ""
   },
   {
+    "VariableName": "BathConditionNew",
+    "SubfolderLevel": [5],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/[^/]+/([^/]+)",
+    "FunctionName": ""
+  },
+  {
     "VariableName": "IsExpMatFile",
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",
