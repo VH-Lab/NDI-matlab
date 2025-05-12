@@ -140,7 +140,7 @@ classdef nielsenvisintan < ndi.daq.reader.mfdaq.intan
 
                         time2 = [stimontimes(:)];
                         data2 = [stimid(:)];
-                        ch{2} = [time2 data2];
+                        ch{2} = [time2 data2(1:size(time2,1),:)]; % fix for aborted trials
 
                         time3 = [stimsetuptimes(:)' ; stimcleartimes(:)'];
                         data3 = [ones(size(stimsetuptimes(:)')) ; -1*ones(size(stimcleartimes(:)'))];
