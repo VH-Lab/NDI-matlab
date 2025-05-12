@@ -6,9 +6,7 @@ function t = all_documents2markdown(varargin)
 
     spaces = 6; % used to be 4 when there was only one tool in the suite
     input_path = ndi.common.PathConstants.DocumentFolder;
-    if input_path(end)~=filesep,
-        input_path(end+1) = filesep;
-    end;
+
     output_path=[ndi.common.PathConstants.RootFolder filesep 'docs' filesep 'NDI-matlab' filesep 'documents' filesep];
     doc_output_path = ['NDI-matlab/documents' filesep];
     doc_path = [''];
@@ -16,6 +14,10 @@ function t = all_documents2markdown(varargin)
 
     vlt.data.assign(varargin{:});
 
+    if input_path(end)~=filesep,
+        input_path(end+1) = filesep;
+    end;
+    
     t = [];
 
     d = dir([input_path filesep '*.json']);
@@ -49,5 +51,5 @@ function t = all_documents2markdown(varargin)
     end;
 
     if write_yml,
-        vlt.file.str2text([ndi.common.PathConstants.RootFolder filesep 'docs' filesep 'NDI-matlab' filesep 'documents' filesep 'documents.yml'],t);
+        vlt.file.str2text([output_path filesep 'documents.yml'],t);
     end;
