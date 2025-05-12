@@ -65,11 +65,11 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             % Check for NaN values based on NonNaNVariableNames option
             nanInd = true(height(variableTable),1);
             for i = 1:numel(options.NonNaNVariableNames)
-                 % Check if the specified column exists
-                 if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
-                     warning('sessionMaker:NonNaNVariableNames', 'Variable "%s" provided in NonNaNVariableNames not found in variableTable. Skipping check.', options.NonNaNVariableNames{i});
-                     continue; % Skip to the next variable name if the current one doesn't exist
-                 end
+                % Check if the specified column exists
+                if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
+                    warning('sessionMaker:NonNaNVariableNames', 'Variable "%s" provided in NonNaNVariableNames not found in variableTable. Skipping check.', options.NonNaNVariableNames{i});
+                    continue; % Skip to the next variable name if the current one doesn't exist
+                end
                 % Update nanInd: a row is valid only if it passes the previous checks AND the current variable check
                 nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)), ...
                     variableTable.(options.NonNaNVariableNames{i}));
