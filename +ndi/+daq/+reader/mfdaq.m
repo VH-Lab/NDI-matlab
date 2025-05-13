@@ -660,7 +660,7 @@ classdef mfdaq < ndi.daq.reader
                 ec_{i} = ec{i}.ndi_clocktype2char();
             end;
             daqreader_epochdata_ingested.epochtable.epochclock = ec_;
-            daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+            daqreader_epochdata_ingested.epochtable.t0_t1 = ndi.fun.doc.t0_t1cell2array(ndi_daqreader_mfdaq_obj.t0_t1(epochfiles));
 
             epochid_struct.epochid = epoch_id;
 
