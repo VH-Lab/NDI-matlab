@@ -7,11 +7,12 @@ function [epochid] = filename2epochid(session,filename)
 %
 %   Input Arguments:
 %       session  - An NDI session object.
-%       filename - A char array or string scalar representing the name of the
-%                  file to search for within the epochs.
+%       filename - A character vector or a cell array of character vectors 
+%                  representing the name(s) of the file(s) to search for 
+%                   within the epochs.
 %
 %   Output Arguments:
-%       epochid  - A cell array of epoch ID(s) associated with the filename.
+%       epochid  - A cell array of epoch ID(s) associated with the filename(s).
 
 % Input argument validation
 arguments

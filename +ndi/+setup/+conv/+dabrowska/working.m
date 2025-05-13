@@ -81,6 +81,10 @@ What are the strains?
 myDir = '/Users/jhaley/Documents/MATLAB';
 myPath = fullfile(myDir,'data','Dabrowska');
 
+% Edit file path with an extra space
+badFolder = fullfile(myPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
+movefile(badFolder,replace(badFolder,'  ',' '))
+
 % Get files
 [dirList,isDir] = vlt.file.manifest(myPath);
 fileList = dirList(~isDir);
@@ -122,7 +126,7 @@ end
 name = {'bath';'Vm';'I'};
 reference = {1;1;1};
 type = {'stimulator';'patch-Vm';'patch-I'};
-deviceString = {'dabrowskalab:ai1';'dabrowskalab:ai1';'dabrowskalab:ao1'};
+deviceString = {'dabrowska_mat:ai1';'dabrowska_mat:ai1';'dabrowska_mat:ao1'};
 probeTable = table(name,reference,type,deviceString);
 
 % Create probePostfix
@@ -139,25 +143,21 @@ variableTable{epochInd,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
 ndi.setup.NDIMaker.epochProbeMapMaker(myPath,variableTable,probeTable,...
     'Overwrite',true,...
     'NonNaNVariableNames','IsExpMatFile',...
-    'ProbePostfix','ProbePostFix');
+    'ProbePostfix','ProbePostfix');
 
 %% Stimulus Bath
 
-sb = ndi.setup.NDIMaker.stimulusBathMaker(sessionArray{1},'dabrowska');
-%%
+sb = ndi.setup.NDIMaker.stimulusBathMaker(sessionArray{1},'dabrowska',...
+    'GetProbes',true);
+
+% Get mixture dictionary
 jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowksa_mixtures_dictionary.json');
 mixture_dictionary = jsondecode(fileread(jsonPath));
-docs = sb.table2bathDocs(variableTable,...
+
+% Get stimulus bath docs
+stimulus_bath_docs = sb.table2bathDocs(variableTable,...
     'bath','BathConditionString',...
     'MixtureDictionary',mixture_dictionary,...
-    'NonNaNVariableNames','SessionInd', ...
-    'MixtureDelimeter',' + ',...
+    'NonNaNVariableNames','sessionInd', ...
+    'MixtureDelimeter','+',...
     'Overwrite',false);
-
-%%
-filename = 'Dabrowska/Electrophysiology Data - Transgenic/AVP_IV_Curves_CRF_BNST_neurons/Aug 18 2021/AVP/experiment001trial017.mat';
-myPath = '/Users/jhaley/Documents/MATLAB/data/marder/972_141';
-filename = '972_141_0000.abf';
-session = ndi.session.dir(myPath);
-% probes = session.getprobes;
-epochid = ndi.fun.epoch.filename2epochid(session,filename);

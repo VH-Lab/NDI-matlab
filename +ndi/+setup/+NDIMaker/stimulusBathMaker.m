@@ -15,7 +15,7 @@ classdef stimulusBathMaker < handle
     end
 
     methods
-        function obj = stimulusBathMaker(session,labName)
+        function obj = stimulusBathMaker(session,labName,options)
             %STIMULUSBATHMAKER Constructor for this class.
             %   Initializes the stimulusBathMaker by loading mixture and bath
             %   target ontology files specific to the given labName and associating
@@ -29,6 +29,11 @@ classdef stimulusBathMaker < handle
             %                (e.g., 'labName_mixtures.json','labName_bathtargets.json')
             %                in the 'NDI-MATLAB/+ndi/+setup/+conv/+labName' folder.
             %
+            %   Optional Name-Value Arguments:
+            %       GetProbes: Runs session.getprobes. Depeneding on the
+            %                size of the session, this can add significant
+            %                processing time.
+            %
             %   Outputs:
             %       obj: An instance of the stimulusBathMaker class.
             %
@@ -41,10 +46,16 @@ classdef stimulusBathMaker < handle
             arguments
                 session {mustBeA(session,{'ndi.session.dir','ndi.database.dir'})}
                 labName (1,:) char
+                options.GetProbes (1,1) logical = false
             end
 
             % Store the session object
-            obj.session = session; 
+            obj.session = session;
+
+            % Get probes
+            if options.GetProbes
+                obj.session.getprobes;
+            end
 
             % Construct the path to the lab-specific ontology files
             labFolder = fullfile(ndi.common.PathConstants.RootFolder,...
@@ -65,7 +76,7 @@ classdef stimulusBathMaker < handle
             obj.bathtargetsStruct = jsondecode(fileread(obj.bathtargetsFilename));
         end % STIMULUSBATHMAKER
 
-        function docs = createBathDoc(obj, stimulatorid, epochid, bathtargetStrings, mixtureStrings,options)
+        function docs = createBathDoc(obj, stimulator_id, epoch_id, bathtargetStrings, mixtureStrings,options)
             %CREATEBATHDOC Creates and adds NDI 'stimulus_bath' documents to the session database.
             %   Constructs one or more 'stimulus_bath' NDI documents for a specific
             %   stimulator and epoch, based on provided bath target(s) and mixture(s).
@@ -100,8 +111,8 @@ classdef stimulusBathMaker < handle
             % Input argument validation
             arguments
                 obj
-                stimulatorid (1,:) char
-                epochid (1,:) char
+                stimulator_id (1,:) char
+                epoch_id (1,:) char
                 bathtargetStrings {mustBeA(bathtargetStrings,{'char','str','cell'})}
                 mixtureStrings {mustBeA(mixtureStrings,{'char','str','cell'})}
                 options.Overwrite (1,1) logical = false;
@@ -119,15 +130,17 @@ classdef stimulusBathMaker < handle
                     error('STIMULUSBATHMAKER:InvalidMixtureString',...
                         '%s is not a valid mixture name in the mixtures file: %s.',...
                         mixtureStrings{i},obj.mixtureFilename)
+                elseif ~any(strcmp(mixtureNames,mixtureStrings{i}))
+                    mixtureStrings(i) = mixtureNames(strcmpi(mixtureNames,mixtureStrings{i}));
                 end
-
+                
                 % Convert mixture string to table format
                 mixtureTable = cat(1,mixtureTable,ndi.setup.conv.marder.mixtureStr2mixtureTable(...
                     mixtureStrings{i},obj.mixtureStruct));
             end
 
             % --- Process Bath Target Strings ---
-             bathtargetNames = fieldnames(obj.bathtargetsStruct); % Get valid bath target names
+            bathtargetNames = fieldnames(obj.bathtargetsStruct); % Get valid bath target names
             if ischar(bathtargetStrings) % Ensure bathtargetStrings is a cell array
                 bathtargetStrings = {bathtargetStrings};
             end
@@ -144,32 +157,45 @@ classdef stimulusBathMaker < handle
                 locList = cat(1,locList,obj.bathtargetsStruct.(bathtargetStrings{i}));
             end
 
-            % --- Create and Add Documents ---
-            docs = cell(size(locList)); % Initialize output cell array
+            % Initialize output cell array
+            docs = cell(size(locList));
+            locNum = [];
+
+            % Check if document already exists, if so, skip or remove
+            % from database if overwriting
+            old_docs = ndi.database.fun.finddocs_elementEpochType(obj.session,...
+                stimulator_id,epoch_id,'stimulus_bath');
             for l = 1:numel(locList)
 
-                % Check if document already exists, if so, skip or remove 
-                % from database if overwriting
-                old_doc = ndi.database.fun.finddocs_elementEpochType(obj.session,...
-                    stimulatorid,epochid,'stimulus_bath');
-                if ~isempty(old_doc)
-                    if options.Overwrite
-                        docs{l} = old_doc;
-                        obj.session.database_rm(old_doc);
+                % Find doc(s) that match the current location ontology node
+                for i = 1:numel(old_docs)
+                    if strcmpi(locList(l).location,...
+                            old_docs{i}.document_properties.stimulus_bath.location.ontologyNode)
+                        
+                        % If overwriting, delete and add locNum to list
+                        if options.Overwrite
+                            obj.session.database_rm(old_docs{i});
+                            locNum = cat(1,locNum,l);
+                        else
+                            docs{l} = old_docs{i};
+                        end
                     else
-                        continue
+                        % If not found, add locNum to list
+                        locNum = cat(1,locNum,l);
                     end
                 end
+            end
+
+            % --- Create and Add Documents ---
+            for l = locNum
 
                 % Define stimulus bath structure
                 stimulus_bath.location.ontologyNode = locList(l).location;
-                bathLoc = ndi.database.fun.uberon_ontology_lookup('Identifier',...
-                    locList(l).location);
-                stimulus_bath.location.name = bathLoc.Name;
+                [~,stimulus_bath.location.name] = ndi.ontology.lookup(locList(l).location);
                 stimulus_bath.mixture_table = ndi.database.fun.writetablechar(mixtureTable);
 
                 % Create stimulus bath document
-                 % Create the base NDI document
+                epochid.epochid = epoch_id;
                 current_doc = ndi.document('stimulus_bath',...      % Document type
                     'stimulus_bath', stimulus_bath,...              % Data payload
                     'epochid', epochid) + ...                       % Associate with epoch
@@ -177,7 +203,7 @@ classdef stimulusBathMaker < handle
 
                 % Set dependency link to the stimulator
                 current_doc = current_doc.set_dependency_value(...
-                    'stimulus_element_id', stimulatorid);
+                    'stimulus_element_id', stimulator_id);
 
                 % Add document to list
                 docs{l} = current_doc;
@@ -249,16 +275,10 @@ classdef stimulusBathMaker < handle
                 options.FilenameVariable = 'Filename';
             end
 
-            % Get stimulator id
-            stim = obj.session.getprobes('type','stimulator');
-            if isempty(stim)
-                error('STIMULUSBATHMAKER:MissingStimulator',...
-                    'No stimulator found in the session.')
-            elseif numel(stim) > 1
-                error('STIMULUSBATHMAKER:SeveralStimulators',...
-                    'More than one stimulator found in the session.')
+            % Ensure NonNaNVariableNames is a cell array for consistent processing
+            if ~iscell(options.NonNaNVariableNames)
+                options.NonNaNVariableNames = {options.NonNaNVariableNames};
             end
-            stimulatorid = stim{1}.id;
             
             % --- Identify Valid Rows ---
             % Check for NaN values based on NonNaNVariableNames option
@@ -270,17 +290,34 @@ classdef stimulusBathMaker < handle
                     continue; % Skip to the next variable name if the current one doesn't exist
                 end
                 % Update nanInd: a row is valid only if it passes the previous checks AND the current variable check
-                nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)), ...
-                    variableTable.(options.NonNaNVariableNames{i}));
+                nanVariable = variableTable.(options.NonNaNVariableNames{i});
+                if iscell(nanVariable)
+                    nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)),nanVariable);
+                else
+                    nanInd = nanInd & ~isnan(nanVariable);
+                end
             end
             epochInd = find(nanInd); % Get linear indices of valid rows
+
+            % Get epoch ids from data file names
+            filenames = variableTable.(options.FilenameVariable)(epochInd);
+            epochids = ndi.fun.epoch.filename2epochid(obj.session,filenames);
 
             docs = cell(size(epochInd)); % Initialize output cell array
             for e = 1:numel(epochInd)
 
-                % Get epoch id from data file name
-                filename = variableTable.(options.FilenameVariable){epochInd(e)};
-                epochid = ndi.fun.epoch.filename2epochid(obj.session,filename);
+                % Get stimulator id associated to the epochid
+                stim = ndi.fun.epoch.epochid2element(obj.session,epochids{e},'type','stimulator');
+                if isempty(stim)
+                    error('STIMULUSBATHMAKER:MissingStimulator',...
+                        'No stimulator found in the session.')
+                elseif iscell(stim) & numel(stim) > 1
+                        error('STIMULUSBATHMAKER:SeveralStimulators',...
+                            'More than one stimulator found in the session.')
+                elseif iscell(stim) & isscalar(stim)
+                    stim = stim{1};
+                end
+                stimulatorid = stim.id;
 
                 % Get bath target string
                 if any(strcmpi(fieldnames(variableTable),bathVariable))
@@ -298,6 +335,7 @@ classdef stimulusBathMaker < handle
 
                 % Convert mixture strings using key in mixture dictionary then confirm match to mixtureStruct
                 mixtureStrings = strsplit(mixtureStrings,options.MixtureDelimeter);
+                mixtureStrings = strtrim(mixtureStrings);
                 mixtureStrings = replace(mixtureStrings,' ','_');
                 for i = 1:numel(mixtureStrings)
                     if any(strcmpi(fieldnames(options.MixtureDictionary),mixtureStrings{i}))
@@ -311,7 +349,7 @@ classdef stimulusBathMaker < handle
                 end
 
                 % Create stimulus bath doc and add to database
-                docs{e} = createBathDoc(obj, stimulatorid, epochid, ...
+                docs{e} = createBathDoc(obj, stimulatorid, epochids{e}, ...
                     bathtargetStrings, mixtureStrings,'Overwrite',options.Overwrite);
             end
         end % TABLE2BATHDOCS

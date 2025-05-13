@@ -56,20 +56,30 @@ classdef epochProbeMapMaker < handle
             %                           these columns must not be NaN for a valid 
             %                           session to be created. Default: {}.
             %       ProbePostfix     - A postfix to be appended to probe names. Default: {} (no postfix).
-            %                           - If a variable name in variableTable: The
-            %                             value of that variable in the corresponding
-            %                             row is used.
-            %                           - If a char/string: This postfix is
-            %                             appended to each probe name from `probeTable`.
-            %                           - If a cell array: Its length must match the
-            %                             total number of rows in the input `variableTable`
-            %                             (before any filtering by `NonNaNVariableNames`).
-            %                             The postfix corresponding to the original row
-            %                             index of a valid epoch stream will be used.
+            %                           - If a char/string:
+            %                               - If a variable name in variableTable, the
+            %                                   value of that variable in the corresponding
+            %                                   row is used.
+            %                               - If not a variable name, this char/string is used.
+            %                           - If a cell array: 
+            %                               - If its length matches the total number of rows
+            %                                   in the input `variableTable`, the value 
+            %                                   in the corresponding row is used.
+            %                               - If its length matches the total number of rows
+            %                                   in the input `variableTable` and the second dimension
+            %                                   matches the number of probes (i.e. height of probeTable),
+            %                                   the value in the corresponding row is used for each probe.
+            %                               - If values are variable names with length
+            %                                   equal to the number of probes (i.e. height of
+            %                                   probeTable, the value of the variable(s) 
+            %                                   in the corresponding row are used. An empty
+            %                                   char/str vector may be used to omit a postfix for
+            %                                   certain variables (e.g. {'PostFix','','PostFix'})
             %                           
-            %
             %   Output Arguments:
             %       obj (epochProbeMapMaker)  - The constructed epochProbeMapMaker object.
+            %
+            %   See also: NDI.EPOCH.EPOCHPROBEMAP_DAQSYSTEM
 
             arguments
                 path (1,:) char
@@ -148,16 +158,46 @@ classdef epochProbeMapMaker < handle
                 for p = 1:height(probeTable)
 
                     probeName = probeTable.name{p}; % Original probe name
-
-                    % Apply ProbePostfix if specified
-                    if numel(options.ProbePostfix) == height(variableTable)
-                        probeName = strcat(probeName,options.ProbePostfix{validInd(e)});
-                    elseif ischar(options.ProbePostfix)
-                        if any(contains(variableTable.Properties.VariableNames,options.ProbePostfix))
-                            probeName = strcat(probeName,variableTable.(options.ProbePostfix)(validInd(e)));
+                    
+                    if ischar(options.ProbePostfix)
+                        % Check if Postfix matches a variable name in variableTable
+                        if any(strcmpi(variableTable.Properties.VariableNames,options.ProbePostfix))
+                            probeName = strcat(probeName,variableTable.(options.ProbePostfix){validInd(e)});
+                        
+                        % If not, just append Postfix as is
                         else
                             probeName = strcat(probeName,options.ProbePostfix);
                         end
+                    elseif iscell(options.ProbePostfix)
+                        % Check if Postfix is the same length as the variableTable
+                        if numel(options.ProbePostfix) == height(variableTable)
+                            probeName = strcat(probeName,options.ProbePostfix{validInd(e)});
+
+                        % Check if Postfix size matches the height(variableTable) x height(probeTable)
+                        elseif size(options.ProbePostfix) == [height(variableTable),height(probeTable)]
+                            probeName = strcat(probeName,options.ProbePostfix{validInd(e),p});
+
+                        % Check if Postfix size matches the height(probeTable) x height(variableTable)
+                        elseif size(options.ProbePostfix) == [height(probeTable),height(variableTable)]
+                            probeName = strcat(probeName,options.ProbePostfix{p,validInd(e)});
+                        
+                        % Check if Postfix contains variable names in variableTable
+                        elseif numel(options.ProbePostfix) == height(probeTable)
+                            if isempty(options.ProbePostfix{p})
+                                probeName = probeName;
+                            elseif any(strcmpi(variableTable.Properties.VariableNames,options.ProbePostfix{p}))
+                                probeName = strcat(probeName,variableTable.(options.ProbePostfix{p}){validInd(e)});
+                            else
+                                 warning('EPOCHPROBEMAPMAKER:InvalidPostfix',...
+                                    'ProbePostfix %s is not valid.',options.ProbePostfix{p})
+                            end
+                        else
+                            warning('EPOCHPROBEMAPMAKER:InvalidPostfix',...
+                                'ProbePostfix is not valid.')
+                        end
+                    else
+                        warning('EPOCHPROBEMAPMAKER:InvalidPostfix',...
+                                'ProbePostfix is not valid.')
                     end
 
                     % Create an epochprobemap_daqsystem object for the current probe
