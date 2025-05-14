@@ -98,6 +98,9 @@ classdef tuningcurve < ndi.calculator
                     end;
                 elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'numberatleast'),
                     pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+                    if ~isnumeric(parameters.input_parameters.selection(i).value)
+                        error(['NumberAtLeast value must be numeric.']);
+                    end
                     match = numel(pva)>=parameters.input_parameters.selection(i).value;
                     if match==0, %if it doesn't have it, then quit
                         doc = {};
