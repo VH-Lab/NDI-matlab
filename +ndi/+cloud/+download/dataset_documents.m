@@ -44,8 +44,6 @@ function [b,msg] = dataset_documents(dataset, mode, jsonpath, filepath, options)
         end
     end
 
-    
-
     for i = 1:numel(d)
         if verbose, disp(['Downloading document ' int2str(i) ' of ' int2str(numel(d))  ' (' num2str(100*(i)/numel(d))  '%)' '...']); end
         document_id = d{i};
