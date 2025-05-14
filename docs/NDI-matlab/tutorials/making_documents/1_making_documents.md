@@ -9,7 +9,7 @@ Creating an NDI document class involves creating two .JSON files. The first is a
 The first step in designing a database document is to decide where it goes. If you are designing a document for NDI proper, then it should go in a subdirectory of
 `NDI-matlab/ndi_common/database_documents`.
 
-Let's look at the design of the database document definition for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/), which we placed in `ndi_common/database_documents/apps/calculations/simple_calc.json`:
+Let's look at the design of the database document definition for [ndi.calc.example.simple](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bcalc/%2Bexample/simple.m/), which we placed in `ndi_common/database_documents/apps/calculations/simple_calc.json`:
 
 #### Code block 7.2.2.1: Database documentation definition for `simple_calc` (Do not type into Matlab command line)
 

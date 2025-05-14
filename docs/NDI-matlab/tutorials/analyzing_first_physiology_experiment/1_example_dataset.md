@@ -1,11 +1,11 @@
 # Tutorial 2: Analyzing your first electrophysiology experiment with NDI
 
-This is a beginner's tutorial for NDI. This tutorial is designed for users who have some basic familiarity with coding or Matlab. If you're a Matlab and coding newbie, please use [Tutorial 3.1, the detailed version](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset/).
+This is a beginner's tutorial for NDI. This tutorial is designed for users who have some basic familiarity with coding or Matlab. If you're a Matlab and coding newbie, please use [Tutorial 3.1, the detailed version](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/analyzing_first_physiology_experiment_detailed/1_example_dataset/).
 
 ## 2.1: Reading an example dataset
 
 We will start with learning to read an example dataset into NDI. We assume you have already
-[installed NDI](https://vh-lab.github.io/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/tutorials/ndimodel/1_intro/). These data are available in a
+[installed NDI](https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/) and taken the [introductory tutorial of the NDI model](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/ndimodel/1_intro/). These data are available in a
 compressed folder
 [here](https://drive.google.com/file/d/1j7IAeMSrH64-qIDLB5EJYUofJSdinwuU/view?usp=sharing). 
 You can put the folder anywhere, but
@@ -66,9 +66,9 @@ In this example, we have already prepared the metadata files that are necessary 
 
 First, we need to tell NDI what **probes** we have in our experiment. A **probe** is anything that measures or stimulates; one end of a probe 
 is connected to a **subject**, and the other end of a probe is connected to a data acquisition device. We tell NDI how the probe is connected by
-creating an [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Usually, we do this with a little
+creating an [ndi.epoch.epochprobemap](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bepoch/epochprobemap.m/). Usually, we do this with a little
 code that instructs NDI how to read this information directly from the laboratory's own file information, but in this example, we will use the
-generic [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file.
+generic [ndi.epoch.epochprobemap_daqsystem](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bmetadata/epochprobemap_daqsystem.m/) object, which reads in a simple tab-delimited text file.
 
 Let's print the `probemap.txt` file for directory `t00001`:
 
@@ -103,9 +103,9 @@ data can be read directly, but here we have made another tab-delimited text file
 type (fullfile(prefix,'ts_exper1','t00001','stims.tsv'))
 ```
 
-### 2.1.4 Gaining access to the data in NDI: [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) and [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects
+### 2.1.4 Gaining access to the data in NDI: [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) and [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects
 
-Now all that remains is to open the data directory as an [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) object, and make [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects to read your data. We will use an [ndi.session.dir](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bsession/dir.m/) object, which allows us to read information from a directory (folder) on disk. 
+Now all that remains is to open the data directory as an [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) object, and make [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects to read your data. We will use an [ndi.session.dir](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bsession/dir.m/) object, which allows us to read information from a directory (folder) on disk. 
 
 We will create a new ndi.system object by calling the constructor with the reference name we wish to give to the session and the pathname to our data:
 
@@ -127,17 +127,17 @@ S.getprobes()
 
 Unless you ran this demo before, you won't see any probes here (it will return an empty cell array). 
 
-We need to make new [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects for our data acquisition system and our stimulator. Our devices are
-multifunction data acquisition systems, so we use the [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) subtype.
+We need to make new [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) objects for our data acquisition system and our stimulator. Our devices are
+multifunction data acquisition systems, so we use the [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) subtype.
 
-An [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) object consists of three components: an
-[ndi.file.navigator](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/) object whose job it is to find the files or
+An [ndi.daq.system](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/system.m/) object consists of three components: an
+[ndi.file.navigator](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bfile/navigator.m/) object whose job it is to find the files or
 streams associated with
-each epoch of data, an [ndi.daq.reader](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) object whose job it is to read the raw data from the files, and an
-[ndi.daq.metadatareader](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/metadatareader.m/) (optionally) whose
+each epoch of data, an [ndi.daq.reader](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/reader.m/) object whose job it is to read the raw data from the files, and an
+[ndi.daq.metadatareader](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/metadatareader.m/) (optionally) whose
 job it is to read any metadata associated with the epoch (such as stimulus parameter information). 
 
-First, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object that we will call `'ced_daqsystem'` to
+First, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) object that we will call `'ced_daqsystem'` to
 read the electrode data from our CED SMR files.
 
 #### Code block 2.1.4.3. Type this in to Matlab:
@@ -163,7 +163,7 @@ et = ced_system.epochtable() % should see a 4 element answer
 f = ced_system.filenavigator.getepochfiles(1) % you should see the files from epoch 1, t00001
 ```
 
-Second, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) for our visual stimulus system.
+Second, we will build an [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/) for our visual stimulus system.
 
 #### Code block 2.1.4.5. Type this in to Matlab:
 
@@ -189,7 +189,7 @@ S.syncgraph_addrule(nsf);
 ```
 
 
-### 2.1.5 Opening the data in NDI: accessing probes via from [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/)
+### 2.1.5 Opening the data in NDI: accessing probes via from [ndi.daq.system.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bdaq/%2Bsystem/mfdaq.m/)
 
 Now we can use NDI to see the probes that these daq systems can find and to access the data from those probes. Let's look at the electrode probe data first.
 
@@ -208,7 +208,7 @@ epoch_to_read = 1;
 ```
 
 You can see that probe 1 has a *name* of `ctx`, a *reference* of `1`, and it is of *type* `n-trode`, or an n-channel electrode. It has a software
-object type of [ndi.probe.timeseries.mfdaq](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/), which simply means
+object type of [ndi.probe.timeseries.mfdaq](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/mfdaq.m/), which simply means
 it is associated with multifunction DAQ systems and returns timeseries observations.
 Now let's read data from our probe `p_ctx1` and plot the data:
 
@@ -250,7 +250,7 @@ for i=1:numel(et), et(i), end; % display the epoch table entries
 
 Now let's read the data from our stimulator. To do this, we are going to ask NDI to read the stimulus timing information
 in the time units of our electrode probe `p_ctx`. You'll notice that when we read data from `p_ctx1`, `readtimeseries` returned
-an [ndi.time.timereference](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) object `timeref_p_ctx1`.
+an [ndi.time.timereference](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) object `timeref_p_ctx1`.
 Let's examine this quickly:
 
 #### Code block 2.1.5.4. Type this in to Matlab:
@@ -261,7 +261,7 @@ timeref_p_ctx1
 
 You'll see a structure with the following fields:
 
-| `timeref_p_ctx1`  | [timereference](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) with properties |
+| `timeref_p_ctx1`  | [timereference](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Btime/timereference.m/) with properties |
 | ---- | ---- |
 | referent |  `[1x1 ndi.probe.timeseries.mfdaq]` | 
 | clocktype |  `[1x1 ndi.time.clocktype]` |
@@ -295,7 +295,7 @@ data.parameters{1}
 ```
 
 Here we examined several fields of the variables `data` and `t` returned from `readtimeseries` from our
-[ndi.probe.timeseries.stimulator](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/).
+[ndi.probe.timeseries.stimulator](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/%2Bprobe/%2Btimeseries/stimulator.m/).
 
 You can see that `t` is a structure with 2 fields, `stimon` and `stimoff`. Our system kept track of when each stimulus began, but in these recordings, we did not have our data acquisition system
 keep track of when our stimulus turned off. (For later analysis, we will need to read this from the stimulus parameters.)

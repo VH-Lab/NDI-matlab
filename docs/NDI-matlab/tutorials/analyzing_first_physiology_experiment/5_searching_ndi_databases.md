@@ -2,12 +2,12 @@
 
 ## 2.5 Understanding and searching the NDI database
 
-### 2.5.1 The [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/) and [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects
+### 2.5.1 The [ndi.database](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/database.m/) and [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) objects
 
-Each [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) object has an [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/) object as one of its properties. This database holds the [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects 
+Each [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) object has an [ndi.database](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/database.m/) object as one of its properties. This database holds the [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) objects 
 that contain the metadata and data results of calculations that apps and programs have performed on the original data.
 
-First, let's open the [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) that we've been working with.
+First, let's open the [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) that we've been working with.
 
 #### Code block 2.5.1.1. Type this into Matlab.
 
@@ -17,7 +17,7 @@ ref = 'ts_exper2';
 S = ndi.session.dir(ref,dirname);
 ```
 
-We find documents by searching for them with the [ndi.session](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/session.m/) method `database_search()`. For example, we can examine all documents that contain stimulus presentation data:
+We find documents by searching for them with the [ndi.session](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/session.m/) method `database_search()`. For example, we can examine all documents that contain stimulus presentation data:
 
 #### Code block 2.5.1.2. Type this into Matlab.
 
@@ -47,13 +47,13 @@ stim_pres_doc{1}.document_properties
   %      stimulus_presentation: [1x1 struct]
 ```
 
-We have used an [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) object to conduct our search, and we will describe those objects a little later.
+We have used an [ndi.query](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/query.m/) object to conduct our search, and we will describe those objects a little later.
 
-Here we see that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have a property called `document_properties` that contains all of the text information that is stored in the document. We will look through all of these properties here, and we also direct you to the documentation page for the ndi.document class [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/).
+Here we see that [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) objects have a property called `document_properties` that contains all of the text information that is stored in the document. We will look through all of these properties here, and we also direct you to the documentation page for the ndi.document class [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/stimulus/stimulus_presentation/).
 
-## 2.5.2 All [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) objects have the fields `document_class` and `base`.
+## 2.5.2 All [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) objects have the fields `document_class` and `base`.
 
-The `document_class` fields contain critical information about the class, such as the file that contains its definition and its class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/documents/base/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/documents/epochid/) documents. 
+The `document_class` fields contain critical information about the class, such as the file that contains its definition and its class name. In addition, document types can be composed of multiple document types. The [stimulus presentation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/stimulus/stimulus_presentation/) class has two superclasses: [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/epochid/). This means that a [stimulus_presentation](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/stimulus/stimulus_presentation/) document has its own fields, plus all of the fields from [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) documents and and [ndi.document_epochid](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/epochid/) documents. 
 
 Let's look at the data that specifies the superclasses:
 
@@ -87,7 +87,7 @@ stim_pres_doc{1}.document_properties.document_class.superclasses(3)
 %    definition: '$NDIDOCUMENTPATH/base.json'
 ```
 
-All documents have [base](https://vh-lab.github.io/NDI-matlab/documents/base/) as a superclass. Note that [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is the name of the software object in Matlab (and Python), whereas [base](https://vh-lab.github.io/NDI-matlab/documents/base/) is the name of the database object type that has the following fields:
+All documents have [base](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) as a superclass. Note that [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) is the name of the software object in Matlab (and Python), whereas [base](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) is the name of the database object type that has the following fields:
 
 | field | default_value | data type | description |
 | --- | --- | --- | --- |
@@ -98,12 +98,12 @@ All documents have [base](https://vh-lab.github.io/NDI-matlab/documents/base/) a
 | **datestamp** | (current time) | ISO-8601 date string, time zone must be UTC leap seconds | Time of document creation |
 | **database_version** | - | character array (ASCII) | Version of this document in the database |
 
-The most useful item in each [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) is its unique identifier `id`. This is a globally unique identifier, which means that no other [ndi.document](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/document.m/) or corresponding [base](https://vh-lab.github.io/NDI-matlab/documents/base/) anywhere in the universe has the same identifier. It is constructed of two hexidecimal strings: the first is based on the time of creation in Universal Controlled Time (UTC), and the second is created by a random number generator. This constructions means that `ndi.document` ids are not only unique, but also that sorting them alphabetically will give you the creation order of the documents. This can come in handy from time to time.
+The most useful item in each [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) is its unique identifier `id`. This is a globally unique identifier, which means that no other [ndi.document](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/document.m/) or corresponding [base](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) anywhere in the universe has the same identifier. It is constructed of two hexidecimal strings: the first is based on the time of creation in Universal Controlled Time (UTC), and the second is created by a random number generator. This constructions means that `ndi.document` ids are not only unique, but also that sorting them alphabetically will give you the creation order of the documents. This can come in handy from time to time.
 
-## 2.5.3 Searching for [base](https://vh-lab.github.io/NDI-matlab/documents/base/) with [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/)
+## 2.5.3 Searching for [base](https://vh-lab.github.io/NDI-matlab/NDI-matlab/documents/base/) with [ndi.query](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/query.m/)
 
 Performing analyses or analyses of analyses in NDI involves searching for previous entries in the database, building upon them, and writing the
-results back to the database. The object [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) allows one to express database searches. Let's learn about [ndi.query](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/query.m/) with a few examples.
+results back to the database. The object [ndi.query](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/query.m/) allows one to express database searches. Let's learn about [ndi.query](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/query.m/) with a few examples.
 
 #### Code block 2.5.3.1. Type this into Matlab.
 
@@ -230,7 +230,7 @@ mydoc{1}.document_properties.element
 % We see it is our visual stimulation system
 ```
 
-Some documents have a lot of depends_on items. Let's examine our ctx_1 neuron that we created in [Tutorial 2.3](https://vh-lab.github.io/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/).
+Some documents have a lot of depends_on items. Let's examine our ctx_1 neuron that we created in [Tutorial 2.3](https://vh-lab.github.io/NDI-matlab/NDI-matlab/tutorials/analyzing_first_physiology_experiment/3_spikesorting/).
 
 #### Code block 2.5.4.2. Type this into Matlab.
 ```matlab
@@ -249,7 +249,7 @@ end;
 %   Depends on spike_clusters_id: 412687f62d1057b8_40c28348e09e5e9b
 ```
 
-### 2.5.5 Structure of an [ndi.database](https://vh-lab.github.io/NDI-matlab/reference/%2Bndi/database.m/)
+### 2.5.5 Structure of an [ndi.database](https://vh-lab.github.io/NDI-matlab/NDI-matlab/reference/%2Bndi/database.m/)
 
 NDI databases (and any analysis project) has a beautiful underlying structure that one can visualize, to get a sense of how the calculations and inferred objects (like neurons that spike) are derived from one another.
 

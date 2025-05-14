@@ -3,7 +3,7 @@ Neuroscience Data Interface - A means of specifying and accessing neuroscience d
 
 Available at https://github.com/VH-Lab/NDI-matlab
 
-Installation instructions: https://vh-lab.github.io/NDI-matlab/installation/
+Installation instructions: https://vh-lab.github.io/NDI-matlab/NDI-matlab/installation/
 
 Notes for manual installers: 
 
