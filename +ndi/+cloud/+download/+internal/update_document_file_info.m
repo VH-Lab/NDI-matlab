@@ -41,7 +41,7 @@ end
 function updatedDocument = updateDocumentForLocalFiles(document, fileDirectory)
 
     originalFileInfo = document.document_properties.files.file_info;
-    document.reset_file_info();
+    document = document.reset_file_info();
 
     for i = 1:numel(originalFileInfo)
         file_uid = originalFileInfo(i).locations(1).uid;
