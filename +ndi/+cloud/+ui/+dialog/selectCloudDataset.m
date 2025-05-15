@@ -1,5 +1,14 @@
 function cloudDatasetId = selectCloudDataset(access)
-% selectCloudDataset - Open a dialog to select a dataset from cloud
+% SELECTCLOUDDATASET - Open a dialog to select a dataset from cloud
+%   
+% CLOUDDATASETID = ndi.cloud.ui.dialog.SELECTCLOUDDATASET(ACCESS)
+%
+% Inputs:
+%   ACCESS          - Access level for which to select dataset from. Must
+%                     be "public" or "private"
+%
+% Outputs:
+%   CLOUDDATASETID  - The identifier of the selected cloud dataset
 
     arguments
         access (1,1) string {mustBeMember(access, ["public", "private"])} = "public"
