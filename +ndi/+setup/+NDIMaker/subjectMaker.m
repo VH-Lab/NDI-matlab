@@ -27,6 +27,7 @@ classdef subjectMaker % Class name remains subjectMaker
             %
             %   Applies a user-provided function to each row of a data table
             %   to extract subject information (ID, strain, species, sex).
+            %   It also extracts the 'sessionInd' directly from the table.
             %   It then filters this information to return data only for
             %   unique, valid subject IDs found in the table.
             %
@@ -34,7 +35,8 @@ classdef subjectMaker % Class name remains subjectMaker
             %       obj (ndi.setup.NDIMaker.subjectMaker): The subjectMaker object instance.
             %       dataTable (table): A MATLAB table where each row contains
             %                        metadata potentially defining a subject.
-            %                        Must contain columns needed by subjectInfoFun.
+            %                        Must contain columns needed by subjectInfoFun,
+            %                        AND a column named 'sessionInd'.
             %       subjectInfoFun (function_handle): An anonymous function
             %                        (or handle to a function) like:
             %                        info = @(tableRow) createSubjectInformation(tableRow)
@@ -56,71 +58,131 @@ classdef subjectMaker % Class name remains subjectMaker
             %                        - biologicalSex (cell array): Corresponding sex info/NaN.
             %                        - tableRowIndex (numeric vector): Original row index in
             %                          dataTable where this unique subject was first found.
+            %                        - sessionInd (numeric vector): Session index from the
+            %                          'sessionInd' column of dataTable for the row that
+            %                          generated the unique subject.
             %                        Returns an empty struct with empty fields if no
             %                        valid, unique subjects are found.
+            %
+            %   Assumes:
+            %       - dataTable contains a numeric column named 'sessionInd'.
 
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
-                dataTable table {mustBeNonempty}
+                dataTable table {mustBeNonempty, mustHaveSessionIndColumn(dataTable)}
                 subjectInfoFun (1,1) function_handle
             end
 
             numRows = height(dataTable);
 
-            % Preallocate cell arrays to store results from all rows
+            % Preallocate cell arrays/vectors to store results from all rows
             allSubjectNames = cell(numRows, 1);
             allStrains = cell(numRows, 1);
             allSpecies = cell(numRows, 1);
             allBiologicalSex = cell(numRows, 1);
             allTableRowIndex = (1:numRows)'; % Store original index
+            allSessionInds = nan(numRows, 1); % Preallocate for sessionInd, assuming numeric
 
-            validRowProcessed = false(numRows, 1); % Keep track of rows processed without error
+            validRowProcessedSuccessfully = false(numRows, 1); % Track if subjectInfoFun completed without error
 
             % --- Loop 1: Extract info from all rows ---
             for i = 1:numRows
                 currentRow = dataTable(i, :);
+                local_id_from_fun = NaN; % Default in case of error or non-assignment
+                strain_obj_from_fun = NaN;
+                species_obj_from_fun = NaN;
+                sex_obj_from_fun = NaN;
+
                 try
                     % Call the user-provided function to get the subject info
-                    [local_id, strain_obj, species_obj, sex_obj] = subjectInfoFun(currentRow);
-
-                    % Store results (even if local_id is NaN for now)
-                    allSubjectNames{i} = local_id;
-                    allStrains{i} = strain_obj;
-                    allSpecies{i} = species_obj;
-                    allBiologicalSex{i} = sex_obj;
-                    validRowProcessed(i) = true; % Mark row as processed
-
+                    [local_id_from_fun, strain_obj_from_fun, species_obj_from_fun, sex_obj_from_fun] = subjectInfoFun(currentRow);
+                    validRowProcessedSuccessfully(i) = true; % Mark row as processed by subjectInfoFun without error
                 catch ME_Func
                     escaped_message = strrep(ME_Func.message, '%', '%%');
-                    warning_msg = sprintf('Error executing subjectInfoFun for table row %d: %s. Skipping row.', i, escaped_message);
+                    warning_msg = sprintf('Error executing subjectInfoFun for table row %d: %s. Skipping this row for subject info extraction.', i, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError', warning_msg);
-                    % Leave preallocated NaNs/empty cells for this row
+                    % local_id_from_fun and other outputs remain as default (e.g., NaN)
+                    % validRowProcessedSuccessfully(i) remains false
+                end
+
+                % Store results from subjectInfoFun
+                allSubjectNames{i} = local_id_from_fun;
+                allStrains{i} = strain_obj_from_fun;
+                allSpecies{i} = species_obj_from_fun;
+                allBiologicalSex{i} = sex_obj_from_fun;
+                
+                % Extract sessionInd directly from the table row
+                try
+                    rawSessionInd = currentRow.sessionInd;
+                    extractedSessionIndValue = NaN; % Default
+
+                    if iscell(rawSessionInd) % Check if the content is a cell
+                        if ~isempty(rawSessionInd) && numel(rawSessionInd) > 0
+                            % Handle potential nested cells, though less common for simple indices
+                            if iscell(rawSessionInd{1}) && ~isempty(rawSessionInd{1}) && numel(rawSessionInd{1}) > 0
+                                extractedSessionIndValue = rawSessionInd{1}{1}; % Extract from nested cell
+                            else
+                                extractedSessionIndValue = rawSessionInd{1}; % Take the first element
+                            end
+                        end
+                        % If cell is empty, extractedSessionIndValue remains NaN
+                    else
+                        extractedSessionIndValue = rawSessionInd; % It's not a cell, use directly
+                    end
+
+                    % Now validate the extracted value
+                    if isnumeric(extractedSessionIndValue) && isscalar(extractedSessionIndValue)
+                        allSessionInds(i) = extractedSessionIndValue;
+                    else
+                        warning_msg = sprintf('Data in "sessionInd" column for table row %d (extracted as type %s) is not a numeric scalar. Storing NaN.', i, class(extractedSessionIndValue));
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIndData', warning_msg);
+                        % allSessionInds(i) remains NaN
+                    end
+                catch ME_SessionInd
+                    escaped_message = strrep(ME_SessionInd.message, '%', '%%');
+                    warning_msg = sprintf('Error accessing "sessionInd" for table row %d: %s. Storing NaN for sessionInd.', i, escaped_message);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionIndAccessError', warning_msg);
+                     % allSessionInds(i) remains NaN
+                end
+                
+                % If subjectInfoFun completed without error but returned an invalid ID
+                if validRowProcessedSuccessfully(i) && ~(ischar(local_id_from_fun) && ~isempty(local_id_from_fun))
+                    if (isnumeric(local_id_from_fun) && all(isnan(local_id_from_fun(:)))) || ...
+                       (islogical(local_id_from_fun) && all(isnan(local_id_from_fun(:)))) || ...
+                       (iscell(local_id_from_fun) && isempty(local_id_from_fun)) || ...
+                       (ischar(local_id_from_fun) && isempty(local_id_from_fun)) % Redundant but explicit
+                        warning_msg = sprintf('subjectInfoFun completed for table row %d but returned an invalid or empty subject ID. This may be due to an internal issue in the function (e.g., invalid date, potentially indicated by a separate warning from that function).', i);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned', warning_msg);
+                    end
                 end
             end
 
             % --- Filter for valid and unique subjects ---
-            % Find rows that were processed AND have a valid (char) subject name
+            % Find rows where subjectInfoFun executed AND returned a valid (char) subject name
             isValidName = cellfun(@(x) ischar(x) && ~isempty(x), allSubjectNames);
-            validIndices = find(isValidName & validRowProcessed);
+            finalValidIndices = find(isValidName);
 
-            if isempty(validIndices)
+
+            if isempty(finalValidIndices)
                 % Return empty struct if no valid subjects found
                  subjectInfo = struct(...
                     'subjectName', {{}}, ...
                     'strain', {{}}, ...
                     'species', {{}}, ...
                     'biologicalSex', {{}}, ...
-                    'tableRowIndex', [] ...
+                    'tableRowIndex', [], ...
+                    'sessionInd', [] ...
                  );
                 return;
             end
 
             % Extract data only for rows with valid subject names
-            validSubjectNames = allSubjectNames(validIndices);
-            validStrains = allStrains(validIndices);
-            validSpecies = allSpecies(validIndices);
-            validBiologicalSex = allBiologicalSex(validIndices);
-            validOriginalIndices = allTableRowIndex(validIndices);
+            validSubjectNames = allSubjectNames(finalValidIndices);
+            validStrains = allStrains(finalValidIndices);
+            validSpecies = allSpecies(finalValidIndices);
+            validBiologicalSex = allBiologicalSex(finalValidIndices);
+            validOriginalIndices = allTableRowIndex(finalValidIndices);
+            validSessionInds = allSessionInds(finalValidIndices);
 
             % Find the indices of the *first* occurrence of each unique valid subject name
             [uniqueNames, ia, ~] = unique(validSubjectNames, 'stable'); % 'stable' keeps first occurrence
@@ -130,6 +192,7 @@ classdef subjectMaker % Class name remains subjectMaker
             uniqueSpecies = validSpecies(ia);
             uniqueBiologicalSex = validBiologicalSex(ia);
             uniqueOriginalIndices = validOriginalIndices(ia);
+            uniqueSessionInds = validSessionInds(ia);
 
             % --- Create Output Struct ---
             subjectInfo = struct(...
@@ -137,7 +200,8 @@ classdef subjectMaker % Class name remains subjectMaker
                 'strain', {uniqueStrains}, ...
                 'species', {uniqueSpecies}, ...
                 'biologicalSex', {uniqueBiologicalSex}, ...
-                'tableRowIndex', uniqueOriginalIndices ...
+                'tableRowIndex', uniqueOriginalIndices, ...
+                'sessionInd', uniqueSessionInds ...
             );
 
         end % function getSubjectInfoFromTable
@@ -244,7 +308,7 @@ classdef subjectMaker % Class name remains subjectMaker
                     % 2. Create and add species document(s)
                     if isfield(subjectInfo, 'species') && numel(subjectInfo.species) >= i
                         species_obj = subjectInfo.species{i};
-                        if isa(species_obj, 'openminds.controlledterms.Species')
+                        if isa(species_obj, 'openminds.controlledterms.Species') % Corrected check
                             try
                                 % Returns a cell array of NDI documents
                                 species_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(species_obj, current_session_id, 'subject', main_subject_doc_id);
@@ -264,7 +328,7 @@ classdef subjectMaker % Class name remains subjectMaker
                     % 3. Create and add strain document(s)
                     if isfield(subjectInfo, 'strain') && numel(subjectInfo.strain) >= i
                         strain_obj = subjectInfo.strain{i};
-                        if isa(strain_obj, 'openminds.core.research.Strain')
+                        if isa(strain_obj, 'openminds.core.research.Strain') % Corrected check
                              try
                                 % Returns a cell array of NDI documents
                                 strain_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(strain_obj, current_session_id, 'subject', main_subject_doc_id);
@@ -283,7 +347,7 @@ classdef subjectMaker % Class name remains subjectMaker
                     % 4. Create and add biological sex document(s)
                     if isfield(subjectInfo, 'biologicalSex') && numel(subjectInfo.biologicalSex) >= i
                         sex_obj = subjectInfo.biologicalSex{i};
-                        if isa(sex_obj, 'openminds.controlledterms.BiologicalSex')
+                        if isa(sex_obj, 'openminds.controlledterms.BiologicalSex') % Corrected check
                             try
                                 % Returns a cell array of NDI documents
                                 sex_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(sex_obj, current_session_id, 'subject', main_subject_doc_id);
@@ -534,5 +598,13 @@ function mustHaveAllValidSubjectNames(subjectNameCellArray)
             error('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectNameEntry', ...
                   'All subject names in subjectInfo.subjectName must be valid, non-empty character vectors. Error at index %d.', k_val);
         end
+    end
+end
+
+function mustHaveSessionIndColumn(dataTable)
+% Validates that the dataTable has a 'sessionInd' column
+    if ~ismember('sessionInd', dataTable.Properties.VariableNames)
+        error('ndi:setup:NDIMaker:subjectMaker:MissingSessionIndColumn', ...
+            'The input dataTable must contain a column named "sessionInd".');
     end
 end
