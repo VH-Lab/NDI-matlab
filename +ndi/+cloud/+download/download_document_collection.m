@@ -65,8 +65,11 @@ function documents = download_document_collection(datasetId, documentIds, option
     end
     
     % Unzip documents and return as cell array of ndi document objects
-    jsonFile = unzip(tempZipFilepath);
-    documentStructs = jsondecode(fileread(jsonFile{1}));
+    unzippedFiles = unzip(tempZipFilepath);
+    jsonFile = unzippedFiles{1};
+    jsonFileCleanupObj = onCleanup(@() deleteIfExists(jsonFile));
+
+    documentStructs = jsondecode(fileread(jsonFile));
 
     documents = ndi.cloud.download.internal.structs_to_ndi_documents(documentStructs);
 end
