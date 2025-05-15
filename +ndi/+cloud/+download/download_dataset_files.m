@@ -89,8 +89,8 @@ end
 
 function displayProgress(currentFileNumber, totalFileNumber)
 % displayProgress - Display progress for file download
-    percentFinished = (currentFileNumber / totalFileNumber) * 100;
+    percentFinished = round((currentFileNumber / totalFileNumber) * 100);
      
-    fprintf('Downloading file %d of %d (%d %%) ...\n', ...
+    fprintf('Downloading file %d of %d (%d%% complete) ...\n', ...
         currentFileNumber, totalFileNumber, percentFinished)
 end
