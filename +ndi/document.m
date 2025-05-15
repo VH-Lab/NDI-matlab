@@ -36,7 +36,7 @@ classdef document
                     end
                 end
                 if mod(numel(varargin),2)~=0,
-                    error(['Variable inputs must be name/value pairs'.']);
+                    error('Variable inputs must be name/value pairs');
                 end;
 
                 for i=1:2:numel(varargin), % assign variable arguments
@@ -134,6 +134,12 @@ classdef document
 
             t = cat(2,t,ts);
         end;
+
+        function tf = has_files(ndi_document_obj)
+            tf = isfield(ndi_document_obj.document_properties, 'files') ...
+                && isstruct(ndi_document_obj.document_properties.files) ...
+                && isfield(ndi_document_obj.document_properties.files, 'file_info');
+        end
 
         function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
             % ADD_FILE - add a file to a ndi.document
