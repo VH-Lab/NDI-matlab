@@ -257,7 +257,7 @@ classdef document
             %
             names = {};
             depend_struct = vlt.data.emptystruct('name','value');
-            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on') & ...
+            hasdependencies = isfield(ndi_document_obj.document_properties,'depends_on') && ...
                 ~isempty(ndi_document_obj.document_properties.depends_on);
             if hasdependencies
                 names = {ndi_document_obj.document_properties.depends_on.name};
@@ -527,7 +527,7 @@ classdef document
             otherproperties = rmfield(ndi_document_obj_b.document_properties, 'document_class');
 
             % Step 2): Merge dependencies if we have to
-            if isfield(ndi_document_obj_out.document_properties,'depends_on') & ...
+            if isfield(ndi_document_obj_out.document_properties,'depends_on') && ...
                     isfield(ndi_document_obj_b.document_properties,'depends_on'),
                 % we need to merge dependencies
                 for k=1:numel(ndi_document_obj_b.document_properties.depends_on),
@@ -871,7 +871,7 @@ classdef document
             for i=1:numel(s_super),
                 % merge s and s_super{i}
                 % part 1: do we need to merge superclass labels?
-                if isfield(s,'document_class')&isfield(s_super{i},'document_class'),
+                if isfield(s,'document_class') && isfield(s_super{i},'document_class'),
                     s.document_class.superclasses = cat(1,s.document_class.superclasses(:),...
                         s_super{i}.document_class.superclasses(:));
                     [dummy,unique_indexes] = unique({s.document_class.superclasses.definition});
@@ -883,7 +883,7 @@ classdef document
                 s_super{i} = rmfield(s_super{i},'document_class');
 
                 % part 2: merge dependencies
-                if isfield(s,'depends_on') & isfield(s_super{i},'depends_on'), % if only s or super_s has it, merge does it right
+                if isfield(s,'depends_on') && isfield(s_super{i},'depends_on'), % if only s or super_s has it, merge does it right
                     s.depends_on = cat(1,s.depends_on(:),s_super{i}.depends_on(:));
                     s_super{i} = rmfield(s_super{i},'depends_on');
                     [dummy,unique_indexes] = unique({s.depends_on.name});
@@ -893,13 +893,13 @@ classdef document
                 end;
 
                 % part 3: merge file_list
-                if isfield(s,'files') & isfield(s_super{i},'files') % if only s or super_s has it, merge handles it fine
+                if isfield(s,'files') && isfield(s_super{i},'files') % if only s or super_s has it, merge handles it fine
                     s_has = isfield(s.files,'file_list');
                     ssuper_has = isfield(s_super{i}.files,'file_list');
                     if ~ssuper_has, % just merge whatever s has
                         % use s's version in the merge
                         s_super{i} = rmfield(s_super{i},'files');
-                    elseif ~s_has & ssuper_has,
+                    elseif ~s_has && ssuper_has,
                         s = rmfield(s,'files');
                     else, % they both have it
                         s.files.file_list = cat(1,s.files.file_list(:),s_super{i}.files.file_list(:));
