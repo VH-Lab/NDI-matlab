@@ -6,7 +6,7 @@ end
 
 dataPath = fullfile(dataParentDir,'Dabrowska');
 
-badFolder = fullfile(myPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
+badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
     movefile(badFolder,replace(badFolder,'  ',' '));
 end
