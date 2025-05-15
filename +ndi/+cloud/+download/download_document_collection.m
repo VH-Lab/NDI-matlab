@@ -17,6 +17,9 @@ function documents = download_document_collection(datasetId, documentIds, option
 %                   Array of document identifiers to download. Default is an empty string (""),
 %                   which indicates that all documents in the dataset will be downloaded.
 %
+%    options.Timeout - (1,1) double, optional
+%                   Optional name-value argument. Default is 10 (seconds)
+%
 % OUTPUTS:
 %    documents    - Cell
 %                   A cell array of structures representing the downloaded 
@@ -44,6 +47,8 @@ function documents = download_document_collection(datasetId, documentIds, option
 
     isFinished = false;
     t1 = tic;
+    % The download URL is not immediately available. Retry downloading the 
+    % file until successful or the timeout is reached.
     while ~isFinished && toc(t1) < options.Timeout
         try
             websave(tempZipFilepath, downloadUrl);
@@ -51,6 +56,13 @@ function documents = download_document_collection(datasetId, documentIds, option
         catch ME
             pause(1)
         end
+    end
+
+    if ~isfile(tempZipFilepath)
+        error('NDI:Cloud:DocumentDownloadFailed', ...
+            ['Download failed with message:\n %s\n. If you see this ', ...
+            'message repeatedly, try using a larger Timeout value.'], ...
+            ME.message)
     end
     
     % Unzip documents and return as structs
