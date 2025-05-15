@@ -33,13 +33,11 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
 
     files = filterFilesToDownload(datasetInfo.files, fileUuids);
 
-    numFiles = numel(files);
-
-    if options.Verbose
-        fprintf('Will download %d files...\n', numFiles );
-    end
     targetFolder = createSubFolderForDownloadedFiles(targetFolder);
-
+    
+    numFiles = numel(files);
+    if options.Verbose; fprintf('Will download %d files...\n', numFiles ); end
+    
     for i = 1:numFiles
         if options.Verbose, displayProgress(i, numFiles); end
         
@@ -53,11 +51,11 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
 
         targetFilepath = fullfile(targetFolder, file_uid);
         if isfile(targetFilepath)
-            if options.Verbose, fprintf('File %d already exists locally, skipping...\n', i); end
+            if options.Verbose; fprintf('File %d already exists locally, skipping...\n', i); end
             continue;
         end
         [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, file_uid);
-        if options.Verbose, fprintf('Saving file %d...\n', i); end
+        if options.Verbose; fprintf('Saving file %d...\n', i); end
 
         % Save the file
         try
