@@ -83,7 +83,11 @@ myPath = fullfile(myDir,'data','Dabrowska');
 
 % Edit file path with an extra space
 badFolder = fullfile(myPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
-movefile(badFolder,replace(badFolder,'  ',' '))
+try
+    movefile(badFolder,replace(badFolder,'  ',' '))
+catch ME
+    warning('Bad path already fixed')
+end
 
 % Get files
 [dirList,isDir] = vlt.file.manifest(myPath);
@@ -136,10 +140,11 @@ recordingDates = datetime(variableTable.RecordingDate(epochInd),...
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
 sliceLabel = variableTable.sliceLabel(epochInd);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
+variableTable.ProbePostfix = cell(height(variableTable),1);
 variableTable{epochInd,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
     recordingDates,sliceLabel,'UniformOutput',false);
 
-% Create epoch probe maps
+%% Create epoch probe maps
 ndi.setup.NDIMaker.epochProbeMapMaker(myPath,variableTable,probeTable,...
     'Overwrite',true,...
     'NonNaNVariableNames','IsExpMatFile',...
@@ -160,4 +165,4 @@ stimulus_bath_docs = sb.table2bathDocs(variableTable,...
     'MixtureDictionary',mixture_dictionary,...
     'NonNaNVariableNames','sessionInd', ...
     'MixtureDelimeter','+',...
-    'Overwrite',false);
+    'Overwrite',true);

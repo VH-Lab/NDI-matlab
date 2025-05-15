@@ -159,32 +159,32 @@ classdef stimulusBathMaker < handle
 
             % Initialize output cell array
             docs = cell(size(locList));
-            locNum = [];
 
             % Check if document already exists, if so, skip or remove
             % from database if overwriting
             old_docs = ndi.database.fun.finddocs_elementEpochType(obj.session,...
                 stimulator_id,epoch_id,'stimulus_bath');
-            for l = 1:numel(locList)
+            
+            % Find locations that need to be processed
+            locNum = 1:numel(locList);
+            for i = 1:numel(old_docs)
 
-                % Find doc(s) that match the current location ontology node
-                for i = 1:numel(old_docs)
-                    if strcmpi(locList(l).location,...
-                            old_docs{i}.document_properties.stimulus_bath.location.ontologyNode)
-                        
-                        % If overwriting, delete and add locNum to list
-                        if options.Overwrite
-                            obj.session.database_rm(old_docs{i});
-                            locNum = cat(1,locNum,l);
-                        else
-                            docs{l} = old_docs{i};
-                        end
+                % Find location ontology node(s) that match the doc
+                locMatch = strcmpi({locList.location},...
+                    old_docs{i}.document_properties.stimulus_bath.location.ontologyNode);
+                
+                if any(locMatch)
+                    if options.Overwrite
+                        % If overwriting, delete
+                        obj.session.database_rm(old_docs{i});
                     else
-                        % If not found, add locNum to list
-                        locNum = cat(1,locNum,l);
+                        % If not overwriting, grab doc and remove locNum from list
+                        docs{locMatch} = old_docs{i};
+                        locNum(locMatch) = NaN;
                     end
                 end
             end
+            locNum(isnan(locNum)) = [];
 
             % --- Create and Add Documents ---
             for l = locNum
