@@ -31,18 +31,14 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
 
     [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
 
-    files = datasetInfo.files;
-    if ~ismissing(fileUuids) % Filter by uids
-        allFileUuids = cellfun(@(f) f.uid, files, 'UniformOutput', false);
-        idx = intersect(allFileUuids, fileUuids, "stable");
-        files = files(idx);
-    end
+    files = filterFilesToDownload(datasetInfo.files, fileUuids);
 
     numFiles = numel(files);
 
     if options.Verbose
         fprintf('Will download %d files...\n', numFiles );
     end
+    targetFolder = createSubFolderForDownloadedFiles(targetFolder);
 
     for i = 1:numFiles
         if options.Verbose, displayProgress(i, numFiles); end
@@ -78,6 +74,20 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
     if options.Verbose; disp('File download complete.'); end
 end
 
+function files = filterFilesToDownload(files, fileUuids)
+    if ~ismissing(fileUuids) % Filter by uids
+        allFileUuids = cellfun(@(f) f.uid, files, 'UniformOutput', false);
+        idx = intersect(allFileUuids, fileUuids, "stable");
+        files = files(idx);
+    end
+end
+
+function filesTargetFolder = createSubFolderForDownloadedFiles(targetFolder)
+    filesTargetFolder = fullfile(targetFolder, 'download', 'files');
+    if ~isfolder(filesTargetFolder)
+        mkdir(filesTargetFolder)
+    end
+end
 
 function displayProgress(currentFileNumber, totalFileNumber)
 % displayProgress - Display progress for file download
