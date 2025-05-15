@@ -22,8 +22,7 @@ function documents = download_document_collection(datasetId, documentIds, option
 %
 % OUTPUTS:
 %    documents    - Cell
-%                   A cell array of structures representing the downloaded 
-%                   documents.
+%                   A cell array of ndi.document objects.
 %
 % EXAMPLE:
 %    % Download all documents from a dataset:
@@ -65,9 +64,11 @@ function documents = download_document_collection(datasetId, documentIds, option
             ME.message)
     end
     
-    % Unzip documents and return as structs
+    % Unzip documents and return as cell array of ndi document objects
     jsonFile = unzip(tempZipFilepath);
-    documents = jsondecode(fileread(jsonFile{1}));
+    documentStructs = jsondecode(fileread(jsonFile{1}));
+
+    documents = ndi.cloud.download.internal.structs_to_ndi_documents(documentStructs);
 end
 
 function deleteIfExists(filePath)
