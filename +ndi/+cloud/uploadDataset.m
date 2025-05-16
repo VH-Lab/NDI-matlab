@@ -1,7 +1,7 @@
-function datasetId = uploadDataset(ndiDataset, options)
-    % NEW_DATASET - upload a dataset to NDI cloud
+function cloudDatasetId = uploadDataset(ndiDataset, options)
+    % UPLOADDATASET - upload a dataset to NDI cloud
     %
-    % DATASETID = NEW_DATASET(ndiDataset)
+    % DATASETID = ndi.cloud.UPLOADDATASET(ndiDataset)
     %
     % Upload an ndi.dataset object to NDI Cloud. The DATASETID on
     % NDI Cloud is returned.
