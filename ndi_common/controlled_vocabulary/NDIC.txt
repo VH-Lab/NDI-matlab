@@ -23,6 +23,6 @@ Identifier	Name	Description
 22	Treatment: right eye premature eye opening	The subject's right eye was opened prematurely, before natural eye opening.
 23	Treatment: natural left eye opening	The subject's left eye was allowed to open naturally.
 24	Treatment: natural right eye opening	The subject's right eye was allowed to open naturally.
-25  Approach: Before optogenetic tetanus  The measurement is performed before an optogenetic tetanus stimulus.
-26  Approach: After optogenetic tetanus  The measurement is performed after an optogenetic tetanus stimulus.
+25	Approach: Before optogenetic tetanus  The measurement is performed before an optogenetic tetanus stimulus.
+26	Approach: After optogenetic tetanus  The measurement is performed after an optogenetic tetanus stimulus.
 27	Purpose: Assessing activity with temperature manipulation	States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature
