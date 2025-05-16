@@ -28,7 +28,7 @@ jobs:
     uses: ehennestad/matbox/.github/workflows/reusable_test_workflow.yml@add-reusable-test-workflow
     inputs:
       code_directory: '.' # home directory
-      tools_directory: 'tests/tools'
+      tools_directory: 'tests'
       matlab_release: 'latest'
     secrets:
       commit_email_address: ${{ secrets.COMMIT_EMAIL_ADDRESS }}
