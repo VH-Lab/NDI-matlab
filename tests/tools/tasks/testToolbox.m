@@ -1,5 +1,6 @@
 function testToolbox(varargin)
     installMatBox()
+    ndi_install()
     projectRootDir = nditools.projectdir();
     matbox.tasks.testToolbox(projectRootDir, ...
         "SourceFolderName", "", ...
