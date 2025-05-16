@@ -4,7 +4,7 @@
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "/([^/]+)_IV_Curves",
+    "StringFormat": "Optogenetics/([^/]+)_(?i)[a-z]{3}",
     "FunctionName": ""
   },
   {
@@ -12,7 +12,7 @@
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "(?<=/)([^/_]+)(?:_[^/]*)?(?=_IV_Curves)",
+    "StringFormat": "Optogenetics/([^/]+)_Cre",
     "FunctionName": ""
   },
   {
@@ -20,7 +20,7 @@
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "(?<=/)[^/_]+_(.+?)(?=_IV_Curves)",
+    "StringFormat": "Optogenetics/([^/]+)_(.+?)_Cre",
     "FunctionName": ""
   },
   {
@@ -28,7 +28,7 @@
     "SubfolderLevel": [3],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "_([^_/]+)_neurons",
+    "StringFormat": "Cre_([^_/]+)",
     "FunctionName": ""
   },
   {
@@ -44,7 +44,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "neurons/([^/]+)/",
+    "StringFormat": "((?i)[a-z]{3} \\d{1,2} \\d{4} *(?:[a-zA-Z])?)(?:/|$)",
     "FunctionName": ""
   },
   {
@@ -52,7 +52,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "neurons/[^/]+/([^/]+)",
+    "StringFormat": "([^/]+)/experiment",
     "FunctionName": ""
   },
   {
@@ -60,15 +60,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "neurons/((?i)[a-z]{3} \\d{1,2} \\d{4})",
-    "FunctionName": ""
-  },    
-  {
-    "VariableName": "IsWildType",
-    "SubfolderLevel": [],
-    "StringDetectMode": "regex",
-    "StringDetectInput": "",
-    "StringFormat": "((?i)Wild[- ]type)",
+    "StringFormat": "((?i)[a-z]{3} \\d{1,2} \\d{4})",
     "FunctionName": ""
   },
   {
@@ -76,7 +68,15 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "neurons/(?i)[a-z]{3} \\d{1,2} \\d{4} *([a-zA-Z])?(?:/|$)",
+    "StringFormat": "(?i)[a-z]{3} \\d{1,2} \\d{4} *([a-zA-Z])?(?:/|$)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsWildType",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)Wild[- ]type)",
     "FunctionName": ""
   },
   {
@@ -100,7 +100,7 @@
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
-    "StringFormat": "((?i)AVPCre_BNST_neurons)",
+    "StringFormat": "((?i)AVP_Cre)",
     "FunctionName": ""
   }
 ]
