@@ -1,5 +1,8 @@
 function testToolbox(varargin)
     installMatBox()
-    projectRootDir = matboxtools.projectdir();
-    matbox.tasks.testToolbox(projectRootDir, varargin{:})
+    projectRootDir = nditools.projectdir();
+    matbox.tasks.testToolbox(projectRootDir, ...
+        "CodeFolderName", "", ...
+        "ToolsFolderName", "", ...
+        varargin{:})
 end

@@ -1,4 +1,4 @@
 function installMatBox()
-    projectRootDir = matboxtools.projectdir();
-    addpath(genpath(fullfile(projectRootDir, "code")))
+    projectRootDir = nditools.projectdir();
+    addpath(projectRootDir)
 end

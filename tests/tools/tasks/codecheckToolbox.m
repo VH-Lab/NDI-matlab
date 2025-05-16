@@ -1,5 +1,5 @@
 function codecheckToolbox()
     installMatBox()
-    projectRootDir = matboxtools.projectdir();
+    projectRootDir = nditools.projectdir();
     matbox.tasks.codecheckToolbox(projectRootDir)
 end

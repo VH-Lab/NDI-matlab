@@ -3,6 +3,6 @@ function createTestedWithBadgeforToolbox(versionNumber)
         versionNumber (1,1) string
     end
     installMatBox()
-    projectRootDirectory = fullfile(matboxtools.projectdir());
+    projectRootDirectory = nditools.projectdir();
     matbox.tasks.createTestedWithBadgeforToolbox(versionNumber, projectRootDirectory)
 end

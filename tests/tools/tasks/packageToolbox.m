@@ -4,7 +4,7 @@ function packageToolbox(releaseType, versionString)
         versionString {mustBeTextScalar} = "";
     end
     installMatBox()
-    projectRootDir = matboxtools.projectdir();
-    addpath(genpath(projectRootDir))
+    projectRootDir = nditools.projectdir();
+    addpath(projectRootDir)
     matbox.tasks.packageToolbox(projectRootDir, releaseType, versionString)
 end
