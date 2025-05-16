@@ -1,5 +1,5 @@
 function testToolbox(varargin)
-    installMatBox()
+    nditools.installMatBox()
     ndi_install()
     projectRootDir = nditools.projectdir();
     matbox.tasks.testToolbox(projectRootDir, ...

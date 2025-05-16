@@ -3,7 +3,7 @@ function packageToolbox(releaseType, versionString)
         releaseType {mustBeTextScalar,mustBeMember(releaseType,["build","major","minor","patch","specific"])} = "build"
         versionString {mustBeTextScalar} = "";
     end
-    installMatBox()
+    nditools.installMatBox()
     projectRootDir = nditools.projectdir();
     addpath(projectRootDir)
     matbox.tasks.packageToolbox(projectRootDir, releaseType, versionString)
