@@ -55,7 +55,6 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
             continue;
         end
         [~, downloadURL, ~] = ndi.cloud.api.datasets.get_file_details(cloudDatasetId, file_uid);
-        if options.Verbose; fprintf('Saving file %d...\n', i); end
 
         % Save the file
         try
@@ -74,9 +73,13 @@ end
 
 function files = filterFilesToDownload(files, fileUuids)
     if ~ismissing(fileUuids) % Filter by uids
-        allFileUuids = cellfun(@(f) f.uid, files, 'UniformOutput', false);
-        idx = intersect(allFileUuids, fileUuids, "stable");
+        allFileUuids = arrayfun(@(f) f.uid, files, 'UniformOutput', false);
+        [~, idx] = intersect(allFileUuids, fileUuids, "stable");
+
         files = files(idx);
+               
+        assert(isequal(sort(string({files.uid})), sort(fileUuids)), ...
+            'Expected filtered files list to match IDs for filtering.')
     end
 end
 
