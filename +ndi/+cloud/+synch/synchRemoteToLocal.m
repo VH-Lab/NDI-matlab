@@ -3,13 +3,18 @@ function synchRemoteToLocal(ndiDataset, cloudDatasetId, options)
     arguments
         ndiDataset (1,1) ndi.dataset
         cloudDatasetId (1,1) string
+        options.SynchMode (1,1) ndi.cloud.synch.enum.SynchMode = "Hybrid"
         options.DeleteMissingFiles (1,1) logical = false
+        options.Verbose (1,1) logical = true
     end
+
+    import ndi.cloud.synch.enum.SynchMode
+
     if options.DeleteMissingFiles
         error('Not implemented')
     end
 
-    % todo: resolve cloud dataset identifier
+    % Todo: resolve cloud dataset identifier
     % cloudDatasetIdQuery = ndi.query('','isa','cloud_dataset_id');
     % cloudDatasetIdDocument = ndiDataset.database_search(cloudDatasetIdQuery);
     % cloudDatasetId = cloudDatasetIdDocument.identifier;
@@ -25,12 +30,46 @@ function synchRemoteToLocal(ndiDataset, cloudDatasetId, options)
         localDocuments, 'UniformOutput', false) );
 
     % Download missing documents from cloud
-    [missingDocumentIds] = setdiff(remoteDocumentIds, localDocumentIds, 'stable');
+    [~, missingDocumentIdx] = setdiff(remoteDocumentIds, localDocumentIds, 'stable');
     
-    newNdiDocuments = ndi.cloud.download.download_document_collection(cloudDatasetId, missingDocumentIds);
-    for i = 1:numel(newNdiDocuments)
-        newNdiDocuments{i} = ndi.document(newNdiDocuments{i});
+    missingDocumentCloudIds = {documentSummary.documents(missingDocumentIdx).id};
+
+    newNdiDocuments = ndi.cloud.download.download_document_collection(...
+        cloudDatasetId, missingDocumentCloudIds);
+
+    if options.SynchMode == SynchMode.Local
+        % Download missing files if files should be downloaded.
+        missingFileUids = getFileUidsFromDocuments(newNdiDocuments);
+        ndi.cloud.download.download_dataset_files(...
+            cloudDatasetId, ...
+            ndiDataset.path, ...
+            missingFileUids, ...
+            "Verbose", options.Verbose)
     end
+
+    newNdiDocuments = ndi.cloud.download.internal.update_document_file_info(...
+        newNdiDocuments, options.SynchMode, fullfile(ndiDataset.path, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
     
+    if options.Verbose
+        fprintf('Adding %d documents to dataset...\n', numel(newNdiDocuments))
+        if options.SynchMode == SynchMode.Local
+            fprintf('Will copy %d downloaded files into dataset. May take several minutes if the files are large...\n', numel(missingFileUids))
+        end
+    end
     ndiDataset.database_add(newNdiDocuments);
+    if options.Verbose; disp('Completed dataset update.'); end
+end
+
+function fileUids = getFileUidsFromDocuments(ndiDocuments)
+    fileUids = {};
+
+    for i = 1:numel(ndiDocuments)
+        document = ndiDocuments{i};
+        if document.has_files()
+            fileInfo = document.document_properties.files.file_info;
+            for j = 1:numel(fileInfo)
+                fileUids = [fileUids, {fileInfo(j).locations.uid}]; %#ok<AGROW>
+            end
+        end
+    end
 end
