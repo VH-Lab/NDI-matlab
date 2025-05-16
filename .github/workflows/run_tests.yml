@@ -26,7 +26,7 @@ jobs:
   call-workflow-test-toolbox:
     name: Test
     uses: ehennestad/matbox/.github/workflows/reusable_test_workflow.yml@add-reusable-test-workflow
-    inputs:
+    with:
       code_directory: '.' # home directory
       tools_directory: 'tests'
       matlab_release: 'latest'
