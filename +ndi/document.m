@@ -138,7 +138,8 @@ classdef document
         function tf = has_files(ndi_document_obj)
             tf = isfield(ndi_document_obj.document_properties, 'files') ...
                 && isstruct(ndi_document_obj.document_properties.files) ...
-                && isfield(ndi_document_obj.document_properties.files, 'file_info');
+                && isfield(ndi_document_obj.document_properties.files, 'file_info') ...
+                && ~isempty(ndi_document_obj.document_properties.files.file_info);
         end
 
         function ndi_document_obj = add_file(ndi_document_obj, name, location, varargin)
