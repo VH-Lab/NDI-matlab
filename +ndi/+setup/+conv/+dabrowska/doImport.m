@@ -17,7 +17,7 @@ end
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
 include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
-    ~contains(fileList,'.DS_Store');
+    ~contains(fileList,'.DS_Store') & ~endsWith(fileList,'epochprobemap.txt') & ~endsWith(fileList,'.epochid.ndi');
 fileList = fileList(include);
 
 % Get variable table

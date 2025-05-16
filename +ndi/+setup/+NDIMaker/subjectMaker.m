@@ -29,7 +29,8 @@ classdef subjectMaker % Class name remains subjectMaker
             %   to extract subject information (ID, strain, species, sex).
             %   It also extracts the 'sessionInd' directly from the table.
             %   It then filters this information to return data only for
-            %   unique, valid subject IDs found in the table.
+            %   unique, valid subject IDs that also have a valid sessionInd
+            %   (positive integer) found in the table.
             %
             %   Args:
             %       obj (ndi.setup.NDIMaker.subjectMaker): The subjectMaker object instance.
@@ -65,7 +66,8 @@ classdef subjectMaker % Class name remains subjectMaker
             %                        valid, unique subjects are found.
             %
             %   Assumes:
-            %       - dataTable contains a numeric column named 'sessionInd'.
+            %       - dataTable contains a column named 'sessionInd' that can be
+            %         interpreted as numeric session indices.
 
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
@@ -102,7 +104,6 @@ classdef subjectMaker % Class name remains subjectMaker
                     warning_msg = sprintf('Error executing subjectInfoFun for table row %d: %s. Skipping this row for subject info extraction.', i, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError', warning_msg);
                     % local_id_from_fun and other outputs remain as default (e.g., NaN)
-                    % validRowProcessedSuccessfully(i) remains false
                 end
 
                 % Store results from subjectInfoFun
@@ -111,46 +112,71 @@ classdef subjectMaker % Class name remains subjectMaker
                 allSpecies{i} = species_obj_from_fun;
                 allBiologicalSex{i} = sex_obj_from_fun;
                 
-                % Extract sessionInd directly from the table row
+                % Extract and process sessionInd directly from the table row
                 try
                     rawSessionInd = currentRow.sessionInd;
-                    extractedSessionIndValue = NaN; % Default
+                    valueToConvert = NaN; % Default value if extraction fails or cell is empty
 
                     if iscell(rawSessionInd) % Check if the content is a cell
                         if ~isempty(rawSessionInd) && numel(rawSessionInd) > 0
-                            % Handle potential nested cells, though less common for simple indices
+                            % Handle potential nested cells
                             if iscell(rawSessionInd{1}) && ~isempty(rawSessionInd{1}) && numel(rawSessionInd{1}) > 0
-                                extractedSessionIndValue = rawSessionInd{1}{1}; % Extract from nested cell
+                                valueToConvert = rawSessionInd{1}{1}; % Extract from nested cell
                             else
-                                extractedSessionIndValue = rawSessionInd{1}; % Take the first element
+                                valueToConvert = rawSessionInd{1}; % Take the first element
                             end
                         end
-                        % If cell is empty, extractedSessionIndValue remains NaN
+                        % If cell is empty, valueToConvert remains NaN
                     else
-                        extractedSessionIndValue = rawSessionInd; % It's not a cell, use directly
+                        valueToConvert = rawSessionInd; % It's not a cell, use directly
                     end
 
-                    % Now validate the extracted value
-                    if isnumeric(extractedSessionIndValue) && isscalar(extractedSessionIndValue)
+                    % Attempt to convert to double if it's char or string
+                    extractedSessionIndValue = NaN; % Default for final numeric value
+                    if ischar(valueToConvert) || isstring(valueToConvert)
+                        convertedValue = str2double(valueToConvert);
+                        if ~isnan(convertedValue) % Check if conversion was successful
+                            extractedSessionIndValue = convertedValue;
+                        else
+                            % Only warn if the string wasn't just empty or whitespace
+                            if ~( (ischar(valueToConvert) && isempty(strtrim(valueToConvert))) || ...
+                                  (isstring(valueToConvert) && strlength(strtrim(valueToConvert))==0) )
+                                warning_msg = sprintf('Value "%s" in "sessionInd" column for table row %d could not be converted to a number. Storing NaN.', char(valueToConvert), i);
+                                warning('ndi:setup:NDIMaker:subjectMaker:SessionIndConversionError', warning_msg);
+                            end
+                        end
+                    elseif isnumeric(valueToConvert)
+                        extractedSessionIndValue = valueToConvert;
+                    % else: valueToConvert is some other type, extractedSessionIndValue remains NaN
+                    end
+
+                    % Now validate the (potentially converted) value
+                    if isnumeric(extractedSessionIndValue) && isscalar(extractedSessionIndValue) && ~isnan(extractedSessionIndValue)
                         allSessionInds(i) = extractedSessionIndValue;
                     else
-                        warning_msg = sprintf('Data in "sessionInd" column for table row %d (extracted as type %s) is not a numeric scalar. Storing NaN.', i, class(extractedSessionIndValue));
-                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIndData', warning_msg);
-                        % allSessionInds(i) remains NaN
+                        if ~( (ischar(valueToConvert) || isstring(valueToConvert)) && isnan(str2double(valueToConvert)) ) || ...
+                           (isnumeric(extractedSessionIndValue) && (~isscalar(extractedSessionIndValue) || isnan(extractedSessionIndValue)) )
+                             warning_msg = sprintf('Data in "sessionInd" column for table row %d (processed as type %s) is not a valid numeric scalar. Storing NaN.', i, class(extractedSessionIndValue));
+                             warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIndData', warning_msg);
+                        end
                     end
                 catch ME_SessionInd
                     escaped_message = strrep(ME_SessionInd.message, '%', '%%');
                     warning_msg = sprintf('Error accessing "sessionInd" for table row %d: %s. Storing NaN for sessionInd.', i, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:SessionIndAccessError', warning_msg);
-                     % allSessionInds(i) remains NaN
                 end
                 
-                % If subjectInfoFun completed without error but returned an invalid ID
                 if validRowProcessedSuccessfully(i) && ~(ischar(local_id_from_fun) && ~isempty(local_id_from_fun))
-                    if (isnumeric(local_id_from_fun) && all(isnan(local_id_from_fun(:)))) || ...
-                       (islogical(local_id_from_fun) && all(isnan(local_id_from_fun(:)))) || ...
-                       (iscell(local_id_from_fun) && isempty(local_id_from_fun)) || ...
-                       (ischar(local_id_from_fun) && isempty(local_id_from_fun)) % Redundant but explicit
+                    isEffectivelyNaNOrEmpty = false;
+                    if isnumeric(local_id_from_fun) && all(isnan(local_id_from_fun(:)))
+                        isEffectivelyNaNOrEmpty = true;
+                    elseif (islogical(local_id_from_fun) || iscell(local_id_from_fun)) && isempty(local_id_from_fun) 
+                        isEffectivelyNaNOrEmpty = true;
+                    elseif ischar(local_id_from_fun) && isempty(local_id_from_fun)
+                        isEffectivelyNaNOrEmpty = true;
+                    end
+
+                    if isEffectivelyNaNOrEmpty
                         warning_msg = sprintf('subjectInfoFun completed for table row %d but returned an invalid or empty subject ID. This may be due to an internal issue in the function (e.g., invalid date, potentially indicated by a separate warning from that function).', i);
                         warning('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectIDReturned', warning_msg);
                     end
@@ -158,10 +184,11 @@ classdef subjectMaker % Class name remains subjectMaker
             end
 
             % --- Filter for valid and unique subjects ---
-            % Find rows where subjectInfoFun executed AND returned a valid (char) subject name
             isValidName = cellfun(@(x) ischar(x) && ~isempty(x), allSubjectNames);
-            finalValidIndices = find(isValidName);
-
+            % Also check for valid sessionInd (not NaN and > 0)
+            isValidSessionInd = arrayfun(@(x) isnumeric(x) && isscalar(x) && ~isnan(x) && x > 0, allSessionInds);
+            
+            finalValidIndices = find(isValidName & isValidSessionInd); % Combined condition
 
             if isempty(finalValidIndices)
                 % Return empty struct if no valid subjects found
@@ -176,7 +203,7 @@ classdef subjectMaker % Class name remains subjectMaker
                 return;
             end
 
-            % Extract data only for rows with valid subject names
+            % Extract data only for rows with valid subject names AND valid sessionInds
             validSubjectNames = allSubjectNames(finalValidIndices);
             validStrains = allStrains(finalValidIndices);
             validSpecies = allSpecies(finalValidIndices);
