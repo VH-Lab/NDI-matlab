@@ -36,7 +36,7 @@ variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 mySessionPath = dataParentDir;
 SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
-[sessionArray,variableTable.sessionInd] = SM.sessionIndices;
+[sessionArray,variableTable.sessionInd,variableTable.sessionIDs] = SM.sessionIndices;
 
 %% Add DAQ system
 labName = 'dabrowskalab';
