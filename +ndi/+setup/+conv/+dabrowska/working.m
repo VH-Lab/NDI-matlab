@@ -119,7 +119,6 @@ opto_rows = contains(variableTable_ephys.Properties.RowNames,'Optogenetics');
 common_vars = intersect(variableTable_ephys.Properties.VariableNames,...
     variableTable_opto.Properties.VariableNames);
 variableTable = variableTable_ephys(:,common_vars);
-variableTable.isAVPCre = cell(height(variableTable),1); % quick fix
 variableTable(opto_rows,:) = variableTable_opto(opto_rows,common_vars);
 
 % Add additional metadata
