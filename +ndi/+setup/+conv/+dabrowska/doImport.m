@@ -8,6 +8,7 @@ dataPath = fullfile(dataParentDir,'Dabrowska');
 
 badFolder = fullfile(dataPath,'Electrophysiology Data - Wild-type/TGOT_IV_Curves_Type III_BNST_neurons/Apr 26  2022');
 if isfolder(badFolder)
+    disp(['Removing extra space in known folder ' badFolder])
     movefile(badFolder,replace(badFolder,'  ',' '));
 end
 
@@ -21,7 +22,7 @@ include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
 fileList = fileList(include);
 
 % Get variable table
-jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowskaDataLocation.json');
+jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_ephys.json');
 j = jsondecode(fileread(jsonPath));
 variableTable = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 variableTable{:,'SessionRef'} = {'Dabrowska'};
@@ -36,7 +37,7 @@ variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
 mySessionPath = dataParentDir;
 SM = ndi.setup.NDIMaker.sessionMaker(mySessionPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
-[sessionArray,variableTable.sessionInd,variableTable.sessionIDs] = SM.sessionIndices;
+[sessionArray,variableTable.sessionInd,variableTable.sessionID] = SM.sessionIndices;
 
 %% Add DAQ system
 labName = 'dabrowskalab';
@@ -45,34 +46,32 @@ SM.addDaqSystem(labName,'Overwrite',true)
 %% Step 3: SUBJECTS
 %%
 %% 
-
-%% Create subject strings
-for i = 1:height(variableTable)
-    if isnan(variableTable.IsExpMatFile{i})
-        variableTable.SubjectString{i} = '';
-    else
-        variableTable.SubjectString{i} = ndi.setup.conv.dabrowska.createSubjectInformation(variableTable(i,:));
-    end
-end
+subM = ndi.setup.NDIMaker.subjectMaker();
+[subjectInfo,variableTable.SubjectString] = subM.getSubjectInfoFromTable(variableTable,@ndi.setup.conv.dabrowska.createSubjectInformation);
+% We have no need to delete any previously made subjects because we remade all the sessions
+% but if we did we could use the subM.deleteSubjectDocs method
+subDocStruct = subM.makeSubjectDocuments(subjectInfo);
+subM.addSubjectsToSessions(sessionArray, subDocStruct.documents);
 
 %% Step 4: PROBETABLE. Create a table that will help us build epochprobemaps.
 %%
 %%
 
 % Create probeTable
-name = {'bath';'Vm';'I'}; % the probes we have here
+name = {'bath';'Vm';'I'};
 reference = {1;1;1};
-type = {'stimulator';'patch-Vm';'patch-I'}; % the types
+type = {'stimulator';'patch-Vm';'patch-I'};
 deviceString = {'dabrowska_mat:ai1';'dabrowska_mat:ai1';'dabrowska_mat:ao1'};
 probeTable = table(name,reference,type,deviceString);
 
 % Create probePostfix
-epochInd = ~isnan(variableTable.sessionInd);
+epochInd = cellfun(@(sr) ~any(isnan(sr)),variableTable.IsExpMatFile);
 recordingDates = datetime(variableTable.RecordingDate(epochInd),...
     'InputFormat','MMM dd yyyy');
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
-sliceLabel = variableTable.sliceLabel(epochInd);
+sliceLabel = variableTable.SliceLabel(epochInd);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
+variableTable.ProbePostfix = cell(height(variableTable),1);
 variableTable{epochInd,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
     recordingDates,sliceLabel,'UniformOutput',false);
 

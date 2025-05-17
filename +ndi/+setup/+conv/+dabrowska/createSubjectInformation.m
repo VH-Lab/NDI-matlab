@@ -6,8 +6,8 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 %   Generates a subject identifier string and openMINDS objects based on
 %   multiple columns in the input table row. It handles columns that may
 %   contain cell arrays or direct numeric/string values. It enforces
-%   exclusivity among genotype indicator columns. Output text values are char.
-%   Biological sex output is currently always NaN.
+%   exclusivity among genotype indicator columns and requires a valid sessionID.
+%   Output text values are char. Biological sex output is currently always NaN.
 %
 %   Depends on the external validation function: ndi.validators.mustHaveRequiredColumns
 %
@@ -15,16 +15,19 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 %       tableRow (table): A 1xN MATLAB table (single row). Argument validation
 %                         ensures it contains AT LEAST the columns:
 %                         'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre',
-%                         'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID'.
+%                         'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID',
+%                         and 'sessionID'.
 %                         Columns may contain cell arrays (value in first cell used)
 %                         or direct numeric/string/char values (e.g., NaN, "text", 'text').
 %                         Genotype columns: Exactly ONE must resolve to non-empty char.
+%                         sessionID column: Must resolve to a non-empty char array or string.
 %
 %   Returns:
 %       subjectString (char | NaN):
 %           - A character array string with a prefix determined by the valid
 %             genotype column, followed by the formatted date and SubjectPostfix.
-%           - Returns numeric NaN if prerequisites fail.
+%           - Returns numeric NaN if prerequisites fail (e.g., invalid sessionID,
+%             genotype, date, or postfix).
 %       strain (openminds.core.research.Strain | NaN):
 %           - An openMINDS Strain object determined by the valid genotype column
 %             and requires valid 'SpeciesOntologyID'.
@@ -43,124 +46,133 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
         tableRow (1, :) table {mustBeNonempty, ... % Must be 1 row, non-empty
                  ndi.validators.mustHaveRequiredColumns(tableRow, ... % Call validator
                  {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre', ... % Hard-coded cols
-                  'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID'})} % Column list
+                  'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID', 'sessionID'})} % Added 'sessionID'
     end
 
     % --- Initialize Outputs ---
     subjectString = NaN;
     strain = NaN;
     species = NaN;
-    biologicalSex = NaN; % Added biologicalSex output, initialized to NaN
+    biologicalSex = NaN; % Initialized to NaN
     sp = NaN; % Local variable for the species object used in strain creation
 
     % --- Extract Values using Helper Function ---
-    % Helper now ensures strings are cast to char arrays
+    % Helper ensures strings are cast to char arrays if extracted as string type.
+    sessionIDValue = extractTableCellValue(tableRow, 'sessionID'); % Extract sessionID first
     isWildTypeValue = extractTableCellValue(tableRow, 'IsWildType');
-    isCRFCreValue = extractTableCellValue(tableRow, 'IsCRFCre');
-    isOTRCreValue = extractTableCellValue(tableRow, 'IsOTRCre');
-    isAVPCreValue = extractTableCellValue(tableRow, 'IsAVPCre');
+    isCRFCreValue = extractTableCellValue(tableRow, 'IsCRFCre'); 
+    isOTRCreValue = extractTableCellValue(tableRow, 'IsOTRCre'); 
+    isAVPCreValue = extractTableCellValue(tableRow, 'IsAVPCre'); 
     recordingDateValue = extractTableCellValue(tableRow, 'RecordingDate');
     subjectPostfixValue = extractTableCellValue(tableRow, 'SubjectPostfix');
     speciesOntologyIDValue = extractTableCellValue(tableRow, 'SpeciesOntologyID');
 
+    % --- Validate sessionID ---
+    % Must be a non-empty character array or string.
+    if ~(ischar(sessionIDValue) && ~isempty(sessionIDValue))
+        warning_msg = sprintf('sessionID did not resolve to a non-empty character array (type: %s). Returning NaN for all outputs.', class(sessionIDValue));
+        warning('ndi:createSubjectInformation:InvalidSessionID', warning_msg);
+        return; % Return initial NaN values for all outputs.
+    end
+
     % --- Check Genotype Exclusivity ---
-    % Now operates correctly on extracted char arrays or other types (NaN)
+    % Expects exactly one of the genotype indicators to be a non-empty char array.
     genotypeValues = {isWildTypeValue, isCRFCreValue, isOTRCreValue, isAVPCreValue};
-    genotypeNames = {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre'};
+    genotypeNames = {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre'}; 
     isValidGenotype = cellfun(@(x) ischar(x) && ~isempty(x), genotypeValues);
 
     if sum(isValidGenotype) ~= 1
-        error('createSubjectInformation:ExclusiveGenotypeViolation', ...
-              'Exactly one genotype column (%s) must resolve to non-empty text. Found %d.', ...
-              strjoin(genotypeNames, ', '), sum(isValidGenotype));
+        % If not exactly one valid genotype indicator is found, issue a warning
+        % and return with subjectString (and other outputs) as NaN.
+        warning_msg = sprintf('Expected exactly one valid genotype indicator from (%s). Found %d. Returning NaN for subjectString.', ...
+                strjoin(genotypeNames, ', '), sum(isValidGenotype));
+        warning('ndi:createSubjectInformation:GenotypeIssue', warning_msg);
+        return; 
     end
 
-    % Identify the valid genotype and set the prefix
+    % Identify the valid genotype and set the prefix for subjectString.
     validGenotypeIndex = find(isValidGenotype);
-    validGenotypeName = genotypeNames{validGenotypeIndex};
+    validGenotypeName = genotypeNames{validGenotypeIndex}; 
 
     switch validGenotypeName
         case 'IsWildType'
             prefix = 'sd_rat_wt_';
-        case 'IsCRFCre'
+        case 'IsCRFCre' 
             prefix = 'sdwi_rat_CRFCre_';
-        case 'IsOTRCre'
+        case 'IsOTRCre' 
             prefix = 'sdwi_rat_OTRCre_';
-        case 'IsAVPCre'
+        case 'IsAVPCre' 
             prefix = 'sdwi_rat_AVPCre_';
-        otherwise % Should not happen due to the check above
-             error('createSubjectInformation:InternalError', 'Unexpected valid genotype identified.');
+        otherwise 
+             error('ndi:createSubjectInformation:InternalGenotypeError', 'Unexpected valid genotype identified.');
     end
 
     % --- Validate and Process RecordingDate and SubjectPostfix ---
-    % Checks should now pass if data was originally string, as it's converted to char
+    % These must be non-empty char arrays to proceed.
     if ~(ischar(recordingDateValue) && ~isempty(recordingDateValue))
-        warning('createSubjectInformation:InvalidDateInput', ...
-                'RecordingDate did not resolve to valid text for %s. Returning NaN outputs.', validGenotypeName);
-        % biologicalSex remains NaN
-        return; % Return NaN defaults
+        escaped_genotype = strrep(validGenotypeName, '%', '%%'); % Escape for sprintf
+        warning_msg = sprintf('RecordingDate did not resolve to valid text for genotype %s. Returning NaN outputs.', escaped_genotype);
+        warning('ndi:createSubjectInformation:InvalidDateInput', warning_msg);
+        return; % Return initial NaN values.
     end
      if ~(ischar(subjectPostfixValue) && ~isempty(subjectPostfixValue))
-         % This warning should no longer trigger for the 'string' case
-         warning('createSubjectInformation:InvalidPostfixInput', ...
-                'SubjectPostfix did not resolve to valid text. Expected non-empty char array, got "%s". Returning NaN outputs.', class(subjectPostfixValue));
-        % biologicalSex remains NaN
-        return; % Return NaN defaults
+         warning_msg = sprintf('SubjectPostfix did not resolve to valid text (expected non-empty char, got type %s). Returning NaN outputs.', class(subjectPostfixValue));
+         warning('ndi:createSubjectInformation:InvalidPostfixInput', warning_msg);
+        return; % Return initial NaN values.
     end
 
     % --- Convert Date Format ---
+    % Parse the recordingDateValue and reformat it to 'yyMMdd'.
     try
-        % Ensure inputDateFormat matches the actual format of recordingDateValue
-        inputDateFormat = 'MMM dd yyyy'; % Corrected year format specifier
+        inputDateFormat = 'MMM dd yy'; % Example: "Apr 01 2021" - Note: yy for 2-digit year, YYYY for 4-digit
         datetimeObj = datetime(recordingDateValue, 'InputFormat', inputDateFormat);
-        outputDateFormat = 'yyMMdd'; % Using standard MM for month
-        formattedDate = char(datetimeObj,outputDateFormat);
+        outputDateFormat = 'yyMMdd'; % Example: "210401"
+        formattedDate = char(datetimeObj, outputDateFormat); % Convert datetime to char array in specified format
     catch ME_DateFormat
-        warning('createSubjectInformation:DateFormatError', ...
-                'Could not parse RecordingDate "%s" with format "%s". Error: %s. Returning NaN outputs.', ...
-                recordingDateValue, inputDateFormat, ME_DateFormat.message); % recordingDateValue is now char
-        % biologicalSex remains NaN
-        return; % Return NaN defaults
+        escaped_date_val = strrep(recordingDateValue, '%', '%%');
+        escaped_msg = strrep(ME_DateFormat.message, '%', '%%');
+        warning_msg = sprintf('Could not parse RecordingDate "%s" with format "%s". Error: %s. Returning NaN outputs.', ...
+                escaped_date_val, inputDateFormat, escaped_msg);
+        warning('ndi:createSubjectInformation:DateFormatError', warning_msg);
+        return; % Return initial NaN values.
     end
 
     % --- Construct the Subject String ---
-    % Use string() for concatenation flexibility, then final char conversion
+    % Concatenate prefix, formatted date, and postfix.
     subjectString_temp = string(prefix) + formattedDate + string(subjectPostfixValue);
-    subjectString = char(subjectString_temp);
+    subjectString = char(subjectString_temp); % Ensure final output is a char array.
 
-    % --- Populate Species (if SpeciesOntologyID resolved to valid char) ---
-    isSpeciesOntologyIDValid = ischar(speciesOntologyIDValue) && ~isempty(speciesOntologyIDValue); % Check char value
+    % --- Populate Species openMINDS Object ---
+    % Create species object if SpeciesOntologyID is valid text.
+    isSpeciesOntologyIDValid = ischar(speciesOntologyIDValue) && ~isempty(speciesOntologyIDValue);
     if isSpeciesOntologyIDValid
         try
             sp_temp = openminds.controlledterms.Species;
-            sp_temp.name = "Rattus norvegicus"; % Hardcoded name
-            sp_temp.preferredOntologyIdentifier = "NCBITaxon:10116"; % Hardcoded ID
-            % To use the value from the table instead:
-            % sp_temp.preferredOntologyIdentifier = string(speciesOntologyIDValue); % Convert char back to string if needed by openMINDS constructor/setter
+            sp_temp.name = "Rattus norvegicus"; % Hardcoded
+            sp_temp.preferredOntologyIdentifier = "NCBITaxon:10116"; % Hardcoded
             species = sp_temp;
-            sp = species;
+            sp = species; % For use in strain creation
         catch ME_SpeciesCreate
-             warning('createSubjectInformation:SpeciesCreationFailed', ...
-                     'Could not create openMINDS Species object. Error: %s', ME_SpeciesCreate.message);
-             % species remains NaN, sp remains NaN
+             escaped_message = strrep(ME_SpeciesCreate.message, '%', '%%');
+             warning_msg = sprintf('Could not create openMINDS Species object. Error: %s', escaped_message);
+             warning('ndi:createSubjectInformation:SpeciesCreationFailed', warning_msg);
+             % species and sp remain NaN
         end
     else
-         warning('createSubjectInformation:InvalidSpeciesOntologyID', ...
-                 'SpeciesOntologyID column did not resolve to valid text. Cannot determine species or strain.');
-         % species remains NaN, sp remains NaN
+         warning_msg = sprintf('SpeciesOntologyID column (value type: %s) did not resolve to valid text. Cannot determine species or related strain.', class(speciesOntologyIDValue));
+         warning('ndi:createSubjectInformation:InvalidSpeciesOntologyID', warning_msg);
+         % species and sp remain NaN
     end
 
-    % --- Populate Strain (depends on valid genotype AND valid species) ---
+    % --- Populate Strain openMINDS Object ---
+    % Depends on a valid species object ('sp').
     if ~isa(sp, 'openminds.controlledterms.Species')
-        % biologicalSex remains NaN
-        return; % Strain remains NaN
+        return; % Strain remains NaN if species is not valid.
     end
 
-    % Proceed with strain creation only if sp is a valid Species object
     try
-        % Define common controlled term links (adjust lookupId/URI as needed)
-        wt_strain_type = "wildtype"; % Using string directly as per user's version
-        ki_strain_type = "knockin"; % Using string directly as per user's version
+        wt_strain_type = "wildtype"; 
+        ki_strain_type = "knockin"; 
 
         switch validGenotypeName
             case 'IsWildType'
@@ -170,71 +182,82 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
                  st_sd.ontologyIdentifier = "RRID:RGD_70508";
                  st_sd.geneticStrainType = wt_strain_type;
                  strain = st_sd;
-
-            case {'IsCRFCre', 'IsOTRCre', 'IsAVPCre'} % Common background for transgenic lines
+            case {'IsCRFCre', 'IsOTRCre', 'IsAVPCre'} 
                  st_sd = openminds.core.research.Strain('name', "SD", 'species', sp, ...
                      'ontologyIdentifier', "RRID:RGD_70508", 'geneticStrainType', wt_strain_type);
-
                  st_wi = openminds.core.research.Strain('name', "WI", 'species', sp, ...
                      'ontologyIdentifier', "RRID:RGD_13508588", 'geneticStrainType', wt_strain_type);
-
                  st_trans = openminds.core.research.Strain;
                  st_trans.species = sp;
                  st_trans.backgroundStrain = [st_sd st_wi];
                  st_trans.geneticStrainType = ki_strain_type;
 
-                 if strcmp(validGenotypeName, 'IsCRFCre')
+                 if strcmp(validGenotypeName, 'IsCRFCre') 
                      st_trans.name = 'CRF-Cre';
-                 elseif strcmp(validGenotypeName, 'IsOTRCre')
+                 elseif strcmp(validGenotypeName, 'IsOTRCre') 
                      st_trans.name = 'OTR-IRES-Cre';
-                 elseif strcmp(validGenotypeName, 'IsAVPCre')
+                 elseif strcmp(validGenotypeName, 'IsAVPCre') 
                      st_trans.name = 'AVP-Cre';
                  end
                  strain = st_trans;
-
-        end % End switch validGenotypeName
-
+        end 
     catch ME_StrainCreate
-        warning('createSubjectInformation:StrainCreationFailed', ...
-                'Could not create openMINDS Strain object for %s. Error: %s', validGenotypeName, ME_StrainCreate.message);
+        escaped_genotype = strrep(validGenotypeName, '%', '%%');
+        escaped_message = strrep(ME_StrainCreate.message, '%', '%%');
+        warning_msg = sprintf('Could not create openMINDS Strain object for genotype %s. Error: %s', escaped_genotype, escaped_message);
+        warning('ndi:createSubjectInformation:StrainCreationFailed', warning_msg);
         strain = NaN;
-        % biologicalSex remains NaN
     end
 
     % --- Populate Biological Sex (Placeholder) ---
-    % Currently no logic, biologicalSex remains NaN as initialized.
-    % TODO: Add logic here later if needed, e.g., based on another table column.
-
+    % biologicalSex remains NaN as per current function design.
+    % TODO: Implement logic for biological sex if needed.
 
 end % End function createSubjectInformation
 
-
-% --- Nested Helper Function ---
+% --- Nested Helper Function to Extract Table Cell Values ---
 function value = extractTableCellValue(tblRow, colName)
-    % Extracts the value from a table cell, handling cell arrays vs direct values.
-    % Ensures that extracted string data is returned as a char array.
-    % Assumes tblRow is a 1-row table and colName exists.
-    content = tblRow.(colName); % Use dynamic field access
+    %EXTRACTTABLECELLVALUE Extracts value from a table cell, handling data type variations.
+    %
+    %   value = EXTRACTTABLECELLVALUE(tblRow, colName)
+    %
+    %   Retrieves content from the specified column 'colName' in the single-row
+    %   table 'tblRow'. It handles cases where the content might be a direct value
+    %   (numeric, char, string) or wrapped in a cell (potentially nested).
+    %   If the extracted value is a MATLAB string, it's converted to a char array.
+    %   If the cell is empty or contains an empty nested cell, NaN is returned.
+    %
+    %   Args:
+    %       tblRow (table): A 1-row table.
+    %       colName (char/string): The name of the column to extract from.
+    %
+    %   Returns:
+    %       value (any): The extracted value (char, double, NaN, etc.).
+    %                    Strings are returned as char arrays.
 
-    if iscell(content)
-        if ~isempty(content) && numel(content) > 0 % Ensure cell is not empty
-             % Check if the first element itself is a cell (nested cell)
+    content = tblRow.(colName); % Access column content using dynamic field name.
+    value_intermediate = NaN;   % Default if cell is empty or extraction fails.
+
+    if iscell(content) % If the column content is a cell array.
+        if ~isempty(content) && numel(content) > 0 % Ensure the cell itself is not empty.
+             % Handle potentially nested cells (common if data comes from mixed sources).
              if iscell(content{1}) && ~isempty(content{1}) && numel(content{1}) > 0
-                 value = content{1}{1}; % Extract from nested cell
+                 value_intermediate = content{1}{1}; % Extract from the inner cell.
              else
-                 value = content{1}; % Take the first element
+                 value_intermediate = content{1}; % Extract from the outer cell.
              end
-        else
-            value = NaN; % Return NaN if cell is empty
         end
-    else
-        value = content; % Assume the content itself is the value (e.g., NaN, double, char, string)
+        % If the cell 'content' was empty, value_intermediate remains NaN.
+    else % If the column content is not a cell.
+        value_intermediate = content; % Use the content directly.
     end
 
-    % --- Cast string to char ---
-    % If the extracted value is a string, convert it to char for downstream checks
-    if isstring(value)
-        value = char(value);
+    % --- Standardize Output: Cast MATLAB string to char array ---
+    % This ensures downstream functions expecting char arrays work correctly.
+    if isstring(value_intermediate)
+        value = char(value_intermediate);
+    else
+        value = value_intermediate;
     end
 
 end % extractTableCellValue
