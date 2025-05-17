@@ -161,22 +161,22 @@ function variableTable = processFileManifest(fileManifest, varStructArray, optio
                         if ~isfield(varDef,'StringFormat') || isempty(varDef.StringFormat) || (~ischar(varDef.StringFormat) && ~isstring(varDef.StringFormat))
                             warning('processFileManifest:InvalidRegexPattern', ...
                                     'StringFormat regex pattern is missing, empty, or invalid for variable "%s". Assigning NaN.', varDef.VariableName);
-                            extractedValue = NaN;
+                            extractedValue = {NaN};
                         else
                             pattern = char(varDef.StringFormat);
                             tokenResult = regexp(filePath, pattern, 'tokens', 'once', 'forcecelloutput');
 
                             if isempty(tokenResult)
-                                extractedValue = NaN; % No match (normal)
+                                extractedValue = {NaN}; % No match (normal)
                             else
                                 try
                                     % Check expected structure: {{token1}} where token1 is not empty char ''
                                     if iscell(tokenResult) && ~isempty(tokenResult) && ...
                                        iscell(tokenResult{1}) && ~isempty(tokenResult{1})
 
-                                        extractedValue = tokenResult{1}{1}; % Extract first token
-                                        if ~ischar(extractedValue) % Ensure char output
-                                            extractedValue = char(extractedValue);
+                                        extractedValue = tokenResult{1}; % Extract first token
+                                        if ~ischar(extractedValue{1}) % Ensure char output
+                                            extractedValue = {char(extractedValue{1})};
                                         end
                                     else
                                          % --- Optional: Keep detailed debugging if needed ---
@@ -187,12 +187,12 @@ function variableTable = processFileManifest(fileManifest, varStructArray, optio
 
                                         %warning('processFileManifest:RegexNoTokens', ...
                                         %        'Regex matched for variable "%s", but no captured tokens found or format unexpected. Assigning NaN.', varDef.VariableName);
-                                        extractedValue = NaN;
+                                        extractedValue = {NaN};
                                     end
                                 catch ME_Token
                                     warning('processFileManifest:TokenAccessError', ...
                                             'Error accessing regex token for variable "%s": %s. Assigning NaN.', varDef.VariableName, ME_Token.message);
-                                    extractedValue = NaN;
+                                    extractedValue = {NaN};
                                 end
                             end
                         end % End check for valid StringFormat

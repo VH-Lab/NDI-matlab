@@ -64,7 +64,7 @@
     "FunctionName": ""
   },
   {
-    "VariableName": "sliceLabel",
+    "VariableName": "SliceLabel",
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
@@ -80,7 +80,7 @@
     "FunctionName": ""
   },
   {
-    "VariableName": "isCRFCre",
+    "VariableName": "IsCRFCre",
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
@@ -88,7 +88,7 @@
     "FunctionName": ""
   },
   {
-    "VariableName": "isOTRCre",
+    "VariableName": "IsOTRCre",
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
@@ -96,12 +96,27 @@
     "FunctionName": ""
   },
   {
-    "VariableName": "isAVPCre",
+    "VariableName": "IsAVPCre",
     "SubfolderLevel": [],
     "StringDetectMode": "regex",
     "StringDetectInput": "",
     "StringFormat": "((?i)AVP_Cre)",
     "FunctionName": ""
+  },
+  {
+    "VariableName": "OTA",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)OTA)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "TLS",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)TLS)",
+    "FunctionName": ""
   }
 ]
-
