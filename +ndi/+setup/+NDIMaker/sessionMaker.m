@@ -5,15 +5,13 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
 %   ndi.session.dir objects. It identifies unique sessions, handles 
 %   existing session directories (with an option to overwrite),
 %   and provides mechanisms to associate DAQ systems with these sessions.
-
     properties (Access = public)
         path (1,:) char         % Base directory path where session folders are located or will be created.
         variableTable table     % Input table containing session definition information. Must contain 'SessionRef' and 'SessionPath' variables.
-        sessions cell           % Cell array holding the created/loaded ndi.session.dir objects.
-        tableInd (:,1) double   % Array mapping rows of the input 'variableTable' to session indices. Invalid 'variableTable' rows will have NaN entries.
+        sessions cell           % Cell array holding the created/loaded ndi.session.dir objects (unique sessions).
+        tableInd (:,1) double   % Array mapping rows of the input 'variableTable' to session indices in 'sessions'. Invalid 'variableTable' rows will have NaN entries.
         daqSystems struct       % Struct array holding DAQ system information for each session. Contains fields 'filenavigator' and 'daqreader'.
     end
-
     methods
         function obj = sessionMaker(path,variableTable,options)
             %SESSIONMAKER Constructor for the sessionMaker class.
@@ -43,7 +41,6 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             %
             %   Output Arguments:
             %       obj (sessionMaker)  - The constructed sessionMaker object.
-
             % Input argument validation using the arguments block
             arguments
                 path (1,:) char {mustBeFolder}
@@ -51,16 +48,13 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 options.Overwrite (1,1) logical = false;
                 options.NonNaNVariableNames {mustBeA(options.NonNaNVariableNames,{'char','str','cell'})} = {};
             end
-
             % Assign properties from inputs
             obj.path = path;
             obj.variableTable = variableTable;
-
             % Ensure NonNaNVariableNames is a cell array for consistent processing
             if ~iscell(options.NonNaNVariableNames)
                 options.NonNaNVariableNames = {options.NonNaNVariableNames};
             end
-
             % --- Identify Valid Session Rows ---
             % Check for NaN values based on NonNaNVariableNames option
             nanInd = true(height(variableTable),1);
@@ -75,28 +69,24 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                     variableTable.(options.NonNaNVariableNames{i}));
             end
             validInd = find(nanInd); % Get linear indices of valid rows
-
             % --- Determine Unique Sessions ---
             % Extract SessionRef values from the valid rows
             validSessionRefs = variableTable.SessionRef(validInd);
             % Find unique session references among the valid ones
-            [sessionRefs,sessionInd,tableInd] = unique(validSessionRefs,'stable'); % 'stable' preserves order of first appearance
-            % sessionInd now points into 'validInd'. We need the original row index from 'variableTable'.
-            firstOccurrenceInd = validInd(sessionInd); % Indices in the original variableTable for the first occurrence of each unique session
-
+            [sessionRefs,sessionInd_unique,tableInd_map] = unique(validSessionRefs,'stable'); % 'stable' preserves order of first appearance
+            % sessionInd_unique now points into 'validInd'. We need the original row index from 'variableTable'.
+            firstOccurrenceInd = validInd(sessionInd_unique); % Indices in the original variableTable for the first occurrence of each unique session
             % --- Populate tableInd Property ---
             % Initialize tableInd with NaNs for all rows
             obj.tableInd = nan(height(variableTable),1);
-            % For the valid rows, assign the index from tableInd, which maps to the unique session index
-            obj.tableInd(validInd) = tableInd;
-
+            % For the valid rows, assign the index from tableInd_map, which maps to the unique session index
+            obj.tableInd(validInd) = tableInd_map;
             % --- Create or Load NDI Session Objects ---
             obj.sessions = cell(size(sessionRefs)); % Preallocate cell array for ndi.session.dir objects
             for i = 1:numel(sessionRefs) % Iterate through unique sessions
                 % Get the full path for the current session using the path from the *first occurrence* row
                 sessionPath = fullfile(path, variableTable.SessionPath{firstOccurrenceInd(i)});
                 sessionRef = sessionRefs{i}; % The unique session reference identifier
-
                 % Check if the session directory and NDI database exist
                 if ndi.session.dir.exists(sessionPath)
                     % Session exists: Load it
@@ -116,33 +106,76 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 % Close any open database connections
                 % mksqlite('close');
             end
-
             % Initialize the daqSystems property as an empty struct with the specified fields
             obj.daqSystems = struct('filenavigator', {}, 'daqreader', {});
             % Ensure it has the correct size corresponding to the number of sessions
-            obj.daqSystems(numel(obj.sessions)).filenavigator = []; % Preallocate size
-
+            if ~isempty(obj.sessions) % Check if sessions were created
+                obj.daqSystems(numel(obj.sessions)).filenavigator = []; % Preallocate size
+            end
         end % constructor sessionMaker
 
-        function [sessions,ind] = sessionIndices(obj)
-            %SESSIONINDICES Returns the session objects and their corresponding table indices.
-            %   [SESSIONS, IND] = sessionIndices(OBJ) returns the cell array of
-            %   ndi.session.dir objects managed by this sessionMaker instance and
-            %   an array indicating which session corresponds to each row of the
-            %   original variableTable.
+        function [sessions, ind, session_ids] = sessionIndices(obj)
+            %SESSIONINDICES Returns unique session objects, their mapping to table rows, and session IDs per table row.
+            %   [SESSIONS, IND, SESSION_IDS] = sessionIndices(OBJ)
+            %   returns the cell array of unique ndi.session.dir objects, an array
+            %   indicating which unique session corresponds to each row of the
+            %   original variableTable, and a cell array of session ID strings for each
+            %   row of the variableTable.
             %
             %   Output Arguments:
-            %       sessions (cell) - Cell array of ndi.session.dir objects, where
-            %                       sessions{k} is the k-th unique session.
-            %       ind (:,1) double - Array of the same height as the original
-            %                       variableTable. `ind(r)` gives the index `k` such
-            %                       that `sessions{k}` is the session associated with
-            %                       row `r` of the table. Rows not associated with a
-            %                       valid session will have NaN values.
+            %       sessions (cell)            - Cell array of unique ndi.session.dir objects, where
+            %                                    sessions{k} is the k-th unique session.
+            %       ind (:,1) double           - Array of the same height as the original
+            %                                    variableTable. `ind(r)` gives the index `k` such
+            %                                    that `sessions{k}` is the session associated
+            %                                    with row `r` of the table. Rows not associated with a
+            %                                    valid session will have NaN values.
+            %       session_ids (cell)         - Cell array of strings, of the same height as the
+            %                                    original variableTable. `session_ids{r}`
+            %                                    is the session ID (from ndi.session.id())
+            %                                    of the session associated with row `r` of variableTable.
+            %                                    Entries for rows not associated with a valid session
+            %                                    will be empty strings ''.
 
-            sessions = obj.sessions;
-            ind = obj.tableInd;
+            sessions = obj.sessions; % These are the unique sessions
+            ind = obj.tableInd;      % This maps each row of variableTable to an index in 'sessions'
+            
+            % First, get IDs for all unique sessions
+            unique_session_ids_list = cell(size(sessions)); % Corresponds to 'sessions'
+            for i=1:numel(sessions)
+                if ~isempty(sessions{i}) && isvalid(sessions{i}) % Check if session object is valid and not empty
+                    try
+                        unique_session_ids_list{i} = sessions{i}.id();
+                    catch ME
+                        warning('sessionMaker:sessionIndices:FailedToGetId', ...
+                            ['Failed to get ID for unique session index ' num2str(i) '. Error: ' ME.message]);
+                        unique_session_ids_list{i} = 'ERROR_GETTING_ID'; % Placeholder for error
+                    end
+                else
+                    unique_session_ids_list{i} = ''; % Placeholder for empty/invalid unique sessions
+                end
+            end
 
+            % Now, map these unique session IDs to each row of the variableTable
+            num_rows_in_table = height(obj.variableTable);
+            session_ids_per_row = cell(num_rows_in_table, 1); % This will be the actual third output
+
+            for k = 1:num_rows_in_table
+                session_idx_for_this_row = ind(k); % Get the index into the 'sessions' (unique sessions) array
+                
+                % Check if the index is valid and points to an actual unique session
+                if ~isnan(session_idx_for_this_row) && ...
+                   session_idx_for_this_row > 0 && ...
+                   session_idx_for_this_row <= numel(unique_session_ids_list)
+                    
+                    % Assign the ID of the corresponding unique session
+                    session_ids_per_row{k} = unique_session_ids_list{session_idx_for_this_row};
+                else
+                    % This row in variableTable is not associated with a valid unique session
+                    session_ids_per_row{k} = ''; 
+                end
+            end
+            session_ids = session_ids_per_row; % Assign to the output variable
         end % sessionIndices
 
         function addDaqSystem(obj, labName, options)
@@ -166,13 +199,11 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             %   Name-Value Arguments:
             %       Overwrite - Whether to overwrite existing DAQ system 
             %                   entries in the sessions. Default: false.
-
             arguments
                 obj
                 labName (1,:) char
                 options.Overwrite (1,1) logical = false;
             end
-
             % Check that the daq_system directory for the lab exists
             try
                 ndi.setup.daq.system.listDaqSystemNames(labName);
@@ -182,17 +213,14 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
                 error('SESSIONMAKER:invalidDAQDirName','%s is not a valid subdirectory of %s',...
                     labName,importDir);
             end
-
             for i = 1:numel(obj.sessions)
                 % Add DAQ systems to each session
                 ndi.setup.daq.addDaqSystems(obj.sessions{i},labName,options.Overwrite);
-
                 % Load the DAQ system information back from the session
                 daq_info = obj.sessions{i}.daqsystem_load;
                 obj.daqSystems(i).filenavigator = daq_info.filenavigator;
                 obj.daqSystems(i).daqreader = daq_info.daqreader;
             end
         end
-
     end % methods
 end % sessionMaker

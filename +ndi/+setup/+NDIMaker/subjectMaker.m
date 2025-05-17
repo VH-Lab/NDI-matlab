@@ -1,22 +1,22 @@
 % Filename: +ndi/+setup/+NDIMaker/subjectMaker.m
 
-classdef subjectMaker % Class name remains subjectMaker
-%SUBJECTMAKER A helper class to extract subject information from tables and manage subject documents.
+classdef subjectMaker
+%SUBJECTMAKER A helper class to extract subject information from tables and manage NDI subject documents.
 %   Provides methods to facilitate the extraction of unique subject
 %   information based on metadata in tables, and to manage NDI subject
 %   documents (e.g., creation, deletion). Resides in the ndi.setup.NDIMaker package.
 
     properties
-        % No properties defined in this version.
+        % No properties are defined for this class in the current version.
     end
 
     methods
-        function obj = subjectMaker() % Constructor name remains subjectMaker
-            %SUBJECTMAKER Construct an instance of this class
+        function obj = subjectMaker()
+            %SUBJECTMAKER Construct an instance of this class.
             %
             %   OBJ = NDI.SETUP.NDIMAKER.SUBJECTMAKER()
             %
-            %   Creates a subjectMaker object. Takes no arguments.
+            %   Creates a subjectMaker object.
             %
         end
 
@@ -25,145 +25,99 @@ classdef subjectMaker % Class name remains subjectMaker
             %
             %   subjectInfo = GETSUBJECTINFOFROMTABLE(OBJ, dataTable, subjectInfoFun)
             %
-            %   Applies a user-provided function to each row of a data table
-            %   to extract subject information (ID, strain, species, sex).
-            %   It also extracts the 'sessionInd' directly from the table.
-            %   It then filters this information to return data only for
-            %   unique, valid subject IDs that also have a valid sessionInd
-            %   (positive integer) found in the table.
+            %   This method processes each row of an input 'dataTable' using a
+            %   provided function 'subjectInfoFun'. It extracts subject-specific
+            %   details (name, strain, species, biological sex) and a 'sessionID'
+            %   (character array) directly from the table. The method then filters
+            %   these results to return information only for unique subject names
+            %   that also have a valid (non-empty char) sessionID.
             %
             %   Args:
-            %       obj (ndi.setup.NDIMaker.subjectMaker): The subjectMaker object instance.
-            %       dataTable (table): A MATLAB table where each row contains
-            %                        metadata potentially defining a subject.
-            %                        Must contain columns needed by subjectInfoFun,
-            %                        AND a column named 'sessionInd'.
-            %       subjectInfoFun (function_handle): An anonymous function
-            %                        (or handle to a function) like:
-            %                        info = @(tableRow) createSubjectInformation(tableRow)
-            %                        It takes a single table row as input and returns
-            %                        four outputs:
+            %       obj (ndi.setup.NDIMaker.subjectMaker): The instance of this subjectMaker class.
+            %       dataTable (table): A MATLAB table where each row contains metadata.
+            %                        This table must include all columns required by 'subjectInfoFun'
+            %                        and a column named 'sessionID' (containing char/string IDs).
+            %       subjectInfoFun (function_handle): A handle to a function that processes
+            %                        a single row of 'dataTable'. Expected to return:
             %                        [subjectId, strain, species, biologicalSex]
-            %                        Where:
-            %                         - subjectId is char/NaN (local identifier)
-            %                         - strain is openminds.core.research.Strain/NaN or similar
-            %                         - species is openminds.controlledterms.Species/NaN or similar
-            %                         - biologicalSex is currently NaN or similar
+            %                        - subjectId: char array (subject's local identifier) or NaN.
+            %                        - strain: openMINDS strain object or NaN.
+            %                        - species: openMINDS species object or NaN.
+            %                        - biologicalSex: openMINDS biological sex object or NaN.
             %
             %   Returns:
-            %       subjectInfo (struct): A structure containing information about
-            %                        unique subjects found in the table. It has fields:
-            %                        - subjectName (cell array): Unique, valid subject IDs (char).
-            %                        - strain (cell array): Corresponding strain objects/NaN.
-            %                        - species (cell array): Corresponding species objects/NaN.
-            %                        - biologicalSex (cell array): Corresponding sex info/NaN.
-            %                        - tableRowIndex (numeric vector): Original row index in
-            %                          dataTable where this unique subject was first found.
-            %                        - sessionInd (numeric vector): Session index from the
-            %                          'sessionInd' column of dataTable for the row that
-            %                          generated the unique subject.
-            %                        Returns an empty struct with empty fields if no
-            %                        valid, unique subjects are found.
+            %       subjectInfo (struct): A structure containing data for unique subjects.
+            %                        Fields: subjectName, strain, species, biologicalSex (all cell arrays),
+            %                        tableRowIndex (numeric vector), sessionID (cell array of char).
+            %                        If no valid subjects are found, an empty struct is returned.
             %
             %   Assumes:
-            %       - dataTable contains a column named 'sessionInd' that can be
-            %         interpreted as numeric session indices.
+            %       - 'dataTable' contains a column 'sessionID' with char/string session identifiers.
 
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
-                dataTable table {mustBeNonempty, mustHaveSessionIndColumn(dataTable)}
+                dataTable table {mustBeNonempty, ndi.setup.NDIMaker.subjectMaker.mustHaveSessionIDColumn(dataTable)}
                 subjectInfoFun (1,1) function_handle
             end
 
             numRows = height(dataTable);
 
-            % Preallocate cell arrays/vectors to store results from all rows
             allSubjectNames = cell(numRows, 1);
             allStrains = cell(numRows, 1);
             allSpecies = cell(numRows, 1);
             allBiologicalSex = cell(numRows, 1);
-            allTableRowIndex = (1:numRows)'; % Store original index
-            allSessionInds = nan(numRows, 1); % Preallocate for sessionInd, assuming numeric
+            allTableRowIndex = (1:numRows)';
+            allSessionIDs = cell(numRows, 1); 
+            allSessionIDs(:) = {''}; 
 
-            validRowProcessedSuccessfully = false(numRows, 1); % Track if subjectInfoFun completed without error
+            validRowProcessedSuccessfully = false(numRows, 1);
 
-            % --- Loop 1: Extract info from all rows ---
             for i = 1:numRows
                 currentRow = dataTable(i, :);
-                local_id_from_fun = NaN; % Default in case of error or non-assignment
+                local_id_from_fun = NaN; 
                 strain_obj_from_fun = NaN;
                 species_obj_from_fun = NaN;
                 sex_obj_from_fun = NaN;
 
                 try
-                    % Call the user-provided function to get the subject info
                     [local_id_from_fun, strain_obj_from_fun, species_obj_from_fun, sex_obj_from_fun] = subjectInfoFun(currentRow);
-                    validRowProcessedSuccessfully(i) = true; % Mark row as processed by subjectInfoFun without error
+                    validRowProcessedSuccessfully(i) = true;
                 catch ME_Func
                     escaped_message = strrep(ME_Func.message, '%', '%%');
                     warning_msg = sprintf('Error executing subjectInfoFun for table row %d: %s. Skipping this row for subject info extraction.', i, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:subjectInfoFunError', warning_msg);
-                    % local_id_from_fun and other outputs remain as default (e.g., NaN)
                 end
 
-                % Store results from subjectInfoFun
                 allSubjectNames{i} = local_id_from_fun;
                 allStrains{i} = strain_obj_from_fun;
                 allSpecies{i} = species_obj_from_fun;
                 allBiologicalSex{i} = sex_obj_from_fun;
                 
-                % Extract and process sessionInd directly from the table row
                 try
-                    rawSessionInd = currentRow.sessionInd;
-                    valueToConvert = NaN; % Default value if extraction fails or cell is empty
-
-                    if iscell(rawSessionInd) % Check if the content is a cell
-                        if ~isempty(rawSessionInd) && numel(rawSessionInd) > 0
-                            % Handle potential nested cells
-                            if iscell(rawSessionInd{1}) && ~isempty(rawSessionInd{1}) && numel(rawSessionInd{1}) > 0
-                                valueToConvert = rawSessionInd{1}{1}; % Extract from nested cell
-                            else
-                                valueToConvert = rawSessionInd{1}; % Take the first element
-                            end
-                        end
-                        % If cell is empty, valueToConvert remains NaN
+                    % Use static helper to unwrap cell content for sessionID
+                    valueToProcess = ndi.setup.NDIMaker.subjectMaker.unwrapTableCellContent(currentRow.sessionID);
+                    
+                    % Convert to char if it's a string
+                    if isstring(valueToProcess)
+                        valueToProcess = char(valueToProcess);
+                    end
+                    
+                    % Store if char; if numeric NaN, treat as empty
+                    if ischar(valueToProcess)
+                         allSessionIDs{i} = valueToProcess; 
+                    elseif isnumeric(valueToProcess) && all(isnan(valueToProcess(:))) 
+                         allSessionIDs{i} = ''; 
                     else
-                        valueToConvert = rawSessionInd; % It's not a cell, use directly
+                        % If it's not char and not numeric NaN, it's an unexpected type for sessionID
+                        warning_msg = sprintf('Data in "sessionID" column for table row %d (type %s after unwrapping) is not char/string or NaN. Storing as empty.', i, class(valueToProcess));
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDType', warning_msg);
+                        allSessionIDs{i} = ''; % Ensure it's an empty char for filtering
                     end
-
-                    % Attempt to convert to double if it's char or string
-                    extractedSessionIndValue = NaN; % Default for final numeric value
-                    if ischar(valueToConvert) || isstring(valueToConvert)
-                        convertedValue = str2double(valueToConvert);
-                        if ~isnan(convertedValue) % Check if conversion was successful
-                            extractedSessionIndValue = convertedValue;
-                        else
-                            % Only warn if the string wasn't just empty or whitespace
-                            if ~( (ischar(valueToConvert) && isempty(strtrim(valueToConvert))) || ...
-                                  (isstring(valueToConvert) && strlength(strtrim(valueToConvert))==0) )
-                                warning_msg = sprintf('Value "%s" in "sessionInd" column for table row %d could not be converted to a number. Storing NaN.', char(valueToConvert), i);
-                                warning('ndi:setup:NDIMaker:subjectMaker:SessionIndConversionError', warning_msg);
-                            end
-                        end
-                    elseif isnumeric(valueToConvert)
-                        extractedSessionIndValue = valueToConvert;
-                    % else: valueToConvert is some other type, extractedSessionIndValue remains NaN
-                    end
-
-                    % Now validate the (potentially converted) value
-                    if isnumeric(extractedSessionIndValue) && isscalar(extractedSessionIndValue) && ~isnan(extractedSessionIndValue)
-                        allSessionInds(i) = extractedSessionIndValue;
-                    else
-                        if ~( (ischar(valueToConvert) || isstring(valueToConvert)) && isnan(str2double(valueToConvert)) ) || ...
-                           (isnumeric(extractedSessionIndValue) && (~isscalar(extractedSessionIndValue) || isnan(extractedSessionIndValue)) )
-                             warning_msg = sprintf('Data in "sessionInd" column for table row %d (processed as type %s) is not a valid numeric scalar. Storing NaN.', i, class(extractedSessionIndValue));
-                             warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIndData', warning_msg);
-                        end
-                    end
-                catch ME_SessionInd
-                    escaped_message = strrep(ME_SessionInd.message, '%', '%%');
-                    warning_msg = sprintf('Error accessing "sessionInd" for table row %d: %s. Storing NaN for sessionInd.', i, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionIndAccessError', warning_msg);
+                catch ME_SessionID
+                    escaped_message = strrep(ME_SessionID.message, '%', '%%');
+                    warning_msg = sprintf('Error accessing "sessionID" for table row %d: %s. Storing as empty.', i, escaped_message);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionIDAccessError', warning_msg);
+                    allSessionIDs{i} = ''; 
                 end
                 
                 if validRowProcessedSuccessfully(i) && ~(ischar(local_id_from_fun) && ~isempty(local_id_from_fun))
@@ -183,109 +137,56 @@ classdef subjectMaker % Class name remains subjectMaker
                 end
             end
 
-            % --- Filter for valid and unique subjects ---
             isValidName = cellfun(@(x) ischar(x) && ~isempty(x), allSubjectNames);
-            % Also check for valid sessionInd (not NaN and > 0)
-            isValidSessionInd = arrayfun(@(x) isnumeric(x) && isscalar(x) && ~isnan(x) && x > 0, allSessionInds);
+            isValidSessionID = cellfun(@(x) ischar(x) && ~isempty(x), allSessionIDs); 
             
-            finalValidIndices = find(isValidName & isValidSessionInd); % Combined condition
+            finalValidIndices = find(isValidName & isValidSessionID);
 
             if isempty(finalValidIndices)
-                % Return empty struct if no valid subjects found
                  subjectInfo = struct(...
                     'subjectName', {{}}, ...
                     'strain', {{}}, ...
                     'species', {{}}, ...
                     'biologicalSex', {{}}, ...
                     'tableRowIndex', [], ...
-                    'sessionInd', [] ...
+                    'sessionID', {{}} ... 
                  );
                 return;
             end
 
-            % Extract data only for rows with valid subject names AND valid sessionInds
             validSubjectNames = allSubjectNames(finalValidIndices);
             validStrains = allStrains(finalValidIndices);
             validSpecies = allSpecies(finalValidIndices);
             validBiologicalSex = allBiologicalSex(finalValidIndices);
             validOriginalIndices = allTableRowIndex(finalValidIndices);
-            validSessionInds = allSessionInds(finalValidIndices);
+            validSessionIDs = allSessionIDs(finalValidIndices); 
 
-            % Find the indices of the *first* occurrence of each unique valid subject name
-            [uniqueNames, ia, ~] = unique(validSubjectNames, 'stable'); % 'stable' keeps first occurrence
+            [uniqueNames, ia, ~] = unique(validSubjectNames, 'stable'); 
 
-            % Select the data corresponding to these unique first occurrences
             uniqueStrains = validStrains(ia);
             uniqueSpecies = validSpecies(ia);
             uniqueBiologicalSex = validBiologicalSex(ia);
             uniqueOriginalIndices = validOriginalIndices(ia);
-            uniqueSessionInds = validSessionInds(ia);
+            uniqueSessionIDs = validSessionIDs(ia); 
 
-            % --- Create Output Struct ---
             subjectInfo = struct(...
                 'subjectName', {uniqueNames}, ...
                 'strain', {uniqueStrains}, ...
                 'species', {uniqueSpecies}, ...
                 'biologicalSex', {uniqueBiologicalSex}, ...
                 'tableRowIndex', uniqueOriginalIndices, ...
-                'sessionInd', uniqueSessionInds ...
+                'sessionID', {uniqueSessionIDs} ... 
             );
 
         end % function getSubjectInfoFromTable
 
-        function output = makeSubjectDocuments(obj, subjectInfo, sessionIDs)
+        function output = makeSubjectDocuments(obj, subjectInfo)
             %MAKESUBJECTDOCUMENTS Creates NDI subject documents from subjectInfo structure.
-            %
-            %   output = MAKESUBJECTDOCUMENTS(OBJ, subjectInfo, sessionIDs)
-            %
-            %   Constructs NDI subject documents for each unique subject listed
-            %   in the subjectInfo structure. It creates a main subject document
-            %   and then attempts to create separate NDI documents for species,
-            %   strain, and biological sex information by calling
-            %   ndi.database.fun.openMINDSobj2ndi_document for each valid
-            %   openMINDS object, linking them to the main subject document.
-            %   The output for each subject is a cell array containing all these documents.
-            %
-            %   Args:
-            %       obj (ndi.setup.NDIMaker.subjectMaker): The subjectMaker instance.
-            %       subjectInfo (struct): A structure as returned by
-            %                             getSubjectInfoFromTable. Validated to ensure
-            %                             it has a 'subjectName' cell array field.
-            %       sessionIDs (cellstr): A cell array of NDI session ID strings.
-            %                             Validated to ensure it's text-like. Length
-            %                             is checked against numSubjects.
-            %
-            %   Returns:
-            %       output (struct): A structure with fields:
-            %                        - subjectName (cell array): Subject names for which
-            %                          documents were attempted.
-            %                        - documents (cell array): Each element is a cell array
-            %                          of NDI document objects (ndi.document) pertaining
-            %                          to the corresponding subject. This includes the main
-            %                          subject document and any documents created for its
-            %                          species, strain, and sex. Contains an empty cell
-            %                          if document creation failed for a subject.
-            %
-            %   Throws:
-            %       error: If sessionIDs length does not match the number of subjects.
-            %       error: If any subjectName in subjectInfo.subjectName is invalid.
-            %
-            %   Assumptions:
-            %       - ndi.document class can be instantiated as:
-            %         ndi.document('subject_type_string', 'prop1', val1, 'prop2', val2, ...)
-            %       - ndi.database.fun.openMINDSobj2ndi_document(openminds_obj, session_id, 'subject', subject_doc_id)
-            %         exists and returns a cell array of NDI document(s)
-            %         representing the openMINDS_obj, or an empty cell array if conversion fails.
-            %       - NDI document objects have an id() method that returns a unique ID
-            %         even for documents not yet added to a database.
-
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
-                subjectInfo (1,1) struct {mustBeValidSubjectInfoForDocCreation(subjectInfo)}
-                sessionIDs (1,:) cell {mustBeTextLike(sessionIDs)}
+                subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
             end
 
-            % Further validation after arguments block
             numSubjects = numel(subjectInfo.subjectName);
 
             if numSubjects == 0
@@ -294,53 +195,47 @@ classdef subjectMaker % Class name remains subjectMaker
                 output = struct('subjectName', {{}}, 'documents', {{}});
                 return;
             end
-
-            if numel(sessionIDs) ~= numSubjects
-                error('ndi:setup:NDIMaker:subjectMaker:SessionIDMismatch', ...
-                    'The number of sessionIDs (%d) must match the number of subjects in subjectInfo (%d).', ...
-                    numel(sessionIDs), numSubjects);
+            
+            if numel(subjectInfo.sessionID) ~= numSubjects
+                 error('ndi:setup:NDIMaker:subjectMaker:SessionIDLengthMismatch', ... 
+                    'The number of sessionIDs in subjectInfo.sessionID (%d) must match the number of subjects in subjectInfo.subjectName (%d).', ...
+                    numel(subjectInfo.sessionID), numSubjects);
             end
 
-            mustHaveAllValidSubjectNames(subjectInfo.subjectName); % Validate all subject names upfront
+            ndi.setup.NDIMaker.subjectMaker.mustHaveAllValidSubjectNames(subjectInfo.subjectName);
 
             output_subjectNames = cell(numSubjects, 1);
-            output_documents = cell(numSubjects, 1); % Each element will be a cell array of docs
+            output_documents = cell(numSubjects, 1); 
 
             for i = 1:numSubjects
-                sName = subjectInfo.subjectName{i}; % Already validated by mustHaveAllValidSubjectNames
+                sName = subjectInfo.subjectName{i}; 
                 output_subjectNames{i} = sName;
 
-                current_session_id = sessionIDs{i};
-                if ~(ischar(current_session_id) && ~isempty(current_session_id))
+                current_session_id_for_doc = subjectInfo.sessionID{i}; 
+                if ~(ischar(current_session_id_for_doc) && ~isempty(current_session_id_for_doc))
                      escaped_sName = strrep(sName, '%', '%%');
-                     warning_msg = sprintf('Session ID for subject "%s" (index %d) is not a valid string. Skipping document creation.', escaped_sName, i);
-                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionID', warning_msg);
-                     output_documents{i} = {}; % Placeholder for failed document set
+                     warning_msg = sprintf('Session ID for subject "%s" (index %d from subjectInfo.sessionID) is not a valid string. Skipping document creation.', escaped_sName, i);
+                     warning('ndi:setup:NDIMaker:subjectMaker:InvalidSessionIDFromSubjectInfo', warning_msg);
+                     output_documents{i} = {}; 
                      continue;
                 end
 
-                all_docs_for_this_subject = {}; % Initialize cell array for this subject's documents
-                main_subject_doc_id = ''; % To store the ID of the main subject document
+                all_docs_for_this_subject = {}; 
+                main_subject_doc_id = ''; 
 
                 try
-                    % 1. Create base subject document
                     main_subject_doc = ndi.document('subject', ...
                         'subject.local_identifier', sName, ...
-                        'base.session_id', current_session_id);
-                    all_docs_for_this_subject{end+1} = main_subject_doc; % Add as the first document
-                    
-                    % Get the ID of the main subject document for linking
+                        'base.session_id', current_session_id_for_doc);
+                    all_docs_for_this_subject{end+1} = main_subject_doc; 
                     main_subject_doc_id = main_subject_doc.id(); 
 
-                    % 2. Create and add species document(s)
                     if isfield(subjectInfo, 'species') && numel(subjectInfo.species) >= i
                         species_obj = subjectInfo.species{i};
-                        if isa(species_obj, 'openminds.controlledterms.Species') % Corrected check
+                        if isa(species_obj, 'openminds.controlledterms.Species') 
                             try
-                                % Returns a cell array of NDI documents
-                                species_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(species_obj, current_session_id, 'subject', main_subject_doc_id);
+                                species_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(species_obj, current_session_id_for_doc, 'subject', main_subject_doc_id);
                                 if ~isempty(species_ndi_docs)
-                                    % Ensure new_docs is a column vector for cat
                                     all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), species_ndi_docs(:));
                                 end
                             catch ME_SpeciesConv
@@ -352,13 +247,11 @@ classdef subjectMaker % Class name remains subjectMaker
                         end
                     end
 
-                    % 3. Create and add strain document(s)
                     if isfield(subjectInfo, 'strain') && numel(subjectInfo.strain) >= i
                         strain_obj = subjectInfo.strain{i};
-                        if isa(strain_obj, 'openminds.core.research.Strain') % Corrected check
+                        if isa(strain_obj, 'openminds.core.research.Strain') 
                              try
-                                % Returns a cell array of NDI documents
-                                strain_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(strain_obj, current_session_id, 'subject', main_subject_doc_id);
+                                strain_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(strain_obj, current_session_id_for_doc, 'subject', main_subject_doc_id);
                                 if ~isempty(strain_ndi_docs)
                                     all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), strain_ndi_docs(:));
                                 end
@@ -371,13 +264,11 @@ classdef subjectMaker % Class name remains subjectMaker
                         end
                     end
 
-                    % 4. Create and add biological sex document(s)
                     if isfield(subjectInfo, 'biologicalSex') && numel(subjectInfo.biologicalSex) >= i
                         sex_obj = subjectInfo.biologicalSex{i};
-                        if isa(sex_obj, 'openminds.controlledterms.BiologicalSex') % Corrected check
+                        if isa(sex_obj, 'openminds.controlledterms.BiologicalSex') 
                             try
-                                % Returns a cell array of NDI documents
-                                sex_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(sex_obj, current_session_id, 'subject', main_subject_doc_id);
+                                sex_ndi_docs = ndi.database.fun.openMINDSobj2ndi_document(sex_obj, current_session_id_for_doc, 'subject', main_subject_doc_id);
                                 if ~isempty(sex_ndi_docs)
                                     all_docs_for_this_subject = cat(1, all_docs_for_this_subject(:), sex_ndi_docs(:));
                                 end
@@ -396,7 +287,7 @@ classdef subjectMaker % Class name remains subjectMaker
                     escaped_message = strrep(ME_DocCreation.message, '%', '%%');
                     warning_msg = sprintf('Failed to create base NDI document for subject %s: %s', escaped_sName, escaped_message);
                     warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', warning_msg);
-                    output_documents{i} = {}; % Store empty cell for this subject on error
+                    output_documents{i} = {}; 
                 end
             end
 
@@ -404,65 +295,115 @@ classdef subjectMaker % Class name remains subjectMaker
 
         end % function makeSubjectDocuments
 
+        function added_status = addSubjectsToSessions(obj, sessionArray, documentsToAddSets)
+            %ADDSUBJECTSTOSESSIONS Adds sets of subject-related documents to their respective sessions.
+            arguments
+                obj (1,1) ndi.setup.NDIMaker.subjectMaker
+                sessionArray (1,:) ndi.session.dir 
+                documentsToAddSets (1,:) cell 
+            end
+
+            if isempty(documentsToAddSets)
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptyDocSetInput', 'documentsToAddSets is empty. No documents to add.');
+                added_status = logical([]); 
+                return;
+            end
+            if isempty(sessionArray)
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptySessionArray', 'sessionArray is empty. Cannot add documents.');
+                added_status = false(1, numel(documentsToAddSets)); 
+                return;
+            end
+
+            numDocSets = numel(documentsToAddSets);
+            added_status = false(1, numDocSets); 
+
+            session_id_map = containers.Map('KeyType', 'char', 'ValueType', 'double'); 
+            for k_sess = 1:numel(sessionArray)
+                try
+                    sess_obj = sessionArray(k_sess);
+                    session_id_map(sess_obj.id()) = k_sess; 
+                catch ME_SessIDMap
+                    escaped_message = strrep(ME_SessIDMap.message, '%', '%%');
+                    warning_msg = sprintf('Could not get ID for a session in sessionArray at index %d: %s. This session will be unavailable for adding documents.', k_sess, escaped_message);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionMapCreationError',warning_msg);
+                end
+            end
+            
+            if isempty(session_id_map) && numDocSets > 0 
+                 warning('ndi:setup:NDIMaker:subjectMaker:NoUsableSessions', 'No usable sessions found in sessionArray. Cannot add documents.');
+                 return; 
+            end
+
+            for i = 1:numDocSets
+                current_doc_set = documentsToAddSets{i};
+
+                if isempty(current_doc_set) || ~iscell(current_doc_set) || ~isa(current_doc_set{1}, 'ndi.document')
+                    warning_msg = sprintf('Document set at index %d is empty, not a cell, or does not start with an ndi.document. Skipping.', i);
+                    warning('ndi:setup:NDIMaker:subjectMaker:InvalidDocSetEntry', warning_msg);
+                    continue; 
+                end
+
+                try
+                    target_session_id = current_doc_set{1}.document_properties.base.session_id;
+                    
+                    if ~(ischar(target_session_id) && ~isempty(target_session_id))
+                        warning_msg = sprintf('Target session ID for document set %d is invalid or empty. Skipping.', i);
+                        warning('ndi:setup:NDIMaker:subjectMaker:InvalidTargetSessionID', warning_msg);
+                        continue;
+                    end
+
+                catch ME_TargetSessID
+                    escaped_message = strrep(ME_TargetSessID.message, '%', '%%');
+                    warning_msg = sprintf('Error retrieving target session ID from document set %d: %s. Skipping.', i, escaped_message);
+                    warning('ndi:setup:NDIMaker:subjectMaker:TargetSessionIDError', warning_msg);
+                    continue;
+                end
+
+                if isKey(session_id_map, target_session_id)
+                    session_idx_in_array = session_id_map(target_session_id);
+                    actual_session_object = sessionArray(session_idx_in_array);
+                    
+                    try
+                        actual_session_object.database_add(current_doc_set);
+                        added_status(i) = true; 
+                        fprintf('Added %d documents for subject (target session: %s) to session %s.\n', ...
+                            numel(current_doc_set), strrep(target_session_id,'%','%%'), strrep(actual_session_object.Reference,'%','%%'));
+                    catch ME_DbAdd
+                        escaped_message = strrep(ME_DbAdd.message, '%', '%%');
+                        escaped_target_id = strrep(target_session_id, '%', '%%');
+                        warning_msg = sprintf('Failed to add document set %d (target session: %s) to database for session %s: %s', ...
+                            i, escaped_target_id, strrep(actual_session_object.Reference,'%','%%'), escaped_message);
+                        warning('ndi:setup:NDIMaker:subjectMaker:DatabaseAddError', warning_msg);
+                    end
+                else
+                    escaped_target_id = strrep(target_session_id, '%', '%%');
+                    warning_msg = sprintf('Session with ID "%s" (for document set %d) not found in the provided sessionArray. Skipping document set.', ...
+                        escaped_target_id, i);
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', warning_msg);
+                end
+            end
+        end % function addSubjectsToSessions
 
         function deletion_report = deleteSubjectDocs(obj, sessionArray, localIdentifiersToDelete)
             %DELETESUBJECTDOCS Deletes subject documents from sessions based on local identifiers.
-            %
-            %   deletion_report = DELETESUBJECTDOCS(OBJ, sessionArray, localIdentifiersToDelete)
-            %
-            %   Searches each NDI session for 'subject' documents whose
-            %   'document_properties.subject.local_identifier' matches any of the
-            %   identifiers provided in localIdentifiersToDelete. Found documents
-            %   are then removed from the database via the session object.
-            %
-            %   Args:
-            %       obj (ndi.setup.NDIMaker.subjectMaker): The subjectMaker object instance.
-            %       sessionArray (ndi.session.dir vector): An array of NDI session
-            %                                          directory objects.
-            %       localIdentifiersToDelete (cellstr | string): A cell array of
-            %                                          character vectors or a string array
-            %                                          containing the local subject
-            %                                          identifiers to be deleted.
-            %
-            %   Returns:
-            %       deletion_report (struct): A structure array detailing the
-            %                               deletion attempts. Each element corresponds
-            %                               to a session and contains fields:
-            %                               - session_id (char): The ID of the session.
-            %                               - session_reference (char): The reference of the session.
-            %                               - docs_found_ids (cellstr): Database IDs of matching documents found.
-            %                               - docs_deleted_ids (cellstr): Database IDs of documents successfully deleted.
-            %                               - errors (cell): Cell array of any MException objects encountered.
-            %
-            %   Assumptions:
-            %       - Session objects in sessionArray are of type `ndi.session.dir`
-            %         (or similar) and have methods: `id()`, `Reference` (property),
-            %         `database_search(query)`, `database_delete(doc_ids_cell_array)`.
-            %       - Document objects have a method `id()` to get their database ID.
-            %       - `ndi.query` class exists and supports '&' and '|' operations.
-            %       - Document property paths:
-            %         `document_properties.document_class.objectname`
-            %         `document_properties.subject.local_identifier`
-
             arguments
                 obj (1,1) ndi.setup.NDIMaker.subjectMaker
-                sessionArray (1,:) ndi.session.dir % Assuming object array
-                localIdentifiersToDelete {mustBeTextLike(localIdentifiersToDelete)} % Renamed validator
+                sessionArray (1,:) ndi.session.dir 
+                localIdentifiersToDelete {ndi.setup.NDIMaker.subjectMaker.mustBeTextLike(localIdentifiersToDelete)}
             end
 
             if isempty(localIdentifiersToDelete) || isempty(sessionArray)
                 warning_msg = 'No local identifiers provided or no sessions to search. No action taken.';
-                warning('ndi:setup:NDIMaker:subjectMaker:EmptyInput', warning_msg); % Corrected ID
+                warning('ndi:setup:NDIMaker:subjectMaker:EmptyInput', warning_msg);
                 deletion_report = struct('session_id', {}, 'session_reference', {}, ...
                                          'docs_found_ids', {}, 'docs_deleted_ids', {}, 'errors', {});
                 return;
             end
 
-            % Ensure localIdentifiersToDelete is a cellstr for ismember/query construction
             if isstring(localIdentifiersToDelete)
                 localIdentifiersToDelete = cellstr(localIdentifiersToDelete);
             end
-            localIdentifiersToDelete = localIdentifiersToDelete(:); % Ensure column vector
+            localIdentifiersToDelete = localIdentifiersToDelete(:); 
 
             numSessions = numel(sessionArray);
             deletion_report = repmat(struct('session_id', '', 'session_reference', '', ...
@@ -477,19 +418,18 @@ classdef subjectMaker % Class name remains subjectMaker
                 docs_successfully_deleted_ids = {};
 
                 try
-                    current_session_id = currentSession.id();
-                    current_session_ref = currentSession.Reference; % Assuming Reference property
-                    deletion_report(s).session_id = current_session_id;
+                    current_session_id_val = currentSession.id(); 
+                    current_session_ref = currentSession.Reference; 
+                    deletion_report(s).session_id = current_session_id_val;
                     deletion_report(s).session_reference = current_session_ref;
                 catch ME_SessionInfo
                     escaped_message = strrep(ME_SessionInfo.message, '%', '%%');
                     warning_msg = sprintf('Could not get ID or Reference for session %d: %s. Skipping session.', s, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:SessionInfoError', warning_msg); % Corrected ID
+                    warning('ndi:setup:NDIMaker:subjectMaker:SessionInfoError', warning_msg);
                     deletion_report(s).errors{end+1} = ME_SessionInfo;
                     continue;
                 end
 
-                % --- Build Query ---
                 type_query = ndi.query('document_properties.document_class.objectname', 'exact_string', expected_doc_type);
                 if isempty(localIdentifiersToDelete)
                     continue;
@@ -508,17 +448,16 @@ classdef subjectMaker % Class name remains subjectMaker
                 end
                 final_query = type_query & combined_local_id_query;
 
-                % --- Search Database ---
                 docs_found = {};
                 try
                     docs_found = currentSession.database_search(final_query);
                 catch ME_Search
                     escaped_sRef = strrep(current_session_ref, '%', '%%');
-                    escaped_sID = strrep(current_session_id, '%', '%%');
+                    escaped_sID = strrep(current_session_id_val, '%', '%%');
                     escaped_message = strrep(ME_Search.message, '%', '%%');
                     warning_msg = sprintf('Database search failed for session %s (ID: %s): %s.', ...
                         escaped_sRef, escaped_sID, escaped_message);
-                    warning('ndi:setup:NDIMaker:subjectMaker:DBSearchError', warning_msg); % Corrected ID
+                    warning('ndi:setup:NDIMaker:subjectMaker:DBSearchError', warning_msg);
                     session_errors{end+1} = ME_Search;
                     deletion_report(s).errors = session_errors;
                     continue;
@@ -530,11 +469,11 @@ classdef subjectMaker % Class name remains subjectMaker
                         deletion_report(s).docs_found_ids = docs_found_for_deletion_ids;
                     catch ME_DocID
                         escaped_sRef = strrep(current_session_ref, '%', '%%');
-                        escaped_sID = strrep(current_session_id, '%', '%%');
+                        escaped_sID = strrep(current_session_id_val, '%', '%%');
                         escaped_message = strrep(ME_DocID.message, '%', '%%');
                         warning_msg = sprintf('Could not extract database IDs from found documents for session %s (ID: %s): %s.', ...
                             escaped_sRef, escaped_sID, escaped_message);
-                         warning('ndi:setup:NDIMaker:subjectMaker:DocIDError', warning_msg); % Corrected ID
+                         warning('ndi:setup:NDIMaker:subjectMaker:DocIDError', warning_msg);
                         session_errors{end+1} = ME_DocID;
                         deletion_report(s).errors = session_errors;
                         continue;
@@ -546,92 +485,100 @@ classdef subjectMaker % Class name remains subjectMaker
                             docs_successfully_deleted_ids = docs_found_for_deletion_ids;
                             deletion_report(s).docs_deleted_ids = docs_successfully_deleted_ids;
                             fprintf('Session %s (ID: %s): Deleted %d subject document(s).\n', ...
-                                strrep(current_session_ref, '%', '%%'), strrep(current_session_id, '%', '%%'), numel(docs_successfully_deleted_ids));
+                                strrep(current_session_ref, '%', '%%'), strrep(current_session_id_val, '%', '%%'), numel(docs_successfully_deleted_ids));
                         catch ME_Delete
                             escaped_sRef = strrep(current_session_ref, '%', '%%');
-                            escaped_sID = strrep(current_session_id, '%', '%%');
+                            escaped_sID = strrep(current_session_id_val, '%', '%%');
                             escaped_message = strrep(ME_Delete.message, '%', '%%');
                             warning_msg = sprintf('Database delete operation failed for session %s (ID: %s): %s.', ...
                                 escaped_sRef, escaped_sID, escaped_message);
-                            warning('ndi:setup:NDIMaker:subjectMaker:DBDeleteError', warning_msg); % Corrected ID
+                            warning('ndi:setup:NDIMaker:subjectMaker:DBDeleteError', warning_msg);
                             session_errors{end+1} = ME_Delete;
                         end
                     end
                 else
                      fprintf('Session %s (ID: %s): No subject documents found matching the provided local identifiers.\n', ...
-                         strrep(current_session_ref, '%', '%%'), strrep(current_session_id, '%', '%%'));
+                         strrep(current_session_ref, '%', '%%'), strrep(current_session_id_val, '%', '%%'));
                 end
                 deletion_report(s).errors = session_errors;
             end % loop through sessions
         end % function deleteSubjectDocs
 
-        % --- Deprecated/Needs Refactoring ---
-        function added_status = addSubjectsToSessions(obj, sessionArray, subjectDocuments)
-            %ADDSUBJECTSTOSESSIONS Adds subject documents to sessions if not already present.
-            % *** NOTE: This function is currently incompatible with the output of
-            %     getSubjectInfoFromTable and needs refactoring. ***
-            arguments
-                obj (1,1) ndi.setup.NDIMaker.subjectMaker
-                sessionArray (1,:) ndi.session.dir
-                subjectDocuments (1,:) cell {mustBeVector}
-            end
-            warning_msg = 'addSubjectsToSessions is not compatible with the current class structure and needs refactoring.';
-            warning('ndi:setup:NDIMaker:subjectMaker:DeprecatedFunction', warning_msg); % Corrected ID
-            numSubjectDocs = numel(subjectDocuments);
-            added_status = false(1, numSubjectDocs);
-            if isempty(subjectDocuments) || isempty(sessionArray)
-                return;
-            end
-            disp('Placeholder: addSubjectsToSessions logic needs complete rewrite.');
-        end % function addSubjectsToSessions
-
     end % methods block
 
-end % classdef subjectMaker
-
-
-% --- Local Helper Function for Argument Validation ---
-function mustBeTextLike(value) % Renamed function
-% Validate that input is char, string, or cell array of char/string
-    if ~(ischar(value) || isstring(value) || iscellstr(value) || (iscell(value) && all(cellfun(@(x) ischar(x) || isstring(x), value))))
-        error('Validation:InvalidTextLikeType', 'Input must be a character vector, string, cell array of character vectors, or cell array of strings.');
-    end
-end
-
-% --- New Local Validation Functions ---
-function mustBeValidSubjectInfoForDocCreation(subjectInfo)
-% Validates the basic structure of subjectInfo for makeSubjectDocuments
-    if ~isstruct(subjectInfo)
-        error('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectInfoType', ...
-            'subjectInfo must be a struct.');
-    end
-    if ~isfield(subjectInfo, 'subjectName') || ~iscell(subjectInfo.subjectName)
-        error('ndi:setup:NDIMaker:subjectMaker:MissingSubjectNameField', ...
-            'subjectInfo must be a struct with a cell array field named "subjectName".');
-    end
-    % Further checks for strain, species, biologicalSex can be added if they are strictly required
-    % and not just optional. For now, only subjectName is critical for this validator.
-end
-
-function mustHaveAllValidSubjectNames(subjectNameCellArray)
-% Validates that all subject names in the cell array are non-empty char vectors
-    if ~iscell(subjectNameCellArray)
-        % This should ideally be caught by mustBeValidSubjectInfoForDocCreation
-        error('ndi:setup:NDIMaker:subjectMaker:InternalSubjectNameError', 'subjectNameCellArray is not a cell array.');
-    end
-    for k_val = 1:numel(subjectNameCellArray)
-        sName_val = subjectNameCellArray{k_val};
-        if ~(ischar(sName_val) && ~isempty(sName_val))
-            error('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectNameEntry', ...
-                  'All subject names in subjectInfo.subjectName must be valid, non-empty character vectors. Error at index %d.', k_val);
+    methods (Static)
+        % --- Static Helper/Validation Functions ---
+        function mustBeTextLike(value)
+            if ~(ischar(value) || isstring(value) || iscellstr(value) || (iscell(value) && all(cellfun(@(x) ischar(x) || isstring(x), value))))
+                error('ndi:setup:NDIMaker:subjectMaker:InvalidTextLikeType', 'Input must be a character vector, string, cell array of character vectors, or cell array of strings.');
+            end
         end
-    end
-end
 
-function mustHaveSessionIndColumn(dataTable)
-% Validates that the dataTable has a 'sessionInd' column
-    if ~ismember('sessionInd', dataTable.Properties.VariableNames)
-        error('ndi:setup:NDIMaker:subjectMaker:MissingSessionIndColumn', ...
-            'The input dataTable must contain a column named "sessionInd".');
-    end
-end
+        function mustBeValidSubjectInfoForDocCreation(subjectInfo)
+            if ~isstruct(subjectInfo)
+                error('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectInfoType', ...
+                    'subjectInfo must be a struct.');
+            end
+            if ~isfield(subjectInfo, 'subjectName') || ~iscell(subjectInfo.subjectName)
+                error('ndi:setup:NDIMaker:subjectMaker:MissingSubjectNameField', ...
+                    'subjectInfo must be a struct with a cell array field named "subjectName".');
+            end
+            if ~isfield(subjectInfo, 'sessionID') || ~iscell(subjectInfo.sessionID) 
+                error('ndi:setup:NDIMaker:subjectMaker:MissingSessionIDField', ...
+                    'subjectInfo must be a struct with a cell array field named "sessionID".');
+            end
+            if numel(subjectInfo.subjectName) ~= numel(subjectInfo.sessionID)
+                error('ndi:setup:NDIMaker:subjectMaker:SubjectSessionIDLengthMismatch', ...
+                    'subjectInfo.subjectName and subjectInfo.sessionID must have the same number of elements.');
+            end
+        end
+
+        function mustHaveAllValidSubjectNames(subjectNameCellArray)
+            if ~iscell(subjectNameCellArray)
+                error('ndi:setup:NDIMaker:subjectMaker:InternalSubjectNameError', 'subjectNameCellArray is not a cell array.');
+            end
+            for k_val = 1:numel(subjectNameCellArray)
+                sName_val = subjectNameCellArray{k_val};
+                if ~(ischar(sName_val) && ~isempty(sName_val))
+                    error('ndi:setup:NDIMaker:subjectMaker:InvalidSubjectNameEntry', ...
+                          'All subject names in subjectInfo.subjectName must be valid, non-empty character vectors. Error at index %d.', k_val);
+                end
+            end
+        end
+
+        function mustHaveSessionIDColumn(dataTable) 
+            if ~ismember('sessionID', dataTable.Properties.VariableNames) 
+                error('ndi:setup:NDIMaker:subjectMaker:MissingSessionIDColumn', ...
+                    'The input dataTable must contain a column named "sessionID".');
+            end
+        end
+        
+        function unwrappedValue = unwrapTableCellContent(cellValue)
+            %UNWRAPTABLECELLCONTENT Recursively unwraps content from nested cell arrays.
+            %   UNWRAPPEDVALUE = UNWRAPTABLECELLCONTENT(CELLVALUE)
+            %   If CELLVALUE is a cell, this function attempts to extract the
+            %   innermost content. It handles multiple layers of cell nesting.
+            %   If CELLVALUE is not a cell, it's returned as is.
+            %   If a cell is empty at any level of unwrapping, it returns NaN.
+            
+            currentValue = cellValue;
+            unwrap_count = 0; % Safety break for excessive nesting
+            max_unwrap = 5;   % Max number of cell layers to unwrap
+
+            while iscell(currentValue) && ~isempty(currentValue) && unwrap_count < max_unwrap
+                currentValue = currentValue{1};
+                unwrap_count = unwrap_count + 1;
+            end
+            
+            % If after unwrapping it's still an empty cell (e.g. from initial {{}})
+            % or if the original was an empty cell
+            if iscell(currentValue) && isempty(currentValue)
+                unwrappedValue = NaN;
+            else
+                unwrappedValue = currentValue;
+            end
+        end
+
+    end % methods (Static)
+
+end % classdef subjectMaker
