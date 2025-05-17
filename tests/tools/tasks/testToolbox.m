@@ -7,8 +7,9 @@ function testToolbox(varargin)
         end
         userpath(userFolder)
     end
-    ndi_install()
+    %ndi_install()
     projectRootDir = nditools.projectdir();
+    matbox.installRequirements(fullfile(projectRootDir, 'tests'))
     matbox.tasks.testToolbox(projectRootDir, ...
         "SourceFolderName", "", ...
         "ToolsFolderName", "", ...
