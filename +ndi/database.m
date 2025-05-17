@@ -209,7 +209,7 @@ classdef database
                     ndi_database_obj.remove(ids{i}); % remove the entry
                 end
             else,
-                disp(['Not clearing because user did not indicate he/she is sure.']);
+                disp('Not clearing because user did not indicate they are sure.');
             end;
         end % clear
 

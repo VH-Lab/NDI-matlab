@@ -82,6 +82,10 @@ classdef epochprobemap_daqsystem < ndi.epoch.epochprobemap
 
             % name, check for errors
             [b,errormsg] = vlt.data.islikevarname(name_);
+            if iscell(errormsg)
+                errormsg = join(errormsg,'');
+                errormsg = errormsg{1};
+            end
             if ~b,
                 error(['Error in name field: ' errormsg ]);
             end;

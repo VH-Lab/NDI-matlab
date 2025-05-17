@@ -1,0 +1,5 @@
+Note:
+
+The test cases of NDITaxon are scattered about the JSON file because the API 
+returns an error if too many nearly-simultaneous requests are made.
+
