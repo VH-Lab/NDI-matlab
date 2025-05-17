@@ -96,7 +96,17 @@ classdef tuningcurve < ndi.calculator
                         doc = {};
                         return;
                     end;
-                elseif strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
+                elseif strcmp(lower(char(parameters.input_parameters.selection(i).operation)),'numberatleast'),
+                    pva = ndi_calculator_obj.property_value_array(stim_response_doc,parameters.input_parameters.selection(i).property);
+                    if ~isnumeric(parameters.input_parameters.selection(i).value)
+                        error(['NumberAtLeast value must be numeric.']);
+                    end
+                    match = numel(pva)>=parameters.input_parameters.selection(i).value;
+                    if match==0, %if it doesn't have it, then quit
+                        doc = {};
+                        return;
+                    end;
+               elseif strcmpi(char(parameters.input_parameters.selection(i).value),'best'),
                     % calculate best value
                     [n,v,stim_property_value] = ndi_calculator_obj.best_value(parameters.input_parameters.best_algorithm,...
                         stim_response_doc, parameters.input_parameters.selection(i).property);

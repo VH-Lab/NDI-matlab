@@ -132,7 +132,7 @@ classdef reader < ndi.ido & ndi.documentservice
                     t{1} = t0t1(:)';
                 else,
                     for i=1:size(et.t0_t1,2),
-                        t{i} = t0t1(i,:);
+                        t{i} = t0t1(:,i)';
                     end;
                 end;
                 t0t1 = t;
@@ -180,7 +180,7 @@ classdef reader < ndi.ido & ndi.documentservice
             %    D = mydaqreader.ingest_epochfiles(epochfiles);
 
             daqreader_epochdata_ingested.epochtable.epochclock = ndi_daqreader_mfdaq_obj.epockclock(epochfiles);
-            daqreader_epochdata_ingested.epochtable.t0_t1 = ndi_daqreader_mfdaq_obj.t0_t1(epochfiles);
+            daqreader_epochdata_ingested.epochtable.t0_t1 = ndi.fun.doc.t0_t1cell2array(ndi_daqreader_mfdaq_obj.t0_t1(epochfiles));
 
             d = ndi.document('daqreader_epochdata_ingested',...
                 'daqreader_epochdata_ingested', daqreader_epochdata_ingested);
