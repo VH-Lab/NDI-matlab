@@ -14,7 +14,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 %   Args:
 %       tableRow (table): A 1xN MATLAB table (single row). Argument validation
 %                         ensures it contains AT LEAST the columns:
-%                         'IsWildType', 'isCRFCre', 'isOTRCre', 'isAVPCre',
+%                         'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre',
 %                         'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID'.
 %                         Columns may contain cell arrays (value in first cell used)
 %                         or direct numeric/string/char values (e.g., NaN, "text", 'text').
@@ -42,7 +42,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
         % Validate table properties and required columns directly here
         tableRow (1, :) table {mustBeNonempty, ... % Must be 1 row, non-empty
                  ndi.validators.mustHaveRequiredColumns(tableRow, ... % Call validator
-                 {'IsWildType', 'isCRFCre', 'isOTRCre', 'isAVPCre', ... % Hard-coded cols
+                 {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre', ... % Hard-coded cols
                   'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID'})} % Column list
     end
 
@@ -56,9 +56,9 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     % --- Extract Values using Helper Function ---
     % Helper now ensures strings are cast to char arrays
     isWildTypeValue = extractTableCellValue(tableRow, 'IsWildType');
-    isCRFCreValue = extractTableCellValue(tableRow, 'isCRFCre');
-    isOTRCreValue = extractTableCellValue(tableRow, 'isOTRCre');
-    isAVPCreValue = extractTableCellValue(tableRow, 'isAVPCre');
+    isCRFCreValue = extractTableCellValue(tableRow, 'IsCRFCre');
+    isOTRCreValue = extractTableCellValue(tableRow, 'IsOTRCre');
+    isAVPCreValue = extractTableCellValue(tableRow, 'IsAVPCre');
     recordingDateValue = extractTableCellValue(tableRow, 'RecordingDate');
     subjectPostfixValue = extractTableCellValue(tableRow, 'SubjectPostfix');
     speciesOntologyIDValue = extractTableCellValue(tableRow, 'SpeciesOntologyID');
@@ -66,7 +66,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     % --- Check Genotype Exclusivity ---
     % Now operates correctly on extracted char arrays or other types (NaN)
     genotypeValues = {isWildTypeValue, isCRFCreValue, isOTRCreValue, isAVPCreValue};
-    genotypeNames = {'IsWildType', 'isCRFCre', 'isOTRCre', 'isAVPCre'};
+    genotypeNames = {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre'};
     isValidGenotype = cellfun(@(x) ischar(x) && ~isempty(x), genotypeValues);
 
     if sum(isValidGenotype) ~= 1
@@ -82,11 +82,11 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     switch validGenotypeName
         case 'IsWildType'
             prefix = 'sd_rat_wt_';
-        case 'isCRFCre'
+        case 'IsCRFCre'
             prefix = 'sdwi_rat_CRFCre_';
-        case 'isOTRCre'
+        case 'IsOTRCre'
             prefix = 'sdwi_rat_OTRCre_';
-        case 'isAVPCre'
+        case 'IsAVPCre'
             prefix = 'sdwi_rat_AVPCre_';
         otherwise % Should not happen due to the check above
              error('createSubjectInformation:InternalError', 'Unexpected valid genotype identified.');
@@ -171,7 +171,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
                  st_sd.geneticStrainType = wt_strain_type;
                  strain = st_sd;
 
-            case {'isCRFCre', 'isOTRCre', 'isAVPCre'} % Common background for transgenic lines
+            case {'IsCRFCre', 'IsOTRCre', 'IsAVPCre'} % Common background for transgenic lines
                  st_sd = openminds.core.research.Strain('name', "SD", 'species', sp, ...
                      'ontologyIdentifier', "RRID:RGD_70508", 'geneticStrainType', wt_strain_type);
 
@@ -183,11 +183,11 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
                  st_trans.backgroundStrain = [st_sd st_wi];
                  st_trans.geneticStrainType = ki_strain_type;
 
-                 if strcmp(validGenotypeName, 'isCRFCre')
+                 if strcmp(validGenotypeName, 'IsCRFCre')
                      st_trans.name = 'CRF-Cre';
-                 elseif strcmp(validGenotypeName, 'isOTRCre')
+                 elseif strcmp(validGenotypeName, 'IsOTRCre')
                      st_trans.name = 'OTR-IRES-Cre';
-                 elseif strcmp(validGenotypeName, 'isAVPCre')
+                 elseif strcmp(validGenotypeName, 'IsAVPCre')
                      st_trans.name = 'AVP-Cre';
                  end
                  strain = st_trans;

@@ -104,6 +104,15 @@ include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
     ~contains(fileList,'.DS_Store'); 
 fileList = fileList(include);
 
+% Edit files that say 'Copy of'
+for i = 1:numel(fileList)
+    if contains(fileList{i},'Copy of')
+        myFile = fullfile(myDir,'data',fileList{i});
+        movefile(myFile,replace(myFile,'Copy of ',''));
+        fileList{i} = replace(fileList{i},'Copy of ','');
+    end
+end
+
 % Get variable table (electrophysiology)
 jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_ephys.json');
 j = jsondecode(fileread(jsonPath));
@@ -113,6 +122,17 @@ variableTable_ephys = ndi.setup.conv.datalocation.processFileManifest(fileList,j
 jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_opto.json');
 j = jsondecode(fileread(jsonPath));
 variableTable_opto = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
+
+% Deal with OTA and TLS
+epochInd = cellfun(@(sr) ~any(isnan(sr)),variableTable_opto.BathConditionString);
+variableTable_opto.BathConditionString(epochInd) = replace(variableTable_opto.BathConditionString(epochInd),'TLS','Post');
+OTAInd = find(cellfun(@(sr) ~any(isnan(sr)),variableTable_opto.OTA) & epochInd);
+for i = 1:numel(OTAInd)
+    bcs = variableTable_opto.BathConditionString{OTAInd(i)};
+    if ~contains(bcs,'OTA')
+        variableTable_opto.BathConditionString(OTAInd(i)) = join({bcs,'OTA'},' + ');
+    end
+end
 
 % Combine variable tables with common rows
 opto_rows = contains(variableTable_ephys.Properties.RowNames,'Optogenetics');
@@ -150,7 +170,7 @@ epochInd = cellfun(@(sr) ~any(isnan(sr)),variableTable.IsExpMatFile);
 recordingDates = datetime(variableTable.RecordingDate(epochInd),...
     'InputFormat','MMM dd yyyy');
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
-sliceLabel = variableTable.sliceLabel(epochInd);
+sliceLabel = variableTable.SliceLabel(epochInd);
 sliceLabel(strcmp(sliceLabel,{''})) = {'a'};
 variableTable.ProbePostfix = cell(height(variableTable),1);
 variableTable{epochInd,'ProbePostfix'} = cellfun(@(rd,sl) ['_',rd,'_',sl],...
@@ -166,7 +186,7 @@ ndi.setup.NDIMaker.epochProbeMapMaker(myPath,variableTable,probeTable,...
 %% Create NDI sessions
 S = ndi.setup.NDIMaker.sessionMaker(myPath,variableTable,...
     'NonNaNVariableNames','IsExpMatFile','Overwrite',true);
-[sessionArray,variableTable.sessionInd] = S.sessionIndices;
+[sessionArray,variableTable.SessionInd] = S.sessionIndices;
 
 % Add DAQ system
 labName = 'dabrowskalab';
@@ -181,10 +201,14 @@ sb = ndi.setup.NDIMaker.stimulusBathMaker(sessionArray{1},'dabrowska',...
 jsonPath = fullfile(myDir,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowksa_mixtures_dictionary.json');
 mixture_dictionary = jsondecode(fileread(jsonPath));
 
-%% Get stimulus bath docs
+%% Create stimulus bath docs
 stimulus_bath_docs = sb.table2bathDocs(variableTable,...
     'bath','BathConditionString',...
     'MixtureDictionary',mixture_dictionary,...
-    'NonNaNVariableNames','sessionInd', ...
+    'NonNaNVariableNames','SessionInd', ...
     'MixtureDelimeter','+',...
     'Overwrite',false);
+
+%% Create stimulus approach docs
+
+%stimulus_approach_docs = ndi.setup.stimulus.vhlab.add_stimulus_approach(sessionArray{1},filename);

@@ -102,5 +102,21 @@
     "StringDetectInput": "",
     "StringFormat": "((?i)AVP_Cre)",
     "FunctionName": ""
+  },
+  {
+    "VariableName": "OTA",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)OTA)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "TLS",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)TLS)",
+    "FunctionName": ""
   }
 ]

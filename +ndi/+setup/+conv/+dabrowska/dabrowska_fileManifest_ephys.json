@@ -102,5 +102,13 @@
     "StringDetectInput": "",
     "StringFormat": "((?i)AVPCre_BNST_neurons)",
     "FunctionName": ""
+  },
+  {
+    "VariableName": "TLS",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)TLS)",
+    "FunctionName": ""
   }
 ]
