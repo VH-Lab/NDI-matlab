@@ -6,7 +6,7 @@ function [zipFilePath, fileCleanupObj] = zip_documents_for_upload(documentList, 
     end
 
     % Convert documents to a JSON string
-    jsonStr = jsonencode( documentList );
+    jsonStr = did.datastructures.jsonencodenan( documentList );
     
     % Open the file for writing
     jsonFilename = fullfile(tempdir, 'temp_ndi_documents.json');
