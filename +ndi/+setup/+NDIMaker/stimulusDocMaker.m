@@ -282,11 +282,14 @@ classdef stimulusDocMaker < handle
             filenames = variableTable.(options.FilenameVariable)(epochInd);
             epochids = ndi.fun.epoch.filename2epochid(obj.session,filenames);
 
+            % Get stimulator elements associated with the epochids
+            stims = ndi.fun.epoch.epochid2element(obj.session,epochids,'type','stimulator');
+
             docs = cell(size(epochInd)); % Initialize output cell array
             for e = 1:numel(epochInd)
 
                 % Get stimulator id associated to the epochid
-                stim = ndi.fun.epoch.epochid2element(obj.session,epochids{e},'type','stimulator');
+                stim = stims{e};
                 if isempty(stim)
                     error('STIMULUSDOCMAKER:MissingStimulator',...
                         'No stimulator found in the session.')
@@ -343,7 +346,7 @@ classdef stimulusDocMaker < handle
             %       stimulatorid: The NDI element ID of the stimulator device.
             %       epochid: The NDI epoch ID for which the document is being created.
             %       approachStrings: A character vector or a cell array of character
-            %                          vectors specifying the approache(s) by name.
+            %                          vectors specifying the approach name(s).
             %
             %   Optional Name-Value Arguments:
             %       Overwrite: A flag intended to control whether existing documents 
@@ -354,8 +357,7 @@ classdef stimulusDocMaker < handle
             %             object(s). A separate document is created for each distinct location
             %             associated with the provided 'approachStrings'.
             %
-            %   See also: NDI.DATABASE.FUN.FINDDOCS_ELEMNTEPOCHTYPE,
-            %       NDI.DATABASE.FUN.NDICLOUD_ONTOLOGY_LOOKUP,
+            %   See also: NDI.DATABASE.FUN.NDICLOUD_ONTOLOGY_LOOKUP,
             
             % Input argument validation
             arguments
@@ -411,10 +413,10 @@ classdef stimulusDocMaker < handle
                 % Add document to list
                 docs{a} = current_doc;
 
-                % Add stimulus bath document to database
+                % Add stimulus approach document to database
                 obj.session.database_add(current_doc);
             end
-        end % CREATEBATHDOCS
+        end % CREATEAPPROACHDOCS
 
         function docs = table2approachDocs(obj, variableTable, approachVariable, options)
             %TABLE2APPROACHDOCS Converts rows in a table into stimulus approach documents via CREATEAPPROACHDOCS.
@@ -473,6 +475,9 @@ classdef stimulusDocMaker < handle
             filenames = variableTable.(options.FilenameVariable)(epochInd);
             epochids = ndi.fun.epoch.filename2epochid(obj.session,filenames);
 
+            % Get stimulator elements associated with the epochids
+            stims = ndi.fun.epoch.epochid2element(obj.session,epochids,'type','stimulator');
+
             docs = cell(size(epochInd)); % Initialize output cell array
             for e = 1:numel(epochInd)
 
@@ -487,7 +492,7 @@ classdef stimulusDocMaker < handle
                 if ~isempty(approachStrings) | isnan(approachStrings)
 
                     % Get stimulator id associated to the epochid
-                    stim = ndi.fun.epoch.epochid2element(obj.session,epochids{e},'type','stimulator');
+                    stim = stims{e};
                     if isempty(stim)
                         error('STIMULUSDOCMAKER:MissingStimulator',...
                             'No stimulator found in the session.')

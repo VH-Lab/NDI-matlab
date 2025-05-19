@@ -13,8 +13,8 @@ function [element] = epochid2element(session,epochid,options)
 %
 %   Input Arguments:
 %       session  - An NDI session object.
-%       epochid - A character array (string) representing the unique
-%             identifier of the epoch to find.
+%       epochid - A character vector or a cell array of character vectors 
+%                  representing the unique identifier(s) of the epoch(s) to find.
 %
 %   Optional Name-Value Pair Arguments:
 %       name     - A character array (string). If provided, the search is
@@ -25,18 +25,13 @@ function [element] = epochid2element(session,epochid,options)
 %                  (no type restriction).
 %
 %   Output Arguments:
-%       element - The NDI element object that contains the epoch
-%             specified by EPOCHID.
-%                  - If a single matching element is found, it is returned directly.
-%                  - If no such element is found, the function will throw an error.
-%                  - If multiple elements are found matching the EPOCHID (and optional
-%                    filters), a warning is issued, and a cell array of the
-%                    matching elements is returned.
+%       element - A cell array of NDI element object(s) associated that 
+%             contain the epoch(s) specified by EPOCHID.
 
 % Input argument validation
 arguments
     session {mustBeA(session,{'ndi.session.dir','ndi.database.dir'})}
-    epochid (1,:) char
+    epochid (1,:) {mustBeA(epochid,{'char','str','cell'})}
     options.name (1,:) char = ''
     options.type (1,:) char = ''
 end
@@ -53,7 +48,7 @@ end
 % Get elements from the session
 elements = session.getelements(elementArgs{:});
 
-element = {}; % Initialize as an empty cell array to store found elements
+element = cell(size(epochid));
 for p = 1:numel(elements)
     
     % Get the epochtable for the current element
@@ -62,20 +57,20 @@ for p = 1:numel(elements)
     % Iterate through each entry in the epochtable
     for e = 1:numel(et)
         
-        % If a match is found, add the current element to the 'element' cell array
-        if strcmpi(et(e).epoch_id,epochid)
-            element = cat(1,element,elements(p));
+        % Check if underlying epochs match any epoch id(s)
+        epochInd = strcmpi(epochid,et(e).epoch_id);
+        
+        if any(epochInd)
+            element{epochInd} = elements(p);
         end
     end
 end
 
-% Check output size/type and handle accordingly
-if iscell(element) & isscalar(element)
-    element = element{1};
-elseif isempty(element)
-    error('EPOCHID2ELEMENTID:NoElementFound','No element was found matching the epochid %s',epochid);
-elseif iscell(element) & ~isscalar(element)
-    warning('EPOCHID2ELEMENTID:SeveralElementsFound','More than one element was found matching the epochid %s',epochid);
+% Check output size/type
+missingID = cellfun(@isempty,element);
+if any(missingID)
+    warning('EPOCHID2ELEMENT:NoElementFound','No element was found matching the epoch id(s): \n %s',...
+        strjoin(epochid(missingID),'\n'));
 end
 
 end

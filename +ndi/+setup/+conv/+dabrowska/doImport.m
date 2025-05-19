@@ -140,7 +140,7 @@ stimulus_bath_docs = sd.table2bathDocs(variableTable,...
     'MixtureDelimeter','+',...
     'Overwrite',false);
 
-% Define approachName
+%% Define approachName
 indTLS = cellfun(@(tls) ~any(isnan(tls)),variableTable.TLS);
 indApproach = find(indTLS & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
@@ -149,7 +149,7 @@ variableTable.ApproachName = cell(height(variableTable),1);
 variableTable.ApproachName(indApproach(indPre)) = {'Approach: Before optogenetic tetanus'};
 variableTable.ApproachName(indApproach(indPost)) = {'Approach: After optogenetic tetanus'};
 
-%% Get stimulus approach docs
+% Get stimulus approach docs
 stimulus_approach_docs = sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',false);
