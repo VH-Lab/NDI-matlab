@@ -29,6 +29,7 @@ variableTable{:,'SessionRef'} = {'Dabrowska'};
 variableTable{:,'SessionPath'} = {'Dabrowska'};
 variableTable{:,'SpeciesOntologyID'} = {'NCBITaxon:10116'}; % Rattus norvegicus
 variableTable{:,'SubjectPostfix'} = {'@dabrowska-lab.rosalindfranklin.edu'};
+variableTable{:,'BiologicalSex'} = {'male'};
 
 %% Step 2: SESSIONS. Now that we have the file manifest, build sessions
 %%
