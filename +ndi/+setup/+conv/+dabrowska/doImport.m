@@ -12,6 +12,12 @@ if isfolder(badFolder)
     movefile(badFolder,replace(badFolder,'  ',' '));
 end
 
+badFolder = fullfile(myPath,'Electrophysiology Data _ Optogenetics/AVP_Cre_SON/SON/Pre & TLS/Type III/Mar 16 223');
+if isfolder(badFolder)
+    disp(['Correcting year in known folder ' badFolder])
+    movefile(badFolder,replace(badFolder,'223','2023'))
+end
+
 %% Step 1: VARIABLE TABLE. Get the file manifest and build a table,
 %%         with one row per data file
 
@@ -20,6 +26,16 @@ fileList = dirList(~isDir);
 include = ~contains(fileList,'/._') & ~startsWith(fileList,'._') & ...
     ~contains(fileList,'.DS_Store') & ~endsWith(fileList,'epochprobemap.txt') & ~endsWith(fileList,'.epochid.ndi');
 fileList = fileList(include);
+
+% Edit files that say 'Copy of'
+% for i = 1:numel(fileList)
+%     if contains(fileList{i},'Copy of')
+%         myFile = fullfile(myDir,'data',fileList{i});
+%         disp(['Correcting year in known folder ' badFolder])
+%         movefile(myFile,replace(myFile,'Copy of ',''));
+%         fileList{i} = replace(fileList{i},'Copy of ','');
+%     end
+% end
 
 % Get variable table
 jsonPath = fullfile(userpath,'tools/NDI-matlab/+ndi/+setup/+conv/+dabrowska/dabrowska_fileManifest_ephys.json');
