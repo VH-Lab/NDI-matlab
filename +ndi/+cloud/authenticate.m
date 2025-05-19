@@ -27,10 +27,14 @@ end
 function isSuccess = authenticatedWithSecret()
     isSuccess = false;
     if exist("isSecret", "file") % Introduced in R2024a
-        if isSecret("NDI_CLOUD_USERNAME")
-            userName = getSecret("NDI_CLOUD_USERNAME");
-            password = getSecret("NDI_CLOUD_PASSWORD");
-            isSuccess = login(userName, password);
+        try
+            if isSecret("NDI_CLOUD_USERNAME")
+                userName = getSecret("NDI_CLOUD_USERNAME");
+                password = getSecret("NDI_CLOUD_PASSWORD");
+                isSuccess = login(userName, password);
+            end
+        catch
+            % Abort. The MATLAB Vault might be unavailable.
         end
     end
 end

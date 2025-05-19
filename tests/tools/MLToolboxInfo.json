@@ -1,0 +1,14 @@
+{
+    "Namespace" : "matbox",
+    "ToolboxOptions": {
+        "Identifier": "dedfd78a-8fd1-4fca-9db3-f5eff64c7a88",
+        "ToolboxName": "MatBox",
+        "AuthorName": "Eivind Hennestad",
+        "AuthorEmail": "eivihe@uio.no",
+        "AuthorCompany": "",
+        "Summary": "A MATLAB toolbox to simplify the development lifecycle",
+        "Description": "Matbox is a streamlined solution for managing MATLAB toolbox development, designed to simplify the entire lifecycle—from code checks and dependency management to cleaning, packaging, and continuous integration",
+        "MinimumMatlabRelease": "R2022b",
+        "MaximumMatlabRelease": ""
+    }
+}
