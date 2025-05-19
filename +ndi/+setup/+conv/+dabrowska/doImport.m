@@ -31,8 +31,7 @@ if ~isempty(badFileInd)
     end
 end
 
-%% Step 1: VARIABLE TABLE. Get the file manifest and build a table,
-%         with one row per data file
+%% Step 1: VARIABLE TABLE. Get the file manifest and build a table, with one row per data file
 
 [dirList,isDir] = vlt.file.manifest(dataPath);
 fileList = dirList(~isDir);
@@ -140,7 +139,7 @@ stimulus_bath_docs = sd.table2bathDocs(variableTable,...
     'MixtureDelimeter','+',...
     'Overwrite',false);
 
-%% Define approachName
+% Define approachName
 indTLS = cellfun(@(tls) ~any(isnan(tls)),variableTable.TLS);
 indApproach = find(indTLS & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
@@ -153,7 +152,3 @@ variableTable.ApproachName(indApproach(indPost)) = {'Approach: After optogenetic
 stimulus_approach_docs = sd.table2approachDocs(variableTable,'ApproachName',...
     'NonNaNVariableNames','sessionInd', ...
     'Overwrite',false);
-
-%% Step 6. STIMULUS APPROACH DOCS. Build the stimulus_approach documents
-
-%stimulus_approach_docs = ndi.setup.stimulus.vhlab.add_stimulus_approach(sessionArray{1},filename);
