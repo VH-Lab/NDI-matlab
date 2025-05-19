@@ -16,7 +16,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 %                         ensures it contains AT LEAST the columns:
 %                         'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre',
 %                         'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID',
-%                         and 'sessionID'.
+%                         'sessionID', and 'BiologicalSex'.
 %                         Columns may contain cell arrays (value in first cell used)
 %                         or direct numeric/string/char values (e.g., NaN, "text", 'text').
 %                         Genotype columns: Exactly ONE must resolve to non-empty char.
@@ -36,17 +36,19 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
 %           - An openMINDS Species object (hardcoded 'Rattus norvegicus') if
 %             'SpeciesOntologyID' resolves to a non-empty char array.
 %           - Returns numeric NaN otherwise or if object creation fails.
-%       biologicalSex (NaN):
-%           - Placeholder for biological sex information. Currently always
-%             returns numeric NaN. Intended future type might be
-%             e.g., openminds.controlledterms.BiologicalSex.
+%       biologicalSex (openminds.controlledterms.BiologicalSex | NaN):
+%             If 'BiologicalSex' is present and is
+%             'male','female','hermaphrodite' or 'notDetectable',
+%             BiologicalSex is returned as
+%             openminds.controlledterms.BiologicalSex. Otherwise, NaN is
+%             returned.
 
     arguments
         % Validate table properties and required columns directly here
         tableRow (1, :) table {mustBeNonempty, ... % Must be 1 row, non-empty
                  ndi.validators.mustHaveRequiredColumns(tableRow, ... % Call validator
                  {'IsWildType', 'IsCRFCre', 'IsOTRCre', 'IsAVPCre', ... % Hard-coded cols
-                  'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID', 'sessionID'})} % Added 'sessionID'
+                  'RecordingDate', 'SubjectPostfix', 'SpeciesOntologyID', 'sessionID','BiologicalSex'})}
     end
 
     % --- Initialize Outputs ---
@@ -66,6 +68,7 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     recordingDateValue = extractTableCellValue(tableRow, 'RecordingDate');
     subjectPostfixValue = extractTableCellValue(tableRow, 'SubjectPostfix');
     speciesOntologyIDValue = extractTableCellValue(tableRow, 'SpeciesOntologyID');
+    biologicalSexValue = extractTableCellValue(tableRow, 'BiologicalSex');
 
     % --- Validate sessionID ---
     % Must be a non-empty character array or string.
@@ -210,8 +213,16 @@ function [subjectString, strain, species, biologicalSex] = createSubjectInformat
     end
 
     % --- Populate Biological Sex (Placeholder) ---
-    % biologicalSex remains NaN as per current function design.
-    % TODO: Implement logic for biological sex if needed.
+    % Create biologicalSex object if SpeciesOntologyID is valid text.
+    isBiologicalSexValid = ismember(biologicalSexValue, {'male', 'female', 'hermaphrodite', 'notDetectable'});
+    if isBiologicalSexValid
+        ontologyIdentifiers = {'PATO:0000384','PATO:0000383','PATO:0001340',''};
+        f = find(strcmp(biologicalSexValue,{'male', 'female', 'hermaphrodite', 'notDetectable'}));
+        biologicalSex = openminds.controlledterms.BiologicalSex('name',biologicalSexValue,'preferredOntologyIdentifier',ontologyIdentifiers{f});
+    else
+        biologicalSex = NaN;
+    end
+
 
 end % End function createSubjectInformation
 
