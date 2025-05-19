@@ -51,24 +51,10 @@ classdef sessionMaker < handle % Using handle class for reference behavior (obje
             % Assign properties from inputs
             obj.path = path;
             obj.variableTable = variableTable;
-            % Ensure NonNaNVariableNames is a cell array for consistent processing
-            if ~iscell(options.NonNaNVariableNames)
-                options.NonNaNVariableNames = {options.NonNaNVariableNames};
-            end
-            % --- Identify Valid Session Rows ---
-            % Check for NaN values based on NonNaNVariableNames option
-            nanInd = true(height(variableTable),1);
-            for i = 1:numel(options.NonNaNVariableNames)
-                % Check if the specified column exists
-                if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
-                    warning('sessionMaker:NonNaNVariableNames', 'Variable "%s" provided in NonNaNVariableNames not found in variableTable. Skipping check.', options.NonNaNVariableNames{i});
-                    continue; % Skip to the next variable name if the current one doesn't exist
-                end
-                % Update nanInd: a row is valid only if it passes the previous checks AND the current variable check
-                nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)), ...
-                    variableTable.(options.NonNaNVariableNames{i}));
-            end
-            validInd = find(nanInd); % Get linear indices of valid rows
+            
+            % Get valid epoch rows
+            validInd = ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames);
+            
             % --- Determine Unique Sessions ---
             % Extract SessionRef values from the valid rows
             validSessionRefs = variableTable.SessionRef(validInd);

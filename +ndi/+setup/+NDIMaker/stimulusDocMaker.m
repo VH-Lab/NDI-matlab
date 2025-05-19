@@ -276,7 +276,7 @@ classdef stimulusDocMaker < handle
             end
 
             % Get valid epoch rows
-            epochInd = ndi.setup.NDIMaker.identifyValidInd(variableTable,options.NonNaNVariableNames);
+            epochInd = ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames);
 
             % Get epoch ids from data file names
             filenames = variableTable.(options.FilenameVariable)(epochInd);
@@ -469,7 +469,7 @@ classdef stimulusDocMaker < handle
             end
 
             % Get valid epoch rows
-            epochInd = ndi.setup.NDIMaker.identifyValidInd(variableTable,options.NonNaNVariableNames);
+            epochInd = ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames);
 
             % Get epoch ids from data file names
             filenames = variableTable.(options.FilenameVariable)(epochInd);

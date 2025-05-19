@@ -1,5 +1,5 @@
-function validInd = identifyValidInd(variableTable,NonNaNVariableNames)
-
+function validInd = identifyValidRows(variableTable,NonNaNVariableNames)
+% IDENTIFYVALIDROWS
 %   Input Arguments:
 %       variableTable: A MATLAB table. Rows usually correspond to epochs.
 %                      Columns specified by `BathVariable`,

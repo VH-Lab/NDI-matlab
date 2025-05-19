@@ -95,15 +95,6 @@ classdef epochProbeMapMaker < handle
             obj.variableTable = variableTable;
             obj.probeTable = probeTable;
 
-            % Ensure NonNaNVariableNames is a cell array for consistent processing
-            if ischar(options.NonNaNVariableNames)
-                options.NonNaNVariableNames = {options.NonNaNVariableNames};
-            elseif isstring(options.NonNaNVariableNames) && isscalar(options.NonNaNVariableNames)
-                options.NonNaNVariableNames = {char(options.NonNaNVariableNames)};
-            elseif isstring(options.NonNaNVariableNames) && ~isscalar(options.NonNaNVariableNames)
-                 options.NonNaNVariableNames = cellstr(options.NonNaNVariableNames);
-            end
-
             % Validate variableTable: check for required 'SubjectString' column
             if ~ismember('SubjectString', variableTable.Properties.VariableNames)
                 error('epochProbeMapMaker:MissingSubjectString', ...
@@ -118,20 +109,8 @@ classdef epochProbeMapMaker < handle
                     "The 'probeTable' is missing the following required columns: %s.", strjoin(missingProbeCols, ', '));
             end
 
-            % Check for NaN values based on NonNaNVariableNames option
-            nanInd = true(height(variableTable),1);
-            for i = 1:numel(options.NonNaNVariableNames)
-                 % Check if the specified column exists
-                 if ~ismember(options.NonNaNVariableNames{i}, variableTable.Properties.VariableNames)
-                     warning('sessionMaker:NonNaNVariableNames', 'Variable "%s" provided in NonNaNVariableNames not found in variableTable. Skipping check.', options.NonNaNVariableNames{i});
-                     continue; % Skip to the next variable name if the current one doesn't exist
-                 end
-                % Update nanInd: a row is valid only if it passes the previous checks AND the current variable check
-                nanInd = nanInd & cellfun(@(sr) ~any(isnan(sr)), ...
-                    variableTable.(options.NonNaNVariableNames{i}));
-            end
-            validInd = find(nanInd); % Get linear indices of valid rows
-
+            % Get valid epoch rows
+            validInd = ndi.util.identifyValidRows(variableTable,options.NonNaNVariableNames);
             if isempty(validInd)
                 warning('epochProbeMapMaker:NoValidEpochs', ...
                     'No valid epochs found in variableTable after NaN checks. No epochprobemaps will be created.');
