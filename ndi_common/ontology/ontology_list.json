@@ -43,7 +43,8 @@
     {
        "prefix": "RRID",
        "ontology_name": "RRID"
-    }  
+    },
+    {"prefix": "PATO", "ontology_name": "PATO"}
   ],
   "Ontologies": [
     {
@@ -90,6 +91,11 @@
      "name": "RRID",
      "homepage": "https://scicrunch.org/resources",
      "api_url": "https://scicrunch.org/api/1/resolver/"
+    },
+    {
+      "name": "PATO",
+      "homepage": "http://obofoundry.org/ontology/pato.html",
+      "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/pato"
     }
   ]
 }
