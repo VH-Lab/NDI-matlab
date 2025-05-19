@@ -28,7 +28,7 @@
       "expected_id": "",
       "expected_name": ""
     },
-     {
+    {
       "ontology": "CL",
       "lookup_string": "CL:0000540",
       "should_succeed": true,
@@ -147,12 +147,54 @@
       "expected_id": "",
       "expected_name": ""
     },
-     {
+    {
       "ontology": "UBERON",
       "lookup_string": "UBERON:0002107",
       "should_succeed": true,
       "expected_id": "UBERON:0002107",
       "expected_name": "liver"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:0000384",
+      "should_succeed": true,
+      "expected_id": "PATO:0000384",
+      "expected_name": "male"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:male",
+      "should_succeed": true,
+      "expected_id": "PATO:0000384",
+      "expected_name": "male"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:0000383",
+      "should_succeed": true,
+      "expected_id": "PATO:0000383",
+      "expected_name": "female"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:female",
+      "should_succeed": true,
+      "expected_id": "PATO:0000383",
+      "expected_name": "female"
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:nosuchthing",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "PATO",
+      "lookup_string": "PATO:9999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
     },
     {
       "ontology": "NCBITaxon",
@@ -182,14 +224,14 @@
       "expected_id": "C0009450",
       "expected_name": "Infectious Disorder"
     },
-     {
+    {
       "ontology": "NCIm",
       "lookup_string": "NCIm:C9999999",
       "should_succeed": false,
       "expected_id": "",
       "expected_name": ""
     },
-     {
+    {
       "ontology": "NCIm",
       "lookup_string": "NCIm:C0009450",
       "should_succeed": true,
