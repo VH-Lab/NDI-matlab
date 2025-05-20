@@ -5,7 +5,9 @@
 		"class_name":						"dataset_remote",
 		"property_list_name":				"dataset_remote",
 		"class_version":					1,
-		"superclasses": 					[ "base" ]
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
 	},
 	"dataset_remote": {
 		"dataset_id":                       "",
