@@ -1,6 +1,6 @@
 {
 	"classname":	"dataset_remote",
-	"superclasses": [ ],
+	"superclasses": [ "base" ],
 	"depends_on": [ ],
 	"file": [ ],
 	"dataset_remote": [
