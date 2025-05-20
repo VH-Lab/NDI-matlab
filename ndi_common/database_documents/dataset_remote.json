@@ -1,0 +1,14 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/dataset_remote.json",
+		"validation":						"$NDISCHEMAPATH\/dataset_remote_schema.json",
+		"class_name":						"dataset_remotee",
+		"property_list_name":				"dataset_remote",
+		"class_version":					1,
+		"superclasses": 					[ ]
+	},
+	"dataset_remote": {
+		"dataset_id":                       "",
+		"organization_id":					""
+	}
+}
