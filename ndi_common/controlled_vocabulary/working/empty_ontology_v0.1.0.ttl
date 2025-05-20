@@ -1,0 +1,371 @@
+@prefix : <http://www.example.org/empty_ontology#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix empty_ont: <http://www.example.org/empty_ontology#> .
+@prefix inst: <http://www.example.org/empty_ontology/instance/> .
+
+# Ontology Header
+<http://www.example.org/empty_ontology> rdf:type owl:Ontology ;
+    owl:versionInfo "0.1.0" ;
+    rdfs:label "Experimental Measurements, Purposes, and Treatments OntologY (EMPTY)" ;
+    rdfs:comment "Ontology for Elevated Plus Maze Test (EMPT) measurements, particularly as produced by software like ANY-Maze, fitting within a broader experimental context." ;
+    dc:creator "AI Assistant (Gemini)" .
+
+# Class Definitions
+empty_ont:BehavioralMeasurement rdf:type owl:Class ;
+    rdfs:label "Behavioral measurement" ;
+    skos:definition "A type of scientific measurement that quantifies an observable action, reaction, or pattern of conduct exhibited by an organism. Behavioral measurements are typically used in biological, psychological, and ethological studies to assess an organism's response to internal states, external stimuli, or experimental manipulations. These can range from simple reflexes to complex social interactions and are obtained through methods including direct observation, video tracking, or specialized automated apparatuses." ;
+    dc:identifier "EMPTY:00000090" .
+
+empty_ont:ElevatedPlusMazeMeasurement rdf:type owl:Class ;
+    rdfs:subClassOf empty_ont:BehavioralMeasurement ;
+    rdfs:label "Elevated Plus Maze measurement" ;
+    skos:definition "A specific category of behavioral measurement obtained from the Elevated Plus Maze (EPM) apparatus, an assay widely used in neuroscience and pharmacology to study anxiety-like behavior and the effects of anxiolytic or anxiogenic compounds in laboratory animals, typically rodents. These measurements quantify various aspects of the animal's exploratory activity, spatial preference (e.g., for open vs. enclosed arms), and specific behaviors (e.g., entries, time spent in zones, freezing) within the maze, providing insights into its emotional state and response to perceived risk." ;
+    dc:identifier "EMPTY:00000091" .
+
+# Property Definitions
+empty_ont:unitOfMeasure rdf:type owl:DatatypeProperty ;
+    rdfs:label "unit of measure" ;
+    rdfs:comment "The unit in which a measurement is expressed." ;
+    rdfs:domain empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:range xsd:string .
+
+# Individual Definitions (Specific Measurements)
+
+inst:EMPTY_00000100 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (North)'. The 'Open Arm (North)' is one of the two open arms, distinguished by its assigned 'north' orientation or designation in the experimental setup." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000100" .
+
+inst:EMPTY_00000101 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's body (typically defined by its center point or a significant portion) fully enters the user-defined zone designated as 'Open Arm (South)'. The 'Open Arm (South)' is one of the two open arms, distinguished by its assigned 'south' orientation or designation in the experimental setup." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000101" .
+
+inst:EMPTY_00000102 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total entries" ;
+    skos:definition "In the Elevated Plus Maze task, this represents the total number of times the animal's body (typically defined by its center point or a significant portion) fully enters the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). It is a common measure of exploration and anxiety." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000102" .
+
+inst:EMPTY_00000103 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (North)' zone, irrespective of full body entry. This can indicate risk assessment or tentative exploration of the arm designated as 'north'." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000103" .
+
+inst:EMPTY_00000104 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's head (specifically tracked by the software) enters the user-defined 'Open Arm (South)' zone, irrespective of full body entry, often reflecting cautious exploration of the open arm designated as 'south'." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000104" .
+
+inst:EMPTY_00000105 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this is the total number of times the animal's head (specifically tracked by the software) enters any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'), considered an indicator of risk-assessment behavior." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000105" .
+
+inst:EMPTY_00000106 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - time" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (North)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000106" .
+
+inst:EMPTY_00000107 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - time" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Open Arm (South)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000107" .
+
+inst:EMPTY_00000108 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total time" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)'). Less time is generally indicative of higher anxiety." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000108" .
+
+inst:EMPTY_00000109 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total - percent time in 5 minutes" ;
+    skos:definition "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated open arm zones (e.g., 'Open Arm (North)' and 'Open Arm (South)')." ;
+    empty_ont:unitOfMeasure "%" ;
+    dc:identifier "EMPTY:00000109" .
+
+inst:EMPTY_00000110 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (North)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000110" .
+
+inst:EMPTY_00000111 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Open Arm (South)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000111" .
+
+inst:EMPTY_00000112 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'). Longer latencies often suggest higher anxiety." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000112" .
+
+inst:EMPTY_00000113 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (North)' zone, as detected by the tracking software." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000113" .
+
+inst:EMPTY_00000114 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Open Arm (South)' zone, as detected by the tracking software." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000114" .
+
+inst:EMPTY_00000115 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), reflecting approach motivation." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000115" .
+
+inst:EMPTY_00000116 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (north) - time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior (a state of immobility except for respiratory movements) while within the user-defined 'Open Arm (North)' zone. Freezing is a common fear response." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000116" .
+
+inst:EMPTY_00000117 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm (south) - time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Open Arm (South)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000117" .
+
+inst:EMPTY_00000118 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: open arm total time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated open arm zones (e.g., 'Open Arm (North)' or 'Open Arm (South)'), indicating fear or anxiety." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000118" .
+
+inst:EMPTY_00000119 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (West)' zone, representing the enclosed arm designated as 'west'." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000119" .
+
+inst:EMPTY_00000120 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Closed Arm (East)' zone, representing the enclosed arm designated as 'east'." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000120" .
+
+inst:EMPTY_00000121 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total entries" ;
+    skos:definition "In the Elevated Plus Maze task, this is the total number of times the animal's body fully enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). It is often used as an indicator of general locomotor activity." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000121" .
+
+inst:EMPTY_00000122 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (West)' zone." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000122" .
+
+inst:EMPTY_00000123 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Closed Arm (East)' zone." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000123" .
+
+inst:EMPTY_00000124 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this is the total number of times the animal's head enters any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)')." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000124" .
+
+inst:EMPTY_00000125 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - time" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (West)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000125" .
+
+inst:EMPTY_00000126 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - time" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Closed Arm (East)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000126" .
+
+inst:EMPTY_00000127 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total time" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative total duration the animal's body spends within any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)'). Animals typically spend more time in these 'safer' areas." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000127" .
+
+inst:EMPTY_00000128 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total - percent time in 5 minutes" ;
+    skos:definition "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in any of the designated closed arm zones (e.g., 'Closed Arm (West)' and 'Closed Arm (East)')." ;
+    empty_ont:unitOfMeasure "%" ;
+    dc:identifier "EMPTY:00000128" .
+
+inst:EMPTY_00000129 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (West)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000129" .
+
+inst:EMPTY_00000130 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Closed Arm (East)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000130" .
+
+inst:EMPTY_00000131 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)')." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000131" .
+
+inst:EMPTY_00000132 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (West)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000132" .
+
+inst:EMPTY_00000133 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Closed Arm (East)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000133" .
+
+inst:EMPTY_00000134 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative duration the animal spends actively moving towards any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)')." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000134" .
+
+inst:EMPTY_00000135 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (west) - time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (West)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000135" .
+
+inst:EMPTY_00000136 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm (east) - time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Closed Arm (East)' zone." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000136" .
+
+inst:EMPTY_00000137 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: closed arm total time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this is the cumulative duration the animal exhibits freezing behavior while within any of the designated closed arm zones (e.g., 'Closed Arm (West)' or 'Closed Arm (East)')." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000137" .
+
+inst:EMPTY_00000138 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's body fully enters the user-defined 'Center' zone of the maze, typically from one of the arms. The center zone is the area where all four arms meet." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000138" .
+
+inst:EMPTY_00000139 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - head entries" ;
+    skos:definition "In the Elevated Plus Maze task, this counts the number of times the animal's head enters the user-defined 'Center' zone of the maze." ;
+    empty_ont:unitOfMeasure "count" ;
+    dc:identifier "EMPTY:00000139" .
+
+inst:EMPTY_00000140 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - time" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal's body spends within the user-defined 'Center' zone. Time in the center can indicate decision-making or risk assessment." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000140" .
+
+inst:EMPTY_00000141 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - percent time in 5 minutes" ;
+    skos:definition "In the Elevated Plus Maze task, this represents the percentage of the standard 300-second (5 minute) total test duration that the animal spends in the user-defined 'Center' zone of the maze." ;
+    empty_ont:unitOfMeasure "%" ;
+    dc:identifier "EMPTY:00000141" .
+
+inst:EMPTY_00000142 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - latency to first entry" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the time elapsed from the start of the test until the animal makes its first full body entry into the user-defined 'Center' zone. If the animal starts in the center, this value may be zero or not applicable." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000142" .
+
+inst:EMPTY_00000143 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - time moving towards" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal spends actively moving towards the user-defined 'Center' zone of the maze (e.g., from an arm)." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000143" .
+
+inst:EMPTY_00000144 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: center - time freezing" ;
+    skos:definition "In the Elevated Plus Maze task, this measures the total duration the animal exhibits freezing behavior while within the user-defined 'Center' zone of the maze. Freezing in this relatively exposed area can indicate high anxiety." ;
+    empty_ont:unitOfMeasure "seconds" ;
+    dc:identifier "EMPTY:00000144" .
+
+inst:EMPTY_00000145 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: test identifier" ;
+    skos:definition "For an Elevated Plus Maze experiment, this is a unique code or descriptive name assigned to identify a specific experimental session, trial, or a particular set of recorded data. It helps in organizing and referencing data from distinct observations." ;
+    dc:identifier "EMPTY:00000145" . # Unit of measure N/A
+
+inst:EMPTY_00000146 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: animal identifier" ;
+    skos:definition "For an Elevated Plus Maze experiment, this is a unique code or label assigned to an individual animal subject. This allows for tracking and associating behavioral data with specific animals, along with their characteristics like strain, sex, or age." ;
+    dc:identifier "EMPTY:00000146" . # Unit of measure N/A
+
+inst:EMPTY_00000147 rdf:type owl:NamedIndividual ,
+                             empty_ont:ElevatedPlusMazeMeasurement ;
+    rdfs:label "Elevated Plus Maze: treatment group" ;
+    skos:definition "For an Elevated Plus Maze experiment, this describes the experimental condition or group to which an animal belongs (e.g., control, specific drug administration, genetic modification). It is used to compare behavioral outcomes between different experimental manipulations." ;
+    dc:identifier "EMPTY:00000147" . # Unit of measure N/A
+
