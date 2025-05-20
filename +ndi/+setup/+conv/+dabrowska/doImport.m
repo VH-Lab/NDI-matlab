@@ -50,9 +50,9 @@ j = jsondecode(fileread(jsonPath));
 variableTable_opto = ndi.setup.conv.datalocation.processFileManifest(fileList,j);
 
 % Deal with OTA and TLS
-indEpoch = cellfun(@(sr) ~any(isnan(sr)),variableTable_opto.BathConditionString);
+indEpoch = ndi.util.identifyValidRows(variableTable_opto,'BathConditionString');
 variableTable_opto.BathConditionString(indEpoch) = replace(variableTable_opto.BathConditionString(indEpoch),'TLS','Post');
-OTAInd = find(cellfun(@(sr) ~any(isnan(sr)),variableTable_opto.OTA) & indEpoch);
+OTAInd = find(ndi.util.identifyValidRows(variableTable_opto,'OTA') & indEpoch);
 for i = 1:numel(OTAInd)
     bcs = variableTable_opto.BathConditionString{OTAInd(i)};
     if ~contains(bcs,'OTA')
@@ -105,7 +105,7 @@ deviceString = {'dabrowska_mat:ai1';'dabrowska_mat:ai1';'dabrowska_mat:ao1'};
 probeTable = table(name,reference,type,deviceString);
 
 % Create probePostfix
-indEpoch = cellfun(@(sr) ~any(isnan(sr)),variableTable.IsExpMatFile);
+indEpoch = ndi.util.identifyValidRows(variableTable,'IsExpMatFile');
 recordingDates = datetime(variableTable.RecordingDate(indEpoch),...
     'InputFormat','MMM dd yyyy');
 recordingDates = cellstr(char(recordingDates,'yyMMdd'));
@@ -140,7 +140,7 @@ stimulus_bath_docs = sd.table2bathDocs(variableTable,...
     'Overwrite',false);
 
 % Define approachName
-indTLS = cellfun(@(tls) ~any(isnan(tls)),variableTable.TLS);
+indTLS = ndi.util.identifyValidRows(variableTable,'TLS');
 indApproach = find(indTLS & indEpoch);
 indPre = cellfun(@(bcs) contains(bcs,'Pre'),variableTable.BathConditionString(indApproach));
 indPost = cellfun(@(bcs) contains(bcs,'Post'),variableTable.BathConditionString(indApproach));
