@@ -325,6 +325,145 @@ methods (Static)
         end
     end % function getPrefixOntologyMappings
 
+    function [id, name, definition, synonyms] = lookupOBOFile(oboFilePath, ontologyPrefix, term_to_lookup_fragment)
+        % LOOKUPOBOFILE - Looks up a term in a parsed OBO file.
+        %   [ID, NAME, DEFINITION, SYNONYMS] = ndi.ontology.lookupOBOFile(...
+        %       OBOFILEPATH, ONTOLOGYPREFIX, TERM_TO_LOOKUP_FRAGMENT)
+        %
+        %   Parses an OBO file (if not already cached) and searches for a term.
+        %   TERM_TO_LOOKUP_FRAGMENT is the part of the term after the prefix
+        %   (e.g., '0000001' or 'some term name').
+        %
+        %   The function caches the parsed OBO data to speed up subsequent lookups
+        %   for the same file within a MATLAB session. Call ndi.ontology.clearCache()
+        %   or 'clear functions' to clear this cache.
+        %
+        %   Outputs:
+        %       ID         - The full term ID (e.g., 'EMPTY:0000001').
+        %       NAME       - The term's primary name.
+        %       DEFINITION - The term's definition.
+        %       SYNONYMS   - A cell array of synonym strings (currently basic,
+        %                    not parsing synonym types).
+        %
+        %   Throws:
+        %       ndi:ontology:lookupOBOFile:FileNotFound
+        %       ndi:ontology:lookupOBOFile:ParsingError
+        %       ndi:ontology:lookupOBOFile:InvalidInput
+        %       ndi:ontology:lookupOBOFile:TermNotFound
+
+        arguments
+            oboFilePath (1,:) char {mustBeNonempty}
+            ontologyPrefix (1,:) char {mustBeNonempty}
+            term_to_lookup_fragment (1,:) char % Can be empty if original lookup was just "PREFIX:"
+        end
+
+        id = ''; name = ''; definition = ''; synonyms = {};
+
+        if isempty(term_to_lookup_fragment)
+            error('ndi:ontology:lookupOBOFile:InvalidInput', ...
+                'Term lookup fragment cannot be empty for OBO file search.');
+        end
+
+        persistent oboDataCache
+        if isempty(oboDataCache)
+            oboDataCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+        end
+
+        if ~isfile(oboFilePath)
+            error('ndi:ontology:lookupOBOFile:FileNotFound', ...
+                'OBO file not found: %s', oboFilePath);
+        end
+
+        % Use a canonical path for the cache key to handle relative paths etc.
+        [~, file_info] = fileattrib(oboFilePath);
+        canonicalPath = file_info.Name;
+
+
+        if isKey(oboDataCache, canonicalPath)
+            parsedTerms = oboDataCache(canonicalPath);
+        else
+            fprintf('Parsing OBO file: %s...\n', oboFilePath);
+            try
+                parsedTerms = ndi.ontology.parseOBOFile_(oboFilePath);
+                oboDataCache(canonicalPath) = parsedTerms;
+                fprintf('OBO file parsed and cached successfully. Found %d terms.\n', numel(parsedTerms));
+            catch ME
+                % Clear the potentially partial cache entry if parsing failed
+                if isKey(oboDataCache, canonicalPath)
+                    remove(oboDataCache, canonicalPath);
+                end
+                baseME = MException('ndi:ontology:lookupOBOFile:ParsingError', ...
+                    'Failed to parse OBO file "%s".', oboFilePath);
+                baseME = addCause(baseME, ME);
+                throw(baseME);
+            end
+        end
+
+        if isempty(parsedTerms)
+            error('ndi:ontology:lookupOBOFile:ParsingError', ...
+                'OBO file "%s" parsed to an empty term list.', oboFilePath);
+        end
+
+        foundTerm = false;
+
+        % Determine if lookup is by ID or by name
+        % OBO IDs are typically PREFIX:NUMERIC_ID
+        % We receive the numeric_id part or the name as term_to_lookup_fragment
+        is_id_lookup = ~isempty(regexp(term_to_lookup_fragment, '^\d+$', 'once'));
+        expected_full_id_if_numeric = [ontologyPrefix ':' term_to_lookup_fragment];
+
+        for i = 1:numel(parsedTerms)
+            term = parsedTerms(i);
+            if is_id_lookup
+                % Case-sensitive ID match
+                if strcmp(term.id, expected_full_id_if_numeric)
+                    id = term.id;
+                    name = term.name;
+                    definition = term.definition;
+                    synonyms = term.synonyms;
+                    foundTerm = true;
+                    break;
+                end
+            else % Name lookup
+                % Case-insensitive name match
+                if strcmpi(term.name, term_to_lookup_fragment)
+                    id = term.id;
+                    name = term.name;
+                    definition = term.definition;
+                    synonyms = term.synonyms;
+                    foundTerm = true;
+                    break;
+                end
+                % Also check synonyms for name lookup (case-insensitive)
+                if ~isempty(term.synonyms)
+                    for s_idx = 1:numel(term.synonyms)
+                        if strcmpi(term.synonyms{s_idx}, term_to_lookup_fragment)
+                            id = term.id;
+                            name = term.name; % Return primary name even if found by synonym
+                            definition = term.definition;
+                            synonyms = term.synonyms;
+                            foundTerm = true;
+                            break; % break from synonym loop
+                        end
+                    end
+                    if foundTerm, break; end % break from main term loop
+                end
+            end
+        end
+
+        if ~foundTerm
+            if is_id_lookup
+                error('ndi:ontology:lookupOBOFile:TermNotFound', ...
+                    'Term with ID fragment "%s" (expected full ID "%s") not found in OBO file: %s', ...
+                    term_to_lookup_fragment, expected_full_id_if_numeric, oboFilePath);
+            else
+                error('ndi:ontology:lookupOBOFile:TermNotFound', ...
+                    'Term with name "%s" not found in OBO file: %s', ...
+                    term_to_lookup_fragment, oboFilePath);
+            end
+        end
+    end % function lookupOBOFile
+    
     function ontologies = getOntologies()
         % GETONTOLOGIES - Returns the ontology details list from JSON cache.
          data = ndi.ontology.loadOntologyJSONData_();
@@ -343,10 +482,12 @@ methods (Static)
         if ~isempty(ndicFuncPath), clear(ndicFuncName); fprintf('Cleared persistent data for %s.\n', ndicFuncName);
         else, fprintf('Function %s not found on path, skipping clear.\n', ndicFuncName); end
         fprintf('NDI ontology list JSON cache cleared.\n');
+        clear ndi.ontology.lookupOBOFile; % This clears persistent vars in lookupOBOFile
+        fprintf('Cleared OBO file cache.\n');
+
     end % function clearCache
 
 end % methods (Static)
-
 
 methods (Static, Access = private)
     % --- Private Static Helpers ---
@@ -372,6 +513,118 @@ methods (Static, Access = private)
         try, spaced = regexprep(comp,'([a-z])([A-Z])','$1 $2'); likely_label = lower(strtrim(spaced));
         catch err, warning('ndi:ontology:preprocessLookupInput:ConversionHelperWarning', 'Error in OM heuristic for "%s": %s. Using lower(comp).', comp, err.message); likely_label = lower(comp); end
     end % function convertComponentToLabel_OMHeuristic
+
+    function terms = parseOBOFile_(oboFilePath)
+        % PARSEOBOFILE_ - Parses an OBO format file to extract term information.
+        %   TERMS = ndi.ontology.parseOBOFile_(OBOFILEPATH)
+        %
+        %   This is a basic OBO parser, focusing on [Term] stanzas and
+        %   id, name, def, and synonym tags.
+        %
+        %   Input:
+        %       oboFilePath - Full path to the .obo file.
+        %
+        %   Output:
+        %       terms - A struct array where each element has fields:
+        %               .id         (string)
+        %               .name       (string)
+        %               .definition (string)
+        %               .synonyms   (cell array of strings)
+        %
+        %   Note: This parser is not fully compliant with the OBO 1.2/1.4 spec
+        %   but should handle common structures like the example provided.
+        %   It does not handle import statements, typedefs, instances, etc.
+        %   It assumes definitions and synonyms are single-line for simplicity here,
+        %   though OBO can have multi-line quoted strings.
+        %   Synonym parsing is basic (extracts quoted string, ignores type).
+
+        terms = struct('id', {}, 'name', {}, 'definition', {}, 'synonyms', {});
+        currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+        inTermStanza = false;
+
+        try
+            fid = fopen(oboFilePath, 'rt');
+            if fid == -1
+                error('ndi:ontology:parseOBOFile:FileOpenError', 'Cannot open OBO file: %s', oboFilePath);
+            end
+            rawText = fread(fid, '*char')'; % Read entire file as a character row vector
+            fclose(fid);
+        catch ME
+            error('ndi:ontology:parseOBOFile:FileReadError', 'Error reading OBO file "%s": %s', oboFilePath, ME.message);
+        end
+
+        % Split file into lines, handling both \n and \r\n
+        lines = strsplit(rawText, {'\n', '\r\n'}, 'CollapseDelimiters', false);
+        if iscell(lines) && numel(lines)==1 && isempty(lines{1}) % Handle empty file
+            lines = {};
+        end
+
+
+        for i = 1:numel(lines)
+            line = strtrim(lines{i});
+
+            if isempty(line) || startsWith(line, '!') % Skip empty lines and comments
+                continue;
+            end
+
+            if strcmp(line, '[Term]')
+                if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
+                    terms(end+1) = currentTerm; % Save previous term
+                end
+                % Reset for new term
+                currentTerm = struct('id', '', 'name', '', 'definition', '', 'synonyms', {{}});
+                inTermStanza = true;
+                continue;
+            end
+
+            if startsWith(line, '[Typedef]') || startsWith(line, '[Instance]')
+                if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
+                    terms(end+1) = currentTerm; % Save previous term
+                end
+                inTermStanza = false; % We are no longer in a [Term] stanza
+                continue; % Skip Typedef and Instance stanzas for this basic parser
+            end
+
+            if inTermStanza
+                if startsWith(line, 'id:')
+                    currentTerm.id = strtrim(extractAfter(line, 'id:'));
+                elseif startsWith(line, 'name:')
+                    currentTerm.name = strtrim(extractAfter(line, 'name:'));
+                elseif startsWith(line, 'def:')
+                    % Basic definition extraction: "text" [xref]
+                    % Extract text within the first pair of double quotes.
+                    defMatches = regexp(line, 'def:\s*"(.*?)"', 'tokens', 'once');
+                    if ~isempty(defMatches)
+                        currentTerm.definition = defMatches{1};
+                    else
+                        % Fallback if no quotes, take rest of line (less robust)
+                        currentTerm.definition = strtrim(extractAfter(line, 'def:'));
+                    end
+                elseif startsWith(line, 'synonym:')
+                    % Basic synonym extraction: "text" TYPE [xref]
+                    % Extract text within the first pair of double quotes.
+                    synMatches = regexp(line, 'synonym:\s*"(.*?)"', 'tokens', 'once');
+                    if ~isempty(synMatches)
+                        currentTerm.synonyms{end+1} = synMatches{1};
+                    end
+                    % More advanced parsing could extract synonym type, scope, xrefs.
+                % Add other tags like 'is_a:', 'namespace:', 'is_obsolete:' if needed later
+                % For now, we only strictly need id, name, def for the lookup.
+                end
+            end
+        end
+
+        % Add the last term if file doesn't end with a blank line or new stanza
+        if inTermStanza && ~isempty(currentTerm.id) && ~isempty(currentTerm.name)
+            terms(end+1) = currentTerm;
+        end
+
+        if isempty(terms) && ~isempty(lines) % Check if lines were processed but no terms found
+            warning('ndi:ontology:parseOBOFile:NoTermsFound', ...
+                'No [Term] stanzas found or parsed in OBO file: %s. Check file format.', oboFilePath);
+        end
+    end % function parseOBOFile_
+
 
 end % methods (Static, Access = private)
 
