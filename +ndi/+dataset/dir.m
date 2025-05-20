@@ -52,4 +52,29 @@ classdef dir < ndi.dataset
             end;
         end; % dir(), creator
     end; % methods
+
+    methods (Static)
+        function dataset_erase(ndi_dataset_dir_obj, areyousure)
+            % DATABASE_ERASE - deletes the entire session database folder
+            %
+            % DATABASE_ERASE(NDI_DATASET_DIR_OBJ, AREYOUSURE)
+            %
+            %   Deletes the session in the database.
+            %
+            % Use with care. If AREYOUSURE is 'yes' then the
+            % function will proceed. Otherwise, it will not.
+            arguments
+                ndi_dataset_dir_obj {mustBeA(ndi_dataset_dir_obj,'ndi.session.dir')}
+                areyousure (1,:) char = 'no';
+            end
+
+            if strcmpi(areyousure,'yes')
+                rmdir(fullfile(ndi_dataset_dir_obj.path,'.ndi'),'s'); % remove database folder
+            else
+                disp('Not erasing session directory folder because user did not indicate they sure.');
+            end
+            delete(ndi_dataset_dir_obj);
+
+        end % dataset_erase()
+    end % methods (Static)
 end

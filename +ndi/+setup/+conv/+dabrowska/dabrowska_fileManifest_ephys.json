@@ -1,0 +1,114 @@
+[
+  {
+    "VariableName": "BathStimulationDrugList",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "/([^/]+)_IV_Curves",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathStimulationDrug1",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(?<=/)([^/_]+)(?:_[^/]*)?(?=_IV_Curves)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathStimulationDrug2",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(?<=/)[^/_]+_(.+?)(?=_IV_Curves)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "ProbeLocationString",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "_([^_/]+)_neurons",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsExpMatFile",
+    "SubfolderLevel": [3],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "(experiment\\d+trial\\d+\\.mat$)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "SubjectIDString",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/([^/]+)/",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "BathConditionString",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/[^/]+/([^/]+)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "RecordingDate",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/((?i)[a-z]{3} \\d{1,2} \\d{4})",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "SliceLabel",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "neurons/(?i)[a-z]{3} \\d{1,2} \\d{4} *([a-zA-Z])?(?:/|$)",
+    "FunctionName": ""
+  },    
+  {
+    "VariableName": "IsWildType",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)Wild[- ]type)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsCRFCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)CRF_BNST_neurons)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsOTRCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)OTR_BNST_neurons)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "IsAVPCre",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)AVPCre_BNST_neurons)",
+    "FunctionName": ""
+  },
+  {
+    "VariableName": "TLS",
+    "SubfolderLevel": [],
+    "StringDetectMode": "regex",
+    "StringDetectInput": "",
+    "StringFormat": "((?i)TLS)",
+    "FunctionName": ""
+  }
+]
