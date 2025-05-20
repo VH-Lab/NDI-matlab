@@ -44,7 +44,8 @@
        "prefix": "RRID",
        "ontology_name": "RRID"
     },
-    {"prefix": "PATO", "ontology_name": "PATO"}
+    {"prefix": "PATO", "ontology_name": "PATO"},
+    { "prefix": "EMPTY", "ontology_name": "EMPTY" }
   ],
   "Ontologies": [
     {
@@ -96,6 +97,12 @@
       "name": "PATO",
       "homepage": "http://obofoundry.org/ontology/pato.html",
       "api_url": "https://www.ebi.ac.uk/ols4/api/ontologies/pato"
+    },
+    {
+      "name": "EMPTY",
+      "homepage": null, 
+      "api_url": null, 
+      "description": "Experimental Measurements, Purposes, and Treatments ontologY (local OBO file)"
     }
   ]
 }

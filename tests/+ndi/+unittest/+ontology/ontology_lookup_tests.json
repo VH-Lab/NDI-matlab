@@ -321,6 +321,56 @@
       "should_succeed": false,
       "expected_id": "",
       "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:00000090",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000090",
+      "expected_name": "Behavioral measurement"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:Behavioral measurement",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000090",
+      "expected_name": "Behavioral measurement"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:00000100",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000100",
+      "expected_name": "Elevated Plus Maze: open arm (north) - entries"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:Elevated Plus Maze: treatment group",
+      "should_succeed": true,
+      "expected_id": "EMPTY:00000147",
+      "expected_name": "Elevated Plus Maze: treatment group"
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:NoSuchTermHere",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:99999999",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
+    },
+    {
+      "ontology": "EMPTY",
+      "lookup_string": "EMPTY:0000000",
+      "should_succeed": false,
+      "expected_id": "",
+      "expected_name": ""
     }
   ]
 }
+
