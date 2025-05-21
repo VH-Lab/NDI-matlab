@@ -45,7 +45,7 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
         existsOnCloud = files(i).uploaded;
                 
         if ~existsOnCloud
-            fprintf('File with uuid "%s" does not exist on the cloud, skipping...\n', file_uid)
+            warning('File with uuid "%s" does not exist on the cloud, skipping...\n', file_uid)
             continue;
         end
 
