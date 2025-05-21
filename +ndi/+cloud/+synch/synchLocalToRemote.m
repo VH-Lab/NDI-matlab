@@ -1,8 +1,8 @@
-function synchLocalToRemote(ndiDataset, cloudDatasetId, options)
+function synchLocalToRemote(ndiDataset, options)
 
     arguments
         ndiDataset (1,1) ndi.dataset
-        cloudDatasetId (1,1) string
+        options.CloudDatasetId (1,1) string = missing
         options.DeleteMissingFiles (1,1) logical = false
     end
     
@@ -10,10 +10,14 @@ function synchLocalToRemote(ndiDataset, cloudDatasetId, options)
         error('Not implemented')
     end
 
-    % todo: resolve cloud dataset identifier
-    % cloudDatasetIdQuery = ndi.query('','isa','cloud_dataset_id');
-    % cloudDatasetIdDocument = ndiDataset.database_search(cloudDatasetIdQuery);
-    % cloudDatasetId = cloudDatasetIdDocument.identifier;
+    cloudDatasetId = ndi.cloud.internal.getCloudDatasetIdForLocalDataset(ndiDataset);
+    if ismissing(cloudDatasetId)
+        if ismissing(options.CloudDatasetId)
+            error('Could not resolve the remote dataset id. Please provide the cloud dataset identifier as an input.')
+        else
+            cloudDatasetId = options.CloudDatasetId;
+        end
+    end
 
     % List local documents
     allLocalDocumentsQuery = ndi.query('','isa','base');
@@ -22,11 +26,12 @@ function synchLocalToRemote(ndiDataset, cloudDatasetId, options)
         localDocuments, 'UniformOutput', false) );
 
     % List remote documents
-    [~, documentSummary] = ndi.cloud.api.documents.list_dataset_documents(cloudDatasetId);
-    remoteDocumentIds = string( {documentSummary.documents.ndiId} );
+    remoteDocumentIds = ndi.cloud.internal.get_uploaded_document_ids(cloudDatasetId);
 
     % Upload missing documents to cloud
     [~, missingDocumentInd] = setdiff(localDocumentIds, remoteDocumentIds, 'stable');
     missingDocuments = localDocuments(missingDocumentInd);
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, missingDocuments)
+
+    % Todo: upload files if selected.
 end

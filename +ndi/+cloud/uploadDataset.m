@@ -23,9 +23,12 @@ function cloudDatasetId = uploadDataset(ndiDataset, options)
     %   Step 1b: Convert metadata structure to NDI Cloud Dataset info 
     cloud_dataset_info = ndi.cloud.utility.create_cloud_metadata_struct(metadata_struct);
 
-    %   Step 1c: Create ned NDI Cloud Dataset
+    %   Step 1c: Create new NDI Cloud Dataset
     [~, cloudDatasetId] = ndi.cloud.api.datasets.create_dataset(cloud_dataset_info);
 
+    % Add document with remote dataset id to dataset before uploading.
+    remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);
+    ndiDataset.database_add(remoteDatasetDoc)
 
     % Step 2: Upload documents
     if options.Verbose, disp('Uploading dataset documents...'); end

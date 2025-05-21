@@ -1,8 +1,8 @@
-function synchRemoteToLocal(ndiDataset, cloudDatasetId, options)
+function synchRemoteToLocal(ndiDataset, options)
 
     arguments
         ndiDataset (1,1) ndi.dataset
-        cloudDatasetId (1,1) string
+        options.CloudDatasetId (1,1) string = missing
         options.SynchMode (1,1) ndi.cloud.synch.enum.SynchMode = "Hybrid"
         options.DeleteMissingFiles (1,1) logical = false
         options.Verbose (1,1) logical = true
@@ -14,10 +14,14 @@ function synchRemoteToLocal(ndiDataset, cloudDatasetId, options)
         error('Not implemented')
     end
 
-    % Todo: resolve cloud dataset identifier
-    % cloudDatasetIdQuery = ndi.query('','isa','cloud_dataset_id');
-    % cloudDatasetIdDocument = ndiDataset.database_search(cloudDatasetIdQuery);
-    % cloudDatasetId = cloudDatasetIdDocument.identifier;
+    cloudDatasetId = ndi.cloud.internal.getCloudDatasetIdForLocalDataset(ndiDataset);
+    if ismissing(cloudDatasetId)
+        if ismissing(options.CloudDatasetId)
+            error('Could not resolve the remote dataset id. Please provide the cloud dataset identifier as an input.')
+        else
+            cloudDatasetId = options.CloudDatasetId;
+        end
+    end
 
     % List remote documents
     [~, documentSummary] = ndi.cloud.api.documents.list_dataset_documents(cloudDatasetId);
