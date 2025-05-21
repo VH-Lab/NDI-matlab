@@ -21,6 +21,9 @@ function response = logout()
     headers = [h1 h2];
 
     req = matlab.net.http.RequestMessage(method, headers, body);
+    
+    originalWarnState = warning('off', 'MATLAB:http:BodyExpectedFor');
+    warningResetObj = onCleanup(@() warning(originalWarnState));
 
     url = ndi.cloud.api.url('logout');
 
@@ -30,5 +33,9 @@ function response = logout()
         % Request succeeded
     else
         error('Failed to run command. StatusCode: %d. StatusLine: %s ', response.StatusCode, response.StatusLine.ReasonPhrase);
+    end
+
+    if ~nargout
+        clear response
     end
 end
