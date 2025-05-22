@@ -20,8 +20,7 @@ function synchLocalToRemote(ndiDataset, options)
     end
 
     % List local documents
-    allLocalDocumentsQuery = ndi.query('','isa','base');
-    localDocuments = ndiDataset.database_search(allLocalDocumentsQuery);
+    localDocuments = ndiDataset.database_search( ndi.query('','isa','base') );
     localDocumentIds = string( cellfun(@(doc) doc.document_properties.base.id, ...
         localDocuments, 'UniformOutput', false) );
 
@@ -33,5 +32,7 @@ function synchLocalToRemote(ndiDataset, options)
     missingDocuments = localDocuments(missingDocumentInd);
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, missingDocuments)
 
-    % Todo: upload files if selected.
+    % Upload missing files to cloud. ( Todo: make optional? )
+    ndi.cloud.synch.internal.upload_files_for_dataset_documents( ...
+        cloudDatasetId, ndiDataset, dataset_documents, "Verbose", options.Verbose)
 end

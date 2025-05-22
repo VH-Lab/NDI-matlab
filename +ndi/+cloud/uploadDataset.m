@@ -32,15 +32,10 @@ function cloudDatasetId = uploadDataset(ndiDataset, options)
 
     % Step 2: Upload documents
     if options.Verbose, disp('Uploading dataset documents...'); end
-    dataset_documents = ndiDataset.database_search(ndi.query('','isa','base'));
+    dataset_documents = ndiDataset.database_search( ndi.query('','isa','base') );
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, dataset_documents)
 
     % Step 3: Upload files
-    file_manifest = ...
-        ndi.database.internal.list_binary_files(...
-        ndiDataset, dataset_documents, options.Verbose); % verbose=false
-    [file_manifest(:).is_uploaded] = false;
-
-    totalSizeKb = sum([file_manifest.bytes]) / 1e3;
-    [~, msg] = ndi.cloud.upload.zip_for_upload(ndiDataset, file_manifest, totalSizeKb, cloudDatasetId);
+    ndi.cloud.synch.internal.upload_files_for_dataset_documents( ...
+        cloudDatasetId, ndiDataset, dataset_documents, "Verbose", options.Verbose)
 end
