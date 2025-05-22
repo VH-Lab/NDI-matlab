@@ -33,6 +33,11 @@ function crossrefDataset = convertCloudDatasetToCrossrefDataset(cloudDataset)
     fundingProgram = ndi.cloud.admin.crossref.conversion.convertFunding(cloudDataset);
     %relatedPublications = ndi.cloud.admin.crossref.conversion.convertRelatedPublications(cloudDataset);
 
+    % Ensure no DOI is present on the dataset already. Todo: If a DOI is
+    % present, the metadata record for that DOI should be updated.
+    assert(~isfield(cloudDataset, 'doi') || isempty(cloudDataset.doi), ... 
+        'Expected dataset to have no DOI from before.')
+
     % Create doi_data object
     doiStr = ndi.cloud.admin.createNewDOI();
     datasetURL = ndi.cloud.admin.crossref.Constants.NDIDatasetBaseURL + cloudDataset.x_id;
