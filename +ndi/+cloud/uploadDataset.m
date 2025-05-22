@@ -36,6 +36,6 @@ function cloudDatasetId = uploadDataset(ndiDataset, options)
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, dataset_documents)
 
     % Step 3: Upload files
-    ndi.cloud.synch.internal.upload_files_for_dataset_documents( ...
+    ndi.cloud.sync.internal.upload_files_for_dataset_documents( ...
         cloudDatasetId, ndiDataset, dataset_documents, "Verbose", options.Verbose)
 end

@@ -1,4 +1,4 @@
-function synchLocalToRemote(ndiDataset, options)
+function syncLocalToRemote(ndiDataset, options)
 
     arguments
         ndiDataset (1,1) ndi.dataset
@@ -33,6 +33,6 @@ function synchLocalToRemote(ndiDataset, options)
     ndi.cloud.upload.upload_document_collection(cloudDatasetId, missingDocuments)
 
     % Upload missing files to cloud. ( Todo: make optional? )
-    ndi.cloud.synch.internal.upload_files_for_dataset_documents( ...
+    ndi.cloud.sync.internal.upload_files_for_dataset_documents( ...
         cloudDatasetId, ndiDataset, dataset_documents, "Verbose", options.Verbose)
 end

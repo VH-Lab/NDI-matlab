@@ -1,14 +1,14 @@
-function synchRemoteToLocal(ndiDataset, options)
+function syncRemoteToLocal(ndiDataset, options)
 
     arguments
         ndiDataset (1,1) ndi.dataset
         options.CloudDatasetId (1,1) string = missing
-        options.SynchMode (1,1) ndi.cloud.synch.enum.SynchMode = "Hybrid"
+        options.SyncMode (1,1) ndi.cloud.sync.enum.SyncMode = "Hybrid"
         options.DeleteMissingFiles (1,1) logical = false
         options.Verbose (1,1) logical = true
     end
 
-    import ndi.cloud.synch.enum.SynchMode
+    import ndi.cloud.sync.enum.SyncMode
 
     if options.DeleteMissingFiles
         error('Not implemented')
@@ -41,7 +41,7 @@ function synchRemoteToLocal(ndiDataset, options)
     newNdiDocuments = ndi.cloud.download.download_document_collection(...
         cloudDatasetId, missingDocumentCloudIds);
 
-    if options.SynchMode == SynchMode.Local
+    if options.SyncMode == SyncMode.Local
         % Download missing files if files should be downloaded.
         missingFileUids = getFileUidsFromDocuments(newNdiDocuments);
         ndi.cloud.download.download_dataset_files(...
@@ -52,11 +52,11 @@ function synchRemoteToLocal(ndiDataset, options)
     end
 
     newNdiDocuments = ndi.cloud.download.internal.update_document_file_info(...
-        newNdiDocuments, options.SynchMode, fullfile(ndiDataset.path, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
+        newNdiDocuments, options.SyncMode, fullfile(ndiDataset.path, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
     
     if options.Verbose
         fprintf('Adding %d documents to dataset...\n', numel(newNdiDocuments))
-        if options.SynchMode == SynchMode.Local
+        if options.SyncMode == SyncMode.Local
             fprintf('Will copy %d downloaded files into dataset. May take several minutes if the files are large...\n', numel(missingFileUids))
         end
     end

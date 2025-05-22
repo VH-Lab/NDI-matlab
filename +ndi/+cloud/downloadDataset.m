@@ -9,7 +9,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
 % Inputs:
 %   CLOUDDATASETID (string)         - Identifier for the dataset in the cloud.
 %   TARGETFOLDER (string)           - Local folder to save the downloaded dataset.
-%   OPTIONS.SynchMode (SynchMode)   - Mode of synchronization (default: Hybrid).
+%   OPTIONS.SyncMode (SyncMode)   - Mode of synchronization (default: Hybrid).
 %
 % Outputs:
 %   NDIDATASET - An ndi.dataset object representing the downloaded dataset.
@@ -17,11 +17,11 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
     arguments
         cloudDatasetId (1,1) string = missing
         targetFolder (1,1) string = missing
-        options.SynchMode (1,1) ndi.cloud.synch.enum.SynchMode = "Hybrid"
+        options.SyncMode (1,1) ndi.cloud.sync.enum.SyncMode = "Hybrid"
         options.Verbose (1,1) logical = true
     end
     
-    import ndi.cloud.synch.enum.SynchMode
+    import ndi.cloud.sync.enum.SyncMode
 
     % Prompt user for required values if missing
     if ismissing(cloudDatasetId)
@@ -45,7 +45,7 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
     end
     ndiDocuments = ndi.cloud.download.download_document_collection(cloudDatasetId);
 
-    if options.SynchMode == SynchMode.Local
+    if options.SyncMode == SyncMode.Local
         ndi.cloud.download.download_dataset_files(...
             cloudDatasetId, ...
             targetFolder, ...
@@ -53,11 +53,11 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
     end
 
     ndiDocuments = ndi.cloud.download.internal.update_document_file_info(...
-        ndiDocuments, options.SynchMode, fullfile(targetFolder, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
+        ndiDocuments, options.SyncMode, fullfile(targetFolder, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
 
     if options.Verbose
         disp('Building dataset from documents...')
-        if options.SynchMode == SynchMode.Local
+        if options.SyncMode == SyncMode.Local
             disp('Will copy downloaded files into dataset. May take several minutes if the dataset is large...')
         end
     end

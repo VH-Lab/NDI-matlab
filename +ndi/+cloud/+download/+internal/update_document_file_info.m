@@ -15,7 +15,7 @@ function updatedNdiDocuments = update_document_file_info(ndiDocuments, synchMode
 
     arguments
         ndiDocuments
-        synchMode (1,1) ndi.cloud.synch.enum.SynchMode
+        synchMode (1,1) ndi.cloud.sync.enum.SyncMode
         fileDirectory (1,1) string
     end
 

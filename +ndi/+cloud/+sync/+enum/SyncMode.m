@@ -1,4 +1,4 @@
-classdef SynchMode
+classdef SyncMode
     enumeration
         Local
         Hybrid
