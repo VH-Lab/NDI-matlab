@@ -1,15 +1,15 @@
 function crossrefDataset = convertCloudDatasetToCrossrefDataset(cloudDataset)
 
-% - include all relevant 
+% Todos (crossref best practice recommendations):
+% - include all relevant
 %   [ish] funding
 %   [v] license
 %   [ ] relationship metadata
 % - include all contributors
-%   [ ] name
-%   [ ] ORCID
-%   [ ] 
+%   [v] names
+%   [v] ORCID
 % - include relevant dates (supported date types are creation, publication, and update dates)
-% - provide 
+% - provide
 %   [v] description
 %   [ ] format
 %   [ ] citation metadata
@@ -31,11 +31,11 @@ function crossrefDataset = convertCloudDatasetToCrossrefDataset(cloudDataset)
     datasetDate = ndi.cloud.admin.crossref.conversion.convertDatasetDate(cloudDataset);
     aiProgram = ndi.cloud.admin.crossref.conversion.convertLicense(cloudDataset);
     fundingProgram = ndi.cloud.admin.crossref.conversion.convertFunding(cloudDataset);
-    %relatedPublications = ndi.cloud.admin.crossref.conversion.convertRelatedPublications(cloudDataset);
+    % relatedPublications = ndi.cloud.admin.crossref.conversion.convertRelatedPublications(cloudDataset);
 
     % Ensure no DOI is present on the dataset already. Todo: If a DOI is
     % present, the metadata record for that DOI should be updated.
-    assert(~isfield(cloudDataset, 'doi') || isempty(cloudDataset.doi), ... 
+    assert(~isfield(cloudDataset, 'doi') || isempty(cloudDataset.doi), ...
         'Expected dataset to have no DOI from before.')
 
     % Create doi_data object

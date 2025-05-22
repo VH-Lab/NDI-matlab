@@ -1,10 +1,9 @@
 function headElement = createDoiBatchHeadElement()
-% createDoiBatchHeadElement - Create a structure representing the head element 
+% createDoiBatchHeadElement - Create a structure representing the head element
 % of the doi_batch element of the metadata record submission xml
 
-    %Reference: 
+    % Reference:
     % https://data.crossref.org/reports/help/schema_doc/5.3.1/index.html
-
     
     timeStamp = string(datetime("now", ...
         "Format", 'yyyy-MM-dd''T''HH:mm:ssXXX', ...
@@ -13,8 +12,8 @@ function headElement = createDoiBatchHeadElement()
     % Publisher generated ID that uniquely identifies the DOI submission batch.
     doiBatchId = sprintf("dataset_batch-%s", timeStamp);
     
-    % An integer representation of date and time that serves as a version 
-    % number for the record that is being deposited, used to uniquely identify 
+    % An integer representation of date and time that serves as a version
+    % number for the record that is being deposited, used to uniquely identify
     % batch files and DOI values when a DOI has been updated one or more times.
     timestamp = datetime("now", "Format", "yyyyMMddHHmmss");
     
