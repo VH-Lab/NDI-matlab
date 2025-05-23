@@ -25,7 +25,6 @@ function databaseMetadata = createDatabaseMetadata()
             "MediaType", "online") );
 
     % Create doi_data object
-    ndi.cloud.admin.crossref.Constants.DOIPrefix
     doiData = crossref.model.DoiData(...
         "Doi", ndi.cloud.admin.crossref.Constants.DatabaseDOI, ...
         "Resource", ndi.cloud.admin.crossref.Constants.DatabaseURL );
