@@ -1,4 +1,4 @@
-function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
+function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
 % DOWNLOADDATASET - Downloads a dataset from the NDI Cloud to a local folder.
 %
 % Syntax:
@@ -17,11 +17,12 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
     arguments
         cloudDatasetId (1,1) string = missing
         targetFolder (1,1) string = missing
-        options.SyncMode (1,1) ndi.cloud.sync.enum.SyncMode = "Hybrid"
-        options.Verbose (1,1) logical = true
+        syncOptions.?ndi.cloud.sync.SyncOptions
     end
     
     import ndi.cloud.sync.enum.SyncMode
+       
+    syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
 
     % Prompt user for required values if missing
     if ismissing(cloudDatasetId)
@@ -34,39 +35,44 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, options)
                 'Operation aborted during selection of a dataset target folder.')
         end
     end
-
-    targetFolder = fullfile(targetFolder, cloudDatasetId);
-    if ~isfolder(targetFolder)
-        mkdir(targetFolder)
-    end
     
-    if options.Verbose
+    % Download dataset documents
+    if syncOptions.Verbose
         disp('Downloading dataset documents...')
     end
-    ndiDocuments = ndi.cloud.download.download_document_collection(cloudDatasetId);
+    syncOptionsNvPairs = syncOptions.toCell();
+    ndiDocuments = ndi.cloud.sync.internal.downloadNdiDocuments(...
+        cloudDatasetId, "", syncOptionsNvPairs{:});
 
-    if options.SyncMode == SyncMode.Local
-        ndi.cloud.download.download_dataset_files(...
-            cloudDatasetId, ...
-            targetFolder, ...
-            "Verbose", options.Verbose)
-    end
+    keyboard
+    remove_random_docs
 
-    ndiDocuments = ndi.cloud.download.internal.update_document_file_info(...
-        ndiDocuments, options.SyncMode, fullfile(targetFolder, 'download', 'files')); %todo: path to downloaded files should not be hardcoded here.
-
-    if options.Verbose
+    % Create new dataset with downloaded document
+    if syncOptions.Verbose
         disp('Building dataset from documents...')
-        if options.SyncMode == SyncMode.Local
-            disp('Will copy downloaded files into dataset. May take several minutes if the dataset is large...')
+        if syncOptions.SyncFiles
+            disp(['Will copy downloaded files into dataset. May take ', ...
+                'several minutes if the dataset is large...'])
         end
     end
-    ndiDataset = ndi.dataset.dir([], targetFolder, ndiDocuments);
+    datasetFolder = fullfile(targetFolder, cloudDatasetId);
+    if ~isfolder(datasetFolder)
+        mkdir(datasetFolder)
+    end
+    ndiDataset = ndi.dataset.dir([], datasetFolder, ndiDocuments);
+    if syncOptions.Verbose
+        disp('Created dataset.')
+    end
 
-    % Check if document is already here...
+    % Save sync index
+    ndi.cloud.sync.internal.index.updateSyncIndex(ndiDataset, cloudDatasetId)
+    if syncOptions.Verbose
+        disp('Saved sync index.')
+    end
+
+    % Add document with the cloud dataset ID to the local dataset
     doc = ndiDataset.database_search( ndi.query('','isa','dataset_remote') );
     if isempty(doc)
-        % Create a document with the identifier and organization of the dataset
         remoteDatasetDoc = ndi.cloud.internal.create_remote_dataset_doc(cloudDatasetId, ndiDataset);
         ndiDataset.database_add(remoteDatasetDoc);
     end
