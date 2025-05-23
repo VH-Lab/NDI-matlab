@@ -4,6 +4,9 @@ function cloudDatasetId = getCloudDatasetIdForLocalDataset(ndiDataset)
     if ~isempty(cloudDatasetIdDocument)
         cloudDatasetId = cloudDatasetIdDocument{1}.document_properties.dataset_remote.dataset_id;
     else
-       cloudDatasetId = string(missing);
+        error('NDICloud:Sync:MissingCloudDatasetId', ...
+            ['Could not resolve the remote cloudDatasetId for the local ', ...
+            'dataset: %s. Ensure it is linked.'], ndiDataset.path);
     end
+    % Todo: Add suggestion what to do
 end

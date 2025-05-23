@@ -1,7 +1,7 @@
-function updatedNdiDocuments = update_document_file_info(ndiDocuments, synchMode, fileDirectory)
+function updatedNdiDocuments = update_document_file_info(ndiDocuments, doDownloadFiles, fileDirectory)
 % UPDATE_DOCUMENT_FILE_INFO - Update file info parameters for ndi.documents different modes
 %
-% UPDATEDNDIDOCUMENTS = ndi.cloud.download.internal.UPDATE_DOCUMENT_FILE_INFO(NDIDOCUMENTS, MODE, FILEDIRECTORY)
+% UPDATEDNDIDOCUMENTS = ndi.cloud.download.internal.UPDATE_DOCUMENT_FILE_INFO(NDIDOCUMENTS, doDownloadFiles, FILEDIRECTORY)
 %
 % Given a cell array of ndi.documents, set the 'delete_original' and 'ingest' 
 % fields of the document_properties.files.file_info.location as appropriate to 
@@ -15,7 +15,7 @@ function updatedNdiDocuments = update_document_file_info(ndiDocuments, synchMode
 
     arguments
         ndiDocuments
-        synchMode (1,1) ndi.cloud.sync.enum.SyncMode
+        doDownloadFiles (1,1) logical
         fileDirectory (1,1) string
     end
 
@@ -27,7 +27,7 @@ function updatedNdiDocuments = update_document_file_info(ndiDocuments, synchMode
         document = ndiDocuments{iDocument};
     
         if document.has_files()
-            if synchMode == "Local"
+            if doDownloadFiles
                 updatedNdiDocuments{iDocument} = ...
                     updateDocumentForLocalFiles(document, fileDirectory);
             else

@@ -32,8 +32,6 @@ function download_dataset_files(cloudDatasetId, targetFolder, fileUuids, options
     [datasetInfo, ~] = ndi.cloud.api.datasets.get_dataset(cloudDatasetId);
 
     files = filterFilesToDownload(datasetInfo.files, fileUuids);
-
-    targetFolder = createSubFolderForDownloadedFiles(targetFolder);
     
     numFiles = numel(files);
     if options.Verbose; fprintf('Will download %d files...\n', numFiles ); end
@@ -80,13 +78,6 @@ function files = filterFilesToDownload(files, fileUuids)
                
         assert(isequal(sort(string({files.uid})), sort(fileUuids)), ...
             'Expected filtered files list to match IDs for filtering.')
-    end
-end
-
-function filesTargetFolder = createSubFolderForDownloadedFiles(targetFolder)
-    filesTargetFolder = fullfile(targetFolder, 'download', 'files');
-    if ~isfolder(filesTargetFolder)
-        mkdir(filesTargetFolder)
     end
 end
 
