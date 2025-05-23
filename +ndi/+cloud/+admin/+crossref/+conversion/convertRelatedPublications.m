@@ -9,13 +9,12 @@ function relProgramObj = convertRelatedPublications(cloudDataset)
         relItemList = crossref.model.RelRelatedItem.empty();
 
         for i = 1:numel(relPublicationDetails)
-            relItemList(i) = crossref.model.RelRelatedItem(...
-                )
-        frAssertion = crossref.model.FrAssertion(...
-            "Name", "funder_name", ...
-            "Value", string(fundingDetails.source));
+            % Todo: This is a placeholder. Update by filling in relevant info 
+            % from  relPublicationDetails
+            relItemList(i) = crossref.model.RelRelatedItem();
+        end
         
-        relProgramObj = crossref.model.FrProgram(...
-            "Assertion", frAssertion);
+        relProgramObj = crossref.model.RelProgram(...
+            "RelatedItem", relItemList);
     end
 end
