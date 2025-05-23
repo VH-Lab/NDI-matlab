@@ -5,11 +5,16 @@ function fundingObj = convertFunding(cloudDataset)
     else
         fundingDetails = cloudDataset.funding;
 
-        frAssertion = crossref.model.FrAssertion(...
-            "Name", "funder_name", ...
-            "Value", string(fundingDetails.source));
-        
+        frAssertions = cell(1, numel(fundingDetails));
+        for i = 1:numel(fundingDetails)
+
+            frAssertions{i} = crossref.model.FrAssertion(...
+                "Name", "funder_name", ...
+                "Value", string(fundingDetails(i).source));
+            
+        end
+
         fundingObj = crossref.model.FrProgram(...
-            "Assertion", frAssertion);
+            "Assertion", [frAssertions{:}]);
     end
 end
