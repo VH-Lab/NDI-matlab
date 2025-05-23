@@ -2,22 +2,22 @@ classdef SyncMode
     % SyncMode - Enumeration of supported dataset synchronization modes
     %
     % Defines modes for unidirectional and bidirectional sync operations
-    % between a local and remote dataset, with or without mirroring.
+    % between a local and a remote (NDI Cloud) dataset, with or without mirroring.
     
     enumeration
-        % Download documents that are new on the remote location
+        % Download documents that are new on the remote dataset
         DownloadNew         ("downloadNew")
 
-        % Download files from remote and remove files locally that no longer exist remotely
+        % Download documents from remote and remove documents locally that no longer exist remotely
         MirrorFromRemote    ("mirrorFromRemote")
 
-        % Upload files that are new on the local location
+        % Upload documents that are new in the local dataset
         UploadNew           ("uploadNew")
 
-        % Upload files to remote and remove files remotely that no longer exist locally
+        % Upload documents to remote and remove documents remotely that no longer exist locally
         MirrorToRemote      ("mirrorToRemote")
 
-        % Two-way sync: copy new/updated files both ways, without removing any documents
+        % Two-way sync: copy new/updated documents both ways, without removing any documents
         TwoWaySync          ("twoWaySync")
     end
 
