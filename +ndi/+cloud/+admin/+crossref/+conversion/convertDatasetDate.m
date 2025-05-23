@@ -21,7 +21,7 @@ function datasetDateObj = convertDatasetDate(cloudDataset)
     );
     
     createdYMD = timestampToYearMonthDay(cloudDataset.createdAt);
-    updatedYMD = timestampToYearMonthDay(cloudDataset.createdAt);
+    updatedYMD = timestampToYearMonthDay(cloudDataset.updatedAt);
 
     datasetDateObj = crossref.model.DatabaseDate(...
         "PublicationDate", publicationDate, ...
