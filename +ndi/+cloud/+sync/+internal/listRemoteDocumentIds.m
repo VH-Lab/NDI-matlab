@@ -1,4 +1,18 @@
 function documentIds = listRemoteDocumentIds(cloudDatasetId)
+    % listRemoteDocumentIds - Retrieves document IDs from a remote cloud dataset
+    %
+    % Syntax:
+    %   documentIds = ndi.cloud.sync.internal.listRemoteDocumentIds(cloudDatasetId) 
+    %   This function retrieves the NDI and API document IDs associated with 
+    %   a specified cloud dataset ID and returns them in a table format.
+    %
+    % Input Arguments:
+    %   cloudDatasetId (1,1) string - The ID of the cloud dataset from which to 
+    %   retrieve document IDs.
+    %
+    % Output Arguments:
+    %   documentIds - A table containing the NDI and API document IDs with 
+    %   variable names 'ndiId' and 'apiId'.
 
     arguments
         cloudDatasetId (1,1) string
@@ -23,3 +37,4 @@ function documentIds = listRemoteDocumentIds(cloudDatasetId)
     %     currentRemoteNdiDocumentIds = string(currentRemoteIdMap(:,1));
     % end
 end
+
