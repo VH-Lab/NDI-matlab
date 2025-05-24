@@ -2,14 +2,16 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
 % DOWNLOADDATASET - Downloads a dataset from the NDI Cloud to a local folder.
 %
 % Syntax:
-%   NDIDATASET = ndi.cloud.DOWNLOADDATASET(CLOUDDATASETID, TARGETFOLDER, OPTIONS)
-%   Downloads a dataset specified by CLOUDDATASETID to TARGETFOLDER,
-%   with additional options for synchronization mode.
+%   NDIDATASET = ndi.cloud.downloadDataset(CLOUD_DATASET_ID, TARGET_FOLDER, OPTIONS)
+%   Downloads a dataset specified by CLOUD_DATASET_ID to TARGET_FOLDER,
+%   with additional options for controlling synchronization mode.
 %
 % Inputs:
-%   CLOUDDATASETID (string)         - Identifier for the dataset in the cloud.
-%   TARGETFOLDER (string)           - Local folder to save the downloaded dataset.
-%   OPTIONS.SyncMode (SyncMode)   - Mode of synchronization (default: Hybrid).
+%   CLOUD_DATASET_ID (string)       - Identifier for the dataset in the cloud.
+%   TARGET_FOLDER (string)          - Local folder to save the downloaded dataset.
+%   OPTIONS (name, value pairs)     - Optional synchronization options:
+%       - SyncFiles (logical)       - If true, files will be synced (default: true).
+%       - Verbose (logical)         - If true, verbose output is printed (default: true).
 %
 % Outputs:
 %   NDIDATASET - An ndi.dataset object representing the downloaded dataset.
@@ -23,6 +25,11 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     import ndi.cloud.sync.enum.SyncMode
        
     syncOptions = ndi.cloud.sync.SyncOptions(syncOptions);
+
+    if syncOptions.DryRun
+        error("NDICLOUD:DownloadDataset:DryRunNotSupported", ...
+            '"DryRun" option is not implemented for dataset download.')
+    end
 
     % Prompt user for required values if missing
     if ismissing(cloudDatasetId)
