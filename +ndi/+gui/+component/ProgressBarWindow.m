@@ -46,7 +46,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
             % Initialize progress bar struct
             app.ProgressBars = struct('Panel',{},'Patch',{},'Percent',{},'Button',{},...
-                'Label',{},'Clock',{},'Timer',{});
+                'Label',{},'Clock',{},'Timer',{},'Progress',{});
         end
 
         function app = setFigureSize(app,numBar)
@@ -144,6 +144,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 'Text','0%','FontSize',10);
             app.ProgressBars(barNum).Percent.Layout.Row = rowNum;
             app.ProgressBars(barNum).Percent.Layout.Column = 2;
+            app.ProgressBars(barNum).Progress = 0;
 
             % Add close button
             icon = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+gui','gray_x.svg');
@@ -221,13 +222,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 error(status.identifier,status.message)
             end
 
+            app.ProgressBars(barNum).Progress = progress;
+
             % Set progress bar
             set(app.ProgressBars(barNum).Patch,...
-                'Position',[0 0 progress 1],'Units','normalized')
+                'Position',[0 0 progress 1],'Units','normalized');
 
             % Set percent label
             set(app.ProgressBars(barNum).Percent,...
-                'Text',sprintf('%.0f%%', progress * 100))
+                'Text',sprintf('%.0f%%', progress * 100));
 
             % Add current time
             app.ProgressBars(barNum).Clock{2} = datetime('now');
@@ -259,13 +262,19 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 cutoff {mustBeA(cutoff,{'duration'})} = hours(1)
             end
 
-            timeout = nan(size(app.ProgressBars));
+            timeout = [];
             for i = 1:numel(app.ProgressBars)
-                timeout(i) = app.ProgressBars(i).Clock{2} - ...
-                    app.ProgressBars(i).Clock{1};
+                timeout = cat(1,timeout,datetime('now') - app.ProgressBars(i).Clock{2});
             end
 
             barNum = find(timeout >= cutoff);
+
+            for i = 1:numel(barNum)
+                if app.ProgressBars(barNum(i)).Progress < 1
+                    set(app.ProgressBars(barNum(i)).Button,'Icon','error');
+                end
+            end
+
         end
 
         function [barNum,status] = getBarNum(app,barID)
