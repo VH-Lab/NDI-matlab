@@ -243,7 +243,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 % Update timer
                 timeElapsed = app.ProgressBars(barNum).Clock{2} - ...
                     app.ProgressBars(barNum).Clock{1};
-                timeRemaining = timeElapsed / progress;
+                timeRemaining = timeElapsed * (1 - progress) / progress;
                 if timeRemaining <= minutes(1)
                     timeString = sprintf('%.0f seconds',seconds(timeRemaining));
                 elseif timeRemaining <= hours(2)
