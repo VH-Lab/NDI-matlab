@@ -44,9 +44,6 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     ndiDocuments = ndi.cloud.sync.internal.downloadNdiDocuments(...
         cloudDatasetId, "", syncOptionsNvPairs{:});
 
-    keyboard
-    remove_random_docs
-
     % Create new dataset with downloaded document
     if syncOptions.Verbose
         disp('Building dataset from documents...')
