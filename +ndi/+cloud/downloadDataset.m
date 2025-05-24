@@ -47,9 +47,8 @@ function ndiDataset = downloadDataset(cloudDatasetId, targetFolder, syncOptions)
     if syncOptions.Verbose
         disp('Downloading dataset documents...')
     end
-    syncOptionsNvPairs = syncOptions.toCell();
     ndiDocuments = ndi.cloud.sync.internal.downloadNdiDocuments(...
-        cloudDatasetId, "", syncOptionsNvPairs{:});
+        cloudDatasetId, "", ndi.dataset.empty, syncOptions);
 
     % Create new dataset with downloaded document
     if syncOptions.Verbose
