@@ -1,15 +1,19 @@
+% Give use cases including example for doImport and example for tracking
+% something more granular where you could use did.ido.unique tag and make
+% sure the Bar is set to Auto close
 classdef ProgressBarWindow < matlab.apps.AppBase
     %UNTITLED5 Summary of this class goes here
     %   Detailed explanation goes here
 
     properties (Access = private)
         ScreenFrac = 0.025 % Each progress bar will be ~2.5% of the screen height
-        IconX = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+gui','gray_x.svg');
+        IconClose = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+gui','close_icon.svg');
+        IconPause = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+gui','pause_icon.svg');
+        IconPlay = fullfile(ndi.common.PathConstants.RootFolder,'+ndi','+gui','play_icon.svg');
         ProgressFigureListener
         ProgressGridListener
         ProgressBarListener
         Timeout = minutes(1)
-        Draw = timer('TimerFcn',@drawnow,'StartDelay',0.5,'ExecutionMode','singleShot','BusyMode','drop');
     end
 
     properties (SetObservable)
@@ -37,9 +41,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 end
             end
 
-            if ~isempty(openFigs) & ~options.Overwrite & any(ind)
+            if ~isempty(openFigs) && ~options.Overwrite && any(ind)
                 % If not overwriting, use guidata from current figure
                 app = guidata(openFigs(ind));
+                figure(app.ProgressFigure);
             else
                 % Add listeners
                 app.ProgressFigureListener = addlistener(app,'ProgressFigure','PostSet',@app.handleAppChange);
@@ -78,35 +83,44 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             arguments
                 app
                 options.Label {mustBeTextScalar(options.Label)} = ''
-                options.Color (1,3) double {mustBeInRange(options.Color,0,1)} = ndi.gui.component.ProgressBarWindow.randColor
                 options.Tag {mustBeTextScalar(options.Tag)} = ''
+                options.Color (1,3) double {mustBeInRange(options.Color,0,1)} = [1 1 1]
                 options.Auto logical = false
             end
+
+            % Bring figure to front
+            figure(app.ProgressFigure);
 
             % Check if tag already exists (if it does, set progress to 0)
             if isempty(options.Tag)
                 options.Tag = options.Label;
             end
-            currentBar = app.getBarNum(options.Tag);
-            if ~isempty(currentBar)
+            barNum = app.getBarNum(options.Tag);
+            if ~isempty(barNum)
                 warning('ProgressBarWindow:addBar:InvalidTag',...
                     'Tag "%s" already used. Resetting.',options.Tag)
 
-                if strcmpi(app.ProgressBars(currentBar).Status,'Closed')
-                    app.ProgressBars(currentBar) = [];
+                if strcmpi(app.ProgressBars(barNum).Status,'Closed')
+                    app.ProgressBars(barNum) = [];
                 else
                     app.updateBar(options.Tag,0);
                     return
                 end
             end
 
+            % Replace color if default (white)
+            if all(options.Color == 1)
+                while (sum(options.Color) < 1.5) || (sum(options.Color) > 2.8)
+                    options.Color = rand(1, 3);
+                end
+            end
+
             % Get current barNum
             barNum = numel(app.ProgressBars) + 1;
 
-            % Get tag
+            % Get status, tag, and auto flag
+            app.ProgressBars(barNum).Status = 'Open';
             app.ProgressBars(barNum).Tag = options.Tag;
-
-            % Get auto flag
             app.ProgressBars(barNum).Auto = options.Auto;
 
             % Add rows to ProgressGrid
@@ -142,34 +156,16 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Timer.Layout.Column = 1:2;
 
             % Add bar background
-            % app.ProgressBars(barNum).Panel = uipanel(app.ProgressGrid,...
-            %     'BackgroundColor','w','BorderType','none');
-            % app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
-            % app.ProgressBars(barNum).Panel.Layout.Column = 1;
-            % app.ProgressBars(barNum).Panel.Units = 'normalized';
-            % 
-            % drawnow update
+            app.ProgressBars(barNum).Panel = uiaxes(app.ProgressGrid,...
+                'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
+                'XColor','none','YColor','none','Color','w','Interactions',[]);
+            app.ProgressBars(barNum).Panel.Toolbar.Visible = 'off';
+            app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
+            app.ProgressBars(barNum).Panel.Layout.Column = 1;
 
             % Add bar foreground
-            % app.ProgressBars(barNum).Patch = uipanel(app.ProgressBars(barNum).Panel,...
-            %     'Units','pixels','Position',[1 1 0 app.ProgressBars(barNum).Panel.Position(4)],...
-            %     'BackgroundColor',options.Color,'BorderType','none');
-            % app.ProgressBars(barNum).Patch = uipanel(app.ProgressBars(barNum).Panel,...
-            %     'Units','normalized','Position',[0 0 0 1],...
-            %     'BackgroundColor',options.Color,'BorderType','none');
-
-            % Remove Panel and Patch creation. Instead:
-app.ProgressBars(barNum).Panel = uiaxes(app.ProgressGrid,...
-    'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
-    'XColor','none','YColor','none','Color','w','Interactions',[]);
-app.ProgressBars(barNum).Panel.Toolbar.Visible = 'off';
-app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
-app.ProgressBars(barNum).Panel.Layout.Column = 1;
-
-% Create the patch object (foreground bar)
-app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Panel, ...
-    [0 0 0 0], [0 1 1 0], options.Color); % Start at 0 width
-app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itself
+            app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Panel, ...
+                [0 0 0 0], [0 1 1 0], options.Color,'EdgeColor','none');
 
             % Add progress text
             app.ProgressBars(barNum).Percent = uilabel(app.ProgressGrid,...
@@ -183,7 +179,7 @@ app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itse
 
             % Add close button
             app.ProgressBars(barNum).Button = uibutton(app.ProgressGrid,...
-                'Icon',app.IconX,'IconAlignment','center','text','');
+                'Icon',app.IconPause,'IconAlignment','center','text','');
             app.ProgressBars(barNum).Button.Layout.Row = rowNum;
             app.ProgressBars(barNum).Button.Layout.Column = 3;
             app.ProgressBars(barNum).Button.Tag = options.Tag;
@@ -210,14 +206,7 @@ app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itse
             app.ProgressBars(barNum).Progress = progress;
 
             % Set progress bar
-            % app.ProgressBars(barNum).Patch.Position(3) = ...
-            %     app.ProgressBars(barNum).Panel.Position(3) * progress;
-            % set(app.ProgressBars(barNum).Patch,'Position',[0 0 progress 1]);
-            % if progress == 1
-            %     keyboard
-            % end
-
-    set(app.ProgressBars(barNum).Patch, 'XData', [0 0 progress progress]);
+            set(app.ProgressBars(barNum).Patch,'XData',[0 0 progress progress]);
 
             % Set percent label
             set(app.ProgressBars(barNum).Percent,...
@@ -238,7 +227,7 @@ app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itse
                 timeString = sprintf('%.0f hours',hours(timeRemaining));
             end
             set(app.ProgressBars(barNum).Timer,'Text',['Estimated time: ',timeString]);
-            set(app.ProgressBars(barNum).Button,'Icon',app.IconX);
+            set(app.ProgressBars(barNum).Button,'Icon',app.IconPause);
 
             % Check for bars that have timed out or completed
             app.checkTimeout;
@@ -390,7 +379,20 @@ app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itse
         function handleButtonPress(app,source,~)
 
             % Remove progress bar
-            app.removeBar(source.Tag);
+            barNum = app.getBarNum(source.Tag);
+            if contains(app.ProgressBars(barNum).Button.Icon,'pause')
+                set(app.ProgressBars(barNum).Button,'Icon',app.IconPlay);
+                drawnow nocallbacks
+                disp('pause')
+                app.ProgressBars(barNum).Status = 'Pause';
+            elseif contains(app.ProgressBars(barNum).Button.Icon,'play')
+                set(app.ProgressBars(barNum).Button,'Icon',app.IconPause);
+                disp('play')
+                app.ProgressBars(barNum).Status = 'Open';
+                uiresume(app.ProgressFigure)
+            else
+                app.removeBar(source.Tag);
+            end
         end
 
         function handleAppChange(app,~,~)
@@ -399,23 +401,15 @@ app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itse
             guidata(app.ProgressFigure,app);
 
             % Update figure
-            % if ~app.Draw.Running
-            %     start(app.Draw);
-            % end
             drawnow
         end
-    end
 
-    methods (Static)
-        function thiscolor = randColor()
-            % Generate random RGB
-            thiscolor = rand(1, 3);
-
-            % Prevent color from being too dark or too light
-            colormin = 1.5;
-            colormax = 2.8;
-            while (sum(thiscolor) < colormin) || (sum(thiscolor) > colormax)
-                thiscolor = rand(1, 3);
+        function status = getStatus(app,barID)
+            barNum = getBarNum(app,barID);
+            status = app.ProgressBars(barNum).Status;
+            if strcmpi(status,'Pause')
+                set(app.ProgressBars(barNum).Button,'Icon',app.IconPlay);
+                drawnow
             end
         end
     end
