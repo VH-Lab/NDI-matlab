@@ -142,16 +142,34 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Timer.Layout.Column = 1:2;
 
             % Add bar background
-            app.ProgressBars(barNum).Panel = uipanel(app.ProgressGrid,...
-                'BackgroundColor','w','BorderType','none');
-            app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
-            app.ProgressBars(barNum).Panel.Layout.Column = 1;
-            app.ProgressBars(barNum).Units = 'normalized';
+            % app.ProgressBars(barNum).Panel = uipanel(app.ProgressGrid,...
+            %     'BackgroundColor','w','BorderType','none');
+            % app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
+            % app.ProgressBars(barNum).Panel.Layout.Column = 1;
+            % app.ProgressBars(barNum).Panel.Units = 'normalized';
+            % 
+            % drawnow update
 
             % Add bar foreground
-            app.ProgressBars(barNum).Patch = uipanel(app.ProgressBars(barNum).Panel,...
-                'Units','normalized','Position',[0 0 0 1],...
-                'BackgroundColor',options.Color,'BorderType','none');
+            % app.ProgressBars(barNum).Patch = uipanel(app.ProgressBars(barNum).Panel,...
+            %     'Units','pixels','Position',[1 1 0 app.ProgressBars(barNum).Panel.Position(4)],...
+            %     'BackgroundColor',options.Color,'BorderType','none');
+            % app.ProgressBars(barNum).Patch = uipanel(app.ProgressBars(barNum).Panel,...
+            %     'Units','normalized','Position',[0 0 0 1],...
+            %     'BackgroundColor',options.Color,'BorderType','none');
+
+            % Remove Panel and Patch creation. Instead:
+app.ProgressBars(barNum).Panel = uiaxes(app.ProgressGrid,...
+    'XLim',[0 1],'YLim',[0 1],'XTick',[],'YTick',[],'Box','off',...
+    'XColor','none','YColor','none','Color','w','Interactions',[]);
+app.ProgressBars(barNum).Panel.Toolbar.Visible = 'off';
+app.ProgressBars(barNum).Panel.Layout.Row = rowNum;
+app.ProgressBars(barNum).Panel.Layout.Column = 1;
+
+% Create the patch object (foreground bar)
+app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Panel, ...
+    [0 0 0 0], [0 1 1 0], options.Color); % Start at 0 width
+app.ProgressBars(barNum).Patch.EdgeColor = 'none'; % No border on the patch itself
 
             % Add progress text
             app.ProgressBars(barNum).Percent = uilabel(app.ProgressGrid,...
@@ -192,12 +210,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressBars(barNum).Progress = progress;
 
             % Set progress bar
-            if app.ProgressBars(barNum).Patch.Position(3) == 0
-                set(app.ProgressBars(barNum).Patch,'Units','normalized',...
-                'Position',[0 0 progress 1]);
-            end
-            set(app.ProgressBars(barNum).Patch,'Units','normalized',...
-                'Position',[0 0 progress 1]);
+            % app.ProgressBars(barNum).Patch.Position(3) = ...
+            %     app.ProgressBars(barNum).Panel.Position(3) * progress;
+            % set(app.ProgressBars(barNum).Patch,'Position',[0 0 progress 1]);
+            % if progress == 1
+            %     keyboard
+            % end
+
+    set(app.ProgressBars(barNum).Patch, 'XData', [0 0 progress progress]);
 
             % Set percent label
             set(app.ProgressBars(barNum).Percent,...
@@ -277,11 +297,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
         end % REMOVEBAR
 
         function app = setFigureSize(app,numBar)
+
+            % Get screen size
+            % set(0,'units','pixels');
+            % screenResolution = get(0,'screensize');
             
             % Define figure size
             vpad = sum(app.ProgressGrid.Padding([2,4]));
             height = app.ScreenFrac * (numBar * 25 + vpad)/25;
-            width = app.ScreenFrac * 12;
+            width = app.ScreenFrac * 13;
             left = app.ProgressFigure.Position(1);
             hdiff = height - app.ProgressFigure.Position(4);
             bottom = app.ProgressFigure.Position(2) - hdiff;
@@ -375,9 +399,10 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             guidata(app.ProgressFigure,app);
 
             % Update figure
-            if ~app.Draw.Running
-                start(app.Draw);
-            end
+            % if ~app.Draw.Running
+            %     start(app.Draw);
+            % end
+            drawnow
         end
     end
 
