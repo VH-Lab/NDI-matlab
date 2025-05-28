@@ -197,9 +197,6 @@ classdef epochProbeMapMaker < handle
 
                 % Update progress bar
                 progressBar = progressBar.updateBar('epochprobemap',e/numel(epochstreams));
-                if strcmpi(progressBar.getStatus('epochprobemap'),'Pause')
-                    uiwait(progressBar.ProgressFigure);
-                end
             end
         end
     end
