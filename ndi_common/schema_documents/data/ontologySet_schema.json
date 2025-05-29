@@ -1,0 +1,42 @@
+{
+	"classname": "ontologySet",
+	"superclasses":  [ "base" ],
+	"depends_on": [ ],
+	"file": [ ],
+	"ngrid": [
+		{
+			"name": "names",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The full name(s) of the data variable(s) in a comma-seperated list."
+		},
+		{
+			"name": "variableNames",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The shortened name(s) of the data variable(s) in a comma-seperated list. Must be valid MATLAB variable names."
+		},
+		{
+			"name": "ontologyNodes",
+			"type": "string",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "The ontology node id(s) of the data variable (s) in a comma-seperated list."
+		},
+		{
+			"name": "data",
+			"type": "structure",
+			"default_value": "",
+			"parameters": "",
+			"queryable": 1,
+			"documentation": "A structure with variableNames as fields and arrays of corresponding data as values."
+		}
+
+	]
+}
+

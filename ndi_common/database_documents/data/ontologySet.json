@@ -1,0 +1,19 @@
+{
+	"document_class": {
+		"definition":						"$NDIDOCUMENTPATH\/data\/ontologySet.json",
+		"validation":						"$NDISCHEMAPATH\/data\/ontologySet_schema.json",
+		"class_name":						"ontologySet",
+		"property_list_name":					"ontologySet",
+		"class_version":					1,
+		"superclasses": [
+			{  "definition":				"$NDIDOCUMENTPATH\/base.json" }
+		]
+	},
+	"ontologySet" : {
+			"names":					"",
+			"variableNames":					"",
+			"ontologyNodes":					"",
+			"data":					""
+	}
+}
+
