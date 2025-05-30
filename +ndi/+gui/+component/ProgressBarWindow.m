@@ -21,7 +21,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
     %
     %   See also: uifigure, uigridlayout, uiaxes, patch, uilabel, uibutton
 
-    properties (Access = private)
+    properties (Hidden)
         ScreenFrac double = 0.025 % Fraction of screen height used per bar row.
         IconClose char = fullfile(ndi.common.PathConstants.RootFolder,...
             '+ndi','+gui','close_icon.svg') % Path to the close icon. Update if needed
@@ -67,15 +67,27 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 ind = strcmpi({openFigs.Name},title) & ...
                     strcmpi({openFigs.Tag},'progressbar');
 
-                % If overwriting, close matching progress bar
-                if options.Overwrite && any(ind)
-                    delete(openFigs(ind))
+                if any(ind)
+                    % If overwriting, close matching progress bar
+                    if options.Overwrite
+                        disp(['Closing existing progress bar window: ', title]);
+                        delete(openFigs(ind))
 
-                % If not overwriting, use guidata from current figure
-                elseif ~options.Overwrite && any(ind)
-                    app = guidata(openFigs(ind));
-                    figure(app.ProgressFigure);
-                    return
+                    % If not overwriting, use guidata from current figure
+                    else
+                        disp(['Using existing progress bar window: ', title]);
+                        appExisting = guidata(openFigs(ind));
+
+                        % Check guidata is a ProgressBarWindow
+                        if isa(appExisting, 'ndi.gui.component.ProgressBarWindow')
+                            app = appExisting;
+                            figure(app.ProgressFigure); % Bring it to the front
+                            return
+                        else
+                             warning('ProgressBarWindow:ExistingFigureNotApp', 'Existing figure with title "%s" is not a ProgressBarWindow instance. Creating new.', title);
+                             delete(openFigs(ind)); % Delete non-app figure to avoid conflict
+                        end
+                    end
                 end
             end
 
@@ -96,11 +108,13 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             app.ProgressGrid = uigridlayout(app.ProgressFigure,...
                 'ColumnWidth',{'17.5x','1.5x','1x'},'RowHeight',{},...
                 'RowSpacing',0);
-            app = app.setFigureSize(1);
-            app = app.setFigureTitle(title);
 
+            % Set title and size
+            app = app.setFigureTitle(title);
+            app = app.setFigureSize(1);
+            
             % Initialize progress bar struct
-            app.ProgressBars = struct('Tag',{},'Progress',{},'Status',{},...
+            app.ProgressBars = struct('Tag',{},'Progress',{},'State',{},...
                 'Auto',{},'Axes',{},'Patch',{},'Percent',{},'Button',{},...
                 'Label',{},'Clock',{},'Timer',{});
 
@@ -146,7 +160,9 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Check if tag already exists (if it does, set progress to 0)
             barNum = app.getBarNum(options.Tag);
             if ~isempty(barNum)
-                if strcmpi(app.ProgressBars(barNum).Status,'Closed')
+                
+                % If the existing bar was closed, delete existing        
+                if strcmpi(app.ProgressBars(barNum).State,'Closed')
                     app.ProgressBars(barNum) = [];
                 else
                     warning('ProgressBarWindow:DuplicateTag',...
@@ -166,10 +182,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             % Get new barNum (index)
             barNum = numel(app.ProgressBars) + 1;
 
-            % Get status, tag, and auto flag
-            app.ProgressBars(barNum).Status = 'Open';
+            % Get state, tag, and auto flag
+            app.ProgressBars(barNum).State = 'Open';
             app.ProgressBars(barNum).Tag = options.Tag;
             app.ProgressBars(barNum).Auto = options.Auto;
+            app.ProgressBars(barNum).Progress = 0;
+            app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
 
             % Add rows to ProgressGrid (one for label/timer, one for bar)
             if isempty(options.Label)
@@ -191,7 +209,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 'Text',options.Label,'FontSize',12,...
                 'VerticalAlignment','bottom','HorizontalAlignment','left');
             app.ProgressBars(barNum).Label.Layout.Row = rowNum - 1;
-            app.ProgressBars(barNum).Label.Layout.Column = 1:2;
+            app.ProgressBars(barNum).Label.Layout.Column = 1;
 
             % Add countdown timer (above the bar, right-aligned)
             app.ProgressBars(barNum).Timer = uilabel(app.ProgressGrid,...
@@ -211,18 +229,14 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
             % Add bar patch (foreground)
             app.ProgressBars(barNum).Patch = patch(app.ProgressBars(barNum).Axes, ...
-                [0 0 0 0], [0 1 1 0], options.Color,'EdgeColor','none');
+                [0;0;0;0], [0;0;1;1], options.Color,'EdgeColor','none');
 
             % Add progress percentage text
             app.ProgressBars(barNum).Percent = uilabel(app.ProgressGrid,...
                 'Text','0%','FontSize',10);
             app.ProgressBars(barNum).Percent.Layout.Row = rowNum;
             app.ProgressBars(barNum).Percent.Layout.Column = 2;
-            app.ProgressBars(barNum).Progress = 0;
-
-            % Add clock (start and last update times)
-            app.ProgressBars(barNum).Clock(1:2) = {datetime('now')};
-
+            
             % Add close button
             app.ProgressBars(barNum).Button = uibutton(app.ProgressGrid,...
                 'Icon',app.IconClose,'IconAlignment','center','text','');
@@ -255,7 +269,15 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
             % Get bar number
-            barNum = app.getBarNum(barID);
+            [barNum,status] = app.getBarNum(barID);
+
+            % If bar does not yet exist, throw warning
+            if ~isempty(status.identifier)
+                warning(status.identifier,status.message)
+                if isempty(barNum)
+                    return
+                end
+            end
 
             % Catch errors occuring if bar was concurrently deleted via button press
             try
@@ -263,7 +285,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressBars(barNum).Progress = progress;
 
                 % Set progress bar width
-                set(app.ProgressBars(barNum).Patch,'XData',[0 0 progress progress]);
+                set(app.ProgressBars(barNum).Patch,'XData',[0;progress;progress;0]);
 
                 % Set percent label
                 set(app.ProgressBars(barNum).Percent,...
@@ -273,7 +295,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressBars(barNum).Clock{2} = datetime('now');
 
                 % Update timer (if not yet complete)
-                if progress < 1
+                if progress > 0 && progress < 1
                     timeElapsed = app.ProgressBars(barNum).Clock{2} - ...
                         app.ProgressBars(barNum).Clock{1};
                     timeRemaining = timeElapsed * (1 - progress) / progress;
@@ -293,11 +315,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.checkComplete;
 
                 % Auto close if complete or timeout
-                barDelete = find((strcmpi({app.ProgressBars.Status},'Timeout') | ...
-                    strcmpi({app.ProgressBars.Status},'Complete')) & ...
-                    [app.ProgressBars.Auto]);
-                for i = 1:numel(barDelete)
-                    app = app.removeBar(barDelete);
+                for i = 1:numel(app.ProgressBars)
+                    if (strcmpi(app.ProgressBars(i).State,'Timeout') | ...
+                            strcmpi(app.ProgressBars(i).State,'Complete')) & ...
+                            app.ProgressBars(i).Auto
+                        app = app.removeBar(i);
+                    end
                 end
 
             % Handle error occuring if removeBar is triggered while updateBar is still running
@@ -332,12 +355,21 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 barID {mustBeA(barID,{'numeric','char','str'})}
             end
 
-            % Get bar number and ProgressGrid row numbers
-            barNum = app.getBarNum(barID);
+            % Get bar number
+            [barNum,status] = app.getBarNum(barID);
+            if ~isempty(status.identifier)
+                warning(status.identifier, status.message);
+                return
+            end
+
+            % Get tag and ProgressGrid row numbers
             rowNum = app.ProgressBars(barNum).Label.Layout.Row + [0 1];
 
-            % Set status to closed
-            app.ProgressBars(barNum).Status = 'Closed';
+            % Check for state at time of removal
+            state = app.ProgressBars(barNum).State;
+
+            % Set state to closed
+            app.ProgressBars(barNum).State = 'Closed';
             
             % Remove progress bar
             delete([app.ProgressBars(barNum).Axes,...
@@ -347,7 +379,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
                 app.ProgressBars(barNum).Timer]);
 
             % Adjust position of other bars
-            openBars = find(~strcmpi({app.ProgressBars.Status},'Closed'));
+            openBars = find(~strcmpi({app.ProgressBars.State},'Closed'));
             for i = 1:numel(openBars)
                 app.ProgressBars(openBars(i)).Label.Layout.Row = 2*i - 1;
                 app.ProgressBars(openBars(i)).Timer.Layout.Row = 2*i - 1;
@@ -364,7 +396,19 @@ classdef ProgressBarWindow < matlab.apps.AppBase
 
             % Throw error if terminated in the middle of task
             if app.ProgressBars(barNum).Progress < 1
-                error('Execution of task %s terminated by user.',app.ProgressBars(barNum).Tag)
+                if strcmpi(state,'Button')
+                    error('ProgressBarWindow:UserTermination',...
+                        'Execution of task %s terminated by user.',...
+                        app.ProgressBars(barNum).Tag)
+                elseif strcmpi(state,'Timeout')
+                    error('ProgressBarWindow:AutoCloseOnTimeout',...
+                        'Execution of task %s terminated due to inactivity.',...
+                        app.ProgressBars(barNum).Tag)
+                elseif strcmpi(state,'Open')
+                    warning('ProgressBarWindow:BarRemoved',...
+                        'BarID %s no longer exists.',...
+                        app.ProgressBars(barNum).Tag)
+                end
             end
 
         end % REMOVEBAR
@@ -382,6 +426,12 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %
             %   Outputs:
             %       app - The updated app instance.
+
+            % Input argument validation
+            arguments
+                app
+                totalRowHeight (1,1) {mustBeNumeric}
+            end
 
             % Define figure size
             vpad = sum(app.ProgressGrid.Padding([2,4]));
@@ -424,32 +474,31 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %checkTimeout Checks for and flags bars that have timed out.
             %
             %   BARNUM = CHECKTIMEOUT(APP) finds bars that haven't updated
-            %   within the 'Timeout' duration and sets their status and
+            %   within the 'Timeout' duration and sets their state and
             %   button icon accordingly.
             %
             %   Inputs:
             %       app - The app instance.
             %
             %   Outputs:
-            %       barNum - Indices of the bars that timed out.
+            %       barNum - Indices of bars that have timed out.
 
-            % Get duration of time since last update for every bar
-            timeout = [];
+            % Initialize
+            barNum = [];
+
             for i = 1:numel(app.ProgressBars)
-                timeout = cat(2,timeout,datetime('now') - app.ProgressBars(i).Clock{2});
-            end
+                % Get duration of time since last update
+                timeout = datetime('now') - app.ProgressBars(i).Clock{2};
 
-            % Get indices of bars that have timed out (but are not closed
-            % or completed)
-            barNum = find(timeout >= app.Timeout & ...
-                ~strcmpi({app.ProgressBars.Status},'Closed') & ...
-                ~strcmpi({app.ProgressBars.Status},'Complete'));
-
-            % Set icon to error and status to 'Timeout'
-            for i = 1:numel(barNum)
-                if app.ProgressBars(barNum(i)).Progress < 1
-                    set(app.ProgressBars(barNum(i)).Button,'Icon','error');
-                    app.ProgressBars(barNum(i)).Status = 'Timeout';
+                if timeout >= app.Timeout & ...
+                        ~strcmpi(app.ProgressBars(i).State,'Closed') && ...
+                        ~strcmpi(app.ProgressBars(i).State,'Complete') && ...
+                        app.ProgressBars(i).Progress < 1
+                    
+                    % Set icon to error and state to 'Timeout'
+                    set(app.ProgressBars(i).Button,'Icon','error');
+                    app.ProgressBars(i).State = 'Timeout';
+                    barNum(end+1) = i;
                 end
             end
 
@@ -459,29 +508,33 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %checkComplete Checks for and flags bars that have reached 100%.
             %
             %   BARNUM = CHECKCOMPLETE(APP) finds bars with Progress == 1
-            %   and sets their status, timer text, and button icon.
+            %   and sets their state, timer text, and button icon.
             %
             %   Inputs:
             %       app - The app instance.
             %
             %   Outputs:
-            %       barNum - Indices of all non-closed bars.
+            %       barNum - Indices of complete bars.
 
-            % Get indices of bars that have not closed
-            barNum = find(~strcmpi({app.ProgressBars.Status},'Closed'));
+            % Initialize
+            barNum = [];
 
-            % Set icon to success and status to 'Complete'
-            for i = 1:numel(barNum)
-                if app.ProgressBars(barNum(i)).Progress == 1
-                    set(app.ProgressBars(barNum(i)).Timer,'Text','Complete');
-                    set(app.ProgressBars(barNum(i)).Button,'Icon','success');
-                    app.ProgressBars(barNum(i)).Status = 'Complete';
+            % Check for non-closed progress bars that are complete
+            for i = 1:numel(app.ProgressBars)
+                if ~strcmpi(app.ProgressBars(i).State,'Closed') && ...
+                        app.ProgressBars(i).Progress >= 1
+                    
+                    % Set icon to success and state to 'Complete'
+                    set(app.ProgressBars(i).Timer,'Text','Complete');
+                    set(app.ProgressBars(i).Button,'Icon','success');
+                    app.ProgressBars(i).State = 'Complete';
+                    barNum(end+1) = i;
                 end
             end
 
         end % CHECKCOMPLETE
 
-        function barNum = getBarNum(app,barID)
+        function [barNum,status] = getBarNum(app,barID)
             %getBarNum Finds the index of a bar given its ID (index or Tag).
             %
             %   [BARNUM, STATUS] = GETBARNUM(APP, BARID) searches for a 
@@ -493,27 +546,52 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %
             %   Outputs:
             %       barNum - The index of the found bar. Empty if not found.
+            %       status - Contains identifier and message fields.
+            %                         Empty if bar found and valid.
 
             % Input argument validation
             arguments
                 app
                 barID {mustBeA(barID,{'numeric','char','str'})}
             end
+
+            % Initialize
+            barNum = [];
+            status = struct('identifier', '', 'message', '');
             
-            % Handle bar id types
-            if isnumeric(barID)
-                barNum = barID;
-            else
+            % Handle empty progress bars
+            if isempty(app.ProgressBars)
+                status.identifier = 'ProgressBarWindow:NoBarsExist';
+                status.message = 'No progress bars have been added yet.';
+                return;
+            end
+
+            if isnumeric(barID) % barID is a numeric index
+                if barID > 0 && barID <= numel(app.ProgressBars)
+                    barNum = barID;
+                else
+                    status.identifier = 'ProgressBarWindow:InvalidBarIndex';
+                    status.message = sprintf('Numeric BarID %d is out of bounds (1-%d).', barID, numel(app.ProgressBars));
+                end
+            else % barID is a char or string tag
                 tags = {app.ProgressBars.Tag};
                 barNum = find(strcmpi(tags,barID));
+                if isempty(barNum)
+                    status.identifier = 'ProgressBarWindow:InvalidBarTag';
+                    status.message = sprintf('BarID Tag "%s" not found.', string(barID));
+                elseif numel(barNum) > 1
+                    status.identifier = 'ProgressBarWindow:DuplicateBarID';
+                    status.message = sprintf('BarID Tag "%s" matches multiple bars.', string(barID));
+                    error(status.identifier,status.message);
+                end
             end
 
         end % GETBARNUM
 
-        function status = getStatus(app,barID)
-            %getStatus Returns the status of a specific bar.
+        function state = getState(app,barID)
+            %getState Returns the state of a specific bar.
             %
-            %   STATUS = GETSTATUS(APP, BARID) retrieves the 'Status' field
+            %   STATE = GETSTATE(APP, BARID) retrieves the 'State' field
             %   for the specified bar.
             %
             %   Inputs:
@@ -521,7 +599,7 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %       barID - The index or Tag.
             %
             %   Outputs:
-            %       status - The current status ('Open', 'Complete',
+            %       state - The current state ('Open', 'Complete',
             %                     'Timeout', 'Closed') or empty if not found.
 
             % Input argument validation
@@ -531,12 +609,38 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             end
 
             % Get bar index
-            barNum = getBarNum(app,barID);
+            [barNum,status] = getBarNum(app,barID);
 
-            % Retrieve status
-            status = app.ProgressBars(barNum).Status;
+            % Retrieve state
+            if ~isempty(status.identifier)
+                warning(status.identifier, status.message);
+                state = '';
+            else
+                state = app.ProgressBars(barNum).State;
+            end
 
         end % GETSTATUS
+
+        function app = setTimeout(app, newTimeout)
+            %setTimeout Sets the timeout duration.
+            %
+            %   APP = SETTIMEMOUT(APP,NEWTIMEOUT) updates the timeout time.
+            %
+            %   Inputs:
+            %       app - The app instance.
+            %       newTimeout - The timeout time.
+            %
+            %   Outputs:
+            %       app - The updated app instance.
+
+            % Input argument validation
+            arguments
+                app
+                newTimeout (1,1) duration
+            end
+
+            app.Timeout = newTimeout;
+        end % SETTIMEOUT
 
         function handleButtonPress(app,source,~)
             %handleButtonPress Callback for the close button on each bar.
@@ -544,6 +648,17 @@ classdef ProgressBarWindow < matlab.apps.AppBase
             %   Inputs:
             %       app - The app instance.
             %       source - The handle to the button that was pressed.
+
+            % Input argument validation
+            arguments
+                app
+                source (1,1) matlab.ui.control.Button
+                ~ % event data, unused
+            end
+
+            % Set state as Button
+            barNum = app.getBarNum(source.Tag);
+            app.ProgressBars(barNum).State = 'Button';
 
             % Remove progress bar
             app.removeBar(source.Tag);
