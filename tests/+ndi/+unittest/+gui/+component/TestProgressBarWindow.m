@@ -182,9 +182,37 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
         function testUpdateBarNonExistent(testCase)
             app = ndi.gui.component.ProgressBarWindow('NonExistent Test');
             testCase.addTeardown(@delete, app.ProgressFigure);
-            
+
             testCase.verifyWarning(@() app.updateBar('TNonExistent', 0.5), 'ProgressBarWindow:NoBarsExist');
             testCase.verifyEmpty(app.ProgressBars, 'No bar should be created on update of non-existent.');
+        end
+
+        function testUpdateBarAutoCloseMultipleCorrectly(testCase)
+            app = ndi.gui.component.ProgressBarWindow('Auto Close Multi');
+            testCase.addTeardown(@delete, app.ProgressFigure);
+
+            app.addBar('Tag', 'AC1', 'Auto', true);
+            app.addBar('Tag', 'AC2', 'Auto', true);
+            app.addBar('Tag', 'NoAC', 'Auto', false);
+            app.addBar('Tag', 'AC3', 'Auto', true);
+
+            % Mark AC1 and AC3 as complete by updating them
+            app.updateBar('AC1', 1); % This update should also trigger their auto-removal
+            app.updateBar('AC3', 1); % This update should also trigger their auto-removal
+
+            % Update a non-auto-close bar to ensure the auto-close for others has processed
+            app.updateBar('NoAC', 0.5);
+            drawnow;
+
+            testCase.verifyEqual(app.getState('AC1'), 'Closed');
+            testCase.verifyEqual(app.getState('AC3'), 'Closed');
+            testCase.verifyEqual(app.getState('AC2'), 'Open');
+            testCase.verifyEqual(app.getState('NoAC'), 'Open');
+
+            % Count bars that are NOT closed
+            openOrActiveCount = sum(~strcmpi({app.ProgressBars.State}, 'Closed'));
+            testCase.verifyEqual(openOrActiveCount, 2, 'Only AC2 and NoAC should remain effectively open/active in the struct logic.');
+            testCase.verifyNumElements(app.ProgressGrid.RowHeight, 2 * 2, 'Grid should have rows for 2 bars.');
         end
 
         % RemoveBar Tests
@@ -220,6 +248,31 @@ classdef TestProgressBarWindow < matlab.unittest.TestCase
             app.addBar('Tag', 'TIncomplete');
             
             testCase.verifyWarning(@() app.removeBar('TIncomplete'), 'ProgressBarWindow:BarRemoved');
+        end
+
+        function testRemoveBarIncompleteDifferentStates(testCase)
+            % Test 'Button' state leading to UserTermination error
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TButtonTerm');
+            app.ProgressBars(1).State = 'Button'; % Simulate state set by handleButtonPress
+            testCase.verifyError(@() app.removeBar('TButtonTerm'), 'ProgressBarWindow:UserTermination');
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar')); % Cleanup
+
+            % Test 'Timeout' state leading to AutoCloseOnTimeout error
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TTimeoutTerm');
+            app.ProgressBars(1).State = 'Timeout';
+            testCase.verifyError(@() app.removeBar('TTimeoutTerm'), 'ProgressBarWindow:AutoCloseOnTimeout');
+            delete(findall(groot, 'Type', 'figure', 'Tag', 'progressbar'));
+
+            % Test 'Open' state leading to BarRemoved warning
+            app = ndi.gui.component.ProgressBarWindow();
+            testCase.addTeardown(@delete, app.ProgressFigure);
+            app.addBar('Tag', 'TOpenTerm');
+            app.ProgressBars(1).State = 'Open'; % Default state if not completed
+            testCase.verifyWarning(@() app.removeBar('TOpenTerm'), 'ProgressBarWindow:BarRemoved');
         end
 
         % Button Press Test
