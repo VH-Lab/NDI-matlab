@@ -5,6 +5,11 @@ auto-generated-by: AI Assistant (Gemini)
 ontology: EMPTY
 default-namespace: empty_ontology
 remark: Experimental Measurements, Purposes, and Treatments ontologY (EMPTY)
+remark: All terms must have a codeName that is the name expressed in camel case.
+remark: The codeName must be a valid Matlab variable.
+remark: Experimental purposes must begin with "Purpose: Assessing ..." followed by a clause indicating what is assessed.
+remark: Approaches should begin with "Approach: ".
+remark: Treatments should begin with "Treatment: ".
 
 [Term]
 id: EMPTY:00000085
@@ -470,67 +475,67 @@ is_a: EMPTY:00000085 ! Measurement
 property_value: codeName "microelectrodeVoltageOffset" xsd:string
 
 [Term]
-id: EMPTY:03000000
+id: EMPTY:30000000
 name: Approach
 namespace: empty_ontology
 def: "An approach to stimulation that is associated with an epoch of data but that is not already coded in stimulator metadata. This represents a specific methodology, technique, or procedural aspect applied during data collection that provides important context for interpreting the data." []
 property_value: codeName "approach" xsd:string
 
 [Term]
-id: EMPTY:03000001
-name: Left eye view blocked
+id: EMPTY:30000001
+name: Approach: Left eye view blocked
 namespace: empty_ontology
 def: "Indicates that the view through the left eye was blocked during presentation of this stimulus" []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "leftEyeViewBlocked" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachLeftEyeViewBlocked" xsd:string
 
 [Term]
-id: EMPTY:03000002
-name: Right eye view blocked
+id: EMPTY:30000002
+name: Approach: Right eye view blocked
 namespace: empty_ontology
 def: "Indicates that the view through the right eye was blocked during presentation of this stimulus" []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "rightEyeViewBlocked" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachRightEyeViewBlocked" xsd:string
 
 [Term]
-id: EMPTY:03000003
-name: Command temperature constant
+id: EMPTY:30000003
+name: Approach: Command temperature constant
 namespace: empty_ontology
 def: "The temperature of an experimental object has been commanded to be a certain value" []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "commandTemperatureConstant" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachCommandTemperatureConstant" xsd:string
 
 [Term]
-id: EMPTY:03000004
-name: Command temperature start
+id: EMPTY:30000004
+name: Approach: Command temperature start
 namespace: empty_ontology
 def: "The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch" []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "commandTemperatureStart" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachCommandTemperatureStart" xsd:string
 
 [Term]
-id: EMPTY:03000005
-name: Command temperature end
+id: EMPTY:30000005
+name: Approach: Command temperature end
 namespace: empty_ontology
 def: "The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch" []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "commandTemperatureEnd" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachCommandTemperatureEnd" xsd:string
 
 [Term]
-id: EMPTY:03000006
-name: Before optogenetic tetanus
+id: EMPTY:30000006
+name: Approach: Before optogenetic tetanus
 namespace: empty_ontology
 def: "The measurement is performed before an optogenetic tetanus stimulus." []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "beforeOptogeneticTetanus" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachBeforeOptogeneticTetanus" xsd:string
 
 [Term]
-id: EMPTY:03000007
-name: After optogenetic tetanus
+id: EMPTY:30000007
+name: Approach: After optogenetic tetanus
 namespace: empty_ontology
 def: "The measurement is performed after an optogenetic tetanus stimulus." []
-is_a: EMPTY:03000000 ! Approach
-property_value: codeName "afterOptogeneticTetanus" xsd:string
+is_a: EMPTY:30000000 ! Approach
+property_value: codeName "approachAfterOptogeneticTetanus" xsd:string
 
 [Term]
 id: EMPTY:10000000
@@ -541,75 +546,75 @@ property_value: codeName "treatment" xsd:string
 
 [Term]
 id: EMPTY:10000001
-name: Experienced cricket hunting
+name: Treatment: Experienced cricket hunting
 namespace: empty_ontology
 def: "Indicates that the animal has had experience with hunting for crickets in some capacity" []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "experiencedCricketHunting" xsd:string
+property_value: codeName "treatmentExperiencedCricketHunting" xsd:string
 
 [Term]
 id: EMPTY:10000002
-name: Has not experienced cricket hunting
+name: Treatment: Has not experienced cricket hunting
 namespace: empty_ontology
 def: "Indicates that the animal has not had experience with hunting for crickets" []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "hasNotExperiencedCricketHunting" xsd:string
+property_value: codeName "treatmentHasNotExperiencedCricketHunting" xsd:string
 
 [Term]
 id: EMPTY:10000003
-name: Acclimation onset time
+name: Treatment: Acclimation onset time
 namespace: empty_ontology
 def: "The subject was acclimated to a temperature at a particular onset time." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "acclimationOnsetTime" xsd:string
+property_value: codeName "treatmentAcclimationOnsetTime" xsd:string
 
 [Term]
 id: EMPTY:10000004
-name: Acclimation temperature
+name: Treatment: Acclimation temperature
 namespace: empty_ontology
 def: "The temperature (in degrees C) at which the subject was acclimated." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "acclimationTemperature" xsd:string
+property_value: codeName "treatmentAcclimationTemperature" xsd:string
 
 [Term]
 id: EMPTY:10000005
-name: Non-survival experiment time
+name: Treatment: Non-survival experiment time
 namespace: empty_ontology
 def: "The subject was used in a non-survival experiment." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "nonSurvivalExperimentTime" xsd:string
+property_value: codeName "treatmentNonSurvivalExperimentTime" xsd:string
 
 [Term]
 id: EMPTY:10000006
-name: Left eye premature eye opening
+name: Treatment: Left eye premature eye opening
 namespace: empty_ontology
 def: "The subject's left eye was opened prematurely, before natural eye opening." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "leftEyePrematureEyeOpening" xsd:string
+property_value: codeName "treatmentLeftEyePrematureEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000007
-name: Right eye premature eye opening
+name: Treatment: Right eye premature eye opening
 namespace: empty_ontology
 def: "The subject's right eye was opened prematurely, before natural eye opening." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "rightEyePrematureEyeOpening" xsd:string
+property_value: codeName "treatmentRightEyePrematureEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000008
-name: Natural left eye opening
+name: Treatment: Natural left eye opening
 namespace: empty_ontology
 def: "The subject's left eye was allowed to open naturally." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "naturalLeftEyeOpening" xsd:string
+property_value: codeName "treatmentNaturalLeftEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:10000009
-name: Natural right eye opening
+name: Treatment: Natural right eye opening
 namespace: empty_ontology
 def: "The subject's right eye was allowed to open naturally." []
 is_a: EMPTY:10000000 ! Treatment
-property_value: codeName "naturalRightEyeOpening" xsd:string
+property_value: codeName "treatmentNaturalRightEyeOpening" xsd:string
 
 [Term]
 id: EMPTY:20000000
