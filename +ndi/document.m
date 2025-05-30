@@ -418,6 +418,17 @@ classdef document
             uid = ndi_document_obj.document_properties.base.id;
         end; % id()
 
+        function uid = session_id(ndi_document_obj)
+            % ID - return the document session unique identifier for an ndi.document
+            %
+            % UID = SESSION_ID (NDI_DOCUMENT_OBJ)
+            %
+            % Returns the unique session id of an ndi.document
+            % (Found at NDI_DOCUMENT_OBJ.documentproperties.base.session_id)
+            %
+            uid = ndi_document_obj.document_properties.base.session_id;
+        end; % session_id()
+        
         function [b, msg, fI_index] = is_in_file_list(ndi_document_obj, name)
             % IS_IN_FILE_LIST - is a file name in a ndi.document's file list?
             %
