@@ -269,6 +269,10 @@ classdef stimulusDocMaker < handle
                 options.Overwrite (1,1) logical = false
             end
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Stimulus Bath Document(s)','Tag','stimulusbath');
+
             % If no FilenameVariable specified, use 'RowNames' of VariableTable
             if isempty(options.FilenameVariable)
                 variableTable.Filename = variableTable.Properties.RowNames;
@@ -333,6 +337,9 @@ classdef stimulusDocMaker < handle
                 % Create stimulus bath doc and add to database
                 docs{e} = createBathDoc(obj, stimulatorid, epochids{e}, ...
                     bathtargetStrings, mixtureStrings,'Overwrite',options.Overwrite);
+                
+                % Update progress bar
+                progressBar = progressBar.updateBar('stimulusbath',e/numel(epochInd));
             end
         end % TABLE2BATHDOCS
 
@@ -462,6 +469,10 @@ classdef stimulusDocMaker < handle
                 options.Overwrite (1,1) logical = false
             end
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Stimulus Approach Document(s)','Tag','stimulusapproach');
+
             % If no FilenameVariable specified, use 'RowNames' of VariableTable
             if isempty(options.FilenameVariable)
                 variableTable.Filename = variableTable.Properties.RowNames;
@@ -508,6 +519,9 @@ classdef stimulusDocMaker < handle
                     docs{e} = createApproachDoc(obj, stimulatorid, epochids{e}, ...
                         approachStrings, 'Overwrite',options.Overwrite);
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('stimulusapproach',e/numel(epochInd));
             end
         end % TABLE2APPROACHDOCS
     end

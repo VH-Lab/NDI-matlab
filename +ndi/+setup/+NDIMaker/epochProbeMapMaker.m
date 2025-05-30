@@ -95,6 +95,10 @@ classdef epochProbeMapMaker < handle
             obj.variableTable = variableTable;
             obj.probeTable = probeTable;
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Creating Epoch Probe Map(s)','Tag','epochprobemap');
+
             % Validate variableTable: check for required 'SubjectString' column
             if ~ismember('SubjectString', variableTable.Properties.VariableNames)
                 error('epochProbeMapMaker:MissingSubjectString', ...
@@ -190,6 +194,9 @@ classdef epochProbeMapMaker < handle
 
                 % Save the NDI epochprobemap objects to the file.
                 probemap.savetofile(probeFilename);
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('epochprobemap',e/numel(epochstreams));
             end
         end
     end
