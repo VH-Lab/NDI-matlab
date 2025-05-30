@@ -444,3 +444,240 @@ namespace: empty_ontology
 def: "In the Fear-Potentiated Startle paradigm, this is the amplitude of the acoustic startle response (ASR) measured in response to a startle-eliciting stimulus (e.g., 95-dB white noise burst) prior to any fear conditioning procedures, typically assessed during habituation or pre-conditioning phase. This measurement serves as a reference point for later comparisons with post-conditioning startle responses. Unit of measure: arbitrary units or standardized score." []
 is_a: EMPTY:00000092 ! Acoustic Startle Response measurement
 property_value: codeName "fearPotentiatedStartleBaselineAcousticStartleResponseAmplitude" xsd:string
+
+[Term]
+id: EMPTY:00000149
+name: Session Timeline
+namespace: empty_ontology
+def: "A relative experimental session timeline; major stimulation events are, by default, considered numerically from 1 to N" []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "sessionTimeline" xsd:string
+
+[Term]
+id: EMPTY:00000150
+name: Postnatal day
+namespace: empty_ontology
+def: "Postnatal day' is a specific unit to measure the age of an organism that is born live (viviparous animals), starting with the day of birth (postnatal day 0). Often abbreviated in written documents with a capital P (as in P0, P10, etc).""" []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "postnatalDay" xsd:string
+
+[Term]
+id: EMPTY:00000151
+name: Microelectrode voltage offset
+namespace: empty_ontology
+def: "A voltage offset measured at the end of a voltage record, in V" []
+is_a: EMPTY:00000085 ! Measurement
+property_value: codeName "microelectrodeVoltageOffset" xsd:string
+
+[Term]
+id: EMPTY:03000000
+name: Approach
+namespace: empty_ontology
+def: "An approach to stimulation that is associated with an epoch of data but that is not already coded in stimulator metadata. This represents a specific methodology, technique, or procedural aspect applied during data collection that provides important context for interpreting the data." []
+property_value: codeName "approach" xsd:string
+
+[Term]
+id: EMPTY:03000001
+name: Left eye view blocked
+namespace: empty_ontology
+def: "Indicates that the view through the left eye was blocked during presentation of this stimulus" []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "leftEyeViewBlocked" xsd:string
+
+[Term]
+id: EMPTY:03000002
+name: Right eye view blocked
+namespace: empty_ontology
+def: "Indicates that the view through the right eye was blocked during presentation of this stimulus" []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "rightEyeViewBlocked" xsd:string
+
+[Term]
+id: EMPTY:03000003
+name: Command temperature constant
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value" []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "commandTemperatureConstant" xsd:string
+
+[Term]
+id: EMPTY:03000004
+name: Command temperature start
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value at the beginning of the recording epoch" []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "commandTemperatureStart" xsd:string
+
+[Term]
+id: EMPTY:03000005
+name: Command temperature end
+namespace: empty_ontology
+def: "The temperature of an experimental object has been commanded to be a certain value at the end of the recording epoch" []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "commandTemperatureEnd" xsd:string
+
+[Term]
+id: EMPTY:03000006
+name: Before optogenetic tetanus
+namespace: empty_ontology
+def: "The measurement is performed before an optogenetic tetanus stimulus." []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "beforeOptogeneticTetanus" xsd:string
+
+[Term]
+id: EMPTY:03000007
+name: After optogenetic tetanus
+namespace: empty_ontology
+def: "The measurement is performed after an optogenetic tetanus stimulus." []
+is_a: EMPTY:03000000 ! Approach
+property_value: codeName "afterOptogeneticTetanus" xsd:string
+
+[Term]
+id: EMPTY:10000000
+name: Treatment
+namespace: empty_ontology
+def: "A treatment applied to a subject that is not associated with any particular data epoch. Treatments can include pharmacological interventions, surgical procedures, environmental manipulations, or any other controlled alteration of a subject's state that is intended to produce a specific effect or response." []
+property_value: codeName "treatment" xsd:string
+
+[Term]
+id: EMPTY:10000001
+name: Experienced cricket hunting
+namespace: empty_ontology
+def: "Indicates that the animal has had experience with hunting for crickets in some capacity" []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "experiencedCricketHunting" xsd:string
+
+[Term]
+id: EMPTY:10000002
+name: Has not experienced cricket hunting
+namespace: empty_ontology
+def: "Indicates that the animal has not had experience with hunting for crickets" []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "hasNotExperiencedCricketHunting" xsd:string
+
+[Term]
+id: EMPTY:10000003
+name: Acclimation onset time
+namespace: empty_ontology
+def: "The subject was acclimated to a temperature at a particular onset time." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "acclimationOnsetTime" xsd:string
+
+[Term]
+id: EMPTY:10000004
+name: Acclimation temperature
+namespace: empty_ontology
+def: "The temperature (in degrees C) at which the subject was acclimated." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "acclimationTemperature" xsd:string
+
+[Term]
+id: EMPTY:10000005
+name: Non-survival experiment time
+namespace: empty_ontology
+def: "The subject was used in a non-survival experiment." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "nonSurvivalExperimentTime" xsd:string
+
+[Term]
+id: EMPTY:10000006
+name: Left eye premature eye opening
+namespace: empty_ontology
+def: "The subject's left eye was opened prematurely, before natural eye opening." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "leftEyePrematureEyeOpening" xsd:string
+
+[Term]
+id: EMPTY:10000007
+name: Right eye premature eye opening
+namespace: empty_ontology
+def: "The subject's right eye was opened prematurely, before natural eye opening." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "rightEyePrematureEyeOpening" xsd:string
+
+[Term]
+id: EMPTY:10000008
+name: Natural left eye opening
+namespace: empty_ontology
+def: "The subject's left eye was allowed to open naturally." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "naturalLeftEyeOpening" xsd:string
+
+[Term]
+id: EMPTY:10000009
+name: Natural right eye opening
+namespace: empty_ontology
+def: "The subject's right eye was allowed to open naturally." []
+is_a: EMPTY:10000000 ! Treatment
+property_value: codeName "naturalRightEyeOpening" xsd:string
+
+[Term]
+id: EMPTY:20000000
+name: Purpose
+namespace: empty_ontology
+def: "The purpose of a measurement, stimulus, or experiment. This describes the intended goal or objective of the scientific investigation or a specific component of it." []
+property_value: codeName "purpose" xsd:string
+
+[Term]
+id: EMPTY:20000001
+name: Purpose: Assessing spatial frequency tuning
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess spatial frequency tuning" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingSpatialFrequencyTuning" xsd:string
+
+[Term]
+id: EMPTY:20000002
+name: Purpose: Assessing temporal frequency tuning
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess temporal frequency tuning" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingTemporalFrequencyTuning" xsd:string
+
+[Term]
+id: EMPTY:20000003
+name: Purpose: Assessing direction of motion tuning
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess direction of motion tuning" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingDirectionOfMotionTuning" xsd:string
+
+[Term]
+id: EMPTY:20000004
+name: Purpose: Assessing contrast tuning
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess contrast tuning" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingContrastTuning" xsd:string
+
+[Term]
+id: EMPTY:20000005
+name: Purpose: Assessing ocular dominance or binocular matching
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess ocular dominance or binocular matching" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingOcularDominanceOrBinocularMatching" xsd:string
+
+[Term]
+id: EMPTY:20000006
+name: Purpose: Assessing the pyloric rhythm
+namespace: empty_ontology
+def: "States that the purpose of the measurement is to observe the pyloric rhythm" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingThePyloricRhythm" xsd:string
+
+[Term]
+id: EMPTY:20000007
+name: Purpose: Assessing the gastric mill rhythm
+namespace: empty_ontology
+def: "States that the purpose of the measurement is to observe the gastric mill rhythm" []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingTheGastricMillRhythm" xsd:string
+
+[Term]
+id: EMPTY:20000008
+name: Purpose: Assessing activity with temperature manipulation
+namespace: empty_ontology
+def: "States that the purpose of the stimulus is to assess the activity of probed subjects at a particular temperature." []
+is_a: EMPTY:20000000 ! Purpose
+property_value: codeName "purposeAssessingActivityWithTemperatureManipulation" xsd:string
