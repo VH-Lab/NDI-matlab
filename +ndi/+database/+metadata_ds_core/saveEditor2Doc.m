@@ -16,7 +16,7 @@ function D = saveEditor2Doc(D, datasetInfo)
         D.database_rm(metadata_editor_docs);
     end
 
-    document = ndi.database.metadata_ds_core.convertDatasetInfoToDocument(datasetInfo);
+    document = ndi.database.metadata_ds_core.convertDatasetInfoToStruct(datasetInfo);
 
     d = ndi.document(docName,'base.id',newid.identifier,...
         'base.session_id',session_id,...

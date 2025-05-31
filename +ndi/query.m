@@ -26,6 +26,18 @@ classdef query < did.query
 %
 % See also: did.query, ndi.query/query, did.database/search
 
+    methods (Static)
+        function q_all = all()
+            % ALL - Returns a query for all base NDI documents
+            %
+            % Q_ALL = NDI.QUERY.ALL()
+            %
+            % Returns NDI.QUERY('','isa','base').
+            %
+                q_all = ndi.query('','isa','base');
+        end % all()
+    end % static methods
+
     methods
         function ndi_query_obj = query(field,op,param1,param2)
             % QUERY - create an NDI query object for searching an NDI database
@@ -118,4 +130,3 @@ classdef query < did.query
         end % query() constructor
     end % methods
 end % classdef
-

@@ -8,9 +8,9 @@ classdef MetadataEditorApp < matlab.apps.AppBase
     %   
     %   Inputs:
     %       Session  : An NDI session object
-    %       FilePath : A pathname specifying where to save metadata
-    %                  (optional). The default behavior is to save 
-    %                  metadata to the session folder
+    %       TempWorkingFile : A pathname for the temporary working 
+    %                  metadata file (optional). The default behavior 
+    %                  is to use a file in the session folder.
 
     % Properties that correspond to app components
     properties (Access = public)
@@ -254,9 +254,10 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         % An NDI dataset object
         Dataset
         
-        % A filepath for saving and retrieving the metadata information. It
-        % is under Session/.ndi/NDIDatasetUpload
-        FilePath
+        % A path to the temporary working file for saving and retrieving 
+        % metadata information during an editing session.
+        % It is typically under Session/.ndi/NDIMetadataEditorData.mat
+        TempWorkingFile
     end
 
     properties (Access = private)
@@ -379,31 +380,80 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
     methods (Access = private) % Load/save user data
 
-        function filePath = getDatasetFilepath(app)
+        function tempWorkingFile = getTempWorkingFile(app)
+        % GETTEMPWORKINGFILE - Determines and returns the full path to the temporary working file.
+        % This file is used to save and load metadata during an editing session.
 
-            filePath = app.FilePath;
-            if isempty(filePath)
-                filePath = fullfile(userpath, 'NDIDatasetUpload', 'dataset.mat');
-                if ~isempty(app.Dataset)
-                    savedDatasetInformation = ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, filePath);
+            tempWorkingFile = app.TempWorkingFile; % User-provided path takes precedence
+
+            if isempty(tempWorkingFile) % If no user-provided path, determine the default
+                if ~isempty(app.Dataset) && isprop(app.Dataset,'path') && ~isempty(app.Dataset.path)
+                    % Use dataset's path if available
+                    tempWorkingFile = fullfile(app.Dataset.path, 'NDIMetadataEditorData.mat');
+                else
+                    % Fallback to original default if dataset or its path is not available
+                    tempWorkingFile = fullfile(userpath, 'NDIDatasetUpload', 'dataset.mat'); % Note: This fallback implies a non-temporary storage location if no dataset path
                 end
             end
         end
 
         function saveDatasetInformation(app)
                         
-            savePath = app.getDatasetFilepath();
+            tempSaveFile = app.getTempWorkingFile();
             datasetInformation = app.DatasetInformation;
-            save(savePath, "datasetInformation")
+            save(tempSaveFile, "datasetInformation")
         end
 
         function loadDatasetInformation(app)
-            loadPath = app.getDatasetFilepath();
-            
-            if isfile(loadPath)
-                S = load(loadPath, "datasetInformation");
-                app.DatasetInformation = S.datasetInformation;
-                app.updateComponentsFromDatasetInformation()
+            tempLoadFile = app.getTempWorkingFile();
+
+            % Attempt to read/create metadata from app.Dataset before asking user about existing temp file
+            if ~isempty(app.Dataset)
+                % This function might create/update tempLoadFile if it extracts metadata
+                ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
+            end
+
+            [userSelection, backedUpSuccessfully, originalFileDeleted] = ...
+                ndi.database.metadata_app.fun.askReuseTempFile(app, tempLoadFile);
+
+            if strcmp(userSelection, 'Start Over')
+                % If 'Start Over' was chosen and either backup was successful (original file potentially deleted)
+                % or backup failed but original file was deleted anyway.
+                if (backedUpSuccessfully && originalFileDeleted) || (~backedUpSuccessfully && originalFileDeleted)
+                    app.DatasetInformation = struct();
+                    app.updateComponentsFromDatasetInformation();
+                    return;
+                elseif backedUpSuccessfully && ~originalFileDeleted
+                    % Backup succeeded, delete failed. Proceed with empty session as backup exists.
+                    app.DatasetInformation = struct();
+                    app.updateComponentsFromDatasetInformation();
+                    return;
+                else % Backup failed AND delete failed (askReuseTempFile forces userSelection to 'Continue' in this case)
+                    % This 'else' block should ideally not be reached if askReuseTempFile forces 'Continue'.
+                    % However, as a fallback, if we are here with 'Start Over', it means something unexpected.
+                    % Default to loading the file if it still exists.
+                    if isfile(tempLoadFile)
+                        S = load(tempLoadFile, "datasetInformation");
+                        app.DatasetInformation = S.datasetInformation;
+                    else
+                        app.DatasetInformation = struct(); % Should not happen if askReuseTempFile logic is correct
+                    end
+                    app.updateComponentsFromDatasetInformation();
+                end
+            elseif strcmp(userSelection, 'Continue')
+                if isfile(tempLoadFile)
+                    S = load(tempLoadFile, "datasetInformation");
+                    app.DatasetInformation = S.datasetInformation;
+                else
+                    % This case implies the file didn't exist initially, and askReuseTempFile returned 'Continue'
+                    % which is unexpected. Default to an empty struct.
+                    app.DatasetInformation = struct();
+                end
+                app.updateComponentsFromDatasetInformation();
+            else 
+                % Default case: file didn't exist initially, or an unexpected selection from askReuseTempFile
+                app.DatasetInformation = struct();
+                app.updateComponentsFromDatasetInformation();
             end
         end
 
@@ -1431,12 +1481,12 @@ classdef MetadataEditorApp < matlab.apps.AppBase
     methods (Access = private)
 
         % Code that executes after component creation
-        function startupFcn(app, datasetObject, filePath, debugMode)
+        function startupFcn(app, datasetObject, tempWorkingFileInput, debugMode)
             
             arguments 
                 app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
                 datasetObject (1,:) ndi.dataset = ndi.dataset.empty % Todo: should be required.
-                filePath (1,:) string = string.empty
+                tempWorkingFileInput (1,:) string = string.empty
                 debugMode (1,1) logical = false
             end
 
@@ -1455,8 +1505,8 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 disp('here:startupFcn')
             % Assign input arguments to properties:
             if ~isempty(datasetObject); app.Dataset = datasetObject; end
-            if ~isempty(filePath);      app.FilePath = filePath;     end
-            if ~isempty(datasetObject) &&(~isempty(filePath))
+            if ~isempty(tempWorkingFileInput); app.TempWorkingFile = tempWorkingFileInput; end
+            if ~isempty(datasetObject) && (~isempty(tempWorkingFileInput))
                 
             end
 
@@ -1491,7 +1541,7 @@ disp('here:startupFcn')
                 app.DatasetInformation.VersionIdentifier = app.VersionIdentifierEditField.Value;
             end
             if ~isfield(app.DatasetInformation, 'VersionInnovation')
-                app.DatasetInformation.VersionIdentifier = "This is the first version of the dataset";
+                app.DatasetInformation.VersionInnovation = "This is the first version of the dataset";
             end
         end
 
@@ -1802,7 +1852,7 @@ disp('here:startupFcn')
             end
             ndi.database.metadata_app.fun.save_dataset_docs(app.Dataset, app.Dataset.id(), app.DatasetInformation);
             % app.openLoginForm();
-            % ndi.database.fun.dataset_metadata(app.Dataset, 0, 'path', app.FilePath, 'action', 'submit', 'login', app.LoginInformation);
+            % ndi.database.fun.dataset_metadata(app.Dataset, 0, 'path', app.TempWorkingFile, 'action', 'submit', 'login', app.LoginInformation);
         end
 
         % Value changed function: ReleaseDateDatePicker

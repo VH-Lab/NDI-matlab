@@ -153,43 +153,46 @@ function documentList = convertFormDataToDocuments(appUserData, sessionId)
     subjectMap = containers.Map;
 
     % Create subjects
-    subjects = cell(1, numel(appUserData.Subjects));
-    for i = 1:numel(subjects)
-        subjectItem = appUserData.Subjects(i);
-
-        subjects{i} = openminds.core.Subject();
-        if ~isempty(subjectItem.BiologicalSexList)
-            if ~iscell(subjectItem.BiologicalSexList),
-                subjectItem.BiologicalSexList = {subjectItem.BiologicalSexList};
-            end;
-            subjects{i}.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
+    if isfield(appUserData, 'Subjects') && ~isempty(appUserData.Subjects)
+        subjectsCell = cell(1, numel(appUserData.Subjects));
+        for i = 1:numel(appUserData.Subjects)
+            subjectItem = appUserData.Subjects(i);
+    
+            currentSubject = openminds.core.Subject();
+            if ~isempty(subjectItem.BiologicalSexList)
+                if ~iscell(subjectItem.BiologicalSexList),
+                    subjectItem.BiologicalSexList = {subjectItem.BiologicalSexList};
+                end;
+                currentSubject.biologicalSex = openminds.controlledterms.BiologicalSex(subjectItem.BiologicalSexList{1});
+            end
+    
+            speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
+            isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
+            if any( isMatchedInstance )
+                speciesName = openminds.controlledterms.Species.CONTROLLED_INSTANCES(isMatchedInstance);
+                speciesInstance = openminds.controlledterms.Species(speciesName);
+            else
+                speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
+            end
+    
+            if isempty( subjectItem.StrainList )
+                currentSubject.species = speciesInstance;
+            else
+                strainName = subjectItem.StrainList.Name;
+                strainInstance = strainInstanceMap(strainName);
+                currentSubject.species = strainInstance;
+            end
+    
+            % Add internal identifier and lookup label
+            subjectName = subjectItem.SubjectName;
+            subjectNameSplit = strsplit(subjectName, '@');
+            currentSubject.internalIdentifier = subjectNameSplit{1};
+            currentSubject.lookupLabel = subjectName;
+            subjectMap(currentSubject.lookupLabel) = subjectItem.sessionIdentifier;
+            subjectsCell{i} = currentSubject;
         end
-
-        speciesName = strrep(subjectItem.SpeciesList.Name, ' ', '');
-        isMatchedInstance = strcmpi (openminds.controlledterms.Species.CONTROLLED_INSTANCES, speciesName);
-        if any( isMatchedInstance )
-            speciesName = openminds.controlledterms.Species.CONTROLLED_INSTANCES(isMatchedInstance);
-            speciesInstance = openminds.controlledterms.Species(speciesName);
-        else
-            speciesInstance = subjectItem.SpeciesList.convertToOpenMinds();
-        end
-
-        if isempty( subjectItem.StrainList )
-            subjects{i}.species = speciesInstance;
-        else
-            strainName = subjectItem.StrainList.Name;
-            strainInstance = strainInstanceMap(strainName);
-            subjects{i}.species = strainInstance;
-        end
-
-        % Add internal identifier and lookup label
-        subjectName = subjectItem.SubjectName;
-        subjectNameSplit = strsplit(subjectName, '@');
-        subjects{i}.internalIdentifier = subjectNameSplit{1};
-        subjects{i}.lookupLabel = subjectName;
-        subjectMap(subjects{i}.lookupLabel) = subjectItem.sessionIdentifier;
+        datasetVersion.studiedSpecimen = [subjectsCell{:}];
     end
-    datasetVersion.studiedSpecimen = [subjects{:}];
 
     dataset.hasVersion = datasetVersion;
 
