@@ -289,7 +289,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             end;
         end; % database_add
 
-        function ndi_dataset_obj = database_rm(ndi_dataset_obj, doc_unique_id, varargin)
+        function ndi_dataset_obj = database_rm(ndi_dataset_obj, doc_unique_id, options)
             % DATABASE_RM - Remove an ndi.document with a given document ID from a dataset
             %
             % NDI_DATASET_OBJ = DATABASE_RM(NDI_DATASET_OBJ, DOC_UNIQUE_ID)
@@ -314,34 +314,36 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % See also: ndi.dataset/database_add(), ndi.dataset/database_search()
 
             arguments
-                ErrIfNotFound (1,1) logical = false
+                ndi_dataset_obj (1,1) {mustBeA(ndi_dataset_obj,"ndi.dataset")}
+                doc_unique_id {mustBeA(doc_unique_id,["cell" "ndi.document"])}
+                options.ErrIfNotFound (1,1) logical = false
             end
 
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
             ndi_session_ids_here = {};
-            for i=1:numel(doc_input),
+            for i=1:numel(doc_input)
                 ndi_session_ids_here{i} = doc_input{i}.document_properties.base.session_id;
-            end;
+            end
 
             usession_ids = setdiff(unique(ndi_session_ids_here),ndi.session.empty_id());
 
             s = {};
             % make sure all documents have a home before doing anything else
-            for i=1:numel(usession_ids),
-                if ~strcmp(usession_ids{i},ndi_dataset_obj.id()),
+            for i=1:numel(usession_ids)
+                if ~strcmp(usession_ids{i},ndi_dataset_obj.id())
                     s{i} = ndi_dataset_obj.open_session(usession_ids{i});
-                else,
+                else
                     s{i} = ndi_dataset_obj.session;
-                end;
-            end;
+                end
+            end
 
             % now remove them in turn
-            for i=1:numel(usession_ids),
+            for i=1:numel(usession_ids)
                 indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
-                s{i}.database_rm(doc_input(indexes),'ErrIfNotFound',ErrIfNotFound);
+                s{i}.database_rm(doc_input(indexes),'ErrIfNotFound',options.ErrIfNotFound);
                 mksqlite('close'); % TODO: update ndi.session with a close database files method                
-            end;
-        end; % database_rm
+            end
+        end % database_rm
 
         function ndi_document_obj = database_search(ndi_dataset_obj, searchparameters)
             % DATABASE_SEARCH - Search for an ndi.document in a database of an ndi.dataset object
