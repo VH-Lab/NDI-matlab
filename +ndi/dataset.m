@@ -97,6 +97,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session.database_rm(d_);
             d = d.set_session_id(ndi_dataset_obj.id());
             ndi_dataset_obj.session.database_add(d);
+            mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
         end; % add_linked_session()
 
@@ -109,22 +110,22 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % Add an ndi.session object to an ndi.dataset, by copying the session
             % documents into the dataset.
             %
-            if isempty(ndi_dataset_obj.session_array),
+            if isempty(ndi_dataset_obj.session_array)
                 ndi_dataset_obj.build_session_info;
-            end;
+            end
 
             % first, make sure it is not already there
 
             match = any(strcmp(ndi_session_obj.id(),{ndi_dataset_obj.session_info.session_id}));
-            if match,
+            if match
                 error(['ndi.session object with id ' ndi_session_obj.id() ' is already part of dataset ' ndi_dataset_obj.id() '.']);
-            end;
+            end
 
             % second, make sure it is fully ingested
             is_fully_ingested = ndi_session_obj.is_fully_ingested();
-            if ~is_fully_ingested,
+            if ~is_fully_ingested
                 error(['ndi.session object with id ' ndi_session_obj.id() ' and reference ' ndi_session_obj.reference ' is not yet fully ingested. It must be fully ingested before it can be added in ingested form to an ndi.dataset object.']);
-            end;
+            end
 
             % okay, let's add it
             session_info_here.session_id = ndi_session_obj.id();
@@ -132,20 +133,20 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             session_info_here.session_creator = class(ndi_session_obj);
             session_info_here.is_linked = 0;
             session_creator_args = ndi_session_obj.creator_args();
-            for i=1:6, %numel(session_creator_args),
+            for i=1:6 %numel(session_creator_args),
                 field_here = ['session_creator_input' int2str(i)];
                 session_info_here = setfield(session_info_here,field_here,'');
-                if numel(session_creator_args)>=i,
+                if numel(session_creator_args)>=i
                     session_info_here = setfield(session_info_here,field_here,session_creator_args{i});
-                end;
-            end;
+                end
+            end
 
             % terrible kludge
-            if isa(ndi_session_obj,'ndi.session.dir'),
+            if isa(ndi_session_obj,'ndi.session.dir')
                 session_info_here = setfield(session_info_here,'session_creator_input2',''); % same relative path % ndi_dataset_obj.getpath());
-            else,
+            else
                 error(['Not smart enough to add ingested sessions of type ' class(ndi_session_obj) ' yet.']);
-            end;
+            end
 
             ndi.database.fun.copy_session_to_dataset(ndi_session_obj, ndi_dataset_obj);
 
@@ -158,8 +159,9 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             ndi_dataset_obj.session.database_rm(d_);
             d = d.set_session_id(ndi_dataset_obj.id());
             ndi_dataset_obj.session.database_add(d);
+            mksqlite('close'); % TODO: update ndi.session with a close database files method                
 
-        end; % add_ingested_session()
+        end % add_ingested_session()
 
         function ndi_session_obj = open_session(ndi_dataset_obj, session_id)
             % OPEN_SESSION - open an ndi.session object from an ndi.dataset
@@ -198,6 +200,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                     % ndi_dataset_obj.session_info(match_).session_creator_input5, ...
                     % ndi_dataset_obj.session_info(match_).session_creator_input6);
                     ndi_session_obj = ndi_dataset_obj.session_array(match).session;
+                    mksqlite('close'); % TODO: update ndi.session with a close database files method                
                 end;
             end;
         end; % open_session()
@@ -282,6 +285,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             for i=1:numel(usession_ids),
                 indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
                 s{i}.database_add(document(indexes));
+                mksqlite('close'); % TODO: update ndi.session with a close database files method                
             end;
         end; % database_add
 
@@ -305,11 +309,13 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             % This function also takes parameters as name/value pairs that modify its behavior:
             % Parameter (default)        | Description
             % --------------------------------------------------------------------------------
-            % ErrIfNotFound (0)          | Produce an error if an ID to be deleted is not found.
+            % ErrIfNotFound (false)      | Produce an error if an ID to be deleted is not found.
             %
             % See also: ndi.dataset/database_add(), ndi.dataset/database_search()
-            ErrIfNotFound = 0;
-            vlt.data.assign(varargin{:});
+
+            arguments
+                ErrIfNotFound (1,1) logical = false
+            end
 
             doc_input = ndi.session.docinput2docs(ndi_dataset_obj, doc_unique_id); % make sure we have docs
             ndi_session_ids_here = {};
@@ -333,6 +339,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             for i=1:numel(usession_ids),
                 indexes = find( strcmp(usession_ids{i},ndi_session_ids_here) | strcmp(ndi.session.empty_id(),ndi_session_ids_here));
                 s{i}.database_rm(doc_input(indexes),'ErrIfNotFound',ErrIfNotFound);
+                mksqlite('close'); % TODO: update ndi.session with a close database files method                
             end;
         end; % database_rm
 
@@ -352,6 +359,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
             match = find([ndi_dataset_obj.session_info.is_linked]);
             for i=1:numel(match),
                 ndi_document_obj = cat(1,ndi_dataset_obj.session_array(match(i)).session.database_search(searchparameters));
+                mksqlite('close'); % TODO: update ndi.session with a close database files method
             end;
         end % database_search();
 
@@ -463,6 +471,7 @@ classdef dataset < handle % & ndi.ido but this cannot be a superclass because it
                 if ndi_dataset_obj.session_info(i).is_linked,
                     if isempty(ndi_dataset_obj.session_array(i).session),
                         ndi_dataset_obj.open_session(ndi_dataset_obj.session_info(i).session_id);
+                        mksqlite('close'); % TODO: update ndi.session with a close database files method
                     end;
                 end;
             end;
