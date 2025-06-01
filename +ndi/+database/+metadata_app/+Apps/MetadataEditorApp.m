@@ -407,54 +407,13 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         function loadDatasetInformation(app)
             tempLoadFile = app.getTempWorkingFile();
 
-            % Attempt to read/create metadata from app.Dataset before asking user about existing temp file
-            if ~isempty(app.Dataset)
-                % This function might create/update tempLoadFile if it extracts metadata
-                ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
+            % This function might create/update tempLoadFile if it extracts metadata
+            ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
+            if isfile(tempLoadFile)
+                S = load(tempLoadFile, "datasetInformation");
+                app.DatasetInformation = S.datasetInformation;
             end
-
-            [userSelection, backedUpSuccessfully, originalFileDeleted] = ...
-                ndi.database.metadata_app.fun.askReuseTempFile(app, tempLoadFile);
-
-            if strcmp(userSelection, 'Start Over')
-                % If 'Start Over' was chosen and either backup was successful (original file potentially deleted)
-                % or backup failed but original file was deleted anyway.
-                if (backedUpSuccessfully && originalFileDeleted) || (~backedUpSuccessfully && originalFileDeleted)
-                    app.DatasetInformation = struct();
-                    app.updateComponentsFromDatasetInformation();
-                    return;
-                elseif backedUpSuccessfully && ~originalFileDeleted
-                    % Backup succeeded, delete failed. Proceed with empty session as backup exists.
-                    app.DatasetInformation = struct();
-                    app.updateComponentsFromDatasetInformation();
-                    return;
-                else % Backup failed AND delete failed (askReuseTempFile forces userSelection to 'Continue' in this case)
-                    % This 'else' block should ideally not be reached if askReuseTempFile forces 'Continue'.
-                    % However, as a fallback, if we are here with 'Start Over', it means something unexpected.
-                    % Default to loading the file if it still exists.
-                    if isfile(tempLoadFile)
-                        S = load(tempLoadFile, "datasetInformation");
-                        app.DatasetInformation = S.datasetInformation;
-                    else
-                        app.DatasetInformation = struct(); % Should not happen if askReuseTempFile logic is correct
-                    end
-                    app.updateComponentsFromDatasetInformation();
-                end
-            elseif strcmp(userSelection, 'Continue')
-                if isfile(tempLoadFile)
-                    S = load(tempLoadFile, "datasetInformation");
-                    app.DatasetInformation = S.datasetInformation;
-                else
-                    % This case implies the file didn't exist initially, and askReuseTempFile returned 'Continue'
-                    % which is unexpected. Default to an empty struct.
-                    app.DatasetInformation = struct();
-                end
-                app.updateComponentsFromDatasetInformation();
-            else 
-                % Default case: file didn't exist initially, or an unexpected selection from askReuseTempFile
-                app.DatasetInformation = struct();
-                app.updateComponentsFromDatasetInformation();
-            end
+            app.updateComponentsFromDatasetInformation();
         end
 
         function loadSpecies(app)

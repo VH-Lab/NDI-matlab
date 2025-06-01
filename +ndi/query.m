@@ -36,6 +36,18 @@ classdef query < did.query
             %
                 q_all = ndi.query('','isa','base');
         end % all()
+
+        function q_none = none()
+            % NONE - Returns a query that should not match any document
+            %
+            % Q_NONE = NDI.QUERY.NONE()
+            %
+            % Returns NDI.QUERY('nosuchfield','hasfield').
+            % This is useful when a query object is needed but no results
+            % are desired.
+            %
+                q_none = ndi.query('nosuchfield','hasfield');
+        end % none()
     end % static methods
 
     methods
