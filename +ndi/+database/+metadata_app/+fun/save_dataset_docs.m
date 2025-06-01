@@ -8,25 +8,16 @@ function save_dataset_docs(S, session_id, datasetInformation)
     %   datasetInformation - metadata collected using the metadata app
     %
 
+    % Call the new function to handle deletion of old documents
+    % The 'true' for askUser preserves the original behavior of prompting the user.
+    [hadPreviousDocs, previousDocsDeleted] = ndi.database.metadata_ds_core.eraseMetadataEditorNDIDocs(S, true);
+
+    % If previous documents existed but were not deleted (e.g., user said 'No'), then return.
+    if hadPreviousDocs && ~previousDocsDeleted
+        return;
+    end
+    % If there were no previous docs, or if they were successfully deleted, proceed.
+
     documentList = ndi.database.metadata_ds_core.convertFormDataToDocuments(datasetInformation, session_id);
-
-    oldDocs = S.database_search(ndi.query('openminds.matlab_type','exact_string','openminds.core.products.Dataset'));
-
-    if ~isempty(oldDocs),
-        answer = questdlg('This will replace any previously saved core metadata information in the dataset or session. Continue?','Continue?','Yes','No','Yes');
-    else,
-        answer = 'Yes';
-    end;
-
-    if ~strcmp(answer,'Yes'),
-        return; % leave if user said no
-    end;
-
-    if ~isempty(oldDocs),
-        antecedents = ndi.database.fun.findallantecedents(S,[],oldDocs{:});
-        S.database_rm(oldDocs);
-        S.database_rm(antecedents);
-    end;
-
     S.database_add(documentList);
 end

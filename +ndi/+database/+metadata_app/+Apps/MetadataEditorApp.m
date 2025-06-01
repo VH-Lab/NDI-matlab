@@ -2,195 +2,198 @@ classdef MetadataEditorApp < matlab.apps.AppBase
     %METADATAEDITORAPP App Edit and upload metadata for NDI datasets
     %   
     %   Syntax:
-    %       ndi.database.metadata_app.Apps.DatasetUploadApp(ndiSession)
-    %           opens the metadata editor for the specified NDI 
-    %           session
+    %       ndi.database.metadata_app.Apps.MetadataEditorApp(ndiEntity)
+    %       ndi.database.metadata_app.Apps.MetadataEditorApp(ndiEntity, debugMode)
+    %           opens the metadata editor for the specified NDI entity (session or dataset).
     %   
     %   Inputs:
-    %       Session  : An NDI session object
-    %       TempWorkingFile : A pathname for the temporary working 
-    %                  metadata file (optional). The default behavior 
-    %                  is to use a file in the session folder.
+    %       ndiEntity  : An NDI session or dataset object. This argument is required.
+    %       debugMode  : (Optional) Boolean (true/false, default false) to enable debug features.
+    %
+    %   The temporary working file for metadata is automatically stored in the
+    %   [ndiEntity_path]/.ndi/NDIMetadataEditorData.mat file.
 
     % Properties that correspond to app components
     properties (Access = public)
         NDIMetadataEditorUIFigure       matlab.ui.Figure
-        FooterPanel                     matlab.ui.container.Panel
-        FooterGridLayout                matlab.ui.container.GridLayout
-        NdiLogoImage                    matlab.ui.control.Image
-        NextButton                      matlab.ui.control.Button
-        PreviousButton                  matlab.ui.control.Button
-        MainGridLayout                  matlab.ui.container.GridLayout
-        TabGroup                        matlab.ui.container.TabGroup
-        IntroTab                        matlab.ui.container.Tab
-        IntroGridLayout                 matlab.ui.container.GridLayout
-        GridLayout25                    matlab.ui.container.GridLayout
-        NdiLogoIntroImage               matlab.ui.control.Image
-        IntroLabel                      matlab.ui.control.Label
-        GridLayout_Step0_C2             matlab.ui.container.GridLayout
-        IntroductionTextLabel           matlab.ui.control.Label
-        GridLayout_Step0_C3             matlab.ui.container.GridLayout
-        GetStartedButton                matlab.ui.control.Button
-        DatasetOverviewTab              matlab.ui.container.Tab
-        DatasetOverviewGridLayout       matlab.ui.container.GridLayout
-        DatasetInformationLabel         matlab.ui.control.Label
-        DatasetInformationPanel         matlab.ui.container.Panel
-        GridLayout                      matlab.ui.container.GridLayout
-        GridLayout4                     matlab.ui.container.GridLayout
-        DatasetCommentsTextArea         matlab.ui.control.TextArea
-        DatasetCommentsTextAreaLabel    matlab.ui.control.Label
-        Panel_4                         matlab.ui.container.Panel
-        GridLayout3                     matlab.ui.container.GridLayout
-        AbstractTextAreaLabel           matlab.ui.control.Label
-        AbstractTextArea                matlab.ui.control.TextArea
-        Panel_3                         matlab.ui.container.Panel
-        GridLayout2                     matlab.ui.container.GridLayout
-        DatasetShortNameEditFieldLabel  matlab.ui.control.Label
-        DatasetShortNameEditField       matlab.ui.control.EditField
-        DatasetBranchTitleEditFieldLabel  matlab.ui.control.Label
-        DatasetBranchTitleEditField     matlab.ui.control.EditField
-        AuthorsTab                      matlab.ui.container.Tab
-        AuthorsGridLayout               matlab.ui.container.GridLayout
-        AuthorDetailsLabel              matlab.ui.control.Label
-        AuthorMainPanel                 matlab.ui.container.Panel
-        AuthorMainPanelGridLayout       matlab.ui.container.GridLayout
-        AuthorContentRightGridLayout    matlab.ui.container.GridLayout
-        AffiliationListBoxGridLayout    matlab.ui.container.GridLayout
-        AffiliationListBox              matlab.ui.control.ListBox
-        AffiliationListBoxButtonGridLayout  matlab.ui.container.GridLayout
-        RemoveAffiliationButton         matlab.ui.control.Button
-        MoveAffiliationUpButton         matlab.ui.control.Button
-        MoveAffiliationDownButton       matlab.ui.control.Button
-        AffiliationSelectionGridLayout  matlab.ui.container.GridLayout
-        OrganizationDropDown            matlab.ui.control.DropDown
-        AddAffiliationButton            matlab.ui.control.Button
-        AffiliationsListBoxLabel        matlab.ui.control.Label
-        AuthorContentCenterGridLayout   matlab.ui.container.GridLayout
-        AuthorRoleTree                  matlab.ui.container.CheckBoxTree
-        FirstAuthorNode                 matlab.ui.container.TreeNode
-        CustodianNode                   matlab.ui.container.TreeNode
-        CorrespondingNode               matlab.ui.container.TreeNode
-        AuthorRoleLabel                 matlab.ui.control.Label
-        AuthorEmailEditFieldLabel       matlab.ui.control.Label
-        AuthorEmailEditField            matlab.ui.control.EditField
-        AuthorOrcidGridLayout           matlab.ui.container.GridLayout
-        SearchOrcidButton               matlab.ui.control.Button
-        DigitalIdentifierEditField      matlab.ui.control.EditField
-        DigitalIdentifierEditFieldLabel  matlab.ui.control.Label
-        FamilyNameEditField             matlab.ui.control.EditField
-        FamilyNameEditFieldLabel        matlab.ui.control.Label
-        GivenNameEditField              matlab.ui.control.EditField
-        GivenNameEditFieldLabel         matlab.ui.control.Label
-        AuthorContentLeftGridLayout     matlab.ui.container.GridLayout
-        AuthorListBoxLabel              matlab.ui.control.Label
-        AuthorListBoxGridLayout         matlab.ui.container.GridLayout
-        AuthorListBoxButtonGridLayout   matlab.ui.container.GridLayout
-        MoveAuthorDownButton            matlab.ui.control.Button
-        MoveAuthorUpButton              matlab.ui.control.Button
-        RemoveAuthorButton              matlab.ui.control.Button
-        AddAuthorButton                 matlab.ui.control.Button
-        AuthorListBox                   matlab.ui.control.ListBox
-        DatasetDetailsTab               matlab.ui.container.Tab
-        DatasetDetailsGridLayout        matlab.ui.container.GridLayout
-        DatasetDetailsLabel             matlab.ui.control.Label
-        DatasetDetailsPanel             matlab.ui.container.Panel
-        GridLayout18                    matlab.ui.container.GridLayout
-        GridLayout20                    matlab.ui.container.GridLayout
-        PublicationTableButtonGridLayout  matlab.ui.container.GridLayout
-        AddRelatedPublicationButton     matlab.ui.control.Button
-        RemovePublicationButton         matlab.ui.control.Button
-        MovePublicationUpButton         matlab.ui.control.Button
-        MovePublicationDownButton       matlab.ui.control.Button
-        RelatedPublicationUITable       matlab.ui.control.Table
-        RelatedPublicationUITableLabel  matlab.ui.control.Label
-        GridLayout19                    matlab.ui.container.GridLayout
-        GridLayout22                    matlab.ui.container.GridLayout
-        GridLayout28                    matlab.ui.container.GridLayout
-        LicenseHelpButton               matlab.ui.control.Button
-        LicenseDropDown                 matlab.ui.control.DropDown
-        AccessibilityLabel              matlab.ui.control.Label
-        VersionInnovationEditField      matlab.ui.control.EditField
-        VersionInnovationEditFieldLabel  matlab.ui.control.Label
-        VersionIdentifierEditField      matlab.ui.control.EditField
-        VersionIdentifierEditFieldLabel  matlab.ui.control.Label
-        FullDocumentationEditField      matlab.ui.control.EditField
-        FullDocumentationEditFieldLabel  matlab.ui.control.Label
-        LicenseDropDownLabel            matlab.ui.control.Label
-        ReleaseDateDatePicker           matlab.ui.control.DatePicker
-        ReleaseDateDatePickerLabel      matlab.ui.control.Label
-        FundingGridLayout               matlab.ui.container.GridLayout
-        FundingTableButtonGridLayout    matlab.ui.container.GridLayout
-        AddFundingButton                matlab.ui.control.Button
-        RemoveFundingButton             matlab.ui.control.Button
-        MoveFundingUpButton             matlab.ui.control.Button
-        MoveFundingDownButton           matlab.ui.control.Button
-        FundingUITableLabel             matlab.ui.control.Label
-        FundingUITable                  matlab.ui.control.Table
-        ExperimentDetailsTab            matlab.ui.container.Tab
-        ExperimentDetailsGridLayout     matlab.ui.container.GridLayout
-        ExperimentDetailsLabel          matlab.ui.control.Label
-        ExperimentDetailsPanel          matlab.ui.container.Panel
-        GridLayout26                    matlab.ui.container.GridLayout
-        SelectedTechniquesListBox       matlab.ui.control.ListBox
-        SelectedTechniquesListBoxLabel  matlab.ui.control.Label
-        SelectTechniqueDropDownLabel    matlab.ui.control.Label
-        SelectTechniqueDropDown         matlab.ui.control.DropDown
-        SelectTechniqueCategoryDropDown  matlab.ui.control.DropDown
-        SelectTechniqueCategoryDropDownLabel  matlab.ui.control.Label
-        AddTechniqueButton              matlab.ui.control.Button
-        RemoveTechniqueButton           matlab.ui.control.Button
-        ExperimentalApproachTreeLabel   matlab.ui.control.Label
-        ExperimentalApproachTree        matlab.ui.container.CheckBoxTree
-        DataTypeTree                    matlab.ui.container.CheckBoxTree
-        DataTypeTreeLabel               matlab.ui.control.Label
-        SubjectInfoTab                  matlab.ui.container.Tab
-        SubjectInfoGridLayout           matlab.ui.container.GridLayout
-        SubjectInfoLabel                matlab.ui.control.Label
-        SubjectInfoPanel                matlab.ui.container.Panel
-        GridLayout16                    matlab.ui.container.GridLayout
-        UITableSubject                  matlab.ui.control.Table
-        GridLayout17                    matlab.ui.container.GridLayout
-        GridLayout27                    matlab.ui.container.GridLayout
-        AddStrainButton                 matlab.ui.control.Button
-        StrainEditField                 matlab.ui.control.EditField
-        GridLayout24_4                  matlab.ui.container.GridLayout
-        AddSpeciesButton                matlab.ui.control.Button
-        SpeciesEditField                matlab.ui.control.EditField
-        GridLayout24_3                  matlab.ui.container.GridLayout
-        StrainClearButton               matlab.ui.control.Button
-        AssignStrainButton              matlab.ui.control.Button
-        GridLayout24_2                  matlab.ui.container.GridLayout
-        SpeciesClearButton              matlab.ui.control.Button
-        AssignSpeciesButton             matlab.ui.control.Button
-        GridLayout24                    matlab.ui.container.GridLayout
-        BiologicalSexClearButton        matlab.ui.control.Button
-        AssignBiologicalSexButton       matlab.ui.control.Button
-        StrainListBox                   matlab.ui.control.ListBox
-        StrainLabel                     matlab.ui.control.Label
-        SpeciesListBox                  matlab.ui.control.ListBox
-        SpeciesLabel_2                  matlab.ui.control.Label
-        BiologicalSexListBox            matlab.ui.control.ListBox
-        BiologicalSexLabel              matlab.ui.control.Label
-        ProbeInfoTab                    matlab.ui.container.Tab
-        ProbeInfoGridLayout             matlab.ui.container.GridLayout
-        ProbeInfoLabel                  matlab.ui.control.Label
-        ProbeInfoPanel                  matlab.ui.container.Panel
-        GridLayout23                    matlab.ui.container.GridLayout
-        UITableProbe                    matlab.ui.control.Table
-        SaveTab                         matlab.ui.container.Tab
-        SubmitGridLayout                matlab.ui.container.GridLayout
-        SubmitLabel                     matlab.ui.control.Label
-        SubmitPanelGridLayout           matlab.ui.container.GridLayout
-        ErrorTextArea                   matlab.ui.control.TextArea
-        ErrorTextAreaLabel              matlab.ui.control.Label
-        SubmissionDescriptionLabel      matlab.ui.control.Label
-        SubmissionStatusPanel           matlab.ui.container.Panel
-        SubmitFooterGridLayout          matlab.ui.container.GridLayout
-        ExportDatasetInfoButton         matlab.ui.control.Button
-        TestDocumentConversionButton    matlab.ui.control.Button
-        SaveButton                      matlab.ui.control.Button
-        SaveChangesButton               matlab.ui.control.Button
-        FooterpanelLabel                matlab.ui.control.Label
+        FooterPanel                   matlab.ui.container.Panel
+        FooterGridLayout              matlab.ui.container.GridLayout
+        NdiLogoImage                  matlab.ui.control.Image
+        NextButton                    matlab.ui.control.Button
+        PreviousButton                matlab.ui.control.Button
+        MainGridLayout                matlab.ui.container.GridLayout
+        TabGroup                      matlab.ui.container.TabGroup
+        IntroTab                      matlab.ui.container.Tab
+        IntroGridLayout               matlab.ui.container.GridLayout
+        GridLayout25                  matlab.ui.container.GridLayout
+        NdiLogoIntroImage             matlab.ui.control.Image
+        IntroLabel                    matlab.ui.control.Label
+        GridLayout_Step0_C2           matlab.ui.container.GridLayout
+        IntroductionTextLabel         matlab.ui.control.Label
+        GridLayout_Step0_C3           matlab.ui.container.GridLayout
+        GetStartedButton              matlab.ui.control.Button
+        DatasetOverviewTab            matlab.ui.container.Tab
+        DatasetOverviewGridLayout     matlab.ui.container.GridLayout
+        DatasetInformationLabel       matlab.ui.control.Label
+        DatasetInformationPanel       matlab.ui.container.Panel
+        GridLayout                    matlab.ui.container.GridLayout
+        GridLayout4                   matlab.ui.container.GridLayout
+        DatasetCommentsTextArea       matlab.ui.control.TextArea
+        DatasetCommentsTextAreaLabel  matlab.ui.control.Label
+        Panel_4                       matlab.ui.container.Panel
+        GridLayout3                   matlab.ui.container.GridLayout
+        AbstractTextAreaLabel         matlab.ui.control.Label
+        AbstractTextArea              matlab.ui.control.TextArea
+        Panel_3                       matlab.ui.container.Panel
+        GridLayout2                   matlab.ui.container.GridLayout
+        DatasetShortNameEditFieldLabel matlab.ui.control.Label
+        DatasetShortNameEditField     matlab.ui.control.EditField
+        DatasetBranchTitleEditFieldLabel matlab.ui.control.Label
+        DatasetBranchTitleEditField   matlab.ui.control.EditField
+        AuthorsTab                    matlab.ui.container.Tab
+        AuthorsGridLayout             matlab.ui.container.GridLayout
+        AuthorDetailsLabel            matlab.ui.control.Label
+        AuthorMainPanel               matlab.ui.container.Panel
+        AuthorMainPanelGridLayout     matlab.ui.container.GridLayout
+        AuthorContentRightGridLayout  matlab.ui.container.GridLayout
+        AffiliationListBoxGridLayout  matlab.ui.container.GridLayout
+        AffiliationListBox            matlab.ui.control.ListBox
+        AffiliationListBoxButtonGridLayout matlab.ui.container.GridLayout
+        RemoveAffiliationButton       matlab.ui.control.Button
+        MoveAffiliationUpButton       matlab.ui.control.Button
+        MoveAffiliationDownButton     matlab.ui.control.Button
+        AffiliationSelectionGridLayout matlab.ui.container.GridLayout
+        OrganizationDropDown          matlab.ui.control.DropDown
+        AddAffiliationButton          matlab.ui.control.Button
+        AffiliationsListBoxLabel      matlab.ui.control.Label
+        AuthorContentCenterGridLayout matlab.ui.container.GridLayout
+        AuthorRoleTree                matlab.ui.container.CheckBoxTree
+        FirstAuthorNode               matlab.ui.container.TreeNode
+        CustodianNode                 matlab.ui.container.TreeNode
+        CorrespondingNode             matlab.ui.container.TreeNode
+        AuthorRoleLabel               matlab.ui.control.Label
+        AuthorEmailEditFieldLabel     matlab.ui.control.Label
+        AuthorEmailEditField          matlab.ui.control.EditField
+        AuthorOrcidGridLayout         matlab.ui.container.GridLayout
+        SearchOrcidButton             matlab.ui.control.Button
+        DigitalIdentifierEditField    matlab.ui.control.EditField
+        DigitalIdentifierEditFieldLabel matlab.ui.control.Label
+        FamilyNameEditField           matlab.ui.control.EditField
+        FamilyNameEditFieldLabel      matlab.ui.control.Label
+        GivenNameEditField            matlab.ui.control.EditField
+        GivenNameEditFieldLabel       matlab.ui.control.Label
+        AuthorContentLeftGridLayout   matlab.ui.container.GridLayout
+        AuthorListBoxLabel            matlab.ui.control.Label
+        AuthorListBoxGridLayout       matlab.ui.container.GridLayout
+        AuthorListBoxButtonGridLayout matlab.ui.container.GridLayout
+        MoveAuthorDownButton          matlab.ui.control.Button
+        MoveAuthorUpButton            matlab.ui.control.Button
+        RemoveAuthorButton            matlab.ui.control.Button
+        AddAuthorButton               matlab.ui.control.Button
+        AuthorListBox                 matlab.ui.control.ListBox
+        DatasetDetailsTab             matlab.ui.container.Tab
+        DatasetDetailsGridLayout      matlab.ui.container.GridLayout
+        DatasetDetailsLabel           matlab.ui.control.Label
+        DatasetDetailsPanel           matlab.ui.container.Panel
+        GridLayout18                  matlab.ui.container.GridLayout
+        GridLayout20                  matlab.ui.container.GridLayout
+        PublicationTableButtonGridLayout matlab.ui.container.GridLayout
+        AddRelatedPublicationButton   matlab.ui.control.Button
+        RemovePublicationButton       matlab.ui.control.Button
+        MovePublicationUpButton       matlab.ui.control.Button
+        MovePublicationDownButton     matlab.ui.control.Button
+        RelatedPublicationUITable     matlab.ui.control.Table
+        RelatedPublicationUITableLabel matlab.ui.control.Label
+        GridLayout19                  matlab.ui.container.GridLayout
+        GridLayout22                  matlab.ui.container.GridLayout
+        GridLayout28                  matlab.ui.container.GridLayout
+        LicenseHelpButton             matlab.ui.control.Button
+        LicenseDropDown               matlab.ui.control.DropDown
+        AccessibilityLabel            matlab.ui.control.Label
+        VersionInnovationEditField    matlab.ui.control.EditField
+        VersionInnovationEditFieldLabel matlab.ui.control.Label
+        VersionIdentifierEditField    matlab.ui.control.EditField
+        VersionIdentifierEditFieldLabel matlab.ui.control.Label
+        FullDocumentationEditField    matlab.ui.control.EditField
+        FullDocumentationEditFieldLabel matlab.ui.control.Label
+        LicenseDropDownLabel          matlab.ui.control.Label
+        ReleaseDateDatePicker         matlab.ui.control.DatePicker
+        ReleaseDateDatePickerLabel    matlab.ui.control.Label
+        FundingGridLayout             matlab.ui.container.GridLayout
+        FundingTableButtonGridLayout  matlab.ui.container.GridLayout
+        AddFundingButton              matlab.ui.control.Button
+        RemoveFundingButton           matlab.ui.control.Button
+        MoveFundingUpButton           matlab.ui.control.Button
+        MoveFundingDownButton         matlab.ui.control.Button
+        FundingUITableLabel           matlab.ui.control.Label
+        FundingUITable                matlab.ui.control.Table
+        ExperimentDetailsTab          matlab.ui.container.Tab
+        ExperimentDetailsGridLayout   matlab.ui.container.GridLayout
+        ExperimentDetailsLabel        matlab.ui.control.Label
+        ExperimentDetailsPanel        matlab.ui.container.Panel
+        GridLayout26                  matlab.ui.container.GridLayout
+        SelectedTechniquesListBox     matlab.ui.control.ListBox
+        SelectedTechniquesListBoxLabel matlab.ui.control.Label
+        SelectTechniqueDropDownLabel  matlab.ui.control.Label
+        SelectTechniqueDropDown       matlab.ui.control.DropDown
+        SelectTechniqueCategoryDropDown matlab.ui.control.DropDown
+        SelectTechniqueCategoryDropDownLabel matlab.ui.control.Label
+        AddTechniqueButton            matlab.ui.control.Button
+        RemoveTechniqueButton         matlab.ui.control.Button
+        ExperimentalApproachTreeLabel matlab.ui.control.Label
+        ExperimentalApproachTree      matlab.ui.container.CheckBoxTree
+        DataTypeTree                  matlab.ui.container.CheckBoxTree
+        DataTypeTreeLabel             matlab.ui.control.Label
+        SubjectInfoTab                matlab.ui.container.Tab
+        SubjectInfoGridLayout         matlab.ui.container.GridLayout
+        SubjectInfoLabel              matlab.ui.control.Label
+        SubjectInfoPanel              matlab.ui.container.Panel
+        GridLayout16                  matlab.ui.container.GridLayout
+        UITableSubject                matlab.ui.control.Table
+        GridLayout17                  matlab.ui.container.GridLayout
+        GridLayout27                  matlab.ui.container.GridLayout
+        AddStrainButton               matlab.ui.control.Button
+        StrainEditField               matlab.ui.control.EditField
+        GridLayout24_4                matlab.ui.container.GridLayout
+        AddSpeciesButton              matlab.ui.control.Button
+        SpeciesEditField              matlab.ui.control.EditField
+        GridLayout24_3                matlab.ui.container.GridLayout
+        StrainClearButton             matlab.ui.control.Button
+        AssignStrainButton            matlab.ui.control.Button
+        GridLayout24_2                matlab.ui.container.GridLayout
+        SpeciesClearButton            matlab.ui.control.Button
+        AssignSpeciesButton           matlab.ui.control.Button
+        GridLayout24                  matlab.ui.container.GridLayout
+        BiologicalSexClearButton      matlab.ui.control.Button
+        AssignBiologicalSexButton     matlab.ui.control.Button
+        StrainListBox                 matlab.ui.control.ListBox
+        StrainLabel                   matlab.ui.control.Label
+        SpeciesListBox                matlab.ui.control.ListBox
+        SpeciesLabel_2                matlab.ui.control.Label
+        BiologicalSexListBox          matlab.ui.control.ListBox
+        BiologicalSexLabel            matlab.ui.control.Label
+        ProbeInfoTab                  matlab.ui.container.Tab
+        ProbeInfoGridLayout           matlab.ui.container.GridLayout
+        ProbeInfoLabel                matlab.ui.control.Label
+        ProbeInfoPanel                matlab.ui.container.Panel
+        GridLayout23                  matlab.ui.container.GridLayout
+        UITableProbe                  matlab.ui.control.Table
+        SaveTab                       matlab.ui.container.Tab
+        SubmitGridLayout              matlab.ui.container.GridLayout
+        SubmitLabel                   matlab.ui.control.Label
+        SubmitPanelGridLayout         matlab.ui.container.GridLayout
+        ErrorTextArea                 matlab.ui.control.TextArea
+        ErrorTextAreaLabel            matlab.ui.control.Label
+        SubmissionDescriptionLabel    matlab.ui.control.Label
+        SubmissionStatusPanel         matlab.ui.container.Panel
+        SubmitFooterGridLayout        matlab.ui.container.GridLayout
+        ExportDatasetInfoButton       matlab.ui.control.Button
+        TestDocumentConversionButton  matlab.ui.control.Button
+        SaveButton                    matlab.ui.control.Button
+        SaveChangesButton             matlab.ui.control.Button
+        FooterpanelLabel              matlab.ui.control.Label
+        ResetFormButton               matlab.ui.control.Button % New Button
+        RevertToSavedButton           matlab.ui.control.Button % New Button
     end
 
     
@@ -204,23 +207,23 @@ classdef MetadataEditorApp < matlab.apps.AppBase
         % FieldComponentMap - Mapping between dataset information fields
         % and app components
         FieldComponentMap = struct(...
-                 'DatasetFullName', 'DatasetBranchTitleEditField', ...
-                'DatasetShortName', 'DatasetShortNameEditField', ...
-                     'Description', 'AbstractTextArea', ...
-                        'Comments', 'DatasetCommentsTextArea', ...
-                     'ReleaseDate', 'ReleaseDateDatePicker', ...
-                         'License', 'LicenseDropDown', ...
-               'FullDocumentation', 'FullDocumentationEditField', ...
-               'VersionIdentifier', 'VersionIdentifierEditField', ...
-               'VersionInnovation', 'VersionInnovationEditField', ...
-                         'Funding', 'FundingUITable', ...
-              'RelatedPublication', 'RelatedPublicationUITable', ...
-            'ExperimentalApproach', 'ExperimentalApproachTree', ...
-              'TechniquesEmployed', 'SelectedTechniquesListBox', ...
-                        'DataType', 'DataTypeTree' ...
-            );
-            % 'Subjects', 'UITableSubject', ... % Note: Currently handled individually
-            % 'Probes', 'UITableProbe' ...
+                    'DatasetFullName', 'DatasetBranchTitleEditField', ...
+                    'DatasetShortName', 'DatasetShortNameEditField', ...
+                            'Description', 'AbstractTextArea', ...
+                                'Comments', 'DatasetCommentsTextArea', ...
+                            'ReleaseDate', 'ReleaseDateDatePicker', ...
+                                'License', 'LicenseDropDown', ...
+                    'FullDocumentation', 'FullDocumentationEditField', ...
+                    'VersionIdentifier', 'VersionIdentifierEditField', ...
+                    'VersionInnovation', 'VersionInnovationEditField', ...
+                                'Funding', 'FundingUITable', ...
+                    'RelatedPublication', 'RelatedPublicationUITable', ...
+                    'ExperimentalApproach', 'ExperimentalApproachTree', ...
+                    'TechniquesEmployed', 'SelectedTechniquesListBox', ...
+                                'DataType', 'DataTypeTree' ...
+                    );
+                    % 'Subjects', 'UITableSubject', ... % Note: Currently handled individually
+                    % 'Probes', 'UITableProbe' ...
 
         FieldComponentPostfix = ["EditField", "TextArea", "DropDown", "UITable", "Tree", "ListBox"]
     end
@@ -334,7 +337,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 otherwise
                     fields = [];
 
-            end   
+            end    
 
             for iField = fields
                 componentFieldName = app.FieldComponentMap.(iField);
@@ -364,7 +367,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             labelFieldName = sprintf('%sLabel', componentFieldName);
 
             app.(labelFieldName).FontWeight = 'bold';
-            app.(labelFieldName).FontColor = [0.7098    0.0902         0];
+            app.(labelFieldName).FontColor = [0.7098    0.0902        0];
             app.(labelFieldName).Tag = 'RequiredValueMissing';
         end
 
@@ -382,33 +385,37 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
         function tempWorkingFile = getTempWorkingFile(app)
         % GETTEMPWORKINGFILE - Determines and returns the full path to the temporary working file.
+        % If app.TempWorkingFile is not already set, this function determines it based on
+        % app.Dataset.path() and sets app.TempWorkingFile.
         % This file is used to save and load metadata during an editing session.
 
-            tempWorkingFile = app.TempWorkingFile; % User-provided path takes precedence
-
-            if isempty(tempWorkingFile) % If no user-provided path, determine the default
-                if ~isempty(app.Dataset) && isprop(app.Dataset,'path') && ~isempty(app.Dataset.path)
-                    % Use dataset's path if available
-                    tempWorkingFile = fullfile(app.Dataset.path, 'NDIMetadataEditorData.mat');
-                else
-                    % Fallback to original default if dataset or its path is not available
-                    tempWorkingFile = fullfile(userpath, 'NDIDatasetUpload', 'dataset.mat'); % Note: This fallback implies a non-temporary storage location if no dataset path
-                end
+            if isempty(app.TempWorkingFile) || app.TempWorkingFile == ""
+                % datasetObject is a required input to startupFcn, and must be ndi.session or ndi.dataset.
+                % These objects are guaranteed to have a .path() method that returns a non-empty path.
+                entityPath = app.Dataset.path();
+                ndiFolderPath = fullfile(entityPath, '.ndi');
+                % The .ndi folder creation is not handled here as per user feedback.
+                % It's assumed to exist or be handled by the saving mechanism if needed.
+                app.TempWorkingFile = fullfile(ndiFolderPath, 'NDIMetadataEditorData.mat');
             end
+            tempWorkingFile = app.TempWorkingFile;
         end
 
         function saveDatasetInformation(app)
-                        
-            tempSaveFile = app.getTempWorkingFile();
+            tempSaveFile = app.getTempWorkingFile(); 
             datasetInformation = app.DatasetInformation;
-            save(tempSaveFile, "datasetInformation")
+            save(tempSaveFile, "datasetInformation");
         end
 
         function loadDatasetInformation(app)
             tempLoadFile = app.getTempWorkingFile();
+            % tempLoadFile is assumed to be valid and non-empty here.
 
             % This function might create/update tempLoadFile if it extracts metadata
-            ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
+            if ~isempty(app.Dataset) 
+                ndi.database.metadata_app.fun.readExistingMetadata(app.Dataset, tempLoadFile);
+            end
+
             if isfile(tempLoadFile)
                 S = load(tempLoadFile, "datasetInformation");
                 app.DatasetInformation = S.datasetInformation;
@@ -455,7 +462,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             organizationInstances = app.Organizations;
             saveUserInstances('affiliation_organization', organizationInstances)
         end
-    
+        
         function strainInstances = getStrainInstances(app)
             import ndi.database.metadata_app.fun.loadUserInstanceCatalog
             strainInstances = loadUserInstanceCatalog('Strain');
@@ -579,8 +586,8 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             app.AuthorData.updateProperty(propertyName, propertyValue, authorIndex)
 
             if doSave
-              app.DatasetInformation.Author = app.AuthorData.AuthorList;
-              app.saveDatasetInformation();
+                app.DatasetInformation.Author = app.AuthorData.AuthorList;
+                app.saveDatasetInformation();
             end
         end
 
@@ -595,7 +602,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 uialert(app.NDIMetadataEditorUIFigure, ME.message, 'Invalid input')
             end
         end
-      
+        
         % Update author input fields based on a struct of author details
         function fillAuthorInputFieldsFromStruct(app, S)
             % Note: Not all fields are handled yet
@@ -756,7 +763,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 % provide a search link for the orcid web search. 
             end
         end
-           
+            
         function insertOrganization(app, S, insertIndex)
 
             if nargin < 3 || isempty(insertIndex)
@@ -864,7 +871,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
             % Get user-inputs from form
             S = app.UIForm.Funding.getFunderDetails();
-           
+            
             % Update data in table if user pressed save.
             mode = app.UIForm.Funding.FinishState;
 
@@ -910,7 +917,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
             % Get user-inputs from form
             S = app.UIForm.(formName).getFormData();
-           
+            
             % Update data in table if user pressed save.
             mode = app.UIForm.(formName).FinishState;
             if mode == "Save"
@@ -986,7 +993,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             end
 
             app.UIForm.Species.waitfor(); % Wait for user to proceed
-                  
+                    
             % Get user-inputs from form
             S = app.UIForm.Species.getInfo();
             
@@ -1032,7 +1039,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 clear S
             end
         end
-       
+        
         % Replace information for specified author in the author table
         function replaceProbeInTable(app, probeIndex, probe)
             newRowData = struct2table(probe.toTableStruct(),'AsArray', true);
@@ -1136,7 +1143,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     else
                         items = string( {strainCatalog(keep).name} );
                     end
-                end       
+                end        
             end
             app.StrainListBox.Items = items;
         end
@@ -1204,7 +1211,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 
             subjectData = ndi.database.metadata_app.fun.loadSubjects(app.Dataset);
             app.SubjectData = subjectData;
-            subjectTableData = subjectData.formatTable()
+            subjectTableData = subjectData.formatTable();
             if ~isempty(subjectTableData)
                 app.UITableSubject.Data = struct2table(subjectTableData, 'AsArray', true);
             end
@@ -1295,7 +1302,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
             delete(app.Timer)
             app.Timer = [];
         end
-    
+        
         function changeTab(app, newTab)
             app.TabGroup.SelectedTab = newTab;
             app.onTabChanged()
@@ -1337,7 +1344,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
 
                 % subjectIndex = app.SubjectData.getIndex(subjectName); %Question: Would this ever be different from selected row?
 
-                if ~isempty(newValue) && ~isempty(subjectName) && subjectIndex ~= -1          
+                if ~isempty(newValue) && ~isempty(subjectName) && subjectIndex ~= -1        
                     switch columnName
                         case 'BiologicalSex'
                             app.SubjectData.SubjectList(subjectIndex).BiologicalSexList = {newValue};
@@ -1409,7 +1416,7 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                 subjectIndex = selectedRows(i);
                 subjectName = app.UITableSubject.Data{selectedRows(i), 'Subject'};
 
-                if ~isempty(subjectName) && subjectIndex ~= -1          
+                if ~isempty(subjectName) && subjectIndex ~= -1        
                     switch columnName
                         case 'BiologicalSex'
                             app.SubjectData.SubjectList(subjectIndex).deleteBiologicalSex();
@@ -1440,12 +1447,11 @@ classdef MetadataEditorApp < matlab.apps.AppBase
     methods (Access = private)
 
         % Code that executes after component creation
-        function startupFcn(app, datasetObject, tempWorkingFileInput, debugMode)
+        function startupFcn(app, datasetObject, debugMode)
             
             arguments 
                 app (1,1) ndi.database.metadata_app.Apps.MetadataEditorApp
-                datasetObject (1,:) ndi.dataset = ndi.dataset.empty % Todo: should be required.
-                tempWorkingFileInput (1,:) string = string.empty
+                datasetObject (1,1) {mustBeA(datasetObject, ["ndi.session", "ndi.dataset"])} % This is a required argument
                 debugMode (1,1) logical = false
             end
 
@@ -1461,18 +1467,15 @@ classdef MetadataEditorApp < matlab.apps.AppBase
                     delete(app); throwAsCaller(ME)
                 end
             end
-disp('here:startupFcn')
-            % Assign input arguments to properties:
-            if ~isempty(datasetObject); app.Dataset = datasetObject; end
-            if ~isempty(tempWorkingFileInput); app.TempWorkingFile = tempWorkingFileInput; end
-            if ~isempty(datasetObject) && (~isempty(tempWorkingFileInput))
-                
-            end
 
+            % Assign input arguments to properties:
+            app.Dataset = datasetObject; % datasetObject is now a required argument.
+            app.TempWorkingFile = app.getTempWorkingFile(); % Determine and set the temp working file path.
+            
             % This panel contains the previous and next buttons and should
             % not be visible on the first page:
             app.FooterPanel.Visible = 'off';
-                     
+                        
             app.hideUnimplementedComponents()
             app.markRequiredFields()
 
@@ -2014,7 +2017,7 @@ disp('here:startupFcn')
             % indices = event.Indices;
             % newData = event.NewData;
             currentData = app.RelatedPublicationUITable.Data;
-             
+            
             % Note: Convert table to struct before adding to dataset information.
             app.DatasetInformation.RelatedPublication = table2struct(currentData);
             app.saveDatasetInformation();
@@ -2099,7 +2102,7 @@ disp('here:startupFcn')
         % Button pushed function: AssignBiologicalSexButton
         function AssignBiologicalSexButtonPushed(app, event)
             
-            biologicalSex = app.BiologicalSexListBox.Value;    
+            biologicalSex = app.BiologicalSexListBox.Value;     
             
             % Get the selected row and column in the table
             subjectSelections = app.UITableSubject.Selection;
@@ -2380,7 +2383,7 @@ disp('here:startupFcn')
                 else
                     app.UITableProbe.Data{indices(1),indices(2)} = eventdata.PreviousData;
                 end
-            end            
+            end          
         end
 
         % Double-clicked callback: UITableProbe
@@ -2464,6 +2467,77 @@ disp('here:startupFcn')
         function LicenseHelpButtonPushed(app, event)
             web("https://en.wikipedia.org/wiki/Creative_Commons_license#Six_regularly_used_licenses")
         end
+
+        % Button pushed function: ResetFormButton
+        function ResetFormButtonPushed(app, event)
+            answer = uiconfirm(app.NDIMetadataEditorUIFigure, ...
+                'Are you sure you want to reset the form? All unsaved changes in the UI will be lost and the form will be repopulated with data from the NDI entity.', ...
+                'Confirm Reset', ...
+                'Options', {'Yes, Reset', 'Cancel'}, 'DefaultOption', 'Cancel');
+
+            if strcmp(answer, 'Yes, Reset')
+                % 1. Re-initialize DatasetInformation
+                app.DatasetInformation = struct();
+                
+                % 2. Re-initialize AuthorData
+                app.AuthorData = ndi.database.metadata_app.class.AuthorData();
+                % Clear author listbox and fields
+                app.AuthorListBox.Items = {};
+                app.AuthorListBox.Value = {};
+                app.fillAuthorInputFieldsFromStruct(app.AuthorData.getEmptyItem()); % Fill with empty author struct
+
+                % 3. Re-initialize/re-load data from the NDI entity (session/dataset)
+                % This is similar to parts of startupFcn
+                if ~isempty(app.Dataset)
+                    app.getInitialMetadataFromSession(); % This re-populates app.SubjectData and UITableSubject, app.ProbeData and UITableProbe
+                else
+                    % If no dataset, ensure SubjectData and ProbeData are empty
+                    app.SubjectData = ndi.database.metadata_app.class.SubjectData();
+                    app.UITableSubject.Data = table(); % Clear table
+                    app.ProbeData = ndi.database.metadata_app.class.ProbeData();
+                    app.UITableProbe.Data = table(); % Clear table
+                end
+
+                % 4. Set default values for certain fields if necessary (like in startupFcn)
+                if ~isfield(app.DatasetInformation, 'VersionIdentifier')
+                    app.DatasetInformation.VersionIdentifier = '1.0.0'; % Default from createComponents
+                end
+                if ~isfield(app.DatasetInformation, 'VersionInnovation')
+                    app.DatasetInformation.VersionInnovation = 'This is the first version of the dataset'; % Default from createComponents
+                end
+                if ~isfield(app.DatasetInformation, 'License') % Ensure license has a default if cleared
+                    app.DatasetInformation.License = app.LicenseDropDown.ItemsData{2}; % Default to the first actual license
+                    if isempty(app.LicenseDropDown.ItemsData{2}) && numel(app.LicenseDropDown.ItemsData) > 2
+                         app.DatasetInformation.License = app.LicenseDropDown.ItemsData{3}; % Try next if first is placeholder
+                    end
+                end
+
+
+                % 5. Update all UI components from the now reset/re-initialized DatasetInformation
+                app.updateComponentsFromDatasetInformation(); % This will populate fields based on the cleared/default DatasetInformation
+
+                % 6. Save this reset state to the temporary working file
+                app.saveDatasetInformation();
+
+                app.inform('Form has been reset to its initial state.', 'Form Reset');
+            end
+        end
+
+        % Button pushed function: RevertToSavedButton
+        function RevertToSavedButtonPushed(app, event)
+            answer = uiconfirm(app.NDIMetadataEditorUIFigure, ...
+                'Are you sure you want to revert to the last saved version? All current unsaved changes in the UI will be lost.', ...
+                'Confirm Revert', ...
+                'Options', {'Yes, Revert', 'Cancel'}, 'DefaultOption', 'Cancel');
+
+            if strcmp(answer, 'Yes, Revert')
+                % The loadDatasetInformation function already handles loading from the .mat file
+                % or re-parsing from the NDI entity if the .mat file is not yet informative.
+                app.loadDatasetInformation();
+                app.inform('Form has been reverted to the last saved version.', 'Reverted to Saved');
+            end
+        end
+
     end
 
     % Component initialization
@@ -3622,36 +3696,55 @@ disp('here:startupFcn')
             % Create SubmitGridLayout
             app.SubmitGridLayout = uigridlayout(app.SaveTab);
             app.SubmitGridLayout.ColumnWidth = {'1x'};
-            app.SubmitGridLayout.RowHeight = {60, '4x', '1.5x'};
+            app.SubmitGridLayout.RowHeight = {60, '4x', '2x'}; % Adjusted '2x' for two rows of buttons
 
             % Create SubmitFooterGridLayout
             app.SubmitFooterGridLayout = uigridlayout(app.SubmitGridLayout);
-            app.SubmitFooterGridLayout.ColumnWidth = {'1x', 150, '1x'};
-            app.SubmitFooterGridLayout.RowHeight = {40};
+            % Adjusted for 2 rows, 3 columns
+            app.SubmitFooterGridLayout.ColumnWidth = {'1x', '1x', '1x'}; 
+            app.SubmitFooterGridLayout.RowHeight = {40, 40};  % Two rows for buttons
             app.SubmitFooterGridLayout.ColumnSpacing = 20;
-            app.SubmitFooterGridLayout.RowSpacing = 20;
+            app.SubmitFooterGridLayout.RowSpacing = 10; % Added row spacing
             app.SubmitFooterGridLayout.Layout.Row = 3;
             app.SubmitFooterGridLayout.Layout.Column = 1;
+            app.SubmitFooterGridLayout.Padding = [10 10 10 10]; % Adjusted padding
 
+            % ROW 1 of Buttons in SubmitFooterGridLayout
             % Create SaveButton
             app.SaveButton = uibutton(app.SubmitFooterGridLayout, 'push');
             app.SaveButton.ButtonPushedFcn = createCallbackFcn(app, @SaveButtonPushed, true);
             app.SaveButton.Layout.Row = 1;
-            app.SaveButton.Layout.Column = 2;
-            app.SaveButton.Text = 'Save';
+            app.SaveButton.Layout.Column = 1;
+            app.SaveButton.Text = '<html><b>Save</b></html>'; % Bold text
 
+            % Create ResetFormButton
+            app.ResetFormButton = uibutton(app.SubmitFooterGridLayout, 'push');
+            app.ResetFormButton.ButtonPushedFcn = createCallbackFcn(app, @ResetFormButtonPushed, true);
+            app.ResetFormButton.Layout.Row = 1;
+            app.ResetFormButton.Layout.Column = 2;
+            app.ResetFormButton.Text = 'Reset Form';
+
+            % Create RevertToSavedButton
+            app.RevertToSavedButton = uibutton(app.SubmitFooterGridLayout, 'push');
+            app.RevertToSavedButton.ButtonPushedFcn = createCallbackFcn(app, @RevertToSavedButtonPushed, true);
+            app.RevertToSavedButton.Layout.Row = 1;
+            app.RevertToSavedButton.Layout.Column = 3;
+            app.RevertToSavedButton.Text = 'Revert to Saved';
+
+            % ROW 2 of Buttons in SubmitFooterGridLayout
             % Create TestDocumentConversionButton
             app.TestDocumentConversionButton = uibutton(app.SubmitFooterGridLayout, 'push');
             app.TestDocumentConversionButton.ButtonPushedFcn = createCallbackFcn(app, @TestDocumentConversionButtonPushed, true);
-            app.TestDocumentConversionButton.Layout.Row = 1;
+            app.TestDocumentConversionButton.Layout.Row = 2;
             app.TestDocumentConversionButton.Layout.Column = 1;
             app.TestDocumentConversionButton.Text = 'Test Document Conversion';
 
             % Create ExportDatasetInfoButton
             app.ExportDatasetInfoButton = uibutton(app.SubmitFooterGridLayout, 'push');
             app.ExportDatasetInfoButton.ButtonPushedFcn = createCallbackFcn(app, @ExportDatasetInfoButtonPushed, true);
-            app.ExportDatasetInfoButton.Layout.Row = 1;
-            app.ExportDatasetInfoButton.Layout.Column = 3;
+            app.ExportDatasetInfoButton.Layout.Row = 2;
+            app.ExportDatasetInfoButton.Layout.Column = 2; % Place in second column
+            % app.ExportDatasetInfoButton.Layout.Column = [2 3]; % Alternative: span 2 columns
             app.ExportDatasetInfoButton.Text = 'Export Dataset Info to Workspace';
 
             % Create SubmitPanelGridLayout
