@@ -226,6 +226,10 @@ classdef subjectMaker
                 subjectInfo (1,1) struct {ndi.setup.NDIMaker.subjectMaker.mustBeValidSubjectInfoForDocCreation(subjectInfo)}
             end
 
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Making Subject Document(s)','Tag','subjectDoc');
+
             numSubjects = numel(subjectInfo.subjectName);
 
             if numSubjects == 0
@@ -328,6 +332,9 @@ classdef subjectMaker
                     warning('ndi:setup:NDIMaker:subjectMaker:DocumentCreationError', warning_msg);
                     output_documents{i} = {}; 
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('subjectDoc',i/numSubjects);
             end
 
             output = struct('subjectName', {output_subjectNames}, 'documents', {output_documents});
@@ -394,6 +401,10 @@ classdef subjectMaker
                 added_status = false(1, numel(documentsToAddSets)); 
                 return;
             end
+
+            % Create progress bar
+            progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset','Overwrite',false);
+            progressBar = progressBar.addBar('Label','Adding Subject(s) to Session(s)','Tag','subjectSession');
 
             numDocSets = numel(documentsToAddSets);
             added_status = false(1, numDocSets); 
@@ -467,6 +478,9 @@ classdef subjectMaker
                         escaped_target_id, i);
                     warning('ndi:setup:NDIMaker:subjectMaker:SessionNotFoundForAdd', warning_msg);
                 end
+
+                % Update progress bar
+                progressBar = progressBar.updateBar('subjectSession',i/numDocSets);
             end
         end % function addSubjectsToSessions
 

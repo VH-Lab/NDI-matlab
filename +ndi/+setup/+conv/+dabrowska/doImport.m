@@ -4,6 +4,10 @@ arguments
     dataParentDir (1,:) char {mustBeFolder}
 end
 
+%%
+
+progressBar = ndi.gui.component.ProgressBarWindow('Import Dataset');
+
 dataPath = fullfile(dataParentDir,'Dabrowska');
 
 %% Deal with bad paths
